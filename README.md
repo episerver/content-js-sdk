@@ -1,15 +1,26 @@
 # Optimizely CMS JavaScript tools
 
-## Tooling
+## Tech-stack
 
-- NPM vs YARN vs PNPM?
-- Monorepos: Maybe Turborepo? pnpm? Lerna?
+| Tool       | Category                 |
+| :--------- | :----------------------- |
+| pnpm       | Package manager          |
+| Turborepo? | task runner              |
+| changeset? | monorepo version manager |
+
+### Other discussions
+
 - TSConfig: Create a base for all packages
 - ESM and CJS
 
 ## CLI
 
-- oclif and inquirer
+Tooling:
+
+- oclif: parses arguments and flags, creates examples...
+- inquirer: for prompts
+
+### Commands
 
 ```
 login
@@ -41,6 +52,10 @@ maybe in the future, expose the CLI commands as JS functions:
 ### Content delivery (GraphQL)
 
 - If we generate the queries (strings) ourselves, maybe `fetch` works instead of requiring any dependency
+
+## Sample sites
+
+- At least Next.js
 
 ---
 
