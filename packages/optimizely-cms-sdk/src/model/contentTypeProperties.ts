@@ -34,17 +34,6 @@ export type MultiSelectString = Base & {
   };
 };
 
-// TODO: Check that values in "LinkCollection" are constants.
-// If that is the case, users should no input them by hand.
-export type LinkCollection = Base & {
-  type: 'array';
-  format: 'LinkCollection';
-  items: {
-    type: 'component';
-    contentType: 'link';
-  };
-};
-
 export type SelectOneString = Base & {
   type: 'string';
   format: 'selectOne';
@@ -66,7 +55,9 @@ export type ArrayItems =
   | RichText
   | Url
   | Integer
-  | Float;
+  | Float
+  | ContentReference
+  | Component;
 
 /** Represents the content type property "String" */
 export type String = Base & {
@@ -93,6 +84,31 @@ export type Float = Base & {
 };
 export type ContentReference = Base & {
   type: 'contentReference';
+};
+
+/**
+ * Reprensents the content type property "Component".
+ * Note: this is called "Block" in the GUI
+ */
+export type Component = Base & {
+  type: 'component';
+  contentType: string;
+};
+
+// TODO: What to do with this?
+// Link and link collections are special type of `Component` and `Array<Component>` respectively
+export type LinkItem = Base & {
+  type: 'component';
+  contentType: 'link';
+};
+
+export type LinkCollection = Base & {
+  type: 'array';
+  format: 'LinkCollection';
+  items: {
+    type: 'component';
+    contentType: 'link';
+  };
 };
 
 // TODO: "link collection" in CMS is "array of component<contentType: link>"
