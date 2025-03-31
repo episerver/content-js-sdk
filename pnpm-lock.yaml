@@ -8,6 +8,12 @@ importers:
 
   .: {}
 
+  packages/optimizely-cms-cli:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+
   packages/optimizely-cms-sdk:
     devDependencies:
       '@types/node':
