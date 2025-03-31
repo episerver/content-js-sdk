@@ -12,6 +12,7 @@
 
 - TSConfig: Create a base for all packages
 - ESM and CJS
+- Formatter, at least in the samples
 
 ## CLI
 

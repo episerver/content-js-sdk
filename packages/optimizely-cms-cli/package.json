@@ -10,6 +10,9 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.7.0",
+  "dependencies": {
+    "optimizely-cms-sdk": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.8.2"
   }
