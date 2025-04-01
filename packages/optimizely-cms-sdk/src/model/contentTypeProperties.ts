@@ -15,14 +15,11 @@ type Base = {
   editorSettings?: Record<string, Record<string, never>> | null;
 };
 
-type WithEnum<T> =
-  | {
-      format: 'selectOne';
-      enum: {
-        values: { value: T; displayName: string }[];
-      };
-    }
-  | {};
+type WithEnum<T> = {
+  enum?: {
+    values: { value: T; displayName: string }[];
+  };
+};
 
 export type Array<T extends ArrayItems> = Base & {
   type: 'array';
