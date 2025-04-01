@@ -36,6 +36,7 @@ export type ArrayItems =
   | Integer
   | Float
   | ContentReference
+  | Content
   | Component
   | Link;
 
@@ -65,6 +66,12 @@ export type Float = Base & {
 } & WithEnum<number>;
 export type ContentReference = Base & {
   type: 'contentReference';
+  allowedTypes?: string[];
+  restrictedTypes?: string[];
+};
+
+export type Content = Base & {
+  type: 'content';
   allowedTypes?: string[];
   restrictedTypes?: string[];
 };
