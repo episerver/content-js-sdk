@@ -65,6 +65,8 @@ export type Float = Base & {
 } & WithEnum<number>;
 export type ContentReference = Base & {
   type: 'contentReference';
+  allowedTypes?: string[];
+  restrictedTypes?: string[];
 };
 
 /**
