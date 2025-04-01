@@ -1,5 +1,12 @@
-export function sum(a: number, b: number) {
-  return a + b;
-}
+import { type InferFromContentType } from './infer';
+import { AnyContentType } from './model/contentTypes';
 
-console.log(sum(4, 5));
+export { contentType } from './model';
+export namespace contentType {
+  /**
+   * Infers the type consisting of the fields included in a CMS content with the content type `T`
+   */
+  export type infer<T extends AnyContentType> = InferFromContentType<T>;
+}
+export * as ContentTypes from './model/contentTypes';
+export * as ContentTypeProperties from './model/contentTypeProperties';
