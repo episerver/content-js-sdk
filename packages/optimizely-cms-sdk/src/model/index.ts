@@ -1,6 +1,6 @@
-import { ContentType } from './contentTypes';
+import { AnyContentType } from './contentTypes';
 
 /** Defines a Optimizely CMS content type */
-export function defineContentType<T extends ContentType>(contentType: T): T {
+export function defineContentType<T extends AnyContentType>(contentType: T): T {
   return contentType;
 }

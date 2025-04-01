@@ -20,7 +20,7 @@ export type InferredUrl = {
 
 /** Infers the Typescript type for each content type property */
 // prettier-ignore
-export type InferFromProperty<T extends CTP.ContentTypeProperty> =
+export type InferFromProperty<T extends CTP.AnyProperty> =
     T extends CTP.Boolean ? boolean
   : T extends CTP.Binary  ? unknown
   : T extends CTP.Json ? any
@@ -41,8 +41,8 @@ export type InferredBase = {
 };
 
 /** Infers an `object` with the TS type inferred for each type */
-type InferProps<T extends CT.ContentType> = T extends {
-  properties: Record<string, CTP.ContentTypeProperty>;
+type InferProps<T extends CT.AnyContentType> = T extends {
+  properties: Record<string, CTP.AnyProperty>;
 }
   ? {
       [Key in keyof T['properties']]: InferFromProperty<T['properties'][Key]>;
@@ -50,7 +50,7 @@ type InferProps<T extends CT.ContentType> = T extends {
   : {};
 
 /** Adds TS fields specific to `Experience` */
-type InferExperience<T extends CT.ContentType> = T extends CT.Experience
+type InferExperience<T extends CT.AnyContentType> = T extends CT.Experience
   ? {
       composition: {
         nodes: {
@@ -63,6 +63,6 @@ type InferExperience<T extends CT.ContentType> = T extends CT.Experience
   : {};
 
 /** Infers the TypeScript type for a content type */
-export type InferFromContentType<T extends CT.ContentType> = Prettify<
+export type InferFromContentType<T extends CT.AnyContentType> = Prettify<
   InferredBase & InferProps<T> & InferExperience<T>
 >;

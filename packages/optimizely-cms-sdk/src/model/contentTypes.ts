@@ -1,13 +1,13 @@
-import { ContentTypeProperty } from './contentTypeProperties';
+import { AnyProperty } from './contentTypeProperties';
 
 /** All possible content types */
-export type ContentType = Component | Others;
+export type AnyContentType = Component | Others;
 
 /** A "Base" content type that includes all common attributes for all content types */
 type Base = {
   key: string;
   displayName?: string;
-  properties?: Record<string, ContentTypeProperty>;
+  properties?: Record<string, AnyProperty>;
 };
 
 /** Represents the "Component" type (also called "Block") in CMS */

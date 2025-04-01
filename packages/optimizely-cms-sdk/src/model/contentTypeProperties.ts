@@ -1,5 +1,5 @@
 /** All possible content type properties */
-export type ContentTypeProperty = Array<ArrayItems> | ArrayItems;
+export type AnyProperty = Array<ArrayItems> | ArrayItems;
 
 /** A "Base" content type property that includes all common attributes for all content type properties */
 type Base = {
