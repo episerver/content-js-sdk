@@ -42,7 +42,6 @@ export type ArrayItems =
 /** Represents the content type property "String" */
 export type String = Base & {
   type: 'string';
-  format?: 'shortString';
   minLength?: number;
   maxLength?: number;
 } & WithEnum<string>;
