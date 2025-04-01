@@ -25,8 +25,8 @@ type WithEnum<T> =
   | {};
 
 export type Array<T extends ArrayItems> = Base & {
+  type: 'array';
   items: T;
-  format?: 'selectMany';
 };
 
 export type ArrayItems =
@@ -41,12 +41,6 @@ export type ArrayItems =
   | ContentReference
   | Component
   | Link;
-
-export type MultiSelect = Base & {
-  type: 'array';
-  format: 'selectMany';
-  // items:
-};
 
 /** Represents the content type property "String" */
 export type String = Base & {
