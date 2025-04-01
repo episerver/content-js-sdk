@@ -30,6 +30,7 @@ export type InferFromProperty<T extends CTP.ContentTypeProperty> =
   : T extends CTP.Integer ? number
   : T extends CTP.Float ? number
   : T extends CTP.ContentReference ? {}
+  : T extends CTP.Array<infer E> ? InferFromProperty<E>[]
   : {}
 
 /** Attributes included in the response from Graph in every content type */

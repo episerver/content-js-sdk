@@ -1,5 +1,5 @@
 /** All possible content type properties */
-export type ContentTypeProperty = Array | ArrayItems;
+export type ContentTypeProperty = Array<ArrayItems> | ArrayItems;
 
 /** A "Base" content type property that includes all common attributes for all content type properties */
 type Base = {
@@ -24,8 +24,8 @@ type WithEnum<T> =
     }
   | {};
 
-export type Array = Base & {
-  items: ArrayItems;
+export type Array<T extends ArrayItems> = Base & {
+  items: T;
   format?: 'selectMany';
 };
 
