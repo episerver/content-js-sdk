@@ -1,9 +1,5 @@
 /** All possible content type properties */
-export type ContentTypeProperty =
-  | MultiSelectString
-  | SelectOneString
-  | Array
-  | ArrayItems;
+export type ContentTypeProperty = Array | ArrayItems;
 
 /** A "Base" content type property that includes all common attributes for all content type properties */
 type Base = {
@@ -19,28 +15,14 @@ type Base = {
   editorSettings?: Record<string, Record<string, never>> | null;
 };
 
-// TODO: check if "multi-select" can be other things than strings
-// if not, MultiSelectString can be simpler
-export type MultiSelectString = Base & {
-  type: 'array';
-  format: 'selectMany';
-  items: {
-    type: 'string';
-
-    // TODO: Check if other types can have enums
-    enum: {
-      values: { value: string; displayName: string }[];
-    };
-  };
-};
-
-export type SelectOneString = Base & {
-  type: 'string';
-  format: 'selectOne';
-  enum: {
-    values: { value: string; displayName: string }[];
-  };
-};
+type WithEnum<T> =
+  | {
+      format: 'selectOne';
+      enum: {
+        values: { value: T; displayName: string }[];
+      };
+    }
+  | {};
 
 export type Array = Base & {
   items: ArrayItems;
@@ -57,7 +39,14 @@ export type ArrayItems =
   | Integer
   | Float
   | ContentReference
-  | Component;
+  | Component
+  | Link;
+
+export type MultiSelect = Base & {
+  type: 'array';
+  format: 'selectMany';
+  // items:
+};
 
 /** Represents the content type property "String" */
 export type String = Base & {
@@ -65,23 +54,25 @@ export type String = Base & {
   format?: 'shortString';
   minLength?: number;
   maxLength?: number;
-};
+} & WithEnum<string>;
 
 export type Boolean = Base & { type: 'boolean' };
 export type Binary = Base & { type: 'binary' };
 export type Json = Base & { type: 'json' };
+
+// Note: `RichText` type does not exist in the REST API. However, we need it to extract the right GraphQL fields from there
 export type RichText = Base & { type: 'richText' };
 export type Url = Base & { type: 'url' };
 export type Integer = Base & {
   type: 'integer';
   minimum?: number;
   maximum?: number;
-};
+} & WithEnum<number>;
 export type Float = Base & {
   type: 'float';
   minimum?: number;
   maximum?: number;
-};
+} & WithEnum<number>;
 export type ContentReference = Base & {
   type: 'contentReference';
 };
@@ -95,27 +86,28 @@ export type Component = Base & {
   contentType: string;
 };
 
-// TODO: What to do with this?
-// Link and link collections are special type of `Component` and `Array<Component>` respectively
-export type LinkItem = Base & {
-  type: 'component';
-  contentType: 'link';
+// Note: `Link` does not exist in the REST API. It is called `component` with `contentType=link`
+export type Link = Base & {
+  type: 'link';
 };
 
-export type LinkCollection = Base & {
-  type: 'array';
-  format: 'LinkCollection';
-  items: {
-    type: 'component';
-    contentType: 'link';
+export type InferredBaseProperties = {
+  _metadata: {
+    url: {
+      default: string;
+    };
   };
 };
 
-// TODO: "link collection" in CMS is "array of component<contentType: link>"
-
-// In "allowedTypes", things are not called exactly as in the GUI:
-// - Block in the GUI = `component` in the API
-// - Pages in the GUI = `Page`
-// - Images = `Image`
-// - Video = `Video`
-// - Media = `Media`
+/** Infers the Typescript type for each content type property */
+// prettier-ignore
+export type InferFromProperty<T extends ContentTypeProperty> =
+    T extends Boolean ? boolean
+  : T extends Binary  ? unknown
+  : T extends Json ? any
+  : T extends RichText ? {html: string; json: any}
+  : T extends Url ? {}
+  : T extends Integer ? number
+  : T extends Float ? number
+  : T extends ContentReference ? {}
+  : {}
