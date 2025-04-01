@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "tsc",
-    "generate:types": "openapi-typescript ./spec.json -o src/open-api/schema.ts"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +16,6 @@
     "chalk": "^5.4.1",
     "conf": "^13.1.0",
     "glob": "^11.0.1",
-    "inquirer": "^12.5.0",
     "openapi-fetch": "^0.13.5",
     "optimizely-cms-sdk": "workspace:*",
     "ora": "^8.2.0",
