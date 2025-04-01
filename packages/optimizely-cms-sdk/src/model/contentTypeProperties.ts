@@ -86,28 +86,9 @@ export type Component = Base & {
   contentType: string;
 };
 
-// Note: `Link` does not exist in the REST API. It is called `component` with `contentType=link`
+// Note: `Link` does not exist in the REST API or in the GUI.
+// - In the API is called `component` with `contentType=link`
+// - In the GUI is called
 export type Link = Base & {
   type: 'link';
 };
-
-export type InferredBaseProperties = {
-  _metadata: {
-    url: {
-      default: string;
-    };
-  };
-};
-
-/** Infers the Typescript type for each content type property */
-// prettier-ignore
-export type InferFromProperty<T extends ContentTypeProperty> =
-    T extends Boolean ? boolean
-  : T extends Binary  ? unknown
-  : T extends Json ? any
-  : T extends RichText ? {html: string; json: any}
-  : T extends Url ? {}
-  : T extends Integer ? number
-  : T extends Float ? number
-  : T extends ContentReference ? {}
-  : {}

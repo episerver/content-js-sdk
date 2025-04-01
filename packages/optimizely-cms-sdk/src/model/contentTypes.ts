@@ -16,6 +16,10 @@ export type Component = Base & {
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
 };
 
+export type Experience = Base & {
+  baseType: 'experience';
+};
+
 /** Represents all other types in CMS. They don't have any additional property */
 export type Others = Base & {
   baseType:
