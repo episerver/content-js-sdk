@@ -42,7 +42,7 @@ export async function findContentTypes(
         const contentType = isContentType(obj)
           ? obj
           : isContentType(obj?.ContentType)
-          ? obj
+          ? obj?.ContentType
           : null;
 
         if (contentType) {

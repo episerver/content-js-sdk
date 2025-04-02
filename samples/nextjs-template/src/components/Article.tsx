@@ -5,5 +5,3 @@ export const ContentType = contentType({
   displayName: 'Landing page',
   baseType: 'experience',
 });
-
-export default function X() {}
