@@ -1,8 +1,5 @@
-//type=component
-
 import { contentType } from 'optimizely-cms-sdk';
 
-// properties: heading, image, body
 export const ContentType = contentType({
   key: 'SmallFeature',
   baseType: 'component',
