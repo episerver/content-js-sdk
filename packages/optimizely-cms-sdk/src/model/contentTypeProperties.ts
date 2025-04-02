@@ -15,18 +15,15 @@ type Base = {
   editorSettings?: Record<string, Record<string, never>> | null;
 };
 
-type WithEnum<T> =
-  | {
-      format: 'selectOne';
-      enum: {
-        values: { value: T; displayName: string }[];
-      };
-    }
-  | {};
+type WithEnum<T> = {
+  enum?: {
+    values: { value: T; displayName: string }[];
+  };
+};
 
 export type Array<T extends ArrayItems> = Base & {
+  type: 'array';
   items: T;
-  format?: 'selectMany';
 };
 
 export type ArrayItems =
@@ -39,19 +36,13 @@ export type ArrayItems =
   | Integer
   | Float
   | ContentReference
+  | Content
   | Component
   | Link;
-
-export type MultiSelect = Base & {
-  type: 'array';
-  format: 'selectMany';
-  // items:
-};
 
 /** Represents the content type property "String" */
 export type String = Base & {
   type: 'string';
-  format?: 'shortString';
   minLength?: number;
   maxLength?: number;
 } & WithEnum<string>;
@@ -75,6 +66,14 @@ export type Float = Base & {
 } & WithEnum<number>;
 export type ContentReference = Base & {
   type: 'contentReference';
+  allowedTypes?: string[];
+  restrictedTypes?: string[];
+};
+
+export type Content = Base & {
+  type: 'content';
+  allowedTypes?: string[];
+  restrictedTypes?: string[];
 };
 
 /**

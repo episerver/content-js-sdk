@@ -1,7 +1,7 @@
 import { AnyProperty } from './contentTypeProperties';
 
 /** All possible content types */
-export type AnyContentType = Component | Others;
+export type AnyContentType = Component | Experience | Others;
 
 /** A "Base" content type that includes all common attributes for all content types */
 type Base = {
