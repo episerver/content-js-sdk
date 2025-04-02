@@ -2,18 +2,38 @@
   "name": "optimizely-cms-cli",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.7.0",
+  "type": "module",
   "dependencies": {
-    "optimizely-cms-sdk": "workspace:*"
+    "@inquirer/prompts": "^7.4.0",
+    "@oclif/core": "^4.2.10",
+    "chalk": "^5.4.1",
+    "conf": "^13.1.0",
+    "glob": "^11.0.1",
+    "openapi-fetch": "^0.13.5",
+    "optimizely-cms-sdk": "workspace:*",
+    "ora": "^8.2.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/node": "^18",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
+  },
+  "bin": {
+    "optimizely-cms-cli": "./bin/run.js"
+  },
+  "oclif": {
+    "bin": "optimizely-cms-cli",
+    "commands": "./dist/commands",
+    "dirname": "optimizely-cms-cli",
+    "topicSeparator": " "
   }
 }
