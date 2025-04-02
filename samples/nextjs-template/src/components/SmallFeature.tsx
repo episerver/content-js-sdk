@@ -1,14 +1,14 @@
 import { contentType } from 'optimizely-cms-sdk';
 
 export const ContentType = contentType({
-  key: 'Article',
-  displayName: 'Article',
-  baseType: 'page',
+  key: 'SmallFeature',
+  baseType: 'component',
+  displayName: 'Small feature',
   properties: {
-    headline: {
+    heading: {
       type: 'string',
     },
-    thumbnail: {
+    image: {
       type: 'contentReference',
       allowedTypes: ['Image'],
     },
