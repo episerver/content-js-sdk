@@ -31,21 +31,32 @@ export async function findContentTypes(
 ): Promise<FoundContentType[]> {
   const files = await glob(pattern, { cwd });
 
-  const found: FoundContentType[] = [];
-  for (const f of files) {
-    const loaded = await tsImport(resolve(f), cwd);
+  const found = await Promise.all(
+    files.map(async (file) => {
+      const loaded = await tsImport(resolve(file), cwd);
+      const matches: FoundContentType[] = [];
 
-    // Traverse every exported object
-    for (const k in loaded) {
-      const obj = loaded[k];
-      if (isContentType(obj)) {
-        found.push({
-          path: f,
-          contentType: obj,
-        });
+      for (const key of Object.getOwnPropertyNames(loaded)) {
+        const obj = (loaded as any)[key];
+
+        const contentType = isContentType(obj)
+          ? obj
+          : isContentType(obj?.ContentType)
+          ? obj
+          : null;
+
+        if (contentType) {
+          matches.push({
+            path: file,
+            contentType,
+          });
+        }
       }
-    }
-  }
 
-  return found;
+      return matches;
+    })
+  );
+
+  // Flattens the nested arrays (contentType)
+  return found.flat();
 }
