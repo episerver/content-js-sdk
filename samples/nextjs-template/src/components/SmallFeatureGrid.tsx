@@ -1,6 +1,3 @@
-// baseType=component
-// properties: features=array<SmallFeature | Article>
-
 import { contentType } from 'optimizely-cms-sdk';
 
 export const ContentType = contentType({

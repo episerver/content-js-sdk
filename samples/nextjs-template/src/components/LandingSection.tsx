@@ -1,6 +1,5 @@
 import { contentType } from 'optimizely-cms-sdk';
 
-// heading, subtitle, features
 export const ContentType = contentType({
   key: 'LandingSection',
   baseType: 'component',
