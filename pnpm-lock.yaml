@@ -96,6 +96,9 @@ importers:
       eslint-config-next:
         specifier: 15.2.4
         version: 15.2.4(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)
+      optimizely-cms-cli:
+        specifier: workspace:*
+        version: link:../../packages/optimizely-cms-cli
       tailwindcss:
         specifier: ^4
         version: 4.0.17
