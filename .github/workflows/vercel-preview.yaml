@@ -10,9 +10,6 @@ jobs:
   Deploy-Preview:
     runs-on: ubuntu-latest
     environment: vercel-preview
-    defaults:
-      run:
-        working-directory: ./samples/nextjs-template
     steps:
       - uses: actions/checkout@v2
       - name: Install Vercel CLI
