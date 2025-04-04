@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap');
 
 * {
-  font-family: Arial, Helvetica, sans-serif;
   line-height: 1.5;
   box-sizing: border-box;
 }
@@ -14,9 +13,9 @@ nav {
   align-items: center;
   color: white;
   /* gap: 0 1rem; */
-
+  
   .logo {
-    font-family: "Bodoni Moda", serif; 
+    font-family: var(--font-serif);
     color: white;
     text-transform: uppercase;
     font-size: 0.8rem;
@@ -28,7 +27,7 @@ nav {
     text-decoration: none;
     margin-inline-end: auto;
   }
-
+  
   a:not(.logo), button {
     color: white;
     background: none;
@@ -41,17 +40,18 @@ nav {
 }
 
 h1 {
-  font-family: "Bodoni Moda", serif;
+  font-family: var(--font-serif);
   font-size: clamp(3rem, 4.286vw + 1.071rem, 4.5rem);
   margin-block: 0 1rem;
   letter-spacing: -0.05rem;
-
+  
   font-optical-sizing: auto;
   font-weight: 450;
   font-style: normal;
 }
 
 body {
+  font-family: var(--font-sans);
   width: 100%;
   margin: 0;
 }
@@ -131,7 +131,7 @@ section > header {
   border-bottom: 3px solid black;
 
   > h2 {
-    font-family: "Bodoni Moda", serif;
+    font-family: var(--font-serif);
     font-optical-sizing: auto;
     font-weight: 500;
     font-style: normal;
@@ -223,7 +223,7 @@ section > header {
     }
     p {
       grid-area: text;
-      font-family: "Bodoni Moda", serif;
+      font-family: var(--font-serif);
       font-size: 1.25rem;
       padding-inline-end: 1rem;
       text-wrap: pretty;
@@ -231,7 +231,7 @@ section > header {
   }
 
   h3 {
-    font-family: "Bodoni Moda", serif;
+    font-family: var(--font-serif);
     margin-block: 0;
     font-size: 2.5rem;
     line-height: 1.2;
@@ -258,7 +258,7 @@ section > header {
 
 
     h4 {
-      font-family: "Bodoni Moda", serif;
+      font-family: var(--font-serif);
       font-size: 2rem;
       margin-block: 1rem;
     }
