@@ -1,8 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&display=swap');
+:root {
+  --color-text: #000;
+  --color-accent: rgb(255, 106, 0);
+}
 
 * {
   line-height: 1.5;
   box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  font-weight: bold;
+}
+
+a:hover {
+  color: var(--color-accent);
 }
 
 nav {
@@ -11,12 +29,12 @@ nav {
   width: 100%;
   display: flex;
   align-items: center;
-  color: white;
-  /* gap: 0 1rem; */
+  color: var(--hero-foreground);
   
   .logo {
     font-family: var(--font-serif);
-    color: white;
+    font-weight: inherit;
+    color: var(--hero-foreground);
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 0.15rem;
@@ -29,14 +47,17 @@ nav {
   }
   
   a:not(.logo), button {
-    color: white;
-    background: none;
+    color: inherit;
     font: inherit;
     text-decoration: none;
     border: none;
     display: block;
     padding-inline: 1rem;
   }
+}
+
+nav:has(+ main .uni-hero.dark) {
+  --hero-foreground: #fff;
 }
 
 h1 {
@@ -62,13 +83,13 @@ img {
 }
 
 .uni-hero {
-  --background: linear-gradient(#fff0 0%, #fff3 50%, #ffff 100%);
-  --foreground: #000;
+  --hero-background: linear-gradient(#fff0 0%, #fff3 50%, #ffff 100%);
+  --hero-foreground: #000;
   padding-block: 1rem;
   padding-inline: 2rem;
   position: relative;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--hero-background);
+  color: var(--hero-foreground);
 
   img {
     position: absolute;
@@ -97,14 +118,14 @@ img {
 
   .heading::before {
     content: "";
-    border-left: 1px solid var(--foreground);
+    border-left: 1px solid var(--hero-foreground);
     position: absolute;
     height: 8rem;
     margin-block-start: -10rem;
   }
   .heading::after {
     content: "";
-    border-left: 1px solid var(--foreground);
+    border-left: 1px solid var(--hero-foreground);
     position: absolute;
     height: 4rem;
     margin-block-start: 2rem;
@@ -116,8 +137,8 @@ img {
 }
 
 .uni-hero.dark {
-  --background: linear-gradient(#0000 0%, #0003 50%, #000f 100%);
-  --foreground: white;
+  --hero-background: linear-gradient(#0000 0%, #0003 50%, #000f 100%);
+  --hero-foreground: white;
 }
 
 section {
