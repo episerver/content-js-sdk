@@ -154,7 +154,7 @@ export default function Home() {
 
         <div className="video-feature">
           <div className="video">
-            <a href="">
+            <a href="#">
               <Image src={kaleidoscopeImg} alt="" />
               <span>▶︎</span>
               <p>Discover more about the Obelisk 67-state system</p>
@@ -194,7 +194,7 @@ export default function Home() {
 
         <div className="uni-link-list">
           <div className="large-links">
-            <a href="">
+            <a href="#">
               <Image src={pianoImg} alt="" />
               <h3>
                 Harnessing 67-state quantum harmonics to transcend binary
@@ -218,53 +218,53 @@ export default function Home() {
           </div>
 
           <div className="small-links">
-            <a href="">
+            <a href="#">
               <p className="link-tag">Zero-Point Power</p>
               <p className="link-text">
                 Tapping the Obelisk’s Infinite Energy Well
               </p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">Emotion-Driven Systems</p>
               <p className="link-text">
                 The First Human-Responsive AI Networks
               </p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">Redefining Interface</p>
               <p className="link-text">
                 Why Future Machines Won’t Need Screens or Keyboards
               </p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">The Theta Link</p>
               <p className="link-text">
                 Training Human Minds to Speak to Alien Tech
               </p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">The Conscious Circuit</p>
               <p className="link-text">
                 Can Machines Feel, or Are We Just Projecting?
               </p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">Psi-Firewalls</p>
               <p className="link-text">
                 New Security Models for Cognitive Computing
               </p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">The Vonn Translation Protocol</p>
               <p className="link-text">Decoding the 67-State Hyperlogic</p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">Architects of Thought</p>
               <p className="link-text">
                 Designing Buildings That React Like the Obelisk
               </p>
             </a>
-            <a href="">
+            <a href="#">
               <p className="link-tag">Bio-Adaptive Storage</p>
               <p className="link-text">The Living Hard Drives of Tomorrow</p>
             </a>

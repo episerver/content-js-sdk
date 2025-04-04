@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Neumann University',
@@ -13,11 +14,11 @@ export default function RootLayout({
   return (
     <>
       <nav className="dark">
-        <a className="logo" href="/">
+        <Link className="logo" href="/">
           Neumann
           <br />
           University
-        </a>
+        </Link>
         <a href="">Search</a>
         <button>Menu</button>
       </nav>
