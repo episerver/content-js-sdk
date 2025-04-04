@@ -198,8 +198,10 @@ export default function Home() {
             <a href="#">
               <Image src={pianoImg} alt="" />
               <h3>
-                Harnessing 67-state quantum harmonics to transcend binary
-                computation.
+                <span className="animate">
+                  Harnessing 67-state quantum harmonics to transcend binary
+                  computation.
+                </span>
               </h3>
               <p>
                 How the Obelisk’s 67-state logic shattered binary thinking and

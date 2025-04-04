@@ -1,10 +1,10 @@
 :root {
   --color-text: #000;
   --color-accent: rgb(255, 106, 0);
+  line-height: 1.5;
 }
 
 * {
-  line-height: 1.5;
   box-sizing: border-box;
 }
 
@@ -283,6 +283,10 @@ section > header {
       text-decoration: none;
     }
 
+    > a:hover {
+      color: inherit;
+    }
+
     h4,
     h3 {
       font-family: var(--font-serif);
@@ -363,4 +367,16 @@ body:has(.under-construction) {
     font-size: 1.5rem;
     font-weight: bold;
   }
+}
+
+span.animate {
+  background-image: linear-gradient(#000, #000);
+  background-size: 0 3px;
+  background-position: 0 90%;
+  background-repeat: no-repeat, no-repeat;
+  transition: background-size 300ms ease-out;
+}
+
+a:hover span.animate {
+  background-size: 100% 3px;
 }
