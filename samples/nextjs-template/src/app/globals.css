@@ -30,7 +30,7 @@ nav {
   display: flex;
   align-items: center;
   color: var(--hero-foreground);
-  
+
   .logo {
     font-family: var(--font-serif);
     font-weight: inherit;
@@ -45,8 +45,9 @@ nav {
     text-decoration: none;
     margin-inline-end: auto;
   }
-  
-  a:not(.logo), button {
+
+  a:not(.logo),
+  button {
     color: inherit;
     font: inherit;
     text-decoration: none;
@@ -65,7 +66,7 @@ h1 {
   font-size: clamp(3rem, 4.286vw + 1.071rem, 4.5rem);
   margin-block: 0 1rem;
   letter-spacing: -0.05rem;
-  
+
   font-optical-sizing: auto;
   font-weight: 450;
   font-style: normal;
@@ -106,7 +107,7 @@ img {
     text-align: center;
     padding-block: 8rem;
   }
-  
+
   .heading p {
     max-width: 30rem;
     margin-inline: auto;
@@ -117,14 +118,14 @@ img {
   }
 
   .heading::before {
-    content: "";
+    content: '';
     border-left: 1px solid var(--hero-foreground);
     position: absolute;
     height: 8rem;
     margin-block-start: -10rem;
   }
   .heading::after {
-    content: "";
+    content: '';
     border-left: 1px solid var(--hero-foreground);
     position: absolute;
     height: 4rem;
@@ -213,7 +214,7 @@ section > header {
     background: linear-gradient(#0000 0%, #0003 50%, #000f 100%);
 
     display: grid;
-    grid-template-areas: "blank blank" "button text";
+    grid-template-areas: 'blank blank' 'button text';
     grid-template-columns: auto 1fr;
     grid-template-rows: 1fr auto;
     text-decoration: none;
@@ -235,7 +236,11 @@ section > header {
       width: 4rem;
       height: 4rem;
       font-size: 1.25rem;
-      background: radial-gradient(var(--color-accent) 0%, var(--color-accent) 50%, #f000 51%);
+      background: radial-gradient(
+        var(--color-accent) 0%,
+        var(--color-accent) 50%,
+        #f000 51%
+      );
       border: var(--color-accent) 1px solid;
       grid-area: button;
       margin: 1rem 1.5rem;
@@ -262,11 +267,9 @@ section > header {
 
 .uni-link-list {
   display: grid;
-  grid-template-areas: "headline" "large" "small";
+  grid-template-areas: 'headline' 'large' 'small';
   grid-template-columns: 1fr;
   gap: 1rem 2rem;
-
-
 
   > h3 {
     grid-area: headline;
@@ -280,7 +283,8 @@ section > header {
       text-decoration: none;
     }
 
-    h4, h3 {
+    h4,
+    h3 {
       font-family: var(--font-serif);
       font-weight: 400;
       font-size: 2rem;
@@ -334,7 +338,29 @@ section > header {
   }
 
   .uni-link-list {
-    grid-template-areas: "headline headline" "large small";
+    grid-template-areas: 'headline headline' 'large small';
     grid-template-columns: 2fr 1fr;
+  }
+}
+
+body:has(.under-construction) {
+  display: grid;
+  height: 100vh;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+}
+
+.under-construction {
+  max-width: 40rem;
+  border: 1px solid black;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin: 1rem;
+
+  h1 {
+    font-family: var(--font-sans);
+    font-size: 1.5rem;
+    font-weight: bold;
   }
 }

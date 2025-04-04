@@ -1,5 +1,5 @@
-import './globals.css';
 import { Bodoni_Moda, Inter } from 'next/font/google';
+import './globals.css';
 
 const serifFont = Bodoni_Moda({
   variable: '--font-serif',
