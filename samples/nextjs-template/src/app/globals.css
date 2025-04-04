@@ -235,8 +235,8 @@ section > header {
       width: 4rem;
       height: 4rem;
       font-size: 1.25rem;
-      background: radial-gradient(#f00 0%, #f00 50%, #f000 50%);
-      border: red 1px solid;
+      background: radial-gradient(var(--color-accent) 0%, var(--color-accent) 50%, #f000 51%);
+      border: var(--color-accent) 1px solid;
       grid-area: button;
       margin: 1rem 1.5rem;
       padding-left: 0.25rem;
