@@ -262,8 +262,8 @@ section > header {
 
 .uni-link-list {
   display: grid;
-  grid-template-areas: "headline headline" "large small";
-  grid-template-columns: 2fr 1fr;
+  grid-template-areas: "headline" "large" "small";
+  grid-template-columns: 1fr;
   gap: 1rem 2rem;
 
 
@@ -331,5 +331,10 @@ section > header {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
+  }
+
+  .uni-link-list {
+    grid-template-areas: "headline headline" "large small";
+    grid-template-columns: 2fr 1fr;
   }
 }
