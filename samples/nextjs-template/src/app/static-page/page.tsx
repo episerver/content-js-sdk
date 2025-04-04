@@ -218,74 +218,56 @@ export default function Home() {
           </div>
 
           <div className="small-links">
-            <div>
-              <a href="">
-                <p className="link-tag">Zero-Point Power</p>
-                <p className="link-text">
-                  Tapping the Obelisk’s Infinite Energy Well
-                </p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">Emotion-Driven Systems</p>
-                <p className="link-text">
-                  The First Human-Responsive AI Networks
-                </p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">Redefining Interface</p>
-                <p className="link-text">
-                  Why Future Machines Won’t Need Screens or Keyboards
-                </p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">The Theta Link</p>
-                <p className="link-text">
-                  Training Human Minds to Speak to Alien Tech
-                </p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">The Conscious Circuit</p>
-                <p className="link-text">
-                  Can Machines Feel, or Are We Just Projecting?
-                </p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">Psi-Firewalls</p>
-                <p className="link-text">
-                  New Security Models for Cognitive Computing
-                </p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">The Vonn Translation Protocol</p>
-                <p className="link-text">Decoding the 67-State Hyperlogic</p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">Architects of Thought</p>
-                <p className="link-text">
-                  Designing Buildings That React Like the Obelisk
-                </p>
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <p className="link-tag">Bio-Adaptive Storage</p>
-                <p className="link-text">The Living Hard Drives of Tomorrow</p>
-              </a>
-            </div>
+            <a href="">
+              <p className="link-tag">Zero-Point Power</p>
+              <p className="link-text">
+                Tapping the Obelisk’s Infinite Energy Well
+              </p>
+            </a>
+            <a href="">
+              <p className="link-tag">Emotion-Driven Systems</p>
+              <p className="link-text">
+                The First Human-Responsive AI Networks
+              </p>
+            </a>
+            <a href="">
+              <p className="link-tag">Redefining Interface</p>
+              <p className="link-text">
+                Why Future Machines Won’t Need Screens or Keyboards
+              </p>
+            </a>
+            <a href="">
+              <p className="link-tag">The Theta Link</p>
+              <p className="link-text">
+                Training Human Minds to Speak to Alien Tech
+              </p>
+            </a>
+            <a href="">
+              <p className="link-tag">The Conscious Circuit</p>
+              <p className="link-text">
+                Can Machines Feel, or Are We Just Projecting?
+              </p>
+            </a>
+            <a href="">
+              <p className="link-tag">Psi-Firewalls</p>
+              <p className="link-text">
+                New Security Models for Cognitive Computing
+              </p>
+            </a>
+            <a href="">
+              <p className="link-tag">The Vonn Translation Protocol</p>
+              <p className="link-text">Decoding the 67-State Hyperlogic</p>
+            </a>
+            <a href="">
+              <p className="link-tag">Architects of Thought</p>
+              <p className="link-text">
+                Designing Buildings That React Like the Obelisk
+              </p>
+            </a>
+            <a href="">
+              <p className="link-tag">Bio-Adaptive Storage</p>
+              <p className="link-text">The Living Hard Drives of Tomorrow</p>
+            </a>
           </div>
         </div>
       </section>
