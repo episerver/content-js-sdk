@@ -19,3 +19,4 @@ jspm_packages/
 .env.local
 
 dist
+.vercel
