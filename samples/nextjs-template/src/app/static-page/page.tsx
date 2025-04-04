@@ -109,17 +109,18 @@ export default function Home() {
             <div>
               The Obelisk emits low-frequency electromagnetic fields that
               interact with human brainwaves. Users with high theta activity can
-              sense patterns, sounds, or even visions. It's not touched or typed
-              into—it’s felt, like it reaches into your thoughts and listens.
+              sense patterns, sounds, or even visions. It&apos;s not touched or
+              typed into—it&apos;s felt, like it reaches into your thoughts and
+              listens.
             </div>
           </div>
           <div>
             <h3>Lack of Conventional Interfaces</h3>
             <div>
-              There are no buttons, ports, or screens on the device. It doesn’t
-              accept physical input in any known way. Instead, interaction
-              appears to occur through mental resonance, as if it understands
-              intention directly from brainwave harmonics.
+              There are no buttons, ports, or screens on the device. It
+              doesn&apos;t accept physical input in any known way. Instead,
+              interaction appears to occur through mental resonance, as if it
+              understands intention directly from brainwave harmonics.
             </div>
           </div>
           <div>
@@ -147,7 +148,7 @@ export default function Home() {
               When first discovered, the Obelisk was covered in etched
               symbols—like alien circuitry or star maps. Over time, many of
               these have faded or vanished. Some believe they were temporary
-              keys, unlocking the device’s dormant systems as it “woke up.”
+              keys, unlocking the device&apos;s dormant systems as it “woke up.”
             </div>
           </div>
         </div>
@@ -166,7 +167,7 @@ export default function Home() {
               Professor Elira Vonn, theoretical computation specialist from the
               Aeskar Institute of Multidimensional Logic talks about when she
               noticed a recurring pattern of 67 distinct color-state transitions
-              within the Obelisk’s crystalline core—each corresponding to a
+              within the Obelisk&apos;s crystalline core—each corresponding to a
               unique data harmonic
             </p>
             <p>
