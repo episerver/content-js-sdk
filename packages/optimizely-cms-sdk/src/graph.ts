@@ -99,15 +99,3 @@ export async function fetchContent(filter: any) {
 
   return response2;
 }
-
-function parser2() {}
-
-const parser = [
-  'f1',
-  'f2',
-  'f3',
-  {
-    name: 'f4',
-    p: parser2,
-  },
-];
