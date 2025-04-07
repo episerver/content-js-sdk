@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { createQuery } from '../graph';
+import { createQuery, createParser } from '../graph';
 import { contentType } from '../model';
 
 const ct1 = contentType({
@@ -68,5 +68,15 @@ test("Create queries for 'content' properties", () => {
       }
     }
       "
+  `);
+});
+
+test('Create parsers for basic content types', () => {
+  const parser = createParser(ct1);
+  expect(parser({ p1: 'hi', p2: true })).toMatchInlineSnapshot(`
+    {
+      "p1": "hi",
+      "p2": true,
+    }
   `);
 });

@@ -53,7 +53,7 @@ fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 }
 
 // Returns a "parser", a function that parses the GraphQL response.
-function createParser(contentType: AnyContentType) {
+export function createParser(contentType: AnyContentType) {
   // Don't do anything special for "regular" fields
   return (data: any) => data;
 }
