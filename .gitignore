@@ -20,3 +20,5 @@ jspm_packages/
 
 dist
 .vercel
+
+.DS_Store
