@@ -16,9 +16,18 @@ query FetchContent($filter: _ContentWhereInput) {
 `;
 
 function getFields(contentType: AnyContentType) {
-  return Object.entries(contentType.properties ?? {}).map(
-    ([key, value]) => key
-  );
+  return Object.entries(contentType.properties ?? {}).map(([key, value]) => {
+    switch (value.type) {
+      case 'richText':
+        return `${key} { html, json }`;
+      case 'url':
+        return `${key} { type, default }`;
+      case 'link':
+        return `${key} { url { type, default }}`;
+      default:
+        return key;
+    }
+  });
 }
 
 function createFragment(contentType: AnyContentType) {
