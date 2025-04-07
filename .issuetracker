@@ -1,0 +1,7 @@
+# Integration with Issue Tracker
+#
+# (note that '\' need to be escaped).
+
+[issuetracker "Link Jira Tickets"]
+  regex = "CMS-(\\d+)"
+  url = "https://jira.sso.episerver.net/browse/CMS-$1"
