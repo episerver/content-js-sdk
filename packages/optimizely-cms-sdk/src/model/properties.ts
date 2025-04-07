@@ -1,3 +1,5 @@
+import { AnyContentType } from './contentTypes';
+
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
@@ -74,6 +76,8 @@ export type ContentProperty = BaseProperty & {
   type: 'content';
   allowedTypes?: string[];
   restrictedTypes?: string[];
+
+  views: AnyContentType[];
 };
 
 /**

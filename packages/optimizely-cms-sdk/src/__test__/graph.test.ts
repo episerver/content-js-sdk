@@ -22,6 +22,17 @@ const ct2 = contentType({
   },
 });
 
+const ct3 = contentType({
+  key: 'ct3',
+  baseType: 'page',
+  properties: {
+    p1: {
+      type: 'content',
+      views: [ct1],
+    },
+  },
+});
+
 test('Create queries for basic content types', () => {
   expect(createQuery(ct1)).toMatchInlineSnapshot(`
     "
@@ -40,6 +51,20 @@ test('Create queries for basic content types', () => {
     query FetchContent($filter: _ContentWhereInput) {
       __Content(where: $filter) {
         ...ct2
+      }
+    }
+      "
+  `);
+});
+
+test("Create queries for 'content' properties", () => {
+  expect(createQuery(ct3)).toMatchInlineSnapshot(`
+    "
+    fragment ct1 on ct1 { p1 p2 }
+    fragment ct3 on ct3 { p1 { ...ct1 } }
+    query FetchContent($filter: _ContentWhereInput) {
+      __Content(where: $filter) {
+        ...ct3
       }
     }
       "

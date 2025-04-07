@@ -15,26 +15,41 @@ query FetchContent($filter: _ContentWhereInput) {
 })
 `;
 
-function getFields(contentType: AnyContentType) {
-  return Object.entries(contentType.properties ?? {}).map(([key, value]) => {
-    switch (value.type) {
-      case 'richText':
-        return `${key} { html, json }`;
-      case 'url':
-        return `${key} { type, default }`;
-      case 'link':
-        return `${key} { url { type, default }}`;
-      default:
-        return key;
+function getFields(contentType: AnyContentType): {
+  fields: string[];
+  extraFragments: string[];
+} {
+  const fields: string[] = [];
+  const extraFragments: string[] = [];
+
+  for (const [key, property] of Object.entries(contentType.properties ?? {})) {
+    if (property.type === 'content') {
+      extraFragments.push(...property.views.map(createFragment));
+      const subfields = property.views
+        .map((view) => `...${view.key}`)
+        .join(' ');
+
+      fields.push(`${key} { ${subfields} }`);
+    } else if (property.type === 'richText') {
+      fields.push(`${key} { html, json }`);
+    } else if (property.type === 'url') {
+      fields.push(`${key} { type, default }`);
+    } else if (property.type === 'link') {
+      fields.push(`${key} { url { type, default }}`);
+    } else {
+      fields.push(key);
     }
-  });
+  }
+
+  return { fields, extraFragments };
 }
 
-function createFragment(contentType: AnyContentType) {
+function createFragment(contentType: AnyContentType): string {
   const fragmentName = contentType.key;
-  const fields = getFields(contentType);
+  const { fields, extraFragments } = getFields(contentType);
 
-  return `fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
+  return `${extraFragments}
+fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 }
 
 // Returns a "parser", a function that parses the GraphQL response.
@@ -46,8 +61,7 @@ function createParser(contentType: AnyContentType) {
 export function createQuery(contentType: AnyContentType) {
   const fragment = createFragment(contentType);
 
-  return `
-${fragment}
+  return `${fragment}
 query FetchContent($filter: _ContentWhereInput) {
   __Content(where: $filter) {
     ...${contentType.key}
