@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { createQuery, createParser } from '../graph';
 import { contentType } from '../model';
 
@@ -33,50 +33,57 @@ const ct3 = contentType({
   },
 });
 
-test('Create queries for basic content types', () => {
-  expect(createQuery(ct1)).toMatchInlineSnapshot(`
-    "
-    fragment ct1 on ct1 { p1 p2 }
-    query FetchContent($filter: _ContentWhereInput) {
-      __Content(where: $filter) {
-        ...ct1
-      }
-    }
+describe('createQuery', () => {
+  test('properties that match 1:1', () => {
+    expect(createQuery(ct1)).toMatchInlineSnapshot(`
       "
-  `);
+      fragment ct1 on ct1 { p1 p2 }
+      query FetchContent($filter: _ContentWhereInput) {
+        __Content(where: $filter) {
+          ...ct1
+        }
+      }
+        "
+    `);
+  });
 
-  expect(createQuery(ct2)).toMatchInlineSnapshot(`
-    "
-    fragment ct2 on ct2 { p1 { html, json } p2 { url { type, default }} p3 { type, default } p4 }
-    query FetchContent($filter: _ContentWhereInput) {
-      __Content(where: $filter) {
-        ...ct2
-      }
-    }
+  test('properties that add extra information in Graph', () => {
+    expect(createQuery(ct2)).toMatchInlineSnapshot(`
       "
-  `);
+      fragment ct2 on ct2 { p1 { html, json } p2 { url { type, default }} p3 { type, default } p4 }
+      query FetchContent($filter: _ContentWhereInput) {
+        __Content(where: $filter) {
+          ...ct2
+        }
+      }
+        "
+    `);
+  });
+
+  test("'content' properties", () => {
+    expect(createQuery(ct3)).toMatchInlineSnapshot(`
+      "
+      fragment ct1 on ct1 { p1 p2 }
+      fragment ct3 on ct3 { p1 { ...ct1 } }
+      query FetchContent($filter: _ContentWhereInput) {
+        __Content(where: $filter) {
+          ...ct3
+        }
+      }
+        "
+    `);
+  });
 });
 
-test("Create queries for 'content' properties", () => {
-  expect(createQuery(ct3)).toMatchInlineSnapshot(`
-    "
-    fragment ct1 on ct1 { p1 p2 }
-    fragment ct3 on ct3 { p1 { ...ct1 } }
-    query FetchContent($filter: _ContentWhereInput) {
-      __Content(where: $filter) {
-        ...ct3
+describe('createParser', () => {
+  test("properties that don't add extra information", () => {
+    const parser = createParser(ct1);
+    expect(parser({ p1: 'hi', p2: true })).toMatchInlineSnapshot(`
+      {
+        "__viewname": "ct1",
+        "p1": "hi",
+        "p2": true,
       }
-    }
-      "
-  `);
-});
-
-test('Create parsers for basic content types', () => {
-  const parser = createParser(ct1);
-  expect(parser({ p1: 'hi', p2: true })).toMatchInlineSnapshot(`
-    {
-      "p1": "hi",
-      "p2": true,
-    }
-  `);
+    `);
+  });
 });

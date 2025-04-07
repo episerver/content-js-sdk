@@ -55,7 +55,7 @@ fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 // Returns a "parser", a function that parses the GraphQL response.
 export function createParser(contentType: AnyContentType) {
   // Don't do anything special for "regular" fields
-  return (data: any) => data;
+  return (data: any) => ({ ...data, __viewname: contentType.key });
 }
 
 export function createQuery(contentType: AnyContentType) {
