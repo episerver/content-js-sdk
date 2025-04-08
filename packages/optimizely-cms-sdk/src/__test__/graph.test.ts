@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { createQuery, createParser } from '../graph';
+import { createQuery, parseResponseProperty } from '../graph';
 import { contentType } from '../model';
+import { AnyProperty } from '../model/contentTypeProperties';
 
 const ct1 = contentType({
   key: 'ct1',
@@ -28,6 +29,8 @@ const ct3 = contentType({
   properties: {
     p1: {
       type: 'content',
+      // allowedTypes: ['...'],
+      // restrictedTypes: ['...'],
       views: [ct1],
     },
   },
@@ -81,15 +84,59 @@ describe('createQuery', () => {
   });
 });
 
-describe('createParser', () => {
+describe('parseResponseProperty', () => {
   test("properties that don't add extra information", () => {
-    const parser = createParser(ct1);
-    expect(parser({ p1: 'hi', p2: true })).toMatchInlineSnapshot(`
-      {
-        "__viewname": "ct1",
-        "p1": "hi",
-        "p2": true,
-      }
-    `);
+    const p1: AnyProperty = {
+      type: 'string',
+    };
+    expect(parseResponseProperty(p1, 'hello')).toEqual('hello');
+  });
+
+  test('array properties', () => {
+    const p1: AnyProperty = {
+      type: 'array',
+      items: {
+        type: 'string',
+      },
+    };
+
+    expect(parseResponseProperty(p1, ['hello'])).toEqual(['hello']);
+  });
+
+  const ct4 = contentType({
+    key: 'contenttype4',
+    baseType: 'component',
+    properties: {
+      p1: { type: 'string' },
+      p2: { type: 'boolean' },
+    },
+  });
+  const p1: AnyProperty = {
+    type: 'content',
+    views: [ct4],
+  };
+  test('content properties', () => {
+    expect(
+      parseResponseProperty(p1, {
+        __typename: 'contenttype4',
+        p1: 'hi',
+        p2: true,
+      })
+    ).toEqual({
+      __viewname: 'contenttype4',
+      __typename: 'contenttype4',
+      p1: 'hi',
+      p2: true,
+    });
+  });
+
+  test('content properties resolve to null if view is not found', () => {
+    expect(
+      parseResponseProperty(p1, {
+        __typename: 'unknown_content_type',
+        p1: 'hi',
+        p2: true,
+      })
+    ).toEqual(null);
   });
 });

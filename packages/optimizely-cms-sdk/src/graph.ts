@@ -110,7 +110,8 @@ export function parseResponseProperty(property: AnyProperty, value: any) {
 
     return {
       ...subvalues,
-      __viewname: 'X',
+      __typename: value.__typename,
+      __viewname: view.key,
     };
   } else if (property.type === 'array') {
     return value.map((r: any) => parseResponseProperty(property.items, r));
