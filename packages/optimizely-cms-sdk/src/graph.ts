@@ -54,8 +54,12 @@ fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 
 // Returns a "parser", a function that parses the GraphQL response.
 export function createParser(contentType: AnyContentType) {
-  // Don't do anything special for "regular" fields
-  return (data: any) => ({ ...data, __viewname: contentType.key });
+  return (data: any) => ({
+    // Don't do anything special for "regular" fields
+    ...data,
+
+    __viewname: contentType.key,
+  });
 }
 
 export function createQuery(contentType: AnyContentType) {
@@ -91,18 +95,14 @@ export async function fetchContent(filter: any) {
 
   // 2. Perform the same query but with the right fragments
   const contentType = {} as any;
-  const fragment = createFragment(contentType);
   const parser = createParser(contentType);
-
-  const query2 = `
-  ${fragment}
-  `;
+  const query = createQuery(contentType);
 
   const response2 = await fetch(GRAPHQL_URL, {
     method: 'POST',
     headers: {},
     body: JSON.stringify({
-      query: query2,
+      query,
       variables: {
         filter,
       },
