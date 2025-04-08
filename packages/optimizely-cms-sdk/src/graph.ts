@@ -31,7 +31,7 @@ function expandProperty(name: string, options: AnyProperty) {
     extraFragments.push(...options.views.map(createFragment));
     const subfields = options.views.map((view) => `...${view.key}`).join(' ');
 
-    fields.push(`${name} { ${subfields} }`);
+    fields.push(`${name} { __typename ${subfields} }`);
   } else if (options.type === 'richText') {
     fields.push(`${name} { html, json }`);
   } else if (options.type === 'url') {
@@ -165,25 +165,15 @@ export async function fetchContent(
   }).then((r) => r.json());
 
   if (response.errors) {
-    console.log(JSON.stringify(response.errors, null, 2));
     throw new Error('GRAPHQL ERROR');
   }
-
-  console.log(JSON.stringify(response.data, null, 2));
 
   // TODO: error handling
   const type = response.data._Content.item._metadata.types[0];
 
-  console.log(type);
-
   // 2. Perform the same query but with the right fragments
   const contentType = await customImport(type);
-
-  console.log(contentType);
   const query = createQuery(contentType);
-
-  console.log(query);
-
   const response2 = await fetch(url, {
     method: 'POST',
     headers: {},
