@@ -42,6 +42,10 @@ function getFields(contentType: AnyContentType): {
       fields.push(`${key} { type, default }`);
     } else if (property.type === 'link') {
       fields.push(`${key} { url { type, default }}`);
+    } else if (property.type === 'contentReference') {
+      // do nothing for now
+    } else if (property.type === 'array') {
+      // do nothing for now
     } else {
       fields.push(key);
     }
@@ -60,12 +64,14 @@ fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 
 // Returns a "parser", a function that parses the GraphQL response.
 export function createParser(contentType: AnyContentType) {
-  return (data: any) => ({
-    // Don't do anything special for "regular" fields
-    ...data,
+  return function parser(data: any) {
+    console.log(data);
 
-    __viewname: contentType.key,
-  });
+    return {
+      ...data,
+      __viewname: contentType.key,
+    };
+  };
 }
 
 export function createQuery(contentType: AnyContentType) {
@@ -73,8 +79,10 @@ export function createQuery(contentType: AnyContentType) {
 
   return `${fragment}
 query FetchContent($filter: _ContentWhereInput) {
-  __Content(where: $filter) {
-    ...${contentType.key}
+  _Content(where: $filter) {
+    item {
+      ...${contentType.key}
+    }
   }
 }
   `;
