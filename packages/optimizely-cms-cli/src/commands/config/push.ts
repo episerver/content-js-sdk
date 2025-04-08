@@ -5,7 +5,8 @@ import { BaseCommand } from '../../baseCommand.js';
 import { writeFile } from 'node:fs/promises';
 import chalk from 'chalk';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import { Config, findContentTypes } from '../../service/utils.js';
+import { findContentTypes } from '../../service/utils.js';
+import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -27,7 +28,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const jsConfig = await import(configPath).then(
       // Assume that the default import _is_ a jsConfig
-      (m) => m.default as Config
+      (m) => m.default
     );
 
     if (typeof jsConfig.contentTypes === 'string') {
@@ -46,9 +47,11 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
         );
       }
 
-      jsConfig.contentTypes = contentTypes.map(
+      const extractedContentTypes = contentTypes.map(
         ({ contentType }) => contentType
       );
+
+      jsConfig.contentTypes = mapContentToManifest(extractedContentTypes);
     }
 
     const restClient = await createApiClient(flags.host);

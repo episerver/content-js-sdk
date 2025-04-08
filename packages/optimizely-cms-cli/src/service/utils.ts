@@ -8,19 +8,14 @@ export type Prettify<T> = {
 } & {};
 
 /** extract AnyContentType */
-type AllContentType = ContentTypes.AnyContentType;
+export type AnyContentType = ContentTypes.AnyContentType;
 
 export type FoundContentType = {
   path: string;
-  contentType: AllContentType;
+  contentType: AnyContentType;
 };
 
-/** Argument for `buildConfig` */
-export type Config = {
-  contentTypes?: AllContentType[] | string;
-};
-
-function isContentType(obj: unknown): obj is AllContentType {
+function isContentType(obj: unknown): obj is AnyContentType {
   return typeof obj === 'object' && obj !== null && 'key' in obj;
 }
 
