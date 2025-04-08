@@ -39,8 +39,10 @@ describe('createQuery', () => {
       "
       fragment ct1 on ct1 { p1 p2 }
       query FetchContent($filter: _ContentWhereInput) {
-        __Content(where: $filter) {
-          ...ct1
+        _Content(where: $filter) {
+          item {
+            ...ct1
+          }
         }
       }
         "
@@ -52,8 +54,10 @@ describe('createQuery', () => {
       "
       fragment ct2 on ct2 { p1 { html, json } p2 { url { type, default }} p3 { type, default } p4 }
       query FetchContent($filter: _ContentWhereInput) {
-        __Content(where: $filter) {
-          ...ct2
+        _Content(where: $filter) {
+          item {
+            ...ct2
+          }
         }
       }
         "
@@ -66,8 +70,10 @@ describe('createQuery', () => {
       fragment ct1 on ct1 { p1 p2 }
       fragment ct3 on ct3 { p1 { ...ct1 } }
       query FetchContent($filter: _ContentWhereInput) {
-        __Content(where: $filter) {
-          ...ct3
+        _Content(where: $filter) {
+          item {
+            ...ct3
+          }
         }
       }
         "
