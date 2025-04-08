@@ -41,7 +41,10 @@ function expandProperty(name: string, options: AnyProperty) {
   } else if (options.type === 'contentReference') {
     // do nothing for now
   } else if (options.type === 'array') {
-    // do nothing for now
+    // Call recursively
+    const f = expandProperty(name, options.items);
+    fields.push(...f.fields);
+    extraFragments.push(...f.extraFragments);
   } else {
     fields.push(name);
   }
@@ -79,8 +82,6 @@ fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 // Returns a "parser", a function that parses the GraphQL response.
 export function createParser(contentType: AnyContentType) {
   return function parser(data: any) {
-    console.log(data);
-
     return {
       ...data,
       __viewname: contentType.key,
