@@ -79,15 +79,48 @@ function createFragment(contentType: AnyContentType): string {
 fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 }
 
-// Returns a "parser", a function that parses the GraphQL response.
-export function createParser(contentType: AnyContentType) {
-  return function parser(data: any) {
-    return {
-      ...data,
-      __viewname: contentType.key,
-    };
-  };
+function getView(
+  contentTypes: AnyContentType[] | AnyContentType,
+  typeName?: string
+) {
+  if (!Array.isArray(contentTypes)) {
+    return contentTypes;
+  }
+
+  if (!typeName) {
+    throw new Error("Can't detect view. __typename was null or undefined");
+  }
+
+  return contentTypes.find((c) => c.key === typeName);
 }
+
+export function parseResponseProperty(property: AnyProperty, value: any) {
+  if (property.type === 'content') {
+    const view = getView(property.views, value.__typename);
+
+    if (!view) {
+      return null;
+    }
+
+    const subvalues: any = {};
+
+    for (const [k, v] of Object.entries(view.properties ?? {})) {
+      subvalues[k] = parseResponseProperty(v, value[k]);
+    }
+
+    return {
+      ...subvalues,
+      __viewname: 'X',
+    };
+  } else if (property.type === 'array') {
+    return value.map((r: any) => parseResponseProperty(property.items, r));
+  } else {
+    return value;
+  }
+}
+
+/** Parses the GraphQL response */
+function parseResponse(contentType: AnyContentType, response: any) {}
 
 export function createQuery(contentType: AnyContentType) {
   const fragment = createFragment(contentType);
@@ -141,7 +174,6 @@ export async function fetchContent(
   const contentType = await customImport(type);
 
   console.log(contentType);
-  const parser = createParser(contentType);
   const query = createQuery(contentType);
 
   console.log(query);
@@ -157,7 +189,7 @@ export async function fetchContent(
     }),
   })
     .then((r) => r.json())
-    .then((json) => parser(json.data));
+    .then((json) => parseResponse(contentType, json.data));
 
   return response2;
 }
