@@ -1,3 +1,4 @@
+import { AnyProperty } from './model/contentTypeProperties';
 import { AnyContentType } from './model/contentTypes';
 
 /** Filters that can be passed to a Graph query */
@@ -21,6 +22,36 @@ query FetchContent($filter: _ContentWhereInput) {
 }
 `;
 
+/** Converts a property into a GraphQL field */
+function expandProperty(name: string, options: AnyProperty) {
+  const fields: string[] = [];
+  const extraFragments: string[] = [];
+
+  if (options.type === 'content') {
+    extraFragments.push(...options.views.map(createFragment));
+    const subfields = options.views.map((view) => `...${view.key}`).join(' ');
+
+    fields.push(`${name} { ${subfields} }`);
+  } else if (options.type === 'richText') {
+    fields.push(`${name} { html, json }`);
+  } else if (options.type === 'url') {
+    fields.push(`${name} { type, default }`);
+  } else if (options.type === 'link') {
+    fields.push(`${name} { url { type, default }}`);
+  } else if (options.type === 'contentReference') {
+    // do nothing for now
+  } else if (options.type === 'array') {
+    // do nothing for now
+  } else {
+    fields.push(name);
+  }
+
+  return {
+    fields,
+    extraFragments,
+  };
+}
+
 function getFields(contentType: AnyContentType): {
   fields: string[];
   extraFragments: string[];
@@ -29,26 +60,9 @@ function getFields(contentType: AnyContentType): {
   const extraFragments: string[] = [];
 
   for (const [key, property] of Object.entries(contentType.properties ?? {})) {
-    if (property.type === 'content') {
-      extraFragments.push(...property.views.map(createFragment));
-      const subfields = property.views
-        .map((view) => `...${view.key}`)
-        .join(' ');
-
-      fields.push(`${key} { ${subfields} }`);
-    } else if (property.type === 'richText') {
-      fields.push(`${key} { html, json }`);
-    } else if (property.type === 'url') {
-      fields.push(`${key} { type, default }`);
-    } else if (property.type === 'link') {
-      fields.push(`${key} { url { type, default }}`);
-    } else if (property.type === 'contentReference') {
-      // do nothing for now
-    } else if (property.type === 'array') {
-      // do nothing for now
-    } else {
-      fields.push(key);
-    }
+    const f = expandProperty(key, property);
+    fields.push(...f.fields);
+    extraFragments.push(...f.extraFragments);
   }
 
   return { fields, extraFragments };
