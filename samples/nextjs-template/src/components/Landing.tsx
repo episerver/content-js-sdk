@@ -1,4 +1,5 @@
 import { contentType } from 'optimizely-cms-sdk';
+import { LandingSection } from './LandingSection';
 
 export const ContentType = contentType({
   key: 'InFocus',
@@ -22,7 +23,7 @@ export const ContentType = contentType({
       type: 'array',
       items: {
         type: 'content',
-        views: [],
+        views: [LandingSection],
       },
     },
   },

@@ -1,7 +1,7 @@
 import { contentType } from 'optimizely-cms-sdk';
 
-export const ContentType = contentType({
-  key: 'LandingSection',
+export const LandingSection = contentType({
+  key: 'InFocusSection',
   baseType: 'component',
   displayName: 'Landing Section',
   properties: {
@@ -10,13 +10,6 @@ export const ContentType = contentType({
     },
     subtitle: {
       type: 'string',
-    },
-    features: {
-      type: 'array',
-      items: {
-        type: 'content',
-        allowedTypes: ['SmallFeatureGrid', 'VideoFeature'],
-      },
     },
   },
 });
