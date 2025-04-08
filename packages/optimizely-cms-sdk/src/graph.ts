@@ -102,14 +102,8 @@ export function parseResponseProperty(property: AnyProperty, value: any) {
       return null;
     }
 
-    const subvalues: any = {};
-
-    for (const [k, v] of Object.entries(view.properties ?? {})) {
-      subvalues[k] = parseResponseProperty(v, value[k]);
-    }
-
     return {
-      ...subvalues,
+      ...parseResponse(view, value),
       __typename: value.__typename,
       __viewname: view.key,
     };
@@ -121,7 +115,18 @@ export function parseResponseProperty(property: AnyProperty, value: any) {
 }
 
 /** Parses the GraphQL response */
-function parseResponse(contentType: AnyContentType, response: any) {}
+export function parseResponse(contentType: AnyContentType, response: any) {
+  const values: any = {};
+
+  for (const [k, v] of Object.entries(contentType.properties ?? {})) {
+    values[k] = parseResponseProperty(v, response[k]);
+  }
+
+  return {
+    ...response,
+    ...values,
+  };
+}
 
 export function createQuery(contentType: AnyContentType) {
   const fragment = createFragment(contentType);
@@ -190,7 +195,9 @@ export async function fetchContent(
     }),
   })
     .then((r) => r.json())
-    .then((json) => parseResponse(contentType, json.data));
+    .then((json) => {
+      return parseResponse(contentType, json.data._Content.item);
+    });
 
   return response2;
 }

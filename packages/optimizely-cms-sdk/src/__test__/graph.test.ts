@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { createQuery, parseResponseProperty } from '../graph';
+import { createQuery, parseResponse, parseResponseProperty } from '../graph';
 import { contentType } from '../model';
 import { AnyProperty } from '../model/contentTypeProperties';
 
@@ -29,9 +29,21 @@ const ct3 = contentType({
   properties: {
     p1: {
       type: 'content',
-      // allowedTypes: ['...'],
-      // restrictedTypes: ['...'],
       views: [ct1],
+    },
+  },
+});
+
+const ct4 = contentType({
+  key: 'ct4',
+  baseType: 'page',
+  properties: {
+    p1: {
+      type: 'array',
+      items: {
+        type: 'content',
+        views: [ct1],
+      },
     },
   },
 });
@@ -84,59 +96,74 @@ describe('createQuery', () => {
   });
 });
 
-describe('parseResponseProperty', () => {
-  test("properties that don't add extra information", () => {
-    const p1: AnyProperty = {
-      type: 'string',
-    };
-    expect(parseResponseProperty(p1, 'hello')).toEqual('hello');
+describe('parseResponse', () => {
+  test('parses simple properties correctly', () => {
+    const response = { p1: 'hello', p2: true };
+    expect(parseResponse(ct1, response)).toEqual(response);
   });
 
-  test('array properties', () => {
-    const p1: AnyProperty = {
-      type: 'array',
-      items: {
-        type: 'string',
+  test('returns excess properties', () => {
+    const response = { p1: 'hello', p2: true, metadata: 12345 };
+    expect(parseResponse(ct1, response)).toEqual(response);
+  });
+
+  test('handles content properties', () => {
+    const response = {
+      p1: {
+        __typename: 'ct1',
+        p1: 'hello',
+        p2: true,
       },
     };
 
-    expect(parseResponseProperty(p1, ['hello'])).toEqual(['hello']);
-  });
-
-  const ct4 = contentType({
-    key: 'contenttype4',
-    baseType: 'component',
-    properties: {
-      p1: { type: 'string' },
-      p2: { type: 'boolean' },
-    },
-  });
-  const p1: AnyProperty = {
-    type: 'content',
-    views: [ct4],
-  };
-  test('content properties', () => {
-    expect(
-      parseResponseProperty(p1, {
-        __typename: 'contenttype4',
-        p1: 'hi',
+    expect(parseResponse(ct3, response)).toEqual({
+      p1: {
+        __typename: 'ct1',
+        __viewname: 'ct1',
+        p1: 'hello',
         p2: true,
-      })
-    ).toEqual({
-      __viewname: 'contenttype4',
-      __typename: 'contenttype4',
-      p1: 'hi',
-      p2: true,
+      },
     });
   });
 
-  test('content properties resolve to null if view is not found', () => {
-    expect(
-      parseResponseProperty(p1, {
-        __typename: 'unknown_content_type',
-        p1: 'hi',
+  test('resolve to null if content type is not found', () => {
+    const response = {
+      p1: {
+        // `ct2` is not an acceptable "view" for ct3.p1
+        __typename: 'ct2',
+        p1: 'hello',
         p2: true,
-      })
-    ).toEqual(null);
+      },
+    };
+
+    expect(parseResponse(ct3, response)).toEqual({ p1: null });
+  });
+
+  test('handles arrays of content', () => {
+    const response = {
+      p1: [
+        { __typename: 'ct1', p1: 'hello', p2: true },
+        { __typename: 'ct1', p1: 'world', p2: false },
+      ],
+    };
+
+    expect(parseResponse(ct4, response)).toMatchInlineSnapshot(`
+      {
+        "p1": [
+          {
+            "__typename": "ct1",
+            "__viewname": "ct1",
+            "p1": "hello",
+            "p2": true,
+          },
+          {
+            "__typename": "ct1",
+            "__viewname": "ct1",
+            "p1": "world",
+            "p2": false,
+          },
+        ],
+      }
+    `);
   });
 });
