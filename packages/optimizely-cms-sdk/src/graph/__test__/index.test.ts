@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { createQuery, parseResponse, parseResponseProperty } from '.';
-import { contentType } from '../model';
-import { AnyProperty } from '../model/contentTypeProperties';
+import { createQuery, parseResponse, parseResponseProperty } from '..';
+import { contentType } from '../../model';
 
 const ct1 = contentType({
   key: 'ct1',
-  baseType: 'page',
+  baseType: 'component',
   properties: {
     p1: { type: 'string' },
     p2: { type: 'boolean' },
@@ -14,7 +13,7 @@ const ct1 = contentType({
 
 const ct2 = contentType({
   key: 'ct2',
-  baseType: 'page',
+  baseType: 'component',
   properties: {
     p1: { type: 'richText' },
     p2: { type: 'link' },
@@ -25,7 +24,7 @@ const ct2 = contentType({
 
 const ct3 = contentType({
   key: 'ct3',
-  baseType: 'page',
+  baseType: 'component',
   properties: {
     p1: {
       type: 'content',
@@ -36,7 +35,7 @@ const ct3 = contentType({
 
 const ct4 = contentType({
   key: 'ct4',
-  baseType: 'page',
+  baseType: 'component',
   properties: {
     p1: {
       type: 'array',
