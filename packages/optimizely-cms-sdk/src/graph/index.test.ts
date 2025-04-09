@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { createQuery, parseResponse, parseResponseProperty } from '../graph';
+import { createQuery, parseResponse, parseResponseProperty } from '.';
 import { contentType } from '../model';
 import { AnyProperty } from '../model/contentTypeProperties';
 
