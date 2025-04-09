@@ -1,5 +1,5 @@
-import { AnyProperty } from './model/contentTypeProperties';
-import { AnyContentType } from './model/contentTypes';
+import { AnyProperty } from '../model/contentTypeProperties';
+import { AnyContentType } from '../model/contentTypes';
 
 /** Filters that can be passed to a Graph query */
 type GraphFilter = any;
