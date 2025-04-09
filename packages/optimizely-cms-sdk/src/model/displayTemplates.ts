@@ -18,6 +18,12 @@ type BaseTemplate = {
   nodeType?: never;
 };
 
+type WithContentType = {
+  contentType: string;
+  baseType?: never;
+  nodeType?: never;
+};
+
 type ChoiceType = Record<
   string,
   {
@@ -38,10 +44,10 @@ type SettingsType = Record<
 
 type BaseDisplayTemplate = {
   key: string;
-  displayName?: string;
+  displayName: string;
   isDefault: boolean;
   settings: SettingsType;
 };
 
 export type DisplayTemplate = BaseDisplayTemplate &
-  (NodeTemplate | BaseTemplate);
+  (NodeTemplate | BaseTemplate | WithContentType);

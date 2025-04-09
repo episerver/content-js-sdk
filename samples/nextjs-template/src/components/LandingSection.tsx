@@ -1,4 +1,4 @@
-import { contentType } from 'optimizely-cms-sdk';
+import { contentType, displayTemplate } from 'optimizely-cms-sdk';
 
 export const ContentType = contentType({
   key: 'LandingSection',
@@ -15,7 +15,31 @@ export const ContentType = contentType({
       type: 'array',
       items: {
         type: 'content',
-        allowedTypes: ['SmallFeatureGrid', 'VideoFeature'],
+        allowedTypes: ['SmallFeatureGrid'],
+      },
+    },
+  },
+});
+
+export const DisplayTemplate = displayTemplate({
+  key: 'LandingSectionDisplayTemplate',
+  isDefault: true,
+  displayName: 'LandingSectionDisplayTemplate',
+  contentType: 'LandingSection',
+  settings: {
+    background: {
+      editor: 'select',
+      displayName: 'Background',
+      sortOrder: 0,
+      choices: {
+        red: {
+          displayName: 'Red',
+          sortOrder: 0,
+        },
+        blue: {
+          displayName: 'Blue',
+          sortOrder: 1,
+        },
       },
     },
   },
