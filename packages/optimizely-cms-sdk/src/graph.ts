@@ -71,6 +71,7 @@ function getFields(contentType: AnyContentType): {
   return { fields, extraFragments };
 }
 
+/** Get the fragment for a content type */
 function createFragment(contentType: AnyContentType): string {
   const fragmentName = contentType.key;
   const { fields, extraFragments } = getFields(contentType);
@@ -79,10 +80,13 @@ function createFragment(contentType: AnyContentType): string {
 fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
 }
 
-function getView(
+/**
+ * Finds the content type within an array of content types given the `__typename` obtained from GraphQL
+ */
+function findContentType(
   contentTypes: AnyContentType[] | AnyContentType,
   typeName?: string
-) {
+): AnyContentType | undefined {
   if (!Array.isArray(contentTypes)) {
     return contentTypes;
   }
@@ -91,21 +95,31 @@ function getView(
     throw new Error("Can't detect view. __typename was null or undefined");
   }
 
+  // Note: this function does not handle cases where more than one content types are found
   return contentTypes.find((c) => c.key === typeName);
 }
 
+/**
+ * Parses one property on the GraphQL response.
+ *
+ * Adds `__viewname` and `__typename` accordingly
+ *
+ * @param property
+ * @param value
+ * @returns
+ */
 export function parseResponseProperty(property: AnyProperty, value: any) {
   if (property.type === 'content') {
-    const view = getView(property.views, value.__typename);
+    const foundContentType = findContentType(property.views, value.__typename);
 
-    if (!view) {
+    if (!foundContentType) {
       return null;
     }
 
     return {
-      ...parseResponse(view, value),
+      ...parseResponse(foundContentType, value),
       __typename: value.__typename,
-      __viewname: view.key,
+      __viewname: foundContentType.key,
     };
   } else if (property.type === 'array') {
     return value.map((r: any) => parseResponseProperty(property.items, r));
@@ -128,6 +142,10 @@ export function parseResponse(contentType: AnyContentType, response: any) {
   };
 }
 
+/**
+ * Creates a GraphQL query for a particular content type
+ * @param contentType The content type
+ */
 export function createQuery(contentType: AnyContentType) {
   const fragment = createFragment(contentType);
 
