@@ -1,27 +1,31 @@
 import { AnyProperty } from '../model/contentTypeProperties';
 import { AnyContentType } from '../model/contentTypes';
 
-/** Converts a property into a GraphQL field */
-function expandProperty(name: string, options: AnyProperty) {
+/**
+ * Converts a property into a GraphQL field
+ * @param name Name of the property
+ * @param property Property options
+ */
+function convertProperty(name: string, property: AnyProperty) {
   const fields: string[] = [];
   const extraFragments: string[] = [];
 
-  if (options.type === 'content') {
-    extraFragments.push(...options.views.map(createFragment));
-    const subfields = options.views.map((view) => `...${view.key}`).join(' ');
+  if (property.type === 'content') {
+    extraFragments.push(...property.views.map(createFragment));
+    const subfields = property.views.map((view) => `...${view.key}`).join(' ');
 
     fields.push(`${name} { __typename ${subfields} }`);
-  } else if (options.type === 'richText') {
+  } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
-  } else if (options.type === 'url') {
+  } else if (property.type === 'url') {
     fields.push(`${name} { type, default }`);
-  } else if (options.type === 'link') {
+  } else if (property.type === 'link') {
     fields.push(`${name} { url { type, default }}`);
-  } else if (options.type === 'contentReference') {
+  } else if (property.type === 'contentReference') {
     // do nothing for now
-  } else if (options.type === 'array') {
+  } else if (property.type === 'array') {
     // Call recursively
-    const f = expandProperty(name, options.items);
+    const f = convertProperty(name, property.items);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
@@ -34,27 +38,19 @@ function expandProperty(name: string, options: AnyProperty) {
   };
 }
 
-function getFields(contentType: AnyContentType): {
-  fields: string[];
-  extraFragments: string[];
-} {
-  const fields: string[] = [];
-  const extraFragments: string[] = [];
-
-  for (const [key, property] of Object.entries(contentType.properties ?? {})) {
-    const f = expandProperty(key, property);
-    fields.push(...f.fields);
-    extraFragments.push(...f.extraFragments);
-  }
-
-  return { fields, extraFragments };
-}
-
 /** Get the fragment for a content type */
 export function createFragment(contentType: AnyContentType): string {
   const fragmentName = contentType.key;
-  const { fields, extraFragments } = getFields(contentType);
+  const allFields: string[] = [];
+  const allExtraFragments: string[] = [];
 
-  return `${extraFragments}
-  fragment ${fragmentName} on ${fragmentName} { ${fields.join(' ')} }`;
+  for (const [key, property] of Object.entries(contentType.properties ?? {})) {
+    const { fields, extraFragments } = convertProperty(key, property);
+
+    allFields.push(...fields);
+    allExtraFragments.push(...extraFragments);
+  }
+
+  return `${allExtraFragments}
+  fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
 }
