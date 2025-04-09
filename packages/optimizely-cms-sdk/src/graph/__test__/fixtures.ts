@@ -21,11 +21,24 @@ export const heroBlock = contentType({
   },
 });
 
+export const superHeroBlock = contentType({
+  baseType: 'component',
+  key: 'SuperHero',
+  properties: {
+    heading: { type: 'string' },
+    embed_video: { type: 'string' },
+    callToAction: {
+      type: 'array',
+      items: { type: 'content', views: [callToAction] },
+    },
+  },
+});
+
 export const landingPage = contentType({
   baseType: 'page',
   key: 'LandingPage',
   properties: {
-    hero: { type: 'content', views: [heroBlock] },
+    hero: { type: 'content', views: [heroBlock, superHeroBlock] },
     body: { type: 'richText' },
   },
 });

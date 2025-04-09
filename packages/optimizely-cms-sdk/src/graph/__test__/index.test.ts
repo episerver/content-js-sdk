@@ -1,61 +1,16 @@
 import { describe, expect, test } from 'vitest';
-import { createQuery, parseResponse, parseResponseProperty } from '..';
-import { contentType } from '../../model';
-
-const ct1 = contentType({
-  key: 'ct1',
-  baseType: 'component',
-  properties: {
-    p1: { type: 'string' },
-    p2: { type: 'boolean' },
-  },
-});
-
-const ct2 = contentType({
-  key: 'ct2',
-  baseType: 'component',
-  properties: {
-    p1: { type: 'richText' },
-    p2: { type: 'link' },
-    p3: { type: 'url' },
-    p4: { type: 'array', items: { type: 'string' } },
-  },
-});
-
-const ct3 = contentType({
-  key: 'ct3',
-  baseType: 'component',
-  properties: {
-    p1: {
-      type: 'content',
-      views: [ct1],
-    },
-  },
-});
-
-const ct4 = contentType({
-  key: 'ct4',
-  baseType: 'component',
-  properties: {
-    p1: {
-      type: 'array',
-      items: {
-        type: 'content',
-        views: [ct1],
-      },
-    },
-  },
-});
+import { createQuery, parseResponse } from '..';
+import { articlePage, callToAction, heroBlock, landingPage } from './fixtures';
 
 describe('createQuery', () => {
-  test('properties that match 1:1', () => {
-    expect(createQuery(ct1)).toMatchInlineSnapshot(`
+  test('simple content types', () => {
+    expect(createQuery(callToAction)).toMatchInlineSnapshot(`
       "
-      fragment ct1 on ct1 { p1 p2 }
+      fragment CallToAction on CallToAction { label link }
       query FetchContent($filter: _ContentWhereInput) {
         _Content(where: $filter) {
           item {
-            ...ct1
+            ...CallToAction
           }
         }
       }
@@ -63,14 +18,14 @@ describe('createQuery', () => {
     `);
   });
 
-  test('properties that add extra information in Graph', () => {
-    expect(createQuery(ct2)).toMatchInlineSnapshot(`
+  test('complex content types', () => {
+    expect(createQuery(articlePage)).toMatchInlineSnapshot(`
       "
-      fragment ct2 on ct2 { p1 { html, json } p2 { url { type, default }} p3 { type, default } p4 }
+      fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }
       query FetchContent($filter: _ContentWhereInput) {
         _Content(where: $filter) {
           item {
-            ...ct2
+            ...ArticlePage
           }
         }
       }
@@ -78,15 +33,15 @@ describe('createQuery', () => {
     `);
   });
 
-  test("'content' properties", () => {
-    expect(createQuery(ct3)).toMatchInlineSnapshot(`
+  test('nested content types (one level)', () => {
+    expect(createQuery(heroBlock)).toMatchInlineSnapshot(`
       "
-      fragment ct1 on ct1 { p1 p2 }
-      fragment ct3 on ct3 { p1 { __typename ...ct1 } }
+      fragment CallToAction on CallToAction { label link }
+      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }
       query FetchContent($filter: _ContentWhereInput) {
         _Content(where: $filter) {
           item {
-            ...ct3
+            ...Hero
           }
         }
       }
@@ -97,72 +52,118 @@ describe('createQuery', () => {
 
 describe('parseResponse', () => {
   test('parses simple properties correctly', () => {
-    const response = { p1: 'hello', p2: true };
-    expect(parseResponse(ct1, response)).toEqual(response);
+    const response = { label: 'click here', link: 'https://example.com' };
+    expect(parseResponse(callToAction, response)).toEqual(response);
   });
 
   test('returns excess properties', () => {
-    const response = { p1: 'hello', p2: true, metadata: 12345 };
-    expect(parseResponse(ct1, response)).toEqual(response);
+    const response = {
+      label: 'click here',
+      link: 'https://example.com',
+      metadata: 12345,
+    };
+    expect(parseResponse(callToAction, response)).toEqual(response);
   });
 
-  test('handles content properties', () => {
+  test('handle missing fields', () => {
     const response = {
-      p1: {
-        __typename: 'ct1',
-        p1: 'hello',
-        p2: true,
-      },
+      label: 'click here',
+      linka: 'https://nothing.com',
     };
 
-    expect(parseResponse(ct3, response)).toEqual({
-      p1: {
-        __typename: 'ct1',
-        __viewname: 'ct1',
-        p1: 'hello',
-        p2: true,
-      },
+    expect(parseResponse(callToAction, response)).toEqual({
+      label: 'click here',
+      link: undefined,
+      linka: 'https://nothing.com',
     });
   });
 
-  test('resolve to null if content type is not found', () => {
+  test('handles nested fragments', () => {
     const response = {
-      p1: {
-        // `ct2` is not an acceptable "view" for ct3.p1
-        __typename: 'ct2',
-        p1: 'hello',
-        p2: true,
-      },
-    };
-
-    expect(parseResponse(ct3, response)).toEqual({ p1: null });
-  });
-
-  test('handles arrays of content', () => {
-    const response = {
-      p1: [
-        { __typename: 'ct1', p1: 'hello', p2: true },
-        { __typename: 'ct1', p1: 'world', p2: false },
+      heading: 'Example',
+      callToAction: [
+        {
+          __typename: 'CallToAction',
+          label: 'Click here',
+          link: 'https://example.com',
+        },
       ],
     };
 
-    expect(parseResponse(ct4, response)).toMatchInlineSnapshot(`
-      {
-        "p1": [
+    expect(parseResponse(heroBlock, response)).toEqual({
+      callToAction: [
+        {
+          __typename: 'CallToAction',
+          __viewname: 'CallToAction',
+          label: 'Click here',
+          link: 'https://example.com',
+        },
+      ],
+      heading: 'Example',
+    });
+  });
+
+  test('resolves to null if fragment is not found', () => {
+    const response = {
+      heading: 'Example',
+      callToAction: [
+        {
+          __typename: 'NON-EXISTENT-COMPONENT',
+          label: 'Click here',
+          link: 'https://example.com',
+        },
+      ],
+    };
+
+    expect(parseResponse(heroBlock, response)).toEqual({
+      callToAction: [null],
+      heading: 'Example',
+    });
+  });
+
+  test('handles several levels', () => {
+    const response = {
+      hero: {
+        __typename: 'SuperHero',
+        heading: 'Welcome',
+        embed_video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        callToAction: [
           {
-            "__typename": "ct1",
-            "__viewname": "ct1",
-            "p1": "hello",
-            "p2": true,
+            __typename: 'CallToAction',
+            label: 'Click here',
+            link: 'https://example.com',
           },
           {
-            "__typename": "ct1",
-            "__viewname": "ct1",
-            "p1": "world",
-            "p2": false,
+            __typename: 'CallToAction',
+            label: 'Dont click here',
+            link: 'https://example.com',
           },
         ],
-      }
-    `);
+      },
+    };
+
+    expect(parseResponse(landingPage, response)).toEqual({
+      body: undefined,
+      hero: {
+        __typename: 'SuperHero',
+        __viewname: 'SuperHero',
+        callToAction: [
+          {
+            __typename: 'CallToAction',
+            __viewname: 'CallToAction',
+            label: 'Click here',
+            link: 'https://example.com',
+          },
+          {
+            __typename: 'CallToAction',
+            __viewname: 'CallToAction',
+            label: 'Dont click here',
+            link: 'https://example.com',
+          },
+        ],
+        embed_video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        heading: 'Welcome',
+      },
+    });
   });
 });
