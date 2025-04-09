@@ -52,5 +52,5 @@ export function createFragment(contentType: AnyContentType): string {
   }
 
   return `${allExtraFragments}
-  fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
+fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
 }
