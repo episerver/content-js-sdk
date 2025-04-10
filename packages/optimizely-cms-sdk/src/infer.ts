@@ -18,7 +18,7 @@ import {
   RichTextProperty,
   UrlProperty,
 } from './model/properties';
-import * as CT from './model/contentTypes';
+import { AnyContentType, ExperienceContentType } from './model/contentTypes';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {
@@ -53,7 +53,7 @@ export type InferredBase = {
 };
 
 /** Infers an `object` with the TS type inferred for each type */
-type InferProps<T extends CT.AnyContentType> = T extends {
+type InferProps<T extends AnyContentType> = T extends {
   properties: Record<string, AnyProperty>;
 }
   ? {
@@ -62,20 +62,19 @@ type InferProps<T extends CT.AnyContentType> = T extends {
   : {};
 
 /** Adds TS fields specific to `Experience` */
-type InferExperience<T extends CT.AnyContentType> =
-  T extends CT.ExperienceContentType
-    ? {
-        composition: {
-          nodes: {
-            component?: {
-              __typename: string;
-            };
-          }[];
-        };
-      }
-    : {};
+type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
+  ? {
+      composition: {
+        nodes: {
+          component?: {
+            __typename: string;
+          };
+        }[];
+      };
+    }
+  : {};
 
 /** Infers the TypeScript type for a content type */
-export type InferFromContentType<T extends CT.AnyContentType> = Prettify<
+export type InferFromContentType<T extends AnyContentType> = Prettify<
   InferredBase & InferProps<T> & InferExperience<T>
 >;
