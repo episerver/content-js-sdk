@@ -10,12 +10,14 @@ import {
   ArrayProperty,
   BinaryProperty,
   BooleanProperty,
+  ContentProperty,
   ContentReferenceProperty,
   FloatProperty,
   IntegerProperty,
   JsonProperty,
   LinkProperty,
   RichTextProperty,
+  StringProperty,
   UrlProperty,
 } from './model/properties';
 import { AnyContentType, ExperienceContentType } from './model/contentTypes';
@@ -35,6 +37,7 @@ export type InferredUrl = {
 export type InferFromProperty<T extends AnyProperty> =
     T extends BooleanProperty ? boolean
   : T extends BinaryProperty  ? unknown
+  : T extends StringProperty ? string
   : T extends JsonProperty ? any
   : T extends RichTextProperty ? {html: string; json: any}
   : T extends UrlProperty ? InferredUrl
@@ -43,7 +46,8 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends FloatProperty ? number
   : T extends ContentReferenceProperty ? {}
   : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
-  : {}
+  : T extends ContentProperty ? {__typename: string, __viewname: string}
+  : unknown
 
 /** Attributes included in the response from Graph in every content type */
 export type InferredBase = {
@@ -79,7 +83,9 @@ type InferFromContentType<T extends AnyContentType> = Prettify<
   InferredBase & InferProps<T> & InferExperience<T>
 >;
 
-/** Infers the Graph response types of the content type `T` */
-export type Infer<T> = T extends AnyContentType
-  ? InferFromContentType<T>
-  : unknown;
+/** Infers the Graph response types of `T`. `T` can be a content type or a property */
+// prettier-ignore
+export type Infer<T> =
+  T extends AnyContentType ? InferFromContentType<T>
+: T extends AnyProperty ? InferFromProperty<T>
+: unknown;
