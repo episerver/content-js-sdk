@@ -1,4 +1,4 @@
-import { AnyProperty } from './contentTypeProperties';
+import { AnyProperty } from './properties';
 
 /** All possible content types */
 export type AnyContentType = Component | Experience | Others;
