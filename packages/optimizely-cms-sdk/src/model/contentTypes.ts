@@ -1,27 +1,30 @@
 import { AnyProperty } from './properties';
 
 /** All possible content types */
-export type AnyContentType = Component | Experience | Others;
+export type AnyContentType =
+  | ComponentContentType
+  | ExperienceContentType
+  | OtherContentTypes;
 
 /** A "Base" content type that includes all common attributes for all content types */
-type Base = {
+type BaseContentType = {
   key: string;
   displayName?: string;
   properties?: Record<string, AnyProperty>;
 };
 
 /** Represents the "Component" type (also called "Block") in CMS */
-export type Component = Base & {
+export type ComponentContentType = BaseContentType & {
   baseType: 'component';
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
 };
 
-export type Experience = Base & {
+export type ExperienceContentType = BaseContentType & {
   baseType: 'experience';
 };
 
 /** Represents all other types in CMS. They don't have any additional property */
-export type Others = Base & {
+export type OtherContentTypes = BaseContentType & {
   baseType:
     | 'page'
     | 'media'

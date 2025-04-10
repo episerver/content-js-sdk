@@ -9,4 +9,4 @@ export namespace contentType {
   export type infer<T extends AnyContentType> = InferFromContentType<T>;
 }
 export * as ContentTypes from './model/contentTypes';
-export * as ContentTypeProperties from './model/properties';
+export * as Properties from './model/properties';
