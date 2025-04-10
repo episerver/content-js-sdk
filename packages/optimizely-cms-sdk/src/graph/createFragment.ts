@@ -1,18 +1,28 @@
 import { AnyProperty } from '../model/contentTypeProperties';
 import { AnyContentType } from '../model/contentTypes';
 
+type Importer = (contentTypeName: string) => Promise<AnyContentType>;
 /**
  * Converts a property into a GraphQL field
  * @param name Name of the property
  * @param property Property options
  */
-function convertProperty(name: string, property: AnyProperty) {
+async function convertProperty(
+  name: string,
+  property: AnyProperty,
+  customImport: Importer
+) {
   const fields: string[] = [];
   const extraFragments: string[] = [];
 
   if (property.type === 'content') {
-    extraFragments.push(...property.views.map(createFragment));
-    const subfields = property.views.map((view) => `...${view.key}`).join(' ');
+    for (const t of property.allowedTypes ?? []) {
+      extraFragments.push(await createFragment(t, customImport));
+    }
+
+    const subfields = (property.allowedTypes ?? [])
+      .map((t) => `...${t}`)
+      .join(' ');
 
     fields.push(`${name} { __typename ${subfields} }`);
   } else if (property.type === 'richText') {
@@ -25,7 +35,7 @@ function convertProperty(name: string, property: AnyProperty) {
     // do nothing for now
   } else if (property.type === 'array') {
     // Call recursively
-    const f = convertProperty(name, property.items);
+    const f = await convertProperty(name, property.items, customImport);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
@@ -39,13 +49,21 @@ function convertProperty(name: string, property: AnyProperty) {
 }
 
 /** Get the fragment for a content type */
-export function createFragment(contentType: AnyContentType): string {
-  const fragmentName = contentType.key;
+export async function createFragment(
+  contentTypeName: string,
+  customImport: Importer
+): Promise<string> {
+  const fragmentName = contentTypeName;
   const allFields: string[] = [];
   const allExtraFragments: string[] = [];
+  const contentType = await customImport(contentTypeName);
 
   for (const [key, property] of Object.entries(contentType.properties ?? {})) {
-    const { fields, extraFragments } = convertProperty(key, property);
+    const { fields, extraFragments } = await convertProperty(
+      key,
+      property,
+      customImport
+    );
 
     allFields.push(...fields);
     allExtraFragments.push(...extraFragments);

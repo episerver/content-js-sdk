@@ -1,18 +1,18 @@
 import { describe, expect, test } from 'vitest';
 import { createFragment } from '../createFragment';
-import { callToAction, heroBlock, landingPage } from './fixtures';
+import { callToAction, heroBlock, landingPage, customImport } from './fixtures';
 
 describe('createFragment()', () => {
-  test('works for simple properties', () => {
-    const result = createFragment(callToAction);
+  test('works for simple properties', async () => {
+    const result = await createFragment(callToAction.key, customImport);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }"
     `);
   });
 
-  test('works for components inside components', () => {
-    const result = createFragment(heroBlock);
+  test('works for components inside components', async () => {
+    const result = await createFragment(heroBlock.key, customImport);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
@@ -20,8 +20,8 @@ describe('createFragment()', () => {
     `);
   });
 
-  test('works for components inside components (several levels)', () => {
-    const result = createFragment(landingPage);
+  test('works for components inside components (several levels)', async () => {
+    const result = await createFragment(landingPage.key, customImport);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }

@@ -76,8 +76,6 @@ export type ContentProperty = BaseProperty & {
   type: 'content';
   allowedTypes?: string[];
   restrictedTypes?: string[];
-
-  views: AnyContentType[];
 };
 
 /**

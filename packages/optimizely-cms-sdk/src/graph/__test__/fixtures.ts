@@ -1,4 +1,5 @@
 import { contentType } from '../../model';
+import { AnyContentType } from '../../model/contentTypes';
 
 export const callToAction = contentType({
   baseType: 'component',
@@ -16,7 +17,7 @@ export const heroBlock = contentType({
     heading: { type: 'string' },
     callToAction: {
       type: 'array',
-      items: { type: 'content', views: [callToAction] },
+      items: { type: 'content', allowedTypes: ['CallToAction'] },
     },
   },
 });
@@ -29,7 +30,7 @@ export const superHeroBlock = contentType({
     embed_video: { type: 'string' },
     callToAction: {
       type: 'array',
-      items: { type: 'content', views: [callToAction] },
+      items: { type: 'content', allowedTypes: ['CallToAction'] },
     },
   },
 });
@@ -38,7 +39,7 @@ export const landingPage = contentType({
   baseType: 'page',
   key: 'LandingPage',
   properties: {
-    hero: { type: 'content', views: [heroBlock, superHeroBlock] },
+    hero: { type: 'content', allowedTypes: ['Hero', 'SuperHero'] },
     body: { type: 'richText' },
   },
 });
@@ -53,3 +54,16 @@ export const articlePage = contentType({
     tags: { type: 'array', items: { type: 'string' } },
   },
 });
+
+const contentTypeMap: Record<string, AnyContentType> = {
+  CallToAction: callToAction,
+  Hero: heroBlock,
+  SuperHero: superHeroBlock,
+  LandingPage: landingPage,
+  ArticlePage: articlePage,
+};
+
+export async function customImport(name: string) {
+  console.log('Importing ', name);
+  return contentTypeMap[name];
+}
