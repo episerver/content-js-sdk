@@ -1,8 +1,8 @@
 /** All possible content type properties */
-export type AnyProperty = Array<ArrayItems> | ArrayItems;
+export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
 /** A "Base" content type property that includes all common attributes for all content type properties */
-type Base = {
+type BaseProperty = {
   format?: string;
   displayName?: string;
   description?: string;
@@ -21,56 +21,56 @@ type WithEnum<T> = {
   };
 };
 
-export type Array<T extends ArrayItems> = Base & {
+export type ArrayProperty<T extends ArrayItems> = BaseProperty & {
   type: 'array';
   items: T;
 };
 
 export type ArrayItems =
-  | String
-  | Boolean
-  | Binary
-  | Json
-  | RichText
-  | Url
-  | Integer
-  | Float
-  | ContentReference
-  | Content
-  | Component
-  | Link;
+  | StringProperty
+  | BooleanProperty
+  | BinaryProperty
+  | JsonProperty
+  | RichTextProperty
+  | UrlProperty
+  | IntegerProperty
+  | FloatProperty
+  | ContentReferenceProperty
+  | ContentProperty
+  | ComponentProperty
+  | LinkProperty;
 
 /** Represents the content type property "String" */
-export type String = Base & {
+export type StringProperty = BaseProperty & {
   type: 'string';
   minLength?: number;
   maxLength?: number;
 } & WithEnum<string>;
 
-export type Boolean = Base & { type: 'boolean' };
-export type Binary = Base & { type: 'binary' };
-export type Json = Base & { type: 'json' };
+export type BooleanProperty = BaseProperty & { type: 'boolean' };
+export type BinaryProperty = BaseProperty & { type: 'binary' };
+export type JsonProperty = BaseProperty & { type: 'json' };
 
 // Note: `RichText` type does not exist in the REST API. However, we need it to extract the right GraphQL fields from there
-export type RichText = Base & { type: 'richText' };
-export type Url = Base & { type: 'url' };
-export type Integer = Base & {
+export type RichTextProperty = BaseProperty & { type: 'richText' };
+export type UrlProperty = BaseProperty & { type: 'url' };
+export type IntegerProperty = BaseProperty & {
   type: 'integer';
   minimum?: number;
   maximum?: number;
 } & WithEnum<number>;
-export type Float = Base & {
+export type FloatProperty = BaseProperty & {
   type: 'float';
   minimum?: number;
   maximum?: number;
 } & WithEnum<number>;
-export type ContentReference = Base & {
+export type ContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
   allowedTypes?: string[];
   restrictedTypes?: string[];
 };
 
-export type Content = Base & {
+export type ContentProperty = BaseProperty & {
   type: 'content';
   allowedTypes?: string[];
   restrictedTypes?: string[];
@@ -80,7 +80,7 @@ export type Content = Base & {
  * Reprensents the content type property "Component".
  * Note: this is called "Block" in the GUI
  */
-export type Component = Base & {
+export type ComponentProperty = BaseProperty & {
   type: 'component';
   contentType: string;
 };
@@ -88,6 +88,6 @@ export type Component = Base & {
 // Note: `Link` does not exist in the REST API or in the GUI.
 // - In the API is called `component` with `contentType=link`
 // - In the GUI is called
-export type Link = Base & {
+export type LinkProperty = BaseProperty & {
   type: 'link';
 };
