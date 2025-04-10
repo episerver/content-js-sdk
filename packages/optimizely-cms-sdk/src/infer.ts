@@ -62,22 +62,20 @@ type InferProps<T extends CT.AnyContentType> = T extends {
   : {};
 
 /** Adds TS fields specific to `Experience` */
-type InferExperience<T extends CT.AnyContentType> = T extends CT.Experience
-  ? {
-      composition: {
-        nodes: {
-          component?: {
-            __typename: string;
-          };
-        }[];
-      };
-    }
-  : {};
+type InferExperience<T extends CT.AnyContentType> =
+  T extends CT.ExperienceContentType
+    ? {
+        composition: {
+          nodes: {
+            component?: {
+              __typename: string;
+            };
+          }[];
+        };
+      }
+    : {};
 
 /** Infers the TypeScript type for a content type */
-type InferFromContentType<T extends CT.AnyContentType> = Prettify<
+export type InferFromContentType<T extends CT.AnyContentType> = Prettify<
   InferredBase & InferProps<T> & InferExperience<T>
 >;
-
-// One single Infer for everything
-// export type Infer<T> = T extends CT.AnyContentType ?
