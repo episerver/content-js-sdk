@@ -1,4 +1,4 @@
-import { AnyProperty } from '../model/contentTypeProperties';
+import { AnyProperty } from '../model/properties';
 import { AnyContentType } from '../model/contentTypes';
 
 type Importer = (contentTypeName: string) => Promise<AnyContentType>;
