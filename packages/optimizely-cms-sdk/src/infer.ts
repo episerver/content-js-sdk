@@ -5,8 +5,22 @@
  */
 // Read https://zackoverflow.dev/writing/write-your-own-zod/ for an explanation of how this works
 
-import * as CTP from './model/contentTypeProperties';
-import * as CT from './model/contentTypes';
+import {
+  AnyProperty,
+  ArrayProperty,
+  BinaryProperty,
+  BooleanProperty,
+  ContentProperty,
+  ContentReferenceProperty,
+  FloatProperty,
+  IntegerProperty,
+  JsonProperty,
+  LinkProperty,
+  RichTextProperty,
+  StringProperty,
+  UrlProperty,
+} from './model/properties';
+import { AnyContentType, ExperienceContentType } from './model/contentTypes';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {
@@ -20,18 +34,20 @@ export type InferredUrl = {
 
 /** Infers the Typescript type for each content type property */
 // prettier-ignore
-export type InferFromProperty<T extends CTP.AnyProperty> =
-    T extends CTP.Boolean ? boolean
-  : T extends CTP.Binary  ? unknown
-  : T extends CTP.Json ? any
-  : T extends CTP.RichText ? {html: string; json: any}
-  : T extends CTP.Url ? InferredUrl
-  : T extends CTP.Link ? { url: InferredUrl }
-  : T extends CTP.Integer ? number
-  : T extends CTP.Float ? number
-  : T extends CTP.ContentReference ? {}
-  : T extends CTP.Array<infer E> ? InferFromProperty<E>[]
-  : {}
+export type InferFromProperty<T extends AnyProperty> =
+    T extends BooleanProperty ? boolean
+  : T extends BinaryProperty  ? unknown
+  : T extends StringProperty ? string
+  : T extends JsonProperty ? any
+  : T extends RichTextProperty ? {html: string; json: any}
+  : T extends UrlProperty ? InferredUrl
+  : T extends LinkProperty ? { url: InferredUrl }
+  : T extends IntegerProperty ? number
+  : T extends FloatProperty ? number
+  : T extends ContentReferenceProperty ? {}
+  : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
+  : T extends ContentProperty ? {__typename: string, __viewname: string}
+  : unknown
 
 /** Attributes included in the response from Graph in every content type */
 export type InferredBase = {
@@ -41,8 +57,8 @@ export type InferredBase = {
 };
 
 /** Infers an `object` with the TS type inferred for each type */
-type InferProps<T extends CT.AnyContentType> = T extends {
-  properties: Record<string, CTP.AnyProperty>;
+type InferProps<T extends AnyContentType> = T extends {
+  properties: Record<string, AnyProperty>;
 }
   ? {
       [Key in keyof T['properties']]: InferFromProperty<T['properties'][Key]>;
@@ -50,7 +66,7 @@ type InferProps<T extends CT.AnyContentType> = T extends {
   : {};
 
 /** Adds TS fields specific to `Experience` */
-type InferExperience<T extends CT.AnyContentType> = T extends CT.Experience
+type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
   ? {
       composition: {
         nodes: {
@@ -63,6 +79,13 @@ type InferExperience<T extends CT.AnyContentType> = T extends CT.Experience
   : {};
 
 /** Infers the TypeScript type for a content type */
-export type InferFromContentType<T extends CT.AnyContentType> = Prettify<
+type InferFromContentType<T extends AnyContentType> = Prettify<
   InferredBase & InferProps<T> & InferExperience<T>
 >;
+
+/** Infers the Graph response types of `T`. `T` can be a content type or a property */
+// prettier-ignore
+export type Infer<T> =
+  T extends AnyContentType ? InferFromContentType<T>
+: T extends AnyProperty ? InferFromProperty<T>
+: unknown;
