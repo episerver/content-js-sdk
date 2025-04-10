@@ -75,6 +75,11 @@ type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
   : {};
 
 /** Infers the TypeScript type for a content type */
-export type InferFromContentType<T extends AnyContentType> = Prettify<
+type InferFromContentType<T extends AnyContentType> = Prettify<
   InferredBase & InferProps<T> & InferExperience<T>
 >;
+
+/** Infers the Graph response types of the content type `T` */
+export type Infer<T> = T extends AnyContentType
+  ? InferFromContentType<T>
+  : unknown;
