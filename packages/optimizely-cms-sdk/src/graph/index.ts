@@ -1,15 +1,7 @@
-import { AnyContentType } from '../model/contentTypes';
-import { createFragment } from './createFragment';
-
-/** Filters that can be passed to a Graph query */
-type GraphFilter = any;
-
-/** Callback function. Returns the content type ({@link AnyContentType}) given its name */
-type Importer = (contentTypeName: string) => Promise<any>;
+import { createQuery, Importer } from './createQuery';
 
 const GRAPHQL_URL = 'https://cg.optimizely.com/content/v2';
 
-/** Query to fetch content with filters */
 const FETCH_CONTENT_QUERY = `
 query FetchContent($filter: _ContentWhereInput) {
   _Content(where: $filter) {
@@ -22,66 +14,72 @@ query FetchContent($filter: _ContentWhereInput) {
 }
 `;
 
-/**
- * Creates a GraphQL query for a particular content type
- * @param contentType The content type
- */
-export async function createQuery(contentType: string, customImport: Importer) {
-  const fragment = await createFragment(contentType, customImport);
-
-  return `${fragment}
-query FetchContent($filter: _ContentWhereInput) {
-  _Content(where: $filter) {
-    item {
-      ...${contentType}
-    }
-  }
-}
-  `;
-}
-
-/** Fetches a content given its filters */
-export async function fetchContent(
-  key: string,
-  filter: GraphFilter,
-  customImport: Importer
-) {
-  const url = new URL(GRAPHQL_URL);
-  url.searchParams.append('auth', key);
-  // 1. Perform the `FETCH_CONTENT_QUERY` to get the content type
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+function getFilterFromPath(path: string) {
+  return {
+    _metadata: {
+      url: {
+        default: { eq: path },
+      },
     },
-    body: JSON.stringify({
-      query: FETCH_CONTENT_QUERY,
-      variables: {
-        filter,
-      },
-    }),
-  }).then((r) => r.json());
+  };
+}
 
-  if (response.errors) {
-    throw new Error('GRAPHQL ERROR');
+export class GraphClient {
+  key: string;
+  customImport: Importer;
+
+  constructor(key: string, customImport: Importer) {
+    this.key = key;
+    this.customImport = customImport;
   }
 
-  // TODO: error handling
-  const type = response.data._Content.item._metadata.types[0];
+  /** Perform a GraphQL query with variables */
+  async request(query: string, variables: any) {
+    const url = new URL(GRAPHQL_URL);
 
-  const query = createQuery(type, customImport);
-  const response2 = await fetch(url, {
-    method: 'POST',
-    headers: {},
-    body: JSON.stringify({
-      query,
-      variables: {
-        filter,
+    // TODO: handle "preview"
+    url.searchParams.append('auth', this.key);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: ``,
       },
-    }),
-  })
-    .then((r) => r.json())
-    .then((json) => json.data._Content.item);
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+    });
 
-  return response2;
+    if (!response.ok) {
+      // TODO: Handle HTTP errors
+    }
+
+    // TODO:
+    const json = await response.json();
+
+    if (json.errors) {
+      // TODO: handle errors sent by Graph
+    }
+
+    return json.data;
+  }
+
+  /** Fetches the content type of a content */
+  async fetchContentType(path: string) {
+    const filter = getFilterFromPath(path);
+    const data = await this.request(FETCH_CONTENT_QUERY, { filter });
+
+    return data._Content?.item?._metadata?.types?.[0];
+  }
+
+  /** Fetches a content given its path */
+  async fetchContent(path: string) {
+    const filter = getFilterFromPath(path);
+    const contentTypeName = await this.fetchContentType(path);
+    const query = await createQuery(contentTypeName, this.customImport);
+
+    this.request(query, { filter });
+  }
 }

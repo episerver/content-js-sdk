@@ -1,7 +1,7 @@
 import { AnyProperty } from '../model/properties';
 import { AnyContentType } from '../model/contentTypes';
 
-type Importer = (contentTypeName: string) => Promise<AnyContentType>;
+export type Importer = (contentTypeName: string) => Promise<AnyContentType>;
 /**
  * Converts a property into a GraphQL field
  * @param name Name of the property
@@ -71,4 +71,22 @@ export async function createFragment(
 
   return `${allExtraFragments}
 fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
+}
+
+/**
+ * Creates a GraphQL query for a particular content type
+ * @param contentType The content type
+ */
+export async function createQuery(contentType: string, customImport: Importer) {
+  const fragment = await createFragment(contentType, customImport);
+
+  return `${fragment}
+query FetchContent($filter: _ContentWhereInput) {
+  _Content(where: $filter) {
+    item {
+      ...${contentType}
+    }
+  }
+}
+  `;
 }
