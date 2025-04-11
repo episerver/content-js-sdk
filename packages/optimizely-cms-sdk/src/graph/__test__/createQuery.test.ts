@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import { createFragment, createQuery } from '../createQuery';
-import { callToAction, heroBlock, landingPage, customImport } from './fixtures';
+import {
+  callToAction,
+  heroBlock,
+  landingPage,
+  customImport,
+  articlePage,
+} from './fixtures';
 
 describe('createFragment()', () => {
   test('works for simple properties', async () => {
