@@ -1,7 +1,7 @@
 import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
 
 async function myImport(contentType: string) {
-  return import(`../../components/${contentType}.tsx`).then(
+  return import(`../../../components/${contentType}.tsx`).then(
     (r) => r.ContentType
   );
 }
