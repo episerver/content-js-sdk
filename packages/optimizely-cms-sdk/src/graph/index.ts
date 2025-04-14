@@ -80,6 +80,8 @@ export class GraphClient {
     const contentTypeName = await this.fetchContentType(path);
     const query = await createQuery(contentTypeName, this.customImport);
 
-    this.request(query, { filter });
+    const response = await this.request(query, { filter });
+
+    return response?._Content?.item;
   }
 }
