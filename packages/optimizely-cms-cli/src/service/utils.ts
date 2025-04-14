@@ -1,7 +1,12 @@
 import { resolve } from 'node:path';
 import { glob } from 'glob';
 import { tsImport } from 'tsx/esm/api';
-import { ContentTypes } from 'optimizely-cms-sdk';
+import {
+  ContentTypes,
+  isContentType,
+  DisplayTemplates,
+  isDisplayTemplate,
+} from 'optimizely-cms-sdk';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -10,48 +15,119 @@ export type Prettify<T> = {
 /** extract AnyContentType */
 export type AnyContentType = ContentTypes.AnyContentType;
 
+/** extract DisplayTemplate */
+export type DisplayTemplate = DisplayTemplates.DisplayTemplate;
+
 export type FoundContentType = {
   path: string;
   contentType: AnyContentType;
+  displayTemplates: DisplayTemplate;
 };
 
-function isContentType(obj: unknown): obj is AnyContentType {
-  return typeof obj === 'object' && obj !== null && 'key' in obj;
+export type ContentTypeMeta = Pick<FoundContentType, 'contentType' | 'path'>;
+export type DisplayTemplateMeta = Pick<
+  FoundContentType,
+  'displayTemplates' | 'path'
+>;
+
+function cleanType(obj: any) {
+  if (obj !== null && '__type' in obj) delete obj.__type;
 }
 
-/** Finds a list of content types in a given glob */
-export async function findContentTypes(
-  pattern: string,
-  cwd: string
-): Promise<FoundContentType[]> {
-  const files = await glob(pattern, { cwd });
+/**
+ * Given an object, extract its ContentType or DisplayTemplate if present.
+ * Returns an cleaned ('__type' removed) object with both possibilities (one or both may be `null`).
+ */
+export function extractMetaData(obj: unknown): {
+  contentTypeData: AnyContentType;
+  displayTemplateData: DisplayTemplate;
+} {
+  // Try to find a content type
+  const contentTypeData = isContentType(obj)
+    ? obj
+    : isContentType((obj as any)?.ContentType)
+    ? (obj as any)?.ContentType
+    : null;
 
+  // Try to find a display template
+  const displayTemplateData = isDisplayTemplate(obj)
+    ? obj
+    : isDisplayTemplate((obj as any)?.DisplayTemplate)
+    ? (obj as any)?.DisplayTemplate
+    : null;
+
+  cleanType(contentTypeData);
+  cleanType(displayTemplateData);
+
+  return {
+    contentTypeData,
+    displayTemplateData,
+  };
+}
+
+/** Finds content types and display templates in a given glob */
+export async function findMetaData(
+  {
+    contentTypePath,
+    displayTemplatePath,
+  }: { contentTypePath: string; displayTemplatePath: string },
+  cwd: string
+): Promise<{
+  contentTypes: ContentTypeMeta[];
+  displayTemplates: DisplayTemplateMeta[];
+}> {
+  // Retrieve two distinct sets of files via glob
+  const contentTypeFiles = await glob(contentTypePath, { cwd });
+  const displayTemplateFiles = await glob(displayTemplatePath, { cwd });
+
+  // Combine and deduplicate the files, if necessary
+  const allFiles = [...new Set([...contentTypeFiles, ...displayTemplateFiles])];
+
+  // Process each file
   const found = await Promise.all(
-    files.map(async (file) => {
+    allFiles.map(async (file) => {
       const loaded = await tsImport(resolve(file), cwd);
-      const matches: FoundContentType[] = [];
+
+      // Local arrays for each file
+      let localContentTypes: ContentTypeMeta[] = [];
+      let localDisplayTemplates: DisplayTemplateMeta[] = [];
 
       for (const key of Object.getOwnPropertyNames(loaded)) {
         const obj = (loaded as any)[key];
 
-        const contentType = isContentType(obj)
-          ? obj
-          : isContentType(obj?.ContentType)
-          ? obj?.ContentType
-          : null;
+        const { contentTypeData, displayTemplateData } = extractMetaData(obj);
 
-        if (contentType) {
-          matches.push({
+        if (contentTypeData) {
+          localContentTypes.push({
+            contentType: contentTypeData,
             path: file,
-            contentType,
+          });
+        }
+
+        if (displayTemplateData) {
+          localDisplayTemplates.push({
+            displayTemplates: displayTemplateData,
+            path: file,
           });
         }
       }
 
-      return matches;
+      return {
+        contentTypes: localContentTypes,
+        displayTemplates: localDisplayTemplates,
+      };
     })
   );
 
-  // Flattens the nested arrays (contentType)
-  return found.flat();
+  // Flatten the results
+  const result = found.reduce(
+    (acc, curr) => {
+      acc.contentTypes.push(...curr.contentTypes);
+      acc.displayTemplates.push(...curr.displayTemplates);
+      return acc;
+    },
+    { contentTypes: [], displayTemplates: [] }
+  );
+
+  return result;
 }

@@ -5,7 +5,11 @@ import { BaseCommand } from '../../baseCommand.js';
 import { writeFile } from 'node:fs/promises';
 import chalk from 'chalk';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import { findContentTypes } from '../../service/utils.js';
+import {
+  AnyContentType,
+  DisplayTemplate,
+  findMetaData,
+} from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
@@ -32,10 +36,16 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     );
 
     if (typeof jsConfig.contentTypes === 'string') {
-      // Note: the pattern is relative to the config file
+      const contentData: AnyContentType[] = [];
+      const displayTemData: DisplayTemplate[] = [];
+      //the pattern is relative to the config file
       const configPathDirectory = path.dirname(configPath);
-      const contentTypes = await findContentTypes(
-        jsConfig.contentTypes,
+
+      const { contentTypes, displayTemplates } = await findMetaData(
+        {
+          contentTypePath: jsConfig.contentTypes,
+          displayTemplatePath: jsConfig.displayTemplates,
+        },
         configPathDirectory
       );
 
@@ -45,13 +55,20 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
           chalk.bold(ct.contentType.key),
           chalk.bold(ct.path)
         );
+        contentData.push({ ...ct.contentType });
       }
 
-      const extractedContentTypes = contentTypes.map(
-        ({ contentType }) => contentType
-      );
+      for (const dt of displayTemplates) {
+        console.log(
+          'Display template type %s found in %s',
+          chalk.bold(dt.displayTemplates.key),
+          chalk.bold(dt.path)
+        );
+        displayTemData.push({ ...dt.displayTemplates });
+      }
 
-      jsConfig.contentTypes = mapContentToManifest(extractedContentTypes);
+      jsConfig.contentTypes = mapContentToManifest(contentData);
+      jsConfig.displayTemplates = displayTemData;
     }
 
     const restClient = await createApiClient(flags.host);
