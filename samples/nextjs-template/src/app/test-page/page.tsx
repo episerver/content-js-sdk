@@ -1,22 +1,15 @@
-import { fetchContent } from 'optimizely-cms-sdk/dist/graph';
+import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
+import { createQuery } from 'optimizely-cms-sdk/dist/graph/createQuery';
 
 async function myImport(contentType: string) {
-  //   if (contentType === 'InFocus') {
-  return import('../../components/Landing').then((r) => r.ContentType);
-  //   }
+  return import(`../../components/${contentType}.tsx`).then(
+    (r) => r.ContentType
+  );
 }
 
 export default async function Page() {
-  const filter = {
-    _metadata: {
-      url: {
-        default: { eq: '/computers/' },
-      },
-    },
-  };
-  console.log(process.env.GRAPH_SINGLE_KEY);
-  const c = await fetchContent(process.env.GRAPH_SINGLE_KEY!, filter, myImport);
+  const client = new GraphClient(process.env.GRAPH_SINGLE_KEY!, myImport);
+  const c = await client.fetchContent('/obelisk/');
 
-  console.log(c);
-  return <div>{JSON.stringify(c)}</div>;
+  return <pre>{JSON.stringify(c, null, 2)}</pre>;
 }
