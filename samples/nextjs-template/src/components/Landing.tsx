@@ -1,4 +1,5 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
+import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 
 export const ContentType = contentType({
   key: 'Landing',
@@ -33,5 +34,13 @@ type Props = {
 };
 
 export default function LandingComponent({ opti }: Props) {
-  return <div>{opti.heading}</div>;
+  return (
+    <div>
+      <h1>{opti.heading}</h1>
+      <p>{opti.summary}</p>
+      {opti.sections.map((section) => (
+        <OptimizelyComponent opti={section} />
+      ))}
+    </div>
+  );
 }
