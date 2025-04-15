@@ -1,4 +1,4 @@
-import { contentType } from 'optimizely-cms-sdk';
+import { contentType, Infer } from 'optimizely-cms-sdk';
 
 export const ContentType = contentType({
   key: 'Landing',
@@ -27,3 +27,11 @@ export const ContentType = contentType({
     },
   },
 });
+
+type Props = {
+  opti: Infer<typeof ContentType>;
+};
+
+export default function LandingComponent({ opti }: Props) {
+  return <div>{opti.heading}</div>;
+}
