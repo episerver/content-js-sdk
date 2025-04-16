@@ -14,7 +14,7 @@ type NodeTemplate = {
 
 type BaseTemplate = {
   baseType: BaseType;
-  contentType?: string;
+  contentType?: never;
   nodeType?: never;
 };
 

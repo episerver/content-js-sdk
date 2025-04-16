@@ -7,6 +7,7 @@ import {
   DisplayTemplates,
   isDisplayTemplate,
 } from 'optimizely-cms-sdk';
+import chalk from 'chalk';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -38,26 +39,36 @@ function cleanType(obj: any) {
  * Given an object, extract its ContentType or DisplayTemplate if present.
  * Returns an cleaned ('__type' removed) object with both possibilities (one or both may be `null`).
  */
-export function extractMetaData(obj: unknown): {
-  contentTypeData: AnyContentType;
-  displayTemplateData: DisplayTemplate;
+export function extractMetaData(obj: Record<string, unknown>): {
+  contentTypeData: AnyContentType | null;
+  displayTemplateData: DisplayTemplate | null;
 } {
-  // Try to find a content type
-  const contentTypeData = isContentType(obj)
-    ? obj
-    : isContentType((obj as any)?.ContentType)
-    ? (obj as any)?.ContentType
-    : null;
+  let metadata: unknown[] | null = null;
+  let contentTypeData: AnyContentType | null = null;
+  let displayTemplateData: DisplayTemplate | null = null;
 
-  // Try to find a display template
-  const displayTemplateData = isDisplayTemplate(obj)
-    ? obj
-    : isDisplayTemplate((obj as any)?.DisplayTemplate)
-    ? (obj as any)?.DisplayTemplate
-    : null;
+  if ('key' in obj) {
+    metadata = [obj];
+  } else {
+    // handles nextjs module exports
+    metadata = Object.values(obj);
+  }
 
-  cleanType(contentTypeData);
-  cleanType(displayTemplateData);
+  metadata?.forEach((item) => {
+    if (isContentType(item)) {
+      contentTypeData = item;
+    } else if (isDisplayTemplate(item)) {
+      displayTemplateData = item;
+    }
+  });
+
+  if (contentTypeData) {
+    cleanType(contentTypeData);
+  }
+
+  if (displayTemplateData) {
+    cleanType(displayTemplateData);
+  }
 
   return {
     contentTypeData,
@@ -65,23 +76,18 @@ export function extractMetaData(obj: unknown): {
   };
 }
 
-/** Finds content types and display templates in a given glob */
+/** Finds metadata (contentTypes, displayTemplates) in the given paths */
 export async function findMetaData(
-  {
-    contentTypePath,
-    displayTemplatePath,
-  }: { contentTypePath: string; displayTemplatePath: string },
+  componentPaths: string[],
   cwd: string
 ): Promise<{
-  contentTypes: ContentTypeMeta[];
-  displayTemplates: DisplayTemplateMeta[];
+  contentTypes: AnyContentType[];
+  displayTemplates: DisplayTemplate[];
 }> {
-  // Retrieve two distinct sets of files via glob
-  const contentTypeFiles = await glob(contentTypePath, { cwd });
-  const displayTemplateFiles = await glob(displayTemplatePath, { cwd });
-
-  // Combine and deduplicate the files, if necessary
-  const allFiles = [...new Set([...contentTypeFiles, ...displayTemplateFiles])];
+  // Retrieve sets of files via glob
+  const allFiles = (
+    await Promise.all(componentPaths.map((path) => glob(path, { cwd })))
+  ).flat();
 
   // Process each file
   const found = await Promise.all(
@@ -89,8 +95,8 @@ export async function findMetaData(
       const loaded = await tsImport(resolve(file), cwd);
 
       // Local arrays for each file
-      let localContentTypes: ContentTypeMeta[] = [];
-      let localDisplayTemplates: DisplayTemplateMeta[] = [];
+      let localContentTypes: AnyContentType[] = [];
+      let localDisplayTemplates: DisplayTemplate[] = [];
 
       for (const key of Object.getOwnPropertyNames(loaded)) {
         const obj = (loaded as any)[key];
@@ -98,17 +104,13 @@ export async function findMetaData(
         const { contentTypeData, displayTemplateData } = extractMetaData(obj);
 
         if (contentTypeData) {
-          localContentTypes.push({
-            contentType: contentTypeData,
-            path: file,
-          });
+          printFilesContnets('Content Type', file, contentTypeData);
+          localContentTypes.push(contentTypeData);
         }
 
         if (displayTemplateData) {
-          localDisplayTemplates.push({
-            displayTemplates: displayTemplateData,
-            path: file,
-          });
+          printFilesContnets('Display Template', file, displayTemplateData);
+          localDisplayTemplates.push(displayTemplateData);
         }
       }
 
@@ -130,4 +132,22 @@ export async function findMetaData(
   );
 
   return result;
+}
+
+function printFilesContnets(
+  type: string,
+  path: string,
+  metaData: AnyContentType | DisplayTemplate
+) {
+  console.log(
+    '%s %s found in %s',
+    type,
+    chalk.bold(metaData.key),
+    chalk.yellow.italic.underline(path)
+  );
+}
+
+export async function readFromPath(configPath: string) {
+  const config = await import(configPath);
+  return config.default.components;
 }

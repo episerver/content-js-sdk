@@ -3,13 +3,8 @@ import * as path from 'node:path';
 import ora from 'ora';
 import { BaseCommand } from '../../baseCommand.js';
 import { writeFile } from 'node:fs/promises';
-import chalk from 'chalk';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import {
-  AnyContentType,
-  DisplayTemplate,
-  findMetaData,
-} from '../../service/utils.js';
+import { findMetaData, readFromPath } from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
@@ -29,52 +24,25 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPush);
     const configPath = path.resolve(process.cwd(), args.file);
+    const componentPaths = await readFromPath(configPath);
+    //the pattern is relative to the config file
+    const configPathDirectory = path.dirname(configPath);
 
-    const jsConfig = await import(configPath).then(
-      // Assume that the default import _is_ a jsConfig
-      (m) => m.default
+    // extracts metadata(contentTypes, displayTemplates) from the component paths
+    const { contentTypes, displayTemplates } = await findMetaData(
+      componentPaths,
+      configPathDirectory
     );
 
-    if (typeof jsConfig.contentTypes === 'string') {
-      const contentData: AnyContentType[] = [];
-      const displayTemData: DisplayTemplate[] = [];
-      //the pattern is relative to the config file
-      const configPathDirectory = path.dirname(configPath);
-
-      const { contentTypes, displayTemplates } = await findMetaData(
-        {
-          contentTypePath: jsConfig.contentTypes,
-          displayTemplatePath: jsConfig.displayTemplates,
-        },
-        configPathDirectory
-      );
-
-      for (const ct of contentTypes) {
-        console.log(
-          'Content type %s found in %s',
-          chalk.bold(ct.contentType.key),
-          chalk.bold(ct.path)
-        );
-        contentData.push({ ...ct.contentType });
-      }
-
-      for (const dt of displayTemplates) {
-        console.log(
-          'Display template type %s found in %s',
-          chalk.bold(dt.displayTemplates.key),
-          chalk.bold(dt.path)
-        );
-        displayTemData.push({ ...dt.displayTemplates });
-      }
-
-      jsConfig.contentTypes = mapContentToManifest(contentData);
-      jsConfig.displayTemplates = displayTemData;
-    }
+    const metaData = {
+      contentTypes: mapContentToManifest(contentTypes),
+      displayTemplates,
+    };
 
     const restClient = await createApiClient(flags.host);
 
     if (flags.output) {
-      await writeFile(flags.output, JSON.stringify(jsConfig, null, 2));
+      await writeFile(flags.output, JSON.stringify(metaData, null, 2));
       console.log(`Configuration file written in '${flags.output}'`);
     }
 
@@ -86,7 +54,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const response = await restClient
       .POST('/packages', {
-        body: jsConfig as string,
+        body: JSON.stringify(metaData, null, 2) as string,
       })
       .then((r) => r.data);
 
