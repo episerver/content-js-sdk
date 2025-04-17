@@ -1,3 +1,4 @@
+import { BuildConfig } from './buildConfig';
 import { AnyContentType } from './contentTypes';
 import { DisplayTemplate } from './displayTemplates';
 
@@ -13,6 +14,13 @@ export function displayTemplate<T extends DisplayTemplate>(
   options: T
 ): T & { __type: 'displayTemplate' } {
   return { ...options, __type: 'displayTemplate' };
+}
+
+/** Defines a Optimizely CMS build configuration */
+export function buildConfig<T extends BuildConfig>(
+  options: T
+): T & { __type: 'buildConfig' } {
+  return { ...options, __type: 'buildConfig' };
 }
 
 /**

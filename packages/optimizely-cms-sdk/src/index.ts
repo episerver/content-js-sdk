@@ -1,4 +1,5 @@
 export {
+  buildConfig,
   contentType,
   displayTemplate,
   isContentType,
