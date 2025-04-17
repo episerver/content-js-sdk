@@ -38,8 +38,8 @@ export default function LandingComponent({ opti }: Props) {
     <div>
       <h1>{opti.heading}</h1>
       <p>{opti.summary}</p>
-      {opti.sections.map((section) => (
-        <OptimizelyComponent opti={section} />
+      {opti.sections.map((section, i) => (
+        <OptimizelyComponent key={i} opti={section} />
       ))}
     </div>
   );
