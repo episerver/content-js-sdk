@@ -1,16 +1,21 @@
-import { describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 import { createFragment, createQuery } from '../createQuery';
+import { initContentTypeRegistry } from '../../model';
 import {
   callToAction,
   heroBlock,
   landingPage,
-  customImport,
   articlePage,
+  allContentTypes,
 } from './fixtures';
+
+beforeAll(() => {
+  initContentTypeRegistry(allContentTypes);
+});
 
 describe('createFragment()', () => {
   test('works for simple properties', async () => {
-    const result = await createFragment(callToAction.key, customImport);
+    const result = await createFragment(callToAction.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }"
@@ -18,7 +23,7 @@ describe('createFragment()', () => {
   });
 
   test('works for components inside components', async () => {
-    const result = await createFragment(heroBlock.key, customImport);
+    const result = await createFragment(heroBlock.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
@@ -27,7 +32,7 @@ describe('createFragment()', () => {
   });
 
   test('works for components inside components (several levels)', async () => {
-    const result = await createFragment(landingPage.key, customImport);
+    const result = await createFragment(landingPage.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
@@ -41,7 +46,7 @@ describe('createFragment()', () => {
 
 describe('createQuery', () => {
   test('simple content types', async () => {
-    const result = await createQuery(callToAction.key, customImport);
+    const result = await createQuery(callToAction.key);
     expect(result).toMatchInlineSnapshot(`
         "
         fragment CallToAction on CallToAction { label link }
@@ -53,12 +58,13 @@ describe('createQuery', () => {
             }
           }
         }
-          "
-      `);
+      }
+        "
+    `);
   });
 
   test('complex content types', async () => {
-    const result = await createQuery(articlePage.key, customImport);
+    const result = await createQuery(articlePage.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }
@@ -75,7 +81,7 @@ describe('createQuery', () => {
   });
 
   test('nested content types (one level)', async () => {
-    const result = await createQuery(heroBlock.key, customImport);
+    const result = await createQuery(heroBlock.key);
     expect(result).toMatchInlineSnapshot(`
         "
         fragment CallToAction on CallToAction { label link }
@@ -88,7 +94,8 @@ describe('createQuery', () => {
             }
           }
         }
-          "
-      `);
+      }
+        "
+    `);
   });
 });
