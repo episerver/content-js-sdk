@@ -1,4 +1,4 @@
-import { createQuery, Importer } from './createQuery';
+import { createQuery } from './createQuery';
 
 const GRAPHQL_URL = 'https://cg.optimizely.com/content/v2';
 
@@ -26,11 +26,9 @@ function getFilterFromPath(path: string) {
 
 export class GraphClient {
   key: string;
-  customImport: Importer;
 
-  constructor(key: string, customImport: Importer) {
+  constructor(key: string) {
     this.key = key;
-    this.customImport = customImport;
   }
 
   /** Perform a GraphQL query with variables */
@@ -78,7 +76,7 @@ export class GraphClient {
   async fetchContent(path: string) {
     const filter = getFilterFromPath(path);
     const contentTypeName = await this.fetchContentType(path);
-    const query = await createQuery(contentTypeName, this.customImport);
+    const query = createQuery(contentTypeName);
 
     const response = await this.request(query, { filter });
 

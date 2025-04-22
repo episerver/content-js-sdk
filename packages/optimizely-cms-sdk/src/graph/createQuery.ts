@@ -82,8 +82,8 @@ fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
  * Creates a GraphQL query for a particular content type
  * @param contentType The content type
  */
-export async function createQuery(contentType: string) {
-  const fragment = await createFragment(contentType);
+export function createQuery(contentType: string) {
+  const fragment = createFragment(contentType);
 
   return `${fragment}
 query FetchContent($filter: _ContentWhereInput) {
