@@ -11,12 +11,14 @@
   "packageManager": "pnpm@10.7.0",
   "type": "module",
   "dependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.25.9",
     "@inquirer/prompts": "^7.4.0",
     "@oclif/core": "^4.2.10",
     "chalk": "^5.4.1",
     "conf": "^13.1.0",
     "dotenv": "^16.5.0",
     "glob": "^11.0.1",
+    "jiti": "^2.4.2",
     "openapi-fetch": "^0.13.5",
     "optimizely-cms-sdk": "workspace:*",
     "ora": "^8.2.0",
@@ -25,7 +27,6 @@
   "devDependencies": {
     "@types/node": "^18",
     "ts-node": "^10.9.2",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
   "bin": {
