@@ -87,51 +87,37 @@ export async function findMetaData(
   // Retrieve sets of files via glob
   const allFiles = (
     await Promise.all(componentPaths.map((path) => glob(path, { cwd })))
-  ).flat();
+  )
+    .flat()
+    .sort();
 
   // Process each file
-  const found = await Promise.all(
-    allFiles.map(async (file) => {
-      const loaded = await tsImport(resolve(file), cwd);
+  const result2 = {
+    contentTypes: [] as AnyContentType[],
+    displayTemplates: [] as DisplayTemplate[],
+  };
 
-      // Local arrays for each file
-      let localContentTypes: AnyContentType[] = [];
-      let localDisplayTemplates: DisplayTemplate[] = [];
+  for (const file of allFiles) {
+    const loaded = await tsImport(resolve(file), cwd);
 
-      for (const key of Object.getOwnPropertyNames(loaded)) {
-        const obj = (loaded as any)[key];
+    for (const key of Object.getOwnPropertyNames(loaded)) {
+      const obj = (loaded as any)[key];
 
-        const { contentTypeData, displayTemplateData } = extractMetaData(obj);
+      const { contentTypeData, displayTemplateData } = extractMetaData(obj);
 
-        if (contentTypeData) {
-          printFilesContnets('Content Type', file, contentTypeData);
-          localContentTypes.push(contentTypeData);
-        }
-
-        if (displayTemplateData) {
-          printFilesContnets('Display Template', file, displayTemplateData);
-          localDisplayTemplates.push(displayTemplateData);
-        }
+      if (contentTypeData) {
+        printFilesContnets('Content Type', file, contentTypeData);
+        result2.contentTypes.push(contentTypeData);
       }
 
-      return {
-        contentTypes: localContentTypes,
-        displayTemplates: localDisplayTemplates,
-      };
-    })
-  );
+      if (displayTemplateData) {
+        printFilesContnets('Display Template', file, displayTemplateData);
+        result2.displayTemplates.push(displayTemplateData);
+      }
+    }
+  }
 
-  // Flatten the results
-  const result = found.reduce(
-    (acc, curr) => {
-      acc.contentTypes.push(...curr.contentTypes);
-      acc.displayTemplates.push(...curr.displayTemplates);
-      return acc;
-    },
-    { contentTypes: [], displayTemplates: [] }
-  );
-
-  return result;
+  return result2;
 }
 
 function printFilesContnets(
