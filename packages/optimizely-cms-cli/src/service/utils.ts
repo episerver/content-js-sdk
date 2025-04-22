@@ -61,10 +61,10 @@ export function extractMetaData(obj: unknown): {
   if (typeof obj === 'object' && obj !== null) {
     for (const value of Object.values(obj)) {
       if (isContentType(value)) {
-        cleanType(obj);
+        cleanType(value);
         contentTypeData.push(value);
       } else if (isDisplayTemplate(value)) {
-        cleanType(obj);
+        cleanType(value);
         displayTemplateData.push(value);
       }
     }
