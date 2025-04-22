@@ -84,6 +84,7 @@ export async function createQuery(contentType: string, customImport: Importer) {
 query FetchContent($filter: _ContentWhereInput) {
   _Content(where: $filter) {
     item {
+      __typename
       ...${contentType}
     }
   }

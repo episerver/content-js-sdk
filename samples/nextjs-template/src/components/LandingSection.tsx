@@ -1,4 +1,4 @@
-import { contentType, displayTemplate } from 'optimizely-cms-sdk';
+import { contentType, displayTemplate, Infer } from 'optimizely-cms-sdk';
 
 export const ContentType = contentType({
   key: 'LandingSection',
@@ -11,13 +11,6 @@ export const ContentType = contentType({
     subtitle: {
       type: 'string',
     },
-    features: {
-      type: 'array',
-      items: {
-        type: 'content',
-        allowedTypes: ['SmallFeatureGrid'],
-      },
-    },
   },
 });
 
@@ -25,7 +18,7 @@ export const DisplayTemplate = displayTemplate({
   key: 'LandingSectionDisplayTemplate',
   isDefault: true,
   displayName: 'LandingSectionDisplayTemplate',
-  contentType: 'LandingSection',
+  baseType: 'component',
   settings: {
     background: {
       editor: 'select',
@@ -44,3 +37,16 @@ export const DisplayTemplate = displayTemplate({
     },
   },
 });
+
+type Props = {
+  opti: Infer<typeof ContentType>;
+};
+
+export default function LandingSection({ opti }: Props) {
+  return (
+    <section>
+      <h2>{opti.heading}</h2>
+      <p>{opti.subtitle}</p>
+    </section>
+  );
+}
