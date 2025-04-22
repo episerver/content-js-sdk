@@ -6,6 +6,7 @@ import { writeFile } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import { findMetaData, readFromPath } from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
+import { pathToFileURL } from 'node:url';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -23,7 +24,10 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPush);
-    const configPath = path.resolve(process.cwd(), args.file);
+    const configPath = pathToFileURL(
+      path.resolve(process.cwd(), args.file)
+    ).href;
+
     const componentPaths = await readFromPath(configPath);
     //the pattern is relative to the config file
     const configPathDirectory = path.dirname(configPath);
