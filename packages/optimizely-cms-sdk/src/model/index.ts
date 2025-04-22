@@ -48,3 +48,5 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
     'key' in obj
   );
 }
+
+export { init as initContentTypeRegistry } from './contentTypeRegistry';
