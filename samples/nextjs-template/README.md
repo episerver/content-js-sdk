@@ -36,10 +36,10 @@ Start the app
 pnpm dev
 ```
 
-Open `http://localhost:3000/graph-test/<slug>` (where `<slug>` is the _name in URL_ of the previous step).
+Open `http://localhost:3000/graph-test/<lang>/<slug>`, where `<lang>` is the language code (for example `en`) and `<slug>` is the _name in URL_ of the previous step
 
 You should see the content of the page in JSON.
 
-Open `http://localhost:3000/render/<slug>` (where `<slug>` is the _name in URL_ of the previous step).
+Open `http://localhost:3000/render/<lang>/<slug>`, where `<lang>` is the language code (for example `en`) and `<slug>` is the _name in URL_ of the previous step
 
 You should see the content of the page rendered with the components in the project
