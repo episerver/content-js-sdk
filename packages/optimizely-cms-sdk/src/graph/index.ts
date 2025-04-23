@@ -75,7 +75,7 @@ export class GraphClient {
     return json.data;
   }
 
-  /** Fetches the content type of a content */
+  /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
   async fetchContentType(path: string) {
     const filter = getFilterFromPath(path);
     const data = await this.request(FETCH_CONTENT_QUERY, { filter });
@@ -87,6 +87,11 @@ export class GraphClient {
   async fetchContent(path: string) {
     const filter = getFilterFromPath(path);
     const contentTypeName = await this.fetchContentType(path);
+
+    if (!contentTypeName) {
+      throw new Error(`No content found for [${path}]`);
+    }
+
     const query = await createQuery(contentTypeName, this.customImport);
 
     const response = await this.request(query, { filter });
