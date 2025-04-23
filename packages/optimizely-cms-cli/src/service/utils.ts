@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { glob } from 'glob';
-import { tsImport } from 'tsx/esm/api';
+import { createJiti } from 'jiti';
 import {
   ContentTypes,
   isContentType,
@@ -36,38 +36,38 @@ function cleanType(obj: any) {
 }
 
 /**
- * Given an object, extract its ContentType or DisplayTemplate if present.
- * Returns an cleaned ('__type' removed) object with both possibilities (one or both may be `null`).
+ * Extract all `ContentType` and `DisplayTemplate` present in any property in `obj`
+ *
+ * Returns cleaned ('__type' removed) objects.
  */
-export function extractMetaData(obj: Record<string, unknown>): {
-  contentTypeData: AnyContentType | null;
-  displayTemplateData: DisplayTemplate | null;
+export function extractMetaData(obj: unknown): {
+  contentTypeData: AnyContentType[];
+  displayTemplateData: DisplayTemplate[];
 } {
-  let metadata: unknown[] | null = null;
-  let contentTypeData: AnyContentType | null = null;
-  let displayTemplateData: DisplayTemplate | null = null;
-
-  if ('key' in obj) {
-    metadata = [obj];
-  } else {
-    // handles nextjs module exports
-    metadata = Object.values(obj);
+  // `obj` can be metadata itself
+  if (isContentType(obj)) {
+    cleanType(obj);
+    return { contentTypeData: [obj], displayTemplateData: [] };
   }
 
-  metadata?.forEach((item) => {
-    if (isContentType(item)) {
-      contentTypeData = item;
-    } else if (isDisplayTemplate(item)) {
-      displayTemplateData = item;
+  if (isDisplayTemplate(obj)) {
+    cleanType(obj);
+    return { contentTypeData: [], displayTemplateData: [obj] };
+  }
+
+  let contentTypeData: AnyContentType[] = [];
+  let displayTemplateData: DisplayTemplate[] = [];
+
+  if (typeof obj === 'object' && obj !== null) {
+    for (const value of Object.values(obj)) {
+      if (isContentType(value)) {
+        cleanType(value);
+        contentTypeData.push(value);
+      } else if (isDisplayTemplate(value)) {
+        cleanType(value);
+        displayTemplateData.push(value);
+      }
     }
-  });
-
-  if (contentTypeData) {
-    cleanType(contentTypeData);
-  }
-
-  if (displayTemplateData) {
-    cleanType(displayTemplateData);
   }
 
   return {
@@ -84,54 +84,40 @@ export async function findMetaData(
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
 }> {
+  const jiti = createJiti(cwd, { jsx: true });
   // Retrieve sets of files via glob
   const allFiles = (
     await Promise.all(componentPaths.map((path) => glob(path, { cwd })))
-  ).flat();
+  )
+    .flat()
+    .sort();
 
   // Process each file
-  const found = await Promise.all(
-    allFiles.map(async (file) => {
-      const loaded = await tsImport(resolve(file), cwd);
+  const result2 = {
+    contentTypes: [] as AnyContentType[],
+    displayTemplates: [] as DisplayTemplate[],
+  };
 
-      // Local arrays for each file
-      let localContentTypes: AnyContentType[] = [];
-      let localDisplayTemplates: DisplayTemplate[] = [];
+  for (const file of allFiles) {
+    const loaded = await jiti.import(resolve(file)).catch(() => {
+      // TODO: better error messages
+      throw new Error(`Error importing the file ${file}`);
+    });
 
-      for (const key of Object.getOwnPropertyNames(loaded)) {
-        const obj = (loaded as any)[key];
+    const { contentTypeData, displayTemplateData } = extractMetaData(loaded);
 
-        const { contentTypeData, displayTemplateData } = extractMetaData(obj);
+    for (const c of contentTypeData) {
+      printFilesContnets('Content Type', file, c);
+      result2.contentTypes.push(c);
+    }
 
-        if (contentTypeData) {
-          printFilesContnets('Content Type', file, contentTypeData);
-          localContentTypes.push(contentTypeData);
-        }
+    for (const d of displayTemplateData) {
+      printFilesContnets('Display Template', file, d);
+      result2.displayTemplates.push(d);
+    }
+  }
 
-        if (displayTemplateData) {
-          printFilesContnets('Display Template', file, displayTemplateData);
-          localDisplayTemplates.push(displayTemplateData);
-        }
-      }
-
-      return {
-        contentTypes: localContentTypes,
-        displayTemplates: localDisplayTemplates,
-      };
-    })
-  );
-
-  // Flatten the results
-  const result = found.reduce(
-    (acc, curr) => {
-      acc.contentTypes.push(...curr.contentTypes);
-      acc.displayTemplates.push(...curr.displayTemplates);
-      return acc;
-    },
-    { contentTypes: [], displayTemplates: [] }
-  );
-
-  return result;
+  return result2;
 }
 
 function printFilesContnets(
