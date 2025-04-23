@@ -1,15 +1,4 @@
 import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
-import {
-  initReactComponentRegistry,
-  OptimizelyComponent,
-} from 'optimizely-cms-sdk/dist/render/react';
-import React from 'react';
-
-initReactComponentRegistry({
-  resolver(contentType) {
-    return React.lazy(() => import(`../../../components/${contentType}.tsx`));
-  },
-});
 
 async function myImport(contentType: string) {
   return import(`../../../components/${contentType}.tsx`).then(
@@ -23,7 +12,7 @@ type Props = {
   }>;
 };
 
-export default async function Page({ params }: Props) {
+export async function GET(request: Request, { params }: Props) {
   const { slug } = await params;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
@@ -32,5 +21,5 @@ export default async function Page({ params }: Props) {
   });
   const c = await client.fetchContent(`/${slug.join('/')}/`);
 
-  return <OptimizelyComponent opti={c} />;
+  return Response.json(c);
 }
