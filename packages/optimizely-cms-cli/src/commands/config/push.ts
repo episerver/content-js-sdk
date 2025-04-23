@@ -56,36 +56,52 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const spinner = ora('Uploading configuration file').start();
 
-    const response = await restClient
-      .POST('/packages', {
-        body: JSON.stringify(metaData, null, 2) as string,
-      })
-      .then((r) => r.data);
+    const response = await restClient.POST('/packages', {
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/vnd.optimizely.cms.v1.manifest+json',
+      },
+      body: metaData as any,
+    });
+
+    if (response.error) {
+      spinner.fail('Error');
+      console.error(
+        'Error %s %s (%s)',
+        response.error.status,
+        response.error.title,
+        response.error.code
+      );
+      console.error(response.error.detail);
+      return;
+    }
 
     spinner.succeed('Configuration file uploaded');
 
-    if (!response) {
+    if (!response.data) {
       console.error('The server did not respond with any content');
       return;
     }
 
-    if (response.outcomes && response.outcomes.length > 0) {
+    const data = response.data;
+
+    if (data.outcomes && data.outcomes.length > 0) {
       console.log('Outcomes:');
-      for (const r of response?.outcomes ?? []) {
+      for (const r of response.data?.outcomes ?? []) {
         console.log(`- ${r.message}`);
       }
     }
 
-    if (response.warnings && response.warnings.length > 0) {
+    if (data.warnings && data.warnings.length > 0) {
       console.log('Warnings:');
-      for (const r of response.warnings) {
+      for (const r of data.warnings) {
         console.log(`- ${r.message}`);
       }
     }
 
-    if (response.errors && response.errors.length > 0) {
+    if (data.errors && data.errors.length > 0) {
       console.log('Errors:');
-      for (const r of response.errors) {
+      for (const r of data.errors) {
         console.log(`- ${r.message}`);
       }
     }
