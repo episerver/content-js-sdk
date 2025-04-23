@@ -1,6 +1,6 @@
 import { contentType, displayTemplate, Infer } from 'optimizely-cms-sdk';
 
-export const ContentType = contentType({
+export const LandingSectionContentType = contentType({
   key: 'LandingSection',
   baseType: 'component',
   displayName: 'Landing Section',
@@ -39,7 +39,7 @@ export const DisplayTemplate = displayTemplate({
 });
 
 type Props = {
-  opti: Infer<typeof ContentType>;
+  opti: Infer<typeof LandingSectionContentType>;
 };
 
 export default function LandingSection({ opti }: Props) {

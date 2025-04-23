@@ -1,4 +1,6 @@
 import { contentType } from 'optimizely-cms-sdk';
+import { ArticleContentType } from './Article';
+import { SmallFeatureContentType } from './SmallFeature';
 
 export const ContentType = contentType({
   key: 'SmallFeatureGrid',
@@ -9,7 +11,7 @@ export const ContentType = contentType({
       type: 'array',
       items: {
         type: 'contentReference',
-        allowedTypes: ['Article', 'SmallFeature'],
+        allowedTypes: [ArticleContentType, SmallFeatureContentType, 'Image'],
       },
     },
   },

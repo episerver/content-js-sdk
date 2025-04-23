@@ -1,5 +1,6 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
 import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
+import { LandingSectionContentType } from './LandingSection';
 
 export const ContentType = contentType({
   key: 'Landing',
@@ -23,7 +24,7 @@ export const ContentType = contentType({
       type: 'array',
       items: {
         type: 'content',
-        allowedTypes: ['LandingSection'],
+        allowedTypes: [LandingSectionContentType],
       },
     },
   },

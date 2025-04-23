@@ -1,7 +1,22 @@
 import { AnyProperty } from '../model/properties';
-import { AnyContentType } from '../model/contentTypes';
+import {
+  AnyContentType,
+  ContentType,
+  MediaStringTypes,
+} from '../model/contentTypes';
+import { isContentType } from '../model';
 
 export type Importer = (contentTypeName: string) => Promise<AnyContentType>;
+
+/**
+ * Get the key or name of ContentType or Media type
+ * @param t ContentType or Media type property
+ * @returns Name of the ContentType or Media type
+ */
+export function getKeyName(t: MediaStringTypes | ContentType<AnyContentType>) {
+  return isContentType(t) ? t.key : t;
+}
+
 /**
  * Converts a property into a GraphQL field
  * @param name Name of the property
@@ -17,11 +32,11 @@ async function convertProperty(
 
   if (property.type === 'content') {
     for (const t of property.allowedTypes ?? []) {
-      extraFragments.push(await createFragment(t, customImport));
+      extraFragments.push(await createFragment(getKeyName(t), customImport));
     }
 
     const subfields = (property.allowedTypes ?? [])
-      .map((t) => `...${t}`)
+      .map((t) => `...${getKeyName(t)}`)
       .join(' ');
 
     fields.push(`${name} { __typename ${subfields} }`);

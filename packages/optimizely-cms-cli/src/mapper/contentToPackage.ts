@@ -21,6 +21,13 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
           updatedValue.format = 'selectOne';
         }
 
+        if (
+          Object.hasOwn(updatedValue, 'items') &&
+          ['content', 'contentReference'].includes(updatedValue.type)
+        ) {
+          console.log('updatedValue', updatedValue);
+        }
+
         acc[key] = updatedValue;
         return acc;
       },
