@@ -1,6 +1,13 @@
 import { createQuery, Importer } from './createQuery';
 
-const GRAPHQL_URL = 'https://cg.optimizely.com/content/v2';
+/** Options for Graph */
+type GraphOptions = {
+  /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
+  graphUrl?: string;
+
+  /** Function that returns a component given its name */
+  customImport: Importer;
+};
 
 const FETCH_CONTENT_QUERY = `
 query FetchContent($filter: _ContentWhereInput) {
@@ -27,15 +34,17 @@ function getFilterFromPath(path: string) {
 export class GraphClient {
   key: string;
   customImport: Importer;
+  graphUrl: string;
 
-  constructor(key: string, customImport: Importer) {
+  constructor(key: string, options: GraphOptions) {
     this.key = key;
-    this.customImport = customImport;
+    this.customImport = options.customImport;
+    this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
   }
 
   /** Perform a GraphQL query with variables */
   async request(query: string, variables: any) {
-    const url = new URL(GRAPHQL_URL);
+    const url = new URL(this.graphUrl);
 
     // TODO: handle "preview"
     url.searchParams.append('auth', this.key);
