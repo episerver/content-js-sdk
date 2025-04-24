@@ -1,6 +1,6 @@
 'use server';
 import type React from 'react';
-import { ComponentRegistry, ComponentResolver } from './componentRegistry';
+import { ComponentRegistry, ComponentResolver } from './componentRegistry.js';
 
 type ComponentType = React.ComponentType<any>;
 

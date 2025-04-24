@@ -5,7 +5,7 @@
  */
 // Read https://zackoverflow.dev/writing/write-your-own-zod/ for an explanation of how this works
 
-import {
+import type {
   AnyProperty,
   ArrayProperty,
   BinaryProperty,
@@ -19,8 +19,11 @@ import {
   RichTextProperty,
   StringProperty,
   UrlProperty,
-} from './model/properties';
-import { AnyContentType, ExperienceContentType } from './model/contentTypes';
+} from './model/properties.js';
+import type {
+  AnyContentType,
+  ExperienceContentType,
+} from './model/contentTypes.js';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {

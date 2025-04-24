@@ -1,7 +1,7 @@
-import { AnyProperty } from '../model/properties';
-import { ContentOrMediaType } from '../model/contentTypes';
-import { isContentType } from '../model';
-import { getContentType } from '../model/contentTypeRegistry';
+import type { AnyProperty } from '../model/properties.js';
+import type { ContentOrMediaType } from '../model/contentTypes.js';
+import { isContentType } from '../model/index.js';
+import { getContentType } from '../model/contentTypeRegistry.js';
 
 /**
  * Get the key or name of ContentType or Media type
