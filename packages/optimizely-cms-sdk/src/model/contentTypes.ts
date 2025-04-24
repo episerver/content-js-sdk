@@ -11,7 +11,6 @@ type BaseContentType = {
   key: string;
   displayName?: string;
   properties?: Record<string, AnyProperty>;
-  component?: any;
 };
 
 /** Represents the "Component" type (also called "Block") in CMS */
