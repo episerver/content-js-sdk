@@ -87,7 +87,11 @@ export async function findMetaData(
   const jiti = createJiti(cwd, { jsx: true });
   // Retrieve sets of files via glob
   const allFiles = (
-    await Promise.all(componentPaths.map((path) => glob(path, { cwd })))
+    await Promise.all(
+      componentPaths.map((path) =>
+        glob(path, { cwd, dotRelative: true, posix: true })
+      )
+    )
   )
     .flat()
     .sort();
