@@ -48,6 +48,7 @@ describe('createQuery', () => {
         query FetchContent($filter: _ContentWhereInput) {
           _Content(where: $filter) {
             item {
+              __typename
               ...CallToAction
             }
           }
@@ -64,6 +65,7 @@ describe('createQuery', () => {
       query FetchContent($filter: _ContentWhereInput) {
         _Content(where: $filter) {
           item {
+            __typename
             ...ArticlePage
           }
         }
@@ -81,6 +83,7 @@ describe('createQuery', () => {
         query FetchContent($filter: _ContentWhereInput) {
           _Content(where: $filter) {
             item {
+              __typename
               ...Hero
             }
           }

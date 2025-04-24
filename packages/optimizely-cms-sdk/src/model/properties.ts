@@ -1,4 +1,4 @@
-import { ContentTypeStrings } from './contentTypes';
+import { ContentOrMediaType } from './contentTypes';
 
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
@@ -69,14 +69,14 @@ export type FloatProperty = BaseProperty & {
 
 export type ContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
-  allowedTypes?: ContentTypeStrings;
-  restrictedTypes?: ContentTypeStrings;
+  allowedTypes?: ContentOrMediaType[];
+  restrictedTypes?: ContentOrMediaType[];
 };
 
 export type ContentProperty = BaseProperty & {
   type: 'content';
-  allowedTypes?: ContentTypeStrings;
-  restrictedTypes?: ContentTypeStrings;
+  allowedTypes?: ContentOrMediaType[];
+  restrictedTypes?: ContentOrMediaType[];
 };
 
 /**

@@ -1,4 +1,8 @@
-import { AnyContentType } from '../service/utils.js';
+import {
+  AnyContentType,
+  extractKeyName,
+  isValidArrayWithItems,
+} from '../service/utils.js';
 
 export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
   return contentTypes.map((contentType) => {
@@ -21,11 +25,21 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
           updatedValue.format = 'selectOne';
         }
 
-        if (
-          Object.hasOwn(updatedValue, 'items') &&
-          ['content', 'contentReference'].includes(updatedValue.type)
-        ) {
-          console.log('updatedValue', updatedValue);
+        // If type "array" and property "items" exists, update "allowedTypes" and "restrictedTypes"
+        if (isValidArrayWithItems(updatedValue)) {
+          const { allowedTypes, restrictedTypes } = updatedValue.items;
+
+          if (allowedTypes) {
+            updatedValue.items.allowedTypes = allowedTypes.map(
+              extractKeyName
+            ) as any;
+          }
+
+          if (restrictedTypes) {
+            updatedValue.items.restrictedTypes = restrictedTypes.map(
+              extractKeyName
+            ) as any;
+          }
         }
 
         acc[key] = updatedValue;

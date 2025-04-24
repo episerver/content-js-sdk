@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { glob } from 'glob';
 import { createJiti } from 'jiti';
 import {
+  Properties,
   ContentTypes,
   isContentType,
   DisplayTemplates,
@@ -18,6 +19,15 @@ export type AnyContentType = ContentTypes.AnyContentType;
 
 /** extract DisplayTemplate */
 export type DisplayTemplate = DisplayTemplates.DisplayTemplate;
+
+/** extract ContentOrMediaType */
+type ContentOrMediaType = ContentTypes.ContentOrMediaType;
+
+/** create Allowed/Restricted type */
+type AllowedOrRestrictedType = {
+  type: string;
+  items: Properties.ContentProperty | Properties.ContentReferenceProperty;
+};
 
 export type FoundContentType = {
   path: string;
@@ -44,17 +54,6 @@ export function extractMetaData(obj: unknown): {
   contentTypeData: AnyContentType[];
   displayTemplateData: DisplayTemplate[];
 } {
-  // `obj` can be metadata itself
-  if (isContentType(obj)) {
-    cleanType(obj);
-    return { contentTypeData: [obj], displayTemplateData: [] };
-  }
-
-  if (isDisplayTemplate(obj)) {
-    cleanType(obj);
-    return { contentTypeData: [], displayTemplateData: [obj] };
-  }
-
   let contentTypeData: AnyContentType[] = [];
   let displayTemplateData: DisplayTemplate[] = [];
 
@@ -140,4 +139,55 @@ function printFilesContnets(
 export async function readFromPath(configPath: string) {
   const config = await import(configPath);
   return config.default.components;
+}
+
+/**
+ * Extracts the key name from a ContentOrMediaType.
+ * @param input - A value that can either be a string (MediaStringTypes) or a ContentType object.
+ * @returns The extracted key as a string.
+ */
+export function extractKeyName(input: ContentOrMediaType): string {
+  return typeof input === 'string' ? input : input.key;
+}
+
+/**
+ * Checks if a given object has a specific property that is an array of ContentOrMediaType.
+ * @param value - The object to inspect.
+ * @param key - The property name to check on the object.
+ * @returns True if the object has the specified property and it is an array of ContentOrMediaType; otherwise, false.
+ */
+export function hasArrayOfContentOrMediaTypes(
+  value: any,
+  key: string
+): value is { [key: string]: ContentOrMediaType[] } {
+  const mediaTypes = ['Image', 'Video', 'Media'];
+
+  if (!value || typeof value !== 'object' || !Array.isArray(value[key])) {
+    return false;
+  }
+
+  return value[key].every(
+    (item: unknown) =>
+      (typeof item === 'string' && mediaTypes.includes(item)) ||
+      (typeof item === 'object' &&
+        item !== null &&
+        'key' in item &&
+        typeof (item as any).key === 'string')
+  );
+}
+
+/**
+ * Checks if a value is an array schema with an "items" object that may have "allowedTypes" or "restrictedTypes"
+ * @param value - The value to validate, expected to follow the structure of an array-based schema.
+ * @returns True if the value has type === 'array' and a valid items object with the correct structure.
+ */
+export function isValidArrayWithItems(
+  value: any
+): value is AllowedOrRestrictedType {
+  return (
+    value?.type === 'array' &&
+    typeof value.items === 'object' &&
+    (hasArrayOfContentOrMediaTypes(value.items, 'allowedTypes') ||
+      hasArrayOfContentOrMediaTypes(value.items, 'restrictedTypes'))
+  );
 }

@@ -1,9 +1,5 @@
 import { AnyProperty } from '../model/properties';
-import {
-  AnyContentType,
-  ContentType,
-  MediaStringTypes,
-} from '../model/contentTypes';
+import { AnyContentType, ContentOrMediaType } from '../model/contentTypes';
 import { isContentType } from '../model';
 
 export type Importer = (contentTypeName: string) => Promise<AnyContentType>;
@@ -13,7 +9,7 @@ export type Importer = (contentTypeName: string) => Promise<AnyContentType>;
  * @param t ContentType or Media type property
  * @returns Name of the ContentType or Media type
  */
-export function getKeyName(t: MediaStringTypes | ContentType<AnyContentType>) {
+function getKeyName(t: ContentOrMediaType) {
   return isContentType(t) ? t.key : t;
 }
 
