@@ -1,3 +1,5 @@
+// This is the root entry point for the package.
+// Re-export everything
 export {
   buildConfig,
   contentType,
@@ -5,9 +7,9 @@ export {
   isContentType,
   isDisplayTemplate,
   initContentTypeRegistry,
-} from './model';
-export { GraphClient } from './graph';
-export * as ContentTypes from './model/contentTypes';
-export * as DisplayTemplates from './model/displayTemplates';
-export * as Properties from './model/properties';
-export { Infer } from './infer';
+} from './model/index.js';
+export { GraphClient } from './graph/index.js';
+export type * as ContentTypes from './model/contentTypes.js';
+export type * as DisplayTemplates from './model/displayTemplates.js';
+export type * as Properties from './model/properties.js';
+export type { Infer } from './infer.js';
