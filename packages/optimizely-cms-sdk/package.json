@@ -2,10 +2,26 @@
   "name": "optimizely-cms-sdk",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/index.js",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./react": {
+      "import": "./dist/esm/render/react.js",
+      "require": "./dist/cjs/render/react.js"
+    },
+    "./graph": {
+      "import": "./dist/esm/graph/index.js",
+      "require": "./dist/cjs/graph/index.js"
+    }
+  },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "tsc",
+    "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
+    "dev": "pnpm run build --watch",
     "test": "vitest --typecheck"
   },
   "keywords": [],
