@@ -1,4 +1,4 @@
-import { AnyContentType } from './contentTypes';
+import type { AnyContentType } from './contentTypes.js';
 
 type NodeType = 'row' | 'colunm';
 

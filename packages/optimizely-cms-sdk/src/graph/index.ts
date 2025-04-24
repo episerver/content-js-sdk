@@ -1,4 +1,4 @@
-import { createQuery } from './createQuery';
+import { createQuery } from './createQuery.js';
 
 const GRAPHQL_URL = 'https://cg.optimizely.com/content/v2';
 

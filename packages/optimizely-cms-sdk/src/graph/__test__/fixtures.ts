@@ -1,5 +1,5 @@
-import { contentType } from '../../model';
-import { AnyContentType } from '../../model/contentTypes';
+import { contentType } from '../../model/index.js';
+import { AnyContentType } from '../../model/contentTypes.js';
 
 export const callToAction = contentType({
   baseType: 'component',
