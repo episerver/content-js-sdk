@@ -1,5 +1,8 @@
-import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
-import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
+import { GraphClient } from 'optimizely-cms-sdk/graph';
+import {
+  initReactComponentRegistry,
+  OptimizelyComponent,
+} from 'optimizely-cms-sdk/react';
 import React from 'react';
 
 type Props = {

@@ -1,4 +1,4 @@
-import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
+import { GraphClient } from 'optimizely-cms-sdk/graph';
 
 type Props = {
   params: Promise<{

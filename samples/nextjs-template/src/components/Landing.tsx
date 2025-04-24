@@ -1,5 +1,5 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
-import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
+import { OptimizelyComponent } from 'optimizely-cms-sdk/react';
 import { LandingSectionContentType } from './LandingSection';
 import { ContentType as CustomImage } from './CustomImage';
 import { ArticleContentType } from './Article';
