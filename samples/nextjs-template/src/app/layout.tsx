@@ -1,23 +1,24 @@
+import React from 'react';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { init } from 'optimizely-cms-sdk/dist/next';
+
 import { Bodoni_Moda, Inter } from 'next/font/google';
-import { initContentTypeRegistry } from 'optimizely-cms-sdk';
 import './globals.css';
 
-import { ContentType as Article } from '@/components/Article';
-import { ContentType as Hero } from '@/components/Hero';
-import { ContentType as Landing } from '@/components/Landing';
-import { ContentType as LandingSection } from '@/components/LandingSection';
-import { ContentType as SmallFeature } from '@/components/SmallFeature';
-import { ContentType as SmallFeatureGrid } from '@/components/SmallFeatureGrid';
+const filenames = await fs.readdir(path.join(process.cwd(), 'src/components'));
 
-// Initialize the content type registry for the entire app
-initContentTypeRegistry([
-  Article,
-  Hero,
-  Landing,
-  LandingSection,
-  SmallFeature,
-  SmallFeatureGrid,
-]);
+init({
+  contentTypes: await Promise.all(
+    filenames
+      .filter((f) => f.endsWith('.tsx'))
+      .map((f) => f.slice(0, -4))
+      .map((f) => import(`../components/${f}.tsx`).then((m) => m.ContentType))
+  ),
+  componentResolver: function (contentTypeName: string) {
+    return React.lazy(() => import(`@/components/${contentTypeName}.tsx`));
+  },
+});
 
 const serifFont = Bodoni_Moda({
   variable: '--font-serif',
