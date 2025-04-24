@@ -24,9 +24,9 @@ Copy `.env.example` into `.env`. Open the file and add the required environmenta
 
 ### Step 4. Create content
 
-Go to your CMS and create a page with type "Landing Page". Publish it.
-
-Give a custom "Name in URL"
+1. Go to your CMS and create a page with type "Landing Page".
+2. Do not forget to fill the "Name in URL" field
+3. Publish the content.
 
 ### Step 5. Test the content in your app
 
