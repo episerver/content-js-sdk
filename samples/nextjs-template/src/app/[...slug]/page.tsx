@@ -21,10 +21,9 @@ type Props = {
   params: Promise<{
     slug: string[];
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function Page({ params, searchParams }: Props) {
+export default async function Page({ params }: Props) {
   const { slug } = await params;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
