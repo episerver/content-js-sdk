@@ -1,6 +1,6 @@
 // Specific functions for Next.js
 import { AnyContentType } from '../model/contentTypes';
-import { ComponentResolver } from '../render/component-registry';
+import { ComponentResolver } from '../render/componentRegistry';
 
 import { initContentTypeRegistry } from '../model';
 import { initReactComponentRegistry } from '../render/react';
