@@ -17,7 +17,7 @@ export const heroBlock = contentType({
     heading: { type: 'string' },
     callToAction: {
       type: 'array',
-      items: { type: 'content', allowedTypes: ['CallToAction'] },
+      items: { type: 'content', allowedTypes: [callToAction] },
     },
   },
 });
@@ -30,7 +30,7 @@ export const superHeroBlock = contentType({
     embed_video: { type: 'string' },
     callToAction: {
       type: 'array',
-      items: { type: 'content', allowedTypes: ['CallToAction'] },
+      items: { type: 'content', allowedTypes: [callToAction] },
     },
   },
 });
@@ -39,7 +39,7 @@ export const landingPage = contentType({
   baseType: 'page',
   key: 'LandingPage',
   properties: {
-    hero: { type: 'content', allowedTypes: ['Hero', 'SuperHero'] },
+    hero: { type: 'content', allowedTypes: [heroBlock, superHeroBlock] },
     body: { type: 'richText' },
   },
 });

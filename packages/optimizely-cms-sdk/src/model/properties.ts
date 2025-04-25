@@ -1,3 +1,5 @@
+import { ContentOrMediaType } from './contentTypes';
+
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
@@ -64,16 +66,17 @@ export type FloatProperty = BaseProperty & {
   minimum?: number;
   maximum?: number;
 } & WithEnum<number>;
+
 export type ContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
-  allowedTypes?: string[];
-  restrictedTypes?: string[];
+  allowedTypes?: ContentOrMediaType[];
+  restrictedTypes?: ContentOrMediaType[];
 };
 
 export type ContentProperty = BaseProperty & {
   type: 'content';
-  allowedTypes?: string[];
-  restrictedTypes?: string[];
+  allowedTypes?: ContentOrMediaType[];
+  restrictedTypes?: ContentOrMediaType[];
 };
 
 /**
