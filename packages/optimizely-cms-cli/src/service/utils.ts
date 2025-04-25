@@ -24,9 +24,14 @@ export type DisplayTemplate = DisplayTemplates.DisplayTemplate;
 type ContentOrMediaType = ContentTypes.ContentOrMediaType;
 
 /** create Allowed/Restricted type */
-type AllowedOrRestrictedType = {
+export type AllowedOrRestrictedType = {
   type: string;
-  items: Properties.ContentProperty | Properties.ContentReferenceProperty;
+  items: {
+    allowedTypes?: ContentOrMediaType[];
+    restrictedTypes?: ContentOrMediaType[];
+  };
+  allowedTypes?: ContentOrMediaType[];
+  restrictedTypes?: ContentOrMediaType[];
 };
 
 export type FoundContentType = {
@@ -177,17 +182,32 @@ export function hasArrayOfContentOrMediaTypes(
 }
 
 /**
- * Checks if a value is an array schema with an "items" object that may have "allowedTypes" or "restrictedTypes"
+ * Checks if a value is an array schema with an "items" object that may have "allowedTypes" or "restrictedTypes",
+ * or if those properties exist directly on the object.
  * @param value - The value to validate, expected to follow the structure of an array-based schema.
- * @returns True if the value has type === 'array' and a valid items object with the correct structure.
+ * @returns True if the value has type === 'array' or similar and a valid structure for type restrictions.
  */
 export function isValidArrayWithItems(
   value: any
 ): value is AllowedOrRestrictedType {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const isArrayType = ['array', 'contentReference', 'content'].includes(
+    value.type
+  );
+
+  if (!isArrayType) {
+    return false;
+  }
+
   return (
-    value?.type === 'array' &&
-    typeof value.items === 'object' &&
-    (hasArrayOfContentOrMediaTypes(value.items, 'allowedTypes') ||
-      hasArrayOfContentOrMediaTypes(value.items, 'restrictedTypes'))
+    (value.items &&
+      typeof value.items === 'object' &&
+      (hasArrayOfContentOrMediaTypes(value.items, 'allowedTypes') ||
+        hasArrayOfContentOrMediaTypes(value.items, 'restrictedTypes'))) ||
+    hasArrayOfContentOrMediaTypes(value, 'allowedTypes') ||
+    hasArrayOfContentOrMediaTypes(value, 'restrictedTypes')
   );
 }

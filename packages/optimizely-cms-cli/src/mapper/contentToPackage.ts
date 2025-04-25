@@ -1,4 +1,5 @@
 import {
+  AllowedOrRestrictedType,
   AnyContentType,
   extractKeyName,
   isValidArrayWithItems,
@@ -25,20 +26,27 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
           updatedValue.format = 'selectOne';
         }
 
-        // If type "array" and property "items" exists, update "allowedTypes" and "restrictedTypes"
+        // If type "array", "content", "contentReference", update "allowedTypes" and "restrictedTypes"
         if (isValidArrayWithItems(updatedValue)) {
-          const { allowedTypes, restrictedTypes } = updatedValue.items;
+          const value = updatedValue as AllowedOrRestrictedType;
 
-          if (allowedTypes) {
-            updatedValue.items.allowedTypes = allowedTypes.map(
-              extractKeyName
-            ) as any;
-          }
+          // Normalize possible locations of the "allowedTypes" and "restrictedTypes" types
+          const targets = [value.items, value];
 
-          if (restrictedTypes) {
-            updatedValue.items.restrictedTypes = restrictedTypes.map(
-              extractKeyName
-            ) as any;
+          for (const target of targets) {
+            if (!target || typeof target !== 'object') continue;
+
+            if (Array.isArray(target.allowedTypes)) {
+              target.allowedTypes = target.allowedTypes.map(
+                extractKeyName
+              ) as any;
+            }
+
+            if (Array.isArray(target.restrictedTypes)) {
+              target.restrictedTypes = target.restrictedTypes.map(
+                extractKeyName
+              ) as any;
+            }
           }
         }
 
