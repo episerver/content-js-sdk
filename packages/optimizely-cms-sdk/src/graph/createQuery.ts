@@ -1,9 +1,7 @@
 import { AnyProperty } from '../model/properties';
-import { AnyContentType, ContentOrMediaType } from '../model/contentTypes';
+import { ContentOrMediaType } from '../model/contentTypes';
 import { isContentType } from '../model';
 import { getContentType } from '../model/contentTypeRegistry';
-
-export type Importer = (contentTypeName: string) => Promise<AnyContentType>;
 
 /**
  * Get the key or name of ContentType or Media type
