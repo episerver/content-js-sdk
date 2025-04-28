@@ -94,7 +94,7 @@ function convertProperty(
   } else if (property.type === 'link') {
     fields.push(`${name} { url { type, default }}`);
   } else if (property.type === 'contentReference') {
-    // do nothing for now
+    fields.push(`${name} { url { type default }}`);
   } else if (property.type === 'array') {
     // Call recursively
     const f = convertProperty(name, property.items, rootName, visited);
