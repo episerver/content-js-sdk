@@ -32,7 +32,7 @@ export class GraphClient {
   key: string;
   graphUrl: string;
 
-  constructor(key: string, options: GraphOptions) {
+  constructor(key: string, options: GraphOptions = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
   }
