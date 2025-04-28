@@ -1,9 +1,4 @@
-import {
-  AllowedOrRestrictedType,
-  AnyContentType,
-  extractKeyName,
-  isValidArrayWithItems,
-} from '../service/utils.js';
+import { AnyContentType, extractKeyName } from '../service/utils.js';
 
 export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
   return contentTypes.map((contentType) => {
@@ -13,7 +8,7 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
     // Transform properties via a single reduce
     const formattedProperties = Object.entries(properties).reduce(
       (acc, [key, value]) => {
-        const updatedValue = { ...value };
+        let updatedValue = { ...value };
 
         // If type is "richText", we switch type to "string" and "format" to "html"
         if (updatedValue.type === 'richText') {
@@ -26,29 +21,8 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
           updatedValue.format = 'selectOne';
         }
 
-        // If type "array", "content", "contentReference", update "allowedTypes" and "restrictedTypes"
-        if (isValidArrayWithItems(updatedValue)) {
-          const value = updatedValue as AllowedOrRestrictedType;
-
-          // Normalize possible locations of the "allowedTypes" and "restrictedTypes" types
-          const targets = [value.items, value];
-
-          for (const target of targets) {
-            if (!target || typeof target !== 'object') continue;
-
-            if (Array.isArray(target.allowedTypes)) {
-              target.allowedTypes = target.allowedTypes.map(
-                extractKeyName
-              ) as any;
-            }
-
-            if (Array.isArray(target.restrictedTypes)) {
-              target.restrictedTypes = target.restrictedTypes.map(
-                extractKeyName
-              ) as any;
-            }
-          }
-        }
+        // If type "array", "content", "contentReference", update and normalizes its "allowedTypes" and "restrictedTypes"
+        updatedValue = mapAllowedRestrictedTypes(updatedValue);
 
         acc[key] = updatedValue;
         return acc;
@@ -61,4 +35,33 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
       properties: formattedProperties,
     };
   });
+}
+
+/**
+ * Recursively maps and normalizes `allowedTypes` and `restrictedTypes`
+ * and handles nested `items` when the type is "array".
+ * @param updatedValue - The schema object to transform.
+ * @returns The same object, with allowed/restricted types normalized.
+ */
+function mapAllowedRestrictedTypes(updatedValue: any) {
+  // Recursively handle nested 'items' if it's an array
+  if (updatedValue.type === 'array' && updatedValue.items) {
+    updatedValue.items = mapAllowedRestrictedTypes(updatedValue.items);
+  }
+
+  if (['contentReference', 'content'].includes(updatedValue.type)) {
+    if (Array.isArray(updatedValue.allowedTypes)) {
+      updatedValue.allowedTypes = updatedValue.allowedTypes.map(
+        extractKeyName
+      ) as any;
+    }
+
+    if (Array.isArray(updatedValue.restrictedTypes)) {
+      updatedValue.restrictedTypes = updatedValue.restrictedTypes.map(
+        extractKeyName
+      ) as any;
+    }
+  }
+
+  return updatedValue;
 }
