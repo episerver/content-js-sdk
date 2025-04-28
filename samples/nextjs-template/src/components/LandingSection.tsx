@@ -12,6 +12,7 @@ export const LandingSectionContentType = contentType({
       type: 'string',
     },
   },
+  component: LandingSection,
 });
 
 export const DisplayTemplate = displayTemplate({

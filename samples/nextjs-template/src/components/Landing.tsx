@@ -35,6 +35,7 @@ export const ContentType = contentType({
       },
     },
   },
+  component: LandingComponent,
 });
 
 type Props = {
