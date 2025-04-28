@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { contentType, Infer } from 'optimizely-cms-sdk';
 import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 import { LandingSectionContentType } from './LandingSection';
@@ -44,12 +45,17 @@ type Props = {
 
 export default function LandingComponent({ opti }: Props) {
   return (
-    <div>
-      <h1>{opti.heading}</h1>
-      <p>{opti.summary}</p>
+    <main>
+      <header className={['uni-hero', opti.theme].join(' ')}>
+        <Image src={opti.background.url.default} alt="" fill={true} />
+        <div className="heading">
+          <h1>{opti.heading}</h1>
+          <p>{opti.summary}</p>
+        </div>
+      </header>
       {opti.sections.map((section, i) => (
         <OptimizelyComponent key={i} opti={section} />
       ))}
-    </div>
+    </main>
   );
 }
