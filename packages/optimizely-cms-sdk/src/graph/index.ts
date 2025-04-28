@@ -1,12 +1,9 @@
-import { createQuery, Importer } from './createQuery';
+import { createQuery } from './createQuery';
 
 /** Options for Graph */
 type GraphOptions = {
   /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
   graphUrl?: string;
-
-  /** Function that returns a component given its name */
-  customImport: Importer;
 };
 
 const FETCH_CONTENT_QUERY = `
@@ -33,12 +30,10 @@ function getFilterFromPath(path: string) {
 
 export class GraphClient {
   key: string;
-  customImport: Importer;
   graphUrl: string;
 
   constructor(key: string, options: GraphOptions) {
     this.key = key;
-    this.customImport = options.customImport;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
   }
 
@@ -92,7 +87,7 @@ export class GraphClient {
       throw new Error(`No content found for [${path}]`);
     }
 
-    const query = await createQuery(contentTypeName, this.customImport);
+    const query = createQuery(contentTypeName);
 
     const response = await this.request(query, { filter });
 

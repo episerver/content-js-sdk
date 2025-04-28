@@ -55,15 +55,10 @@ export const articlePage = contentType({
   },
 });
 
-const contentTypeMap: Record<string, AnyContentType> = {
-  CallToAction: callToAction,
-  Hero: heroBlock,
-  SuperHero: superHeroBlock,
-  LandingPage: landingPage,
-  ArticlePage: articlePage,
-};
-
-export async function customImport(name: string) {
-  console.log('Importing ', name);
-  return contentTypeMap[name];
-}
+export const allContentTypes: AnyContentType[] = [
+  callToAction,
+  heroBlock,
+  superHeroBlock,
+  landingPage,
+  articlePage,
+];

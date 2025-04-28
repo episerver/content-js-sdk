@@ -1,8 +1,7 @@
 import { AnyProperty } from '../model/properties';
-import { AnyContentType, ContentOrMediaType } from '../model/contentTypes';
+import { ContentOrMediaType } from '../model/contentTypes';
 import { isContentType } from '../model';
-
-export type Importer = (contentTypeName: string) => Promise<AnyContentType>;
+import { getContentType } from '../model/contentTypeRegistry';
 
 /**
  * Get the key or name of ContentType or Media type
@@ -18,17 +17,13 @@ function getKeyName(t: ContentOrMediaType) {
  * @param name Name of the property
  * @param property Property options
  */
-async function convertProperty(
-  name: string,
-  property: AnyProperty,
-  customImport: Importer
-) {
+function convertProperty(name: string, property: AnyProperty) {
   const fields: string[] = [];
   const extraFragments: string[] = [];
 
   if (property.type === 'content') {
     for (const t of property.allowedTypes ?? []) {
-      extraFragments.push(await createFragment(getKeyName(t), customImport));
+      extraFragments.push(createFragment(getKeyName(t)));
     }
 
     const subfields = (property.allowedTypes ?? [])
@@ -46,7 +41,7 @@ async function convertProperty(
     // do nothing for now
   } else if (property.type === 'array') {
     // Call recursively
-    const f = await convertProperty(name, property.items, customImport);
+    const f = convertProperty(name, property.items);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
@@ -60,21 +55,18 @@ async function convertProperty(
 }
 
 /** Get the fragment for a content type */
-export async function createFragment(
-  contentTypeName: string,
-  customImport: Importer
-): Promise<string> {
+export function createFragment(contentTypeName: string): string {
   const fragmentName = contentTypeName;
   const allFields: string[] = [];
   const allExtraFragments: string[] = [];
-  const contentType = await customImport(contentTypeName);
+  const contentType = getContentType(contentTypeName);
+
+  if (!contentType) {
+    throw new Error(`Content type ${contentTypeName} is not defined`);
+  }
 
   for (const [key, property] of Object.entries(contentType.properties ?? {})) {
-    const { fields, extraFragments } = await convertProperty(
-      key,
-      property,
-      customImport
-    );
+    const { fields, extraFragments } = convertProperty(key, property);
 
     allFields.push(...fields);
     allExtraFragments.push(...extraFragments);
@@ -88,8 +80,8 @@ fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
  * Creates a GraphQL query for a particular content type
  * @param contentType The content type
  */
-export async function createQuery(contentType: string, customImport: Importer) {
-  const fragment = await createFragment(contentType, customImport);
+export function createQuery(contentType: string) {
+  const fragment = createFragment(contentType);
 
   return `${fragment}
 query FetchContent($filter: _ContentWhereInput) {

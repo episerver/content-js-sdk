@@ -4,6 +4,7 @@ export {
   displayTemplate,
   isContentType,
   isDisplayTemplate,
+  initContentTypeRegistry,
 } from './model';
 export { GraphClient } from './graph';
 export * as ContentTypes from './model/contentTypes';
