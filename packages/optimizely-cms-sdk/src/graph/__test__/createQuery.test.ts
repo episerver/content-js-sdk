@@ -7,6 +7,7 @@ import {
   landingPage,
   articlePage,
   allContentTypes,
+  superHeroBlock,
 } from './fixtures';
 
 beforeAll(() => {
@@ -37,9 +38,18 @@ describe('createFragment()', () => {
       "
       fragment CallToAction on CallToAction { label link }
       fragment Hero on Hero { heading callToAction { __typename ...CallToAction } },
+      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } },
+      fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
+      fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }"
+    `);
+  });
+
+  test('works when the same reference is repeated', async () => {
+    const result = await createFragment(superHeroBlock.key);
+    expect(result).toMatchInlineSnapshot(`
+      "
       fragment CallToAction on CallToAction { label link }
-      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }
-      fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero } body { html, json } }"
+      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }"
     `);
   });
 });
@@ -48,14 +58,13 @@ describe('createQuery', () => {
   test('simple content types', async () => {
     const result = await createQuery(callToAction.key);
     expect(result).toMatchInlineSnapshot(`
-        "
-        fragment CallToAction on CallToAction { label link }
-        query FetchContent($filter: _ContentWhereInput) {
-          _Content(where: $filter) {
-            item {
-              __typename
-              ...CallToAction
-            }
+      "
+      fragment CallToAction on CallToAction { label link }
+      query FetchContent($filter: _ContentWhereInput) {
+        _Content(where: $filter) {
+          item {
+            __typename
+            ...CallToAction
           }
         }
       }
@@ -83,15 +92,35 @@ describe('createQuery', () => {
   test('nested content types (one level)', async () => {
     const result = await createQuery(heroBlock.key);
     expect(result).toMatchInlineSnapshot(`
+      "
+      fragment CallToAction on CallToAction { label link }
+      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }
+      query FetchContent($filter: _ContentWhereInput) {
+        _Content(where: $filter) {
+          item {
+            __typename
+            ...Hero
+          }
+        }
+      }
         "
-        fragment CallToAction on CallToAction { label link }
-        fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }
-        query FetchContent($filter: _ContentWhereInput) {
-          _Content(where: $filter) {
-            item {
-              __typename
-              ...Hero
-            }
+    `);
+  });
+
+  test('nested content types (several levels)', async () => {
+    const result = await createQuery(landingPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      "
+      fragment CallToAction on CallToAction { label link }
+      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } },
+      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } },
+      fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
+      fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
+      query FetchContent($filter: _ContentWhereInput) {
+        _Content(where: $filter) {
+          item {
+            __typename
+            ...LandingPage
           }
         }
       }
