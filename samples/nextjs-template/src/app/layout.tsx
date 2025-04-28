@@ -1,22 +1,22 @@
 import React from 'react';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { init } from 'optimizely-cms-sdk/dist/next';
 
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
+import { initContentTypeRegistry } from 'optimizely-cms-sdk';
+import { initReactComponentRegistry } from 'optimizely-cms-sdk/dist/render/react';
 
-const filenames = await fs.readdir(path.join(process.cwd(), 'src/components'));
+import Landing, {
+  ContentType as LadningContentType,
+} from '@/components/Landing';
+import LandingSection, {
+  LandingSectionContentType,
+} from '@/components/LandingSection';
 
-init({
-  contentTypes: await Promise.all(
-    filenames
-      .filter((f) => f.endsWith('.tsx'))
-      .map((f) => f.slice(0, -4))
-      .map((f) => import(`../components/${f}.tsx`).then((m) => m.ContentType))
-  ),
-  componentResolver: function (contentTypeName: string) {
-    return React.lazy(() => import(`@/components/${contentTypeName}.tsx`));
+initContentTypeRegistry([LandingSectionContentType, LadningContentType]);
+initReactComponentRegistry({
+  resolver: {
+    Landing,
+    LandingSection,
   },
 });
 
