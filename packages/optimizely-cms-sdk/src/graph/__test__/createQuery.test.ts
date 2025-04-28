@@ -18,38 +18,42 @@ describe('createFragment()', () => {
   test('works for simple properties', async () => {
     const result = await createFragment(callToAction.key);
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { label link }"
+      [
+        "fragment CallToAction on CallToAction { label link }",
+      ]
     `);
   });
 
   test('works for components inside components', async () => {
     const result = await createFragment(heroBlock.key);
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { label link }
-      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }"
+      [
+        "fragment CallToAction on CallToAction { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }",
+      ]
     `);
   });
 
   test('works for components inside components (several levels)', async () => {
     const result = await createFragment(landingPage.key);
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { label link }
-      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } },
-      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } },
-      fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
-      fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }"
+      [
+        "fragment CallToAction on CallToAction { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }",
+        "fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+      ]
     `);
   });
 
   test('works when the same reference is repeated', async () => {
     const result = await createFragment(superHeroBlock.key);
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { label link }
-      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }"
+      [
+        "fragment CallToAction on CallToAction { label link }",
+        "fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }",
+      ]
     `);
   });
 });
@@ -112,8 +116,8 @@ describe('createQuery', () => {
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
-      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } },
-      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } },
+      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }
+      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }
       fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
       fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
       query FetchContent($filter: _ContentWhereInput) {
