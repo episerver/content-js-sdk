@@ -1,6 +1,6 @@
 import { contentType } from 'optimizely-cms-sdk';
 
-export const ContentType = contentType({
+export const SmallFeatureContentType = contentType({
   key: 'SmallFeature',
   baseType: 'component',
   displayName: 'Small feature',

@@ -1,4 +1,9 @@
-import { AnyContentType } from '../service/utils.js';
+import {
+  AllowedOrRestrictedType,
+  AnyContentType,
+  extractKeyName,
+  isValidArrayWithItems,
+} from '../service/utils.js';
 
 export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
   return contentTypes.map((contentType) => {
@@ -19,6 +24,30 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
         // If "enum" exists, set format to "selectOne"
         if (Object.hasOwn(updatedValue, 'enum')) {
           updatedValue.format = 'selectOne';
+        }
+
+        // If type "array", "content", "contentReference", update "allowedTypes" and "restrictedTypes"
+        if (isValidArrayWithItems(updatedValue)) {
+          const value = updatedValue as AllowedOrRestrictedType;
+
+          // Normalize possible locations of the "allowedTypes" and "restrictedTypes" types
+          const targets = [value.items, value];
+
+          for (const target of targets) {
+            if (!target || typeof target !== 'object') continue;
+
+            if (Array.isArray(target.allowedTypes)) {
+              target.allowedTypes = target.allowedTypes.map(
+                extractKeyName
+              ) as any;
+            }
+
+            if (Array.isArray(target.restrictedTypes)) {
+              target.restrictedTypes = target.restrictedTypes.map(
+                extractKeyName
+              ) as any;
+            }
+          }
         }
 
         acc[key] = updatedValue;

@@ -34,3 +34,9 @@ export type OtherContentTypes = BaseContentType & {
     // | "section" -- not allowed
     | 'element';
 };
+
+export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
+
+export type MediaStringTypes = 'Image' | 'Video' | 'Media';
+
+export type ContentOrMediaType = ContentType | MediaStringTypes;
