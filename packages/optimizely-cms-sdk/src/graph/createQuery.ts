@@ -23,12 +23,11 @@ function convertProperty(name: string, property: AnyProperty) {
 
   if (property.type === 'content') {
     for (const t of property.allowedTypes ?? []) {
-      extraFragments.push(createFragment(getKeyName(t)));
+      extraFragments.push(...createFragment(getKeyName(t)));
     }
+    const uniqueTypes = Array.from(new Set(property.allowedTypes ?? []));
 
-    const subfields = (property.allowedTypes ?? [])
-      .map((t) => `...${getKeyName(t)}`)
-      .join(' ');
+    const subfields = uniqueTypes.map((t) => `...${getKeyName(t)}`).join(' ');
 
     fields.push(`${name} { __typename ${subfields} }`);
   } else if (property.type === 'richText') {
@@ -48,14 +47,16 @@ function convertProperty(name: string, property: AnyProperty) {
     fields.push(name);
   }
 
+  const uniqueFragments = Array.from(new Set(extraFragments));
+
   return {
     fields,
-    extraFragments,
+    extraFragments: uniqueFragments,
   };
 }
 
-/** Get the fragment for a content type */
-export function createFragment(contentTypeName: string): string {
+/** Get the fragment (and its dependencies) for a content type */
+export function createFragment(contentTypeName: string): string[] {
   const fragmentName = contentTypeName;
   const allFields: string[] = [];
   const allExtraFragments: string[] = [];
@@ -72,8 +73,12 @@ export function createFragment(contentTypeName: string): string {
     allExtraFragments.push(...extraFragments);
   }
 
-  return `${allExtraFragments}
-fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
+  const uniqueFragments = Array.from(new Set(allExtraFragments));
+
+  return [
+    ...uniqueFragments,
+    `fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`,
+  ];
 }
 
 /**
@@ -83,7 +88,8 @@ fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`;
 export function createQuery(contentType: string) {
   const fragment = createFragment(contentType);
 
-  return `${fragment}
+  return `
+${fragment.join('\n')}
 query FetchContent($filter: _ContentWhereInput) {
   _Content(where: $filter) {
     item {

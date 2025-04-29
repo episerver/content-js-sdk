@@ -22,6 +22,22 @@ export const heroBlock = contentType({
   },
 });
 
+export const specialHeroBlock = contentType({
+  baseType: 'component',
+  key: 'SpecialHero',
+  properties: {
+    heading: { type: 'string' },
+    primaryCallToAction: {
+      type: 'content',
+      allowedTypes: [callToAction],
+    },
+    callToAction: {
+      type: 'array',
+      items: { type: 'content', allowedTypes: [callToAction, callToAction] },
+    },
+  },
+});
+
 export const superHeroBlock = contentType({
   baseType: 'component',
   key: 'SuperHero',
@@ -39,7 +55,10 @@ export const landingPage = contentType({
   baseType: 'page',
   key: 'LandingPage',
   properties: {
-    hero: { type: 'content', allowedTypes: [heroBlock, superHeroBlock] },
+    hero: {
+      type: 'content',
+      allowedTypes: [heroBlock, superHeroBlock, specialHeroBlock],
+    },
     body: { type: 'richText' },
   },
 });
@@ -57,6 +76,7 @@ export const articlePage = contentType({
 
 export const allContentTypes: AnyContentType[] = [
   callToAction,
+  specialHeroBlock,
   heroBlock,
   superHeroBlock,
   landingPage,
