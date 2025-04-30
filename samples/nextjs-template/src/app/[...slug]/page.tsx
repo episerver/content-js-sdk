@@ -1,15 +1,11 @@
 import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
-import {
-  initReactComponentRegistry,
-  OptimizelyComponent,
-} from 'optimizely-cms-sdk/dist/render/react';
+import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 import React from 'react';
 
-initReactComponentRegistry({
-  resolver(contentType) {
-    return React.lazy(() => import(`../../components/${contentType}.tsx`));
-  },
-});
+export async function generateStaticParams() {
+  // TODO: Get this from the CMS instead of hard-coding
+  return [{ slug: ['en', 'obelisk'] }];
+}
 
 type Props = {
   params: Promise<{
