@@ -1,18 +1,32 @@
-import { contentType } from 'optimizely-cms-sdk';
-import { ArticleContentType } from './Article';
+import { contentType, Infer } from 'optimizely-cms-sdk';
 import { SmallFeatureContentType } from './SmallFeature';
+import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 
-export const ContentType = contentType({
+export const SmallFeatureGridContentType = contentType({
   key: 'SmallFeatureGrid',
   displayName: 'Small feature grid',
   baseType: 'component',
   properties: {
-    features: {
+    smallFeatures: {
       type: 'array',
       items: {
-        type: 'contentReference',
-        allowedTypes: [ArticleContentType, SmallFeatureContentType, '_Image'],
+        type: 'content',
+        allowedTypes: [SmallFeatureContentType],
       },
     },
   },
 });
+
+type Props = {
+  opti: Infer<typeof SmallFeatureGridContentType>;
+};
+
+export default function SmallFeatureGrid({ opti }: Props) {
+  return (
+    <div className="small-feature-grid">
+      {opti.smallFeatures.map((feature) => (
+        <OptimizelyComponent opti={feature} />
+      ))}
+    </div>
+  );
+}
