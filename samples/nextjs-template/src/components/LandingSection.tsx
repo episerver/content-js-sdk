@@ -64,8 +64,8 @@ export default function LandingSection({ opti }: Props) {
         <h2>{opti.heading}</h2>
         <p>{opti.subtitle}</p>
       </header>
-      {opti.sections.map((section) => (
-        <OptimizelyComponent opti={section} />
+      {opti.sections.map((section, i) => (
+        <OptimizelyComponent opti={section} key={i} />
       ))}
     </section>
   );
