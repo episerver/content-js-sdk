@@ -49,4 +49,4 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
   );
 }
 
-export { init as initContentTypeRegistry } from './contentTypeRegistry';
+export { init as initContentTypeRegistry } from './contentTypeRegistry.js';

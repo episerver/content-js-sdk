@@ -1,4 +1,4 @@
-import { ContentOrMediaType } from './contentTypes';
+import { ContentOrMediaType } from './contentTypes.js';
 
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
