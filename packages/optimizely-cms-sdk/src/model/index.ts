@@ -1,4 +1,4 @@
-import { BuildConfig } from './buildConfig.js';
+import type { BuildConfig } from './buildConfig.js';
 import type { AnyContentType } from './contentTypes.js';
 import type { DisplayTemplate } from './displayTemplates.js';
 
