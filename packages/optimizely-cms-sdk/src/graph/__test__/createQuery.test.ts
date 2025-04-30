@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeAll } from 'vitest';
 import { createFragment, createQuery } from '../createQuery.js';
+import { initContentTypeRegistry } from '../../model/index.js';
 import {
   callToAction,
   heroBlock,
@@ -7,7 +8,6 @@ import {
   articlePage,
   allContentTypes,
 } from './fixtures.js';
-import { initContentTypeRegistry } from '../../model/index.js';
 
 beforeAll(() => {
   initContentTypeRegistry(allContentTypes);
