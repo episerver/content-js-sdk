@@ -11,8 +11,12 @@ import Landing, {
 import LandingSection, {
   LandingSectionContentType,
 } from '@/components/LandingSection';
-import { SmallFeatureGridContentType } from '@/components/SmallFeatureGrid';
-import { SmallFeatureContentType } from '@/components/SmallFeature';
+import SmallFeatureGrid, {
+  SmallFeatureGridContentType,
+} from '@/components/SmallFeatureGrid';
+import SmallFeature, {
+  SmallFeatureContentType,
+} from '@/components/SmallFeature';
 import VideoFeature, {
   VideoFeatureContentType,
 } from '@/components/VideoFeature';
@@ -31,6 +35,8 @@ initReactComponentRegistry({
     Landing,
     LandingSection,
     VideoFeature,
+    SmallFeatureGrid,
+    SmallFeature,
   },
 });
 
