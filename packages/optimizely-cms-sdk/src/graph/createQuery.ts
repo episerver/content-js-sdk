@@ -45,14 +45,10 @@ function convertProperty(
   const fields: string[] = [];
   const extraFragments: string[] = [];
 
-  // “skip” lives only for this property
-  const skip = new Set<string>();
-
   if (property.type === 'content') {
     const allowed = refinedAllowedTypes(
       property.allowedTypes,
       property.restrictedTypes,
-      skip,
       rootName
     );
 
@@ -153,16 +149,17 @@ query FetchContent($filter: _ContentWhereInput) {
  * Returns the set of content types that are **allowed** at the current property level.
  * @param allowedTypes Explicit allow-list for the property, or `undefined`.
  * @param restrictedTypes Explicit restricted-list for the property, or `undefined`.
- * @param skip A **local** Set that collects keys banned at this level; it is *not* passed to child fragments.
  * @param rootName Name of the fragment we are **currently** building.
  * @returns baseline array (all allowedTypes – restrictedTypes) in declaration order.
  */
 function refinedAllowedTypes(
   allowedTypes: ContentOrMediaType[] | undefined,
   restrictedTypes: ContentOrMediaType[] | undefined,
-  skip: Set<string>,
   rootName: string
 ): ContentOrMediaType[] {
+  // “skip” lives only for this property
+  const skip = new Set<string>();
+
   // ecord this level’s restrictions
   for (const r of restrictedTypes ?? []) {
     skip.add(getKeyName(r));
@@ -174,13 +171,8 @@ function refinedAllowedTypes(
       ? allowedTypes
       : (getCachedContentTypes() as ContentOrMediaType[]);
 
-  // subtract anything now in “skip”
-  const allowed = baseline.filter(
+  // subtract everything in skip and the fragment that is beign built
+  return baseline.filter(
     (t) => !skip.has(getKeyName(t)) && getKeyName(t) !== rootName
   );
-
-  // remove any type that is *already* in the stack
-  const permitted = allowed.filter((t) => getKeyName(t) !== rootName);
-
-  return permitted;
 }

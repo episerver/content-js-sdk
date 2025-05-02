@@ -62,7 +62,7 @@ describe('createFragment()', () => {
     `);
   });
 
-  test('When contentType only has both allowedTypes and restrictedTypes', async () => {
+  test('When contentType has both allowedTypes and restrictedTypes', async () => {
     const result = await createFragment(aboutPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
@@ -74,7 +74,7 @@ describe('createFragment()', () => {
     `);
   });
 
-  test('When contentType only has only allowedTypes defined', async () => {
+  test('When the contentType has only allowedTypes defined', async () => {
     const result = await createFragment(fAQPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
@@ -87,7 +87,7 @@ describe('createFragment()', () => {
     `);
   });
 
-  test('When contentType only has restrictedTypes (no allowedTypes) defined', async () => {
+  test('When the contentType has only restrictedTypes (no allowedTypes) defined', async () => {
     const result = await createFragment(contactUsPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
