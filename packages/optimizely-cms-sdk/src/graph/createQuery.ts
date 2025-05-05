@@ -1,7 +1,23 @@
 import { AnyProperty } from '../model/properties';
-import { ContentOrMediaType } from '../model/contentTypes';
+import { AnyContentType, ContentOrMediaType } from '../model/contentTypes';
 import { isContentType } from '../model';
-import { getContentType } from '../model/contentTypeRegistry';
+import {
+  getAllContentTypes,
+  getContentType,
+} from '../model/contentTypeRegistry';
+
+let allContentTypes: AnyContentType[] = [];
+
+/**
+ * This is a simple memoisation that avoids repeatedly calling the registry
+ * @returns An array of all contentType definitions.
+ */
+function getCachedContentTypes(): AnyContentType[] {
+  if (allContentTypes.length === 0) {
+    allContentTypes = getAllContentTypes();
+  }
+  return allContentTypes;
+}
 
 /**
  * Get the key or name of ContentType or Media type
@@ -14,20 +30,35 @@ function getKeyName(t: ContentOrMediaType) {
 
 /**
  * Converts a property into a GraphQL field
- * @param name Name of the property
- * @param property Property options
+ * @param name Field name in the parent selection set.
+ * @param property Property definition object from the schema.
+ * @param rootName Name of the fragment we are **currently** building.
+ * @param visited Shared recursion-guard set from the caller.
+ * @returns object including the refined fileds and extraFragments `{ fields, extraFragments }`.
  */
-function convertProperty(name: string, property: AnyProperty) {
+function convertProperty(
+  name: string,
+  property: AnyProperty,
+  rootName: string,
+  visited: Set<string> // one shared guard per tree
+): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
   const extraFragments: string[] = [];
 
   if (property.type === 'content') {
-    for (const t of property.allowedTypes ?? []) {
-      extraFragments.push(...createFragment(getKeyName(t)));
-    }
-    const uniqueTypes = Array.from(new Set(property.allowedTypes ?? []));
+    const allowed = refinedAllowedTypes(
+      property.allowedTypes,
+      property.restrictedTypes,
+      rootName
+    );
 
-    const subfields = uniqueTypes.map((t) => `...${getKeyName(t)}`).join(' ');
+    for (const t of allowed) {
+      extraFragments.push(...createFragment(getKeyName(t), visited));
+    }
+
+    const subfields = [...new Set(allowed)] // remove duplicates
+      .map((t) => `...${getKeyName(t)}`)
+      .join(' ');
 
     fields.push(`${name} { __typename ${subfields} }`);
   } else if (property.type === 'richText') {
@@ -40,44 +71,57 @@ function convertProperty(name: string, property: AnyProperty) {
     // do nothing for now
   } else if (property.type === 'array') {
     // Call recursively
-    const f = convertProperty(name, property.items);
+    const f = convertProperty(name, property.items, rootName, visited);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
     fields.push(name);
   }
 
-  const uniqueFragments = Array.from(new Set(extraFragments));
-
   return {
     fields,
-    extraFragments: uniqueFragments,
+    extraFragments: [...new Set(extraFragments)], // remove duplicates
   };
 }
 
-/** Get the fragment (and its dependencies) for a content type */
-export function createFragment(contentTypeName: string): string[] {
-  const fragmentName = contentTypeName;
-  const allFields: string[] = [];
-  const allExtraFragments: string[] = [];
-  const contentType = getContentType(contentTypeName);
+/**
+ * Builds a GraphQL fragment for the requested content-type **and** returns every nested fragment it depends on.
+ * @param contentTypeName Name/key of the content-type to expand.
+ * @param visited Set of fragment names already on the stack.
+ * @returns Array of fragment strings.
+ */
+export function createFragment(
+  contentTypeName: string,
+  visited: Set<string> = new Set() // shared across recursion
+): string[] {
+  // a recursion guard that prevents infinite loops
+  if (visited.has(contentTypeName)) return [];
+  visited.add(contentTypeName);
 
+  const contentType = getContentType(contentTypeName);
   if (!contentType) {
     throw new Error(`Content type ${contentTypeName} is not defined`);
   }
 
-  for (const [key, property] of Object.entries(contentType.properties ?? {})) {
-    const { fields, extraFragments } = convertProperty(key, property);
+  const allFields: string[] = [];
+  const allExtraFragments: string[] = [];
 
+  for (const [key, prop] of Object.entries(contentType.properties ?? {})) {
+    const { fields, extraFragments } = convertProperty(
+      key,
+      prop,
+      contentTypeName,
+      visited
+    );
     allFields.push(...fields);
     allExtraFragments.push(...extraFragments);
   }
 
-  const uniqueFragments = Array.from(new Set(allExtraFragments));
-
   return [
-    ...uniqueFragments,
-    `fragment ${fragmentName} on ${fragmentName} { ${allFields.join(' ')} }`,
+    ...new Set(allExtraFragments), // unique dependency fragments
+    `fragment ${contentTypeName} on ${contentTypeName} { ${allFields.join(
+      ' '
+    )} }`,
   ];
 }
 
@@ -99,4 +143,36 @@ query FetchContent($filter: _ContentWhereInput) {
   }
 }
   `;
+}
+
+/**
+ * Returns the set of content types that are **allowed** at the current property level.
+ * @param allowedTypes Explicit allow-list for the property, or `undefined`.
+ * @param restrictedTypes Explicit restricted-list for the property, or `undefined`.
+ * @param rootName Name of the fragment we are **currently** building.
+ * @returns baseline array (all allowedTypes – restrictedTypes) in declaration order.
+ */
+function refinedAllowedTypes(
+  allowedTypes: ContentOrMediaType[] | undefined,
+  restrictedTypes: ContentOrMediaType[] | undefined,
+  rootName: string
+): ContentOrMediaType[] {
+  // “skip” lives only for this property
+  const skip = new Set<string>();
+
+  // ecord this level’s restrictions
+  for (const r of restrictedTypes ?? []) {
+    skip.add(getKeyName(r));
+  }
+
+  // decide the baseline list baseline (allowedTypes  OR  every known contentType)
+  const baseline: ContentOrMediaType[] =
+    allowedTypes && allowedTypes.length > 0
+      ? allowedTypes
+      : (getCachedContentTypes() as ContentOrMediaType[]);
+
+  // subtract everything in skip and the fragment that is beign built
+  return baseline.filter(
+    (t) => !skip.has(getKeyName(t)) && getKeyName(t) !== rootName
+  );
 }

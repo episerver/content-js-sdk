@@ -10,6 +10,15 @@ export const callToAction = contentType({
   },
 });
 
+export const myButton = contentType({
+  baseType: 'component',
+  key: 'myButton',
+  properties: {
+    label: { type: 'string' },
+    link: { type: 'string' },
+  },
+});
+
 export const heroBlock = contentType({
   baseType: 'component',
   key: 'Hero',
@@ -17,7 +26,7 @@ export const heroBlock = contentType({
     heading: { type: 'string' },
     callToAction: {
       type: 'array',
-      items: { type: 'content', allowedTypes: [callToAction] },
+      items: { type: 'content', allowedTypes: [callToAction, myButton] },
     },
   },
 });
@@ -74,6 +83,56 @@ export const articlePage = contentType({
   },
 });
 
+export const aboutBlock = contentType({
+  baseType: 'component',
+  key: 'AboutContent',
+  properties: {
+    heading: { type: 'string' },
+    embed_video: { type: 'string' },
+    callToAction: {
+      type: 'array',
+      items: { type: 'content', allowedTypes: [callToAction, myButton] },
+    },
+  },
+});
+
+export const aboutPage = contentType({
+  baseType: 'page',
+  key: 'AboutPage',
+  properties: {
+    hero: {
+      type: 'content',
+      allowedTypes: [heroBlock],
+      restrictedTypes: [myButton],
+    },
+    body: { type: 'richText' },
+  },
+});
+
+export const fAQPage = contentType({
+  baseType: 'page',
+  key: 'fAQPage',
+  properties: {
+    hero: {
+      type: 'content',
+      allowedTypes: [myButton, heroBlock, superHeroBlock],
+    },
+    body: { type: 'richText' },
+  },
+});
+
+export const contactUsPage = contentType({
+  baseType: 'page',
+  key: 'contactUsPage',
+  properties: {
+    others: {
+      type: 'content',
+      restrictedTypes: [myButton],
+    },
+    body: { type: 'richText' },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -81,4 +140,9 @@ export const allContentTypes: AnyContentType[] = [
   superHeroBlock,
   landingPage,
   articlePage,
+  myButton,
+  aboutPage,
+  aboutBlock,
+  contactUsPage,
+  fAQPage,
 ];

@@ -5,9 +5,12 @@ import {
   callToAction,
   heroBlock,
   landingPage,
+  aboutPage,
   articlePage,
   allContentTypes,
   superHeroBlock,
+  fAQPage,
+  contactUsPage,
 } from './fixtures';
 
 beforeAll(() => {
@@ -29,17 +32,19 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment CallToAction on CallToAction { label link }",
-        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }",
+        "fragment myButton on myButton { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }",
       ]
     `);
   });
 
-  test('works for components inside components (several levels)', async () => {
+  test('works for components inside components (several levels) : landingPage', async () => {
     const result = await createFragment(landingPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment CallToAction on CallToAction { label link }",
-        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }",
+        "fragment myButton on myButton { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }",
         "fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }",
         "fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
         "fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
@@ -53,6 +58,50 @@ describe('createFragment()', () => {
       [
         "fragment CallToAction on CallToAction { label link }",
         "fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }",
+      ]
+    `);
+  });
+
+  test('When contentType has both allowedTypes and restrictedTypes', async () => {
+    const result = await createFragment(aboutPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment CallToAction on CallToAction { label link }",
+        "fragment myButton on myButton { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment AboutPage on AboutPage { hero { __typename ...Hero } body { html, json } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has only allowedTypes defined', async () => {
+    const result = await createFragment(fAQPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment myButton on myButton { label link }",
+        "fragment CallToAction on CallToAction { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has only restrictedTypes (no allowedTypes) defined', async () => {
+    const result = await createFragment(contactUsPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment CallToAction on CallToAction { label link }",
+        "fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
+        "fragment myButton on myButton { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
+        "fragment AboutPage on AboutPage { hero { __typename ...Hero } body { html, json } }",
+        "fragment AboutContent on AboutContent { heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage } body { html, json } }",
       ]
     `);
   });
@@ -98,7 +147,8 @@ describe('createQuery', () => {
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
-      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }
+      fragment myButton on myButton { label link }
+      fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }
       query FetchContent($filter: _ContentWhereInput) {
         _Content(where: $filter) {
           item {
@@ -116,7 +166,8 @@ describe('createQuery', () => {
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
-      fragment Hero on Hero { heading callToAction { __typename ...CallToAction } }
+      fragment myButton on myButton { label link }
+      fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }
       fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }
       fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
       fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
