@@ -29,6 +29,15 @@ function getKeyName(t: ContentOrMediaType) {
 }
 
 /**
+ * Check if the keyName is a special type
+ * @param key keyName of the content type
+ * @returns boolean
+ */
+function isMediaType(key: string): boolean {
+  return ['Image', 'Video', 'Media'].includes(key);
+}
+
+/**
  * Converts a property into a GraphQL field
  * @param name Field name in the parent selection set.
  * @param property Property definition object from the schema.
@@ -43,6 +52,7 @@ function convertProperty(
   visited: Set<string> // one shared guard per tree
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
+  const subfields: string[] = [];
   const extraFragments: string[] = [];
 
   if (property.type === 'content') {
@@ -53,14 +63,15 @@ function convertProperty(
     );
 
     for (const t of allowed) {
-      extraFragments.push(...createFragment(getKeyName(t), visited));
+      const key = getKeyName(t);
+      extraFragments.push(...createFragment(key, visited));
+      subfields.push(`...${key}`);
     }
 
-    const subfields = [...new Set(allowed)] // remove duplicates
-      .map((t) => `...${getKeyName(t)}`)
+    const uniqueSubfields = [...new Set(subfields)] // remove duplicates
       .join(' ');
 
-    fields.push(`${name} { __typename ${subfields} }`);
+    fields.push(`${name} { __typename ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
   } else if (property.type === 'url') {
@@ -98,13 +109,22 @@ export function createFragment(
   if (visited.has(contentTypeName)) return [];
   visited.add(contentTypeName);
 
+  const allFields: string[] = [];
+  const allExtraFragments: string[] = [];
+
+  if (isMediaType(contentTypeName)) {
+    allFields.push(`_metadata { displayName url { default } }`);
+    return [
+      `fragment ${contentTypeName} on _${contentTypeName} { ${allFields.join(
+        ' '
+      )} }`,
+    ];
+  }
+
   const contentType = getContentType(contentTypeName);
   if (!contentType) {
     throw new Error(`Content type ${contentTypeName} is not defined`);
   }
-
-  const allFields: string[] = [];
-  const allExtraFragments: string[] = [];
 
   for (const [key, prop] of Object.entries(contentType.properties ?? {})) {
     const { fields, extraFragments } = convertProperty(

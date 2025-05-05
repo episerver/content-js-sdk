@@ -11,6 +11,8 @@ import {
   superHeroBlock,
   fAQPage,
   contactUsPage,
+  mediaPage,
+  blogPage,
 } from './fixtures';
 
 beforeAll(() => {
@@ -101,7 +103,35 @@ describe('createFragment()', () => {
         "fragment AboutPage on AboutPage { hero { __typename ...Hero } body { html, json } }",
         "fragment AboutContent on AboutContent { heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
         "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage } body { html, json } }",
+        "fragment Image on _Image { _metadata { displayName url { default } } }",
+        "fragment Media on _Media { _metadata { displayName url { default } } }",
+        "fragment Video on _Video { _metadata { displayName url { default } } }",
+        "fragment mediaPage on mediaPage { media { __typename ...Image ...Media ...Video } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...Image } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage } body { html, json } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has special allowedTypes defined (Image, Media, Video)', async () => {
+    const result = await createFragment(mediaPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment Image on _Image { _metadata { displayName url { default } } }",
+        "fragment Media on _Media { _metadata { displayName url { default } } }",
+        "fragment Video on _Video { _metadata { displayName url { default } } }",
+        "fragment mediaPage on mediaPage { media { __typename ...Image ...Media ...Video } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has allowedTypes defined with special type', async () => {
+    const result = await createFragment(blogPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
+        "fragment Image on _Image { _metadata { displayName url { default } } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...Image } }",
       ]
     `);
   });
