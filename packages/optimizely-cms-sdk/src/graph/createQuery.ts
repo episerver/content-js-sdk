@@ -29,6 +29,45 @@ function getKeyName(t: ContentOrMediaType) {
 }
 
 /**
+ * Check if the keyName is a special type
+ * @param key keyName of the content type
+ * @returns boolean
+ */
+function isBaseType(key: string): boolean {
+  return /^_/.test(key);
+}
+
+/**
+ * Check if the keyName is a Media type
+ * @param key keyName of the content type
+ * @returns boolean
+ */
+function isMediaType(key: string): boolean {
+  return ['_Image', '_Media', '_Video'].includes(key);
+}
+
+/**
+ * Generates and adds framents for base types
+ * @param contentTypeName name of the base content type
+ * @param allFields all fields inside the given content type
+ * @param allExtraFragments all additional fragments needed for given content type
+ * @returns
+ */
+function generateBaseTypeFragments(
+  contentTypeName: string,
+  allFields: string[],
+  allExtraFragments: string[]
+) {
+  // Note: more base typea to be added later
+  if (isMediaType(contentTypeName)) {
+    allExtraFragments.push(
+      `fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }`
+    );
+    allFields.push(`_metadata { ...mediaMetaData }`);
+  }
+}
+
+/**
  * Converts a property into a GraphQL field
  * @param name Field name in the parent selection set.
  * @param property Property definition object from the schema.
@@ -43,6 +82,7 @@ function convertProperty(
   visited: Set<string> // one shared guard per tree
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
+  const subfields: string[] = [];
   const extraFragments: string[] = [];
 
   if (property.type === 'content') {
@@ -53,14 +93,15 @@ function convertProperty(
     );
 
     for (const t of allowed) {
-      extraFragments.push(...createFragment(getKeyName(t), visited));
+      const key = getKeyName(t);
+      extraFragments.push(...createFragment(key, visited));
+      subfields.push(`...${key}`);
     }
 
-    const subfields = [...new Set(allowed)] // remove duplicates
-      .map((t) => `...${getKeyName(t)}`)
+    const uniqueSubfields = [...new Set(subfields)] // remove duplicates
       .join(' ');
 
-    fields.push(`${name} { __typename ${subfields} }`);
+    fields.push(`${name} { __typename ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
   } else if (property.type === 'url') {
@@ -98,23 +139,29 @@ export function createFragment(
   if (visited.has(contentTypeName)) return [];
   visited.add(contentTypeName);
 
-  const contentType = getContentType(contentTypeName);
-  if (!contentType) {
-    throw new Error(`Content type ${contentTypeName} is not defined`);
-  }
-
   const allFields: string[] = [];
   const allExtraFragments: string[] = [];
 
-  for (const [key, prop] of Object.entries(contentType.properties ?? {})) {
-    const { fields, extraFragments } = convertProperty(
-      key,
-      prop,
-      contentTypeName,
-      visited
-    );
-    allFields.push(...fields);
-    allExtraFragments.push(...extraFragments);
+  if (isBaseType(contentTypeName)) {
+    // generates and adds fragments for base types
+    generateBaseTypeFragments(contentTypeName, allFields, allExtraFragments);
+  } else {
+    // generates and adds fragments for user defined contentTypes
+    const contentType = getContentType(contentTypeName);
+    if (!contentType) {
+      throw new Error(`Content type ${contentTypeName} is not defined`);
+    }
+
+    for (const [key, prop] of Object.entries(contentType.properties ?? {})) {
+      const { fields, extraFragments } = convertProperty(
+        key,
+        prop,
+        contentTypeName,
+        visited
+      );
+      allFields.push(...fields);
+      allExtraFragments.push(...extraFragments);
+    }
   }
 
   return [

@@ -37,6 +37,6 @@ export type OtherContentTypes = BaseContentType & {
 
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
 
-export type MediaStringTypes = 'Image' | 'Video' | 'Media';
+export type MediaStringTypes = '_Image' | '_Video' | '_Media';
 
 export type ContentOrMediaType = ContentType | MediaStringTypes;

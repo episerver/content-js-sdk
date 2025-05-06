@@ -133,6 +133,28 @@ export const contactUsPage = contentType({
   },
 });
 
+export const mediaPage = contentType({
+  baseType: 'component',
+  key: 'mediaPage',
+  properties: {
+    media: {
+      type: 'content',
+      allowedTypes: ['_Image', '_Media', '_Video'],
+    },
+  },
+});
+
+export const blogPage = contentType({
+  baseType: 'page',
+  key: 'blogPage',
+  properties: {
+    blog: {
+      type: 'content',
+      allowedTypes: [articlePage, '_Image'],
+    },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -145,4 +167,6 @@ export const allContentTypes: AnyContentType[] = [
   aboutBlock,
   contactUsPage,
   fAQPage,
+  mediaPage,
+  blogPage,
 ];
