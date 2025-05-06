@@ -1,6 +1,10 @@
 import { createQuery } from './createQuery';
 
-const GRAPHQL_URL = 'https://cg.optimizely.com/content/v2';
+/** Options for Graph */
+type GraphOptions = {
+  /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
+  graphUrl?: string;
+};
 
 const FETCH_CONTENT_QUERY = `
 query FetchContent($filter: _ContentWhereInput) {
@@ -26,14 +30,16 @@ function getFilterFromPath(path: string) {
 
 export class GraphClient {
   key: string;
+  graphUrl: string;
 
-  constructor(key: string) {
+  constructor(key: string, options: GraphOptions = {}) {
     this.key = key;
+    this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
   }
 
   /** Perform a GraphQL query with variables */
   async request(query: string, variables: any) {
-    const url = new URL(GRAPHQL_URL);
+    const url = new URL(this.graphUrl);
 
     // TODO: handle "preview"
     url.searchParams.append('auth', this.key);
@@ -64,7 +70,7 @@ export class GraphClient {
     return json.data;
   }
 
-  /** Fetches the content type of a content */
+  /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
   async fetchContentType(path: string) {
     const filter = getFilterFromPath(path);
     const data = await this.request(FETCH_CONTENT_QUERY, { filter });
@@ -76,6 +82,11 @@ export class GraphClient {
   async fetchContent(path: string) {
     const filter = getFilterFromPath(path);
     const contentTypeName = await this.fetchContentType(path);
+
+    if (!contentTypeName) {
+      throw new Error(`No content found for [${path}]`);
+    }
+
     const query = createQuery(contentTypeName);
 
     const response = await this.request(query, { filter });

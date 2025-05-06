@@ -22,10 +22,10 @@ export const ContentType = contentType({
         ],
       },
     },
-    firstSection: {
-      type: 'content',
-      allowedTypes: [LandingSectionContentType],
-    },
+    // firstSection: {
+    //   type: 'content',
+    //   allowedTypes: [LandingSectionContentType],
+    // },
     sections: {
       type: 'array',
       items: {

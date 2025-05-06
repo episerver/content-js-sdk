@@ -2,35 +2,44 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Step 1. Login to your instance
+
+Run the command:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm exec optimizely-cms-cli login
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Step 2. Sync content types
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run the command:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm exec optimizely-cms-cli config push
+```
 
-## Learn More
+### Step 3. Setup environmental variables
 
-To learn more about Next.js, take a look at the following resources:
+Copy `.env.example` into `.env`. Open the file and add the required environmental variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Step 4. Create content
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Go to your CMS and create a page with type "Landing Page".
+2. Do not forget to fill the "Name in URL" field
+3. Publish the content.
 
-## Deploy on Vercel
+### Step 5. Test the content in your app
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Start the app
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dev
+```
+
+- Open `http://localhost:3000/<lang>/<slug>`, where `<lang>` is the language code (for example `en`) and `<slug>` is the _name in URL_ of the previous step.
+
+  You should see the content of the page rendered with the components in the project
+
+- Append `http://localhost:3000/json/<lang>/<slug>` to the URL.
+
+  You should see the content of the page in JSON.

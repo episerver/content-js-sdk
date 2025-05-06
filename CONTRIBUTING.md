@@ -19,7 +19,7 @@ The SDK is a development library. It does not contain any runtime
 
 ### Run the CLI
 
-You can run `optimizely-cms-cli` from anywhere in the repo by using the command:
+You can run `optimizely-cms-cli` locally from the sample sites (for example, inside `/samples/nextjs-template`) by using the command:
 
 ```
 pnpm exec optimizely-cms-cli
@@ -34,15 +34,9 @@ pnpm exec optimizely-cms-cli --help
 
 You can also pass the `--help` flag to any command to see the flags and arguments for each of them
 
-### Run the samples
+### Run the sample sites
 
-Open a terminal in the directory `/samples/nextjs-template` and run
-
-```
-pnpm dev
-```
-
-Open http://localhost:3000 with your browser to see the result.
+- For `nextjs-template`, read the [README.md file in that project](./samples/nextjs-template/README.md)
 
 ## Repository structure
 
