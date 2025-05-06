@@ -6,6 +6,14 @@ type GraphOptions = {
   graphUrl?: string;
 };
 
+type PreviewParams = {
+  preview_token: string;
+  key: string;
+  ctx: string;
+  ver: string;
+  loc: string;
+};
+
 const FETCH_CONTENT_QUERY = `
 query FetchContent($filter: _ContentWhereInput) {
   _Content(where: $filter) {
@@ -17,6 +25,16 @@ query FetchContent($filter: _ContentWhereInput) {
   }
 }
 `;
+
+function getFilterFromPreviewParams(params: PreviewParams) {
+  return {
+    _metadata: {
+      key: { eq: params.key },
+      version: { eq: params.ver },
+      locale: { eq: params.loc },
+    },
+  };
+}
 
 function getFilterFromPath(path: string) {
   return {
@@ -38,17 +56,18 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(query: string, variables: any) {
+  async request(query: string, variables: any, previewToken?: string) {
     const url = new URL(this.graphUrl);
 
-    // TODO: handle "preview"
-    url.searchParams.append('auth', this.key);
+    if (!previewToken) {
+      url.searchParams.append('auth', this.key);
+    }
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: ``,
+        Authorization: previewToken ? `Bearer ${previewToken}` : '',
       },
       body: JSON.stringify({
         query,
@@ -90,6 +109,35 @@ export class GraphClient {
     const query = createQuery(contentTypeName);
 
     const response = await this.request(query, { filter });
+
+    return response?._Content?.item;
+  }
+
+  /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
+  async fetchPreviewContent(
+    searchParams: Record<string, string | string[] | undefined>
+  ) {
+    // TODO: Check that searchParams are correctly defined
+    const filter = getFilterFromPreviewParams(searchParams as PreviewParams);
+
+    // 1. Get content type
+    const data = await this.request(
+      FETCH_CONTENT_QUERY,
+      { filter },
+      searchParams.preview_token as string
+    );
+    const contentTypeName = data._Content?.item?._metadata?.types?.[0];
+
+    if (!contentTypeName) {
+      throw new Error(`No content found for key [${searchParams.key}]`);
+    }
+
+    const query = createQuery(contentTypeName);
+    const response = await this.request(
+      query,
+      { filter },
+      searchParams.preview_token as string
+    );
 
     return response?._Content?.item;
   }
