@@ -13,7 +13,6 @@ import {
 } from '../model/contentTypeRegistry';
 import {
   getKeyName,
-  isBaseType,
   isBaseMediaType,
   isCustomMediaType,
   buildBaseTypeFragments,
@@ -40,6 +39,45 @@ function getCachedContentTypes(): AnyContentType[] {
  */
 function refreshCache() {
   allContentTypes = getAllContentTypes();
+}
+
+/**
+ * Check if the keyName is a special type
+ * @param key keyName of the content type
+ * @returns boolean
+ */
+function isBaseType(key: string): boolean {
+  return /^_/.test(key);
+}
+
+/**
+ * Check if the keyName is a Media type
+ * @param key keyName of the content type
+ * @returns boolean
+ */
+function isMediaType(key: string): boolean {
+  return ['_Image', '_Media', '_Video'].includes(key);
+}
+
+/**
+ * Generates and adds framents for base types
+ * @param contentTypeName name of the base content type
+ * @param allFields all fields inside the given content type
+ * @param allExtraFragments all additional fragments needed for given content type
+ * @returns
+ */
+function generateBaseTypeFragments(
+  contentTypeName: string,
+  allFields: string[],
+  allExtraFragments: string[]
+) {
+  // Note: more base typea to be added later
+  if (isMediaType(contentTypeName)) {
+    allExtraFragments.push(
+      `fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }`
+    );
+    allFields.push(`_metadata { ...mediaMetaData }`);
+  }
 }
 
 /**
