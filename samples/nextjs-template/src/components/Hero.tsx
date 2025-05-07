@@ -1,6 +1,6 @@
 import { contentType } from 'optimizely-cms-sdk';
 
-export const ContentType = contentType({
+export const HeroContentType = contentType({
   key: 'Hero',
   displayName: 'Hero',
   baseType: 'component',

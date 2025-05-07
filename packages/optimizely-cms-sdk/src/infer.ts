@@ -10,6 +10,7 @@ import {
   ArrayProperty,
   BinaryProperty,
   BooleanProperty,
+  ComponentProperty,
   ContentProperty,
   ContentReferenceProperty,
   FloatProperty,
@@ -47,6 +48,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends ContentReferenceProperty ? { url: InferredUrl }
   : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
   : T extends ContentProperty ? {__typename: string, __viewname: string}
+  : T extends ComponentProperty<infer E> ? Infer<E>
   : unknown
 
 /** Attributes included in the response from Graph in every content type */
