@@ -15,6 +15,10 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
       (acc, [key, value]) => {
         const updatedValue = { ...value };
 
+        if (updatedValue.type === 'component') {
+          (updatedValue.contentType as any) = updatedValue.contentType.key;
+        }
+
         // If type is "richText", we switch type to "string" and "format" to "html"
         if (updatedValue.type === 'richText') {
           (updatedValue.type as any) = 'string'; //
