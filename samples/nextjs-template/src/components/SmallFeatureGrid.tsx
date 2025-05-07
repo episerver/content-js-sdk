@@ -11,7 +11,7 @@ export const ContentType = contentType({
       type: 'array',
       items: {
         type: 'contentReference',
-        allowedTypes: [ArticleContentType, SmallFeatureContentType, 'Image'],
+        allowedTypes: [ArticleContentType, SmallFeatureContentType, '_Image'],
       },
     },
   },

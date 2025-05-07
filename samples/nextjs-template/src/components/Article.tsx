@@ -10,7 +10,7 @@ export const ArticleContentType = contentType({
     },
     thumbnail: {
       type: 'contentReference',
-      allowedTypes: ['Image'],
+      allowedTypes: ['_Image'],
     },
     body: {
       type: 'richText',

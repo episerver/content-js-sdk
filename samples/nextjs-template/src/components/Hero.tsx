@@ -13,7 +13,7 @@ export const ContentType = contentType({
     },
     background: {
       type: 'contentReference',
-      allowedTypes: ['Image'],
+      allowedTypes: ['_Image'],
     },
     theme: {
       type: 'string',
