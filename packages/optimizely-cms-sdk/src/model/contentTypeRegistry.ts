@@ -11,3 +11,8 @@ export function init(registry: AnyContentType[]) {
 export function getContentType(name: string) {
   return _registry.find((c) => c.key === name);
 }
+
+/** Get all the content types */
+export function getAllContentTypes(): AnyContentType[] {
+  return _registry;
+}

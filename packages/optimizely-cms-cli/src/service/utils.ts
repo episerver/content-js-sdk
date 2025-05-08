@@ -2,7 +2,6 @@ import { resolve } from 'node:path';
 import { glob } from 'glob';
 import { createJiti } from 'jiti';
 import {
-  Properties,
   ContentTypes,
   isContentType,
   DisplayTemplates,
@@ -153,61 +152,4 @@ export async function readFromPath(configPath: string) {
  */
 export function extractKeyName(input: ContentOrMediaType): string {
   return typeof input === 'string' ? input : input.key;
-}
-
-/**
- * Checks if a given object has a specific property that is an array of ContentOrMediaType.
- * @param value - The object to inspect.
- * @param key - The property name to check on the object.
- * @returns True if the object has the specified property and it is an array of ContentOrMediaType; otherwise, false.
- */
-export function hasArrayOfContentOrMediaTypes(
-  value: any,
-  key: string
-): value is { [key: string]: ContentOrMediaType[] } {
-  const mediaTypes = ['Image', 'Video', 'Media'];
-
-  if (!value || typeof value !== 'object' || !Array.isArray(value[key])) {
-    return false;
-  }
-
-  return value[key].every(
-    (item: unknown) =>
-      (typeof item === 'string' && mediaTypes.includes(item)) ||
-      (typeof item === 'object' &&
-        item !== null &&
-        'key' in item &&
-        typeof (item as any).key === 'string')
-  );
-}
-
-/**
- * Checks if a value is an array schema with an "items" object that may have "allowedTypes" or "restrictedTypes",
- * or if those properties exist directly on the object.
- * @param value - The value to validate, expected to follow the structure of an array-based schema.
- * @returns True if the value has type === 'array' or similar and a valid structure for type restrictions.
- */
-export function isValidArrayWithItems(
-  value: any
-): value is AllowedOrRestrictedType {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const isArrayType = ['array', 'contentReference', 'content'].includes(
-    value.type
-  );
-
-  if (!isArrayType) {
-    return false;
-  }
-
-  return (
-    (value.items &&
-      typeof value.items === 'object' &&
-      (hasArrayOfContentOrMediaTypes(value.items, 'allowedTypes') ||
-        hasArrayOfContentOrMediaTypes(value.items, 'restrictedTypes'))) ||
-    hasArrayOfContentOrMediaTypes(value, 'allowedTypes') ||
-    hasArrayOfContentOrMediaTypes(value, 'restrictedTypes')
-  );
 }

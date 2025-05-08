@@ -1,4 +1,4 @@
-import { ContentOrMediaType } from './contentTypes';
+import { AnyContentType, ContentOrMediaType } from './contentTypes';
 
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
@@ -39,7 +39,7 @@ export type ArrayItems =
   | FloatProperty
   | ContentReferenceProperty
   | ContentProperty
-  | ComponentProperty
+  | ComponentProperty<AnyContentType>
   | LinkProperty;
 
 /** Represents the content type property "String" */
@@ -83,9 +83,9 @@ export type ContentProperty = BaseProperty & {
  * Reprensents the content type property "Component".
  * Note: this is called "Block" in the GUI
  */
-export type ComponentProperty = BaseProperty & {
+export type ComponentProperty<T extends AnyContentType> = BaseProperty & {
   type: 'component';
-  contentType: string;
+  contentType: T;
 };
 
 // Note: `Link` does not exist in the REST API or in the GUI.
