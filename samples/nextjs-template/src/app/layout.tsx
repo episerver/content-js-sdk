@@ -20,7 +20,6 @@ import SmallFeature, {
 import VideoFeature, {
   VideoFeatureContentType,
 } from '@/components/VideoFeature';
-import { ArticleListContentType } from '@/components/ArticleList';
 import { HeroContentType } from '@/components/Hero';
 
 initContentTypeRegistry([
@@ -29,7 +28,6 @@ initContentTypeRegistry([
   SmallFeatureGridContentType,
   SmallFeatureContentType,
   VideoFeatureContentType,
-  ArticleListContentType,
   HeroContentType,
 ]);
 initReactComponentRegistry({
