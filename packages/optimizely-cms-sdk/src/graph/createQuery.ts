@@ -60,7 +60,10 @@ function convertProperty(
   const subfields: string[] = [];
   const extraFragments: string[] = [];
 
-  if (property.type === 'content') {
+  if (property.type === 'component') {
+    extraFragments.push(...createFragment(property.contentType.key, visited));
+    fields.push(`${name} { ...${property.contentType.key} }`);
+  } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
       property.allowedTypes,
       property.restrictedTypes,
