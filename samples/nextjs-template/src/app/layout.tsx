@@ -21,6 +21,7 @@ import VideoFeature, {
   VideoFeatureContentType,
 } from '@/components/VideoFeature';
 import { ArticleListContentType } from '@/components/ArticleList';
+import { HeroContentType } from '@/components/Hero';
 
 initContentTypeRegistry([
   LandingSectionContentType,
@@ -29,6 +30,7 @@ initContentTypeRegistry([
   SmallFeatureContentType,
   VideoFeatureContentType,
   ArticleListContentType,
+  HeroContentType,
 ]);
 initReactComponentRegistry({
   resolver: {
