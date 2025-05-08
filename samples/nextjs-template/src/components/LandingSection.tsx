@@ -1,7 +1,6 @@
 import { contentType, displayTemplate, Infer } from 'optimizely-cms-sdk';
 import { SmallFeatureGridContentType } from './SmallFeatureGrid';
 import { VideoFeatureContentType } from './VideoFeature';
-import { ArticleListContentType } from './ArticleList';
 import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 
 export const LandingSectionContentType = contentType({
@@ -19,11 +18,7 @@ export const LandingSectionContentType = contentType({
       type: 'array',
       items: {
         type: 'content',
-        allowedTypes: [
-          SmallFeatureGridContentType,
-          VideoFeatureContentType,
-          ArticleListContentType,
-        ],
+        allowedTypes: [SmallFeatureGridContentType, VideoFeatureContentType],
       },
     },
   },
