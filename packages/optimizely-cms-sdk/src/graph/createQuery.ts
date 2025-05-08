@@ -61,8 +61,10 @@ function convertProperty(
   const extraFragments: string[] = [];
 
   if (property.type === 'component') {
-    extraFragments.push(...createFragment(property.contentType.key, visited));
-    fields.push(`${name} { ...${property.contentType.key} }`);
+    extraFragments.push(
+      ...createFragment(property.contentType.key, visited, 'Property')
+    );
+    fields.push(`${name} { ...${property.contentType.key}Property }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
       property.allowedTypes,
@@ -121,7 +123,8 @@ function convertProperty(
  */
 export function createFragment(
   contentTypeName: string,
-  visited: Set<string> = new Set() // recursion guard shared down the tree
+  visited: Set<string> = new Set(), // shared across recursion
+  suffix: string = ''
 ): string[] {
   // Refresh registry cache only on the *root* call (avoids redundant reads)
   if (visited.size === 0) refreshCache();
@@ -166,8 +169,8 @@ export function createFragment(
   // Compose unique fragment
   const uniqueFields = [...new Set(fields)].join(' ');
   return [
-    ...new Set(extraFragments),
-    `fragment ${contentTypeName} on ${contentTypeName} { ${uniqueFields} }`,
+    ...new Set(extraFragments), // unique dependency fragments
+    `fragment ${contentTypeName}${suffix} on ${contentTypeName}${suffix} { ${uniqueFields} }`,
   ];
 }
 
