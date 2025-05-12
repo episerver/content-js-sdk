@@ -114,29 +114,27 @@ export class GraphClient {
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
-  async fetchPreviewContent(
-    searchParams: Record<string, string | string[] | undefined>
-  ) {
+  async fetchPreviewContent(params: PreviewParams) {
     // TODO: Check that searchParams are correctly defined
-    const filter = getFilterFromPreviewParams(searchParams as PreviewParams);
+    const filter = getFilterFromPreviewParams(params);
 
     // 1. Get content type
     const data = await this.request(
       FETCH_CONTENT_QUERY,
       { filter },
-      searchParams.preview_token as string
+      params.preview_token
     );
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
 
     if (!contentTypeName) {
-      throw new Error(`No content found for key [${searchParams.key}]`);
+      throw new Error(`No content found for key [${params.key}]`);
     }
 
     const query = createQuery(contentTypeName);
     const response = await this.request(
       query,
       { filter },
-      searchParams.preview_token as string
+      params.preview_token
     );
 
     return response?._Content?.item;
