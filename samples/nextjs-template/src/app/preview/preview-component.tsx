@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function callback(event: any) {
   console.log('CALLBACK');
   const message = event.detail;
