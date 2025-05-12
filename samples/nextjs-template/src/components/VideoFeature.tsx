@@ -13,7 +13,7 @@ export const VideoFeatureContentType = contentType({
     },
     thumbnail_image: {
       type: 'contentReference',
-      allowedTypes: ['Image'],
+      allowedTypes: ['_Image'],
     },
     thumbnail_caption: {
       type: 'string',
