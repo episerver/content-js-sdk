@@ -14,6 +14,13 @@ type PreviewParams = {
   loc: string;
 };
 
+// TODO: this type definition is provisional
+type GraphFilter = {
+  _metadata: {
+    [key: string]: any;
+  };
+};
+
 const FETCH_CONTENT_QUERY = `
 query FetchContent($filter: _ContentWhereInput) {
   _Content(where: $filter) {
@@ -26,7 +33,7 @@ query FetchContent($filter: _ContentWhereInput) {
 }
 `;
 
-function getFilterFromPreviewParams(params: PreviewParams) {
+function getFilterFromPreviewParams(params: PreviewParams): GraphFilter {
   return {
     _metadata: {
       key: { eq: params.key },
@@ -36,7 +43,7 @@ function getFilterFromPreviewParams(params: PreviewParams) {
   };
 }
 
-function getFilterFromPath(path: string) {
+function getFilterFromPath(path: string): GraphFilter {
   return {
     _metadata: {
       url: {
@@ -90,9 +97,12 @@ export class GraphClient {
   }
 
   /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
-  async fetchContentType(path: string) {
-    const filter = getFilterFromPath(path);
-    const data = await this.request(FETCH_CONTENT_QUERY, { filter });
+  async fetchContentType(filter: GraphFilter, previewToken?: string) {
+    const data = await this.request(
+      FETCH_CONTENT_QUERY,
+      { filter },
+      previewToken
+    );
 
     return data._Content?.item?._metadata?.types?.[0];
   }
@@ -100,7 +110,7 @@ export class GraphClient {
   /** Fetches a content given its path */
   async fetchContent(path: string) {
     const filter = getFilterFromPath(path);
-    const contentTypeName = await this.fetchContentType(path);
+    const contentTypeName = await this.fetchContentType(filter);
 
     if (!contentTypeName) {
       throw new Error(`No content found for [${path}]`);
@@ -115,16 +125,11 @@ export class GraphClient {
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: PreviewParams) {
-    // TODO: Check that searchParams are correctly defined
     const filter = getFilterFromPreviewParams(params);
-
-    // 1. Get content type
-    const data = await this.request(
-      FETCH_CONTENT_QUERY,
-      { filter },
+    const contentTypeName = await this.fetchContentType(
+      filter,
       params.preview_token
     );
-    const contentTypeName = data._Content?.item?._metadata?.types?.[0];
 
     if (!contentTypeName) {
       throw new Error(`No content found for key [${params.key}]`);
