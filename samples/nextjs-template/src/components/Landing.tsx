@@ -38,11 +38,9 @@ export default function LandingComponent({ opti }: Props) {
           <p>{opti.hero.summary}</p>
         </div>
       </header>
-      <div>
-        {opti.sections.map((section, i) => (
-          <OptimizelyComponent key={i} opti={section} index={i} />
-        ))}
-      </div>
+      {opti.sections.map((section, i) => (
+        <OptimizelyComponent key={i} opti={section} />
+      ))}
     </main>
   );
 }
