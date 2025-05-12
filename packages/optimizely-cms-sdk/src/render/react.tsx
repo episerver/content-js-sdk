@@ -14,7 +14,6 @@ type Props = {
   opti: {
     __typename: string;
   };
-  [key: string]: any;
 };
 
 export function initReactComponentRegistry(options: InitOptions) {
