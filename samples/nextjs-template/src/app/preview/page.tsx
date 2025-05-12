@@ -1,6 +1,7 @@
 import { GraphClient } from 'optimizely-cms-sdk';
 import { PreviewParams } from 'optimizely-cms-sdk/dist/graph';
 import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
+import { PreviewComponent } from './preview-component';
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -16,5 +17,13 @@ export default async function Page({ searchParams }: Props) {
     (await searchParams) as PreviewParams
   );
 
-  return <OptimizelyComponent opti={response} />;
+  return (
+    <>
+      <OptimizelyComponent opti={response} />;
+      <PreviewComponent />
+      <script
+        src={`${process.env.OPTIMIZELY_HOST}/util/javascript/communicationinjector.js`}
+      ></script>
+    </>
+  );
 }
