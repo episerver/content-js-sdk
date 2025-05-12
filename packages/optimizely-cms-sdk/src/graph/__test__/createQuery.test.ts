@@ -11,6 +11,10 @@ import {
   superHeroBlock,
   fAQPage,
   contactUsPage,
+  mediaPage,
+  blogPage,
+  specialPage,
+  mediaBlock,
 } from './fixtures';
 
 beforeAll(() => {
@@ -101,7 +105,94 @@ describe('createFragment()', () => {
         "fragment AboutPage on AboutPage { hero { __typename ...Hero } body { html, json } }",
         "fragment AboutContent on AboutContent { heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
         "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage } body { html, json } }",
+        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
+        "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
+        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
+        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
+        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
+        "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock } body { html, json } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has allowedTypes defined with special type', async () => {
+    const result = await createFragment(blogPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
+        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
+        "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
+        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has special allowedTypes defined (_Image, _Media, _Video)', async () => {
+    const result = await createFragment(mediaPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
+        "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
+        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
+        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
+        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has only restrictedTypes (no allowedTypes) defined and its a BaseType (_Image, _Media, _Video)', async () => {
+    const result = await createFragment(specialPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment CallToAction on CallToAction { label link }",
+        "fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
+        "fragment myButton on myButton { label link }",
+        "fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
+        "fragment AboutPage on AboutPage { hero { __typename ...Hero } body { html, json } }",
+        "fragment AboutContent on AboutContent { heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
+        "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
+        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
+        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
+        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
+        "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock } body { html, json } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has allowedTypes and has baseType as restricted (_Image, _Media, _Video)', async () => {
+    const result = await createFragment(mediaBlock.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
+        "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
+        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
+        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
+        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
+        "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
       ]
     `);
   });
