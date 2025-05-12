@@ -23,16 +23,17 @@ export type ExperienceContentType = BaseContentType & {
   baseType: 'experience';
 };
 
+export type BaseTypes =
+  | 'page'
+  | 'media'
+  | 'image'
+  | 'video'
+  | 'folder'
+  | 'element';
+
 /** Represents all other types in CMS. They don't have any additional property */
 export type OtherContentTypes = BaseContentType & {
-  baseType:
-    | 'page'
-    | 'media'
-    | 'image'
-    | 'video'
-    | 'folder'
-    // | "section" -- not allowed
-    | 'element';
+  baseType: BaseTypes;
 };
 
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };

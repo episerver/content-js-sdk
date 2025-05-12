@@ -1,10 +1,25 @@
 import { AnyProperty } from '../model/properties';
-import { AnyContentType, ContentOrMediaType } from '../model/contentTypes';
-import { isContentType } from '../model';
 import {
-  getAllContentTypes,
+  AnyContentType,
+  MediaStringTypes,
+  ContentOrMediaType,
+} from '../model/contentTypes';
+import {
+  getBaseKey,
   getContentType,
+  getAllContentTypes,
+  getAllMediaTypeKeys,
+  getContentTypeByBaseType,
 } from '../model/contentTypeRegistry';
+import {
+  getKeyName,
+  isBaseType,
+  isBaseMediaType,
+  isCustomMediaType,
+  buildBaseTypeFragments,
+  MEDIA_METADATA_FRAGMENT,
+  COMMON_MEDIA_METADATA_BLOCK,
+} from '../util/baseTypeUtil';
 
 let allContentTypes: AnyContentType[] = [];
 
@@ -20,51 +35,11 @@ function getCachedContentTypes(): AnyContentType[] {
 }
 
 /**
- * Get the key or name of ContentType or Media type
- * @param t ContentType or Media type property
- * @returns Name of the ContentType or Media type
+ *  Force a fresh read called once per *top‑level* createFragment() call.
+ * @returns An array of all contentType definitions.
  */
-function getKeyName(t: ContentOrMediaType) {
-  return isContentType(t) ? t.key : t;
-}
-
-/**
- * Check if the keyName is a special type
- * @param key keyName of the content type
- * @returns boolean
- */
-function isBaseType(key: string): boolean {
-  return /^_/.test(key);
-}
-
-/**
- * Check if the keyName is a Media type
- * @param key keyName of the content type
- * @returns boolean
- */
-function isMediaType(key: string): boolean {
-  return ['_Image', '_Media', '_Video'].includes(key);
-}
-
-/**
- * Generates and adds framents for base types
- * @param contentTypeName name of the base content type
- * @param allFields all fields inside the given content type
- * @param allExtraFragments all additional fragments needed for given content type
- * @returns
- */
-function generateBaseTypeFragments(
-  contentTypeName: string,
-  allFields: string[],
-  allExtraFragments: string[]
-) {
-  // Note: more base typea to be added later
-  if (isMediaType(contentTypeName)) {
-    allExtraFragments.push(
-      `fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }`
-    );
-    allFields.push(`_metadata { ...mediaMetaData }`);
-  }
+function refreshCache() {
+  allContentTypes = getAllContentTypes();
 }
 
 /**
@@ -86,7 +61,7 @@ function convertProperty(
   const extraFragments: string[] = [];
 
   if (property.type === 'content') {
-    const allowed = refinedAllowedTypes(
+    const allowed = resolveAllowedTypes(
       property.allowedTypes,
       property.restrictedTypes,
       rootName
@@ -96,6 +71,16 @@ function convertProperty(
       const key = getKeyName(t);
       extraFragments.push(...createFragment(key, visited));
       subfields.push(`...${key}`);
+
+      // if the key name is one of the user defined media type we append the base type fragment
+      // eg: userDefinedImage (baseType:"image") -> _Image
+      if (getAllMediaTypeKeys().includes(key)) {
+        const cc = getContentType(key);
+        if (cc) {
+          const baseKey = getBaseKey(cc.baseType);
+          subfields.push(`...${baseKey.trim()}`);
+        }
+      }
     }
 
     const uniqueSubfields = [...new Set(subfields)] // remove duplicates
@@ -133,42 +118,53 @@ function convertProperty(
  */
 export function createFragment(
   contentTypeName: string,
-  visited: Set<string> = new Set() // shared across recursion
+  visited: Set<string> = new Set() // recursion guard shared down the tree
 ): string[] {
-  // a recursion guard that prevents infinite loops
-  if (visited.has(contentTypeName)) return [];
+  // Refresh registry cache only on the *root* call (avoids redundant reads)
+  if (visited.size === 0) refreshCache();
+  if (visited.has(contentTypeName)) return []; // cyclic ref guard
   visited.add(contentTypeName);
 
-  const allFields: string[] = [];
-  const allExtraFragments: string[] = [];
+  const fields: string[] = [];
+  const extraFragments: string[] = [];
 
+  // Built‑in CMS baseTypes  ("_Image", "_Video", "_Media" etc.)
   if (isBaseType(contentTypeName)) {
-    // generates and adds fragments for base types
-    generateBaseTypeFragments(contentTypeName, allFields, allExtraFragments);
-  } else {
-    // generates and adds fragments for user defined contentTypes
-    const contentType = getContentType(contentTypeName);
-    if (!contentType) {
-      throw new Error(`Content type ${contentTypeName} is not defined`);
-    }
+    const { fields: f, extraFragments: e } = buildBaseTypeFragments(
+      contentTypeName as MediaStringTypes
+    );
+    fields.push(...f);
+    extraFragments.push(...e);
 
-    for (const [key, prop] of Object.entries(contentType.properties ?? {})) {
-      const { fields, extraFragments } = convertProperty(
-        key,
+    // Handle User defined contentType
+  } else {
+    const ct = getContentType(contentTypeName);
+    if (!ct) throw new Error(`Unknown content type: ${contentTypeName}`);
+
+    // Gather fields for every property
+    for (const [propKey, prop] of Object.entries(ct.properties ?? {})) {
+      const { fields: f, extraFragments: e } = convertProperty(
+        propKey,
         prop,
         contentTypeName,
         visited
       );
-      allFields.push(...fields);
-      allExtraFragments.push(...extraFragments);
+      fields.push(...f);
+      extraFragments.push(...e);
+    }
+
+    // Custom contentTypes which implements baseTypes (media/image/video): we append fragments for metadata
+    if (isCustomMediaType(ct)) {
+      extraFragments.unshift(MEDIA_METADATA_FRAGMENT); // maintain order
+      fields.push(COMMON_MEDIA_METADATA_BLOCK);
     }
   }
 
+  // Compose unique fragment
+  const uniqueFields = [...new Set(fields)].join(' ');
   return [
-    ...new Set(allExtraFragments), // unique dependency fragments
-    `fragment ${contentTypeName} on ${contentTypeName} { ${allFields.join(
-      ' '
-    )} }`,
+    ...new Set(extraFragments),
+    `fragment ${contentTypeName} on ${contentTypeName} { ${uniqueFields} }`,
   ];
 }
 
@@ -199,27 +195,47 @@ query FetchContent($filter: _ContentWhereInput) {
  * @param rootName Name of the fragment we are **currently** building.
  * @returns baseline array (all allowedTypes – restrictedTypes) in declaration order.
  */
-function refinedAllowedTypes(
-  allowedTypes: ContentOrMediaType[] | undefined,
-  restrictedTypes: ContentOrMediaType[] | undefined,
-  rootName: string
-): ContentOrMediaType[] {
-  // “skip” lives only for this property
+function resolveAllowedTypes(
+  allowed: ContentOrMediaType[] | undefined,
+  restricted: ContentOrMediaType[] | undefined,
+  rootKey: string
+): (ContentOrMediaType | AnyContentType)[] {
   const skip = new Set<string>();
+  const seen = new Set<string>();
+  const result: (ContentOrMediaType | AnyContentType)[] = [];
+  const baseline = allowed?.length ? allowed : getCachedContentTypes();
 
-  // ecord this level’s restrictions
-  for (const r of restrictedTypes ?? []) {
-    skip.add(getKeyName(r));
+  // If a CMS base media type ("_Image", "_Media" …) is restricted,
+  // we must also ban every user defined media type that shares the same media type
+  restricted?.forEach((r) => {
+    const key = getKeyName(r);
+    skip.add(key);
+    if (isBaseMediaType(key as MediaStringTypes)) {
+      getContentTypeByBaseType(key as MediaStringTypes).forEach((ct) =>
+        skip.add(ct.key)
+      );
+    }
+  });
+
+  const add = (ct: ContentOrMediaType | AnyContentType) => {
+    const key = getKeyName(ct);
+    if (key === rootKey || skip.has(key) || seen.has(key)) return;
+    seen.add(key);
+    result.push(ct);
+  };
+
+  for (const entry of baseline) {
+    const key = getKeyName(entry);
+
+    // If this entry is a base media type inject all matching custom media‑types *before* it.
+    if (allowed?.length && isBaseMediaType(key as MediaStringTypes)) {
+      getContentTypeByBaseType(key as MediaStringTypes)
+        .filter(isCustomMediaType)
+        .forEach(add);
+    }
+
+    add(entry); // finally, the entry itself (token or regular type)
   }
 
-  // decide the baseline list baseline (allowedTypes  OR  every known contentType)
-  const baseline: ContentOrMediaType[] =
-    allowedTypes && allowedTypes.length > 0
-      ? allowedTypes
-      : (getCachedContentTypes() as ContentOrMediaType[]);
-
-  // subtract everything in skip and the fragment that is beign built
-  return baseline.filter(
-    (t) => !skip.has(getKeyName(t)) && getKeyName(t) !== rootName
-  );
+  return result;
 }

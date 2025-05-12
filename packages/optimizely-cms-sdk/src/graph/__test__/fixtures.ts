@@ -133,8 +133,46 @@ export const contactUsPage = contentType({
   },
 });
 
+export const blogPage = contentType({
+  baseType: 'page',
+  key: 'blogPage',
+  properties: {
+    blog: {
+      type: 'content',
+      allowedTypes: [articlePage, '_Image'],
+    },
+  },
+});
+
+export const customImage = contentType({
+  baseType: 'image',
+  key: 'customImage',
+  properties: {
+    name: { type: 'string' },
+    alt: { type: 'string' },
+  },
+});
+
+export const customVideo = contentType({
+  baseType: 'video',
+  key: 'customVideo',
+  properties: {
+    name: { type: 'string' },
+    date: { type: 'string' },
+  },
+});
+
+export const customMedia = contentType({
+  baseType: 'media',
+  key: 'customMedia',
+  properties: {
+    name: { type: 'string' },
+    fileType: { type: 'string' },
+  },
+});
+
 export const mediaPage = contentType({
-  baseType: 'component',
+  baseType: 'page',
   key: 'mediaPage',
   properties: {
     media: {
@@ -144,13 +182,25 @@ export const mediaPage = contentType({
   },
 });
 
-export const blogPage = contentType({
+export const specialPage = contentType({
   baseType: 'page',
-  key: 'blogPage',
+  key: 'specialPage',
   properties: {
-    blog: {
+    media: {
       type: 'content',
-      allowedTypes: [articlePage, '_Image'],
+      restrictedTypes: ['_Image'],
+    },
+  },
+});
+
+export const mediaBlock = contentType({
+  baseType: 'component',
+  key: 'mediaBlock',
+  properties: {
+    media: {
+      type: 'content',
+      allowedTypes: [mediaPage],
+      restrictedTypes: ['_Image'],
     },
   },
 });
@@ -169,4 +219,9 @@ export const allContentTypes: AnyContentType[] = [
   fAQPage,
   mediaPage,
   blogPage,
+  customImage,
+  customMedia,
+  customVideo,
+  specialPage,
+  mediaBlock,
 ];

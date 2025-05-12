@@ -6,7 +6,7 @@ import { DisplayTemplate } from './displayTemplates';
 export function contentType<T extends AnyContentType>(
   options: T
 ): T & { __type: 'contentType' } {
-  if (isValidKey(options.key)) {
+  if (isInvalidKey(options.key)) {
     throw new Error(`Invalid key: ${options.key} in contentType.`);
   }
   return { ...options, __type: 'contentType' };
@@ -16,7 +16,7 @@ export function contentType<T extends AnyContentType>(
 export function displayTemplate<T extends DisplayTemplate>(
   options: T
 ): T & { __type: 'displayTemplate' } {
-  if (isValidKey(options.key)) {
+  if (isInvalidKey(options.key)) {
     throw new Error(`Invalid key: ${options.key} in displayTemplate.`);
   }
   return { ...options, __type: 'displayTemplate' };
@@ -58,7 +58,7 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
 /**
  * Checks if `key` is a valid key name (user defined key insted of base type).
  */
-export function isValidKey(key: string): boolean {
+export function isInvalidKey(key: string): boolean {
   const regex = /^[A-Za-z][_0-9A-Za-z]+$/;
   return !regex.test(key);
 }
