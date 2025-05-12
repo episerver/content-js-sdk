@@ -1,4 +1,5 @@
 import { GraphClient } from 'optimizely-cms-sdk';
+import { PreviewParams } from 'optimizely-cms-sdk/dist/graph';
 import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 
 type Props = {
@@ -10,9 +11,10 @@ export default async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  //   const contentType = await client.fetchContentType(path);
-  //   const query = createQuery(contentType);
-  const response = await client.fetchPreviewContent(await searchParams);
+  const response = await client.fetchPreviewContent(
+    // TODO: check types in runtime properly
+    (await searchParams) as PreviewParams
+  );
 
   return <OptimizelyComponent opti={response} />;
 }

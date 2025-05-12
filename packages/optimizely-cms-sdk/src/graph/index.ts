@@ -6,7 +6,7 @@ type GraphOptions = {
   graphUrl?: string;
 };
 
-type PreviewParams = {
+export type PreviewParams = {
   preview_token: string;
   key: string;
   ctx: string;
@@ -15,7 +15,7 @@ type PreviewParams = {
 };
 
 // TODO: this type definition is provisional
-type GraphFilter = {
+export type GraphFilter = {
   _metadata: {
     [key: string]: any;
   };
