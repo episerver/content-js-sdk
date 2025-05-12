@@ -5,7 +5,6 @@ import { ComponentRegistry, ComponentResolver } from './componentRegistry';
 type ComponentType = React.ComponentType<any>;
 
 let componentRegistry: ComponentRegistry<ComponentType>;
-let isEdit = false;
 
 type InitOptions = {
   resolver: ComponentResolver<ComponentType>;
@@ -22,10 +21,6 @@ export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
 }
 
-export function setPreviewMode(params: Record<string, any>) {
-  isEdit = params && params.ctx === 'edit';
-}
-
 export async function OptimizelyComponent({ opti, ...props }: Props) {
   if (!componentRegistry) {
     throw new Error('You should call `initReactComponentRegistry` first');
@@ -39,18 +34,4 @@ export async function OptimizelyComponent({ opti, ...props }: Props) {
   }
 
   return <Component opti={opti} {...props} />;
-}
-
-export function getOptiProps(prop: any) {
-  if (!isEdit) {
-    return {};
-  }
-
-  if (typeof prop === 'string') {
-    return {
-      'data-epi-edit': prop,
-    };
-  }
-
-  return {};
 }
