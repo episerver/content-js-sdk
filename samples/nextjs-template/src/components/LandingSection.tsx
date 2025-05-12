@@ -1,4 +1,7 @@
 import { contentType, displayTemplate, Infer } from 'optimizely-cms-sdk';
+import { SmallFeatureGridContentType } from './SmallFeatureGrid';
+import { VideoFeatureContentType } from './VideoFeature';
+import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 
 export const LandingSectionContentType = contentType({
   key: 'LandingSection',
@@ -11,8 +14,14 @@ export const LandingSectionContentType = contentType({
     subtitle: {
       type: 'string',
     },
+    sections: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: [SmallFeatureGridContentType, VideoFeatureContentType],
+      },
+    },
   },
-  component: LandingSection,
 });
 
 export const DisplayTemplate = displayTemplate({
@@ -46,8 +55,13 @@ type Props = {
 export default function LandingSection({ opti }: Props) {
   return (
     <section>
-      <h2>{opti.heading}</h2>
-      <p>{opti.subtitle}</p>
+      <header>
+        <h2>{opti.heading}</h2>
+        <p>{opti.subtitle}</p>
+      </header>
+      {opti.sections.map((section, i) => (
+        <OptimizelyComponent opti={section} key={i} />
+      ))}
     </section>
   );
 }

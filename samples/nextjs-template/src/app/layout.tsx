@@ -11,12 +11,32 @@ import Landing, {
 import LandingSection, {
   LandingSectionContentType,
 } from '@/components/LandingSection';
+import SmallFeatureGrid, {
+  SmallFeatureGridContentType,
+} from '@/components/SmallFeatureGrid';
+import SmallFeature, {
+  SmallFeatureContentType,
+} from '@/components/SmallFeature';
+import VideoFeature, {
+  VideoFeatureContentType,
+} from '@/components/VideoFeature';
+import { HeroContentType } from '@/components/Hero';
 
-initContentTypeRegistry([LandingSectionContentType, LadningContentType]);
+initContentTypeRegistry([
+  LandingSectionContentType,
+  LadningContentType,
+  SmallFeatureGridContentType,
+  SmallFeatureContentType,
+  VideoFeatureContentType,
+  HeroContentType,
+]);
 initReactComponentRegistry({
   resolver: {
     Landing,
     LandingSection,
+    VideoFeature,
+    SmallFeatureGrid,
+    SmallFeature,
   },
 });
 

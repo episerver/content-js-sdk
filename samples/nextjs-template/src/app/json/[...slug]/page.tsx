@@ -1,6 +1,11 @@
 import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
 import { createQuery } from 'optimizely-cms-sdk/dist/graph/createQuery';
 
+export async function generateStaticParams() {
+  // TODO: Get this from the CMS instead of hard-coding
+  return [{ slug: ['en', 'obelisk'] }];
+}
+
 type Props = {
   params: Promise<{
     slug: string[];
