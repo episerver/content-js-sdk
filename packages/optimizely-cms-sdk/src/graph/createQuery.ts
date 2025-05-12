@@ -9,7 +9,6 @@ import {
   getAllContentTypes,
   getContentTypeByBaseType,
   getAllMediaTypeKeys,
-  getBaseKey,
 } from '../model/contentTypeRegistry';
 import {
   getKeyName,
@@ -19,6 +18,7 @@ import {
   MEDIA_METADATA_FRAGMENT,
   COMMON_MEDIA_METADATA_BLOCK,
   isBaseType,
+  getBaseKey,
 } from '../util/baseTypeUtil';
 
 let allContentTypes: AnyContentType[] = [];
