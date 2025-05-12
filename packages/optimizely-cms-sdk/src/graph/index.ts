@@ -33,7 +33,7 @@ query FetchContent($filter: _ContentWhereInput) {
 }
 `;
 
-function getFilterFromPreviewParams(params: PreviewParams): GraphFilter {
+export function getFilterFromPreviewParams(params: PreviewParams): GraphFilter {
   return {
     _metadata: {
       key: { eq: params.key },
@@ -43,7 +43,7 @@ function getFilterFromPreviewParams(params: PreviewParams): GraphFilter {
   };
 }
 
-function getFilterFromPath(path: string): GraphFilter {
+export function getFilterFromPath(path: string): GraphFilter {
   return {
     _metadata: {
       url: {
