@@ -1,9 +1,6 @@
 import Image from 'next/image';
 import { contentType, Infer } from 'optimizely-cms-sdk';
-import {
-  getOptiProps,
-  OptimizelyComponent,
-} from 'optimizely-cms-sdk/dist/render/react';
+import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
 import { LandingSectionContentType } from './LandingSection';
 import { HeroContentType } from './Hero';
 
@@ -41,7 +38,7 @@ export default function LandingComponent({ opti }: Props) {
           <p>{opti.hero.summary}</p>
         </div>
       </header>
-      <div {...getOptiProps('sections')}>
+      <div>
         {opti.sections.map((section, i) => (
           <OptimizelyComponent key={i} opti={section} index={i} />
         ))}
