@@ -20,10 +20,10 @@ export default async function Page({ searchParams }: Props) {
 
   return (
     <>
-      <OptimizelyComponent opti={response} />;
+      <OptimizelyComponent opti={response} />
       <PreviewComponent />
       <Script
-        src={`${process.env.OPTIMIZELY_HOST}/util/javascript/communicationinjector.js`}
+        src={`${process.env.OPTIMIZELY_CMS_HOST}/util/javascript/communicationinjector.js`}
       ></Script>
     </>
   );
