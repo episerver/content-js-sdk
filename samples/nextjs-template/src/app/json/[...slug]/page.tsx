@@ -1,4 +1,4 @@
-import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
+import { getFilterFromPath, GraphClient } from 'optimizely-cms-sdk/dist/graph';
 import { createQuery } from 'optimizely-cms-sdk/dist/graph/createQuery';
 
 export async function generateStaticParams() {
@@ -21,7 +21,9 @@ export default async function Page({ params }: Props) {
 
   const path = '/' + slug.join('/') + '/';
 
-  const contentType = await client.fetchContentType(path);
+  // Note: this is shown for demo purposes.
+  // `fetchContentType` and `createQuery` are not needed
+  const contentType = await client.fetchContentType(getFilterFromPath(path));
   const query = createQuery(contentType);
   const response = await client.fetchContent(path);
 
