@@ -1,6 +1,9 @@
 import { GraphClient } from 'optimizely-cms-sdk';
 import { PreviewParams } from 'optimizely-cms-sdk/dist/graph';
-import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
+import {
+  OptimizelyComponent,
+  setContext,
+} from 'optimizely-cms-sdk/dist/render/react';
 import { PreviewComponent } from './preview-component';
 import Script from 'next/script';
 
@@ -17,6 +20,10 @@ export default async function Page({ searchParams }: Props) {
     // TODO: check types in runtime properly
     (await searchParams) as PreviewParams
   );
+
+  setContext({
+    edit: (await searchParams).ctx === 'edit',
+  });
 
   return (
     <>
