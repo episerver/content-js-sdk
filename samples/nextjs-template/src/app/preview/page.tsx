@@ -4,7 +4,7 @@ import {
   OptimizelyComponent,
   setContext,
 } from 'optimizely-cms-sdk/dist/render/react';
-import { PreviewComponent } from './preview-component';
+import { PreviewComponent } from 'optimizely-cms-sdk/dist/preview/react';
 import Script from 'next/script';
 
 type Props = {
@@ -27,11 +27,11 @@ export default async function Page({ searchParams }: Props) {
 
   return (
     <>
-      <OptimizelyComponent opti={response} />
-      <PreviewComponent />
       <Script
         src={`${process.env.OPTIMIZELY_CMS_HOST}/util/javascript/communicationinjector.js`}
       ></Script>
+      <PreviewComponent />
+      <OptimizelyComponent opti={response} />
     </>
   );
 }

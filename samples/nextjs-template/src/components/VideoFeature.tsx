@@ -1,4 +1,5 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
+import { OptiImage } from 'optimizely-cms-sdk/dist/preview/react';
 
 export const VideoFeatureContentType = contentType({
   key: 'VideoFeature',
@@ -33,7 +34,7 @@ export default function VideoFeature({ opti }: Props) {
     <div className="video-feature">
       <div className="video">
         <a href={opti.video_link}>
-          <img src={opti.thumbnail_image.url.default} alt="" />
+          <OptiImage src={opti.thumbnail_image.url.default} alt="" />
           <span>▶︎</span>
           <p>{opti.thumbnail_caption}</p>
         </a>

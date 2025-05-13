@@ -1,4 +1,5 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
+import { OptiImage } from 'optimizely-cms-sdk/dist/preview/react';
 
 export const SmallFeatureContentType = contentType({
   key: 'SmallFeature',
@@ -28,7 +29,7 @@ export default function SmallFeature({ opti }: Props) {
       <h3>{opti.heading}</h3>
       {opti.image?.url?.default && (
         <div style={{ position: 'relative' }}>
-          <img src={opti.image.url.default} alt="" />
+          <OptiImage src={opti.image.url.default} alt="" />
         </div>
       )}
       <div dangerouslySetInnerHTML={{ __html: opti.body.html }} />

@@ -12,10 +12,14 @@
   "license": "ISC",
   "packageManager": "pnpm@10.7.0",
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "next": ">=14"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "next": {
       "optional": true
     }
   },
