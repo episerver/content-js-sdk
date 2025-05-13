@@ -36,20 +36,17 @@ export default class Login extends Command {
       return;
     }
 
-    const clientUrl = new URL(
-      '/ui/Optimizely.Cms.Service.Security.Turnstile.UI/Clients/',
-      instanceUrl
-    );
-
     console.log(
-      `Go to ${chalk.bold(clientUrl.toString())} \nand create a new API Client`
+      'Go to %s and click "%s"',
+      chalk.bold(`${instanceUrl} > Settings > API Keys`),
+      chalk.bold('Create API Key')
     );
 
     const oauthClientId = await input({
-      message: 'Enter API Client name',
+      message: 'Enter Client ID',
     });
     const oauthClientSecret = await input({
-      message: 'Enter API Client secret',
+      message: 'Enter Client Secret',
     });
 
     console.log();
