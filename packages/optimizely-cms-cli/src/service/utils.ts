@@ -151,5 +151,5 @@ export async function readFromPath(configPath: string) {
  * @returns The extracted key as a string.
  */
 export function extractKeyName(input: ContentOrMediaType): string {
-  return typeof input === 'string' ? input : input.key;
+  return typeof input === 'string' ? input.slice(1) : input.key;
 }
