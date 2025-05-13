@@ -7,12 +7,15 @@ export const ArticleContentType = contentType({
   baseType: 'page',
   properties: {
     heading: {
+      displayName: 'The Headline 😊',
       type: 'string',
     },
     subtitle: {
       type: 'string',
+      displayName: 'SUBTITLE!!!!!!',
     },
     body: {
+      displayName: 'body 🐈',
       type: 'richText',
     },
   },
