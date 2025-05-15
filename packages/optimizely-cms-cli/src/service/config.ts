@@ -68,7 +68,7 @@ export function readCredentials(url?: string) {
 
   if (!url && Object.values(obj.data).length > 1) {
     throw new Error(
-      'More than one credentials detected. Provide the --host flag or the OPTIMIZELY_HOST env var'
+      'More than one credentials detected. Provide the --host flag or the OPTIMIZELY_CMS_HOST env var'
     );
   }
 
