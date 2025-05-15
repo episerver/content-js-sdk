@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "rootDir": "./src",
     "declaration": true,
     "sourceMap": true,
@@ -10,5 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["./src/**/*"]
 }
