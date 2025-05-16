@@ -5,8 +5,8 @@ import { useSecuredImage } from './useSecuredImage';
 
 type Props = Omit<ImageProps, 'src'> & { src: string };
 
-export function OptiNextImage({ src, ...rest }: Props) {
+export function OptiNextImage({ src, alt, ...rest }: Props) {
   const securedSrc = useSecuredImage(src);
 
-  return <Image src={securedSrc} {...rest} />;
+  return <Image src={securedSrc} alt={alt} {...rest} />;
 }
