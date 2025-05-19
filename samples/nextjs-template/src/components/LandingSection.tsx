@@ -22,6 +22,7 @@ export const LandingSectionContentType = contentType({
       },
     },
   },
+  compositionBehaviors: ['sectionEnabled'],
 });
 
 export const DisplayTemplate = displayTemplate({

@@ -22,6 +22,8 @@ import VideoFeature, {
 } from '@/components/VideoFeature';
 import { HeroContentType } from '@/components/Hero';
 import Article, { ArticleContentType } from '@/components/Article';
+import { LandingExperienceContentType } from '@/components/LandingExperience';
+import { CallToActionContentType } from '@/components/CallToAction';
 
 initContentTypeRegistry([
   LandingSectionContentType,
@@ -31,6 +33,8 @@ initContentTypeRegistry([
   VideoFeatureContentType,
   HeroContentType,
   ArticleContentType,
+  LandingExperienceContentType,
+  CallToActionContentType,
 ]);
 initReactComponentRegistry({
   resolver: {

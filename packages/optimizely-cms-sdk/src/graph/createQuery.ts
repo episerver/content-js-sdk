@@ -115,6 +115,27 @@ function convertProperty(
   };
 }
 
+/** Builds a GraphQL fragment for any Experience content type */
+function createExperienceFragments(): string[] {
+  // Fixed fragments for all experiences
+  const fixedFragments = [
+    'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
+    'fragment ICompositionNode on ICompositionNode { ...on CompositionStructureNode { nodeType nodes @recursive } ...on CompositionComponentNode { component { ..._IComponent } } }',
+  ];
+
+  // Add fragments for each content type with "composition behavior"
+  const experienceNodes = getCachedContentTypes()
+    .filter((c) => c.baseType === 'component' && c.compositionBehaviors?.length)
+    .map((c) => c.key);
+
+  // Get the required fragments
+  const extraFragments = experienceNodes.map((n) => createFragment(n)).flat();
+  const nodeNames = experienceNodes.map((n) => `...${n}`).join(' ');
+  const componentFragment = `fragment _IComponent on _IComponent {__typename ${nodeNames}}`;
+
+  return [...fixedFragments, ...extraFragments, componentFragment];
+}
+
 /**
  * Builds a GraphQL fragment for the requested content-type **and** returns every nested fragment it depends on.
  * @param contentTypeName Name/key of the content-type to expand.
@@ -163,6 +184,11 @@ export function createFragment(
     if (isCustomMediaType(ct)) {
       extraFragments.unshift(MEDIA_METADATA_FRAGMENT); // maintain order
       fields.push(COMMON_MEDIA_METADATA_BLOCK);
+    }
+
+    if (ct.baseType === 'experience') {
+      fields.push('..._IExperience');
+      extraFragments.push(...createExperienceFragments());
     }
   }
 
