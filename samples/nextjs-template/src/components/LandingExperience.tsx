@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import { contentType, Infer } from 'optimizely-cms-sdk';
 import {
-  ExperienceWrapperProps,
+  ComponentWrapperProps,
+  StructureWrapperProps,
   OptimizelyExperience,
   getPreviewAttrs as pa,
 } from 'optimizely-cms-sdk/dist/render/react';
@@ -23,15 +24,19 @@ type Props = {
   opti: Infer<typeof LandingExperienceContentType>;
 };
 
-function Row({ children }: ExperienceWrapperProps) {
+function Row({ children }: StructureWrapperProps) {
   return <div>{children}</div>;
 }
 
-function Column({ children }: ExperienceWrapperProps) {
+function Column({ children }: StructureWrapperProps) {
   return <div>{children}</div>;
 }
 
-function Section({ children }: ExperienceWrapperProps) {
+function Section({ children }: StructureWrapperProps) {
+  return <div>{children}</div>;
+}
+
+function ComponentWrapper({ children }: ComponentWrapperProps) {
   return <div>{children}</div>;
 }
 
@@ -49,7 +54,8 @@ export default function LandingExperienceComponent({ opti }: Props) {
       )}
 
       <OptimizelyExperience
-        composition={opti.composition}
+        nodes={opti.composition.nodes}
+        Component={ComponentWrapper}
         Row={Row}
         Column={Column}
         Section={Section}

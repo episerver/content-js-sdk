@@ -1,8 +1,12 @@
 'use server';
-import type React from 'react';
+import React from 'react';
 import { ComponentRegistry, ComponentResolver } from './componentRegistry';
 import { JSX } from 'react';
-import { ExperienceStructureNode, ExperienceNode } from '../infer';
+import {
+  ExperienceStructureNode,
+  ExperienceNode,
+  ExperienceComponentNode,
+} from '../infer';
 import { isComponentNode } from '../util/baseTypeUtil';
 
 type ComponentType = React.ComponentType<any>;
@@ -69,47 +73,59 @@ export function getPreviewAttrs<T extends string>(property: T): any {
   }
 }
 
-export type ExperienceWrapperProps = {
+export type StructureWrapperProps = {
   node: ExperienceStructureNode;
   children: React.ReactNode;
+  index?: number;
 };
-export type ExperienceWrapper = (props: ExperienceWrapperProps) => JSX.Element;
+export type ComponentWrapperProps = {
+  node: ExperienceComponentNode;
+  children: React.ReactNode;
+};
+export type StructureWrapper = (props: StructureWrapperProps) => JSX.Element;
+export type ComponentWrapper = (props: ComponentWrapperProps) => JSX.Element;
 
-function FallbackComponent({ node }: ExperienceWrapperProps) {
+function FallbackComponent({ node }: StructureWrapperProps) {
   return <div>Node type {node.nodeType} not supported</div>;
 }
 
 export function OptimizelyExperience({
-  composition: node,
+  nodes,
   Section,
   Row,
   Column,
+  Component,
 }: {
-  composition: ExperienceNode;
-  Row: ExperienceWrapper;
-  Column: ExperienceWrapper;
-  Section: ExperienceWrapper;
+  nodes: ExperienceNode[];
+  Row: StructureWrapper;
+  Column: StructureWrapper;
+  Section: StructureWrapper;
+  Component?: ComponentWrapper;
 }) {
-  if (isComponentNode(node)) {
-    return <OptimizelyComponent opti={node.component} />;
-  }
-
-  const { nodes, nodeType } = node;
-  const components = { Section, Row, Column };
-
-  const mapper: Record<string, ExperienceWrapper> = {
+  const components = { Section, Row, Column, Component };
+  const mapper: Record<string, StructureWrapper> = {
     section: Section,
     row: Row,
     column: Column,
   };
 
-  const Component = mapper[nodeType] ?? FallbackComponent;
+  return nodes.map((node, i) => {
+    if (isComponentNode(node)) {
+      const Wrapper = Component ?? React.Fragment;
+      return (
+        <Wrapper node={node} key={i}>
+          <OptimizelyComponent opti={node.component} />;
+        </Wrapper>
+      );
+    }
 
-  return (
-    <Component node={node}>
-      {nodes.map((n, i) => (
-        <OptimizelyExperience {...components} composition={n} key={i} />
-      ))}
-    </Component>
-  );
+    const { nodes, nodeType } = node;
+    const Structure = mapper[nodeType] ?? FallbackComponent;
+
+    return (
+      <Structure node={node} index={i} key={i}>
+        <OptimizelyExperience {...components} nodes={nodes} />
+      </Structure>
+    );
+  });
 }
