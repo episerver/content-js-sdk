@@ -120,7 +120,7 @@ function createExperienceFragments(): string[] {
   // Fixed fragments for all experiences
   const fixedFragments = [
     'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
-    'fragment ICompositionNode on ICompositionNode { ...on CompositionStructureNode { nodeType nodes @recursive } ...on CompositionComponentNode { component { ..._IComponent } } }',
+    'fragment ICompositionNode on ICompositionNode { ...on CompositionStructureNode { nodeType nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }',
   ];
 
   // Add fragments for each content type with "composition behavior"

@@ -67,17 +67,22 @@ type InferProps<T extends AnyContentType> = T extends {
     }
   : {};
 
+// Special fields for Experience
+export type ExperienceNode = ExperienceComponentNode | ExperienceStructureNode;
+export type ExperienceStructureNode = {
+  nodeType: string;
+  nodes: ExperienceNode[];
+};
+export type ExperienceComponentNode = {
+  nodeType: 'component';
+  component: {
+    __typename: string;
+  };
+};
+
 /** Adds TS fields specific to `Experience` */
 type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
-  ? {
-      composition: {
-        nodes: {
-          component?: {
-            __typename: string;
-          };
-        }[];
-      };
-    }
+  ? { composition: ExperienceNode }
   : {};
 
 /** Infers the TypeScript type for a content type */

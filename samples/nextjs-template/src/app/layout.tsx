@@ -22,8 +22,12 @@ import VideoFeature, {
 } from '@/components/VideoFeature';
 import { HeroContentType } from '@/components/Hero';
 import Article, { ArticleContentType } from '@/components/Article';
-import { LandingExperienceContentType } from '@/components/LandingExperience';
-import { CallToActionContentType } from '@/components/CallToAction';
+import LandingExperience, {
+  LandingExperienceContentType,
+} from '@/components/LandingExperience';
+import CallToAction, {
+  CallToActionContentType,
+} from '@/components/CallToAction';
 
 initContentTypeRegistry([
   LandingSectionContentType,
@@ -44,6 +48,8 @@ initReactComponentRegistry({
     SmallFeatureGrid,
     SmallFeature,
     Article,
+    LandingExperience,
+    CallToAction,
   },
 });
 
