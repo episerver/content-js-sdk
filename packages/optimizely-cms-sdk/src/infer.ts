@@ -21,7 +21,11 @@ import {
   StringProperty,
   UrlProperty,
 } from './model/properties';
-import { AnyContentType, ExperienceContentType } from './model/contentTypes';
+import {
+  AnyContentType,
+  ExperienceContentType,
+  SectionContentType,
+} from './model/contentTypes';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {
@@ -71,6 +75,12 @@ type InferProps<T extends AnyContentType> = T extends {
 export type ExperienceNode = ExperienceComponentNode | ExperienceStructureNode;
 
 export type ExperienceCompositionNode = {
+  /** Internal node type. Can be `CompositionStructureNode` or `CompositionComponentNode` */
+  __typename: string;
+
+  /** Name of the content type if provided, `null` otherwise */
+  type: string | null;
+
   key: string;
   displayName: string;
   displaySettings: {
@@ -80,6 +90,7 @@ export type ExperienceCompositionNode = {
 };
 
 export type ExperienceStructureNode = ExperienceCompositionNode & {
+  /** "row", "column", etc. */
   nodeType: string;
   nodes: ExperienceNode[];
 };
@@ -95,8 +106,14 @@ type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
   ? { composition: ExperienceStructureNode }
   : {};
 
+/** Adds TS fields specific to `Section` */
+type InferSection = Prettify<{
+  nodes: ExperienceNode[];
+}>;
+
 /** Infers the TypeScript type for a content type */
 type InferFromContentType<T extends AnyContentType> = Prettify<
+  // Note: Add `InferSection` here when users can create their own Section
   InferredBase & InferProps<T> & InferExperience<T>
 >;
 
@@ -105,4 +122,5 @@ type InferFromContentType<T extends AnyContentType> = Prettify<
 export type Infer<T> =
   T extends AnyContentType ? InferFromContentType<T>
 : T extends AnyProperty ? InferFromProperty<T>
+: T extends SectionContentType ? InferSection
 : unknown;

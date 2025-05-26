@@ -4,6 +4,7 @@ import { AnyProperty } from './properties';
 export type AnyContentType =
   | ComponentContentType
   | ExperienceContentType
+  // Note: Add `SectionContentType` when users can create their own
   | OtherContentTypes;
 
 /** A "Base" content type that includes all common attributes for all content types */
@@ -21,6 +22,11 @@ export type ComponentContentType = BaseContentType & {
 
 export type ExperienceContentType = BaseContentType & {
   baseType: 'experience';
+};
+
+// This content type is used only internally
+export type SectionContentType = BaseContentType & {
+  baseType: 'section';
 };
 
 export type BaseTypes =
