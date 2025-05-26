@@ -78,8 +78,9 @@ export function getPreviewAttrs<T extends string>(property: T): any {
  * @returns The updated image URL with the `preview_token` query parameter appended, or the original URL if no token is present.
  */
 export function getSecureImageSrc(url: string): string {
-  if (context.preview_token) {
-    return `${url}?preview_token=${context.preview_token}`;
-  }
-  return url;
+  const token = context.preview_token;
+  if (!token) return url;
+
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}preview_token=${token}`;
 }
