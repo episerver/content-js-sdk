@@ -6,8 +6,6 @@ interface ContentSavedEvent {
   contentLink: string;
   previewUrl: string;
   previewToken: string;
-  parentId?: string;
-  sectionId?: string;
 }
 
 /**
@@ -19,6 +17,7 @@ export function PreviewComponent() {
     const handler = (e: Event) => {
       let finalUrl: string;
       const { previewUrl } = (e as CustomEvent).detail as ContentSavedEvent;
+      console.log('e', JSON.stringify((e as CustomEvent).detail));
 
       try {
         // Handles both absolute and relative URLs
