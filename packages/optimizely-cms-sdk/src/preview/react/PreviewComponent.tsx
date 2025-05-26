@@ -2,6 +2,14 @@
 
 import { useEffect } from 'react';
 
+interface ContentSavedEvent {
+  contentLink: string;
+  previewUrl: string;
+  previewToken: string;
+  parentId?: string;
+  sectionId?: string;
+}
+
 /**
  * Listens for Optimizely CMS content saved events and redirects to the
  * preview URL with the token appended.
@@ -10,7 +18,7 @@ export function PreviewComponent() {
   useEffect(() => {
     const handler = (e: Event) => {
       let finalUrl: string;
-      const { previewUrl } = (e as CustomEvent).detail;
+      const { previewUrl } = (e as CustomEvent).detail as ContentSavedEvent;
 
       try {
         // Handles both absolute and relative URLs

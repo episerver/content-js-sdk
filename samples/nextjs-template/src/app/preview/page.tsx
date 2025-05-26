@@ -23,6 +23,7 @@ export default async function Page({ searchParams }: Props) {
 
   setContext({
     edit: (await searchParams).ctx === 'edit',
+    preview_token: (await searchParams).preview_token as string,
   });
 
   return (

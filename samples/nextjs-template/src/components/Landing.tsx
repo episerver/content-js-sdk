@@ -2,10 +2,11 @@ import { contentType, Infer } from 'optimizely-cms-sdk';
 import {
   getPreviewAttrs as pa,
   OptimizelyComponent,
+  getSecureImageSrc,
 } from 'optimizely-cms-sdk/dist/render/react';
 import { LandingSectionContentType } from './LandingSection';
 import { HeroContentType } from './Hero';
-import { OptiNextImage } from 'optimizely-cms-sdk/dist/preview/react';
+import Image from 'next/image';
 
 export const ContentType = contentType({
   key: 'Landing',
@@ -35,8 +36,8 @@ export default function LandingComponent({ opti }: Props) {
   return (
     <main>
       <header className={['uni-hero', opti.hero.theme].join(' ')}>
-        <OptiNextImage
-          src={opti.hero.background.url.default}
+        <Image
+          src={getSecureImageSrc(opti.hero.background.url.default)}
           alt=""
           fill={true}
         />
