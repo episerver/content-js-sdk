@@ -103,5 +103,5 @@ export function getBaseKey(key: string): string {
 export function isComponentNode(
   node: ExperienceNode
 ): node is ExperienceComponentNode {
-  return node.nodeType === 'component';
+  return node.__typename === 'CompositionComponentNode';
 }
