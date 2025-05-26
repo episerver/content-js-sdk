@@ -85,47 +85,55 @@ export type ComponentWrapperProps = {
 export type StructureWrapper = (props: StructureWrapperProps) => JSX.Element;
 export type ComponentWrapper = (props: ComponentWrapperProps) => JSX.Element;
 
-function FallbackComponent({ node }: StructureWrapperProps) {
-  return <div>Node type {node.nodeType} not supported</div>;
+export async function OptimizelyExperience({
+  node,
+  ComponentWrapper,
+}: {
+  node: ExperienceNode;
+  ComponentWrapper?: ComponentWrapper;
+}) {
+  if (isComponentNode(node)) {
+    const Wrapper = ComponentWrapper ?? React.Fragment;
+    return (
+      <Wrapper node={node}>
+        <OptimizelyComponent opti={node.component} />;
+      </Wrapper>
+    );
+  }
+
+  const { type, nodes } = node;
+
+  if (type === null) {
+    // Not handle
+    return <div>???</div>;
+  }
+
+  const Component = await componentRegistry.getComponent(type);
+
+  // TODO: pass the correct properties
+  return <Component opti={{ nodes }} />;
 }
 
-export function OptimizelyExperience({
+export function OptimizelySection({
   nodes,
-  Section,
-  Row,
-  Column,
-  Component,
+  wrappers,
 }: {
   nodes: ExperienceNode[];
-  Row: StructureWrapper;
-  Column: StructureWrapper;
-  Section: StructureWrapper;
-  Component?: ComponentWrapper;
+  wrappers: Record<string, StructureWrapper>;
 }) {
-  const components = { Section, Row, Column, Component };
-  const mapper: Record<string, StructureWrapper> = {
-    section: Section,
-    row: Row,
-    column: Column,
-  };
-
   return nodes.map((node, i) => {
     if (isComponentNode(node)) {
-      const Wrapper = Component ?? React.Fragment;
-      return (
-        <Wrapper node={node} key={i}>
-          <OptimizelyComponent opti={node.component} />;
-        </Wrapper>
-      );
+      return <OptimizelyComponent opti={node.component} />;
     }
 
-    const { nodes, nodeType } = node;
-    const Structure = mapper[nodeType] ?? FallbackComponent;
+    const { nodes, nodeType, type } = node;
+
+    const Component = wrappers[nodeType];
 
     return (
-      <Structure node={node} index={i} key={i}>
-        <OptimizelyExperience {...components} nodes={nodes} />
-      </Structure>
+      <Component node={node} index={i}>
+        <OptimizelySection nodes={nodes} wrappers={wrappers} />
+      </Component>
     );
   });
 }
