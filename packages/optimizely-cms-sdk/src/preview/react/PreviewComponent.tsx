@@ -17,7 +17,6 @@ export function PreviewComponent() {
     const handler = (e: Event) => {
       let finalUrl: string;
       const { previewUrl } = (e as CustomEvent).detail as ContentSavedEvent;
-      console.log('e', JSON.stringify((e as CustomEvent).detail));
 
       try {
         // Handles both absolute and relative URLs
