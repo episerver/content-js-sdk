@@ -115,7 +115,6 @@ export function OptimizelyExperience({
 
     const Component = componentRegistry.getComponent(type);
 
-    // TODO: pass the correct properties
     return <Component key={node.key} opti={{ nodes }} />;
   });
 }
