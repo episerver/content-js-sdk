@@ -89,33 +89,35 @@ export type ComponentContainer = (
   props: ComponentContainerProps
 ) => JSX.Element;
 
-export async function OptimizelyExperience({
-  node,
+export function OptimizelyExperience({
+  nodes,
   ComponentWrapper,
 }: {
-  node: ExperienceNode;
+  nodes: ExperienceNode[];
   ComponentWrapper?: ComponentContainer;
 }) {
-  if (isComponentNode(node)) {
-    const Wrapper = ComponentWrapper ?? React.Fragment;
-    return (
-      <Wrapper node={node}>
-        <OptimizelyComponent opti={node.component} />;
-      </Wrapper>
-    );
-  }
+  return nodes.map((node) => {
+    if (isComponentNode(node)) {
+      const Wrapper = ComponentWrapper ?? React.Fragment;
+      return (
+        <Wrapper node={node} key={node.key}>
+          <OptimizelyComponent opti={node.component} />;
+        </Wrapper>
+      );
+    }
 
-  const { type, nodes } = node;
+    const { type, nodes } = node;
 
-  if (type === null) {
-    // Not handle
-    return <div>???</div>;
-  }
+    if (type === null) {
+      // Not handle
+      return <div>???</div>;
+    }
 
-  const Component = await componentRegistry.getComponent(type);
+    const Component = componentRegistry.getComponent(type);
 
-  // TODO: pass the correct properties
-  return <Component opti={{ nodes }} />;
+    // TODO: pass the correct properties
+    return <Component key={node.key} opti={{ nodes }} />;
+  });
 }
 
 export function createOptimizelySection(

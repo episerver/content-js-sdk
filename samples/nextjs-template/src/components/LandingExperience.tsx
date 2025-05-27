@@ -40,13 +40,10 @@ export default function LandingExperienceComponent({ opti }: Props) {
         </header>
       )}
 
-      {opti.composition.nodes.map((node) => (
-        <OptimizelyExperience
-          node={node}
-          key={node.key}
-          ComponentWrapper={ComponentWrapper}
-        />
-      ))}
+      <OptimizelyExperience
+        nodes={opti.composition.nodes}
+        ComponentWrapper={ComponentWrapper}
+      />
     </main>
   );
 }
