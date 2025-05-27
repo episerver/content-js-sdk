@@ -73,24 +73,28 @@ export function getPreviewAttrs<T extends string>(property: T): any {
   }
 }
 
-export type StructureWrapperProps = {
+export type StructureContainerProps = {
   node: ExperienceStructureNode;
   children: React.ReactNode;
   index?: number;
 };
-export type ComponentWrapperProps = {
+export type ComponentContainerProps = {
   node: ExperienceComponentNode;
   children: React.ReactNode;
 };
-export type StructureWrapper = (props: StructureWrapperProps) => JSX.Element;
-export type ComponentWrapper = (props: ComponentWrapperProps) => JSX.Element;
+export type StructureContainer = (
+  props: StructureContainerProps
+) => JSX.Element;
+export type ComponentContainer = (
+  props: ComponentContainerProps
+) => JSX.Element;
 
 export async function OptimizelyExperience({
   node,
   ComponentWrapper,
 }: {
   node: ExperienceNode;
-  ComponentWrapper?: ComponentWrapper;
+  ComponentWrapper?: ComponentContainer;
 }) {
   if (isComponentNode(node)) {
     const Wrapper = ComponentWrapper ?? React.Fragment;
@@ -114,26 +118,24 @@ export async function OptimizelyExperience({
   return <Component opti={{ nodes }} />;
 }
 
-export function OptimizelySection({
-  nodes,
-  wrappers,
-}: {
-  nodes: ExperienceNode[];
-  wrappers: Record<string, StructureWrapper>;
-}) {
-  return nodes.map((node, i) => {
-    if (isComponentNode(node)) {
-      return <OptimizelyComponent opti={node.component} />;
-    }
+export function createOptimizelySection(
+  containers: Record<string, StructureContainer>
+) {
+  return function OptimizelySection({ nodes }: { nodes: ExperienceNode[] }) {
+    return nodes.map((node, i) => {
+      if (isComponentNode(node)) {
+        return <OptimizelyComponent opti={node.component} />;
+      }
 
-    const { nodes, nodeType, type } = node;
+      const { nodes, nodeType } = node;
 
-    const Component = wrappers[nodeType];
+      const Component = containers[nodeType];
 
-    return (
-      <Component node={node} index={i}>
-        <OptimizelySection nodes={nodes} wrappers={wrappers} />
-      </Component>
-    );
-  });
+      return (
+        <Component node={node} index={i}>
+          <OptimizelySection nodes={nodes} />
+        </Component>
+      );
+    });
+  };
 }

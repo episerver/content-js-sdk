@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { contentType, Infer } from 'optimizely-cms-sdk';
 import {
-  ComponentWrapperProps,
+  ComponentContainerProps,
   OptimizelyExperience,
   getPreviewAttrs as pa,
 } from 'optimizely-cms-sdk/dist/render/react';
@@ -23,7 +23,7 @@ type Props = {
   opti: Infer<typeof LandingExperienceContentType>;
 };
 
-function ComponentWrapper({ children }: ComponentWrapperProps) {
+function ComponentWrapper({ children }: ComponentContainerProps) {
   return <div>{children}</div>;
 }
 
