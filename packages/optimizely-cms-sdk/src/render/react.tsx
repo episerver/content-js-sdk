@@ -152,6 +152,8 @@ export function OptimizelyGridSection({
       </Component>
     );
   });
+}
+
 /**
  * Appends the `preview_token` from the context to the provided image URL, if available.
  * @param url The url for the image source
