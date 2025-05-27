@@ -1,7 +1,7 @@
 import { Infer } from 'optimizely-cms-sdk/dist/infer';
 import { BlankSectionContentType } from 'optimizely-cms-sdk/dist/model/internalContentTypes';
 import {
-  createOptimizelySection,
+  OptimizelyGridSection,
   StructureContainerProps,
 } from 'optimizely-cms-sdk/dist/render/react';
 
@@ -17,13 +17,11 @@ type BlankSectionProps = {
   opti: Infer<typeof BlankSectionContentType>;
 };
 
-const SectionComponent = createOptimizelySection({ row: Row, column: Column });
-
 /** Defines a component to render a blank section */
 export default function BlankSection({ opti }: BlankSectionProps) {
   return (
     <section>
-      <SectionComponent nodes={opti.nodes} />
+      <OptimizelyGridSection nodes={opti.nodes} row={Row} column={Column} />
     </section>
   );
 }

@@ -120,24 +120,31 @@ export function OptimizelyExperience({
   });
 }
 
-export function createOptimizelySection(
-  containers: Record<string, StructureContainer>
-) {
-  return function OptimizelySection({ nodes }: { nodes: ExperienceNode[] }) {
-    return nodes.map((node, i) => {
-      if (isComponentNode(node)) {
-        return <OptimizelyComponent opti={node.component} />;
-      }
+export function OptimizelyGridSection({
+  nodes,
+  row,
+  column,
+}: {
+  nodes: ExperienceNode[];
+  row: StructureContainer;
+  column: StructureContainer;
+}) {
+  return nodes.map((node, i) => {
+    if (isComponentNode(node)) {
+      return <OptimizelyComponent key={node.key} opti={node.component} />;
+    }
 
-      const { nodes, nodeType } = node;
+    const { nodes, nodeType } = node;
 
-      const Component = containers[nodeType];
+    const mapper: Record<string, StructureContainer> = { row, column };
 
-      return (
-        <Component node={node} index={i}>
-          <OptimizelySection nodes={nodes} />
-        </Component>
-      );
-    });
-  };
+    // TODO: default component
+    const Component = mapper[nodeType] ?? React.Fragment;
+
+    return (
+      <Component node={node} index={i}>
+        <OptimizelyGridSection row={row} column={column} nodes={nodes} />
+      </Component>
+    );
+  });
 }
