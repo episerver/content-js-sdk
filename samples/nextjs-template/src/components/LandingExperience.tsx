@@ -3,6 +3,7 @@ import { contentType, Infer } from 'optimizely-cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyExperience,
+  getSecureImageSrc,
   getPreviewAttrs as pa,
 } from 'optimizely-cms-sdk/dist/render/react';
 import { HeroContentType } from './Hero';
@@ -32,14 +33,17 @@ export default function LandingExperienceComponent({ opti }: Props) {
     <main>
       {opti.hero && (
         <header className={['uni-hero', opti.hero.theme].join(' ')}>
-          <Image src={opti.hero.background.url.default} alt="" fill={true} />
+          <Image
+            src={getSecureImageSrc(opti.hero.background.url.default)}
+            alt=""
+            fill={true}
+          />
           <div className="heading" {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
             <p {...pa('hero.summary')}>{opti.hero.summary}</p>
           </div>
         </header>
       )}
-
       <OptimizelyExperience
         nodes={opti.composition.nodes}
         ComponentWrapper={ComponentWrapper}
