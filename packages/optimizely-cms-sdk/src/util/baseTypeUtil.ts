@@ -1,3 +1,4 @@
+import { ExperienceComponentNode, ExperienceNode } from '../infer';
 import {
   AnyContentType,
   ContentOrMediaType,
@@ -97,4 +98,10 @@ export function getBaseKey(key: string): string {
     default:
       return key;
   }
+}
+
+export function isComponentNode(
+  node: ExperienceNode
+): node is ExperienceComponentNode {
+  return node.__typename === 'CompositionComponentNode';
 }

@@ -1,6 +1,13 @@
 'use server';
-import type React from 'react';
+import React from 'react';
 import { ComponentRegistry, ComponentResolver } from './componentRegistry';
+import { JSX } from 'react';
+import {
+  ExperienceStructureNode,
+  ExperienceNode,
+  ExperienceComponentNode,
+} from '../infer';
+import { isComponentNode } from '../util/baseTypeUtil';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -70,6 +77,81 @@ export function getPreviewAttrs<T extends string>(property: T): any {
       'data-epi-property-name': property,
     };
   }
+}
+
+export type StructureContainerProps = {
+  node: ExperienceStructureNode;
+  children: React.ReactNode;
+  index?: number;
+};
+export type ComponentContainerProps = {
+  node: ExperienceComponentNode;
+  children: React.ReactNode;
+};
+export type StructureContainer = (
+  props: StructureContainerProps
+) => JSX.Element;
+export type ComponentContainer = (
+  props: ComponentContainerProps
+) => JSX.Element;
+
+export function OptimizelyExperience({
+  nodes,
+  ComponentWrapper,
+}: {
+  nodes: ExperienceNode[];
+  ComponentWrapper?: ComponentContainer;
+}) {
+  return nodes.map((node) => {
+    if (isComponentNode(node)) {
+      const Wrapper = ComponentWrapper ?? React.Fragment;
+      return (
+        <Wrapper node={node} key={node.key}>
+          <OptimizelyComponent opti={node.component} />;
+        </Wrapper>
+      );
+    }
+
+    const { type, nodes } = node;
+
+    if (type === null) {
+      // TODO: Error handling
+      return <div>???</div>;
+    }
+
+    const Component = componentRegistry.getComponent(type);
+
+    return <Component key={node.key} opti={{ nodes }} />;
+  });
+}
+
+export function OptimizelyGridSection({
+  nodes,
+  row,
+  column,
+}: {
+  nodes: ExperienceNode[];
+  row: StructureContainer;
+  column: StructureContainer;
+}) {
+  return nodes.map((node, i) => {
+    if (isComponentNode(node)) {
+      return <OptimizelyComponent key={node.key} opti={node.component} />;
+    }
+
+    const { nodes, nodeType } = node;
+
+    const mapper: Record<string, StructureContainer> = { row, column };
+
+    // TODO: default component
+    const Component = mapper[nodeType] ?? React.Fragment;
+
+    return (
+      <Component node={node} index={i}>
+        <OptimizelyGridSection row={row} column={column} nodes={nodes} />
+      </Component>
+    );
+  });
 }
 
 /**
