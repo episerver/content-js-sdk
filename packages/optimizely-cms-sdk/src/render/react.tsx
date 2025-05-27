@@ -109,7 +109,7 @@ export function OptimizelyExperience({
     const { type, nodes } = node;
 
     if (type === null) {
-      // Not handle
+      // TODO: Error handling
       return <div>???</div>;
     }
 
