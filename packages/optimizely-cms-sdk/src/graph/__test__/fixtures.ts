@@ -205,6 +205,56 @@ export const mediaBlock = contentType({
   },
 });
 
+export const HeroContentType = contentType({
+  key: 'NewHero',
+  displayName: 'NewHero',
+  baseType: 'component',
+  properties: {
+    heading: {
+      type: 'string',
+    },
+    summary: {
+      type: 'string',
+    },
+    background: {
+      type: 'contentReference',
+      allowedTypes: ['_Image'],
+    },
+    theme: {
+      type: 'string',
+      enum: {
+        values: [
+          { value: 'light', displayName: 'Light' },
+          { value: 'dark', displayName: 'Dark' },
+        ],
+      },
+    },
+  },
+  compositionBehaviors: ['sectionEnabled'],
+});
+
+export const FeedBackPage = contentType({
+  key: 'FeedBackPage',
+  displayName: 'FeedBackPage',
+  baseType: 'page',
+  properties: {
+    p_contentArea: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: [HeroContentType],
+      },
+      sortOrder: 8,
+    },
+    p_block: {
+      type: 'component',
+      contentType: HeroContentType,
+      displayName: 'p_block',
+      sortOrder: 50,
+    },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -224,4 +274,6 @@ export const allContentTypes: AnyContentType[] = [
   customVideo,
   specialPage,
   mediaBlock,
+  HeroContentType,
+  FeedBackPage,
 ];

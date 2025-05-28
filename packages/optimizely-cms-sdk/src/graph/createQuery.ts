@@ -149,7 +149,7 @@ export function createFragment(
 ): string[] {
   // Refresh registry cache only on the *root* call (avoids redundant reads)
   if (visited.size === 0) refreshCache();
-  if (visited.has(contentTypeName)) return []; // cyclic ref guard
+  if (!suffix && visited.has(contentTypeName)) return []; // cyclic ref guard, we skip this when its has a suffix (component property)
   visited.add(contentTypeName);
 
   const fields: string[] = [];
@@ -196,7 +196,7 @@ export function createFragment(
   const uniqueFields = [...new Set(fields)].join(' ');
   return [
     ...new Set(extraFragments), // unique dependency fragments
-    `fragment ${contentTypeName}${suffix} on ${contentTypeName}${suffix} { ${uniqueFields} }`,
+    `fragment ${contentTypeName}${suffix} on ${contentTypeName} { ${uniqueFields} }`,
   ];
 }
 
