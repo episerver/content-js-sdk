@@ -36,10 +36,35 @@ Start the app
 pnpm dev
 ```
 
-- Open `http://localhost:3000/<lang>/<slug>`, where `<lang>` is the language code (for example `en`) and `<slug>` is the _name in URL_ of the previous step.
+- Open `https://localhost:3000/<lang>/<slug>`, where `<lang>` is the language code (for example `en`) and `<slug>` is the _name in URL_ of the previous step.
 
   You should see the content of the page rendered with the components in the project
 
-- Append `http://localhost:3000/json/<lang>/<slug>` to the URL.
+- Go to `https://localhost:3000/json/<lang>/<slug>`
 
   You should see the content of the page in JSON.
+
+### Step 6. Setup an application in the CMS
+
+1. Go to your CMS and then "Settings" > "Applications".
+2. Click "Create Application"
+3. Set the following values:
+
+   - Application Name: "test"
+   - Select the content you have created as a start page.
+
+   Click "Next"
+
+4. Click "test" (the application you have created) to open its settings and then "Hostnames"
+5. Click "Add Hostname..."
+6. Set the following values:
+
+   - Hostname: `localhost:3000`
+   - Check "Use a secure connection (HTTPS)"
+   - Locale: `all`
+
+   Click Add
+
+### Step 7. Test preview/edit mode
+
+In the CMS, go to the content you created in step 4 and edit. You should see the preview in the right hand side
