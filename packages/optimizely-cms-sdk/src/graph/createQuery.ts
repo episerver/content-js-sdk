@@ -196,7 +196,7 @@ export function createFragment(
   const uniqueFields = [...new Set(fields)].join(' ');
   return [
     ...new Set(extraFragments), // unique dependency fragments
-    `fragment ${contentTypeName}${suffix} on ${contentTypeName} { ${uniqueFields} }`,
+    `fragment ${contentTypeName}${suffix} on ${contentTypeName}${suffix} { ${uniqueFields} }`,
   ];
 }
 
