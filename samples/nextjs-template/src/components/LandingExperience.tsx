@@ -24,8 +24,8 @@ type Props = {
   opti: Infer<typeof LandingExperienceContentType>;
 };
 
-function ComponentWrapper({ children }: ComponentContainerProps) {
-  return <div>{children}</div>;
+function ComponentWrapper({ children, node }: ComponentContainerProps) {
+  return <div {...pa(node)}>{children}</div>;
 }
 
 export default function LandingExperienceComponent({ opti }: Props) {
