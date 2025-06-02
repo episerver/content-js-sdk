@@ -22,7 +22,12 @@ type BlankSectionProps = {
 export default function BlankSection({ opti }: BlankSectionProps) {
   return (
     <section>
-      <OptimizelyGridSection nodes={opti.nodes} row={Row} column={Column} />
+      <OptimizelyGridSection
+        {...pa(opti)}
+        nodes={opti.nodes}
+        row={Row}
+        column={Column}
+      />
     </section>
   );
 }
