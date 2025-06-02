@@ -151,7 +151,7 @@ export function OptimizelyGridSection({
     const Component = mapper[nodeType] ?? React.Fragment;
 
     return (
-      <Component node={node} index={i}>
+      <Component node={node} index={i} key={node.key}>
         <OptimizelyGridSection row={row} column={column} nodes={nodes} />
       </Component>
     );
