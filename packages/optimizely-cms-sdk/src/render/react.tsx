@@ -121,6 +121,10 @@ export function OptimizelyExperience({
 
     const Component = componentRegistry.getComponent(type);
 
+    if (!Component) {
+      throw new Error(`No component defined for content type ${type}`);
+    }
+
     return <Component key={node.key} opti={{ nodes }} />;
   });
 }
