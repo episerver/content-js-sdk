@@ -107,7 +107,7 @@ export function OptimizelyExperience({
       const Wrapper = ComponentWrapper ?? React.Fragment;
       return (
         <Wrapper node={node} key={node.key}>
-          <OptimizelyComponent opti={node.component} />;
+          <OptimizelyComponent opti={node.component} />
         </Wrapper>
       );
     }
