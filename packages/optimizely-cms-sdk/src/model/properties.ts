@@ -33,6 +33,7 @@ export type ArrayItems =
   | BooleanProperty
   | BinaryProperty
   | JsonProperty
+  | DateTimeProperty
   | RichTextProperty
   | UrlProperty
   | IntegerProperty
@@ -52,6 +53,9 @@ export type StringProperty = BaseProperty & {
 export type BooleanProperty = BaseProperty & { type: 'boolean' };
 export type BinaryProperty = BaseProperty & { type: 'binary' };
 export type JsonProperty = BaseProperty & { type: 'json' };
+export type DateTimeProperty = BaseProperty & {
+  type: 'dateTime';
+};
 
 // Note: `RichText` type does not exist in the REST API. However, we need it to extract the right GraphQL fields from there
 export type RichTextProperty = BaseProperty & { type: 'richText' };
