@@ -21,11 +21,18 @@ export async function getToken(
     })
     .then(({ response, data, error }) => {
       if (!response.ok) {
-        throw new Error('Response is not OK');
+        if (error?.error === 'invalid_client') {
+          throw new credentialErrors.InvalidCredentials();
+        }
+        throw new Error(
+          'Something went wrong when trying to fetch token. Please try again'
+        );
       }
 
       if (!data) {
-        throw new Error('endpoint respond with no data');
+        throw new Error(
+          'The endpoint `/oauth/token` did not respond with data'
+        );
       }
       return data.access_token;
     });

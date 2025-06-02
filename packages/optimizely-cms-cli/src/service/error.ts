@@ -26,4 +26,13 @@ export const credentialErrors = {
       });
     }
   },
+
+  InvalidCredentials: class InvalidCredentials extends CLIError {
+    constructor() {
+      super('The client credentials are invalid', {
+        exit: 1,
+        suggestions: [`Run 'optimizely-experimental login`],
+      });
+    }
+  },
 };
