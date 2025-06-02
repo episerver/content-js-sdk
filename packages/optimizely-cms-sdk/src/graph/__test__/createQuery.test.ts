@@ -117,7 +117,7 @@ describe('createFragment()', () => {
         "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHero { heading summary background { url { type default }} theme }",
+        "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock ...NewHero ...FeedBackPage } }",
         "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage } body { html, json } }",
@@ -179,7 +179,7 @@ describe('createFragment()', () => {
         "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHero { heading summary background { url { type default }} theme }",
+        "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage } body { html, json } }",
         "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock ...NewHero ...FeedBackPage } }",
@@ -209,7 +209,7 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHero { heading summary background { url { type default }} theme }",
+        "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
       ]
     `);

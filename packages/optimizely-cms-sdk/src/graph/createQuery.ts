@@ -147,10 +147,11 @@ export function createFragment(
   visited: Set<string> = new Set(), // shared across recursion
   suffix: string = ''
 ): string[] {
+  const fragmentName = `${contentTypeName}${suffix}`;
   // Refresh registry cache only on the *root* call (avoids redundant reads)
   if (visited.size === 0) refreshCache();
-  if (!suffix && visited.has(contentTypeName)) return []; // cyclic ref guard, we skip this when its has a suffix (component property)
-  visited.add(contentTypeName);
+  if (visited.has(fragmentName)) return []; // cyclic ref guard
+  visited.add(fragmentName);
 
   const fields: string[] = [];
   const extraFragments: string[] = [];
@@ -196,7 +197,7 @@ export function createFragment(
   const uniqueFields = [...new Set(fields)].join(' ');
   return [
     ...new Set(extraFragments), // unique dependency fragments
-    `fragment ${contentTypeName}${suffix} on ${contentTypeName}${suffix} { ${uniqueFields} }`,
+    `fragment ${fragmentName} on ${fragmentName} { ${uniqueFields} }`,
   ];
 }
 
