@@ -28,6 +28,7 @@ import LandingExperience, {
 import CallToAction, {
   CallToActionContentType,
 } from '@/components/CallToAction';
+import BlankSection from '@/components/BlankSection';
 
 initContentTypeRegistry([
   LandingSectionContentType,
@@ -50,6 +51,7 @@ initReactComponentRegistry({
     Article,
     LandingExperience,
     CallToAction,
+    BlankSection,
   },
 });
 
