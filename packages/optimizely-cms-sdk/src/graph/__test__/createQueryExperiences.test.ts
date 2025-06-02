@@ -16,7 +16,7 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
-        "fragment ICompositionNode on ICompositionNode { ...on CompositionStructureNode { nodeType nodes @recursive } ...on CompositionComponentNode { component { ..._IComponent } } }",
+        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
         "fragment CallToAction on CallToAction { label link }",
         "fragment ExpSection on ExpSection { heading }",
         "fragment _IComponent on _IComponent {__typename ...CallToAction ...ExpSection}",
