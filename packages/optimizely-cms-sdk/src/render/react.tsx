@@ -71,11 +71,17 @@ export function setContext(ctx: Partial<Context>) {
   }
 }
 
-export function getPreviewAttrs<T extends string>(property: T): any {
+export function getPreviewAttrs(property: string | { key: string }): any {
   if (context.edit) {
-    return {
-      'data-epi-property-name': property,
-    };
+    if (typeof property === 'string') {
+      return {
+        'data-epi-property-name': property,
+      };
+    } else {
+      return {
+        'data-epi-block-id': property.key,
+      };
+    }
   }
 }
 
