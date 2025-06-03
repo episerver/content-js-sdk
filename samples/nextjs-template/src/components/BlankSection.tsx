@@ -21,13 +21,8 @@ type BlankSectionProps = {
 /** Defines a component to render a blank section */
 export default function BlankSection({ opti }: BlankSectionProps) {
   return (
-    <section>
-      <OptimizelyGridSection
-        {...pa(opti)}
-        nodes={opti.nodes}
-        row={Row}
-        column={Column}
-      />
+    <section {...pa(opti)}>
+      <OptimizelyGridSection nodes={opti.nodes} row={Row} column={Column} />
     </section>
   );
 }
