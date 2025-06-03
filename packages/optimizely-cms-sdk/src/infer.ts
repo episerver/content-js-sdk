@@ -13,6 +13,7 @@ import {
   ComponentProperty,
   ContentProperty,
   ContentReferenceProperty,
+  DateTimeProperty,
   FloatProperty,
   IntegerProperty,
   JsonProperty,
@@ -43,6 +44,7 @@ export type InferFromProperty<T extends AnyProperty> =
     T extends BooleanProperty ? boolean
   : T extends BinaryProperty  ? unknown
   : T extends StringProperty ? string
+  : T extends DateTimeProperty ? string
   : T extends JsonProperty ? any
   : T extends RichTextProperty ? {html: string; json: any}
   : T extends UrlProperty ? InferredUrl
