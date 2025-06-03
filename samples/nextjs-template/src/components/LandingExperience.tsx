@@ -37,8 +37,9 @@ export default function LandingExperienceComponent({ opti }: Props) {
             src={getSecureImageSrc(opti.hero.background.url.default)}
             alt=""
             fill={true}
+            {...pa('hero.background')}
           />
-          <div className="heading" {...pa('hero')}>
+          <div className="heading">
             <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
             <p {...pa('hero.summary')}>{opti.hero.summary}</p>
           </div>

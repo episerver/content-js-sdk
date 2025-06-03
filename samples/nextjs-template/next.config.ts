@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.cms.optimizely.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.cmstest.optimizely.com',
+      },
     ],
   },
 };

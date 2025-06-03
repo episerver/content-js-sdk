@@ -1,5 +1,8 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
-import { getSecureImageSrc } from 'optimizely-cms-sdk/dist/render/react';
+import {
+  getPreviewAttrs as pa,
+  getSecureImageSrc,
+} from 'optimizely-cms-sdk/dist/render/react';
 
 export const SmallFeatureContentType = contentType({
   key: 'SmallFeature',
@@ -26,13 +29,20 @@ type Props = {
 export default function SmallFeature({ opti }: Props) {
   return (
     <div className="small-feature-grid">
-      <h3>{opti.heading}</h3>
+      <h3 {...pa('heading')}>{opti.heading}</h3>
       {opti.image?.url?.default && (
         <div style={{ position: 'relative' }}>
-          <img src={getSecureImageSrc(opti.image.url.default)} alt="" />
+          <img
+            src={getSecureImageSrc(opti.image.url.default)}
+            alt=""
+            {...pa('image')}
+          />
         </div>
       )}
-      <div dangerouslySetInnerHTML={{ __html: opti.body.html }} />
+      <div
+        dangerouslySetInnerHTML={{ __html: opti.body.html }}
+        {...pa('body')}
+      />
     </div>
   );
 }

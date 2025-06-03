@@ -1,5 +1,8 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
-import { getSecureImageSrc } from 'optimizely-cms-sdk/dist/render/react';
+import {
+  getSecureImageSrc,
+  getPreviewAttrs as pa,
+} from 'optimizely-cms-sdk/dist/render/react';
 
 export const VideoFeatureContentType = contentType({
   key: 'VideoFeature',
@@ -33,18 +36,22 @@ export default function VideoFeature({ opti }: Props) {
   return (
     <div className="video-feature">
       <div className="video">
-        <a href={opti.video_link}>
+        <a href={opti.video_link} {...pa('video_link')}>
           <img
             src={getSecureImageSrc(opti.thumbnail_image.url.default)}
             alt=""
+            {...pa('thumbnail_image')}
           />
           <span>▶︎</span>
-          <p>{opti.thumbnail_caption}</p>
+          <p {...pa('thumbnail_caption')}>{opti.thumbnail_caption}</p>
         </a>
       </div>
       <div>
-        <h3>{opti.heading}</h3>
-        <div dangerouslySetInnerHTML={{ __html: opti.body.html }} />
+        <h3 {...pa('heading')}>{opti.heading}</h3>
+        <div
+          dangerouslySetInnerHTML={{ __html: opti.body.html }}
+          {...pa('body')}
+        />
       </div>
     </div>
   );
