@@ -15,6 +15,7 @@ import {
   blogPage,
   specialPage,
   mediaBlock,
+  FeedBackPage,
 } from './fixtures';
 
 beforeAll(() => {
@@ -115,8 +116,11 @@ describe('createFragment()', () => {
         "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
         "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock } body { html, json } }",
+        "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
+        "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
+        "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock ...NewHero ...FeedBackPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage } body { html, json } }",
       ]
     `);
   });
@@ -174,8 +178,11 @@ describe('createFragment()', () => {
         "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
         "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock } body { html, json } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock } }",
+        "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
+        "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
+        "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage } body { html, json } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...mediaBlock ...NewHero ...FeedBackPage } }",
       ]
     `);
   });
@@ -193,6 +200,17 @@ describe('createFragment()', () => {
         "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
         "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
+      ]
+    `);
+  });
+
+  test('When the contentType has both contentArea and Block with the same contentType', async () => {
+    const result = await createFragment(FeedBackPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
+        "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
+        "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
       ]
     `);
   });

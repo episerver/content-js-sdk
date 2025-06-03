@@ -38,6 +38,7 @@ export default function LandingExperienceComponent({ opti }: Props) {
               src={getSecureImageSrc(opti.hero.background.url.default)}
               alt=""
               fill={true}
+              {...pa('hero.background')}
             />
           )}
           <div className="heading" {...pa('hero')}>
