@@ -110,6 +110,7 @@ type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
 
 /** Adds TS fields specific to `Section` */
 type InferSection = Prettify<{
+  key: string;
   nodes: ExperienceNode[];
 }>;
 

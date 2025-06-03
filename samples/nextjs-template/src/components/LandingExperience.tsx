@@ -24,8 +24,8 @@ type Props = {
   opti: Infer<typeof LandingExperienceContentType>;
 };
 
-function ComponentWrapper({ children }: ComponentContainerProps) {
-  return <div>{children}</div>;
+function ComponentWrapper({ children, node }: ComponentContainerProps) {
+  return <div {...pa(node)}>{children}</div>;
 }
 
 export default function LandingExperienceComponent({ opti }: Props) {
@@ -33,13 +33,15 @@ export default function LandingExperienceComponent({ opti }: Props) {
     <main>
       {opti.hero && (
         <header className={['uni-hero', opti.hero.theme].join(' ')}>
-          <Image
-            src={getSecureImageSrc(opti.hero.background.url.default)}
-            alt=""
-            fill={true}
-            {...pa('hero.background')}
-          />
-          <div className="heading">
+          {opti.hero.background && (
+            <Image
+              src={getSecureImageSrc(opti.hero.background.url.default)}
+              alt=""
+              fill={true}
+              {...pa('hero.background')}
+            />
+          )}
+          <div className="heading" {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
             <p {...pa('hero.summary')}>{opti.hero.summary}</p>
           </div>

@@ -71,11 +71,17 @@ export function setContext(ctx: Partial<Context>) {
   }
 }
 
-export function getPreviewAttrs<T extends string>(property: T): any {
+export function getPreviewAttrs(property: string | { key: string }): any {
   if (context.edit) {
-    return {
-      'data-epi-property-name': property,
-    };
+    if (typeof property === 'string') {
+      return {
+        'data-epi-property-name': property,
+      };
+    } else {
+      return {
+        'data-epi-block-id': property.key,
+      };
+    }
   }
 }
 
@@ -107,7 +113,7 @@ export function OptimizelyExperience({
       const Wrapper = ComponentWrapper ?? React.Fragment;
       return (
         <Wrapper node={node} key={node.key}>
-          <OptimizelyComponent opti={node.component} />;
+          <OptimizelyComponent opti={node.component} />
         </Wrapper>
       );
     }
@@ -121,7 +127,11 @@ export function OptimizelyExperience({
 
     const Component = componentRegistry.getComponent(type);
 
-    return <Component key={node.key} opti={{ nodes }} />;
+    if (!Component) {
+      throw new Error(`No component defined for content type ${type}`);
+    }
+
+    return <Component key={node.key} opti={node} />;
   });
 }
 
@@ -147,7 +157,7 @@ export function OptimizelyGridSection({
     const Component = mapper[nodeType] ?? React.Fragment;
 
     return (
-      <Component node={node} index={i}>
+      <Component node={node} index={i} key={node.key}>
         <OptimizelyGridSection row={row} column={column} nodes={nodes} />
       </Component>
     );
