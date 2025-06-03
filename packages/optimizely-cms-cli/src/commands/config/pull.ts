@@ -23,7 +23,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     const response = await restClient.GET('/packages').then((r) => r.data);
 
     if (!response) {
-      console.error('The server did not respond with any content');
+      spinner.fail('The server did not respond with any content');
       return;
     }
 
