@@ -8,7 +8,7 @@ export async function getToken(
   clientId: string,
   clientSecret: string
 ) {
-  const baseUrl = new URL('/_cms/preview2', cmsRoot).toString();
+  const baseUrl = new URL('https://api.cms.optimizely.com').toString();
   const client = createClient<paths>({ baseUrl });
 
   return client
@@ -47,7 +47,7 @@ export async function createRestApiClient({
   clientId: string;
   clientSecret: string;
 }) {
-  const baseUrl = new URL('/_cms/preview2', url).toString();
+  const baseUrl = new URL('/_cms/preview3', url).toString();
   const accessToken = await getToken(url, clientId, clientSecret);
 
   return createClient<paths>({
