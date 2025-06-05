@@ -1,4 +1,5 @@
-import { createQuery } from './createQuery.js';
+import { createQuery } from './createQuery';
+import { NotFound } from './error';
 
 /** Options for Graph */
 type GraphOptions = {
@@ -21,8 +22,8 @@ export type GraphFilter = {
   };
 };
 
-const FETCH_CONTENT_QUERY = `
-query FetchContent($filter: _ContentWhereInput) {
+export const FETCH_CONTENT_TYPE_QUERY = `
+query FetchContentType($filter: _ContentWhereInput) {
   _Content(where: $filter) {
     item {
       _metadata {
@@ -118,7 +119,7 @@ export class GraphClient {
   /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
   async fetchContentType(filter: GraphFilter, previewToken?: string) {
     const data = await this.request(
-      FETCH_CONTENT_QUERY,
+      FETCH_CONTENT_TYPE_QUERY,
       { filter },
       previewToken
     );
@@ -132,7 +133,7 @@ export class GraphClient {
     const contentTypeName = await this.fetchContentType(filter);
 
     if (!contentTypeName) {
-      throw new Error(`No content found for [${path}]`);
+      throw new NotFound(filter, `No content found for [${path}]`);
     }
 
     const query = createQuery(contentTypeName);
@@ -151,7 +152,7 @@ export class GraphClient {
     );
 
     if (!contentTypeName) {
-      throw new Error(`No content found for key [${params.key}]`);
+      throw new NotFound(filter, `No content found for key [${params.key}]`);
     }
 
     const query = createQuery(contentTypeName);
