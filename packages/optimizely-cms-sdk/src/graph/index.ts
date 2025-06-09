@@ -123,6 +123,7 @@ export class GraphClient {
     return response?._Content?.item;
   }
 
+  // TODO: should we get `params` from the context?
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: PreviewParams) {
     const filter = getFilterFromPreviewParams(params);
