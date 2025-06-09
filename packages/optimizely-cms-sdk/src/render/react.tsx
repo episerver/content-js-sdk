@@ -8,6 +8,7 @@ import {
   ExperienceComponentNode,
 } from '../infer';
 import { isComponentNode } from '../util/baseTypeUtil';
+import { getContext } from './previewContext';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -17,19 +18,6 @@ let componentRegistry: ComponentRegistry<ComponentType>;
 
 type InitOptions = {
   resolver: ComponentResolver<ComponentType>;
-};
-
-// Rendering context information
-type Context = {
-  edit: boolean;
-  preview: boolean;
-  preview_token?: string;
-};
-
-let context: Context = {
-  edit: false,
-  preview: false,
-  preview_token: undefined,
 };
 
 export function initReactComponentRegistry(options: InitOptions) {
@@ -57,21 +45,8 @@ export async function OptimizelyComponent({ opti, ...props }: Props) {
   return <Component opti={opti} {...props} />;
 }
 
-export function setContext(ctx: Partial<Context>) {
-  if (ctx.preview !== undefined) {
-    context.preview = ctx.preview;
-  }
-
-  if (ctx.edit !== undefined) {
-    context.edit = ctx.edit;
-  }
-
-  if (ctx.preview_token !== undefined) {
-    context.preview_token = ctx.preview_token;
-  }
-}
-
 export function getPreviewAttrs(property: string | { key: string }): any {
+  const context = getContext();
   if (context.edit) {
     if (typeof property === 'string') {
       return {
@@ -170,6 +145,7 @@ export function OptimizelyGridSection({
  * @returns The updated image URL with the `preview_token` query parameter appended, or the original URL if no token is present.
  */
 export function getSecureImageSrc(url: string): string {
+  const context = getContext();
   const token = context.preview_token;
   if (!token) return url;
 
