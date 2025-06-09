@@ -7,6 +7,7 @@ import { createApiClient } from '../../service/cmsRestClient.js';
 import { findMetaData, readFromPath } from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
+import chalk from 'chalk';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -17,6 +18,14 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     output: Flags.string({ description: 'if passed, write the manifest JSON' }),
     dryRun: Flags.boolean({
       description: 'do not send anything to the server',
+    }),
+    force: Flags.boolean({
+      description:
+        'Force updates the content type even though the changes might result in data loss.',
+    }),
+    overwrite: Flags.boolean({
+      description:
+        'Indicates whether existing content items with matching keys in the CMS should be overwritten.',
     }),
   };
   static override description = 'describe the command here';
@@ -47,11 +56,27 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     if (flags.output) {
       await writeFile(flags.output, JSON.stringify(metaData, null, 2));
-      console.log(`Configuration file written in '${flags.output}'`);
+      console.info(`Configuration file written in '${flags.output}'`);
     }
 
     if (flags.dryRun) {
       return;
+    }
+
+    if (flags.force) {
+      console.warn(
+        `${chalk.yellowBright.bold(
+          '--force'
+        )} is used!. This forces content type updates, which may result in data loss`
+      );
+    }
+
+    if (flags.overwrite) {
+      console.warn(
+        `${chalk.yellowBright.bold(
+          '--overwrite'
+        )} is used!. This overwrite existing CMS content items with matching keys.`
+      );
     }
 
     const spinner = ora('Uploading configuration file').start();
@@ -62,6 +87,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
         'content-type': 'application/vnd.optimizely.cms.v1.manifest+json',
       },
       body: metaData as any,
+      params: {
+        query: {
+          ignoreDataLossWarnings: flags.force,
+          overwriteExistingContentItems: flags.overwrite,
+        },
+      },
     });
 
     if (response.error) {
