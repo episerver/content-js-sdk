@@ -19,19 +19,6 @@ type InitOptions = {
   resolver: ComponentResolver<ComponentType>;
 };
 
-// Rendering context information
-type Context = {
-  edit: boolean;
-  preview: boolean;
-  preview_token?: string;
-};
-
-let context: Context = {
-  edit: false,
-  preview: false,
-  preview_token: undefined,
-};
-
 export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
 }
@@ -39,6 +26,7 @@ export function initReactComponentRegistry(options: InitOptions) {
 type Props = {
   opti: {
     __typename: string;
+    __context?: { edit: boolean; preview_token: string };
   };
 };
 
@@ -48,40 +36,47 @@ export async function OptimizelyComponent({ opti, ...props }: Props) {
   }
 
   const contentType = opti.__typename;
+  const context = opti.__context;
   const Component = await componentRegistry.getComponent(contentType);
 
   if (!Component) {
     return <div>No component found for content type {contentType}</div>;
   }
 
-  return <Component opti={opti} {...props} />;
+  const optiProps = {
+    ...opti,
+    __utils: getUtils(context),
+  };
+
+  return <Component opti={optiProps} {...props} />;
 }
 
-export function setContext(ctx: Partial<Context>) {
-  if (ctx.preview !== undefined) {
-    context.preview = ctx.preview;
+function getUtils(ctx: Props['opti']['__context']) {
+  if (ctx?.edit) {
+    return {
+      getPreviewAttrs,
+      getSecureImageSrc: wrapSecureImageSrc(ctx.preview_token),
+    };
   }
 
-  if (ctx.edit !== undefined) {
-    context.edit = ctx.edit;
-  }
-
-  if (ctx.preview_token !== undefined) {
-    context.preview_token = ctx.preview_token;
-  }
+  return {
+    getPreviewAttrs() {
+      return {};
+    },
+    getSecureImageSrc(url: string) {
+      return url;
+    },
+  };
 }
-
-export function getPreviewAttrs(property: string | { key: string }): any {
-  if (context.edit) {
-    if (typeof property === 'string') {
-      return {
-        'data-epi-property-name': property,
-      };
-    } else {
-      return {
-        'data-epi-block-id': property.key,
-      };
-    }
+function getPreviewAttrs(property: string | { key: string }): any {
+  if (typeof property === 'string') {
+    return {
+      'data-epi-property-name': property,
+    };
+  } else {
+    return {
+      'data-epi-block-id': property.key,
+    };
   }
 }
 
@@ -165,14 +160,14 @@ export function OptimizelyGridSection({
 }
 
 /**
- * Appends the `preview_token` from the context to the provided image URL, if available.
+ * Returns a function that
+ * appends the `preview_token` from the context to the provided image URL, if available.
  * @param url The url for the image source
  * @returns The updated image URL with the `preview_token` query parameter appended, or the original URL if no token is present.
  */
-export function getSecureImageSrc(url: string): string {
-  const token = context.preview_token;
-  if (!token) return url;
-
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}preview_token=${token}`;
+function wrapSecureImageSrc(token: string) {
+  return function getSecureImageSrc(url: string) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}preview_token=${token}`;
+  };
 }

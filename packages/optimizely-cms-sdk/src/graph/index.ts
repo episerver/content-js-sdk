@@ -53,6 +53,24 @@ export function getFilterFromPath(path: string): GraphFilter {
   };
 }
 
+/** Adds an extra `__context` property next to each `__typename` property */
+function decorateWithContext(obj: any, params: PreviewParams): any {
+  if (typeof obj === 'object' && obj !== null) {
+    for (const k in obj) {
+      obj[k] = decorateWithContext(obj[k], params);
+    }
+    if ('__typename' in obj) {
+      obj.__context = {
+        edit: params.ctx === 'edit',
+      };
+    }
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((e) => decorateWithContext(e, params));
+  }
+  return obj;
+}
+
 export class GraphClient {
   key: string;
   graphUrl: string;
@@ -142,6 +160,6 @@ export class GraphClient {
       params.preview_token
     );
 
-    return response?._Content?.item;
+    return decorateWithContext(response?._Content?.item, params);
   }
 }

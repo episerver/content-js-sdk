@@ -79,6 +79,12 @@ export type ExperienceNode = ExperienceComponentNode | ExperienceStructureNode;
 export type ExperienceCompositionNode = {
   /** Internal node type. Can be `CompositionStructureNode` or `CompositionComponentNode` */
   __typename: string;
+  __context?: { edit: boolean; preview_token: string };
+
+  __utils: {
+    getPreviewAttrs: (property: string | { key: string }) => any;
+    getSecureImageSrc: (url: string) => string;
+  };
 
   /** Name of the content type if provided, `null` otherwise */
   type: string | null;
