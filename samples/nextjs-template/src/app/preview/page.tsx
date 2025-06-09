@@ -14,6 +14,9 @@ export default async function Page({ searchParams }: Props) {
     const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!);
     const response = await client.fetchPreviewContent(await searchParams);
 
+    // If I could do something like this, it would work:
+    // const r = OptimizelyComponent({ opti: response });
+
     return (
       <>
         <OptimizelyComponent opti={response} />

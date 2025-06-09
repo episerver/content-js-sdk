@@ -42,11 +42,17 @@ export async function OptimizelyComponent({ opti, ...props }: Props) {
     return <div>No component found for content type {contentType}</div>;
   }
 
+  const context = getContext();
+
+  console.log('OPTIMIZELYCOMPONENT', context);
+
   return <Component opti={opti} {...props} />;
 }
 
 export function getPreviewAttrs(property: string | { key: string }): any {
   const context = getContext();
+
+  console.log(context);
   if (context.edit) {
     if (typeof property === 'string') {
       return {
