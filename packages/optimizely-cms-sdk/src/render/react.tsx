@@ -104,10 +104,14 @@ export function OptimizelyGridSection({
   row,
   column,
 }: {
-  nodes: ExperienceNode[];
+  nodes?: ExperienceNode[];
   row: StructureContainer;
   column: StructureContainer;
 }) {
+  if (!nodes) {
+    // TODO: Handle beter
+    throw new Error('Nodes must be an array');
+  }
   return nodes.map((node, i) => {
     if (isComponentNode(node)) {
       return <OptimizelyComponent key={node.key} opti={node.component} />;

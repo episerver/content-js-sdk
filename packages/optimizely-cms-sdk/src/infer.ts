@@ -97,7 +97,7 @@ export type ExperienceCompositionNode = {
 export type ExperienceStructureNode = ExperienceCompositionNode & {
   /** "row", "column", etc. */
   nodeType: string;
-  nodes: ExperienceNode[];
+  nodes?: ExperienceNode[];
 };
 export type ExperienceComponentNode = ExperienceCompositionNode & {
   nodeType: 'component';

@@ -49,7 +49,7 @@ export default function LandingExperienceComponent({ opti }: Props) {
         </header>
       )}
       <OptimizelyExperience
-        nodes={opti.composition.nodes}
+        nodes={opti.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>
