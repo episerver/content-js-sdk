@@ -62,6 +62,8 @@ export type InferredBase = {
   _metadata: {
     url: InferredUrl;
   };
+  __typename: string;
+  __context?: { edit: boolean; preview_token: string };
 };
 
 /** Infers an `object` with the TS type inferred for each type */
@@ -79,6 +81,7 @@ export type ExperienceNode = ExperienceComponentNode | ExperienceStructureNode;
 export type ExperienceCompositionNode = {
   /** Internal node type. Can be `CompositionStructureNode` or `CompositionComponentNode` */
   __typename: string;
+  __context?: { edit: boolean; preview_token: string };
 
   /** Name of the content type if provided, `null` otherwise */
   type: string | null;
@@ -112,6 +115,9 @@ type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
 type InferSection = Prettify<{
   key: string;
   nodes: ExperienceNode[];
+
+  __typename: string;
+  __context?: { edit: boolean; preview_token: string };
 }>;
 
 /** Infers the TypeScript type for a content type */

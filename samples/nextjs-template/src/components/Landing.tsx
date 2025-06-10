@@ -1,8 +1,7 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
 import {
-  getPreviewAttrs as pa,
+  getPreviewUtils,
   OptimizelyComponent,
-  getSecureImageSrc,
 } from 'optimizely-cms-sdk/dist/render/react';
 import { LandingSectionContentType } from './LandingSection';
 import { HeroContentType } from './Hero';
@@ -33,14 +32,11 @@ type Props = {
 };
 
 export default function LandingComponent({ opti }: Props) {
+  const { pa, src } = getPreviewUtils(opti);
   return (
     <main>
       <header className={['uni-hero', opti.hero.theme].join(' ')}>
-        <Image
-          src={getSecureImageSrc(opti.hero.background.url.default)}
-          alt=""
-          fill={true}
-        />
+        <Image src={src(opti.hero.background.url.default)} alt="" fill={true} />
         <div className="heading" {...pa('hero')}>
           <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
           <p {...pa('hero.summary')}>{opti.hero.summary}</p>

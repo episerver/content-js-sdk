@@ -1,5 +1,5 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
-import { getPreviewAttrs as pa } from 'optimizely-cms-sdk/dist/render/react';
+import { getPreviewUtils } from 'optimizely-cms-sdk/dist/render/react';
 export const CallToActionContentType = contentType({
   key: 'CallToAction',
   baseType: 'component',
@@ -20,6 +20,8 @@ type Props = {
 };
 
 export default function CallToAction({ opti }: Props) {
+  const { pa } = getPreviewUtils(opti);
+
   return (
     <a href={opti.link} {...pa('label')}>
       {opti.label}
