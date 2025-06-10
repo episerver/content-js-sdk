@@ -57,7 +57,7 @@ type Props = {
 };
 
 export default function LandingSection({ opti }: Props) {
-  const { pa, src } = getPreviewUtils(opti);
+  const { pa } = getPreviewUtils(opti);
   return (
     <section>
       <header>
