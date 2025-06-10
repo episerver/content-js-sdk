@@ -252,7 +252,7 @@ function resolveAllowedTypes(
 
   const add = (ct: ContentOrMediaType | AnyContentType) => {
     const key = getKeyName(ct);
-    if (key === rootKey || skip.has(key) || seen.has(key)) return;
+    if (skip.has(key) || seen.has(key)) return;
     seen.add(key);
     result.push(ct);
   };
