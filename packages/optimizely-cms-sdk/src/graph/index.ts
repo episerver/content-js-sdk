@@ -55,6 +55,9 @@ export function getFilterFromPath(path: string): GraphFilter {
 
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
+  if (Array.isArray(obj)) {
+    return obj.map((e) => decorateWithContext(e, params));
+  }
   if (typeof obj === 'object' && obj !== null) {
     for (const k in obj) {
       obj[k] = decorateWithContext(obj[k], params);
@@ -65,9 +68,6 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
         preview_token: params.preview_token,
       };
     }
-  }
-  if (Array.isArray(obj)) {
-    return obj.map((e) => decorateWithContext(e, params));
   }
   return obj;
 }
