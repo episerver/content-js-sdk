@@ -46,14 +46,12 @@ function refreshCache() {
  * Converts a property into a GraphQL field
  * @param name Field name in the parent selection set.
  * @param property Property definition object from the schema.
- * @param rootName Name of the fragment we are **currently** building.
  * @param visited Shared recursion-guard set from the caller.
  * @returns object including the refined fileds and extraFragments `{ fields, extraFragments }`.
  */
 function convertProperty(
   name: string,
   property: AnyProperty,
-  rootName: string,
   visited: Set<string> // one shared guard per tree
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
@@ -68,8 +66,7 @@ function convertProperty(
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
       property.allowedTypes,
-      property.restrictedTypes,
-      rootName
+      property.restrictedTypes
     );
 
     for (const t of allowed) {
@@ -102,7 +99,7 @@ function convertProperty(
     fields.push(`${name} { url { type default }}`);
   } else if (property.type === 'array') {
     // Call recursively
-    const f = convertProperty(name, property.items, rootName, visited);
+    const f = convertProperty(name, property.items, visited);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
@@ -174,7 +171,6 @@ export function createFragment(
       const { fields: f, extraFragments: e } = convertProperty(
         propKey,
         prop,
-        contentTypeName,
         visited
       );
       fields.push(...f);
@@ -225,13 +221,11 @@ query FetchContent($filter: _ContentWhereInput) {
  * Returns the set of content types that are **allowed** at the current property level.
  * @param allowedTypes Explicit allow-list for the property, or `undefined`.
  * @param restrictedTypes Explicit restricted-list for the property, or `undefined`.
- * @param rootName Name of the fragment we are **currently** building.
  * @returns baseline array (all allowedTypes – restrictedTypes) in declaration order.
  */
 function resolveAllowedTypes(
   allowed: ContentOrMediaType[] | undefined,
-  restricted: ContentOrMediaType[] | undefined,
-  rootKey: string
+  restricted: ContentOrMediaType[] | undefined
 ): (ContentOrMediaType | AnyContentType)[] {
   const skip = new Set<string>();
   const seen = new Set<string>();
