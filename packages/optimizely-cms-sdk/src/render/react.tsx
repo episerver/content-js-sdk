@@ -154,7 +154,7 @@ export function getPreviewUtils(opti: Props['opti']) {
 
     /** Appends the preview token to the provided image URL */
     src(url: string) {
-      if (opti.__context?.edit) {
+      if (opti.__context?.preview_token) {
         const separator = url.includes('?') ? '&' : '?';
         return `${url}${separator}preview_token=${opti.__context.preview_token}`;
       }
