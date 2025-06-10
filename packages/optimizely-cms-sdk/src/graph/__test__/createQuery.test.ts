@@ -218,7 +218,7 @@ describe('createFragment()', () => {
     `);
   });
 
-  test('When there is no allowedType defined and the same contentType is added into its own content are from the', async () => {
+  test('When no allowedType is defined and a content type is included in its own content area', async () => {
     const result = await createFragment(ContentPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
