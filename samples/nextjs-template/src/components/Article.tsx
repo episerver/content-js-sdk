@@ -1,5 +1,5 @@
 import { contentType, Infer } from 'optimizely-cms-sdk';
-import { getPreviewAttrs as pa } from 'optimizely-cms-sdk/dist/render/react';
+import { getPreviewUtils } from 'optimizely-cms-sdk/dist/render/react';
 
 export const ArticleContentType = contentType({
   key: 'Article',
@@ -26,6 +26,8 @@ type Props = {
 };
 
 export default function Article({ opti }: Props) {
+  const { pa } = getPreviewUtils(opti);
+
   return (
     <main>
       <h1 {...pa('heading')}>{opti.heading}</h1>

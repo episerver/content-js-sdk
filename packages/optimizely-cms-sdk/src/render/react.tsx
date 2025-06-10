@@ -36,7 +36,6 @@ export async function OptimizelyComponent({ opti, ...props }: Props) {
   }
 
   const contentType = opti.__typename;
-  const context = opti.__context;
   const Component = await componentRegistry.getComponent(contentType);
 
   if (!Component) {
@@ -45,39 +44,9 @@ export async function OptimizelyComponent({ opti, ...props }: Props) {
 
   const optiProps = {
     ...opti,
-    __utils: getUtils(context),
   };
 
   return <Component opti={optiProps} {...props} />;
-}
-
-function getUtils(ctx: Props['opti']['__context']) {
-  if (ctx?.edit) {
-    return {
-      getPreviewAttrs,
-      getSecureImageSrc: wrapSecureImageSrc(ctx.preview_token),
-    };
-  }
-
-  return {
-    getPreviewAttrs() {
-      return {};
-    },
-    getSecureImageSrc(url: string) {
-      return url;
-    },
-  };
-}
-function getPreviewAttrs(property: string | { key: string }): any {
-  if (typeof property === 'string') {
-    return {
-      'data-epi-property-name': property,
-    };
-  } else {
-    return {
-      'data-epi-block-id': property.key,
-    };
-  }
 }
 
 export type StructureContainerProps = {
@@ -159,15 +128,33 @@ export function OptimizelyGridSection({
   });
 }
 
-/**
- * Returns a function that
- * appends the `preview_token` from the context to the provided image URL, if available.
- * @param url The url for the image source
- * @returns The updated image URL with the `preview_token` query parameter appended, or the original URL if no token is present.
- */
-function wrapSecureImageSrc(token: string) {
-  return function getSecureImageSrc(url: string) {
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}preview_token=${token}`;
+/** Get context-aware functions for preview */
+export function getPreviewUtils(opti: Props['opti']) {
+  return {
+    /** Get the HTML data attributes required for a property */
+    pa(property: string | { key: string }) {
+      if (opti.__context?.edit) {
+        if (typeof property === 'string') {
+          return {
+            'data-epi-property-name': property,
+          };
+        } else {
+          return {
+            'data-epi-block-id': property.key,
+          };
+        }
+      } else {
+        return {};
+      }
+    },
+
+    /** Appends the preview token to the provided image URL */
+    src(url: string) {
+      if (opti.__context?.edit) {
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}preview_token=${opti.__context.preview_token}`;
+      }
+      return url;
+    },
   };
 }

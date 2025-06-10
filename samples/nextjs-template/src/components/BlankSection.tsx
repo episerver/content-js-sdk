@@ -3,14 +3,16 @@ import { BlankSectionContentType } from 'optimizely-cms-sdk/dist/model/internalC
 import {
   OptimizelyGridSection,
   StructureContainerProps,
-  getPreviewAttrs as pa,
+  getPreviewUtils,
 } from 'optimizely-cms-sdk/dist/render/react';
 
 function Row({ children, node }: StructureContainerProps) {
+  const { pa } = getPreviewUtils(node);
   return <div {...pa(node)}>{children}</div>;
 }
 
 function Column({ children, node }: StructureContainerProps) {
+  const { pa } = getPreviewUtils(node);
   return <div {...pa(node)}>{children}</div>;
 }
 
@@ -20,6 +22,7 @@ type BlankSectionProps = {
 
 /** Defines a component to render a blank section */
 export default function BlankSection({ opti }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(opti);
   return (
     <section {...pa(opti)}>
       <OptimizelyGridSection nodes={opti.nodes} row={Row} column={Column} />
