@@ -62,6 +62,7 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
     if ('__typename' in obj) {
       obj.__context = {
         edit: params.ctx === 'edit',
+        preview_token: params.preview_token,
       };
     }
   }
