@@ -23,7 +23,7 @@ export default function CallToAction({ opti }: Props) {
   const { pa } = getPreviewUtils(opti);
 
   return (
-    <a href={opti.link} {...pa('label')}>
+    <a href={opti.link ?? '#'} {...pa('label')}>
       {opti.label}
     </a>
   );

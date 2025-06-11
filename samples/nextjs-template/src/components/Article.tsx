@@ -34,7 +34,7 @@ export default function Article({ opti }: Props) {
       <p {...pa('subtitle')}>{opti.subtitle}</p>
       <div
         {...pa('body')}
-        dangerouslySetInnerHTML={{ __html: opti.body.html }}
+        dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
       />
     </main>
   );

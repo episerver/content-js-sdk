@@ -35,14 +35,22 @@ export default function LandingComponent({ opti }: Props) {
   const { pa, src } = getPreviewUtils(opti);
   return (
     <main>
-      <header className={['uni-hero', opti.hero.theme].join(' ')}>
-        <Image src={src(opti.hero.background.url.default)} alt="" fill={true} />
-        <div className="heading" {...pa('hero')}>
-          <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
-          <p {...pa('hero.summary')}>{opti.hero.summary}</p>
-        </div>
-      </header>
-      {opti.sections.map((section, i) => (
+      {opti.hero && (
+        <header className={['uni-hero', opti.hero.theme].join(' ')}>
+          {opti.hero.background && (
+            <Image
+              src={src(opti.hero.background.url.default)}
+              alt=""
+              fill={true}
+            />
+          )}
+          <div className="heading" {...pa('hero')}>
+            <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
+            <p {...pa('hero.summary')}>{opti.hero.summary}</p>
+          </div>
+        </header>
+      )}
+      {opti.sections?.map((section, i) => (
         <OptimizelyComponent key={i} opti={section} />
       ))}
     </main>

@@ -71,7 +71,9 @@ type InferProps<T extends AnyContentType> = T extends {
   properties: Record<string, AnyProperty>;
 }
   ? {
-      [Key in keyof T['properties']]: InferFromProperty<T['properties'][Key]>;
+      [Key in keyof T['properties']]: InferFromProperty<
+        T['properties'][Key]
+      > | null;
     }
   : {};
 
