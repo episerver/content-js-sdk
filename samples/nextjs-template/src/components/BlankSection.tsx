@@ -8,7 +8,11 @@ import {
 
 function Row({ children, node }: StructureContainerProps) {
   const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
+  return (
+    <div className="row" {...pa(node)}>
+      {children}
+    </div>
+  );
 }
 
 function Column({ children, node }: StructureContainerProps) {
