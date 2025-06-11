@@ -265,6 +265,10 @@ section > header {
   }
 }
 
+div.row {
+  display: flex;
+}
+
 .uni-link-list {
   display: grid;
   grid-template-areas: 'headline' 'large' 'small';
