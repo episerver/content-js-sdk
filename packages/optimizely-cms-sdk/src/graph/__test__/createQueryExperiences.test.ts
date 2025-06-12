@@ -19,7 +19,7 @@ describe('createFragment()', () => {
         "fragment ICompositionNode on ICompositionNode { __typename key type nodeType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
         "fragment CallToAction on CallToAction { label link }",
         "fragment ExpSection on ExpSection { heading }",
-        "fragment _IComponent on _IComponent {__typename ...CallToAction ...ExpSection}",
+        "fragment _IComponent on _IComponent { __typename ...CallToAction ...ExpSection }",
         "fragment MyExperience on MyExperience { ..._IExperience }",
       ]
     `);
