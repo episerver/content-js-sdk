@@ -267,6 +267,9 @@ section > header {
 
 div.row {
   display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
 }
 
 .uni-link-list {
