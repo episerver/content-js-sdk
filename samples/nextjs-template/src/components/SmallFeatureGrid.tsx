@@ -24,7 +24,7 @@ type Props = {
 export default function SmallFeatureGrid({ opti }: Props) {
   return (
     <div className="small-feature-grid">
-      {opti.smallFeatures.map((feature, i) => (
+      {opti.smallFeatures?.map((feature, i) => (
         <OptimizelyComponent opti={feature} key={i} />
       ))}
     </div>

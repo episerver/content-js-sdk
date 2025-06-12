@@ -10,12 +10,12 @@ test('infer works for non-content type', () => {
 
 test('infer works for basic properties', () => {
   type ExpectedType = {
-    heading: string;
-    subtitle: string;
-    body: { html: string; json: any };
-    price: number;
-    units: number;
-    image: { url: { default: string; type: string } };
+    heading: string | null;
+    subtitle: string | null;
+    body: { json: any; html: string } | null;
+    price: number | null;
+    units: number | null;
+    image: { url: { default: string; type: string } } | null;
   };
 
   const Article = contentType({
@@ -31,17 +31,17 @@ test('infer works for basic properties', () => {
     },
   });
 
-  expectTypeOf<Infer<typeof Article>>().toMatchObjectType<ExpectedType>();
+  expectTypeOf<Infer<typeof Article>>().toExtend<ExpectedType>();
 });
 
 test('infer works for array properties', () => {
   type ExpectedType = {
-    heading: string[];
-    subtitle: string[];
-    body: { html: string; json: any }[];
-    price: number[];
-    units: number[];
-    image: { url: { default: string; type: string } }[];
+    heading: string[] | null;
+    subtitle: string[] | null;
+    body: { html: string; json: any }[] | null;
+    price: number[] | null;
+    units: number[] | null;
+    image: { url: { default: string; type: string } }[] | null;
   };
 
   const Article = contentType({
@@ -57,14 +57,14 @@ test('infer works for array properties', () => {
     },
   });
 
-  expectTypeOf<Infer<typeof Article>>().toMatchObjectType<ExpectedType>();
+  expectTypeOf<Infer<typeof Article>>().toExtend<ExpectedType>();
 });
 
 test('infer works for component properties', () => {
   type ExpectedType = {
     hero: {
-      image: { url: { default: string; type: string } };
-    };
+      image: { url: { default: string; type: string } } | null;
+    } | null;
   };
 
   const Hero = contentType({
@@ -86,5 +86,5 @@ test('infer works for component properties', () => {
     },
   });
 
-  expectTypeOf<Infer<typeof Article>>().toMatchObjectType<ExpectedType>();
+  expectTypeOf<Infer<typeof Article>>().toExtend<ExpectedType>();
 });

@@ -35,7 +35,7 @@ export default function SmallFeature({ opti }: Props) {
         </div>
       )}
       <div
-        dangerouslySetInnerHTML={{ __html: opti.body.html }}
+        dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
         {...pa('body')}
       />
     </div>
