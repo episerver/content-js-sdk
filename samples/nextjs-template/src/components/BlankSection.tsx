@@ -28,7 +28,7 @@ type BlankSectionProps = {
 export default function BlankSection({ opti }: BlankSectionProps) {
   const { pa } = getPreviewUtils(opti);
   return (
-    <section {...pa(opti)}>
+    <section className="table-section" {...pa(opti)}>
       <OptimizelyGridSection nodes={opti.nodes} row={Row} column={Column} />
     </section>
   );

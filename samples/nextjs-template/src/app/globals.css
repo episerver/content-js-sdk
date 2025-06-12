@@ -265,10 +265,17 @@ section > header {
   }
 }
 
-div.row {
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
+.table-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 3rem;
+
+  .row {
+    display: grid;
+    gap: 1rem;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
 }
 
 .uni-link-list {
