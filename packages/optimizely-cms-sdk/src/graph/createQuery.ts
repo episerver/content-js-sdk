@@ -44,11 +44,14 @@ function refreshCache() {
 
 /**
  * Maximum number of fragments allowed before a warning is issued.
- * This is to prevent excessive fragment depth which can lead to performance issues.
+ * Helps avoid excessive fragment depth, which may impact performance or GraphQL limits.
+ * Can be overridden via the MAX_FRAGMENT_THRESHOLD environment variable.
  */
-const MAX_FRAGMENT_THRESHOLD = parseInt(
-  process.env.MAX_FRAGMENT_THRESHOLD ?? '50'
-);
+const MAX_FRAGMENT_THRESHOLD = (() => {
+  const raw = process.env.MAX_FRAGMENT_THRESHOLD;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100;
+})();
 
 /**
  * Converts a property definition into GraphQL fields and fragments.
