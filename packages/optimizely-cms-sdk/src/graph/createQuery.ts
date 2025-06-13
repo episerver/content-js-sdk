@@ -43,16 +43,42 @@ function refreshCache() {
 }
 
 /**
- * Converts a property definition into a GraphQL field selection and any dependent fragments.
- * @param name - The field name in the selection set.
- * @param property - The property definition from the schema.
- * @param visited - A set of already visited fragments to prevent infinite recursion.
- * @returns An object containing GraphQL field strings and extra dependent fragments.
+ * Maximum number of fragments allowed before a warning is issued.
+ * This is to prevent excessive fragment depth which can lead to performance issues.
  */
+const MAX_FRAGMENT_THRESHOLD = Number(process.env.MAX_FRAGMENT_THRESHOLD ?? 50);
+
 function convertProperty(
   name: string,
   property: AnyProperty,
-  visited: Set<string> // one shared guard per tree
+  rootName: string,
+  visited: Set<string>
+): { fields: string[]; extraFragments: string[] } {
+  const result = convertPropertyField(name, property, rootName, visited);
+
+  if (result.extraFragments.length > MAX_FRAGMENT_THRESHOLD) {
+    console.warn(
+      `\x1b[33m⚠️ [optimizely-cms-sdk] Fragment "${rootName}" generated ${result.extraFragments.length} inner fragments (limit: ${MAX_FRAGMENT_THRESHOLD}). Excessive fragment depth may breach GraphQL limits or degrade performance.\x1b[0m\n` +
+        `\x1b[2m→ Consider narrowing it using \x1b[1mallowedTypes\x1b[22m and \x1b[1mrestrictedTypes\x1b[22m or reviewing \x1b[1mschema references\x1b[22m to reduce complexity.\x1b[0m`
+    );
+  }
+
+  return result;
+}
+
+/**
+ * Converts a property definition into a GraphQL field selection and any dependent fragments.
+ * @param name - The field name in the selection set.
+ * @param property - The property definition from the schema.
+ * @param rootName - The root content type name for recursive fragment generation.
+ * @param visited - A set of already visited fragments to prevent infinite recursion.
+ * @returns An object containing GraphQL field strings and extra dependent fragments.
+ */
+function convertPropertyField(
+  name: string,
+  property: AnyProperty,
+  rootName: string,
+  visited: Set<string>
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
   const subfields: string[] = [];
@@ -85,9 +111,7 @@ function convertProperty(
       }
     }
 
-    const uniqueSubfields = [...new Set(subfields)] // remove duplicates
-      .join(' ');
-
+    const uniqueSubfields = [...new Set(subfields)].join(' '); // remove duplicates
     fields.push(`${name} { __typename ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
@@ -98,7 +122,7 @@ function convertProperty(
   } else if (property.type === 'contentReference') {
     fields.push(`${name} { url { type default }}`);
   } else if (property.type === 'array') {
-    const f = convertProperty(name, property.items, visited);
+    const f = convertProperty(name, property.items, rootName, visited);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
@@ -107,7 +131,7 @@ function convertProperty(
 
   return {
     fields,
-    extraFragments: [...new Set(extraFragments)], // remove duplicates
+    extraFragments: [...new Set(extraFragments)],
   };
 }
 
@@ -130,8 +154,7 @@ function createExperienceFragments(visited: Set<string>): string[] {
   // Get the required fragments
   const extraFragments = experienceNodes
     .filter((n) => !visited.has(n))
-    .map((n) => createFragment(n, visited))
-    .flat();
+    .flatMap((n) => createFragment(n, visited));
 
   const nodeNames = experienceNodes.map((n) => `...${n}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
@@ -177,6 +200,7 @@ export function createFragment(
       const { fields: f, extraFragments: e } = convertProperty(
         propKey,
         prop,
+        contentTypeName,
         visited
       );
       fields.push(...f);
