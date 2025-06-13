@@ -46,8 +46,19 @@ function refreshCache() {
  * Maximum number of fragments allowed before a warning is issued.
  * This is to prevent excessive fragment depth which can lead to performance issues.
  */
-const MAX_FRAGMENT_THRESHOLD = Number(process.env.MAX_FRAGMENT_THRESHOLD ?? 50);
+const MAX_FRAGMENT_THRESHOLD = parseInt(
+  process.env.MAX_FRAGMENT_THRESHOLD ?? '50'
+);
 
+/**
+ * Converts a property definition into GraphQL fields and fragments.
+ * Logs warnings for potential performance or recursion issues based on configuration.
+ * @param name - The field name in the selection set.
+ * @param property - The property definition from the schema.
+ * @param rootName - The root content type name used for tracing and warning messages.
+ * @param visited - A set of already visited fragments to prevent infinite recursion.
+ * @returns An object containing GraphQL field strings and extra dependent fragments.
+ */
 function convertProperty(
   name: string,
   property: AnyProperty,
@@ -252,7 +263,6 @@ query FetchContent($filter: _ContentWhereInput) {
  * Resolves the set of allowed content types for a property, excluding restricted and recursive entries.
  * @param allowed - Explicit allow list of types.
  * @param restricted - Explicit deny list of types.
- * @param rootKey - The root content type currently being processed.
  * @returns An array of allowed content types for fragment generation.
  */
 function resolveAllowedTypes(
