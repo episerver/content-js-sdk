@@ -61,7 +61,11 @@ function convertProperty(
   const result = convertPropertyField(name, property, rootName, visited);
 
   // logs warnings if the fragment generation causes potential issues
-  checkTypeConstraintIssues(rootName, property, result);
+  const warnings = checkTypeConstraintIssues(rootName, property, result);
+
+  if (warnings) {
+    console.warn(warnings);
+  }
 
   return result;
 }

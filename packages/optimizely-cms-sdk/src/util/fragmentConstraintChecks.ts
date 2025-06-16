@@ -12,10 +12,40 @@ const MAX_FRAGMENT_THRESHOLD = (() => {
 })();
 
 /**
- * Generates a warning message if type configuration is missing or incomplete.
+ * Checks if the `allowedTypes` or `restrictedTypes` of a property are undefined or empty.
+ * @param property - The property definition to check.
+ * @returns boolean - True if either `allowedTypes` or `restrictedTypes` are undefined or empty.
+ */
+function arePropertyConstraintsMissing(property: AnyProperty): boolean {
+  return (
+    property.type === 'content' &&
+    (('allowedTypes' in property && !property.allowedTypes?.length) ||
+      ('restrictedTypes' in property && !property.restrictedTypes?.length))
+  );
+}
+
+/**
+ * Checks if the `allowedTypes` or `restrictedTypes` of a property's items are undefined or empty.
+ * @param property - The property definition to check.
+ * @returns boolean - True if either `allowedTypes` or `restrictedTypes` in items are undefined or empty.
+ */
+function areItemConstraintsMissing(property: AnyProperty): boolean {
+  return (
+    property.type === 'array' &&
+    (('allowedTypes' in property.items &&
+      !property.items.allowedTypes?.length) ||
+      (property.type === 'array' &&
+        'restrictedTypes' in property.items &&
+        !property.items.restrictedTypes?.length))
+  );
+}
+
+/**
+ * Checks if a property or its items have missing or incomplete type constraints.
+ * Specifically, it validates whether `allowedTypes` or `restrictedTypes` are undefined or empty.
  * @param property - The property definition to check.
  * @param propertyName - The name of the property being processed.
- * @param rootName - The root content type name used for tracing and warning messages.
+ * @returns string | null - A warning message if type constraints are missing or incomplete, otherwise null.
  */
 export function checkTypeConstraintIssues(
   rootName: string,
@@ -24,22 +54,17 @@ export function checkTypeConstraintIssues(
     fields: string[];
     extraFragments: string[];
   }
-) {
+): string | null {
   if (
-    (result.extraFragments.length > MAX_FRAGMENT_THRESHOLD &&
-      property.type === 'content' &&
-      (!property.allowedTypes?.length || !property.restrictedTypes?.length)) ||
-    (property.type === 'array' &&
-      ((property.items.type === 'content' &&
-        !property.items.allowedTypes?.length &&
-        'allowedTypes' in property.items) ||
-        ('restrictedTypes' in property.items &&
-          !property.items.restrictedTypes?.length &&
-          'restrictedTypes' in property.items)))
+    arePropertyConstraintsMissing(property) ||
+    areItemConstraintsMissing(property) ||
+    result.extraFragments.length > MAX_FRAGMENT_THRESHOLD
   ) {
-    console.warn(
+    return (
       `\x1b[33m⚠️ [optimizely-cms-sdk] Fragment "${rootName}" generated ${result.extraFragments.length} inner fragments (limit: ${MAX_FRAGMENT_THRESHOLD}). Excessive fragment depth may breach GraphQL limits or degrade performance.\x1b[0m\n` +
-        `\x1b[2m→ Consider narrowing it using \x1b[1mallowedTypes\x1b[22m and \x1b[1mrestrictedTypes\x1b[22m or reviewing \x1b[1mschema references\x1b[22m to reduce complexity.\x1b[0m`
+      `\x1b[2m→ Consider narrowing it using \x1b[1mallowedTypes\x1b[22m and \x1b[1mrestrictedTypes\x1b[22m or reviewing \x1b[1mschema references\x1b[22m to reduce complexity.\x1b[0m`
     );
   }
+
+  return null;
 }
