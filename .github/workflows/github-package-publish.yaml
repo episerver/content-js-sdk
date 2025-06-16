@@ -11,10 +11,13 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Install Node.js
+      - name: Setup .npmrc file
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: 'https://npm.pkg.github.com'
+          # Defaults to the user or organization that owns the workflow file
+          scope: '@episerver'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
