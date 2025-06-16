@@ -19,8 +19,10 @@ const MAX_FRAGMENT_THRESHOLD = (() => {
 function arePropertyConstraintsMissing(property: AnyProperty): boolean {
   return (
     property.type === 'content' &&
-    (('allowedTypes' in property && !property.allowedTypes?.length) ||
-      ('restrictedTypes' in property && !property.restrictedTypes?.length))
+    !(
+      ('allowedTypes' in property && property.allowedTypes?.length) ||
+      ('restrictedTypes' in property && property.restrictedTypes?.length)
+    )
   );
 }
 
@@ -32,10 +34,12 @@ function arePropertyConstraintsMissing(property: AnyProperty): boolean {
 function areItemConstraintsMissing(property: AnyProperty): boolean {
   return (
     property.type === 'array' &&
-    (('allowedTypes' in property.items &&
-      !property.items.allowedTypes?.length) ||
+    !(
+      ('allowedTypes' in property.items &&
+        property.items.allowedTypes?.length) ||
       ('restrictedTypes' in property.items &&
-        !property.items.restrictedTypes?.length))
+        property.items.restrictedTypes?.length)
+    )
   );
 }
 
@@ -55,8 +59,8 @@ export function checkTypeConstraintIssues(
   }
 ): string | null {
   if (
-    arePropertyConstraintsMissing(property) ||
-    areItemConstraintsMissing(property) ||
+    (arePropertyConstraintsMissing(property) ||
+      areItemConstraintsMissing(property)) &&
     result.extraFragments.length > MAX_FRAGMENT_THRESHOLD
   ) {
     return (
