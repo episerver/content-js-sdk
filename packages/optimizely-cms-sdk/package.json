@@ -10,6 +10,9 @@
     "build": "tsc",
     "test": "vitest --typecheck"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
