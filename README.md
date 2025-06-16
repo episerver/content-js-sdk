@@ -1,65 +1,26 @@
 # Optimizely CMS JavaScript tools
 
-## Tech-stack
+## Getting started
 
-| Tool       | Category                 |
-| :--------- | :----------------------- |
-| pnpm       | Package manager          |
-| Turborepo? | task runner              |
-| changeset? | monorepo version manager |
+> [!Note] The packages are at this moment published only in GitHub package registry.
 
-### Other discussions
+### 1. Create a GitHub token with access rights
 
-- TSConfig: Create a base for all packages
-- ESM and CJS
-- Formatter, at least in the samples
+[Create a personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with at least `read:packages` scope
 
-## CLI
+### 2. Login to GitHub package registry
 
-Tooling:
-
-- oclif: parses arguments and flags, creates examples...
-- inquirer: for prompts
-
-### Commands
+In your project, add a file called `.npmrc` with the following content (replace `<YOUR TOKEN>` with the token obtained in the previous step):
 
 ```
-login
-config push
-config pull
-content-types delete-all
+@episerver:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=<YOUR TOKEN>
 ```
 
-maybe in the future, expose the CLI commands as JS functions:
+### 3. Install the packages
 
-- When we see the need of using the commands programmatically
-- Maybe as a _different_ SDK ("Management SDK"?)
-
-## SDK
-
-### Modelling
-
-- `buildConfig` and `buildContentType`
-- `/packages` endpoint
-- We don't maintain TypeScript types for the JSON "manifest"
-  - Because the SDK has its own "ContentType" types
-  - Because the SDK does not own the manifest - ideally should be generated from the Open API spec
-
-### Rendering
-
-- React-specific?
-- Next.js-specific?
-
-### Content delivery (GraphQL)
-
-- If we generate the queries (strings) ourselves, maybe `fetch` works instead of requiring any dependency
-
-## Sample sites
-
-- At least Next.js
-
----
-
-## CI / CD
-
-- Use whatever Optimizely is using in other repos
+```sh
+# Replace with `pnpm`, `yarn`, etc if you use a different package manager
+npm install @episerver/cms-sdk
+npm install @episerver/cms-cli
+```
