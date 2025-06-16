@@ -23,10 +23,6 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       description:
         'Force updates the content type even though the changes might result in data loss.',
     }),
-    overwrite: Flags.boolean({
-      description:
-        'Indicates whether existing content items with matching keys in the CMS should be overwritten.',
-    }),
   };
   static override description = 'describe the command here';
   static override examples = ['<%= config.bin %> <%= command.id %>'];
@@ -71,14 +67,6 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       );
     }
 
-    if (flags.overwrite) {
-      console.warn(
-        `${chalk.yellowBright.bold(
-          '--overwrite'
-        )} is used!. This overwrite existing CMS content items with matching keys.`
-      );
-    }
-
     const spinner = ora('Uploading configuration file').start();
 
     const response = await restClient.POST('/packages', {
@@ -90,7 +78,6 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       params: {
         query: {
           ignoreDataLossWarnings: flags.force,
-          overwriteExistingContentItems: flags.overwrite,
         },
       },
     });
