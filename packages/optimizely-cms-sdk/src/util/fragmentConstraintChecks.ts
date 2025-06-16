@@ -34,8 +34,7 @@ function areItemConstraintsMissing(property: AnyProperty): boolean {
     property.type === 'array' &&
     (('allowedTypes' in property.items &&
       !property.items.allowedTypes?.length) ||
-      (property.type === 'array' &&
-        'restrictedTypes' in property.items &&
+      ('restrictedTypes' in property.items &&
         !property.items.restrictedTypes?.length))
   );
 }
