@@ -6,6 +6,7 @@
   "author": "",
   "type": "commonjs",
   "main": "index.js",
+  "private": "true",
   "scripts": {
     "build": "pnpm --filter \"./packages/**\" build",
     "test": "echo \"Error: no test specified\" && exit 1"
