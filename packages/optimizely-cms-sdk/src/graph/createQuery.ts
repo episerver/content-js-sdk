@@ -20,6 +20,7 @@ import {
   isBaseType,
   getBaseKey,
 } from '../util/baseTypeUtil';
+import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks';
 
 let allContentTypes: AnyContentType[] = [];
 
@@ -43,17 +44,6 @@ function refreshCache() {
 }
 
 /**
- * Maximum number of fragments allowed before a warning is issued.
- * Helps avoid excessive fragment depth, which may impact performance or GraphQL limits.
- * Can be overridden via the MAX_FRAGMENT_THRESHOLD environment variable.
- */
-const MAX_FRAGMENT_THRESHOLD = (() => {
-  const raw = process.env.MAX_FRAGMENT_THRESHOLD;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100;
-})();
-
-/**
  * Converts a property definition into GraphQL fields and fragments.
  * Logs warnings for potential performance or recursion issues based on configuration.
  * @param name - The field name in the selection set.
@@ -70,12 +60,8 @@ function convertProperty(
 ): { fields: string[]; extraFragments: string[] } {
   const result = convertPropertyField(name, property, rootName, visited);
 
-  if (result.extraFragments.length > MAX_FRAGMENT_THRESHOLD) {
-    console.warn(
-      `\x1b[33m⚠️ [optimizely-cms-sdk] Fragment "${rootName}" generated ${result.extraFragments.length} inner fragments (limit: ${MAX_FRAGMENT_THRESHOLD}). Excessive fragment depth may breach GraphQL limits or degrade performance.\x1b[0m\n` +
-        `\x1b[2m→ Consider narrowing it using \x1b[1mallowedTypes\x1b[22m and \x1b[1mrestrictedTypes\x1b[22m or reviewing \x1b[1mschema references\x1b[22m to reduce complexity.\x1b[0m`
-    );
-  }
+  // logs warnings if the fragment generation causes potential issues
+  checkTypeConstraintIssues(rootName, property, result);
 
   return result;
 }
