@@ -13,6 +13,9 @@ importers:
       '@babel/plugin-transform-react-jsx':
         specifier: ^7.25.9
         version: 7.25.9(@babel/core@7.26.10)
+      '@episerver/cms-sdk':
+        specifier: workspace:*
+        version: link:../optimizely-cms-sdk
       '@inquirer/prompts':
         specifier: ^7.4.0
         version: 7.4.0(@types/node@18.19.84)
@@ -37,9 +40,6 @@ importers:
       openapi-fetch:
         specifier: ^0.13.5
         version: 0.13.5
-      optimizely-cms-sdk:
-        specifier: workspace:*
-        version: link:../optimizely-cms-sdk
       ora:
         specifier: ^8.2.0
         version: 8.2.0
@@ -78,12 +78,12 @@ importers:
 
   samples/nextjs-template:
     dependencies:
+      '@episerver/cms-sdk':
+        specifier: ^0.0.1
+        version: 0.0.1(react@19.1.0)
       next:
         specifier: 15.2.4
         version: 15.2.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      optimizely-cms-sdk:
-        specifier: workspace:*
-        version: link:../../packages/optimizely-cms-sdk
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -109,9 +109,6 @@ importers:
       eslint-config-next:
         specifier: 15.2.4
         version: 15.2.4(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.2)
-      optimizely-cms-cli:
-        specifier: workspace:*
-        version: link:../../packages/optimizely-cms-cli
       typescript:
         specifier: ^5
         version: 5.8.2
@@ -213,6 +210,11 @@ packages:
 
   '@emnapi/wasi-threads@1.0.1':
     resolution: {integrity: sha512-iIBu7mwkq4UQGeMEM8bLwNK962nXdhodeScX4slfQnRhEMMzvYivHhutCIk8uojvmASXXPC2WNEjwxFWk72Oqw==}
+
+  '@episerver/cms-sdk@0.0.1':
+    resolution: {integrity: sha512-UjUJnxlxaE+KDcDA7KLk5U3+fBesopVOAuh9emPYhYd2YR33BOPZC05/xJbqfyCtUgOoHr7v6YZ+pl/3UZrYgg==, tarball: https://npm.pkg.github.com/download/@episerver/cms-sdk/0.0.1/b02f4bdf91b6766b173d0170f5f593de0f79d1db}
+    peerDependencies:
+      react: ^19.0.0
 
   '@esbuild/aix-ppc64@0.25.2':
     resolution: {integrity: sha512-wCIboOL2yXZym2cgm6mlA742s9QeJ8DjGVaL39dLN4rRwrOgOyYSnOaFPhKZGLb2ngj4EyfAFjsNJwPXZvseag==}
@@ -2877,6 +2879,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
     optional: true
+
+  '@episerver/cms-sdk@0.0.1(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
 
   '@esbuild/aix-ppc64@0.25.2':
     optional: true

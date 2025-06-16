@@ -1,5 +1,5 @@
-import { contentType, Infer } from 'optimizely-cms-sdk';
-import { getPreviewUtils } from 'optimizely-cms-sdk/dist/render/react';
+import { contentType, Infer } from '@episerver/cms-sdk';
+import { getPreviewUtils } from '@episerver/cms-sdk/dist/render/react';
 
 export const ArticleContentType = contentType({
   key: 'Article',

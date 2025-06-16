@@ -23,7 +23,7 @@
     "glob": "^11.0.1",
     "jiti": "^2.4.2",
     "openapi-fetch": "^0.13.5",
-    "optimizely-cms-sdk": "workspace:*",
+    "@episerver/cms-sdk": "workspace:*",
     "ora": "^8.2.0",
     "zod": "^3.24.2"
   },

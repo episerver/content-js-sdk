@@ -6,7 +6,7 @@ import {
   isContentType,
   DisplayTemplates,
   isDisplayTemplate,
-} from 'optimizely-cms-sdk';
+} from '@episerver/cms-sdk';
 import chalk from 'chalk';
 
 export type Prettify<T> = {

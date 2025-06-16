@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@episerver/cms-sdk": "^0.0.1",
     "next": "15.2.4",
-    "optimizely-cms-sdk": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -21,7 +21,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
-    "optimizely-cms-cli": "workspace:*",
     "typescript": "^5"
   }
 }

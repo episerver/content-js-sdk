@@ -1,5 +1,5 @@
-import { GraphClient } from 'optimizely-cms-sdk/dist/graph';
-import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
+import { GraphClient } from '@episerver/cms-sdk/dist/graph';
+import { OptimizelyComponent } from '@episerver/cms-sdk/dist/render/react';
 import React from 'react';
 
 export async function generateStaticParams() {

@@ -1,10 +1,10 @@
-import { contentType, displayTemplate, Infer } from 'optimizely-cms-sdk';
+import { contentType, displayTemplate, Infer } from '@episerver/cms-sdk';
 import { SmallFeatureGridContentType } from './SmallFeatureGrid';
 import { VideoFeatureContentType } from './VideoFeature';
 import {
   getPreviewUtils,
   OptimizelyComponent,
-} from 'optimizely-cms-sdk/dist/render/react';
+} from '@episerver/cms-sdk/dist/render/react';
 
 export const LandingSectionContentType = contentType({
   key: 'LandingSection',
