@@ -24,6 +24,8 @@ jobs:
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
       - name: Install dependencies
         run: pnpm install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build packages
         run: pnpm build
       - name: Build Project Artifacts
