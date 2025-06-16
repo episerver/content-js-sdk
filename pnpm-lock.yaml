@@ -14,7 +14,7 @@ importers:
         specifier: ^7.25.9
         version: 7.25.9(@babel/core@7.26.10)
       '@episerver/cms-sdk':
-        specifier: workspace:*
+        specifier: workspace:^0.0.1
         version: link:../optimizely-cms-sdk
       '@inquirer/prompts':
         specifier: ^7.4.0
@@ -215,6 +215,9 @@ packages:
     resolution: {integrity: sha512-UjUJnxlxaE+KDcDA7KLk5U3+fBesopVOAuh9emPYhYd2YR33BOPZC05/xJbqfyCtUgOoHr7v6YZ+pl/3UZrYgg==, tarball: https://npm.pkg.github.com/download/@episerver/cms-sdk/0.0.1/b02f4bdf91b6766b173d0170f5f593de0f79d1db}
     peerDependencies:
       react: ^19.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@esbuild/aix-ppc64@0.25.2':
     resolution: {integrity: sha512-wCIboOL2yXZym2cgm6mlA742s9QeJ8DjGVaL39dLN4rRwrOgOyYSnOaFPhKZGLb2ngj4EyfAFjsNJwPXZvseag==}
@@ -2881,7 +2884,7 @@ snapshots:
     optional: true
 
   '@episerver/cms-sdk@0.0.1(react@19.1.0)':
-    dependencies:
+    optionalDependencies:
       react: 19.1.0
 
   '@esbuild/aix-ppc64@0.25.2':
