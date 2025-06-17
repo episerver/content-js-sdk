@@ -58,41 +58,32 @@ This repository is a mono-repo, meaning that multiple packages and artifacts are
    - If you are releasing one package use the name `release/package-name@x.y.z`
    - If you are releasing multiple packages, any other name
 
-2. Bump version of the packages
+2. Run `pnpm run version:all`. Remember to choose premajor/preminor/prepatch. This command will:
 
-   -
+   - Let you choose version for individual packages interactively
+   - Update the `version` field in `package.json` in every package
+   - Update version number in dependencies
+   - Create a git tag for each package and a commit
 
-   ```
-   pnpm version
-   ```
-
-3. Push the release branch
-4. Go to GitHub and create a Draft release **for every released package**
-
-   - The tag should be `package-name@x.y.z`
+3. Push the release branch (`git push`) and the tags (`git push origin --tags`)
+4. Go to GitHub and create one Draft release **for every released package**
 
 ### Create more pre-release versions
 
 If the packages are not ready for release, and you need to create one more pre-release version of them:
 
 1. Checkout to the `release/` branch you created
-2. Bump version of the packages
-
-   ```
-   pnpm exec lerna version
-   ```
-
-3. Push the branch
+2. Run `pnpm run version:all` to create a new set of versions
+3. Push the branch and the tags
 
 ### Publish the packages
 
-If the packages are ready for release
+When the packages are ready for release
 
-1. Bump version of the packages
+1. Run `pnpm run version:all`. Choose the major/minor/patch version accordingly.
+2. Push the release branch and the tags
+3. Go to GitHub and publish the releases
 
-   ```
-   pnpm exec lerna version
-   ```
+   - Add the newly created tags to each of the releases
 
-2. Go to GitHub and publish the releases
-3. Merge the PR to `main` branch
+4. Merge the PR to `main` branch
