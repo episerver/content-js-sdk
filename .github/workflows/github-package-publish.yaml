@@ -34,6 +34,6 @@ jobs:
         run: pnpm build
 
       - name: Publish packages
-        run: pnpm exec lerna publish
+        run: pnpm publish:all
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
