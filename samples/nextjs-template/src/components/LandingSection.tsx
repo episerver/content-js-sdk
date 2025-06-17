@@ -8,7 +8,7 @@ import {
 
 export const LandingSectionContentType = contentType({
   key: 'LandingSection',
-  baseType: 'component',
+  baseType: '_component',
   displayName: 'Landing Section',
   properties: {
     heading: {
@@ -32,7 +32,7 @@ export const DisplayTemplate = displayTemplate({
   key: 'LandingSectionDisplayTemplate',
   isDefault: true,
   displayName: 'LandingSectionDisplayTemplate',
-  baseType: 'component',
+  baseType: '_component',
   settings: {
     background: {
       editor: 'select',

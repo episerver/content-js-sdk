@@ -16,26 +16,26 @@ type BaseContentType = {
 
 /** Represents the "Component" type (also called "Block") in CMS */
 export type ComponentContentType = BaseContentType & {
-  baseType: 'component';
+  baseType: '_component';
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
 };
 
 export type ExperienceContentType = BaseContentType & {
-  baseType: 'experience';
+  baseType: '_experience';
 };
 
 // This content type is used only internally
 export type SectionContentType = BaseContentType & {
-  baseType: 'section';
+  baseType: '_section';
 };
 
 export type BaseTypes =
-  | 'page'
-  | 'media'
-  | 'image'
-  | 'video'
-  | 'folder'
-  | 'element';
+  | '_page'
+  | '_media'
+  | '_image'
+  | '_video'
+  | '_folder'
+  | '_element';
 
 /** Represents all other types in CMS. They don't have any additional property */
 export type OtherContentTypes = BaseContentType & {

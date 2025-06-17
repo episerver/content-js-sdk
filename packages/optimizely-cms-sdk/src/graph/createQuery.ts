@@ -152,7 +152,9 @@ function createExperienceFragments(visited: Set<string>): string[] {
   ];
 
   const experienceNodes = getCachedContentTypes()
-    .filter((c) => c.baseType === 'component' && c.compositionBehaviors?.length)
+    .filter(
+      (c) => c.baseType === '_component' && c.compositionBehaviors?.length
+    )
     .map((c) => c.key);
 
   // Get the required fragments
@@ -217,7 +219,7 @@ export function createFragment(
       fields.push(COMMON_MEDIA_METADATA_BLOCK);
     }
 
-    if (ct.baseType === 'experience') {
+    if (ct.baseType === '_experience') {
       fields.push('..._IExperience');
       extraFragments.push(...createExperienceFragments(visited));
     }

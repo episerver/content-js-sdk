@@ -14,12 +14,6 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
           (updatedValue.contentType as any) = updatedValue.contentType.key;
         }
 
-        // If type is "richText", we switch type to "string" and "format" to "html"
-        if (updatedValue.type === 'richText') {
-          (updatedValue.type as any) = 'string'; //
-          updatedValue.format = 'html';
-        }
-
         // If "enum" exists, set format to "selectOne"
         if (Object.hasOwn(updatedValue, 'enum')) {
           updatedValue.format = 'selectOne';

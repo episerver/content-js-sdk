@@ -3,7 +3,7 @@ import { getPreviewUtils } from '@episerver/cms-sdk/dist/render/react';
 
 export const SmallFeatureContentType = contentType({
   key: 'SmallFeature',
-  baseType: 'component',
+  baseType: '_component',
   displayName: 'Small feature',
   properties: {
     heading: {
