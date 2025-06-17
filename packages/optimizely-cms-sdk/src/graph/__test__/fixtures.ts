@@ -255,6 +255,20 @@ export const FeedBackPage = contentType({
   },
 });
 
+export const ContentPage = contentType({
+  key: 'ContentPage',
+  displayName: 'ContentPage',
+  baseType: 'page',
+  properties: {
+    p_contentArea: {
+      type: 'array',
+      items: {
+        type: 'content',
+      },
+    },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -276,4 +290,5 @@ export const allContentTypes: AnyContentType[] = [
   mediaBlock,
   HeroContentType,
   FeedBackPage,
+  ContentPage,
 ];

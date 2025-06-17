@@ -20,11 +20,13 @@ import {
   isBaseType,
   getBaseKey,
 } from '../util/baseTypeUtil';
+import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks';
 
 let allContentTypes: AnyContentType[] = [];
 
 /**
- * This is a simple memoisation that avoids repeatedly calling the registry
+ * Retrieves and caches all content type definitions.
+ * Avoids repeated calls to the content registry.
  * @returns An array of all contentType definitions.
  */
 function getCachedContentTypes(): AnyContentType[] {
@@ -35,41 +37,66 @@ function getCachedContentTypes(): AnyContentType[] {
 }
 
 /**
- *  Force a fresh read called once per *top‑level* createFragment() call.
- * @returns An array of all contentType definitions.
+ * Forces a refresh of the cached content type definitions.
  */
 function refreshCache() {
   allContentTypes = getAllContentTypes();
 }
 
 /**
- * Converts a property into a GraphQL field
- * @param name Field name in the parent selection set.
- * @param property Property definition object from the schema.
- * @param rootName Name of the fragment we are **currently** building.
- * @param visited Shared recursion-guard set from the caller.
- * @returns object including the refined fileds and extraFragments `{ fields, extraFragments }`.
+ * Converts a property definition into GraphQL fields and fragments.
+ * Logs warnings for potential performance or recursion issues based on configuration.
+ * @param name - The field name in the selection set.
+ * @param property - The property definition from the schema.
+ * @param rootName - The root content type name used for tracing and warning messages.
+ * @param visited - A set of already visited fragments to prevent infinite recursion.
+ * @returns An object containing GraphQL field strings and extra dependent fragments.
  */
 function convertProperty(
   name: string,
   property: AnyProperty,
   rootName: string,
-  visited: Set<string> // one shared guard per tree
+  visited: Set<string>
+): { fields: string[]; extraFragments: string[] } {
+  const result = convertPropertyField(name, property, rootName, visited);
+
+  // logs warnings if the fragment generation causes potential issues
+  const warningMessage = checkTypeConstraintIssues(rootName, property, result);
+
+  if (warningMessage) {
+    console.warn(warningMessage);
+  }
+
+  return result;
+}
+
+/**
+ * Converts a property definition into a GraphQL field selection and any dependent fragments.
+ * @param name - The field name in the selection set.
+ * @param property - The property definition from the schema.
+ * @param rootName - The root content type name for recursive fragment generation.
+ * @param visited - A set of already visited fragments to prevent infinite recursion.
+ * @returns An object containing GraphQL field strings and extra dependent fragments.
+ */
+function convertPropertyField(
+  name: string,
+  property: AnyProperty,
+  rootName: string,
+  visited: Set<string>
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
   const subfields: string[] = [];
   const extraFragments: string[] = [];
 
   if (property.type === 'component') {
-    extraFragments.push(
-      ...createFragment(property.contentType.key, visited, 'Property')
-    );
-    fields.push(`${name} { ...${property.contentType.key}Property }`);
+    const key = property.contentType.key;
+    const fragmentName = `${key}Property`;
+    extraFragments.push(...createFragment(key, visited, 'Property'));
+    fields.push(`${name} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
       property.allowedTypes,
-      property.restrictedTypes,
-      rootName
+      property.restrictedTypes
     );
 
     for (const t of allowed) {
@@ -88,9 +115,7 @@ function convertProperty(
       }
     }
 
-    const uniqueSubfields = [...new Set(subfields)] // remove duplicates
-      .join(' ');
-
+    const uniqueSubfields = [...new Set(subfields)].join(' '); // remove duplicates
     fields.push(`${name} { __typename ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
@@ -101,7 +126,6 @@ function convertProperty(
   } else if (property.type === 'contentReference') {
     fields.push(`${name} { url { type default }}`);
   } else if (property.type === 'array') {
-    // Call recursively
     const f = convertProperty(name, property.items, rootName, visited);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
@@ -111,27 +135,33 @@ function convertProperty(
 
   return {
     fields,
-    extraFragments: [...new Set(extraFragments)], // remove duplicates
+    extraFragments: [...new Set(extraFragments)],
   };
 }
 
-/** Builds a GraphQL fragment for any Experience content type */
-function createExperienceFragments(): string[] {
+/**
+ * Builds experience GraphQL fragments and their dependencies.
+ * @param visited - Set of fragment names already visited to avoid cycles.
+ * @returns A list of GraphQL fragment strings.
+ */
+function createExperienceFragments(visited: Set<string>): string[] {
   // Fixed fragments for all experiences
   const fixedFragments = [
     'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
     'fragment ICompositionNode on ICompositionNode { __typename key type nodeType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }',
   ];
 
-  // Add fragments for each content type with "composition behavior"
   const experienceNodes = getCachedContentTypes()
     .filter((c) => c.baseType === 'component' && c.compositionBehaviors?.length)
     .map((c) => c.key);
 
   // Get the required fragments
-  const extraFragments = experienceNodes.map((n) => createFragment(n)).flat();
+  const extraFragments = experienceNodes
+    .filter((n) => !visited.has(n))
+    .flatMap((n) => createFragment(n, visited));
+
   const nodeNames = experienceNodes.map((n) => `...${n}`).join(' ');
-  const componentFragment = `fragment _IComponent on _IComponent {__typename ${nodeNames}}`;
+  const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
 
   return [...fixedFragments, ...extraFragments, componentFragment];
 }
@@ -148,9 +178,9 @@ export function createFragment(
   suffix: string = ''
 ): string[] {
   const fragmentName = `${contentTypeName}${suffix}`;
+  if (visited.has(fragmentName)) return []; // cyclic ref guard
   // Refresh registry cache only on the *root* call (avoids redundant reads)
   if (visited.size === 0) refreshCache();
-  if (visited.has(fragmentName)) return []; // cyclic ref guard
   visited.add(fragmentName);
 
   const fields: string[] = [];
@@ -189,7 +219,7 @@ export function createFragment(
 
     if (ct.baseType === 'experience') {
       fields.push('..._IExperience');
-      extraFragments.push(...createExperienceFragments());
+      extraFragments.push(...createExperienceFragments(visited));
     }
   }
 
@@ -202,8 +232,9 @@ export function createFragment(
 }
 
 /**
- * Creates a GraphQL query for a particular content type
- * @param contentType The content type
+ * Generates a complete GraphQL query for fetching a content type and its fragment.
+ * @param contentType - The key of the content type to query.
+ * @returns A string representing the GraphQL query.
  */
 export function createQuery(contentType: string) {
   const fragment = createFragment(contentType);
@@ -222,16 +253,14 @@ query FetchContent($filter: _ContentWhereInput) {
 }
 
 /**
- * Returns the set of content types that are **allowed** at the current property level.
- * @param allowedTypes Explicit allow-list for the property, or `undefined`.
- * @param restrictedTypes Explicit restricted-list for the property, or `undefined`.
- * @param rootName Name of the fragment we are **currently** building.
- * @returns baseline array (all allowedTypes – restrictedTypes) in declaration order.
+ * Resolves the set of allowed content types for a property, excluding restricted and recursive entries.
+ * @param allowed - Explicit allow list of types.
+ * @param restricted - Explicit deny list of types.
+ * @returns An array of allowed content types for fragment generation.
  */
 function resolveAllowedTypes(
   allowed: ContentOrMediaType[] | undefined,
-  restricted: ContentOrMediaType[] | undefined,
-  rootKey: string
+  restricted: ContentOrMediaType[] | undefined
 ): (ContentOrMediaType | AnyContentType)[] {
   const skip = new Set<string>();
   const seen = new Set<string>();
@@ -252,7 +281,7 @@ function resolveAllowedTypes(
 
   const add = (ct: ContentOrMediaType | AnyContentType) => {
     const key = getKeyName(ct);
-    if (key === rootKey || skip.has(key) || seen.has(key)) return;
+    if (skip.has(key) || seen.has(key)) return;
     seen.add(key);
     result.push(ct);
   };
@@ -267,7 +296,7 @@ function resolveAllowedTypes(
         .forEach(add);
     }
 
-    add(entry); // finally, the entry itself (token or regular type)
+    add(entry); // finally, the entry itself (base or regular type)
   }
 
   return result;
