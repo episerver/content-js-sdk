@@ -2,8 +2,8 @@ import React from 'react';
 
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
-import { initContentTypeRegistry } from 'optimizely-cms-sdk';
-import { initReactComponentRegistry } from 'optimizely-cms-sdk/dist/render/react';
+import { initContentTypeRegistry } from '@episerver/cms-sdk';
+import { initReactComponentRegistry } from '@episerver/cms-sdk/dist/render/react';
 
 import Landing, {
   ContentType as LadningContentType,

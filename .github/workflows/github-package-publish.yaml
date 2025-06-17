@@ -1,0 +1,39 @@
+name: Publish package to GitHub Packages
+on:
+  push:
+    branches:
+      - release/*
+  release:
+    types: [released]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .npmrc file
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://npm.pkg.github.com'
+          # Defaults to the user or organization that owns the workflow file
+          scope: '@episerver'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+
+      - name: Install (all) dependencies)
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm -r test
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Publish packages
+        run: pnpm publish -r
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

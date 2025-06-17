@@ -1,6 +1,6 @@
-import { contentType, Infer } from 'optimizely-cms-sdk';
+import { contentType, Infer } from '@episerver/cms-sdk';
 import { SmallFeatureContentType } from './SmallFeature';
-import { OptimizelyComponent } from 'optimizely-cms-sdk/dist/render/react';
+import { OptimizelyComponent } from '@episerver/cms-sdk/dist/render/react';
 
 export const SmallFeatureGridContentType = contentType({
   key: 'SmallFeatureGrid',

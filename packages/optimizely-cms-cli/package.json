@@ -1,10 +1,16 @@
 {
-  "name": "optimizely-cms-cli",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@episerver/cms-cli",
+  "version": "0.0.2",
+  "description": "CLI application for integration with Optimizely CMS",
+  "repository": {
+    "url": "https://github.com/episerver/content-js-sdk.git"
+  },
   "scripts": {
     "build": "tsc"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -12,6 +18,7 @@
   "type": "module",
   "dependencies": {
     "@babel/plugin-transform-react-jsx": "^7.25.9",
+    "@episerver/cms-sdk": "workspace:^0.0.2",
     "@inquirer/prompts": "^7.4.0",
     "@oclif/core": "^4.2.10",
     "chalk": "^5.4.1",
@@ -20,7 +27,6 @@
     "glob": "^11.0.1",
     "jiti": "^2.4.2",
     "openapi-fetch": "^0.13.5",
-    "optimizely-cms-sdk": "workspace:*",
     "ora": "^8.2.0",
     "zod": "^3.24.2"
   },

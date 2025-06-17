@@ -1,12 +1,18 @@
 {
-  "name": "optimizely-cms-sdk",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@episerver/cms-sdk",
+  "version": "0.0.2",
+  "description": "JavaScript tools for integration with Optimizely CMS",
   "main": "./dist/index.js",
+  "repository": {
+    "url": "https://github.com/episerver/content-js-sdk.git"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest --typecheck"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
