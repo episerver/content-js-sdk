@@ -139,7 +139,7 @@ export const blogPage = contentType({
   properties: {
     blog: {
       type: 'content',
-      allowedTypes: [articlePage, '_Image'],
+      allowedTypes: [articlePage, '_image'],
     },
   },
 });
@@ -177,7 +177,7 @@ export const mediaPage = contentType({
   properties: {
     media: {
       type: 'content',
-      allowedTypes: ['_Image', '_Media', '_Video'],
+      allowedTypes: ['_image', '_media', '_video'],
     },
   },
 });
@@ -188,7 +188,7 @@ export const specialPage = contentType({
   properties: {
     media: {
       type: 'content',
-      restrictedTypes: ['_Image'],
+      restrictedTypes: ['_image'],
     },
   },
 });
@@ -200,7 +200,7 @@ export const mediaBlock = contentType({
     media: {
       type: 'content',
       allowedTypes: [mediaPage],
-      restrictedTypes: ['_Image'],
+      restrictedTypes: ['_image'],
     },
   },
 });
@@ -218,7 +218,7 @@ export const HeroContentType = contentType({
     },
     background: {
       type: 'contentReference',
-      allowedTypes: ['_Image'],
+      allowedTypes: ['_image'],
     },
     theme: {
       type: 'string',

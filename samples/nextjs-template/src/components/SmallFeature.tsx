@@ -11,7 +11,7 @@ export const SmallFeatureContentType = contentType({
     },
     image: {
       type: 'contentReference',
-      allowedTypes: ['_Image'],
+      allowedTypes: ['_image'],
     },
     body: {
       type: 'richText',

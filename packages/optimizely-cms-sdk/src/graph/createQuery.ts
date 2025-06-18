@@ -13,12 +13,10 @@ import {
 import {
   getKeyName,
   isBaseMediaType,
-  isCustomMediaType,
   buildBaseTypeFragments,
   MEDIA_METADATA_FRAGMENT,
   COMMON_MEDIA_METADATA_BLOCK,
   isBaseType,
-  getBaseKey,
 } from '../util/baseTypeUtil';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks';
 
@@ -105,12 +103,11 @@ function convertPropertyField(
       subfields.push(`...${key}`);
 
       // if the key name is one of the user defined media type we append the base type fragment
-      // eg: userDefinedImage (baseType:"image") -> _Image
+      // eg: userDefinedImage (baseType:"image") -> _image
       if (getAllMediaTypeKeys().includes(key)) {
         const cc = getContentType(key);
         if (cc) {
-          const baseKey = getBaseKey(cc.baseType);
-          subfields.push(`...${baseKey.trim()}`);
+          subfields.push(`...${cc.baseType.trim()}`);
         }
       }
     }
@@ -188,7 +185,7 @@ export function createFragment(
   const fields: string[] = [];
   const extraFragments: string[] = [];
 
-  // Built‑in CMS baseTypes  ("_Image", "_Video", "_Media" etc.)
+  // Built‑in CMS baseTypes  ("_image", "_video", "_media" etc.)
   if (isBaseType(contentTypeName)) {
     const { fields: f, extraFragments: e } = buildBaseTypeFragments(
       contentTypeName as MediaStringTypes
@@ -214,7 +211,7 @@ export function createFragment(
     }
 
     // Custom contentTypes which implements baseTypes (media/image/video): we append fragments for metadata
-    if (isCustomMediaType(ct)) {
+    if (isBaseMediaType(ct.baseType)) {
       extraFragments.unshift(MEDIA_METADATA_FRAGMENT); // maintain order
       fields.push(COMMON_MEDIA_METADATA_BLOCK);
     }
@@ -269,15 +266,13 @@ function resolveAllowedTypes(
   const result: (ContentOrMediaType | AnyContentType)[] = [];
   const baseline = allowed?.length ? allowed : getCachedContentTypes();
 
-  // If a CMS base media type ("_Image", "_Media" …) is restricted,
+  // If a CMS base media type ("_image", "_media" …) is restricted,
   // we must also ban every user defined media type that shares the same media type
   restricted?.forEach((r) => {
     const key = getKeyName(r);
     skip.add(key);
-    if (isBaseMediaType(key as MediaStringTypes)) {
-      getContentTypeByBaseType(key as MediaStringTypes).forEach((ct) =>
-        skip.add(ct.key)
-      );
+    if (isBaseMediaType(key)) {
+      getContentTypeByBaseType(key).forEach((ct) => skip.add(ct.key));
     }
   });
 
@@ -292,13 +287,11 @@ function resolveAllowedTypes(
     const key = getKeyName(entry);
 
     // If this entry is a base media type inject all matching custom media‑types *before* it.
-    if (allowed?.length && isBaseMediaType(key as MediaStringTypes)) {
-      getContentTypeByBaseType(key as MediaStringTypes)
-        .filter(isCustomMediaType)
-        .forEach(add);
+    if (allowed?.length && isBaseMediaType(key)) {
+      getContentTypeByBaseType(key).forEach(add);
     }
 
-    add(entry); // finally, the entry itself (base or regular type)
+    add(entry); // add the entry itself
   }
 
   return result;

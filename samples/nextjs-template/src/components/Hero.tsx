@@ -13,7 +13,7 @@ export const HeroContentType = contentType({
     },
     background: {
       type: 'contentReference',
-      allowedTypes: ['_Image'],
+      allowedTypes: ['_image'],
     },
     theme: {
       type: 'string',

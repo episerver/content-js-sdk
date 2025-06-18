@@ -1,16 +1,10 @@
 import { ExperienceComponentNode, ExperienceNode } from '../infer';
 import {
   AnyContentType,
+  MEDIA_BASE_TYPES,
   ContentOrMediaType,
   MediaStringTypes,
 } from '../model/contentTypes';
-
-export const BASE_MEDIA_TYPE: MediaStringTypes[] = [
-  '_Image',
-  '_Media',
-  '_Video',
-];
-export const CUSTOM_MEDIA_TYPE: string[] = ['image', 'media', 'video'];
 
 /**
  * Get the key or name of ContentType or Media type
@@ -36,17 +30,8 @@ export function isBaseType(key: string): boolean {
  * @param key keyName of the content type
  * @returns boolean
  */
-export function isBaseMediaType(key: MediaStringTypes): boolean {
-  return BASE_MEDIA_TYPE.includes(key);
-}
-
-/**
- * Check if the baseType is a custom media type
- * @param ct any user defined content type
- * @returns boolean
- */
-export function isCustomMediaType(ct: AnyContentType): boolean {
-  return CUSTOM_MEDIA_TYPE.includes(ct.baseType);
+export function isBaseMediaType(key: string): key is MediaStringTypes {
+  return (MEDIA_BASE_TYPES as readonly string[]).includes(key);
 }
 
 /** Common media meta‑data fragment */
@@ -70,34 +55,6 @@ export function buildBaseTypeFragments(baseType: MediaStringTypes) {
     };
   }
   return { fields: [], extraFragments: [] };
-}
-
-/** Normalize CMS baseType to SDK types */
-export function normalizeBaseType(key: string): string {
-  switch (key) {
-    case '_Image':
-      return 'image';
-    case '_Media':
-      return 'media';
-    case '_Video':
-      return 'video';
-    default:
-      return key;
-  }
-}
-
-/** get baseType from custom item */
-export function getBaseKey(key: string): string {
-  switch (key) {
-    case 'image':
-      return ' _Image';
-    case 'media':
-      return ' _Media';
-    case 'video':
-      return ' _Video';
-    default:
-      return key;
-  }
 }
 
 export function isComponentNode(

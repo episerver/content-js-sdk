@@ -29,13 +29,21 @@ export type SectionContentType = BaseContentType & {
   baseType: '_section';
 };
 
-export type BaseTypes =
-  | '_page'
-  | '_media'
-  | '_image'
-  | '_video'
-  | '_folder'
-  | '_element';
+// Media-related base types
+export const MEDIA_BASE_TYPES = ['_image', '_media', '_video'] as const;
+
+// Other base types
+export const OTHER_BASE_TYPES = ['_page', '_folder', '_element'] as const;
+
+// All base types including media and other types
+export const ALL_BASE_TYPES = [
+  ...MEDIA_BASE_TYPES,
+  ...OTHER_BASE_TYPES,
+] as const;
+
+export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
+
+export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 
 /** Represents all other types in CMS. They don't have any additional property */
 export type OtherContentTypes = BaseContentType & {
@@ -43,7 +51,5 @@ export type OtherContentTypes = BaseContentType & {
 };
 
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
-
-export type MediaStringTypes = '_Image' | '_Video' | '_Media';
 
 export type ContentOrMediaType = ContentType | MediaStringTypes;
