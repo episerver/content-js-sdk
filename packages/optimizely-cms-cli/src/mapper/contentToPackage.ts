@@ -25,6 +25,15 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
           updatedValue.format = 'selectOne';
         }
 
+        // If its a content area and items are of type "link",
+        // set format to "LinkCollection"
+        if (
+          updatedValue.type === 'array' &&
+          updatedValue.items.type === 'link'
+        ) {
+          updatedValue.format = 'LinkCollection';
+        }
+
         // If type "array", "content", "contentReference", update and normalizes its "allowedTypes" and "restrictedTypes"
         updatedValue = mapAllowedRestrictedTypes(updatedValue);
 
