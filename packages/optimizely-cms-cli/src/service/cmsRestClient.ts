@@ -50,8 +50,6 @@ export async function createRestApiClient({
   const baseUrl = new URL('https://api.cms.optimizely.com/preview3').toString();
   const accessToken = await getToken(url, clientId, clientSecret);
 
-  console.log(accessToken);
-
   return createClient<paths>({
     baseUrl,
     headers: {
