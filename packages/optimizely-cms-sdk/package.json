@@ -5,7 +5,8 @@
   "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js",
-    "./react": "./dist/react.js"
+    "./react/server": "./dist/react/server.js",
+    "./react/client": "./dist/react/client.js"
   },
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git"
