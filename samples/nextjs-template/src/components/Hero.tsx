@@ -3,7 +3,7 @@ import { contentType } from '@episerver/cms-sdk';
 export const HeroContentType = contentType({
   key: 'Hero',
   displayName: 'Hero',
-  baseType: 'component',
+  baseType: '_component',
   properties: {
     heading: {
       type: 'string',
@@ -13,16 +13,14 @@ export const HeroContentType = contentType({
     },
     background: {
       type: 'contentReference',
-      allowedTypes: ['_Image'],
+      allowedTypes: ['_image'],
     },
     theme: {
       type: 'string',
-      enum: {
-        values: [
-          { value: 'light', displayName: 'Light' },
-          { value: 'dark', displayName: 'Dark' },
-        ],
-      },
+      enum: [
+        { value: 'light', displayName: 'Light' },
+        { value: 'dark', displayName: 'Dark' },
+      ],
     },
   },
   compositionBehaviors: ['sectionEnabled'],

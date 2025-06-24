@@ -1,7 +1,13 @@
 import { AnyContentType, extractKeyName } from '../service/utils.js';
+import { isKeyInvalid } from '../utils/validate.js';
 
 export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
   return contentTypes.map((contentType) => {
+    if (isKeyInvalid(contentType.key)) {
+      throw new Error(
+        `❌ [optimizely-cms-cli] Invalid content type key: "${contentType.key}". Keys must be alphanumeric and cannot start with a special character or number.`
+      );
+    }
     // Spread the contentType as extract properties
     const { properties = {} } = contentType;
 
@@ -14,15 +20,18 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
           (updatedValue.contentType as any) = updatedValue.contentType.key;
         }
 
-        // If type is "richText", we switch type to "string" and "format" to "html"
-        if (updatedValue.type === 'richText') {
-          (updatedValue.type as any) = 'string'; //
-          updatedValue.format = 'html';
-        }
-
         // If "enum" exists, set format to "selectOne"
         if (Object.hasOwn(updatedValue, 'enum')) {
           updatedValue.format = 'selectOne';
+        }
+
+        // If its a content area and items are of type "link",
+        // set format to "LinkCollection"
+        if (
+          updatedValue.type === 'array' &&
+          updatedValue.items.type === 'link'
+        ) {
+          updatedValue.format = 'LinkCollection';
         }
 
         // If type "array", "content", "contentReference", update and normalizes its "allowedTypes" and "restrictedTypes"

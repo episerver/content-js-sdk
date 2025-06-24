@@ -109,20 +109,20 @@ describe('createFragment()', () => {
         "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
-        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment _image on _image { _metadata { ...mediaMetaData } }",
         "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
-        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment _media on _media { _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
-        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
-        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
+        "fragment _video on _video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._image } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } body { html, json } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } body { html, json } }",
       ]
     `);
   });
@@ -134,29 +134,29 @@ describe('createFragment()', () => {
         "fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
-        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
-        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
+        "fragment _image on _image { _metadata { ...mediaMetaData } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._image } }",
       ]
     `);
   });
 
-  test('When the contentType has special allowedTypes defined (_Image, _Media, _Video)', async () => {
+  test('When the contentType has special allowedTypes defined (_image, _media, _video)', async () => {
     const result = await createFragment(mediaPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
-        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment _image on _image { _metadata { ...mediaMetaData } }",
         "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
-        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment _media on _media { _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
-        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
+        "fragment _video on _video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
       ]
     `);
   });
 
-  test('When the contentType has only restrictedTypes (no allowedTypes) defined and its a BaseType (_Image, _Media, _Video)', async () => {
+  test('When the contentType has only restrictedTypes (no allowedTypes) defined and its a BaseType (_image, _media, _video)', async () => {
     const result = await createFragment(specialPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
@@ -172,36 +172,36 @@ describe('createFragment()', () => {
         "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
-        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment _image on _image { _metadata { ...mediaMetaData } }",
         "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
-        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment _media on _media { _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
-        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
-        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
+        "fragment _video on _video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._image } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } body { html, json } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } body { html, json } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
       ]
     `);
   });
 
-  test('When the contentType has allowedTypes and has baseType as restricted (_Image, _Media, _Video)', async () => {
+  test('When the contentType has allowedTypes and has baseType as restricted (_image, _media, _video)', async () => {
     const result = await createFragment(mediaBlock.key);
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
-        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment _image on _image { _metadata { ...mediaMetaData } }",
         "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
-        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment _media on _media { _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
-        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
+        "fragment _video on _video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
       ]
     `);
@@ -234,20 +234,20 @@ describe('createFragment()', () => {
         "fragment fAQPage on fAQPage { hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { name alt _metadata { ...mediaMetaData } }",
-        "fragment _Image on _Image { _metadata { ...mediaMetaData } }",
+        "fragment _image on _image { _metadata { ...mediaMetaData } }",
         "fragment customMedia on customMedia { name fileType _metadata { ...mediaMetaData } }",
-        "fragment _Media on _Media { _metadata { ...mediaMetaData } }",
+        "fragment _media on _media { _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { name date _metadata { ...mediaMetaData } }",
-        "fragment _Video on _Video { _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video } }",
-        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._Image } }",
+        "fragment _video on _video { _metadata { ...mediaMetaData } }",
+        "fragment mediaPage on mediaPage { media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { blog { __typename ...ArticlePage ...customImage ..._image } }",
         "fragment mediaBlock on mediaBlock { media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } body { html, json } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._Image ...customMedia ..._Media ...customVideo ..._Video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } body { html, json } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage } }",
       ]
     `);
   });

@@ -3,7 +3,7 @@ import { getPreviewUtils } from '@episerver/cms-sdk/dist/render/react';
 
 export const VideoFeatureContentType = contentType({
   key: 'VideoFeature',
-  baseType: 'component',
+  baseType: '_component',
   displayName: 'Video Feature',
   properties: {
     heading: {
@@ -14,7 +14,7 @@ export const VideoFeatureContentType = contentType({
     },
     thumbnail_image: {
       type: 'contentReference',
-      allowedTypes: ['_Image'],
+      allowedTypes: ['_image'],
     },
     thumbnail_caption: {
       type: 'string',

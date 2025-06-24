@@ -20,7 +20,7 @@ test('infer works for basic properties', () => {
 
   const Article = contentType({
     key: 'Article',
-    baseType: 'page',
+    baseType: '_page',
     properties: {
       heading: { type: 'string' },
       subtitle: { type: 'string' },
@@ -46,7 +46,7 @@ test('infer works for array properties', () => {
 
   const Article = contentType({
     key: 'Article',
-    baseType: 'page',
+    baseType: '_page',
     properties: {
       heading: { type: 'array', items: { type: 'string' } },
       subtitle: { type: 'array', items: { type: 'string' } },
@@ -69,7 +69,7 @@ test('infer works for component properties', () => {
 
   const Hero = contentType({
     key: 'Hero',
-    baseType: 'component',
+    baseType: '_component',
     properties: {
       image: { type: 'contentReference' },
     },
@@ -77,7 +77,7 @@ test('infer works for component properties', () => {
 
   const Article = contentType({
     key: 'Article',
-    baseType: 'page',
+    baseType: '_page',
     properties: {
       hero: {
         type: 'component',
