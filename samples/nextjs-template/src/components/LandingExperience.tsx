@@ -10,7 +10,7 @@ import { HeroContentType } from './Hero';
 export const LandingExperienceContentType = contentType({
   key: 'LandingExperience',
   displayName: 'Landing Experience',
-  baseType: 'experience',
+  baseType: '_experience',
   properties: {
     hero: {
       type: 'component',

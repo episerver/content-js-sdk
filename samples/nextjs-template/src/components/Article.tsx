@@ -4,7 +4,7 @@ import { getPreviewUtils } from '@episerver/cms-sdk/dist/render/react';
 export const ArticleContentType = contentType({
   key: 'Article',
   displayName: 'Article page',
-  baseType: 'page',
+  baseType: '_page',
   properties: {
     heading: {
       displayName: 'The Headline 😊',

@@ -10,7 +10,7 @@ import Image from 'next/image';
 export const ContentType = contentType({
   key: 'Landing',
   displayName: 'Landing page',
-  baseType: 'page',
+  baseType: '_page',
   properties: {
     hero: {
       type: 'component',

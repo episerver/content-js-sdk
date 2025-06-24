@@ -40,8 +40,6 @@ export namespace ContentTypeProperties {
     sortOrder?: number;
     // TODO
     indexingType?: {};
-    editor?: string;
-    editorSettings?: Record<string, Record<string, never>> | null;
   };
   export type Binary = Base & {
     type: 'binary';

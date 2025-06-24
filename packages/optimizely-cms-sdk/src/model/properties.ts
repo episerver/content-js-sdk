@@ -13,14 +13,10 @@ type BaseProperty = {
   group?: string;
   sortOrder?: number;
   indexingType?: {};
-  editor?: string;
-  editorSettings?: Record<string, Record<string, never>> | null;
 };
 
 type WithEnum<T> = {
-  enum?: {
-    values: { value: T; displayName: string }[];
-  };
+  enum?: { value: T; displayName: string }[];
 };
 
 export type ArrayProperty<T extends ArrayItems> = BaseProperty & {

@@ -485,7 +485,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/packages/{key}': {
+  '/experimental/packages/{key}': {
     parameters: {
       query?: never;
       header?: never;
@@ -505,7 +505,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/packages': {
+  '/experimental/packages': {
     parameters: {
       query?: never;
       header?: never;
