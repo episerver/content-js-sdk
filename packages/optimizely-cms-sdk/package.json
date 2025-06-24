@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "clean": "rimraf dist",
     "test": "vitest --typecheck"
   },
   "files": [
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@types/node": "^22.13.14",
     "@types/react": "^19",
+    "rimraf": "^6.0.1",
     "typescript": "^5.8.2",
     "vitest": "^3.1.1"
   }
