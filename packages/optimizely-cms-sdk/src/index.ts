@@ -7,7 +7,8 @@ export {
   isDisplayTemplate,
   initContentTypeRegistry,
 } from './model';
-export { GraphClient } from './graph';
+export { GraphClient, getFilterFromPath } from './graph';
+export { createQuery } from './graph/createQuery';
 export type { PreviewParams } from './graph';
 export { BlankSectionContentType } from './model/internalContentTypes';
 

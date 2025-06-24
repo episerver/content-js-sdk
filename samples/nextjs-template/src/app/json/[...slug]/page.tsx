@@ -1,5 +1,5 @@
-import { getFilterFromPath, GraphClient } from '@episerver/cms-sdk/dist/graph';
-import { createQuery } from '@episerver/cms-sdk/dist/graph/createQuery';
+import { getFilterFromPath, GraphClient } from '@episerver/cms-sdk';
+import { createQuery } from '@episerver/cms-sdk';
 
 export async function generateStaticParams() {
   // TODO: Get this from the CMS instead of hard-coding
