@@ -1,10 +1,9 @@
-import { Infer } from '@episerver/cms-sdk/dist/infer';
-import { BlankSectionContentType } from '@episerver/cms-sdk/dist/model/internalContentTypes';
+import { BlankSectionContentType, Infer } from '@episerver/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
   getPreviewUtils,
-} from '@episerver/cms-sdk/dist/render/react';
+} from '@episerver/cms-sdk/react/server';
 
 function Row({ children, node }: StructureContainerProps) {
   const { pa } = getPreviewUtils(node);

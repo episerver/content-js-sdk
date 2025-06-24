@@ -4,7 +4,7 @@ import { VideoFeatureContentType } from './VideoFeature';
 import {
   getPreviewUtils,
   OptimizelyComponent,
-} from '@episerver/cms-sdk/dist/render/react';
+} from '@episerver/cms-sdk/react/server';
 
 export const LandingSectionContentType = contentType({
   key: 'LandingSection',
