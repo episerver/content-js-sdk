@@ -19,7 +19,7 @@ describe('createFragment > Fragment threshold warning', () => {
   const childTypes = Array.from({ length: 101 }).map((_, i) =>
     contentType({
       key: `Type${i}`,
-      baseType: 'component',
+      baseType: '_component',
       displayName: `Type ${i}`,
       properties: {},
     })
@@ -28,7 +28,7 @@ describe('createFragment > Fragment threshold warning', () => {
   // Root content type that includes all child types in its content area
   const rootType = contentType({
     key: 'ExplodingType',
-    baseType: 'page',
+    baseType: '_page',
     displayName: 'Exploding Type',
     properties: {
       contentArea: {
@@ -74,7 +74,7 @@ describe('createFragment > Fragment threshold warning', () => {
   it('should not log a warning when fragment count is within threshold', () => {
     const minimalType = contentType({
       key: 'SafeType',
-      baseType: 'page',
+      baseType: '_page',
       displayName: 'Safe Type',
       properties: {
         section: {
