@@ -5,7 +5,7 @@ import { OptimizelyComponent } from '@episerver/cms-sdk/dist/render/react';
 export const SmallFeatureGridContentType = contentType({
   key: 'SmallFeatureGrid',
   displayName: 'Small feature grid',
-  baseType: 'component',
+  baseType: '_component',
   properties: {
     smallFeatures: {
       type: 'array',

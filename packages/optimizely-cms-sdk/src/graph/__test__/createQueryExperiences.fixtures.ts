@@ -1,12 +1,12 @@
 import { contentType } from '../../model';
 
 export const MyExperience = contentType({
-  baseType: 'experience',
+  baseType: '_experience',
   key: 'MyExperience',
 });
 
 const CallToAction = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'CallToAction',
   compositionBehaviors: ['elementEnabled'],
   properties: {
@@ -16,7 +16,7 @@ const CallToAction = contentType({
 });
 
 const CallToAction2 = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'CallToAction2',
   compositionBehaviors: [],
   properties: {
@@ -25,7 +25,7 @@ const CallToAction2 = contentType({
 });
 
 const ExpSection = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'ExpSection',
   compositionBehaviors: ['sectionEnabled'],
   properties: {

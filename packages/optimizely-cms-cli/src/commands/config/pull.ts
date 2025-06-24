@@ -20,10 +20,12 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     const restClient = await createApiClient(flags.host);
 
     const spinner = ora('Downloading configuration file').start();
-    const response = await restClient.GET('/packages').then((r) => r.data);
+    const response = await restClient
+      .GET('/experimental/packages')
+      .then((r) => r.data);
 
     if (!response) {
-      console.error('The server did not respond with any content');
+      spinner.fail('The server did not respond with any content');
       return;
     }
 

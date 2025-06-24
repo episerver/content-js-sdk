@@ -1,5 +1,5 @@
-import { CUSTOM_MEDIA_TYPE, normalizeBaseType } from '../util/baseTypeUtil';
-import { AnyContentType, MediaStringTypes } from './contentTypes';
+import { isBaseMediaType } from '../util/baseTypeUtil';
+import { AnyContentType } from './contentTypes';
 
 let _registry: AnyContentType[] = [];
 
@@ -19,17 +19,11 @@ export function getAllContentTypes(): AnyContentType[] {
 }
 
 /** Get the Component from a base type */
-export function getContentTypeByBaseType(
-  name: MediaStringTypes
-): AnyContentType[] {
-  return _registry.filter(
-    (c) => c.baseType === normalizeBaseType(name)
-  ) as AnyContentType[];
+export function getContentTypeByBaseType(name: string): AnyContentType[] {
+  return _registry.filter((c) => c.baseType === name) as AnyContentType[];
 }
 
 /** Get the Component from a content type name */
 export function getAllMediaTypeKeys() {
-  return _registry
-    .filter((c) => CUSTOM_MEDIA_TYPE.includes(c.baseType))
-    .map((c) => c.key);
+  return _registry.filter((c) => isBaseMediaType(c.baseType)).map((c) => c.key);
 }

@@ -2,7 +2,7 @@ import { contentType } from '../../model';
 import { AnyContentType } from '../../model/contentTypes';
 
 export const callToAction = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'CallToAction',
   properties: {
     label: { type: 'string' },
@@ -11,7 +11,7 @@ export const callToAction = contentType({
 });
 
 export const myButton = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'myButton',
   properties: {
     label: { type: 'string' },
@@ -20,7 +20,7 @@ export const myButton = contentType({
 });
 
 export const heroBlock = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'Hero',
   properties: {
     heading: { type: 'string' },
@@ -32,7 +32,7 @@ export const heroBlock = contentType({
 });
 
 export const specialHeroBlock = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'SpecialHero',
   properties: {
     heading: { type: 'string' },
@@ -48,7 +48,7 @@ export const specialHeroBlock = contentType({
 });
 
 export const superHeroBlock = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'SuperHero',
   properties: {
     heading: { type: 'string' },
@@ -61,7 +61,7 @@ export const superHeroBlock = contentType({
 });
 
 export const landingPage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'LandingPage',
   properties: {
     hero: {
@@ -73,7 +73,7 @@ export const landingPage = contentType({
 });
 
 export const articlePage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'ArticlePage',
   properties: {
     body: { type: 'richText' },
@@ -84,7 +84,7 @@ export const articlePage = contentType({
 });
 
 export const aboutBlock = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'AboutContent',
   properties: {
     heading: { type: 'string' },
@@ -97,7 +97,7 @@ export const aboutBlock = contentType({
 });
 
 export const aboutPage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'AboutPage',
   properties: {
     hero: {
@@ -110,7 +110,7 @@ export const aboutPage = contentType({
 });
 
 export const fAQPage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'fAQPage',
   properties: {
     hero: {
@@ -122,7 +122,7 @@ export const fAQPage = contentType({
 });
 
 export const contactUsPage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'contactUsPage',
   properties: {
     others: {
@@ -134,18 +134,18 @@ export const contactUsPage = contentType({
 });
 
 export const blogPage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'blogPage',
   properties: {
     blog: {
       type: 'content',
-      allowedTypes: [articlePage, '_Image'],
+      allowedTypes: [articlePage, '_image'],
     },
   },
 });
 
 export const customImage = contentType({
-  baseType: 'image',
+  baseType: '_image',
   key: 'customImage',
   properties: {
     name: { type: 'string' },
@@ -154,7 +154,7 @@ export const customImage = contentType({
 });
 
 export const customVideo = contentType({
-  baseType: 'video',
+  baseType: '_video',
   key: 'customVideo',
   properties: {
     name: { type: 'string' },
@@ -163,7 +163,7 @@ export const customVideo = contentType({
 });
 
 export const customMedia = contentType({
-  baseType: 'media',
+  baseType: '_media',
   key: 'customMedia',
   properties: {
     name: { type: 'string' },
@@ -172,35 +172,35 @@ export const customMedia = contentType({
 });
 
 export const mediaPage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'mediaPage',
   properties: {
     media: {
       type: 'content',
-      allowedTypes: ['_Image', '_Media', '_Video'],
+      allowedTypes: ['_image', '_media', '_video'],
     },
   },
 });
 
 export const specialPage = contentType({
-  baseType: 'page',
+  baseType: '_page',
   key: 'specialPage',
   properties: {
     media: {
       type: 'content',
-      restrictedTypes: ['_Image'],
+      restrictedTypes: ['_image'],
     },
   },
 });
 
 export const mediaBlock = contentType({
-  baseType: 'component',
+  baseType: '_component',
   key: 'mediaBlock',
   properties: {
     media: {
       type: 'content',
       allowedTypes: [mediaPage],
-      restrictedTypes: ['_Image'],
+      restrictedTypes: ['_image'],
     },
   },
 });
@@ -208,7 +208,7 @@ export const mediaBlock = contentType({
 export const HeroContentType = contentType({
   key: 'NewHero',
   displayName: 'NewHero',
-  baseType: 'component',
+  baseType: '_component',
   properties: {
     heading: {
       type: 'string',
@@ -218,16 +218,14 @@ export const HeroContentType = contentType({
     },
     background: {
       type: 'contentReference',
-      allowedTypes: ['_Image'],
+      allowedTypes: ['_image'],
     },
     theme: {
       type: 'string',
-      enum: {
-        values: [
-          { value: 'light', displayName: 'Light' },
-          { value: 'dark', displayName: 'Dark' },
-        ],
-      },
+      enum: [
+        { value: 'light', displayName: 'Light' },
+        { value: 'dark', displayName: 'Dark' },
+      ],
     },
   },
   compositionBehaviors: ['sectionEnabled'],
@@ -236,7 +234,7 @@ export const HeroContentType = contentType({
 export const FeedBackPage = contentType({
   key: 'FeedBackPage',
   displayName: 'FeedBackPage',
-  baseType: 'page',
+  baseType: '_page',
   properties: {
     p_contentArea: {
       type: 'array',
@@ -258,7 +256,7 @@ export const FeedBackPage = contentType({
 export const ContentPage = contentType({
   key: 'ContentPage',
   displayName: 'ContentPage',
-  baseType: 'page',
+  baseType: '_page',
   properties: {
     p_contentArea: {
       type: 'array',

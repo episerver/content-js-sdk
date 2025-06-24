@@ -2,7 +2,7 @@ import { contentType, Infer } from '@episerver/cms-sdk';
 import { getPreviewUtils } from '@episerver/cms-sdk/dist/render/react';
 export const CallToActionContentType = contentType({
   key: 'CallToAction',
-  baseType: 'component',
+  baseType: '_component',
   displayName: 'Call to Action',
   properties: {
     label: {

@@ -1,6 +1,6 @@
 import { SectionContentType } from './contentTypes';
 
 export const BlankSectionContentType: SectionContentType = {
-  baseType: 'section',
+  baseType: '_section',
   key: 'BlankSection',
 };
