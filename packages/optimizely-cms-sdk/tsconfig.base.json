@@ -1,0 +1,14 @@
+{
+  // Base file regardless of build output
+  // DO NOT include output options (like `module` and `moduleResolution`)
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "rootDir": "./src",
+    "declaration": true,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": false,
+    "strict": true,
+    "skipLibCheck": true
+  }
+}

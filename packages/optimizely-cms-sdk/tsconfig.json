@@ -1,16 +1,10 @@
 {
+  // This file is used ONLY for type-checking in editors like VS Code.
+  // Most of the options should be in tsconfig.base.json
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "target": "es2016",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "rootDir": "./src",
-    "declaration": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "noEmit": true
   }
 }
