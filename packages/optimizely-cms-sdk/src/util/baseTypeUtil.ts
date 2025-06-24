@@ -1,10 +1,10 @@
-import { ExperienceComponentNode, ExperienceNode } from '../infer';
+import { ExperienceComponentNode, ExperienceNode } from '../infer.js';
 import {
   AnyContentType,
   MEDIA_BASE_TYPES,
   ContentOrMediaType,
   MediaStringTypes,
-} from '../model/contentTypes';
+} from '../model/contentTypes.js';
 
 /**
  * Get the key or name of ContentType or Media type

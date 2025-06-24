@@ -21,12 +21,12 @@ import {
   RichTextProperty,
   StringProperty,
   UrlProperty,
-} from './model/properties';
+} from './model/properties.js';
 import {
   AnyContentType,
   ExperienceContentType,
   SectionContentType,
-} from './model/contentTypes';
+} from './model/contentTypes.js';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {

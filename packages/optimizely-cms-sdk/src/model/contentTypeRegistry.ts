@@ -1,5 +1,5 @@
-import { isBaseMediaType } from '../util/baseTypeUtil';
-import { AnyContentType } from './contentTypes';
+import { isBaseMediaType } from '../util/baseTypeUtil.js';
+import { AnyContentType } from './contentTypes.js';
 
 let _registry: AnyContentType[] = [];
 

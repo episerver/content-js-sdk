@@ -3,14 +3,14 @@ import React from 'react';
 import {
   ComponentRegistry,
   ComponentResolver,
-} from '../render/componentRegistry';
+} from '../render/componentRegistry.js';
 import { JSX } from 'react';
 import {
   ExperienceStructureNode,
   ExperienceNode,
   ExperienceComponentNode,
-} from '../infer';
-import { isComponentNode } from '../util/baseTypeUtil';
+} from '../infer.js';
+import { isComponentNode } from '../util/baseTypeUtil.js';
 
 type ComponentType = React.ComponentType<any>;
 

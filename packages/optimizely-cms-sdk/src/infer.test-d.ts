@@ -1,6 +1,6 @@
 import { test, expectTypeOf } from 'vitest';
-import type { Infer } from './infer';
-import { contentType } from './model';
+import type { Infer } from './infer.js';
+import { contentType } from './model/index.js';
 
 test('infer works for non-content type', () => {
   expectTypeOf<Infer<number>>().toBeUnknown();

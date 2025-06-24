@@ -1,15 +1,15 @@
-import { AnyProperty } from '../model/properties';
+import { AnyProperty } from '../model/properties.js';
 import {
   AnyContentType,
   MediaStringTypes,
   ContentOrMediaType,
-} from '../model/contentTypes';
+} from '../model/contentTypes.js';
 import {
   getContentType,
   getAllContentTypes,
   getContentTypeByBaseType,
   getAllMediaTypeKeys,
-} from '../model/contentTypeRegistry';
+} from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
   isBaseMediaType,
@@ -17,8 +17,8 @@ import {
   MEDIA_METADATA_FRAGMENT,
   COMMON_MEDIA_METADATA_BLOCK,
   isBaseType,
-} from '../util/baseTypeUtil';
-import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks';
+} from '../util/baseTypeUtil.js';
+import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 
 let allContentTypes: AnyContentType[] = [];
 
