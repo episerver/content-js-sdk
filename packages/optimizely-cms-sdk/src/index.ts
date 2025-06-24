@@ -9,6 +9,7 @@ export {
 } from './model';
 export { GraphClient } from './graph';
 export type { PreviewParams } from './graph';
+export { BlankSectionContentType } from './model/internalContentTypes';
 
 export * as ContentTypes from './model/contentTypes';
 export * as DisplayTemplates from './model/displayTemplates';

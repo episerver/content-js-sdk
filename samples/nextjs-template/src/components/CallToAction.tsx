@@ -1,5 +1,5 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
-import { getPreviewUtils } from '@episerver/cms-sdk/dist/render/react';
+import { getPreviewUtils } from '@episerver/cms-sdk/react/server';
 export const CallToActionContentType = contentType({
   key: 'CallToAction',
   baseType: 'component',

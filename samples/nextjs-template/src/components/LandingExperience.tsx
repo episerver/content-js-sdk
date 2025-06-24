@@ -4,7 +4,7 @@ import {
   ComponentContainerProps,
   OptimizelyExperience,
   getPreviewUtils,
-} from '@episerver/cms-sdk/dist/render/react';
+} from '@episerver/cms-sdk/react/server';
 import { HeroContentType } from './Hero';
 
 export const LandingExperienceContentType = contentType({
