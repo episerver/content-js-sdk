@@ -41,32 +41,33 @@ You can also pass the `--help` flag to any command to see the flags and argument
 1. Create a `release/` branch.
 
    - If you are releasing one package use the name `release/package-name@x.y.z`
-   - If you are releasing multiple packages, any other name
+   - If you are releasing multiple packages, choose any other name
 
-2. Run `pnpm run version:all`. Remember to choose premajor/preminor/prepatch. This command will:
+2. For every package that gets released, edit the package.json file with the new pre-release version
 
-   - Let you choose version for individual packages interactively
-   - Update the `version` field in `package.json` in every package
-   - Update version number in dependencies
-   - Create a git tag for each package and a commit
+   - For example `0.1.0-alpha.1`
 
-3. Push the release branch (`git push`) and the tags (`git push origin --tags`)
-4. Go to GitHub and create one Draft release **for every released package**
+3. Push the release branch (`git push`)
+4. Go to GitHub and create one Draft release **for every released package**.
+
+   - Tag: `<<package name>>@<<version>>`. E.g. `@episerver/cms-cli@0.1.0`
+   - Release name (same as tag)
+   - Branch: choose the branch you have just created
 
 ### Create more pre-release versions
 
 If the packages are not ready for release, and you need to create one more pre-release version of them:
 
 1. Checkout to the `release/` branch you created
-2. Run `pnpm run version:all` to create a new set of versions
+2. For every package that gets released, bump the version in package.json and create a new
 3. Push the branch and the tags
 
 ### Publish the packages
 
 When the packages are ready for release
 
-1. Run `pnpm run version:all`. Choose the major/minor/patch version accordingly.
-2. Push the release branch and the tags
+1. For every package, edit the package.json with the release version.
+2. Push the branch to GitHub
 3. Go to GitHub and publish the releases
 
    - Add the newly created tags to each of the releases
