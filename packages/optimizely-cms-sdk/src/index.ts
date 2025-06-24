@@ -1,3 +1,4 @@
+// This file re-exports the SDK
 export {
   buildConfig,
   contentType,
