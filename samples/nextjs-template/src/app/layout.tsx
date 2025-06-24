@@ -4,6 +4,7 @@ import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
 import {
   BlankExperienceContentType,
+  displayTemplateRegistry,
   initContentTypeRegistry,
 } from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
@@ -26,6 +27,7 @@ import VideoFeature, {
 import { HeroContentType } from '@/components/Hero';
 import Article, { ArticleContentType } from '@/components/Article';
 import LandingExperience, {
+  LandingDisplayTemplate,
   LandingExperienceContentType,
 } from '@/components/LandingExperience';
 import CallToAction, {
@@ -97,6 +99,8 @@ initReactComponentRegistry({
     BlankExperience,
   },
 });
+
+displayTemplateRegistry([LandingDisplayTemplate]);
 
 const serifFont = Bodoni_Moda({
   variable: '--font-serif',

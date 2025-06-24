@@ -10,6 +10,7 @@ import {
   ExperienceComponentNode,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
+import { getSelectedStyleValues } from '../model/displayTemplates.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -30,6 +31,7 @@ type Props = {
     __typename: string;
     __context?: { edit: boolean; preview_token: string };
   };
+  dps?: string[];
 };
 
 export async function OptimizelyComponent({ opti, ...props }: Props) {
@@ -59,6 +61,7 @@ export type StructureContainerProps = {
 export type ComponentContainerProps = {
   node: ExperienceComponentNode;
   children: React.ReactNode;
+  dps?: string[];
 };
 export type StructureContainer = (
   props: StructureContainerProps
@@ -75,10 +78,16 @@ export function OptimizelyExperience({
   ComponentWrapper?: ComponentContainer;
 }) {
   return nodes.map((node) => {
+    const dps = getSelectedStyleValues(
+      node.displaySettings,
+      node.displayTemplateKey
+    );
+
     if (isComponentNode(node)) {
       const Wrapper = ComponentWrapper ?? React.Fragment;
+
       return (
-        <Wrapper node={node} key={node.key}>
+        <Wrapper node={node} key={node.key} dps={dps}>
           <OptimizelyComponent opti={node.component} />
         </Wrapper>
       );
@@ -115,8 +124,14 @@ export function OptimizelyGridSection({
     throw new Error('Nodes must be an array');
   }
   return nodes.map((node, i) => {
+    const dps = getSelectedStyleValues(
+      node.displaySettings,
+      node.displayTemplateKey
+    );
     if (isComponentNode(node)) {
-      return <OptimizelyComponent key={node.key} opti={node.component} />;
+      return (
+        <OptimizelyComponent key={node.key} opti={node.component} dps={dps} />
+      );
     }
 
     const { nodes, nodeType } = node;

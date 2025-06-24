@@ -1,4 +1,8 @@
-import { contentType, displayTemplate, Infer } from '@episerver/cms-sdk';
+import {
+  contentType,
+  createDisplayConfiguration,
+  Infer,
+} from '@episerver/cms-sdk';
 import { SmallFeatureGridContentType } from './SmallFeatureGrid';
 import { VideoFeatureContentType } from './VideoFeature';
 import {
@@ -28,36 +32,13 @@ export const LandingSectionContentType = contentType({
   compositionBehaviors: ['sectionEnabled'],
 });
 
-export const DisplayTemplate = displayTemplate({
-  key: 'LandingSectionDisplayTemplate',
-  isDefault: true,
-  displayName: 'LandingSectionDisplayTemplate',
-  baseType: '_component',
-  settings: {
-    background: {
-      editor: 'select',
-      displayName: 'Background',
-      sortOrder: 0,
-      choices: {
-        red: {
-          displayName: 'Red',
-          sortOrder: 0,
-        },
-        blue: {
-          displayName: 'Blue',
-          sortOrder: 1,
-        },
-      },
-    },
-  },
-});
-
 type Props = {
   opti: Infer<typeof LandingSectionContentType>;
 };
 
 export default function LandingSection({ opti }: Props) {
   const { pa } = getPreviewUtils(opti);
+
   return (
     <section>
       <header>

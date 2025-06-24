@@ -47,6 +47,7 @@ export type DisplayTemplateMeta = Pick<
 
 function cleanType(obj: any) {
   if (obj !== null && '__type' in obj) delete obj.__type;
+  if (obj !== null && 'template' in obj) delete obj.template;
 }
 
 /**

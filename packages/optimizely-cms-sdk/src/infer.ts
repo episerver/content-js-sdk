@@ -90,6 +90,7 @@ export type ExperienceCompositionNode = {
 
   key: string;
   displayName: string;
+  displayTemplateKey: string;
   displaySettings: {
     key: string;
     value: string;

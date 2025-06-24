@@ -1,5 +1,9 @@
 import Image from 'next/image';
-import { contentType, Infer } from '@episerver/cms-sdk';
+import {
+  contentType,
+  createDisplayConfiguration,
+  Infer,
+} from '@episerver/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyExperience,
@@ -19,13 +23,54 @@ export const LandingExperienceContentType = contentType({
   },
 });
 
+const LandingSectionDisplayTemplate = {
+  background: { red: '#ff0000', blue: '#0000ff' },
+};
+
+export const LandingDisplayTemplate = createDisplayConfiguration(
+  'LandingSectionDisplayTemplate',
+  '_component',
+  LandingSectionDisplayTemplate
+);
+
+// export const DisplayTemplate = displayTemplate({
+//   key: 'LandingSectionDisplayTemplate',
+//   isDefault: true,
+//   displayName: 'LandingSectionDisplayTemplate',
+//   baseType: '_component',
+//   settings: {
+//     background: {
+//       editor: 'select',
+//       displayName: 'Background',
+//       sortOrder: 0,
+//       choices: {
+//         red: {
+//           displayName: 'Red',
+//           sortOrder: 0,
+//         },
+//         blue: {
+//           displayName: 'Blue',
+//           sortOrder: 1,
+//         },
+//       },
+//     },
+//   },
+// });
+
 type Props = {
   opti: Infer<typeof LandingExperienceContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
+function ComponentWrapper({ children, node, dps }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
+  console.log('ComponentWrapper', dps);
+
+  return (
+    <div {...pa(node)}>
+      {children}
+      <div style={{ color: dps?.[0] || 'black' }}>TEST!!!</div>
+    </div>
+  );
 }
 
 export default function LandingExperienceComponent({ opti }: Props) {
