@@ -54,6 +54,9 @@ importers:
       '@types/node':
         specifier: ^18
         version: 18.19.84
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.0.1
       tsx:
         specifier: ^4.19.4
         version: 4.19.4
