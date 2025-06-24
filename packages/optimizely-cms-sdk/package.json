@@ -3,6 +3,11 @@
   "version": "0.0.2",
   "description": "JavaScript tools for integration with Optimizely CMS",
   "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./react/server": "./dist/react/server.js",
+    "./react/client": "./dist/react/client.js"
+  },
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git"
   },

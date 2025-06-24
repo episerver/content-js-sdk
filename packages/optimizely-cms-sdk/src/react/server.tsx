@@ -1,6 +1,9 @@
 'use server';
 import React from 'react';
-import { ComponentRegistry, ComponentResolver } from './componentRegistry';
+import {
+  ComponentRegistry,
+  ComponentResolver,
+} from '../render/componentRegistry';
 import { JSX } from 'react';
 import {
   ExperienceStructureNode,

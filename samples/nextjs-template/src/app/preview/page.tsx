@@ -1,7 +1,6 @@
-import { GraphClient } from '@episerver/cms-sdk';
-import { PreviewParams } from '@episerver/cms-sdk/dist/graph';
-import { OptimizelyComponent } from '@episerver/cms-sdk/dist/render/react';
-import { PreviewComponent } from '@episerver/cms-sdk/dist/preview/react';
+import { GraphClient, type PreviewParams } from '@episerver/cms-sdk';
+import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
+import { PreviewComponent } from '@episerver/cms-sdk/react/client';
 import Script from 'next/script';
 
 type Props = {
