@@ -1,6 +1,6 @@
 {
   "name": "@episerver/cms-sdk",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "JavaScript tools for integration with Optimizely CMS",
   "main": "./dist/index.js",
   "exports": {
