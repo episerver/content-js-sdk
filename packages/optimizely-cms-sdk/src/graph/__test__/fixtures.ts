@@ -256,7 +256,7 @@ export const FeedBackPage = contentType({
 export const ContentPage = contentType({
   key: 'ContentPage',
   displayName: 'ContentPage',
-  baseType: 'page',
+  baseType: '_page',
   properties: {
     p_contentArea: {
       type: 'array',
