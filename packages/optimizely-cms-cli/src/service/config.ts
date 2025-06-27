@@ -46,6 +46,20 @@ export function getInstances(): string[] {
   return result;
 }
 
+export function readEnvCredentials() {
+  const { OPTIMIZELY_CMS_CLIENT_ID, OPTIMIZELY_CMS_CLIENT_SECRET } =
+    process.env;
+
+  if (OPTIMIZELY_CMS_CLIENT_ID && OPTIMIZELY_CMS_CLIENT_SECRET) {
+    return {
+      clientId: OPTIMIZELY_CMS_CLIENT_ID,
+      clientSecret: OPTIMIZELY_CMS_CLIENT_SECRET,
+    };
+  }
+
+  return null;
+}
+
 export function readCredentials(url?: string) {
   const conf = new Conf({ projectName: 'optimizely' });
   const obj = CmsSettingsSchema.safeParse(conf.get('cms', {}));

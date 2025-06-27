@@ -3,7 +3,11 @@ import { Command, Flags } from '@oclif/core';
 import ora from 'ora';
 import chalk from 'chalk';
 import Conf from 'conf';
-import { readCredentials, saveCredentials } from '../service/config.js';
+import {
+  readCredentials,
+  readEnvCredentials,
+  saveCredentials,
+} from '../service/config.js';
 import { getToken } from '../service/cmsRestClient.js';
 
 export default class Login extends Command {
@@ -19,6 +23,24 @@ export default class Login extends Command {
 
     if (flags.verbose) {
       console.log('Credentials file: ' + chalk.bold(conf.path));
+    }
+
+    const envCredentials = readEnvCredentials();
+
+    if (envCredentials) {
+      const spinner = ora('Checking your credentials...').start();
+      const token = await getToken(
+        envCredentials.clientId,
+        envCredentials.clientSecret
+      );
+
+      if (!token) {
+        spinner.fail('You introduced the wrong credentials.');
+        return;
+      }
+      spinner.succeed('Your credentials are correct');
+
+      return;
     }
 
     const instanceUrl = await input({
@@ -53,11 +75,7 @@ export default class Login extends Command {
 
     const spinner = ora('Checking your credentials...').start();
 
-    const token = await getToken(
-      instanceUrl.toString(),
-      oauthClientId,
-      oauthClientSecret
-    );
+    const token = await getToken(oauthClientId, oauthClientSecret);
 
     if (!token) {
       spinner.fail('You introduced the wrong credentials.');
