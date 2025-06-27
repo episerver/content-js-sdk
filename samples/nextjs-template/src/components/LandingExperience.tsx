@@ -34,7 +34,7 @@ export default function LandingExperienceComponent({ opti }: Props) {
     <main>
       {opti.hero && (
         <header className={['uni-hero', opti.hero.theme].join(' ')}>
-          {opti.hero.background && (
+          {opti.hero.background?.url.default && (
             <Image
               src={src(opti.hero.background.url.default)}
               alt=""
