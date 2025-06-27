@@ -22,7 +22,7 @@ export default class Login extends Command {
     }
 
     const instanceUrl = await input({
-      message: 'Enter the instance URL (<<something>>.cms.optimizely.com)',
+      message: 'Enter the instance URL (https://<<something>>.cms.optimizely.com)',
     });
 
     const credentials = readCredentials(instanceUrl);
