@@ -3,11 +3,7 @@ import { paths } from './apiSchema/openapi-schema-types.js';
 import { readCredentials } from './config.js';
 import { credentialErrors } from './error.js';
 
-export async function getToken(
-  cmsRoot: string,
-  clientId: string,
-  clientSecret: string
-) {
+export async function getToken(clientId: string, clientSecret: string) {
   const baseUrl = new URL('https://api.cms.optimizely.com').toString();
   const client = createClient<paths>({ baseUrl });
 
@@ -48,7 +44,7 @@ export async function createRestApiClient({
   clientSecret: string;
 }) {
   const baseUrl = new URL('https://api.cms.optimizely.com/preview3').toString();
-  const accessToken = await getToken(url, clientId, clientSecret);
+  const accessToken = await getToken(clientId, clientSecret);
 
   return createClient<paths>({
     baseUrl,
