@@ -36,7 +36,7 @@ export default function VideoFeature({ opti }: Props) {
     <div className="video-feature">
       <div className="video">
         <a href={opti.video_link ?? '#'} {...pa('video_link')}>
-          {opti.thumbnail_image && (
+          {opti.thumbnail_image?.url.default && (
             <img
               src={src(opti.thumbnail_image.url.default)}
               alt=""
