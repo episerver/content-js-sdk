@@ -91,6 +91,9 @@ importers:
         specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
     devDependencies:
+      '@episerver/cms-cli':
+        specifier: workspace:*
+        version: link:../../packages/optimizely-cms-cli
       '@eslint/eslintrc':
         specifier: ^3
         version: 3.3.1

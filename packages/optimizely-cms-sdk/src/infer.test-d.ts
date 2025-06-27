@@ -15,7 +15,7 @@ test('infer works for basic properties', () => {
     body: { json: any; html: string } | null;
     price: number | null;
     units: number | null;
-    image: { url: { default: string; type: string } } | null;
+    image: { url: { default: string | null; type: string | null } } | null;
   };
 
   const Article = contentType({
@@ -41,7 +41,7 @@ test('infer works for array properties', () => {
     body: { html: string; json: any }[] | null;
     price: number[] | null;
     units: number[] | null;
-    image: { url: { default: string; type: string } }[] | null;
+    image: { url: { default: string | null; type: string | null } }[] | null;
   };
 
   const Article = contentType({
@@ -63,7 +63,7 @@ test('infer works for array properties', () => {
 test('infer works for component properties', () => {
   type ExpectedType = {
     hero: {
-      image: { url: { default: string; type: string } } | null;
+      image: { url: { default: string | null; type: string | null } } | null;
     } | null;
   };
 

@@ -34,8 +34,8 @@ export type Prettify<T> = {
 } & {};
 
 export type InferredUrl = {
-  type: string;
-  default: string;
+  type: string | null;
+  default: string | null;
 };
 
 /** Infers the Typescript type for each content type property */

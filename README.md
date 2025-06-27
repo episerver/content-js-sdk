@@ -9,6 +9,8 @@
 
 [Create a personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with at least `read:packages` scope
 
+Once you create the personal access token, you must [authorize it to access to Optimizely via SSO](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on): click "Configure SSO" and choose Optimizely to give access
+
 In your `$HOME` directory (`~/` in Mac/Linux, `C:\Users\<username>` in Windows) create a file called `.npmrc` with the following content:
 
 ```
