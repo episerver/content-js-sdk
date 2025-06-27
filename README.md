@@ -1,5 +1,15 @@
 # Optimizely CMS JavaScript tools
 
+## 📚 Documentation
+
+For comprehensive guides, API references, and advanced usage patterns, see the **[complete documentation](./docs/)**.
+
+**Quick Links:**
+- **[Getting Started with SDK](./docs/cms-sdk/getting-started.md)** - Build your first content-driven application
+- **[Getting Started with CLI](./docs/cms-cli/getting-started.md)** - Automate content type deployments
+- **[API Reference](./docs/cms-sdk/api-reference.md)** - Complete SDK API documentation
+- **[Commands Reference](./docs/cms-cli/commands-reference.md)** - Complete CLI command reference
+
 ## Installation
 
 > [!NOTE]
