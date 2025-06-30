@@ -1,9 +1,8 @@
-import { input, confirm } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import ora from 'ora';
 import chalk from 'chalk';
 import Conf from 'conf';
-import { readCredentials, saveCredentials } from '../service/config.js';
+import { readEnvCredentials } from '../service/config.js';
 import { getToken } from '../service/cmsRestClient.js';
 
 export default class Login extends Command {
@@ -21,58 +20,27 @@ export default class Login extends Command {
       console.log('Credentials file: ' + chalk.bold(conf.path));
     }
 
-    const instanceUrl = await input({
-      message: 'Enter the instance URL (<<something>>.cms.optimizely.com)',
-    });
+    const credentials = readEnvCredentials();
 
-    const credentials = readCredentials(instanceUrl);
+    if (credentials) {
+      const spinner = ora('Checking your credentials...').start();
+      try {
+        const token = await getToken(
+          credentials.clientId,
+          credentials.clientSecret
+        );
 
-    if (
-      credentials &&
-      !(await confirm({
-        message: `Credentials found for ${instanceUrl}. Do you want to override them?`,
-      }))
-    ) {
+        if (token) {
+          spinner.succeed('Your credentials are correct');
+        } else {
+          spinner.fail('The API did not return a token');
+        }
+      } catch (err) {
+        spinner.clear();
+        throw err;
+      }
+
       return;
     }
-
-    console.log(
-      'Go to %s and click "%s"',
-      chalk.bold(`${instanceUrl} > Settings > API Keys`),
-      chalk.bold('Create API Key')
-    );
-
-    const oauthClientId = await input({
-      message: 'Enter Client ID',
-    });
-    const oauthClientSecret = await input({
-      message: 'Enter Client Secret',
-    });
-
-    console.log();
-
-    const spinner = ora('Checking your credentials...').start();
-
-    const token = await getToken(
-      instanceUrl.toString(),
-      oauthClientId,
-      oauthClientSecret
-    );
-
-    if (!token) {
-      spinner.fail('You introduced the wrong credentials.');
-      return;
-    }
-
-    // Save credsentials
-    saveCredentials(instanceUrl, {
-      clientId: oauthClientId,
-      clientSecret: oauthClientSecret,
-    });
-
-    spinner.succeed(
-      'You are now logged in! Your credentials are stored in ' +
-        chalk.bold(conf.path)
-    );
   }
 }

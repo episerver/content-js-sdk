@@ -1,5 +1,4 @@
 import { Errors } from '@oclif/core';
-import Conf from 'conf';
 
 /** Base class for all Errors that can happen in the CLI app */
 export class OptimizelyCliError extends Error {
@@ -9,30 +8,18 @@ export class OptimizelyCliError extends Error {
 const CLIError = Errors.CLIError;
 
 export const credentialErrors = {
-  WrongFormat: class WrongFormat extends CLIError {
-    constructor(conf: Conf) {
-      super('The credentials file is malformed', {
-        exit: 1,
-        suggestions: [`Delete the file '${conf.path}' and try again`],
-      });
-    }
-  },
-
-  NoCredentialsFound: class NoCredentialsFound extends CLIError {
-    constructor() {
-      super('No credentials found in the file', {
-        exit: 1,
-        suggestions: [`Run 'optimizely-experimental login'`],
-      });
-    }
-  },
-
   InvalidCredentials: class InvalidCredentials extends CLIError {
     constructor() {
       super('The client credentials are invalid', {
         exit: 1,
-        suggestions: [`Run 'optimizely-experimental login`],
       });
+    }
+  },
+  MissingCredentials: class MissingCredentials extends CLIError {
+    constructor() {
+      super(
+        'Credentials not provided. Get the Client ID and Secret from the CMS and define the environment variables `OPTIMIZELY_CMS_CLIENT_ID` and `OPTIMIZELY_CMS_CLIENT_SECRET`'
+      );
     }
   },
 };

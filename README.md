@@ -1,44 +1,24 @@
 # Optimizely CMS JavaScript tools
 
-## Installation
+JavaScript library and CLI app for Optimizely CMS
 
-> [!NOTE]
-> The packages are at this moment published only in GitHub package registry.
+## Getting started
 
-### 1. Setup access to the GitHub package registry
+### From sample site
 
-[Create a personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with at least `read:packages` scope
+(TODO)
 
-Once you create the personal access token, you must [authorize it to access to Optimizely via SSO](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on): click "Configure SSO" and choose Optimizely to give access
+<!--
 
-In your `$HOME` directory (`~/` in Mac/Linux, `C:\Users\<username>` in Windows) create a file called `.npmrc` with the following content:
+The easiest way to get started is using the sample site based on Next.js, which showcases both the SDK and CLI
+-->
 
-```
-@episerver:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=<YOUR TOKEN>
-```
+### From scratch
 
-### 2. Run the CLI without installation
+If you want to start from scratch, you can follow this guide:
 
-Run:
-
-```sh
-# You can use `pnpx`, `yarn dlx`, etc. instead of `npx`
-npx @episerver/cms-cli
-```
-
-### (optional) Install the CLI globally
-
-```sh
-npm install @episerver/cms-cli -g
-
-# Note: the binary is called `optimizely-cms-cli`:
-optimizely-cms-cli
-```
-
-### 3. Install the SDK in a project
-
-```sh
-# You can use `pnpm`, `yarn`, etc. instead of `npm`
-npm install @episerver/cms-sdk
-```
+1. [Installation](./docs/1-installation.md)
+2. [Setup](./docs/2-setup.md)
+3. [Modelling](./docs/3-modelling.md)
+4. Fetching _under construction_
+5. Rendering (React) _under construction_
