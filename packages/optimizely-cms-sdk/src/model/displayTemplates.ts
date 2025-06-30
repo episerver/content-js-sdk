@@ -3,7 +3,7 @@ import { ALL_BASE_TYPES, AnyContentType, BaseTypes } from './contentTypes.js';
 import { getDisplayTemplate } from './displayTemplateRegistry.js';
 
 // section node types
-export const NODE_TYPES = ['row', 'colunm'] as const;
+export const NODE_TYPES = ['row', 'column'] as const;
 
 // cms editor types
 export const EDITOR_TYPE = ['select', 'checkbox'] as const;
