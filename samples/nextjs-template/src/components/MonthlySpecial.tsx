@@ -1,9 +1,6 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
 import { BlogCardContentType } from './BlogCard';
-import {
-  OptimizelyComponent,
-  OptimizelyExperience,
-} from '@episerver/cms-sdk/react/server';
+import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
 
 export const MonthlySpecialContentType = contentType({
   key: 'MonthlySpecial',
