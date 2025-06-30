@@ -21,26 +21,17 @@ In your `$HOME` directory (`~/` in Mac/Linux, `C:\Users\<username>` in Windows) 
 //npm.pkg.github.com/:_authToken=<YOUR TOKEN>
 ```
 
-## Step 2. Install the SDK
+## Step 2. Test that you have access to the CLI
+
+You can use the CLI directly by running
 
 ```sh
-npm install @episerver/cms-sdk
-```
-
-## Step 3. Use the CLI
-
-To use the CLI, you can:
-
-1. Use it without installation
-2. Install globally in your system
-3. Install locally in a project
-
-### Use without installation
-
-```sh
-# You can use `pnpx`, `yarn dlx`, etc. instead of `npx`
 npx @episerver/cms-cli
 ```
+
+You should see a command list
+
+<details><summary>Alternative installation</summary>
 
 ### Install globally
 
@@ -60,10 +51,32 @@ optimizely-cms-cli
 npm install @episerver/cms-cli -D
 ```
 
-Then use `npx` (or `pnpx`, or `yarn dlx`):
+Then use it from the project:
 
 ```sh
 npx optimizely-cms-cli
+```
+
+</details>
+
+## Step 3. Initialize a npm project
+
+We recommend to initialize a Next.js project. Run:
+
+```sh
+npx create-next-app@latest
+```
+
+And select the following prompts:
+
+- Would you like to use TypeScript: Yes
+- Would you like your code inside a `src/` directory? Yes
+- Would you like to use App Router? (recommended) Yes
+
+## Step 4. Install the SDK
+
+```sh
+npm install @episerver/cms-sdk
 ```
 
 ## Next steps
