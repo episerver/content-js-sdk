@@ -10,7 +10,11 @@ You first need to connect the CLI to the Optimizely CMS API.
 
 2. In the Create API dialog, give a name and click "Create API key"
 
+   ![Screenshot of "Create API Key" dialog](./images/create-api-key.png)
+
 3. You will see Client ID and Client Secret, which you will need in the next steps
+
+   ![Screenshot of "Save your Secret" dialog](./images/save-your-secret.png)
 
 ## Step 2. Create environment variables
 
