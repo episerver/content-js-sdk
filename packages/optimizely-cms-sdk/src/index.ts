@@ -5,6 +5,7 @@ export {
   displayTemplate,
   isContentType,
   isDisplayTemplate,
+  displayTemplateRegistry,
   initContentTypeRegistry,
 } from './model/index.js';
 export { GraphClient, getFilterFromPath } from './graph/index.js';

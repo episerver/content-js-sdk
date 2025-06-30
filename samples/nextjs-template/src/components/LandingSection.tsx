@@ -1,8 +1,4 @@
-import {
-  contentType,
-  createDisplayConfiguration,
-  Infer,
-} from '@episerver/cms-sdk';
+import { contentType, Infer } from '@episerver/cms-sdk';
 import { SmallFeatureGridContentType } from './SmallFeatureGrid';
 import { VideoFeatureContentType } from './VideoFeature';
 import {

@@ -61,14 +61,18 @@ type Props = {
   opti: Infer<typeof LandingExperienceContentType>;
 };
 
-function ComponentWrapper({ children, node, dps }: ComponentContainerProps) {
+function ComponentWrapper({
+  children,
+  node,
+  displaySettings,
+}: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  console.log('ComponentWrapper', dps);
+  console.log("ComponentWrapper's displaySettings", displaySettings);
 
   return (
     <div {...pa(node)}>
       {children}
-      <div style={{ color: dps?.[0] || 'black' }}>TEST!!!</div>
+      <div style={{ color: displaySettings?.[0] || 'black' }}>TEST!!!</div>
     </div>
   );
 }

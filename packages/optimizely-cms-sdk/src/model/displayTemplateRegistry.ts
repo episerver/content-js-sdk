@@ -1,6 +1,9 @@
-import { DisplayTemplateConfig, StylesInput } from './displayTemplates.js';
+import {
+  DisplaySettingsInput,
+  DisplayTemplateConfig,
+} from './displayTemplates.js';
 
-let _registry: { name: string; template: StylesInput }[] = [];
+let _registry: { name: string; template: DisplaySettingsInput }[] = [];
 
 /** Initializes the displayTemplate registry */
 export function init(registry: DisplayTemplateConfig[]) {
@@ -18,7 +21,7 @@ export function getDisplayTemplate(name: string) {
 /** Get all the display displayTemplates */
 export function getAllDisplayTemplate(): {
   name: string;
-  template: StylesInput;
+  template: DisplaySettingsInput;
 }[] {
   return _registry;
 }

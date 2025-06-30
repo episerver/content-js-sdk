@@ -60,7 +60,7 @@ type BaseDisplayTemplate = {
 export type DisplayTemplate = BaseDisplayTemplate &
   (NodeTemplate | BaseTemplate | WithContentType);
 
-export type StylesInput = Record<
+export type DisplaySettingsInput = Record<
   string,
   | Record<string, string> // select
   | {
@@ -76,7 +76,7 @@ type DisplayTemplateInput = Array<DisplaySetting>;
 
 export type DisplayTemplateConfig = DisplayTemplate & {
   __type: 'displayTemplate';
-  template: StylesInput;
+  template: DisplaySettingsInput;
 };
 
 // Generic type guard factory
@@ -97,7 +97,7 @@ const isBaseTypes = createTypeGuard(ALL_BASE_TYPES);
  * @returns A resolved template type object: `NodeTemplate`, `BaseTemplate`, or `WithContentType`.
  * @throws An error if the input is invalid (unreachable with current typing).
  */
-export function resolveTemplateType(
+function resolveTemplateType(
   input: TemplateTypeInput
 ): NodeTemplate | BaseTemplate | WithContentType {
   if (typeof input === 'string') {
@@ -123,21 +123,21 @@ export function resolveTemplateType(
 export function createDisplayConfiguration(
   key: string,
   templateType: BaseTypes,
-  stylesInput: StylesInput,
+  stylesInput: DisplaySettingsInput,
   isDefault?: boolean
 ): DisplayTemplateConfig;
 
 export function createDisplayConfiguration(
   key: string,
   templateType: NodeType,
-  stylesInput: StylesInput,
+  stylesInput: DisplaySettingsInput,
   isDefault?: boolean
 ): DisplayTemplateConfig;
 
 export function createDisplayConfiguration(
   key: string,
   templateType: string,
-  stylesInput: StylesInput,
+  stylesInput: DisplaySettingsInput,
   isDefault?: boolean
 ): DisplayTemplateConfig;
 
@@ -153,7 +153,7 @@ export function createDisplayConfiguration(
 export function createDisplayConfiguration(
   key: string,
   templateType: TemplateTypeInput,
-  stylesInput: StylesInput,
+  stylesInput: DisplaySettingsInput,
   isDefault = false
 ): DisplayTemplateConfig {
   const settings: SettingsType = {};
@@ -232,7 +232,7 @@ export function createDisplayConfiguration(
  * @param templateName - The name of the display template to retrieve style definitions for.
  * @returns An array of selected style values as strings. If no styles are found, an empty array is returned.
  */
-export function getSelectedStyleValues(
+export function getSelectedDisplaySettings(
   displaySettings: DisplayTemplateInput,
   templateName: string
 ): string[] {

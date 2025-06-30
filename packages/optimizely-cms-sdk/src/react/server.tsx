@@ -10,7 +10,7 @@ import {
   ExperienceComponentNode,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
-import { getSelectedStyleValues } from '../model/displayTemplates.js';
+import { getSelectedDisplaySettings } from '../model/displayTemplates.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -31,7 +31,7 @@ type Props = {
     __typename: string;
     __context?: { edit: boolean; preview_token: string };
   };
-  dps?: string[];
+  displaySettings?: string[];
 };
 
 export async function OptimizelyComponent({ opti, ...props }: Props) {
@@ -61,7 +61,7 @@ export type StructureContainerProps = {
 export type ComponentContainerProps = {
   node: ExperienceComponentNode;
   children: React.ReactNode;
-  dps?: string[];
+  displaySettings?: string[];
 };
 export type StructureContainer = (
   props: StructureContainerProps
@@ -78,7 +78,7 @@ export function OptimizelyExperience({
   ComponentWrapper?: ComponentContainer;
 }) {
   return nodes.map((node) => {
-    const dps = getSelectedStyleValues(
+    const dps = getSelectedDisplaySettings(
       node.displaySettings,
       node.displayTemplateKey
     );
@@ -87,7 +87,7 @@ export function OptimizelyExperience({
       const Wrapper = ComponentWrapper ?? React.Fragment;
 
       return (
-        <Wrapper node={node} key={node.key} dps={dps}>
+        <Wrapper node={node} key={node.key} displaySettings={dps}>
           <OptimizelyComponent opti={node.component} />
         </Wrapper>
       );
@@ -124,13 +124,17 @@ export function OptimizelyGridSection({
     throw new Error('Nodes must be an array');
   }
   return nodes.map((node, i) => {
-    const dps = getSelectedStyleValues(
+    const dps = getSelectedDisplaySettings(
       node.displaySettings,
       node.displayTemplateKey
     );
     if (isComponentNode(node)) {
       return (
-        <OptimizelyComponent key={node.key} opti={node.component} dps={dps} />
+        <OptimizelyComponent
+          key={node.key}
+          opti={node.component}
+          displaySettings={dps}
+        />
       );
     }
 
