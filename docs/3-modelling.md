@@ -25,6 +25,8 @@ Your project structure will look like this:
 Fill `Article.tsx` with the following content:
 
 ```ts
+import { contentType } from '@episerver/cms-sdk';
+
 export const ArticleContentType = contentType({
   key: 'Article',
   baseType: '_page',
