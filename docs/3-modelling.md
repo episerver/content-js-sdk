@@ -44,4 +44,4 @@ optimizely-cms-cli config push optimizely.config.mjs
 
 ## Next steps
 
-Now you are ready to [fetch content from the CMS](./4-fetching.md)
+Now you are ready to [fetch content from the CMS] (_under construction_)
