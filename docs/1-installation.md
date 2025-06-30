@@ -26,7 +26,7 @@ In your `$HOME` directory (`~/` in Mac/Linux, `C:\Users\<username>` in Windows) 
 You can use the CLI directly by running
 
 ```sh
-npx @episerver/cms-cli
+npx @episerver/cms-cli@latest
 ```
 
 You should see a command list
