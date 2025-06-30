@@ -1,6 +1,6 @@
 import createClient from 'openapi-fetch';
 import { paths } from './apiSchema/openapi-schema-types.js';
-import { readCredentials, readEnvCredentials } from './config.js';
+import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
 
 function rootUrl() {
@@ -27,9 +27,18 @@ export async function getToken(clientId: string, clientSecret: string) {
     })
     .then(({ response, data, error }) => {
       if (!response.ok) {
-        if (error?.error === 'invalid_client') {
+        // In CMS production:
+        if (error?.code === 'invalid_client') {
           throw new credentialErrors.InvalidCredentials();
         }
+
+        // In CMS test:
+        if (error?.code === 'AUTHENTICATION_ERROR') {
+          throw new credentialErrors.InvalidCredentials();
+        }
+
+        // Generic error message:
+
         throw new Error(
           'Something went wrong when trying to fetch token. Please try again'
         );
@@ -63,14 +72,7 @@ export async function createRestApiClient({
 }
 
 export async function createApiClient(host?: string) {
-  const cred =
-    readEnvCredentials() ||
-    readCredentials(host ?? process.env.OPTIMIZELY_CMS_HOST);
-
-  if (!cred) {
-    throw new credentialErrors.NoCredentialsFound();
-  }
-
+  const cred = readEnvCredentials();
   const client = await createRestApiClient(cred);
   return client;
 }

@@ -1435,7 +1435,7 @@ export interface components {
     /** @description Represents an OAuth error. */
     OauthTokenError: {
       /** @description Gets or sets the error. */
-      error?: string | null;
+      code?: string | null;
       /** @description Gets or sets the error description. */
       error_description?: string | null;
     };

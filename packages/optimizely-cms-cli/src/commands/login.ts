@@ -1,13 +1,8 @@
-import { input, confirm } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import ora from 'ora';
 import chalk from 'chalk';
 import Conf from 'conf';
-import {
-  readCredentials,
-  readEnvCredentials,
-  saveCredentials,
-} from '../service/config.js';
+import { readEnvCredentials } from '../service/config.js';
 import { getToken } from '../service/cmsRestClient.js';
 
 export default class Login extends Command {
@@ -25,72 +20,27 @@ export default class Login extends Command {
       console.log('Credentials file: ' + chalk.bold(conf.path));
     }
 
-    const envCredentials = readEnvCredentials();
+    const credentials = readEnvCredentials();
 
-    if (envCredentials) {
+    if (credentials) {
       const spinner = ora('Checking your credentials...').start();
-      const token = await getToken(
-        envCredentials.clientId,
-        envCredentials.clientSecret
-      );
+      try {
+        const token = await getToken(
+          credentials.clientId,
+          credentials.clientSecret
+        );
 
-      if (!token) {
-        spinner.fail('You introduced the wrong credentials.');
-        return;
+        if (token) {
+          spinner.succeed('Your credentials are correct');
+        } else {
+          spinner.fail('The API did not return a token');
+        }
+      } catch (err) {
+        spinner.clear();
+        throw err;
       }
-      spinner.succeed('Your credentials are correct');
 
       return;
     }
-
-    const instanceUrl = await input({
-      message: 'Enter the instance URL (<<something>>.cms.optimizely.com)',
-    });
-
-    const credentials = readCredentials(instanceUrl);
-
-    if (
-      credentials &&
-      !(await confirm({
-        message: `Credentials found for ${instanceUrl}. Do you want to override them?`,
-      }))
-    ) {
-      return;
-    }
-
-    console.log(
-      'Go to %s and click "%s"',
-      chalk.bold(`${instanceUrl} > Settings > API Keys`),
-      chalk.bold('Create API Key')
-    );
-
-    const oauthClientId = await input({
-      message: 'Enter Client ID',
-    });
-    const oauthClientSecret = await input({
-      message: 'Enter Client Secret',
-    });
-
-    console.log();
-
-    const spinner = ora('Checking your credentials...').start();
-
-    const token = await getToken(oauthClientId, oauthClientSecret);
-
-    if (!token) {
-      spinner.fail('You introduced the wrong credentials.');
-      return;
-    }
-
-    // Save credsentials
-    saveCredentials(instanceUrl, {
-      clientId: oauthClientId,
-      clientSecret: oauthClientSecret,
-    });
-
-    spinner.succeed(
-      'You are now logged in! Your credentials are stored in ' +
-        chalk.bold(conf.path)
-    );
   }
 }
