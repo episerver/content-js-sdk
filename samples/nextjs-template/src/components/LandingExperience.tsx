@@ -1,10 +1,5 @@
 import Image from 'next/image';
-import {
-  contentType,
-  createDisplayConfiguration,
-  createDisplayTemplate,
-  Infer,
-} from '@episerver/cms-sdk';
+import { contentType, createDisplayTemplate, Infer } from '@episerver/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyExperience,
@@ -24,11 +19,11 @@ export const LandingExperienceContentType = contentType({
   },
 });
 
-const LandingSectionTemplate = createDisplayTemplate({
+const LandingSectionTemplate = {
   background: { red: '#ff0000', blue: '#0000ff' },
-});
+};
 
-export const LandingDisplayTemplate = createDisplayConfiguration(
+export const LandingDisplayTemplate = createDisplayTemplate(
   'LandingSectionDisplayTemplate',
   '_component',
   LandingSectionTemplate

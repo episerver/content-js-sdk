@@ -3,9 +3,8 @@ import { AnyContentType } from './contentTypes.js';
 import { DisplayTemplate } from './displayTemplates.js';
 
 export {
-  createDisplayTemplate,
   getSelectedDisplaySettings,
-  createDisplayConfiguration,
+  createDisplayTemplate,
 } from './displayTemplates.js';
 
 /** Defines a Optimizely CMS content type */

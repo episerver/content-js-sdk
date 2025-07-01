@@ -82,6 +82,7 @@ type DisplayTemplateInput = Array<DisplaySetting>;
 export type DisplayTemplateConfig = DisplayTemplate & {
   __type: 'displayTemplate';
   template: DisplaySettingsInput;
+  tag?: string; // Optional tag property to store the name of the React component
 };
 
 // Generic type guard factory
@@ -125,73 +126,28 @@ function resolveTemplateType(
   throw new Error('Invalid template type input');
 }
 
-/**
- * Creates a display template object based on the provided template input.
- * @param template - An object defining the display settings for the template.
- * @returns A `DisplaySettingsInput` object containing the display settings.
- */
 export function createDisplayTemplate(
-  input: Record<
-    string,
-    Record<
-      string,
-      | ContentType
-      | {
-          editor?: EditorType;
-          value?: string;
-        }
-      | string
-    >
-  >
-): DisplaySettingsInput {
-  return Object.fromEntries(
-    Object.entries(input).map(([styleKey, styleDef]) => {
-      const processedStyleDef: Record<string, any> = {};
-
-      for (const [key, value] of Object.entries(styleDef)) {
-        if (
-          typeof value === 'object' &&
-          'key' in value &&
-          'baseType' in value
-        ) {
-          // Handle ContentType: Return the key directly
-          processedStyleDef[key] = key;
-        } else if (typeof value === 'object' && 'value' in value) {
-          // Handle object with editor and value
-          processedStyleDef[key] = {
-            editor: value.editor ?? 'checkbox',
-            value: value.value ?? '',
-          };
-        } else if (typeof value === 'string') {
-          // Handle simple key-value pairs
-          processedStyleDef[key] = value;
-        }
-      }
-
-      return [styleKey, processedStyleDef];
-    })
-  ) as DisplaySettingsInput;
-}
-
-export function createDisplayConfiguration(
   key: string,
   templateType: BaseTypes | '_component',
   stylesInput: DisplaySettingsInput,
-  isDefault?: boolean
+  isDefault?: boolean,
+  tag?: React.ComponentType<any> // Optional React component
 ): DisplayTemplateConfig;
 
-export function createDisplayConfiguration(
+export function createDisplayTemplate(
   key: string,
   templateType: NodeType,
   stylesInput: DisplaySettingsInput,
-  isDefault?: boolean
+  isDefault?: boolean,
+  tag?: React.ComponentType<any> // Optional React component
 ): DisplayTemplateConfig;
 
-export function createDisplayConfiguration(
+export function createDisplayTemplate(
   key: string,
   templateType: string,
   stylesInput: DisplaySettingsInput,
-  isDefault?: boolean
+  isDefault?: boolean,
+  tag?: React.ComponentType<any> // Optional React component
 ): DisplayTemplateConfig;
 
 /**
@@ -203,11 +159,12 @@ export function createDisplayConfiguration(
  * @param isDefault - A boolean indicating whether this configuration is the default. Defaults to `false`.
  * @returns A `DisplayTemplateConfig` object containing the display configuration.
  */
-export function createDisplayConfiguration(
+export function createDisplayTemplate(
   key: string,
   templateType: TemplateTypeInput,
   stylesInput: DisplaySettingsInput,
-  isDefault = false
+  isDefault = false,
+  tag?: React.ComponentType<any> // Optional React component
 ): DisplayTemplateConfig {
   const settings: SettingsType = {};
   let sortOrder = 0;
@@ -275,6 +232,7 @@ export function createDisplayConfiguration(
     settings,
     template: stylesInput,
     __type: 'displayTemplate',
+    tag: tag ? tag.name : undefined, // Add the tag property with the component name
   };
 }
 
@@ -288,13 +246,18 @@ export function createDisplayConfiguration(
 export function getSelectedDisplaySettings(
   displaySettings: DisplayTemplateInput,
   templateName: string
-): string[] {
-  const stylesInput = getDisplayTemplate(templateName);
-  if (!stylesInput) return [];
+): {
+  displaySettings: string[];
+  tag: string | undefined;
+} {
+  const displayTemplate = getDisplayTemplate(templateName);
+  if (!displayTemplate || !displayTemplate.template) {
+    return { displaySettings: [], tag: undefined };
+  }
 
-  return displaySettings
+  const displaySettingsValues = displaySettings
     .map(({ key, value }) => {
-      const styleDef = stylesInput[key];
+      const styleDef = displayTemplate.template[key];
       if (!styleDef) return null;
 
       if (
@@ -312,4 +275,9 @@ export function getSelectedDisplaySettings(
       return null;
     })
     .filter((v): v is string => typeof v === 'string' && v !== '');
+
+  return {
+    displaySettings: displaySettingsValues,
+    tag: displayTemplate.tag,
+  };
 }

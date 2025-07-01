@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { createDisplayConfiguration } from '../displayTemplates.js';
+import { createDisplayTemplate } from '../displayTemplates.js';
 
-describe('createDisplayConfiguration', () => {
+describe('createDisplayTemplate', () => {
   it('should create a display configuration with the correct styles input structure', () => {
     const key = 'exampleConfig';
     const templateType = '_component'; // BaseType
@@ -17,12 +17,7 @@ describe('createDisplayConfiguration', () => {
       },
     };
 
-    const result = createDisplayConfiguration(
-      key,
-      templateType,
-      stylesInput,
-      true
-    );
+    const result = createDisplayTemplate(key, templateType, stylesInput, true);
 
     expect(result).toMatchInlineSnapshot(`
       {
@@ -67,6 +62,7 @@ describe('createDisplayConfiguration', () => {
             "sortOrder": 1,
           },
         },
+        "tag": undefined,
         "template": {
           "color": {
             "blue": "#0000ff",
@@ -93,7 +89,7 @@ describe('createDisplayConfiguration', () => {
       },
     };
 
-    const result = createDisplayConfiguration(key, templateType, stylesInput);
+    const result = createDisplayTemplate(key, templateType, stylesInput);
 
     expect(result.isDefault).toBe(false);
   });
