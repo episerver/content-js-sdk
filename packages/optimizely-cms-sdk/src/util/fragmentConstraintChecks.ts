@@ -1,4 +1,4 @@
-import { AnyProperty } from '../model/properties';
+import { AnyProperty } from '../model/properties.js';
 
 /**
  * Maximum number of fragments allowed before a warning is issued.

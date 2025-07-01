@@ -1,4 +1,4 @@
-import { contentType } from '../../model';
+import { contentType } from '../../model/index.js';
 
 export const MyExperience = contentType({
   baseType: '_experience',

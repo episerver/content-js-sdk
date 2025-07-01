@@ -30,7 +30,11 @@ OPTIMIZELY_CMS_CLIENT_SECRET=<the client secret>
 
 ## Step 3. Check the connection
 
-Use the command `optimizely-cms-cli login` to check that the connection is correct
+Use the command to check that the connection is correct:
+
+```
+npx @episerver/cms-cli@latest login
+```
 
 ## Next steps
 

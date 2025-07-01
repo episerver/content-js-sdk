@@ -9,6 +9,7 @@
   "private": "true",
   "scripts": {
     "build": "pnpm --filter \"./packages/**\" build",
+    "clean:all": "pnpm -r clean",
     "test": "echo \"Error: no test specified\" && exit 1",
     "publish:all": "pnpm publish -r --no-git-checks"
   },

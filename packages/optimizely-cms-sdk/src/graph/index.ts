@@ -1,4 +1,4 @@
-import { createQuery } from './createQuery';
+import { createQuery } from './createQuery.js';
 
 /** Options for Graph */
 type GraphOptions = {

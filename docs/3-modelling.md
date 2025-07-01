@@ -4,27 +4,44 @@ In this page you will learn how to model content types for your CMS
 
 ## Step 1. Model content types
 
-1. Create a directory `src/components`. Inside that directory you will place your content types definitions
-2. Create a file called `Article.tsx` inside `src/components` with the following content:
+- Create a directory `src/components`. Inside that directory you will place your content types definitions.
+- Create a file called `Article.tsx` inside the `src/components` directory
+- Create a file `optimizely.config.mjs` in the root of your project
 
-   ```ts
-   export const ArticleContentType = contentType({
-     key: 'Article',
-     baseType: '_page',
-     properties: {
-       heading: {
-         type: 'string',
-       },
-       body: {
-         type: 'richText',
-       },
-     },
-   });
-   ```
+Your project structure will look like this:
 
-## Step 2. Create a config file
+```
+.
+├── src/
+│   ├── app/
+│   └── components/
+│       └── Article.tsx
+├── public
+├── .env
+├── optimizely.config.mjs
+└── ...
+```
 
-Create a `optimizely.config.mjs` file in the root of your project with the following content:
+Fill `Article.tsx` with the following content:
+
+```ts
+import { contentType } from '@episerver/cms-sdk';
+
+export const ArticleContentType = contentType({
+  key: 'Article',
+  baseType: '_page',
+  properties: {
+    heading: {
+      type: 'string',
+    },
+    body: {
+      type: 'richText',
+    },
+  },
+});
+```
+
+Fill `optimizely.config.mjs` with the following content
 
 ```js
 import { buildConfig } from '@episerver/cms-sdk';
@@ -34,12 +51,12 @@ export default buildConfig({
 });
 ```
 
-## Step 3. Sync content types to the CMS
+## Step 2. Sync content types to the CMS
 
 Run the following command:
 
 ```sh
-optimizely-cms-cli config push optimizely.config.mjs
+npx @episerver/cms-cli@latest config push optimizely.config.mjs
 ```
 
 ## Next steps

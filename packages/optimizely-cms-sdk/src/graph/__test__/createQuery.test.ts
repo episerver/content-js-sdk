@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createFragment, createQuery } from '../createQuery';
-import { initContentTypeRegistry } from '../../model';
+import { createFragment, createQuery } from '../createQuery.js';
+import { initContentTypeRegistry } from '../../model/index.js';
 import {
   callToAction,
   heroBlock,
@@ -17,7 +17,7 @@ import {
   mediaBlock,
   FeedBackPage,
   ContentPage,
-} from './fixtures';
+} from './fixtures.js';
 
 beforeAll(() => {
   initContentTypeRegistry(allContentTypes);

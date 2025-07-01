@@ -1,4 +1,4 @@
-import { AnyProperty } from './properties';
+import { AnyProperty } from './properties.js';
 
 /** All possible content types */
 export type AnyContentType =

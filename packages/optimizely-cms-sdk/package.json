@@ -2,17 +2,28 @@
   "name": "@episerver/cms-sdk",
   "version": "0.1.0-alpha.4",
   "description": "JavaScript tools for integration with Optimizely CMS",
+  "type": "module",
   "main": "./dist/index.js",
   "exports": {
-    ".": "./dist/index.js",
-    "./react/server": "./dist/react/server.js",
-    "./react/client": "./dist/react/client.js"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./react/server": {
+      "import": "./dist/esm/react/server.js",
+      "require": "./dist/cjs/react/server.js"
+    },
+    "./react/client": {
+      "import": "./dist/esm/react/client.js",
+      "require": "./dist/cjs/react/client.js"
+    }
   },
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
+    "clean": "rimraf dist",
     "test": "vitest --typecheck"
   },
   "files": [
@@ -33,6 +44,7 @@
   "devDependencies": {
     "@types/node": "^22.13.14",
     "@types/react": "^19",
+    "rimraf": "^6.0.1",
     "typescript": "^5.8.2",
     "vitest": "^3.1.1"
   }
