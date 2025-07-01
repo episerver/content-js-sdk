@@ -90,6 +90,10 @@ Go to http://localhost:3000/en/
 
 You should see the content you have created as JSON
 
+## Next steps
+
+Now you are ready to [render the content](./6-rendering-react.md) that you just fetched.
+
 ---
 
 ## Advanced topics

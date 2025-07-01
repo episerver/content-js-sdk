@@ -127,3 +127,14 @@ export default async function Page({ params }: Props) {
 ```
 
 Go again to http://localhost:3000/en. You should see your page
+
+## Next steps
+
+You have finished 🎉!
+
+This is the end of the tutorial on how to create your first website using Optimizely CMS SaaS.
+
+You can continue exploring these topics:
+
+- Add live preview _(under construction)_
+- Add Experiences _(under construction)_
