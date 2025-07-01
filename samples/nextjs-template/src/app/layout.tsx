@@ -29,6 +29,26 @@ import CallToAction, {
   CallToActionContentType,
 } from '@/components/CallToAction';
 import BlankSection from '@/components/BlankSection';
+import BlogExperience, {
+  BlogExperienceContentType,
+} from '@/components/BlogExperience';
+import BlogCard, { BlogCardContentType } from '@/components/BlogCard';
+import Banner, { BannerContentType } from '@/components/Banner';
+import Tile, { TileContentType } from '@/components/Tile';
+import AboutExperience, {
+  AboutExperienceContentType,
+} from '@/components/AboutExperience';
+import AboutUs, { AboutUsContentType } from '@/components/AboutUs';
+import MonthlySpecial, {
+  MonthlySpecialContentType,
+} from '@/components/MonthlySpecial';
+import OfficeLocations, {
+  OfficeContentType,
+} from '@/components/OfficeLocations';
+import Location, { LocationContentType } from '@/components/Location';
+import BlankExperience, {
+  BlankExperienceContentType,
+} from '@/components/BlankExperience';
 
 initContentTypeRegistry([
   LandingSectionContentType,
@@ -40,7 +60,18 @@ initContentTypeRegistry([
   ArticleContentType,
   LandingExperienceContentType,
   CallToActionContentType,
+  BlogExperienceContentType,
+  BlogCardContentType,
+  BannerContentType,
+  TileContentType,
+  AboutExperienceContentType,
+  AboutUsContentType,
+  MonthlySpecialContentType,
+  OfficeContentType,
+  LocationContentType,
+  BlankExperienceContentType,
 ]);
+
 initReactComponentRegistry({
   resolver: {
     Landing,
@@ -52,6 +83,16 @@ initReactComponentRegistry({
     LandingExperience,
     CallToAction,
     BlankSection,
+    BlogCard,
+    BlogExperience,
+    Banner,
+    Tile,
+    AboutExperience,
+    AboutUs,
+    MonthlySpecial,
+    OfficeLocations,
+    Location,
+    BlankExperience,
   },
 });
 
