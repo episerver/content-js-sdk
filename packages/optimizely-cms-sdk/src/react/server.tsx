@@ -78,7 +78,7 @@ export function OptimizelyExperience({
   ComponentWrapper?: ComponentContainer;
 }) {
   return nodes.map((node) => {
-    const dps = getSelectedDisplaySettings(
+    const nodeDisplaySettings = getSelectedDisplaySettings(
       node.displaySettings,
       node.displayTemplateKey
     );
@@ -87,7 +87,11 @@ export function OptimizelyExperience({
       const Wrapper = ComponentWrapper ?? React.Fragment;
 
       return (
-        <Wrapper node={node} key={node.key} displaySettings={dps}>
+        <Wrapper
+          node={node}
+          key={node.key}
+          displaySettings={nodeDisplaySettings}
+        >
           <OptimizelyComponent opti={node.component} />
         </Wrapper>
       );
@@ -106,7 +110,13 @@ export function OptimizelyExperience({
       throw new Error(`No component defined for content type ${type}`);
     }
 
-    return <Component key={node.key} opti={node} />;
+    return (
+      <Component
+        key={node.key}
+        opti={node}
+        displaySettings={nodeDisplaySettings}
+      />
+    );
   });
 }
 
@@ -124,16 +134,17 @@ export function OptimizelyGridSection({
     throw new Error('Nodes must be an array');
   }
   return nodes.map((node, i) => {
-    const dps = getSelectedDisplaySettings(
+    const nodeDisplaySettings = getSelectedDisplaySettings(
       node.displaySettings,
       node.displayTemplateKey
     );
+
     if (isComponentNode(node)) {
       return (
         <OptimizelyComponent
           key={node.key}
           opti={node.component}
-          displaySettings={dps}
+          displaySettings={nodeDisplaySettings}
         />
       );
     }

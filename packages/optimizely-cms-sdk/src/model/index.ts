@@ -3,6 +3,7 @@ import { AnyContentType } from './contentTypes.js';
 import { DisplayTemplate } from './displayTemplates.js';
 
 export {
+  createDisplayTemplate,
   getSelectedDisplaySettings,
   createDisplayConfiguration,
 } from './displayTemplates.js';

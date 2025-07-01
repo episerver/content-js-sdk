@@ -1,5 +1,10 @@
-import { isContentType } from './index.js';
-import { ALL_BASE_TYPES, AnyContentType, BaseTypes } from './contentTypes.js';
+import { isContentType } from './../index.js';
+import {
+  ALL_BASE_TYPES,
+  AnyContentType,
+  BaseTypes,
+  ContentType,
+} from './contentTypes.js';
 import { getDisplayTemplate } from './displayTemplateRegistry.js';
 
 // section node types
@@ -120,9 +125,57 @@ function resolveTemplateType(
   throw new Error('Invalid template type input');
 }
 
+/**
+ * Creates a display template object based on the provided template input.
+ * @param template - An object defining the display settings for the template.
+ * @returns A `DisplaySettingsInput` object containing the display settings.
+ */
+export function createDisplayTemplate(
+  input: Record<
+    string,
+    Record<
+      string,
+      | ContentType
+      | {
+          editor?: EditorType;
+          value?: string;
+        }
+      | string
+    >
+  >
+): DisplaySettingsInput {
+  return Object.fromEntries(
+    Object.entries(input).map(([styleKey, styleDef]) => {
+      const processedStyleDef: Record<string, any> = {};
+
+      for (const [key, value] of Object.entries(styleDef)) {
+        if (
+          typeof value === 'object' &&
+          'key' in value &&
+          'baseType' in value
+        ) {
+          // Handle ContentType: Return the key directly
+          processedStyleDef[key] = key;
+        } else if (typeof value === 'object' && 'value' in value) {
+          // Handle object with editor and value
+          processedStyleDef[key] = {
+            editor: value.editor ?? 'checkbox',
+            value: value.value ?? '',
+          };
+        } else if (typeof value === 'string') {
+          // Handle simple key-value pairs
+          processedStyleDef[key] = value;
+        }
+      }
+
+      return [styleKey, processedStyleDef];
+    })
+  ) as DisplaySettingsInput;
+}
+
 export function createDisplayConfiguration(
   key: string,
-  templateType: BaseTypes,
+  templateType: BaseTypes | '_component',
   stylesInput: DisplaySettingsInput,
   isDefault?: boolean
 ): DisplayTemplateConfig;

@@ -5,6 +5,8 @@ export {
   displayTemplate,
   isContentType,
   isDisplayTemplate,
+  createDisplayConfiguration,
+  createDisplayTemplate,
   displayTemplateRegistry,
   initContentTypeRegistry,
 } from './model/index.js';

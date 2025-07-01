@@ -2,6 +2,7 @@ import Image from 'next/image';
 import {
   contentType,
   createDisplayConfiguration,
+  createDisplayTemplate,
   Infer,
 } from '@episerver/cms-sdk';
 import {
@@ -23,16 +24,18 @@ export const LandingExperienceContentType = contentType({
   },
 });
 
-const LandingSectionDisplayTemplate = {
+const LandingSectionTemplate = createDisplayTemplate({
   background: { red: '#ff0000', blue: '#0000ff' },
-};
+});
 
 export const LandingDisplayTemplate = createDisplayConfiguration(
   'LandingSectionDisplayTemplate',
   '_component',
-  LandingSectionDisplayTemplate
+  LandingSectionTemplate
 );
 
+// commented out as it is not used in the current implementation and used for comparison
+//
 // export const DisplayTemplate = displayTemplate({
 //   key: 'LandingSectionDisplayTemplate',
 //   isDefault: true,
@@ -67,7 +70,6 @@ function ComponentWrapper({
   displaySettings,
 }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  console.log("ComponentWrapper's displaySettings", displaySettings);
 
   return (
     <div {...pa(node)}>
