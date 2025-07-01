@@ -6,13 +6,13 @@ export {
   isContentType,
   isDisplayTemplate,
   initContentTypeRegistry,
-} from './model';
-export { GraphClient, getFilterFromPath } from './graph';
-export { createQuery } from './graph/createQuery';
-export type { PreviewParams } from './graph';
-export { BlankSectionContentType } from './model/internalContentTypes';
+} from './model/index.js';
+export { GraphClient, getFilterFromPath } from './graph/index.js';
+export { createQuery } from './graph/createQuery.js';
+export type { PreviewParams } from './graph/index.js';
+export { BlankSectionContentType } from './model/internalContentTypes.js';
 
-export * as ContentTypes from './model/contentTypes';
-export * as DisplayTemplates from './model/displayTemplates';
-export * as Properties from './model/properties';
-export { Infer } from './infer';
+export * as ContentTypes from './model/contentTypes.js';
+export * as DisplayTemplates from './model/displayTemplates.js';
+export * as Properties from './model/properties.js';
+export { Infer } from './infer.js';

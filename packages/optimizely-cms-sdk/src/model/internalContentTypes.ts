@@ -1,4 +1,4 @@
-import { SectionContentType } from './contentTypes';
+import { SectionContentType } from './contentTypes.js';
 
 export const BlankSectionContentType: SectionContentType = {
   baseType: '_section',

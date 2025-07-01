@@ -8,8 +8,8 @@ import {
   vi,
   afterAll,
 } from 'vitest';
-import { contentType, initContentTypeRegistry } from '../../model';
-import { createFragment } from '../createQuery';
+import { contentType, initContentTypeRegistry } from '../../model/index.js';
+import { createFragment } from '../createQuery.js';
 
 describe('createFragment > Fragment threshold warning', () => {
   const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {}); // mocks the console.warn method

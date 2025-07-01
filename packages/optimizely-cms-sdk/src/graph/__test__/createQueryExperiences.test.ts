@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import {
   allContentTypes,
   MyExperience,
-} from './createQueryExperiences.fixtures';
-import { initContentTypeRegistry } from '../../model';
-import { createFragment } from '../createQuery';
+} from './createQueryExperiences.fixtures.js';
+import { initContentTypeRegistry } from '../../model/index.js';
+import { createFragment } from '../createQuery.js';
 
 beforeAll(() => {
   initContentTypeRegistry(allContentTypes);

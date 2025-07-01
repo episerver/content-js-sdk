@@ -1,6 +1,6 @@
-import { AnyContentType } from './contentTypes';
+import { AnyContentType } from './contentTypes.js';
 
-type NodeType = 'row' | 'colunm';
+type NodeType = 'row' | 'column';
 
 type EditorType = 'select' | 'checkbox';
 
