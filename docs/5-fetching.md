@@ -14,7 +14,7 @@ In this page you will learn how to create an application in your CMS and fetch c
 
 ## 2. Register the content type Article
 
-Locate the file `app/layout.tsx` or create it if it doesn't exist. Put the following content:
+Locate the file `src/app/layout.tsx` or create it if it doesn't exist. Put the following content:
 
 ```tsx
 import { ArticleContentType } from '@/components/Article';
@@ -37,7 +37,7 @@ export default function RootLayout({
 
 ## 3. Create a page in Next.js
 
-Create a file `app/[...slug]/page.tsx`. Your file structure should look like this:
+Create a file `src/app/[...slug]/page.tsx`. Your file structure should look like this:
 
 ```
 .
