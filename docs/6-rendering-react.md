@@ -21,6 +21,9 @@ export default function Article({ opti }: Props) {
 }
 ```
 
+> [!WARNING]
+> Using [React `dangerouslySetInnerHTML`](https://legacy.reactjs.org/docs/dom-elements.html#dangerouslysetinnerhtml) can introduce XSS risks. In production environments you should sanitize the HTML or use `opti.body?.json` (which gives the content as JSON)
+
 The entire file should look like this:
 
 ```tsx
