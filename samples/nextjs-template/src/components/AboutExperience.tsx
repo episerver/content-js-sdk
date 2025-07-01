@@ -38,14 +38,15 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 }
 
 export default function AboutExperience({ opti }: Props) {
+  const { pa } = getPreviewUtils(opti);
   return (
     <main className="about-experience">
       <header className="about-header">
-        <h1>{opti.title}</h1>
-        <p>{opti.subtitle}</p>
+        <h1 {...pa('title')}>{opti.title}</h1>
+        <p {...pa('subtitle')}>{opti.title}</p>
       </header>
       {opti.section && (
-        <div className="about-section">
+        <div className="about-section" {...pa('section')}>
           <OptimizelyComponent opti={opti.section} />
         </div>
       )}
