@@ -14,7 +14,7 @@ importers:
         specifier: ^7.25.9
         version: 7.25.9(@babel/core@7.26.10)
       '@episerver/cms-sdk':
-        specifier: workspace:^0.1.0-alpha.3
+        specifier: workspace:^0.1.0-alpha.5
         version: link:../optimizely-cms-sdk
       '@inquirer/prompts':
         specifier: ^7.4.0
@@ -85,7 +85,7 @@ importers:
   samples/nextjs-template:
     dependencies:
       '@episerver/cms-sdk':
-        specifier: workspace:^0.1.0-alpha.4
+        specifier: workspace:^0.1.0-alpha.5
         version: link:../../packages/optimizely-cms-sdk
       next:
         specifier: 15.2.4
