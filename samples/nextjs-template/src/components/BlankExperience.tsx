@@ -17,9 +17,11 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 export default function BlankExperience({ opti }: Props) {
   return (
-    <OptimizelyExperience
-      nodes={opti.composition.nodes ?? []}
-      ComponentWrapper={ComponentWrapper}
-    />
+    <main className="blank-experience">
+      <OptimizelyExperience
+        nodes={opti.composition.nodes ?? []}
+        ComponentWrapper={ComponentWrapper}
+      />
+    </main>
   );
 }

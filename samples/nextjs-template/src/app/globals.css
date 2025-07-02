@@ -394,6 +394,10 @@ a:hover span.animate {
   background-size: 100% 3px;
 }
 
+.blank-experience {
+  background-image: linear-gradient(180deg, #10141d 55.03%, #191e28 100%);
+}
+
 .blog-experience {
   display: flex;
   flex-direction: column;
