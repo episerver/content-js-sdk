@@ -3,8 +3,8 @@ import React from 'react';
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
 import {
-  initContentTypeRegistry,
   BlankExperienceContentType,
+  initContentTypeRegistry,
 } from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
@@ -49,9 +49,7 @@ import OfficeLocations, {
   OfficeContentType,
 } from '@/components/OfficeLocations';
 import Location, { LocationContentType } from '@/components/Location';
-import BlankExperience, {
-  BlankExperienceContentType,
-} from '@/components/BlankExperience';
+import BlankExperience from '@/components/BlankExperience';
 
 initContentTypeRegistry([
   BlankExperienceContentType,
