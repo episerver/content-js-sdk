@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { BlankExperienceContentType, Infer } from '@episerver/cms-sdk';
 import {
   ComponentContainerProps,
