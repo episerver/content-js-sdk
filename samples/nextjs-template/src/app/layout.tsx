@@ -2,7 +2,10 @@ import React from 'react';
 
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
-import { initContentTypeRegistry } from '@episerver/cms-sdk';
+import {
+  BlankExperienceContentType,
+  initContentTypeRegistry,
+} from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
 import Landing, {
@@ -46,11 +49,10 @@ import OfficeLocations, {
   OfficeContentType,
 } from '@/components/OfficeLocations';
 import Location, { LocationContentType } from '@/components/Location';
-import BlankExperience, {
-  BlankExperienceContentType,
-} from '@/components/BlankExperience';
+import BlankExperience from '@/components/BlankExperience';
 
 initContentTypeRegistry([
+  BlankExperienceContentType,
   LandingSectionContentType,
   LadningContentType,
   SmallFeatureGridContentType,

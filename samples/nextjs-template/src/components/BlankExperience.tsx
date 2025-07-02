@@ -1,15 +1,9 @@
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { BlankExperienceContentType, Infer } from '@episerver/cms-sdk';
 import {
   ComponentContainerProps,
-  getPreviewUtils,
   OptimizelyExperience,
+  getPreviewUtils,
 } from '@episerver/cms-sdk/react/server';
-
-export const BlankExperienceContentType = contentType({
-  key: 'BlankExperience',
-  displayName: 'Blank Experience',
-  baseType: '_experience',
-});
 
 type Props = {
   opti: Infer<typeof BlankExperienceContentType>;
@@ -22,9 +16,11 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 export default function BlankExperience({ opti }: Props) {
   return (
-    <OptimizelyExperience
-      nodes={opti.composition.nodes ?? []}
-      ComponentWrapper={ComponentWrapper}
-    />
+    <main className="blank-experience">
+      <OptimizelyExperience
+        nodes={opti.composition.nodes ?? []}
+        ComponentWrapper={ComponentWrapper}
+      />
+    </main>
   );
 }
