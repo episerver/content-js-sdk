@@ -1,5 +1,8 @@
 # Optimizely CMS JavaScript tools
 
+> [!WARNING]
+> This repository is not production ready and should not be used in production environments. The codebase is currently under active development and may contain incomplete features, breaking changes, and potential security vulnerabilities.
+
 JavaScript library and CLI app for Optimizely CMS
 
 ## Getting started
