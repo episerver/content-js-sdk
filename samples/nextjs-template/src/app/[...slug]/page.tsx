@@ -2,11 +2,6 @@ import { GraphClient } from '@episerver/cms-sdk';
 import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
 import React from 'react';
 
-export async function generateStaticParams() {
-  // TODO: Get this from the CMS instead of hard-coding
-  return [{ slug: ['en', 'obelisk'] }];
-}
-
 type Props = {
   params: Promise<{
     slug: string[];
