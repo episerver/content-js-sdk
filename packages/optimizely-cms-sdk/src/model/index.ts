@@ -1,6 +1,6 @@
 import { BuildConfig } from './buildConfig.js';
 import { AnyContentType } from './contentTypes.js';
-import { DisplayTemplate } from './displayTemplates.js';
+import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
 
 /** Defines a Optimizely CMS content type */
 export function contentType<T extends AnyContentType>(
@@ -10,7 +10,7 @@ export function contentType<T extends AnyContentType>(
 }
 
 /** Defines a Optimizely CMS display template */
-export function displayTemplate<T extends DisplayTemplate>(
+export function displayTemplate<T extends DisplayTemplateVariant>(
   options: T
 ): T & { __type: 'displayTemplate' } {
   return { ...options, __type: 'displayTemplate' };
@@ -50,3 +50,4 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
 }
 
 export { init as initContentTypeRegistry } from './contentTypeRegistry.js';
+export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';

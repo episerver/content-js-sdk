@@ -5,6 +5,7 @@ import './globals.css';
 import {
   BlankExperienceContentType,
   initContentTypeRegistry,
+  initDisplayTemplateRegistry,
 } from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
@@ -13,6 +14,7 @@ import Landing, {
 } from '@/components/Landing';
 import LandingSection, {
   LandingSectionContentType,
+  LandingSectionDisplayTemplate,
 } from '@/components/LandingSection';
 import SmallFeatureGrid, {
   SmallFeatureGridContentType,
@@ -97,6 +99,8 @@ initReactComponentRegistry({
     BlankExperience,
   },
 });
+
+initDisplayTemplateRegistry([LandingSectionDisplayTemplate]);
 
 const serifFont = Bodoni_Moda({
   variable: '--font-serif',
