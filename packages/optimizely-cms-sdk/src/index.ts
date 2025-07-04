@@ -6,6 +6,7 @@ export {
   isContentType,
   isDisplayTemplate,
   initContentTypeRegistry,
+  initDisplayTemplateRegistry,
 } from './model/index.js';
 export { GraphClient, getFilterFromPath } from './graph/index.js';
 export { createQuery } from './graph/createQuery.js';
