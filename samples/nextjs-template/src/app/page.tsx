@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 export default function Home() {
   return (
     <>
@@ -8,7 +6,7 @@ export default function Home() {
         <p>
           To see some content in this site, create content in the CMS and go to
           <code>/[locale]/[slug]</code>, where locale is the localization (for
-          example "en") and slug is the path of the content
+          example &quot;en&quot;) and slug is the path of the content
         </p>
       </main>
     </>
