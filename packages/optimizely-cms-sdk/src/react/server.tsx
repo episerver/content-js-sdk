@@ -8,8 +8,11 @@ import {
   ExperienceStructureNode,
   ExperienceNode,
   ExperienceComponentNode,
+  DisplaySettingsType,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
+import { parseDisplaySettings } from '../model/displayTemplates.js';
+import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -30,14 +33,19 @@ type Props = {
     __typename: string;
     __context?: { edit: boolean; preview_token: string };
   };
+  componentKey?: string;
 };
 
-export async function OptimizelyComponent({ opti, ...props }: Props) {
+export async function OptimizelyComponent({
+  opti,
+  componentKey,
+  ...props
+}: Props) {
   if (!componentRegistry) {
     throw new Error('You should call `initReactComponentRegistry` first');
   }
 
-  const contentType = opti.__typename;
+  const contentType = componentKey ?? opti.__typename;
   const Component = await componentRegistry.getComponent(contentType);
 
   if (!Component) {
@@ -55,10 +63,12 @@ export type StructureContainerProps = {
   node: ExperienceStructureNode;
   children: React.ReactNode;
   index?: number;
+  displaySettings?: Record<string, string>;
 };
 export type ComponentContainerProps = {
   node: ExperienceComponentNode;
   children: React.ReactNode;
+  displaySettings?: Record<string, string>;
 };
 export type StructureContainer = (
   props: StructureContainerProps
@@ -75,11 +85,20 @@ export function OptimizelyExperience({
   ComponentWrapper?: ComponentContainer;
 }) {
   return nodes.map((node) => {
+    // get component key(tag) from the display template
+    const key = getDisplayTemplateTag(node.displayTemplateKey);
+    // get the parsed display settings (stlyes, classes etc.)
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
+
     if (isComponentNode(node)) {
       const Wrapper = ComponentWrapper ?? React.Fragment;
       return (
-        <Wrapper node={node} key={node.key}>
-          <OptimizelyComponent opti={node.component} />
+        <Wrapper
+          node={node}
+          key={node.key}
+          displaySettings={parsedDisplaySettings}
+        >
+          <OptimizelyComponent opti={node.component} componentKey={key} />
         </Wrapper>
       );
     }
@@ -91,13 +110,21 @@ export function OptimizelyExperience({
       return <div>???</div>;
     }
 
-    const Component = componentRegistry.getComponent(type);
+    // If a display template key is provided, use it to retrieve the corresponding component.
+    // Otherwise, fall back to using the node type as the key to identify the component.
+    const Component = componentRegistry.getComponent(key ?? type);
 
     if (!Component) {
       throw new Error(`No component defined for content type ${type}`);
     }
 
-    return <Component key={node.key} opti={node} />;
+    return (
+      <Component
+        key={node.key}
+        opti={node}
+        displaySettings={parsedDisplaySettings}
+      />
+    );
   });
 }
 
@@ -109,14 +136,24 @@ export function OptimizelyGridSection({
   nodes?: ExperienceNode[];
   row: StructureContainer;
   column: StructureContainer;
+  displaySettings?: DisplaySettingsType[];
 }) {
   if (!nodes) {
     // TODO: Handle beter
     throw new Error('Nodes must be an array');
   }
   return nodes.map((node, i) => {
+    // get component key(tag) from the display template
+    const key = getDisplayTemplateTag(node.displayTemplateKey);
+
     if (isComponentNode(node)) {
-      return <OptimizelyComponent key={node.key} opti={node.component} />;
+      return (
+        <OptimizelyComponent
+          key={node.key}
+          opti={node.component}
+          componentKey={key}
+        />
+      );
     }
 
     const { nodes, nodeType } = node;
@@ -125,9 +162,16 @@ export function OptimizelyGridSection({
 
     // TODO: default component
     const Component = mapper[nodeType] ?? React.Fragment;
+    // get the parsed display settings (stlyes, classes etc.)
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     return (
-      <Component node={node} index={i} key={node.key}>
+      <Component
+        node={node}
+        index={i}
+        key={node.key}
+        displaySettings={parsedDisplaySettings}
+      >
         <OptimizelyGridSection row={row} column={column} nodes={nodes} />
       </Component>
     );
