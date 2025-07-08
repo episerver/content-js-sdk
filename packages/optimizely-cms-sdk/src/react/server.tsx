@@ -34,11 +34,13 @@ type Props = {
     __context?: { edit: boolean; preview_token: string };
   };
   componentKey?: string;
+  displaySettings?: Record<string, string>;
 };
 
 export async function OptimizelyComponent({
   opti,
   componentKey,
+  displaySettings,
   ...props
 }: Props) {
   if (!componentRegistry) {
@@ -56,7 +58,9 @@ export async function OptimizelyComponent({
     ...opti,
   };
 
-  return <Component opti={optiProps} {...props} />;
+  return (
+    <Component opti={optiProps} {...props} displaySettings={displaySettings} />
+  );
 }
 
 export type StructureContainerProps = {
@@ -145,6 +149,8 @@ export function OptimizelyGridSection({
   return nodes.map((node, i) => {
     // get component key(tag) from the display template
     const key = getDisplayTemplateTag(node.displayTemplateKey);
+    // get the parsed display settings (stlyes, classes etc.)
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
       return (
@@ -152,6 +158,7 @@ export function OptimizelyGridSection({
           key={node.key}
           opti={node.component}
           componentKey={key}
+          displaySettings={parsedDisplaySettings}
         />
       );
     }
@@ -162,8 +169,6 @@ export function OptimizelyGridSection({
 
     // TODO: default component
     const Component = mapper[nodeType] ?? React.Fragment;
-    // get the parsed display settings (stlyes, classes etc.)
-    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     return (
       <Component
