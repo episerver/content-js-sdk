@@ -39,7 +39,13 @@ import BlogExperience, {
 } from '@/components/BlogExperience';
 import BlogCard, { BlogCardContentType } from '@/components/BlogCard';
 import Banner, { BannerContentType } from '@/components/Banner';
-import Tile, { TileContentType } from '@/components/Tile';
+import Tile, {
+  SquarTile,
+  SquarTileDisplayTemplate,
+  TileColumnDisplayTemplate,
+  TileContentType,
+  TileRowDisplayTemplate,
+} from '@/components/Tile';
 import AboutExperience, {
   AboutExperienceContentType,
 } from '@/components/AboutExperience';
@@ -97,10 +103,16 @@ initReactComponentRegistry({
     OfficeLocations,
     Location,
     BlankExperience,
+    SquarTile,
   },
 });
 
-initDisplayTemplateRegistry([LandingSectionDisplayTemplate]);
+initDisplayTemplateRegistry([
+  TileRowDisplayTemplate,
+  TileColumnDisplayTemplate,
+  LandingSectionDisplayTemplate,
+  SquarTileDisplayTemplate,
+]);
 
 const serifFont = Bodoni_Moda({
   variable: '--font-serif',

@@ -71,26 +71,55 @@ export const TileColumnDisplayTemplate = displayTemplate({
   },
 });
 
+export const SquarTileDisplayTemplate = displayTemplate({
+  key: 'SquarTileDisplayTemplate',
+  isDefault: false,
+  displayName: 'SquarTileDisplayTemplate',
+  baseType: '_component',
+  settings: {
+    color: {
+      editor: 'select',
+      displayName: 'Description font color',
+      sortOrder: 0,
+      choices: {
+        yellow: {
+          displayName: 'Yellow',
+          sortOrder: 1,
+        },
+        green: {
+          displayName: 'Green',
+          sortOrder: 2,
+        },
+        orange: {
+          displayName: 'Orange',
+          sortOrder: 3,
+        },
+      },
+    },
+  },
+  tag: SquarTile.name,
+});
+
 type Props = {
   opti: Infer<typeof TileContentType>;
+  displaySettings?: Record<string, string>;
 };
 
 export default function Tile({ opti }: Props) {
   return (
     <div className="tile">
-      <div>Base Tile</div>
       <h1>{opti.title}</h1>
       <p>{opti.description}</p>
     </div>
   );
 }
 
-export function TileA({ opti }: Props) {
+// This is a specific tile component that uses the SquarTileDisplayTemplate
+export function SquarTile({ opti, displaySettings }: Props) {
   return (
-    <div className="tile">
-      <div>TileA</div>
+    <div className="squarTile">
       <h4>{opti.title}</h4>
-      <p>{opti.description}</p>
+      <p style={{ color: displaySettings?.color }}>{opti.description}</p>
     </div>
   );
 }

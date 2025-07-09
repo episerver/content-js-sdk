@@ -50,7 +50,6 @@ export const LandingSectionDisplayTemplate = displayTemplate({
       },
     },
   },
-  tag: LandingSection.name,
 });
 
 type Props = {
