@@ -19,7 +19,6 @@ describe('parseDisplaySettings', () => {
     const result = parseDisplaySettings(input);
     expect(result).toEqual({
       layout: 'grid',
-      theme: undefined,
     });
   });
 
