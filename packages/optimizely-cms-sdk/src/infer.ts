@@ -80,6 +80,11 @@ type InferProps<T extends AnyContentType> = T extends {
 // Special fields for Experience
 export type ExperienceNode = ExperienceComponentNode | ExperienceStructureNode;
 
+export type DisplaySettingsType = {
+  key: string;
+  value: string;
+};
+
 export type ExperienceCompositionNode = {
   /** Internal node type. Can be `CompositionStructureNode` or `CompositionComponentNode` */
   __typename: string;
@@ -90,10 +95,8 @@ export type ExperienceCompositionNode = {
 
   key: string;
   displayName: string;
-  displaySettings: {
-    key: string;
-    value: string;
-  }[];
+  displayTemplateKey: string;
+  displaySettings: DisplaySettingsType[];
 };
 
 export type ExperienceStructureNode = ExperienceCompositionNode & {

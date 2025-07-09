@@ -559,6 +559,34 @@ a:hover span.animate {
   margin: 0;
 }
 
+.squarTile {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 0; /* Changed to square edges */
+  border: 1px solid #ddd;
+  background-color: #ffffff;
+  min-height: 240px;
+}
+
+.squarTile h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.squarTile p {
+  font-size: 1rem;
+  color: #555;
+  margin: 0;
+}
+
 .about-us {
   display: flex;
   flex-direction: column;

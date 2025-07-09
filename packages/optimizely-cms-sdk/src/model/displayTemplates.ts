@@ -1,10 +1,15 @@
-import { AnyContentType } from './contentTypes.js';
+import { DisplaySettingsType } from '../infer.js';
+import { BaseTypes } from './contentTypes.js';
 
-type NodeType = 'row' | 'column';
+// section node types
+export const NODE_TYPES = ['row', 'column'] as const;
 
-type EditorType = 'select' | 'checkbox';
+// cms editor types
+export const EDITOR_TYPE = ['select', 'checkbox'] as const;
 
-type BaseType = AnyContentType['baseType'];
+type NodeType = (typeof NODE_TYPES)[number];
+
+type EditorType = (typeof EDITOR_TYPE)[number];
 
 type NodeTemplate = {
   nodeType: NodeType;
@@ -13,7 +18,7 @@ type NodeTemplate = {
 };
 
 type BaseTemplate = {
-  baseType: BaseType;
+  baseType: BaseTypes | '_component';
   contentType?: never;
   nodeType?: never;
 };
@@ -47,7 +52,30 @@ type BaseDisplayTemplate = {
   displayName: string;
   isDefault: boolean;
   settings: SettingsType;
+  tag?: string; // Optional tag property to store the name of the React component
 };
 
-export type DisplayTemplate = BaseDisplayTemplate &
+export type DisplayTemplateVariant = BaseDisplayTemplate &
   (NodeTemplate | BaseTemplate | WithContentType);
+
+export type DisplayTemplate<T = DisplayTemplateVariant> = T & {
+  __type: 'displayTemplate';
+};
+
+export function parseDisplaySettings(
+  displaySettings?: DisplaySettingsType[]
+): Record<string, string> | undefined {
+  if (!displaySettings) {
+    return undefined; // Return undefined if displaySettings is not provided
+  }
+
+  const result: Record<string, string> = {}; // Initialize an empty object
+
+  // Iterate over the input array
+  for (const item of displaySettings) {
+    // Assign the value to the key in the result object
+    result[item.key] = item.value;
+  }
+
+  return result;
+}

@@ -5,6 +5,7 @@ import './globals.css';
 import {
   BlankExperienceContentType,
   initContentTypeRegistry,
+  initDisplayTemplateRegistry,
 } from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
@@ -13,6 +14,7 @@ import Landing, {
 } from '@/components/Landing';
 import LandingSection, {
   LandingSectionContentType,
+  LandingSectionDisplayTemplate,
 } from '@/components/LandingSection';
 import SmallFeatureGrid, {
   SmallFeatureGridContentType,
@@ -37,7 +39,13 @@ import BlogExperience, {
 } from '@/components/BlogExperience';
 import BlogCard, { BlogCardContentType } from '@/components/BlogCard';
 import Banner, { BannerContentType } from '@/components/Banner';
-import Tile, { TileContentType } from '@/components/Tile';
+import Tile, {
+  SquarTile,
+  SquarTileDisplayTemplate,
+  TileColumnDisplayTemplate,
+  TileContentType,
+  TileRowDisplayTemplate,
+} from '@/components/Tile';
 import AboutExperience, {
   AboutExperienceContentType,
 } from '@/components/AboutExperience';
@@ -95,8 +103,16 @@ initReactComponentRegistry({
     OfficeLocations,
     Location,
     BlankExperience,
+    SquarTile,
   },
 });
+
+initDisplayTemplateRegistry([
+  TileRowDisplayTemplate,
+  TileColumnDisplayTemplate,
+  LandingSectionDisplayTemplate,
+  SquarTileDisplayTemplate,
+]);
 
 const serifFont = Bodoni_Moda({
   variable: '--font-serif',
