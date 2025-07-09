@@ -1,80 +1,32 @@
-import { AnyContentType, extractKeyName } from '../service/utils.js';
-import { isKeyInvalid } from '../utils/validate.js';
+import { AnyContentType } from '../service/utils.js';
+import {
+  transformProperties,
+  validateContentTypeKey,
+} from '../utils/mapping.js';
 
-export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
-  return contentTypes.map((contentType) => {
-    if (isKeyInvalid(contentType.key)) {
-      throw new Error(
-        `❌ [optimizely-cms-cli] Invalid content type key: "${contentType.key}". Keys must be alphanumeric and cannot start with a special character or number.`
-      );
-    }
-    // Spread the contentType as extract properties
-    const { properties = {} } = contentType;
+/**
+ * Transforms a content type object to a manifest format.
+ * Validates the content type key and formats its properties.
+ * @param contentType
+ * @returns
+ */
+function transformContentType(contentType: AnyContentType): any {
+  validateContentTypeKey(contentType.key);
 
-    // Transform properties via a single reduce
-    const formattedProperties = Object.entries(properties).reduce(
-      (acc, [key, value]) => {
-        let updatedValue = { ...value };
+  const { properties = {} } = contentType;
+  const formattedProperties = transformProperties(properties);
 
-        if (updatedValue.type === 'component') {
-          (updatedValue.contentType as any) = updatedValue.contentType.key;
-        }
-
-        // If "enum" exists, set format to "selectOne"
-        if (Object.hasOwn(updatedValue, 'enum')) {
-          updatedValue.format = 'selectOne';
-        }
-
-        // If its a content area and items are of type "link",
-        // set format to "LinkCollection"
-        if (
-          updatedValue.type === 'array' &&
-          updatedValue.items.type === 'link'
-        ) {
-          updatedValue.format = 'LinkCollection';
-        }
-
-        // If type "array", "content", "contentReference", update and normalizes its "allowedTypes" and "restrictedTypes"
-        updatedValue = mapAllowedRestrictedTypes(updatedValue);
-
-        acc[key] = updatedValue;
-        return acc;
-      },
-      {} as Record<string, any>
-    );
-
-    return {
-      ...contentType,
-      properties: formattedProperties,
-    };
-  });
+  return {
+    ...contentType,
+    properties: formattedProperties,
+  };
 }
 
 /**
- * Recursively maps and normalizes `allowedTypes` and `restrictedTypes`
- * and handles nested `items` when the type is "array".
- * @param updatedValue - The schema object to transform.
- * @returns The same object, with allowed/restricted types normalized.
+ * Maps an array of content types to a manifest format.
+ * @param contentTypes - Array of content types to transform.
+ * @returns An array of transformed content types.
  */
-function mapAllowedRestrictedTypes(updatedValue: any) {
-  // Recursively handle nested 'items' if it's an array
-  if (updatedValue.type === 'array' && updatedValue.items) {
-    updatedValue.items = mapAllowedRestrictedTypes(updatedValue.items);
-  }
-
-  if (['contentReference', 'content'].includes(updatedValue.type)) {
-    if (Array.isArray(updatedValue.allowedTypes)) {
-      updatedValue.allowedTypes = updatedValue.allowedTypes.map(
-        extractKeyName
-      ) as any;
-    }
-
-    if (Array.isArray(updatedValue.restrictedTypes)) {
-      updatedValue.restrictedTypes = updatedValue.restrictedTypes.map(
-        extractKeyName
-      ) as any;
-    }
-  }
-
-  return updatedValue;
+export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
+  return contentTypes.map(transformContentType);
 }
