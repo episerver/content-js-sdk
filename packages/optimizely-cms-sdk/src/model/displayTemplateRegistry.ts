@@ -20,7 +20,7 @@ export function getDisplayTemplateTag(
 }
 
 /** Get all the DisplayTemplates */
-export function getAllisplayTemplates(): DisplayTemplate[] {
+export function getAllDisplayTemplates(): DisplayTemplate[] {
   return _registry;
 }
 
