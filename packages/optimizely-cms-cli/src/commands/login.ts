@@ -1,7 +1,5 @@
 import { Command, Flags } from '@oclif/core';
 import ora from 'ora';
-import chalk from 'chalk';
-import Conf from 'conf';
 import { readEnvCredentials } from '../service/config.js';
 import { getToken } from '../service/cmsRestClient.js';
 
@@ -13,13 +11,6 @@ export default class Login extends Command {
   };
 
   public async run(): Promise<void> {
-    const { flags } = await this.parse(Login);
-    const conf = new Conf({ projectName: 'optimizely' });
-
-    if (flags.verbose) {
-      console.log('Credentials file: ' + chalk.bold(conf.path));
-    }
-
     const credentials = readEnvCredentials();
 
     if (credentials) {
