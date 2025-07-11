@@ -134,7 +134,7 @@ function handleContentReferenceType(property: any): any {
 /**
  * Transforms a content reference object to a manifest format.
  * @param reference - The content reference object to transform.
- * @returns
+ * @returns The updated property object or the original property.
  */
 function transformContentReference(reference: any): any {
   if (hasContentTypeWithKey(reference)) {
@@ -149,7 +149,7 @@ function transformContentReference(reference: any): any {
 /**
  * Checks if the object has a contentType with a key.
  * @param obj - The object to check.
- * @returns
+ * @returns boolean - True if the object has a contentType with a key, false otherwise.
  */
 function hasContentTypeWithKey(obj: any): boolean {
   return (

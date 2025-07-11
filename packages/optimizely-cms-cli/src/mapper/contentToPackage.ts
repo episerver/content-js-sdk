@@ -7,7 +7,7 @@ import {
 /**
  * Transforms a content type object to a manifest format.
  * Validates the content type key and formats its properties.
- * @param contentType
+ * @param contentType - The content type object to transform.
  * @returns
  */
 function transformContentType(contentType: AnyContentType): any {
