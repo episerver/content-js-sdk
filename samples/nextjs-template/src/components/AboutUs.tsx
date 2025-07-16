@@ -1,4 +1,5 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
+import { getPreviewUtils } from '@episerver/cms-sdk/react/server';
 
 export const AboutUsContentType = contentType({
   key: 'AboutUs',
@@ -24,6 +25,7 @@ export type AboutUsProps = {
 };
 
 export default function AboutUs({ opti }: AboutUsProps) {
+  const { pa } = getPreviewUtils(opti);
   return (
     <section className="about-us">
       {opti.image && (
@@ -34,7 +36,10 @@ export default function AboutUs({ opti }: AboutUsProps) {
       <h2>{opti.heading}</h2>
       <div className="about-us-content">
         <div className="about-us-text">
-          <div dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }} />
+          <div
+            {...pa('body')}
+            dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
+          />
         </div>
       </div>
     </section>
