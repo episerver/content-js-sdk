@@ -269,7 +269,7 @@ section > header {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: 3rem;
-
+  color: #f9f9f9;
   .row {
     display: grid;
     gap: 1rem;
