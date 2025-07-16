@@ -1,4 +1,5 @@
 import { contentType, displayTemplate, Infer } from '@episerver/cms-sdk';
+import { getPreviewUtils } from '@episerver/cms-sdk/react/server';
 
 export const TileContentType = contentType({
   key: 'Tile',
@@ -106,20 +107,24 @@ type Props = {
 };
 
 export default function Tile({ opti }: Props) {
+  const { pa } = getPreviewUtils(opti);
   return (
     <div className="tile">
-      <h1>{opti.title}</h1>
-      <p>{opti.description}</p>
+      <h1 {...pa('title')}>{opti.title}</h1>
+      <p {...pa('description')}>{opti.description}</p>
     </div>
   );
 }
 
 // This is a specific tile component that uses the SquarTileDisplayTemplate
 export function SquarTile({ opti, displaySettings }: Props) {
+  const { pa } = getPreviewUtils(opti);
   return (
     <div className="squarTile">
-      <h4>{opti.title}</h4>
-      <p style={{ color: displaySettings?.color }}>{opti.description}</p>
+      <h4 {...pa('title')}>{opti.title}</h4>
+      <p style={{ color: displaySettings?.color }} {...pa('description')}>
+        {opti.description}
+      </p>
     </div>
   );
 }

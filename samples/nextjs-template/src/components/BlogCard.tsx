@@ -1,4 +1,5 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
+import { getPreviewUtils } from '@episerver/cms-sdk/react/server';
 
 export const BlogCardContentType = contentType({
   key: 'BlogCard',
@@ -29,13 +30,18 @@ type Props = {
 };
 
 export default function BlogCard({ opti }: Props) {
+  const { pa } = getPreviewUtils(opti);
   return (
     <article className="blog-card">
       <h2>{opti.title}</h2>
-      <p className="subtitle">{opti.subtitle}</p>
+      <p className="subtitle" {...pa('subtitle')}>
+        {opti.subtitle}
+      </p>
       <div className="blog-meta">
-        <span className="author">{opti.author}</span>
-        <span className="date">
+        <span className="author" {...pa('author')}>
+          {opti.author}
+        </span>
+        <span className="date" {...pa('date')}>
           {opti.date ? new Date(opti.date).toLocaleDateString() : 'N/A'}
         </span>
       </div>
