@@ -123,6 +123,7 @@ export class GraphClient {
       previewToken
     );
 
+    console.log('fetchContentType :this ', JSON.stringify(this));
     console.log('fetchContentType :filter ', JSON.stringify(filter));
     console.log('fetchContentType : data ', JSON.stringify(data));
 
