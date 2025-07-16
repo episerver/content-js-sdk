@@ -103,6 +103,7 @@ export class GraphClient {
 
     if (!response.ok) {
       // TODO: Handle HTTP errors
+      console.error('HTTP errors', JSON.stringify(response));
     }
 
     // TODO:
@@ -110,6 +111,7 @@ export class GraphClient {
 
     if (json.errors) {
       // TODO: handle errors sent by Graph
+      console.error('GraphQL errors', JSON.stringify(json.errors));
     }
 
     return json.data;
