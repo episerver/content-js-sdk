@@ -123,6 +123,9 @@ export class GraphClient {
       previewToken
     );
 
+    console.log('fetchContentType :filter ', filter);
+    console.log('fetchContentType : data ', JSON.stringify(data));
+
     return data._Content?.item?._metadata?.types?.[0];
   }
 
@@ -138,6 +141,8 @@ export class GraphClient {
     const query = createQuery(contentTypeName);
 
     const response = await this.request(query, { filter });
+
+    console.log('fetchContent', JSON.stringify(response));
 
     return response?._Content?.item;
   }
