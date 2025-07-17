@@ -98,7 +98,7 @@ export const SquarTileDisplayTemplate = displayTemplate({
       },
     },
   },
-  tag: SquarTile.name,
+  tag: 'SquarTile',
 });
 
 type Props = {
