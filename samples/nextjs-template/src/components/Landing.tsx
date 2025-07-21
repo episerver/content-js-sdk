@@ -50,9 +50,11 @@ export default function LandingComponent({ opti }: Props) {
           </div>
         </header>
       )}
-      {opti.sections?.map((section, i) => (
-        <OptimizelyComponent key={i} opti={section} />
-      ))}
+      <div {...pa('sections')}>
+        {opti.sections?.map((section, i) => (
+          <OptimizelyComponent key={i} opti={section} />
+        ))}
+      </div>
     </main>
   );
 }
