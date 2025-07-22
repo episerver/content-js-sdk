@@ -8,12 +8,9 @@ type Props = {
 };
 
 export default async function Page({ searchParams }: Props) {
-  const client = new GraphClient(
-    process.env.NEXT_PUBLIC_OPTIMIZELY_GRAPH_SINGLE_KEY!,
-    {
-      graphUrl: process.env.NEXT_PUBLIC_OPTIMIZELY_GRAPH_URL,
-    }
-  );
+  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
+    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
+  });
 
   const response = await client.fetchPreviewContent(
     // TODO: check types in runtime properly
@@ -23,7 +20,7 @@ export default async function Page({ searchParams }: Props) {
   return (
     <>
       <Script
-        src={`${process.env.NEXT_PUBLIC_OPTIMIZELY_CMS_HOST}/util/javascript/communicationinjector.js`}
+        src={`${process.env.OPTIMIZELY_CMS_HOST}/util/javascript/communicationinjector.js`}
       ></Script>
       <PreviewComponent />
       <OptimizelyComponent opti={response} />
