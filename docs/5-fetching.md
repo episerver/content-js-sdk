@@ -69,21 +69,14 @@ type Props = {
 export default async function Page({ params }: Props) {
   const { slug } = await params;
 
-  const client = new GraphClient(
-    process.env.NEXT_PUBLIC_OPTIMIZELY_GRAPH_SINGLE_KEY!,
-    {
-      graphUrl: process.env.NEXT_PUBLIC_OPTIMIZELY_GRAPH_URL,
-    }
-  );
+  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
+    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
+  });
   const content = await client.fetchContent(`/${slug.join('/')}/`);
 
   return <pre>{JSON.stringify(content, null, 2)}</pre>;
 }
 ```
-
-> **Note**  
-> In Next.js, prefix environmental variables with `NEXT_PUBLIC_` to expose them to the browser.  
-> Example: `OPTIMIZELY_GRAPH_SINGLE_KEY` becomes `NEXT_PUBLIC_OPTIMIZELY_GRAPH_SINGLE_KEY` in `.env`.
 
 ## 4. Start the app
 
