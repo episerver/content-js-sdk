@@ -19,18 +19,18 @@ export type AnyContentType = ContentTypes.AnyContentType;
 /** extract DisplayTemplate */
 export type DisplayTemplate = DisplayTemplates.DisplayTemplate;
 
-/** extract ContentOrMediaType */
-type ContentOrMediaType = ContentTypes.ContentOrMediaType;
+/** extract PermittedTypes */
+type PermittedTypes = ContentTypes.PermittedTypes;
 
 /** create Allowed/Restricted type */
 export type AllowedOrRestrictedType = {
   type: string;
   items: {
-    allowedTypes?: ContentOrMediaType[];
-    restrictedTypes?: ContentOrMediaType[];
+    allowedTypes?: PermittedTypes[];
+    restrictedTypes?: PermittedTypes[];
   };
-  allowedTypes?: ContentOrMediaType[];
-  restrictedTypes?: ContentOrMediaType[];
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
 };
 
 export type FoundContentType = {
@@ -146,10 +146,10 @@ export async function readFromPath(configPath: string) {
 }
 
 /**
- * Extracts the key name from a ContentOrMediaType.
+ * Extracts the key name from a PermittedTypes.
  * @param input - A value that can either be a string (MediaStringTypes) or a ContentType object.
  * @returns The extracted key as a string.
  */
-export function extractKeyName(input: ContentOrMediaType): string {
+export function extractKeyName(input: PermittedTypes): string {
   return typeof input === 'string' ? input : input.key;
 }

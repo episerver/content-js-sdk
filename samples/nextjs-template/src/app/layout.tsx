@@ -40,6 +40,7 @@ import BlogExperience, {
 import BlogCard, { BlogCardContentType } from '@/components/BlogCard';
 import Banner, { BannerContentType } from '@/components/Banner';
 import Tile, {
+  SpecialContentType,
   SquarTile,
   SquarTileDisplayTemplate,
   TileColumnDisplayTemplate,
@@ -80,6 +81,7 @@ initContentTypeRegistry([
   OfficeContentType,
   LocationContentType,
   BlankExperienceContentType,
+  SpecialContentType,
 ]);
 
 initReactComponentRegistry({

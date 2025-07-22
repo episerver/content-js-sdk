@@ -16,6 +16,25 @@ export const TileContentType = contentType({
   compositionBehaviors: ['elementEnabled'],
 });
 
+export const SpecialContentType = contentType({
+  key: 'SpecialContentType',
+  displayName: 'Special Content',
+  baseType: '_component',
+  properties: {
+    title: {
+      type: 'string',
+    },
+    subtitle: {
+      type: 'string',
+    },
+    blog: {
+      type: 'content',
+      allowedTypes: ['_component'],
+    },
+  },
+  compositionBehaviors: ['sectionEnabled'],
+});
+
 export const TileRowDisplayTemplate = displayTemplate({
   key: 'TileRowDisplayTemplate',
   isDefault: true,
