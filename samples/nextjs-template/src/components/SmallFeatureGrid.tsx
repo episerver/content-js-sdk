@@ -1,6 +1,9 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
 import { SmallFeatureContentType } from './SmallFeature';
-import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
+import {
+  getPreviewUtils,
+  OptimizelyComponent,
+} from '@episerver/cms-sdk/react/server';
 
 export const SmallFeatureGridContentType = contentType({
   key: 'SmallFeatureGrid',
@@ -22,8 +25,10 @@ type Props = {
 };
 
 export default function SmallFeatureGrid({ opti }: Props) {
+  const { pa } = getPreviewUtils(opti);
+
   return (
-    <div className="small-feature-grid">
+    <div className="small-feature-grid" {...pa('smallFeatures')}>
       {opti.smallFeatures?.map((feature, i) => (
         <OptimizelyComponent opti={feature} key={i} />
       ))}
