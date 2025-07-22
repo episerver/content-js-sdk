@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "vitest --typecheck"
   },
   "files": [
     "dist"
@@ -35,7 +36,8 @@
     "@types/node": "^18",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.1.1"
   },
   "bin": {
     "optimizely-cms-cli": "./bin/run.js"

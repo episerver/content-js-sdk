@@ -1,7 +1,7 @@
 # Optimizely CMS JavaScript tools
 
 > [!WARNING]
-> This repository is not production ready and should not be used in production environments. The codebase is currently under active development and may contain incomplete features, breaking changes, and potential security vulnerabilities.
+> We are excited for the beta release of our SaaS CMS Javascript SDK. This will be a growing library of tools to model, fetch, and render your content in SaaS CMS. This repository is still in beta and should not be used in production environments. We would appreciate any and all feedback as we work towards general availability.
 
 JavaScript library and CLI app for Optimizely CMS
 

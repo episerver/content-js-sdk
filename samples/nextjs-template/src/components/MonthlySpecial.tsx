@@ -1,6 +1,9 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
 import { BlogCardContentType } from './BlogCard';
-import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
+import {
+  getPreviewUtils,
+  OptimizelyComponent,
+} from '@episerver/cms-sdk/react/server';
 
 export const MonthlySpecialContentType = contentType({
   key: 'MonthlySpecial',
@@ -26,13 +29,18 @@ type Props = {
 };
 
 export default function MonthlySpecial({ opti }: Props) {
+  const { pa } = getPreviewUtils(opti);
   return (
     <div className="monthly-special">
       <div className="monthly-special__content">
-        <h1 className="monthly-special__title">{opti.title}</h1>
-        <p className="monthly-special__subtitle">{opti.subtitle}</p>
+        <h1 className="monthly-special__title" {...pa('title')}>
+          {opti.title}
+        </h1>
+        <p className="monthly-special__subtitle" {...pa('subtitle')}>
+          {opti.subtitle}
+        </p>
       </div>
-      <div className="monthly-special__blog">
+      <div className="monthly-special__blog" {...pa('blog')}>
         {opti.blog && <OptimizelyComponent opti={opti.blog} />}
       </div>
     </div>

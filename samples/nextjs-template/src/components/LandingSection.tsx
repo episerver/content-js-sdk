@@ -28,7 +28,7 @@ export const LandingSectionContentType = contentType({
   compositionBehaviors: ['sectionEnabled'],
 });
 
-export const DisplayTemplate = displayTemplate({
+export const LandingSectionDisplayTemplate = displayTemplate({
   key: 'LandingSectionDisplayTemplate',
   isDefault: true,
   displayName: 'LandingSectionDisplayTemplate',
