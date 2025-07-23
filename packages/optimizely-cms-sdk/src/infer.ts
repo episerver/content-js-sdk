@@ -117,18 +117,19 @@ type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
   : {};
 
 /** Adds TS fields specific to `Section` */
-type InferSection = Prettify<{
-  key: string;
-  nodes: ExperienceNode[];
+type InferSection<T extends AnyContentType> = T extends SectionContentType
+  ? {
+      key: string;
+      nodes: ExperienceNode[];
 
-  __typename: string;
-  __context?: { edit: boolean; preview_token: string };
-}>;
+      __typename: string;
+      __context?: { edit: boolean; preview_token: string };
+    }
+  : {};
 
 /** Infers the TypeScript type for a content type */
 type InferFromContentType<T extends AnyContentType> = Prettify<
-  // Note: Add `InferSection` here when users can create their own Section
-  InferredBase & InferProps<T> & InferExperience<T>
+  InferredBase & InferProps<T> & InferExperience<T> & InferSection<T>
 >;
 
 /** Infers the Graph response types of `T`. `T` can be a content type or a property */
@@ -136,5 +137,4 @@ type InferFromContentType<T extends AnyContentType> = Prettify<
 export type Infer<T> =
   T extends AnyContentType ? InferFromContentType<T>
 : T extends AnyProperty ? InferFromProperty<T>
-: T extends SectionContentType ? InferSection
 : unknown;
