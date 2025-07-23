@@ -1,9 +1,15 @@
-import { createQuery } from './createQuery.js';
 import {
   GraphContentResponseError,
   GraphHttpResponseError,
   GraphResponseError,
 } from './error.js';
+import { createFragment, createQuery } from './createQuery.js';
+import {
+  filterHeading,
+  filterVariables,
+  GraphQueryFilters,
+} from './filters.js';
+import { metadataQueryBody, MetadataResponse } from './metadata.js';
 
 /** Options for Graph */
 type GraphOptions = {
@@ -159,6 +165,73 @@ export class GraphClient {
 
     return data._Content?.item?._metadata?.types?.[0];
   }
+
+  async getItem(filters: GraphQueryFilters) {
+    const metadata = await this.getItemMetadata(filters);
+    const type = metadata?.types?.[0];
+
+    if (!type) {
+      throw new Error(`No content found`);
+    }
+
+    return this.getItemContent(type, filters);
+  }
+
+  async getItemMetadata(filters: GraphQueryFilters) {
+    const query = `
+      query GetItemMetadata(${filterVariables}) {
+        _Content(${filterHeading}) {
+          item {
+            ${metadataQueryBody}
+          }
+        }
+      }
+    `;
+    const response = await this.request(query, filters);
+
+    return response._Content?.item?._metadata as MetadataResponse;
+  }
+
+  async getItemContent(
+    contentTypeName: string,
+    filters: GraphQueryFilters = {}
+  ) {
+    const fragments = createFragment(contentTypeName);
+    const query = `
+      ${fragments.join('\n')}
+      query GetItemContent(${filterVariables}) {
+        _Content(${filterHeading}) {
+          item { __typename ${contentTypeName} }
+        }
+      }
+    `;
+
+    const response = await this.request(query, filters);
+
+    return response?._Content?.item;
+  }
+
+  async listItemsMetadata(filters: GraphQueryFilters = {}) {
+    const query = `
+      query ListItemsMetadata(${filterVariables}) {
+        _Content(${filterHeading}) {
+          items {
+            ${metadataQueryBody}
+          }
+        }
+      }
+    `;
+
+    const response = await this.request(query, filters);
+
+    return response._Content?.items?.map(
+      (item: any) => item?._metadata
+    ) as MetadataResponse[];
+  }
+
+  async listItemsContent() {}
+
+  async listItems(filter: GraphQueryFilters = {}) {}
 
   /** Fetches a content given its path */
   async fetchContent(path: string) {
