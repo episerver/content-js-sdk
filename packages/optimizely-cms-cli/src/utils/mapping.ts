@@ -1,5 +1,21 @@
-import { extractKeyName } from '../service/utils.js';
+import { AnyContentType, extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
+
+/**
+ * Parses the content type object to extract relevant information.
+ * It processes the `mayContainTypes` field to ensure it is an array of key names.
+ * @param contentType - The content type object to parse.
+ * @returns A simplified representation of the content type.
+ */
+export function parseChildContentType(contentType: AnyContentType): any {
+  const { mayContainTypes, ...rest } = contentType;
+  return {
+    ...rest,
+    mayContainTypes: Array.isArray(mayContainTypes)
+      ? mayContainTypes.map(extractKeyName)
+      : [],
+  };
+}
 
 /**
  * Transforms the properties of an object by applying a transformation function to each property value.

@@ -28,6 +28,7 @@ export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 type BaseContentType = {
   key: string;
   displayName?: string;
+  mayContainTypes?: ContentType[];
   properties?: Record<string, AnyProperty>;
 };
 
