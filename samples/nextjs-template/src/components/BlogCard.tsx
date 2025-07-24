@@ -33,7 +33,7 @@ export default function BlogCard({ opti }: Props) {
   const { pa } = getPreviewUtils(opti);
   return (
     <article className="blog-card">
-      <h2>{opti.title}</h2>
+      <h2 {...pa('title')}>{opti.title}</h2>
       <p className="subtitle" {...pa('subtitle')}>
         {opti.subtitle}
       </p>
