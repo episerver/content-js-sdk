@@ -1,4 +1,4 @@
-import { AnyContentType, ContentOrMediaType } from './contentTypes.js';
+import { AnyContentType, PermittedTypes } from './contentTypes.js';
 
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
@@ -69,14 +69,14 @@ export type FloatProperty = BaseProperty & {
 
 export type ContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
-  allowedTypes?: ContentOrMediaType[];
-  restrictedTypes?: ContentOrMediaType[];
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
 };
 
 export type ContentProperty = BaseProperty & {
   type: 'content';
-  allowedTypes?: ContentOrMediaType[];
-  restrictedTypes?: ContentOrMediaType[];
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
 };
 
 /**

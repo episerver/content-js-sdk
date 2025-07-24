@@ -2,7 +2,7 @@ import { ExperienceComponentNode, ExperienceNode } from '../infer.js';
 import {
   AnyContentType,
   MEDIA_BASE_TYPES,
-  ContentOrMediaType,
+  PermittedTypes,
   MediaStringTypes,
 } from '../model/contentTypes.js';
 
@@ -11,7 +11,7 @@ import {
  * @param t ContentType or Media type property
  * @returns Name of the ContentType or Media type
  */
-export function getKeyName(t: ContentOrMediaType | AnyContentType): string {
+export function getKeyName(t: PermittedTypes | AnyContentType): string {
   if (typeof t === 'string') return t;
   return t.key;
 }

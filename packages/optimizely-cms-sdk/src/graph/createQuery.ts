@@ -1,8 +1,9 @@
 import { AnyProperty } from '../model/properties.js';
 import {
   AnyContentType,
+  MAIN_BASE_TYPES,
   MediaStringTypes,
-  ContentOrMediaType,
+  PermittedTypes,
 } from '../model/contentTypes.js';
 import {
   getContentType,
@@ -149,9 +150,15 @@ function createExperienceFragments(visited: Set<string>): string[] {
   ];
 
   const experienceNodes = getCachedContentTypes()
-    .filter(
-      (c) => c.baseType === '_component' && c.compositionBehaviors?.length
-    )
+    .filter((c) => {
+      if (c.baseType === '_component') {
+        return (
+          'compositionBehaviors' in c &&
+          (c.compositionBehaviors?.length ?? 0) > 0
+        );
+      }
+      return false;
+    })
     .map((c) => c.key);
 
   // Get the required fragments
@@ -258,12 +265,12 @@ query FetchContent($filter: _ContentWhereInput) {
  * @returns An array of allowed content types for fragment generation.
  */
 function resolveAllowedTypes(
-  allowed: ContentOrMediaType[] | undefined,
-  restricted: ContentOrMediaType[] | undefined
-): (ContentOrMediaType | AnyContentType)[] {
+  allowed: PermittedTypes[] | undefined,
+  restricted: PermittedTypes[] | undefined
+): (PermittedTypes | AnyContentType)[] {
   const skip = new Set<string>();
   const seen = new Set<string>();
-  const result: (ContentOrMediaType | AnyContentType)[] = [];
+  const result: (PermittedTypes | AnyContentType)[] = [];
   const baseline = allowed?.length ? allowed : getCachedContentTypes();
 
   // If a CMS base media type ("_image", "_media" …) is restricted,
@@ -271,14 +278,15 @@ function resolveAllowedTypes(
   restricted?.forEach((r) => {
     const key = getKeyName(r);
     skip.add(key);
-    if (isBaseMediaType(key)) {
+    if (isBaseType(key)) {
       getContentTypeByBaseType(key).forEach((ct) => skip.add(ct.key));
     }
   });
 
-  const add = (ct: ContentOrMediaType | AnyContentType) => {
+  const add = (ct: PermittedTypes | AnyContentType) => {
     const key = getKeyName(ct);
-    if (skip.has(key) || seen.has(key)) return;
+    if (skip.has(key) || seen.has(key) || MAIN_BASE_TYPES.includes(key as any))
+      return;
     seen.add(key);
     result.push(ct);
   };
@@ -287,7 +295,7 @@ function resolveAllowedTypes(
     const key = getKeyName(entry);
 
     // If this entry is a base media type inject all matching custom media‑types *before* it.
-    if (allowed?.length && isBaseMediaType(key)) {
+    if (allowed?.length && isBaseType(key)) {
       getContentTypeByBaseType(key).forEach(add);
     }
 
