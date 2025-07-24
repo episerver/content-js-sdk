@@ -83,13 +83,21 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     });
 
     if (response.error) {
-      spinner.fail('Error');
-      console.error(
-        'Error %s %s (%s)',
-        response.error.status,
-        response.error.title,
-        response.error.code
-      );
+      if (response.error.status === 404) {
+        spinner.fail('Feature Not Active');
+        console.error(
+          'The requested "preview3" feature is not currently enabled for your environment. ' +
+            'Please contact your administrator or support to enable this functionality.'
+        );
+      } else {
+        spinner.fail('Error');
+        console.error(
+          'Error %s %s (%s)',
+          response.error.status,
+          response.error.title,
+          response.error.code
+        );
+      }
       console.error(response.error.detail);
       return;
     }
