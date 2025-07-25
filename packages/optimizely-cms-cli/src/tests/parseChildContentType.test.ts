@@ -42,7 +42,6 @@ describe('parseChildContentType', () => {
         "__type": "contentType",
         "baseType": "_component",
         "key": "example",
-        "mayContainTypes": [],
       }
     `);
   });

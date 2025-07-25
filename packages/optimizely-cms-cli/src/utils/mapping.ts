@@ -11,9 +11,9 @@ export function parseChildContentType(contentType: AnyContentType): any {
   const { mayContainTypes, ...rest } = contentType;
   return {
     ...rest,
-    mayContainTypes: Array.isArray(mayContainTypes)
-      ? mayContainTypes.map(extractKeyName)
-      : [],
+    ...(Array.isArray(mayContainTypes) && {
+      mayContainTypes: mayContainTypes.map(extractKeyName),
+    }),
   };
 }
 
