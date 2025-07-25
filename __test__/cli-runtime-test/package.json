@@ -1,0 +1,22 @@
+{
+  "name": "cli-runtime-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@episerver/cms-cli": "workspace:*",
+    "@episerver/cms-sdk": "workspace:*",
+    "react": "^19.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.7.0",
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,18 @@
+import React from 'react';
+import { contentType } from '@episerver/cms-sdk';
+import { getString } from './something.js';
+
+export const contentTypeWithRegex = contentType({
+  key: 'ct1',
+  baseType: '_page',
+  displayName: 'CT1',
+  properties: {
+    p1: {
+      type: getString(),
+    },
+  },
+});
+
+export default function Hello() {
+  return <div>Hello world</div>;
+}
