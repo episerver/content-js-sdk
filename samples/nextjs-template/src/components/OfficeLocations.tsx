@@ -42,7 +42,7 @@ export default function OfficeLocations({ opti }: Props) {
       <p className="office-locations__subtitle" {...pa('subtitle')}>
         {opti.subtitle}
       </p>
-      <div className="office-locations__list">
+      <div className="office-locations__list" {...pa('offices')}>
         {(opti.offices ?? []).map((office, i) => (
           <OptimizelyComponent opti={office} key={i} />
         ))}

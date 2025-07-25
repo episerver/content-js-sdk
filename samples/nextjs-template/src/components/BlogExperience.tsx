@@ -48,7 +48,7 @@ export default function BlogExperience({ opti }: Props) {
         <h1 {...pa('title')}>{opti.title}</h1>
         <p {...pa('subtitle')}>{opti.subtitle}</p>
       </header>
-      <section className="blog-articles">
+      <section className="blog-articles" {...pa('articles')}>
         {opti?.articles?.map((article, index) => (
           <OptimizelyComponent key={index} opti={article} />
         ))}
