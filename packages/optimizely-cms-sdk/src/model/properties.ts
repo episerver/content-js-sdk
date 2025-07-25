@@ -42,6 +42,13 @@ export type ArrayItems =
 /** Represents the content type property "String" */
 export type StringProperty = BaseProperty & {
   type: 'string';
+
+  /**
+   * Regular expression.
+   *
+   * @example "\\d\\d\\d\\d-\\d\\d-\\d\\d"
+   */
+  pattern?: string;
   minLength?: number;
   maxLength?: number;
 } & WithEnum<string>;
