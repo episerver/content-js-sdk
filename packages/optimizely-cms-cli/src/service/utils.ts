@@ -108,7 +108,11 @@ async function compileAndImport(
     const f = await import(outUrl);
     return f;
   } catch (err) {
-    throw new Error('Error when importing the file (internal error).');
+    throw new Error(
+      `Error when importing the file at path "${outPath}": ${
+        (err as any).message
+      }`
+    );
   }
 }
 
