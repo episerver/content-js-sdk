@@ -267,6 +267,36 @@ export const ContentPage = contentType({
   },
 });
 
+export const LocationPage = contentType({
+  key: 'LocationPage',
+  displayName: 'LocationPage',
+  baseType: '_page',
+  properties: {
+    location_area: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: ['_component'],
+      },
+    },
+  },
+});
+
+export const ReviewPage = contentType({
+  key: 'ReviewPage',
+  displayName: 'ReviewPage',
+  baseType: '_page',
+  properties: {
+    location_area: {
+      type: 'array',
+      items: {
+        type: 'content',
+        restrictedTypes: ['_component'],
+      },
+    },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -289,4 +319,6 @@ export const allContentTypes: AnyContentType[] = [
   HeroContentType,
   FeedBackPage,
   ContentPage,
+  LocationPage,
+  ReviewPage,
 ];

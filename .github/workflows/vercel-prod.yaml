@@ -3,6 +3,8 @@ env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   OPTIMIZELY_GRAPH_SINGLE_KEY: ${{ secrets.OPTIMIZELY_GRAPH_SINGLE_KEY }}
+  OPTIMIZELY_CMS_HOST: ${{ secrets.OPTIMIZELY_CMS_HOST }}
+  OPTIMIZELY_GRAPH_URL: ${{ secrets.OPTIMIZELY_GRAPH_URL }}
 on:
   push:
     branches:
@@ -24,6 +26,8 @@ jobs:
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - name: Install dependencies
         run: pnpm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build packages
         run: pnpm build
       - name: Build Project Artifacts

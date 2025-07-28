@@ -28,7 +28,7 @@ export const LandingSectionContentType = contentType({
   compositionBehaviors: ['sectionEnabled'],
 });
 
-export const DisplayTemplate = displayTemplate({
+export const LandingSectionDisplayTemplate = displayTemplate({
   key: 'LandingSectionDisplayTemplate',
   isDefault: true,
   displayName: 'LandingSectionDisplayTemplate',
@@ -64,9 +64,11 @@ export default function LandingSection({ opti }: Props) {
         <h2 {...pa('heading')}>{opti.heading}</h2>
         <p {...pa('subtitle')}>{opti.subtitle}</p>
       </header>
-      {(opti.sections ?? []).map((section, i) => (
-        <OptimizelyComponent opti={section} key={i} />
-      ))}
+      <div {...pa('sections')}>
+        {(opti.sections ?? []).map((section, i) => (
+          <OptimizelyComponent opti={section} key={i} />
+        ))}
+      </div>
     </section>
   );
 }

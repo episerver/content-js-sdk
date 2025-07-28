@@ -1,4 +1,4 @@
-import { AnyContentType, ContentOrMediaType } from './contentTypes.js';
+import { AnyContentType, PermittedTypes } from './contentTypes.js';
 
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
@@ -42,6 +42,13 @@ export type ArrayItems =
 /** Represents the content type property "String" */
 export type StringProperty = BaseProperty & {
   type: 'string';
+
+  /**
+   * Regular expression.
+   *
+   * @example "\\d\\d\\d\\d-\\d\\d-\\d\\d"
+   */
+  pattern?: string;
   minLength?: number;
   maxLength?: number;
 } & WithEnum<string>;
@@ -69,14 +76,14 @@ export type FloatProperty = BaseProperty & {
 
 export type ContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
-  allowedTypes?: ContentOrMediaType[];
-  restrictedTypes?: ContentOrMediaType[];
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
 };
 
 export type ContentProperty = BaseProperty & {
   type: 'content';
-  allowedTypes?: ContentOrMediaType[];
-  restrictedTypes?: ContentOrMediaType[];
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
 };
 
 /**

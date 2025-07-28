@@ -6,7 +6,8 @@
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
     "@episerver/cms-sdk": "workspace:^0.1.0-alpha.5",

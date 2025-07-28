@@ -7,14 +7,15 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "vitest --typecheck"
   },
   "files": [
     "dist"
   ],
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "packageManager": "pnpm@10.7.0",
   "type": "module",
   "dependencies": {
@@ -25,8 +26,8 @@
     "chalk": "^5.4.1",
     "conf": "^13.1.0",
     "dotenv": "^16.5.0",
+    "esbuild": "^0.25.8",
     "glob": "^11.0.1",
-    "jiti": "^2.4.2",
     "openapi-fetch": "^0.13.5",
     "ora": "^8.2.0",
     "zod": "^3.24.2"
@@ -34,8 +35,8 @@
   "devDependencies": {
     "@types/node": "^18",
     "rimraf": "^6.0.1",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.1.1"
   },
   "bin": {
     "optimizely-cms-cli": "./bin/run.js"

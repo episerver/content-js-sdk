@@ -61,4 +61,4 @@ npx @episerver/cms-cli@latest config push optimizely.config.mjs
 
 ## Next steps
 
-Now you are ready to [fetch content from the CMS] (_under construction_)
+Now you are ready to [create content in the CMS to fetch it later](./4-create-content.md)

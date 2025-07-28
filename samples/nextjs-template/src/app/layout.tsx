@@ -2,7 +2,11 @@ import React from 'react';
 
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
-import { initContentTypeRegistry } from '@episerver/cms-sdk';
+import {
+  BlankExperienceContentType,
+  initContentTypeRegistry,
+  initDisplayTemplateRegistry,
+} from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
 import Landing, {
@@ -10,6 +14,7 @@ import Landing, {
 } from '@/components/Landing';
 import LandingSection, {
   LandingSectionContentType,
+  LandingSectionDisplayTemplate,
 } from '@/components/LandingSection';
 import SmallFeatureGrid, {
   SmallFeatureGridContentType,
@@ -29,8 +34,33 @@ import CallToAction, {
   CallToActionContentType,
 } from '@/components/CallToAction';
 import BlankSection from '@/components/BlankSection';
+import BlogExperience, {
+  BlogExperienceContentType,
+} from '@/components/BlogExperience';
+import BlogCard, { BlogCardContentType } from '@/components/BlogCard';
+import Banner, { BannerContentType } from '@/components/Banner';
+import Tile, {
+  SquarTile,
+  SquarTileDisplayTemplate,
+  TileColumnDisplayTemplate,
+  TileContentType,
+  TileRowDisplayTemplate,
+} from '@/components/Tile';
+import AboutExperience, {
+  AboutExperienceContentType,
+} from '@/components/AboutExperience';
+import AboutUs, { AboutUsContentType } from '@/components/AboutUs';
+import MonthlySpecial, {
+  MonthlySpecialContentType,
+} from '@/components/MonthlySpecial';
+import OfficeLocations, {
+  OfficeContentType,
+} from '@/components/OfficeLocations';
+import Location, { LocationContentType } from '@/components/Location';
+import BlankExperience from '@/components/BlankExperience';
 
 initContentTypeRegistry([
+  BlankExperienceContentType,
   LandingSectionContentType,
   LadningContentType,
   SmallFeatureGridContentType,
@@ -40,7 +70,18 @@ initContentTypeRegistry([
   ArticleContentType,
   LandingExperienceContentType,
   CallToActionContentType,
+  BlogExperienceContentType,
+  BlogCardContentType,
+  BannerContentType,
+  TileContentType,
+  AboutExperienceContentType,
+  AboutUsContentType,
+  MonthlySpecialContentType,
+  OfficeContentType,
+  LocationContentType,
+  BlankExperienceContentType,
 ]);
+
 initReactComponentRegistry({
   resolver: {
     Landing,
@@ -52,8 +93,26 @@ initReactComponentRegistry({
     LandingExperience,
     CallToAction,
     BlankSection,
+    BlogCard,
+    BlogExperience,
+    Banner,
+    Tile,
+    AboutExperience,
+    AboutUs,
+    MonthlySpecial,
+    OfficeLocations,
+    Location,
+    BlankExperience,
+    SquarTile,
   },
 });
+
+initDisplayTemplateRegistry([
+  TileRowDisplayTemplate,
+  TileColumnDisplayTemplate,
+  LandingSectionDisplayTemplate,
+  SquarTileDisplayTemplate,
+]);
 
 const serifFont = Bodoni_Moda({
   variable: '--font-serif',
