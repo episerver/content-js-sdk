@@ -2,4 +2,4 @@
 import 'dotenv/config';
 import { execute } from '@oclif/core';
 
-await execute({ dir: import.meta.url });
+await execute({ dir: import.meta.url, development: true });

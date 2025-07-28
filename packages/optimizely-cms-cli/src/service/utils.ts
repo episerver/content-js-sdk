@@ -1,6 +1,10 @@
 import { resolve } from 'node:path';
 import { glob } from 'glob';
 import { createJiti } from 'jiti';
+import * as esbuild from 'esbuild';
+import { tmpdir } from 'node:os';
+import { mkdtemp, opendir } from 'node:fs/promises';
+
 import {
   ContentTypes,
   isContentType,
@@ -8,6 +12,8 @@ import {
   isDisplayTemplate,
 } from '@episerver/cms-sdk';
 import chalk from 'chalk';
+import * as path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -79,6 +85,35 @@ export function extractMetaData(obj: unknown): {
   };
 }
 
+/** Compiles the `fileName` into a JavaScript file in a temporal directory and imports it */
+async function compileAndImport(
+  inputName: string,
+  cwdUrl: string,
+  outDir: string
+) {
+  // Note: we must pass paths as "Node.js paths" to `esbuild.build()`
+  const cwdPath = fileURLToPath(cwdUrl);
+  const outPath = path.join(outDir, `${inputName}.js`);
+
+  // TODO: log outPath in verbose mode
+  await esbuild.build({
+    entryPoints: [inputName],
+    absWorkingDir: cwdPath,
+    bundle: true,
+    platform: 'node',
+    outfile: outPath,
+  });
+
+  try {
+    // Note we must pass "File URL paths" when importing with `import()`
+    const outUrl = pathToFileURL(outPath).href;
+    const f = await import(outUrl);
+    return f;
+  } catch (err) {
+    throw new Error('Error when importing the file (internal error).');
+  }
+}
+
 /** Finds metadata (contentTypes, displayTemplates) in the given paths */
 export async function findMetaData(
   componentPaths: string[],
@@ -87,7 +122,9 @@ export async function findMetaData(
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
 }> {
-  const jiti = createJiti(cwd, { jsx: true });
+  // const tmpDir = '/tmp/optimizely-files';
+  const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
+
   // Retrieve sets of files via glob
   const allFiles = (
     await Promise.all(
@@ -106,11 +143,7 @@ export async function findMetaData(
   };
 
   for (const file of allFiles) {
-    const loaded = await jiti.import(resolve(file)).catch(() => {
-      // TODO: better error messages
-      throw new Error(`Error importing the file ${file}`);
-    });
-
+    const loaded = await compileAndImport(file, cwd, tmpDir);
     const { contentTypeData, displayTemplateData } = extractMetaData(loaded);
 
     for (const c of contentTypeData) {
