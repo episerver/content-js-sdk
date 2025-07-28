@@ -269,12 +269,15 @@ section > header {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: 3rem;
-  color: #f9f9f9;
+
   .row {
-    display: grid;
+    display: flex;
     gap: 1rem;
     grid-column: 1 / -1;
     grid-template-columns: subgrid;
+  }
+  .row > div {
+    flex: 1;
   }
 }
 
@@ -396,6 +399,9 @@ a:hover span.animate {
 
 .blank-experience {
   background-image: linear-gradient(180deg, #10141d 55.03%, #191e28 100%);
+  .table-section {
+    color: #f9f9f9;
+  }
 }
 
 .blog-experience {
