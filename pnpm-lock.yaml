@@ -69,9 +69,6 @@ importers:
       glob:
         specifier: ^11.0.1
         version: 11.0.1
-      jiti:
-        specifier: ^2.4.2
-        version: 2.4.2
       openapi-fetch:
         specifier: ^0.13.5
         version: 0.13.5
@@ -88,9 +85,6 @@ importers:
       rimraf:
         specifier: ^6.0.1
         version: 6.0.1
-      tsx:
-        specifier: ^4.19.4
-        version: 4.20.3
       typescript:
         specifier: ^5.8.2
         version: 5.8.2
@@ -7257,7 +7251,8 @@ snapshots:
 
   jest-get-type@29.6.3: {}
 
-  jiti@2.4.2: {}
+  jiti@2.4.2:
+    optional: true
 
   js-tokens@4.0.0: {}
 
@@ -8827,6 +8822,7 @@ snapshots:
       get-tsconfig: 4.10.0
     optionalDependencies:
       fsevents: 2.3.3
+    optional: true
 
   tuf-js@2.2.1:
     dependencies:

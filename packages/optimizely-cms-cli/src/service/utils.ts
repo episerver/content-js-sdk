@@ -1,9 +1,7 @@
-import { resolve } from 'node:path';
 import { glob } from 'glob';
-import { createJiti } from 'jiti';
 import * as esbuild from 'esbuild';
 import { tmpdir } from 'node:os';
-import { mkdtemp, opendir } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 
 import {
   ContentTypes,

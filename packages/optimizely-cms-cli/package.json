@@ -28,7 +28,6 @@
     "dotenv": "^16.5.0",
     "esbuild": "^0.25.8",
     "glob": "^11.0.1",
-    "jiti": "^2.4.2",
     "openapi-fetch": "^0.13.5",
     "ora": "^8.2.0",
     "zod": "^3.24.2"
@@ -36,7 +35,6 @@
   "devDependencies": {
     "@types/node": "^18",
     "rimraf": "^6.0.1",
-    "tsx": "^4.19.4",
     "typescript": "^5.8.2",
     "vitest": "^3.1.1"
   },
