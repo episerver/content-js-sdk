@@ -1,7 +1,7 @@
 import { contentType } from '@episerver/cms-sdk';
 import { getString } from '@/subdir/something.js';
 
-export const contentTypeWithRegex = contentType({
+export const ct1 = contentType({
   key: 'ct1',
   baseType: '_page',
   displayName: 'CT1',

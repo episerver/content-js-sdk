@@ -2,10 +2,10 @@ import React from 'react';
 import { contentType } from '@episerver/cms-sdk';
 import { getString } from './subdir/something.js';
 
-export const contentTypeWithRegex = contentType({
-  key: 'ct1',
+export const ct3 = contentType({
+  key: 'ct3',
   baseType: '_page',
-  displayName: 'CT1',
+  displayName: 'CT3',
   properties: {
     p1: {
       type: getString(),
