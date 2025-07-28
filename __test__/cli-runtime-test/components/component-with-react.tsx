@@ -1,6 +1,6 @@
 import React from 'react';
 import { contentType } from '@episerver/cms-sdk';
-import { getString } from './something.js';
+import { getString } from './subdir/something.js';
 
 export const contentTypeWithRegex = contentType({
   key: 'ct1',
