@@ -33,7 +33,7 @@ jobs:
         run: pnpm build
 
       - name: Run tests
-        run: pnpm -r test
+        run: pnpm -r --if-present test
 
       - name: Publish packages
         run: pnpm publish:all
