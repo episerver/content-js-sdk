@@ -1,4 +1,3 @@
-import React from 'react';
 import { contentType } from '@episerver/cms-sdk';
 import { getString } from './subdir/something';
 
