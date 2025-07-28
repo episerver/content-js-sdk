@@ -29,11 +29,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run tests
-        run: pnpm -r test
-
       - name: Build packages
         run: pnpm build
+
+      - name: Run tests
+        run: pnpm -r test
 
       - name: Publish packages
         run: pnpm publish -r
