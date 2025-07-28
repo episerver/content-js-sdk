@@ -120,7 +120,6 @@ export async function findMetaData(
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
 }> {
-  // const tmpDir = '/tmp/optimizely-files';
   const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
 
   // Retrieve sets of files via glob
