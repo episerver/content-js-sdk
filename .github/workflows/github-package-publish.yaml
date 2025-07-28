@@ -26,6 +26,8 @@ jobs:
 
       - name: Install (all) dependencies)
         run: pnpm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
         run: pnpm -r test
