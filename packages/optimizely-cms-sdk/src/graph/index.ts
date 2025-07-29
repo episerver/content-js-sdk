@@ -107,18 +107,26 @@ export class GraphClient {
     });
 
     if (!response.ok) {
-      throw new GraphHttpResponseError(response.statusText, {
-        status: response.status,
-        request: { query, variables },
-      });
+      const text = await response.text().catch(() => response.statusText);
+
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        // When the response is not JSON
+        throw new GraphHttpResponseError(text, {
+          status: response.status,
+          request: { query, variables },
+        });
+      }
+
+      if (json.errors) {
+        console.log(json.errors);
+        throw new GraphContentResponseError('A');
+      }
     }
 
-    const json = (await response.json()) as any;
-
-    if (json.errors) {
-      console.log(json.errors);
-      throw new GraphContentResponseError('A');
-    }
+    const json = await response.json();
 
     return json.data;
   }
