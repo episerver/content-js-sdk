@@ -69,15 +69,3 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     this.errors = errors;
   }
 }
-
-// /** Error thrown when content is not found */
-// export class NotFound extends OptimizelyGraphError {
-//   hint: string = 'Check that your CMS contains something in the given path/key';
-
-//   constructor(filter: GraphFilter, message?: string) {
-//     super(message ?? 'Content not found', {
-//       query: FETCH_CONTENT_TYPE_QUERY,
-//       variables: { filter },
-//     });
-//   }
-// }
