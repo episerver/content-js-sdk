@@ -1,5 +1,9 @@
-import { createQuery } from './createQuery';
-import { NotFound } from './error';
+import { createQuery } from './createQuery.js';
+import {
+  GraphContentResponseError,
+  GraphHttpResponseError,
+  GraphResponseError,
+} from './error.js';
 
 /** Options for Graph */
 type GraphOptions = {
@@ -103,14 +107,17 @@ export class GraphClient {
     });
 
     if (!response.ok) {
-      // TODO: Handle HTTP errors
+      throw new GraphHttpResponseError(response.statusText, {
+        status: response.status,
+        request: { query, variables },
+      });
     }
 
-    // TODO:
-    const json = await response.json();
+    const json = (await response.json()) as any;
 
     if (json.errors) {
-      // TODO: handle errors sent by Graph
+      console.log(json.errors);
+      throw new GraphContentResponseError('A');
     }
 
     return json.data;
@@ -133,7 +140,7 @@ export class GraphClient {
     const contentTypeName = await this.fetchContentType(filter);
 
     if (!contentTypeName) {
-      throw new NotFound(filter, `No content found for [${path}]`);
+      // throw new NotFound(filter, `No content found for [${path}]`);
     }
 
     const query = createQuery(contentTypeName);
@@ -152,7 +159,7 @@ export class GraphClient {
     );
 
     if (!contentTypeName) {
-      throw new NotFound(filter, `No content found for key [${params.key}]`);
+      // throw new NotFound(filter, `No content found for key [${params.key}]`);
     }
 
     const query = createQuery(contentTypeName);
