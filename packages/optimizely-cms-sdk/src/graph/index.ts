@@ -125,6 +125,11 @@ export class GraphClient {
           status: response.status,
           request: { query, variables },
         });
+      } else {
+        throw new GraphHttpResponseError(response.statusText, {
+          status: response.status,
+          request: { query, variables },
+        });
       }
     }
 

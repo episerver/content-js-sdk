@@ -9,12 +9,6 @@ type GraphRequest = {
   variables: any;
 };
 
-type GraphResponseErrorCode =
-  /** Thrown when the content can't be found */
-  | 'not_found'
-  /** Thrown when the query contains a syntax error, usually because it has more properties than the ones accepted */
-  | 'invalid_query';
-
 /** Super-class for all errors related to Optimizely Graph */
 export class OptimizelyGraphError extends Error {
   constructor(message: string) {
@@ -42,12 +36,22 @@ export class GraphHttpResponseError extends GraphResponseError {
   status: number;
 
   constructor(
-    message: string,
+    message: any,
     options: { status: number; request: GraphRequest }
   ) {
-    super(message, options);
-    // this.message = message;
-    this.status = options.status;
+    if (typeof message === 'string') {
+      super(message, options);
+      // this.message = message;
+      this.status = options.status;
+    } else {
+      if ('code' in message && 'status' in message) {
+        super(message.code, options);
+      } else {
+        super('HTTP Error', options);
+      }
+
+      this.status = message.status;
+    }
   }
 }
 
@@ -59,10 +63,17 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     errors: { message: string }[],
     options: { status: number; request: GraphRequest }
   ) {
-    const message =
+    let message =
       errors.length === 1
         ? errors[0].message
         : `${errors.length} errors in the GraphQL query. Check "errors" object`;
+
+    if (message.startsWith('Cannot query field')) {
+      message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@episerver/cms-cli" CLI app to sync them`;
+    } else if (message.startsWith('Syntax Error')) {
+      message +=
+        ' Try again later. If the error persists, contact Optimizely support';
+    }
 
     super(message, options);
 
