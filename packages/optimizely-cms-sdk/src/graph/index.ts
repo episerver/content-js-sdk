@@ -150,7 +150,10 @@ export class GraphClient {
     const contentTypeName = await this.fetchContentType(filter);
 
     if (!contentTypeName) {
-      // throw new NotFound(filter, `No content found for [${path}]`);
+      throw new GraphResponseError(
+        `No content found for path [${path}]. Check that your CMS contains something in the given path`,
+        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
+      );
     }
 
     const query = createQuery(contentTypeName);
@@ -169,7 +172,10 @@ export class GraphClient {
     );
 
     if (!contentTypeName) {
-      // throw new NotFound(filter, `No content found for key [${params.key}]`);
+      throw new GraphResponseError(
+        `No content found for key [${params.key}]. Check that your CMS contains something there`,
+        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
+      );
     }
 
     const query = createQuery(contentTypeName);
