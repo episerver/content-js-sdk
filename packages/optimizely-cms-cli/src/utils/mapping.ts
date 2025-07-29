@@ -1,4 +1,4 @@
-import { AnyContentType, extractKeyName } from '../service/utils.js';
+import { extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
 
 /**
@@ -7,7 +7,7 @@ import { isKeyInvalid } from './validate.js';
  * @param contentType - The content type object to parse.
  * @returns A simplified representation of the content type.
  */
-export function parseChildContentType(contentType: AnyContentType): any {
+export function parseChildContentType(contentType: Record<string, any>): any {
   const { mayContainTypes, ...rest } = contentType;
   return {
     ...rest,

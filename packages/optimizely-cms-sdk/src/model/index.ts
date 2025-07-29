@@ -1,13 +1,7 @@
 import { BuildConfig } from './buildConfig.js';
 import { AnyContentType } from './contentTypes.js';
 import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
-
-/** Defines a Optimizely CMS content type */
-export function contentType<T extends AnyContentType>(
-  options: T
-): T & { __type: 'contentType' } {
-  return { ...options, __type: 'contentType' };
-}
+export { contentType } from './contentTypes.js';
 
 /** Defines a Optimizely CMS display template */
 export function displayTemplate<T extends DisplayTemplateVariant>(

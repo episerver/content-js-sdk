@@ -9,9 +9,7 @@ import {
 } from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
-import Landing, {
-  ContentType as LadningContentType,
-} from '@/components/Landing';
+import Landing, { LandingPageContentType } from '@/components/Landing';
 import LandingSection, {
   LandingSectionContentType,
   LandingSectionDisplayTemplate,
@@ -58,11 +56,12 @@ import OfficeLocations, {
 } from '@/components/OfficeLocations';
 import Location, { LocationContentType } from '@/components/Location';
 import BlankExperience from '@/components/BlankExperience';
+import FAQ, { FAQContentType } from '@/components/FAQ';
 
 initContentTypeRegistry([
   BlankExperienceContentType,
   LandingSectionContentType,
-  LadningContentType,
+  LandingPageContentType,
   SmallFeatureGridContentType,
   SmallFeatureContentType,
   VideoFeatureContentType,
@@ -80,6 +79,7 @@ initContentTypeRegistry([
   OfficeContentType,
   LocationContentType,
   BlankExperienceContentType,
+  FAQContentType,
 ]);
 
 initReactComponentRegistry({
@@ -104,6 +104,7 @@ initReactComponentRegistry({
     Location,
     BlankExperience,
     SquarTile,
+    FAQ,
   },
 });
 

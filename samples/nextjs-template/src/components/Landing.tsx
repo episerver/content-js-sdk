@@ -7,7 +7,7 @@ import { LandingSectionContentType } from './LandingSection';
 import { HeroContentType } from './Hero';
 import Image from 'next/image';
 
-export const ContentType = contentType({
+export const LandingPageContentType = contentType({
   key: 'Landing',
   displayName: 'Landing page',
   baseType: '_page',
@@ -28,7 +28,7 @@ export const ContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof ContentType>;
+  opti: Infer<typeof LandingPageContentType>;
 };
 
 export default function LandingComponent({ opti }: Props) {
