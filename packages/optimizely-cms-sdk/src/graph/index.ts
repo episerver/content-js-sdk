@@ -121,8 +121,10 @@ export class GraphClient {
       }
 
       if (json.errors) {
-        console.log(json.errors);
-        throw new GraphContentResponseError('A');
+        throw new GraphContentResponseError(json.errors, {
+          status: response.status,
+          request: { query, variables },
+        });
       }
     }
 

@@ -30,31 +30,43 @@ export class QueryCreationError extends OptimizelyGraphError {}
 
 /** Errors related to the response */
 export class GraphResponseError extends OptimizelyGraphError {
-  constructor(message: string) {
+  request: GraphRequest;
+  constructor(message: string, options: { request: GraphRequest }) {
     super(message);
+    this.request = options.request;
   }
 }
 
 /** Thrown when the GraphQL server responded with an HTTP error (401, 404...) */
 export class GraphHttpResponseError extends GraphResponseError {
-  request: GraphRequest;
   status: number;
 
   constructor(
     message: string,
     options: { status: number; request: GraphRequest }
   ) {
-    super(message);
+    super(message, options);
     // this.message = message;
     this.status = options.status;
-    this.request = options.request;
   }
 }
 
 /** Thrown when the GraphQL server responded with a GraphQL related error (syntax, semantic errors...) */
-export class GraphContentResponseError extends GraphResponseError {
-  constructor(message: string) {
-    super(message);
+export class GraphContentResponseError extends GraphHttpResponseError {
+  errors: { message: string }[];
+
+  constructor(
+    errors: { message: string }[],
+    options: { status: number; request: GraphRequest }
+  ) {
+    const message =
+      errors.length === 1
+        ? errors[0].message
+        : `${errors.length} errors in the GraphQL query. Check "errors" object`;
+
+    super(message, options);
+
+    this.errors = errors;
   }
 }
 
