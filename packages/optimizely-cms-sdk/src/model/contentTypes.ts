@@ -73,14 +73,6 @@ export type PermittedTypes = ContentType | AnyContentType['baseType'];
 
 /**  Overload-based contentType definitions with generic return type for inference */
 
-/** COMPONENTS — only allow other components */
-export function contentType<
-  T extends Omit<BaseContentType<'_component'>, 'mayContainTypes'> & {
-    compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
-    mayContainTypes?: ContentType<ComponentContentType>[];
-  }
->(options: T): T & { __type: 'contentType' };
-
 /** PAGES — allow pages & experiences */
 export function contentType<
   T extends Omit<BaseContentType<'_page'>, 'mayContainTypes'> & {
@@ -92,6 +84,14 @@ export function contentType<
 export function contentType<
   T extends Omit<BaseContentType<'_experience'>, 'mayContainTypes'> & {
     mayContainTypes?: ContentType<PageContentType | ExperienceContentType>[];
+  }
+>(options: T): T & { __type: 'contentType' };
+
+/** COMPONENTS — only allow other components */
+export function contentType<
+  T extends Omit<BaseContentType<'_component'>, 'mayContainTypes'> & {
+    compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
+    mayContainTypes?: ContentType<ComponentContentType>[];
   }
 >(options: T): T & { __type: 'contentType' };
 

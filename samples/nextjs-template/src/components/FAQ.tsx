@@ -1,12 +1,12 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
 import { getPreviewUtils } from '@episerver/cms-sdk/react/server';
-import { BannerContentType } from './Banner';
+import { ArticleContentType } from './Article';
 
 export const FAQContentType = contentType({
   key: 'FAQ',
-  baseType: '_component',
+  baseType: '_page',
   displayName: 'FAQ',
-  mayContainTypes: [BannerContentType],
+  mayContainTypes: [ArticleContentType],
   properties: {
     heading: {
       type: 'string',
@@ -15,7 +15,6 @@ export const FAQContentType = contentType({
       type: 'richText',
     },
   },
-  compositionBehaviors: ['sectionEnabled'],
 });
 
 export type FAQProps = {
