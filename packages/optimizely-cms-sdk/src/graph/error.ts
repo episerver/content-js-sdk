@@ -1,5 +1,3 @@
-// import { FETCH_CONTENT_TYPE_QUERY, type GraphFilter } from '.';
-
 /** Represents the request sent to graph */
 type GraphRequest = {
   /** Query sent to Graph */
@@ -41,7 +39,6 @@ export class GraphHttpResponseError extends GraphResponseError {
   ) {
     if (typeof message === 'string') {
       super(message, options);
-      // this.message = message;
       this.status = options.status;
     } else {
       if ('code' in message && 'status' in message) {

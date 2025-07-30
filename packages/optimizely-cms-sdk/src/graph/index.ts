@@ -26,7 +26,7 @@ export type GraphFilter = {
   };
 };
 
-export const FETCH_CONTENT_TYPE_QUERY = `
+const FETCH_CONTENT_TYPE_QUERY = `
 query FetchContentType($filter: _ContentWhereInput) {
   _Content(where: $filter) {
     item {
