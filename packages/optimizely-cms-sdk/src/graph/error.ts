@@ -16,12 +16,6 @@ export class OptimizelyGraphError extends Error {
   }
 }
 
-/** Errors related to the Graph Query request step */
-export class GraphRequestError extends OptimizelyGraphError {}
-
-/** Errors that ocurred when creating the query */
-export class QueryCreationError extends OptimizelyGraphError {}
-
 /** Errors related to the response */
 export class GraphResponseError extends OptimizelyGraphError {
   request: GraphRequest;
