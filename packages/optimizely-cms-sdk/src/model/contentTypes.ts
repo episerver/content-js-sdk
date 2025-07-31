@@ -20,104 +20,71 @@ export const ALL_BASE_TYPES = [
   ...OTHER_BASE_TYPES,
 ] as const;
 
-// Enum of all base types
+// Literal union of baseType strings
 export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
-
-// Enum of main base types
+// Literal union of media baseType strings
 export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
+// Literal union of other baseType strings
+export type OtherBaseTypes = (typeof OTHER_BASE_TYPES)[number];
 
-/** Base shape for all content types */
-export type BaseContentType<T extends BaseTypes> = {
+/**
+ * Determines the allowed types for the mayContainTypes property based on the given baseType.
+ * For example:
+ *   - If the baseType is '_page' or '_experience', mayContainTypes can be an array of page or experience content types.
+ *   - If the baseType is '_component', mayContainTypes can be an array of component content types.
+ *   - For other baseTypes, mayContainTypes is not allowed.
+ * This avoids circular references by using the base content types directly.
+ */
+type AllowedMayContain<T extends BaseTypes> = T extends '_page' | '_experience'
+  ? Array<
+      ContentType<BaseContentType<'_page'> | BaseContentType<'_experience'>>
+    >
+  : T extends '_component'
+  ? Array<ContentType<BaseContentType<'_component'>>>
+  : never;
+
+/**
+ * Base content type, now generic in its own baseType
+ */
+export type BaseContentType<B extends BaseTypes> = {
   key: string;
+  baseType: B;
   displayName?: string;
-  baseType: T;
   properties?: Record<string, AnyProperty>;
-  mayContainTypes?: Extract<AnyContentType, { baseType: T }>[];
+  mayContainTypes?: AllowedMayContain<B>;
 };
 
-/** Specific variants */
+/** Other content types (page, folder, element) */
+export type OtherContentTypes = BaseContentType<OtherBaseTypes>;
+
+/** Media content types (image, media, video) */
+export type MediaContentType = BaseContentType<MediaStringTypes>;
+
+/** Component content type */
 export type ComponentContentType = BaseContentType<'_component'> & {
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
 };
+
+/** Experience content type */
 export type ExperienceContentType = BaseContentType<'_experience'>;
 
-export type PageContentType = BaseContentType<'_page'>;
-
-// This content type is used only internally
+/** Section content type */
 export type SectionContentType = BaseContentType<'_section'>;
 
-/**
- * Represents a "Media" content type (Image, Media, Video).
- */
-export type MediaContentType = BaseContentType<MediaStringTypes>;
-
-/** Represents all other types in CMS */
-export type OtherContentTypes = BaseContentType<'_folder' | '_element'>;
-
-/** Union of all variants */
+/** Union of all content types */
 export type AnyContentType =
   | ComponentContentType
   | ExperienceContentType
-  | PageContentType
   | SectionContentType
-  | MediaContentType
-  | OtherContentTypes;
+  | OtherContentTypes
+  | MediaContentType;
 
-/** Branded factory result */
-export type ContentType<T extends AnyContentType = AnyContentType> = T & {
+/** ContentType wrapper adding __type marker */
+export type ContentType<T extends AnyContentType> = T & {
   __type: 'contentType';
 };
 
-/** All possible inputs for fields that accept content types */
-export type PermittedTypes = ContentType | AnyContentType['baseType'];
-
-/**  Overload-based contentType definitions with generic return type for inference */
-
-/** PAGES — allow pages & experiences */
-export function contentType<
-  T extends Omit<BaseContentType<'_page'>, 'mayContainTypes'> & {
-    mayContainTypes?: ContentType<PageContentType | ExperienceContentType>[];
-  }
->(options: T): T & { __type: 'contentType' };
-
-/** EXPERIENCES — allow pages & experiences */
-export function contentType<
-  T extends Omit<BaseContentType<'_experience'>, 'mayContainTypes'> & {
-    mayContainTypes?: ContentType<PageContentType | ExperienceContentType>[];
-  }
->(options: T): T & { __type: 'contentType' };
-
-/** COMPONENTS — only allow other components */
-export function contentType<
-  T extends Omit<BaseContentType<'_component'>, 'mayContainTypes'> & {
-    compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
-    mayContainTypes?: ContentType<ComponentContentType>[];
-  }
->(options: T): T & { __type: 'contentType' };
-
-/** SECTIONS — only sections */
-export function contentType<T extends BaseContentType<'_section'>>(
-  options: T
-): T & { __type: 'contentType' };
-
-/** MEDIA — only media types */
-export function contentType<T extends BaseContentType<MediaStringTypes>>(
-  options: T
-): T & { __type: 'contentType' };
-
-/** FOLDERS & ELEMENTS — only themselves */
-export function contentType<T extends BaseContentType<'_folder' | '_element'>>(
-  options: T
-): T & { __type: 'contentType' };
-
-/** GENERIC FALLBACK — any content type */
-export function contentType<T extends AnyContentType>(
-  options: T
-): T & { __type: 'contentType' };
-
-/** Implementation */
-export function contentType<T extends AnyContentType>(
-  options: T
-): T & { __type: 'contentType' } {
-  return { ...options, __type: 'contentType' };
-}
+/** Permitted types: either a wrapped ContentType or just a baseType string */
+export type PermittedTypes =
+  | ContentType<AnyContentType>
+  | AnyContentType['baseType'];
