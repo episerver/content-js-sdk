@@ -115,7 +115,10 @@ export class GraphClient {
     });
 
     if (!response.ok) {
-      const text = await response.text().catch(() => response.statusText);
+      const text = await response.text().catch((err) => {
+        console.error('Error reading response text:', err);
+        return response.statusText;
+      });
 
       let json;
       try {
