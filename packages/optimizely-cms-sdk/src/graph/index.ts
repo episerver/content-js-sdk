@@ -26,6 +26,10 @@ export type GraphFilter = {
   };
 };
 
+export type GraphVariables = {
+  filter: GraphFilter;
+};
+
 const FETCH_CONTENT_TYPE_QUERY = `
 query FetchContentType($filter: _ContentWhereInput) {
   _Content(where: $filter) {
@@ -87,7 +91,11 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(query: string, variables: any, previewToken?: string) {
+  async request(
+    query: string,
+    variables: GraphVariables,
+    previewToken?: string
+  ) {
     const url = new URL(this.graphUrl);
 
     if (!previewToken) {
@@ -157,7 +165,7 @@ export class GraphClient {
     if (!contentTypeName) {
       throw new GraphResponseError(
         `No content found for path [${path}]. Check that your CMS contains something in the given path`,
-        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
+        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
       );
     }
 
@@ -179,7 +187,7 @@ export class GraphClient {
     if (!contentTypeName) {
       throw new GraphResponseError(
         `No content found for key [${params.key}]. Check that your CMS contains something there`,
-        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
+        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
       );
     }
 

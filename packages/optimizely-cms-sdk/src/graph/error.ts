@@ -1,10 +1,12 @@
+import type { GraphVariables } from './index.js';
+
 /** Represents the request sent to graph */
 type GraphRequest = {
   /** Query sent to Graph */
   query: string;
 
   /** Variables sent to Graph */
-  variables: any;
+  variables: GraphVariables;
 };
 
 /** Super-class for all errors related to Optimizely Graph */
