@@ -34,21 +34,11 @@ export class GraphHttpResponseError extends GraphResponseError {
   status: number;
 
   constructor(
-    message: any,
+    message: string,
     options: { status: number; request: GraphRequest }
   ) {
-    if (typeof message === 'string') {
-      super(message, options);
-      this.status = options.status;
-    } else {
-      if ('code' in message && 'status' in message) {
-        super(message.code, options);
-      } else {
-        super('HTTP Error', options);
-      }
-
-      this.status = message.status;
-    }
+    super(message, options);
+    this.status = options.status;
   }
 }
 
