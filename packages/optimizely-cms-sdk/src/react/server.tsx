@@ -28,30 +28,38 @@ export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
 }
 
-type Props = {
+/** Props for the {@linkcode OptimizelyComponent} component */
+type OptimizelyComponentProps = {
+  /** Data read from the CMS */
   opti: {
+    /** Content type name */
     __typename: string;
+
+    /** Display template tag (if any) */
+    __tag?: string;
+
+    /** Preview context */
     __context?: { edit: boolean; preview_token: string };
   };
-  componentKey?: string;
+
   displaySettings?: Record<string, string>;
 };
 
 export async function OptimizelyComponent({
   opti,
-  componentKey,
   displaySettings,
   ...props
-}: Props) {
+}: OptimizelyComponentProps) {
   if (!componentRegistry) {
     throw new Error('You should call `initReactComponentRegistry` first');
   }
 
-  const contentType = componentKey ?? opti.__typename;
-  const Component = await componentRegistry.getComponent(contentType);
+  const Component = await componentRegistry.getComponent(opti.__typename, {
+    tag: opti.__tag,
+  });
 
   if (!Component) {
-    return <div>No component found for content type {contentType}</div>;
+    return <div>No component found for content type {opti.__typename}</div>;
   }
 
   const optiProps = {
@@ -89,20 +97,26 @@ export function OptimizelyExperience({
   ComponentWrapper?: ComponentContainer;
 }) {
   return nodes.map((node) => {
-    // get component key(tag) from the display template
-    const key = getDisplayTemplateTag(node.displayTemplateKey);
-    // get the parsed display settings (stlyes, classes etc.)
+    const tag = getDisplayTemplateTag(node.displayTemplateKey);
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
       const Wrapper = ComponentWrapper ?? React.Fragment;
+
       return (
         <Wrapper
           node={node}
           key={node.key}
           displaySettings={parsedDisplaySettings}
         >
-          <OptimizelyComponent opti={node.component} componentKey={key} />
+          <OptimizelyComponent
+            key={node.key}
+            opti={{
+              ...node.component,
+              __typename: node.nodeType,
+              __tag: tag,
+            }}
+          />
         </Wrapper>
       );
     }
@@ -114,18 +128,14 @@ export function OptimizelyExperience({
       return <div>???</div>;
     }
 
-    // If a display template key is provided, use it to retrieve the corresponding component.
-    // Otherwise, fall back to using the node type as the key to identify the component.
-    const Component = componentRegistry.getComponent(key ?? type);
-
-    if (!Component) {
-      throw new Error(`No component defined for content type ${type}`);
-    }
-
     return (
-      <Component
+      <OptimizelyComponent
         key={node.key}
-        opti={node}
+        opti={{
+          ...node,
+          __typename: type,
+          __tag: tag,
+        }}
         displaySettings={parsedDisplaySettings}
       />
     );
@@ -155,9 +165,11 @@ export function OptimizelyGridSection({
     if (isComponentNode(node)) {
       return (
         <OptimizelyComponent
+          opti={{
+            ...node.component,
+            __tag: key,
+          }}
           key={node.key}
-          opti={node.component}
-          componentKey={key}
           displaySettings={parsedDisplaySettings}
         />
       );
@@ -184,7 +196,7 @@ export function OptimizelyGridSection({
 }
 
 /** Get context-aware functions for preview */
-export function getPreviewUtils(opti: Props['opti']) {
+export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
   return {
     /** Get the HTML data attributes required for a property */
     pa(property: string | { key: string }) {
