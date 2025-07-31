@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   ComponentRegistry,
-  ComponentResolver,
+  ComponentResolverOrObject,
 } from '../render/componentRegistry.js';
 import { JSX } from 'react';
 import {
@@ -21,9 +21,48 @@ type ComponentType = React.ComponentType<any>;
 let componentRegistry: ComponentRegistry<ComponentType>;
 
 type InitOptions = {
-  resolver: ComponentResolver<ComponentType>;
+  resolver: ComponentResolverOrObject<ComponentType>;
 };
 
+/**
+ * Initializes the React component registry
+ *
+ * @param options Initialization options.
+ * @param options.resolver Either a ComponentResolver function for dynamic resolution,
+ * or a ComponentMap object for static mappings between content types and components
+ *
+ *
+ * @example
+ * Using a static component map:
+ *
+ * ```ts
+ * initReactComponentRegistry({
+ *   resolver: {
+ *     'ButtonContentType': ButtonComponent,
+ *     // You can define tags using the `ContentType:Tag` syntax:
+ *     'ButtonContentType:ChristmasTag': ChristmasButtonComponent,
+ *     'CardContentType': {
+ *       default: DefaultCardComponent,
+ *       tags: { ChristmasTag: ChristmasCardComponent }
+ *     }
+ *   }
+ * });
+ * ```
+ *
+ * @example
+ * Using a dynamic resolver function:
+ *
+ * ```ts
+ * initReactComponentRegistry({
+ *   resolver: (contentType, options) => {
+ *     if (contentType === 'Button') {
+ *       return options?.tag === 'primary' ? PrimaryButton : DefaultButton;
+ *     }
+ *     return undefined;
+ *   }
+ * });
+ * ```
+ */
 export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
 }

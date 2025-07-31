@@ -83,39 +83,6 @@ export type ComponentResolverOrObject<C> =
 export class ComponentRegistry<T> {
   resolver: ComponentResolverOrObject<T>;
 
-  /**
-   * Creates a new ComponentRegistry instance.
-   *
-   * @param resolverOrObject - Either a ComponentResolver function for dynamic resolution,
-   *   or a ComponentMap object for static mappings between content types and components
-   *
-   * @example
-   * Using a static component map:
-   *
-   * ```ts
-   * const registry = new ComponentRegistry({
-   *   'ButtonContentType': ButtonComponent,
-   *   // You can define tags using the `ContentType:Tag` syntax:
-   *   'ButtonContentType:ChristmasTag': ChristmasButtonComponent,
-   *   'CardContentType': {
-   *     default: DefaultCardComponent,
-   *     tags: { ChristmasTag: ChristmasCardComponent }
-   *   }
-   * });
-   * ```
-   *
-   * @example
-   * Using a dynamic resolver function:
-   *
-   * ```ts
-   * const registry = new ComponentRegistry((contentType, options) => {
-   *   if (contentType === 'Button') {
-   *     return options?.tag === 'primary' ? PrimaryButton : DefaultButton;
-   *   }
-   *   return undefined;
-   * });
-   * ```
-   */
   constructor(resolverOrObject: ComponentResolverOrObject<T>) {
     this.resolver = resolverOrObject;
   }
