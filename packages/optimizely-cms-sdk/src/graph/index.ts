@@ -193,8 +193,8 @@ export class GraphClient {
         { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
       );
     }
-
     const query = createQuery(contentTypeName);
+
     const response = await this.request(
       query,
       { filter },
