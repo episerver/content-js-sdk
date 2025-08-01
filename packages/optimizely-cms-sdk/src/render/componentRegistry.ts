@@ -16,7 +16,9 @@ type ComponentWithVariants<C> = {
   /** Default component */
   default: C;
 
-  /** Tagged variants */
+  /**
+   * Tagged variants, where the keys are tag names and the values are the corresponding components.
+   */
   tags: Record<string, C>;
 };
 
