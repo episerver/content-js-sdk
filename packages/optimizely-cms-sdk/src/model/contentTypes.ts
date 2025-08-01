@@ -20,77 +20,69 @@ export const ALL_BASE_TYPES = [
   ...OTHER_BASE_TYPES,
 ] as const;
 
-// Literal union of baseType strings
 export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
-// Literal union of media baseType strings
 export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
-// Literal union of other baseType strings
-export type OtherBaseTypes = (typeof OTHER_BASE_TYPES)[number];
 
-/**
- * Defines the allowed types for the mayContainTypes property based on the provided baseType.
- * - For '_page' and '_experience', mayContainTypes can include arrays of page, experience, or folder content types.
- * - For '_component', mayContainTypes can include arrays of component content types.
- * - For '_folder', mayContainTypes can include arrays of any content type.
- * - For other baseTypes, mayContainTypes is not permitted.
- * This approach prevents circular references by referencing base content types directly.
- */
-type AllowedMayContain<T extends BaseTypes> = T extends '_page' | '_experience'
-  ? Array<
-      ContentType<
-        | BaseContentType<'_page'>
-        | BaseContentType<'_experience'>
-        | BaseContentType<'_folder'>
-      >
-    >
-  : T extends '_component'
-  ? Array<ContentType<BaseContentType<'_component'>>>
-  : T extends '_folder'
-  ? Array<ContentType<AnyContentType>>
-  : never;
-
-/**
- * Base content type, now generic in its own baseType
- */
-export type BaseContentType<B extends BaseTypes> = {
+/** A "Base" content type that includes all common attributes for all content types */
+type BaseContentType = {
   key: string;
-  baseType: B;
   displayName?: string;
   properties?: Record<string, AnyProperty>;
-  mayContainTypes?: AllowedMayContain<B>;
 };
 
-/** Other content types (page, folder, element) */
-export type OtherContentTypes = BaseContentType<OtherBaseTypes>;
+/** Forward declarations for mutual references */
+export type PageContentType = BaseContentType & {
+  baseType: '_page';
+  mayAllowedTypes?: Array<
+    ContentType<PageContentType | ExperienceContentType | FolderContentType>
+  >;
+};
 
-/** Media content types (image, media, video) */
-export type MediaContentType = BaseContentType<MediaStringTypes>;
+export type ExperienceContentType = BaseContentType & {
+  baseType: '_experience';
+  mayAllowedTypes?: Array<
+    ContentType<PageContentType | ExperienceContentType | FolderContentType>
+  >;
+};
 
-/** Component content type */
-export type ComponentContentType = BaseContentType<'_component'> & {
+export type FolderContentType = BaseContentType & {
+  baseType: '_folder';
+  mayAllowedTypes?: Array<ContentType<AnyContentType>>;
+};
+
+/** Represents the "Component" type (also called "Block") in CMS */
+export type ComponentContentType = BaseContentType & {
+  baseType: '_component';
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
+  mayAllowedTypes?: Array<ContentType<ComponentContentType>>;
 };
 
-/** Experience content type */
-export type ExperienceContentType = BaseContentType<'_experience'>;
+/** This content type is used only internally */
+export type SectionContentType = BaseContentType & {
+  baseType: '_section';
+};
 
-/** Section content type */
-export type SectionContentType = BaseContentType<'_section'>;
+/** Represents element content type */
+export type ElementContentType = BaseContentType & {
+  baseType: '_element';
+};
 
-/** Union of all content types */
+/** Represents a "Media" content type (Image, Media, Video) */
+export type MediaContentType = BaseContentType & {
+  baseType: MediaStringTypes;
+};
+
+/** All possible content types */
 export type AnyContentType =
   | ComponentContentType
   | ExperienceContentType
+  | PageContentType
+  | FolderContentType
   | SectionContentType
-  | OtherContentTypes
+  | ElementContentType
   | MediaContentType;
 
-/** ContentType wrapper adding __type marker */
-export type ContentType<T extends AnyContentType> = T & {
-  __type: 'contentType';
-};
+export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
 
-/** Permitted types: either a wrapped ContentType or just a baseType string */
-export type PermittedTypes =
-  | ContentType<AnyContentType>
-  | AnyContentType['baseType'];
+/** All possible content type for allowed and restricted fields */
+export type PermittedTypes = ContentType | AnyContentType['baseType'];
