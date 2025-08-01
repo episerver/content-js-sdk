@@ -153,8 +153,8 @@ export class GraphClient {
     if (!contentTypeName) {
       throw new Error(`No content found for key [${params.key}]`);
     }
-
     const query = createQuery(contentTypeName);
+
     const response = await this.request(
       query,
       { filter },
