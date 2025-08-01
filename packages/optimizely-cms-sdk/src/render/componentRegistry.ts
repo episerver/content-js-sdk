@@ -44,7 +44,7 @@ type ComponentResolver<C> = (
 type ComponentMap<C> = Record<string, ComponentEntry<C>>;
 
 /** Returns true if `obj` is type {@linkcode ComponentWithVariants} */
-function hasVariants<T>(obj: unknown): obj is ComponentWithVariants<T> {
+function hasVariants(obj: unknown): obj is ComponentWithVariants<unknown> {
   return (
     typeof obj === 'object' && obj !== null && 'default' in obj && 'tags' in obj
   );
