@@ -152,7 +152,6 @@ export function OptimizelyExperience({
             key={node.key}
             opti={{
               ...node.component,
-              __typename: node.nodeType,
               __tag: tag,
             }}
           />
