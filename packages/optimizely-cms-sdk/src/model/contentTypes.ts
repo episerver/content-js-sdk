@@ -21,7 +21,6 @@ export const ALL_BASE_TYPES = [
 ] as const;
 
 export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
-
 export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 
 /** A "Base" content type that includes all common attributes for all content types */
@@ -31,29 +30,44 @@ type BaseContentType = {
   properties?: Record<string, AnyProperty>;
 };
 
-/** Represents the "Component" type (also called "Block") in CMS */
-export type ComponentContentType = BaseContentType & {
-  baseType: '_component';
-  compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
+/** Forward declarations for mutual references */
+export type PageContentType = BaseContentType & {
+  baseType: '_page';
+  mayAllowedTypes?: Array<
+    ContentType<PageContentType | ExperienceContentType | FolderContentType>
+  >;
 };
 
 export type ExperienceContentType = BaseContentType & {
   baseType: '_experience';
+  mayAllowedTypes?: Array<
+    ContentType<PageContentType | ExperienceContentType | FolderContentType>
+  >;
 };
 
-// This content type is used only internally
+export type FolderContentType = BaseContentType & {
+  baseType: '_folder';
+  mayAllowedTypes?: Array<ContentType<AnyContentType>>;
+};
+
+/** Represents the "Component" type (also called "Block") in CMS */
+export type ComponentContentType = BaseContentType & {
+  baseType: '_component';
+  compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
+  mayAllowedTypes?: Array<ContentType<ComponentContentType>>;
+};
+
+/** This content type is used only internally */
 export type SectionContentType = BaseContentType & {
   baseType: '_section';
 };
 
-/** Represents all other types in CMS. They don't have any additional property */
-export type OtherContentTypes = BaseContentType & {
-  baseType: BaseTypes;
+/** Represents element content type */
+export type ElementContentType = BaseContentType & {
+  baseType: '_element';
 };
 
-/**
- * Represents a "Media" content type (Image, Media, Video).
- */
+/** Represents a "Media" content type (Image, Media, Video) */
 export type MediaContentType = BaseContentType & {
   baseType: MediaStringTypes;
 };
@@ -62,8 +76,10 @@ export type MediaContentType = BaseContentType & {
 export type AnyContentType =
   | ComponentContentType
   | ExperienceContentType
+  | PageContentType
+  | FolderContentType
   | SectionContentType
-  | OtherContentTypes
+  | ElementContentType
   | MediaContentType;
 
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };

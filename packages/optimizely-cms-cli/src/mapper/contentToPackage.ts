@@ -2,6 +2,7 @@ import { AnyContentType } from '../service/utils.js';
 import {
   transformProperties,
   validateContentTypeKey,
+  parseChildContentType,
 } from '../utils/mapping.js';
 
 /**
@@ -14,10 +15,11 @@ function transformContentType(contentType: AnyContentType): any {
   validateContentTypeKey(contentType.key);
 
   const { properties = {} } = contentType;
+  const parsedContentType = parseChildContentType(contentType);
   const formattedProperties = transformProperties(properties);
 
   return {
-    ...contentType,
+    ...parsedContentType,
     properties: formattedProperties,
   };
 }
