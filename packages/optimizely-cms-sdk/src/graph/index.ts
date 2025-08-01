@@ -1,4 +1,9 @@
 import { createQuery } from './createQuery.js';
+import {
+  GraphContentResponseError,
+  GraphHttpResponseError,
+  GraphResponseError,
+} from './error.js';
 
 /** Options for Graph */
 type GraphOptions = {
@@ -21,8 +26,12 @@ export type GraphFilter = {
   };
 };
 
-const FETCH_CONTENT_QUERY = `
-query FetchContent($filter: _ContentWhereInput) {
+export type GraphVariables = {
+  filter: GraphFilter;
+};
+
+const FETCH_CONTENT_TYPE_QUERY = `
+query FetchContentType($filter: _ContentWhereInput) {
   _Content(where: $filter) {
     item {
       _metadata {
@@ -82,7 +91,11 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(query: string, variables: any, previewToken?: string) {
+  async request(
+    query: string,
+    variables: GraphVariables,
+    previewToken?: string
+  ) {
     const url = new URL(this.graphUrl);
 
     if (!previewToken) {
@@ -102,15 +115,36 @@ export class GraphClient {
     });
 
     if (!response.ok) {
-      // TODO: Handle HTTP errors
+      const text = await response.text().catch((err) => {
+        console.error('Error reading response text:', err);
+        return response.statusText;
+      });
+
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        // When the response is not JSON
+        throw new GraphHttpResponseError(text, {
+          status: response.status,
+          request: { query, variables },
+        });
+      }
+
+      if (json.errors) {
+        throw new GraphContentResponseError(json.errors, {
+          status: response.status,
+          request: { query, variables },
+        });
+      } else {
+        throw new GraphHttpResponseError(response.statusText, {
+          status: response.status,
+          request: { query, variables },
+        });
+      }
     }
 
-    // TODO:
     const json = await response.json();
-
-    if (json.errors) {
-      // TODO: handle errors sent by Graph
-    }
 
     return json.data;
   }
@@ -118,7 +152,7 @@ export class GraphClient {
   /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
   async fetchContentType(filter: GraphFilter, previewToken?: string) {
     const data = await this.request(
-      FETCH_CONTENT_QUERY,
+      FETCH_CONTENT_TYPE_QUERY,
       { filter },
       previewToken
     );
@@ -132,7 +166,10 @@ export class GraphClient {
     const contentTypeName = await this.fetchContentType(filter);
 
     if (!contentTypeName) {
-      throw new Error(`No content found for [${path}]`);
+      throw new GraphResponseError(
+        `No content found for path [${path}]. Check that your CMS contains something in the given path`,
+        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
+      );
     }
 
     const query = createQuery(contentTypeName);
@@ -151,7 +188,10 @@ export class GraphClient {
     );
 
     if (!contentTypeName) {
-      throw new Error(`No content found for key [${params.key}]`);
+      throw new GraphResponseError(
+        `No content found for key [${params.key}]. Check that your CMS contains something there`,
+        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
+      );
     }
 
     const query = createQuery(contentTypeName);
