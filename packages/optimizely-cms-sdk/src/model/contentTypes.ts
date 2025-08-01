@@ -28,19 +28,25 @@ export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 export type OtherBaseTypes = (typeof OTHER_BASE_TYPES)[number];
 
 /**
- * Determines the allowed types for the mayContainTypes property based on the given baseType.
- * For example:
- *   - If the baseType is '_page' or '_experience', mayContainTypes can be an array of page or experience content types.
- *   - If the baseType is '_component', mayContainTypes can be an array of component content types.
- *   - For other baseTypes, mayContainTypes is not allowed.
- * This avoids circular references by using the base content types directly.
+ * Defines the allowed types for the mayContainTypes property based on the provided baseType.
+ * - For '_page' and '_experience', mayContainTypes can include arrays of page, experience, or folder content types.
+ * - For '_component', mayContainTypes can include arrays of component content types.
+ * - For '_folder', mayContainTypes can include arrays of any content type.
+ * - For other baseTypes, mayContainTypes is not permitted.
+ * This approach prevents circular references by referencing base content types directly.
  */
 type AllowedMayContain<T extends BaseTypes> = T extends '_page' | '_experience'
   ? Array<
-      ContentType<BaseContentType<'_page'> | BaseContentType<'_experience'>>
+      ContentType<
+        | BaseContentType<'_page'>
+        | BaseContentType<'_experience'>
+        | BaseContentType<'_folder'>
+      >
     >
   : T extends '_component'
   ? Array<ContentType<BaseContentType<'_component'>>>
+  : T extends '_folder'
+  ? Array<ContentType<AnyContentType>>
   : never;
 
 /**
