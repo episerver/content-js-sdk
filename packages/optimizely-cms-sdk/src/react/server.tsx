@@ -149,7 +149,6 @@ export function OptimizelyExperience({
           displaySettings={parsedDisplaySettings}
         >
           <OptimizelyComponent
-            key={node.key}
             opti={{
               ...node.component,
               __tag: tag,
