@@ -12,11 +12,14 @@ export function getDisplayTemplate(name: string) {
   return _registry.find((c) => c.key === name);
 }
 
-/** Get the Component name from a content type name */
-export function getDisplayTemplateTag(
-  name: string | undefined
-): string | undefined {
-  return _registry.find((c) => c.key === name)?.tag;
+/**
+ * Get the tag of a {@linkcode DisplayTemplate}. Returns undefined if
+ * the DisplayTemplate doesn't exist or it doesn't have any tag
+ *
+ * @param key DisplayTemplate's key
+ */
+export function getDisplayTemplateTag(key: string): string | undefined {
+  return getDisplayTemplate(key)?.tag;
 }
 
 /** Get all the DisplayTemplates */
