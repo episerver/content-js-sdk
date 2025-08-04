@@ -38,7 +38,7 @@ import BlogExperience, {
 import BlogCard, { BlogCardContentType } from '@/components/BlogCard';
 import Banner, { BannerContentType } from '@/components/Banner';
 import Tile, {
-  SquarTile,
+  SquareTile,
   SquarTileDisplayTemplate,
   TileColumnDisplayTemplate,
   TileContentType,
@@ -96,14 +96,18 @@ initReactComponentRegistry({
     BlogCard,
     BlogExperience,
     Banner,
-    Tile,
+    Tile: {
+      default: Tile,
+      tags: {
+        Square: SquareTile,
+      },
+    },
     AboutExperience,
     AboutUs,
     MonthlySpecial,
     OfficeLocations,
     Location,
     BlankExperience,
-    SquarTile,
     FAQ,
   },
 });
