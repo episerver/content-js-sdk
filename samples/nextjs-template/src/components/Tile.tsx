@@ -98,7 +98,7 @@ export const SquarTileDisplayTemplate = displayTemplate({
       },
     },
   },
-  tag: 'SquarTile',
+  tag: 'Square',
 });
 
 type Props = {
@@ -117,7 +117,7 @@ export default function Tile({ opti }: Props) {
 }
 
 // This is a specific tile component that uses the SquarTileDisplayTemplate
-export function SquarTile({ opti, displaySettings }: Props) {
+export function SquareTile({ opti, displaySettings }: Props) {
   const { pa } = getPreviewUtils(opti);
   return (
     <div className="squarTile">
