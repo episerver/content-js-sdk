@@ -5,13 +5,14 @@ export const MAIN_BASE_TYPES = [
   '_component',
   '_experience',
   '_section',
+  '_page',
 ] as const;
 
 // Media-related base types
 export const MEDIA_BASE_TYPES = ['_image', '_media', '_video'] as const;
 
 // Other base types
-export const OTHER_BASE_TYPES = ['_page', '_folder', '_element'] as const;
+export const OTHER_BASE_TYPES = ['_folder', '_element'] as const;
 
 // All base types including media and other types
 export const ALL_BASE_TYPES = [
@@ -30,7 +31,7 @@ type BaseContentType = {
   properties?: Record<string, AnyProperty>;
 };
 
-/** Forward declarations for mutual references */
+/** Represents the Page type  in CMS */
 export type PageContentType = BaseContentType & {
   baseType: '_page';
   mayAllowedTypes?: Array<
@@ -38,6 +39,7 @@ export type PageContentType = BaseContentType & {
   >;
 };
 
+/** Represents the Experience type  in CMS */
 export type ExperienceContentType = BaseContentType & {
   baseType: '_experience';
   mayAllowedTypes?: Array<
@@ -45,6 +47,7 @@ export type ExperienceContentType = BaseContentType & {
   >;
 };
 
+/** Represents the Folder (Used in the asset panel to organizing content and not in Graph) type in CMS */
 export type FolderContentType = BaseContentType & {
   baseType: '_folder';
   mayAllowedTypes?: Array<ContentType<AnyContentType>>;
