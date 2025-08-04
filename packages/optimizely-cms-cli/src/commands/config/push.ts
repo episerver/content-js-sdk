@@ -97,8 +97,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
           response.error.title,
           response.error.code
         );
+        console.error(response.error.detail);
       }
-      console.error(response.error.detail);
+
       return;
     }
 
