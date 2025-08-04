@@ -60,7 +60,7 @@ export default function LandingSection({ opti }: Props) {
   const { pa } = getPreviewUtils(opti);
   return (
     <section>
-      <header>
+      <header className="landing-header">
         <h2 {...pa('heading')}>{opti.heading}</h2>
         <p {...pa('subtitle')}>{opti.subtitle}</p>
       </header>
