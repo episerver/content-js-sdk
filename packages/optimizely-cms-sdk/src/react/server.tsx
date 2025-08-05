@@ -179,16 +179,36 @@ export function OptimizelyExperience({
   });
 }
 
+function FallbackRow({ node, children }: StructureContainerProps) {
+  const { pa } = getPreviewUtils(node);
+  return (
+    <div style={{ display: 'flex', gap: '1rem' }} {...pa(node)}>
+      {children}
+    </div>
+  );
+}
+
+function FallbackColumn({ node, children }: StructureContainerProps) {
+  const { pa } = getPreviewUtils(node);
+  return (
+    <div style={{ flex: '1' }} {...pa(node)}>
+      {children}
+    </div>
+  );
+}
+
+type OptimizelyGridSectionProps = {
+  nodes?: ExperienceNode[];
+  row?: StructureContainer;
+  column?: StructureContainer;
+  displaySettings?: DisplaySettingsType[];
+};
+
 export function OptimizelyGridSection({
   nodes,
-  row,
-  column,
-}: {
-  nodes?: ExperienceNode[];
-  row: StructureContainer;
-  column: StructureContainer;
-  displaySettings?: DisplaySettingsType[];
-}) {
+  row = FallbackRow,
+  column = FallbackColumn,
+}: OptimizelyGridSectionProps) {
   if (!nodes) {
     // TODO: Handle beter
     throw new Error('Nodes must be an array');
