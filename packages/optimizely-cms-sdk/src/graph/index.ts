@@ -70,11 +70,21 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
 }
 
 export class GraphClient {
-  key: string | PreviewParams;
+  key: string;
+  keyType: 'preview_token' | 'single_key';
+  ctx: string;
   graphUrl: string;
 
   constructor(key: string | PreviewParams, options: GraphOptions = {}) {
-    this.key = key;
+    if (typeof key === 'string') {
+      this.key = key;
+      this.keyType = 'single_key';
+      this.ctx = '';
+    } else {
+      this.ctx = key.ctx;
+      this.key = key.preview_token;
+      this.keyType = 'preview_token';
+    }
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
   }
 
@@ -85,10 +95,10 @@ export class GraphClient {
       'Content-Type': 'application/json',
     };
 
-    if (typeof this.key === 'string') {
+    if (this.keyType === 'single_key') {
       url.searchParams.append('auth', this.key);
     } else {
-      headers['Authorization'] = `Bearer ${this.key?.preview_token}`;
+      headers['Authorization'] = `Bearer ${this.key}`;
     }
 
     const response = await fetch(url, {
@@ -228,7 +238,7 @@ export class GraphClient {
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
-  async fetchPreviewContent(params: PreviewParams) {
+  async fetchPreviewContent(params: { key: string; loc: string; ver: string }) {
     const filter = previewFilter(params);
     const contentTypeName = await this.fetchContentType(filter);
 

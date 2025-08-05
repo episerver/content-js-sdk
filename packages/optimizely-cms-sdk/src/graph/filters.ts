@@ -15,7 +15,11 @@ export function pathFilter(path: string): GraphQueryFilters {
   };
 }
 
-export function previewFilter(params: PreviewParams): GraphQueryFilters {
+export function previewFilter(params: {
+  key: string;
+  ver: string;
+  loc: string;
+}): GraphQueryFilters {
   return {
     where: {
       _metadata: {
