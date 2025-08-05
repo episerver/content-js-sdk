@@ -70,32 +70,30 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
 }
 
 export class GraphClient {
-  key: string;
+  key: string | PreviewParams;
   graphUrl: string;
 
-  constructor(key: string, options: GraphOptions = {}) {
+  constructor(key: string | PreviewParams, options: GraphOptions = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
   }
 
   /** Perform a GraphQL query with variables */
-  async request(
-    query: string,
-    variables: GraphQueryFilters,
-    previewToken?: string
-  ) {
+  async request(query: string, variables: GraphQueryFilters) {
     const url = new URL(this.graphUrl);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
 
-    if (!previewToken) {
+    if (typeof this.key === 'string') {
       url.searchParams.append('auth', this.key);
+    } else {
+      headers['Authorization'] = `Bearer ${this.key?.preview_token}`;
     }
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: previewToken ? `Bearer ${previewToken}` : '',
-      },
+      headers,
       body: JSON.stringify({
         query,
         variables,
@@ -138,14 +136,10 @@ export class GraphClient {
   }
 
   /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
-  async fetchContentType(filters: GraphQueryFilters, previewToken?: string) {
-    const data = await this.request(
-      FETCH_CONTENT_TYPE_QUERY,
-      filters,
-      previewToken
-    );
+  async fetchContentType(filters: GraphQueryFilters) {
+    const data = await this.getItemMetadata(filters);
 
-    return data._Content?.item?._metadata?.types?.[0];
+    return data.types?.[0];
   }
 
   async getItem(filters: GraphQueryFilters) {
@@ -190,6 +184,10 @@ export class GraphClient {
 
     const response = await this.request(query, filters);
 
+    if (typeof this.key !== 'string') {
+      return decorateWithContext(response?._Content?.item, this.key);
+    }
+
     return response?._Content?.item;
   }
 
@@ -211,10 +209,6 @@ export class GraphClient {
     ) as MetadataResponse[];
   }
 
-  async listItemsContent() {}
-
-  async listItems(filter: GraphQueryFilters = {}) {}
-
   /** Fetches a content given its path */
   async fetchContent(path: string) {
     const filter = pathFilter(path);
@@ -228,7 +222,6 @@ export class GraphClient {
     }
 
     const query = createQuery(contentTypeName);
-
     const response = await this.request(query, filter);
 
     return response?._Content?.item;
@@ -237,10 +230,7 @@ export class GraphClient {
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: PreviewParams) {
     const filter = previewFilter(params);
-    const contentTypeName = await this.fetchContentType(
-      filter,
-      params.preview_token
-    );
+    const contentTypeName = await this.fetchContentType(filter);
 
     if (!contentTypeName) {
       throw new GraphResponseError(
@@ -248,10 +238,6 @@ export class GraphClient {
         { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
       );
     }
-    const query = createQuery(contentTypeName);
-
-    const response = await this.request(query, filter, params.preview_token);
-
-    return decorateWithContext(response?._Content?.item, params);
+    return this.getItemContent(contentTypeName, filter);
   }
 }
