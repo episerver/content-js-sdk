@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import {
   ComponentRegistry,
   ComponentResolverOrObject,
@@ -13,6 +13,7 @@ import {
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
+import { isDev } from '../util/environment.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -98,7 +99,17 @@ export async function OptimizelyComponent({
   });
 
   if (!Component) {
-    return <div>No component found for content type {opti.__typename}</div>;
+    console.log(
+      `[optimizely-cms-sdk] No component found for content type ${
+        opti.__typename
+      } ${opti.__tag ? `with tag "${opti.__tag}"` : ''}`
+    );
+
+    return (
+      <FallbackComponent>
+        No component found for content type <b>{opti.__typename}</b>
+      </FallbackComponent>
+    );
   }
 
   const optiProps = {
@@ -195,6 +206,23 @@ function FallbackColumn({ node, children }: StructureContainerProps) {
       {children}
     </div>
   );
+}
+
+function FallbackComponent({ children }: { children: ReactNode }) {
+  return isDev() ? (
+    <div
+      style={{
+        color: 'black',
+        margin: '1rem',
+        padding: '1rem',
+        border: '1px solid',
+        borderRadius: '8px',
+        backgroundColor: 'white',
+      }}
+    >
+      {children}
+    </div>
+  ) : null;
 }
 
 type OptimizelyGridSectionProps = {
