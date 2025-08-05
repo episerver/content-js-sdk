@@ -1,3 +1,4 @@
+import { PreviewParams } from './index.js';
 import { MetadataResponse } from './metadata.js';
 
 export function pathFilter(path: string): GraphQueryFilters {
@@ -9,6 +10,18 @@ export function pathFilter(path: string): GraphQueryFilters {
             eq: path,
           },
         },
+      },
+    },
+  };
+}
+
+export function previewFilter(params: PreviewParams): GraphQueryFilters {
+  return {
+    where: {
+      _metadata: {
+        key: { eq: params.key },
+        version: { eq: params.ver },
+        locale: { eq: params.loc },
       },
     },
   };

@@ -8,6 +8,8 @@ import {
   filterHeading,
   filterVariables,
   GraphQueryFilters,
+  pathFilter,
+  previewFilter,
 } from './filters.js';
 import { metadataQueryBody, MetadataResponse } from './metadata.js';
 
@@ -48,26 +50,6 @@ query FetchContentType($filter: _ContentWhereInput) {
 }
 `;
 
-export function getFilterFromPreviewParams(params: PreviewParams): GraphFilter {
-  return {
-    _metadata: {
-      key: { eq: params.key },
-      version: { eq: params.ver },
-      locale: { eq: params.loc },
-    },
-  };
-}
-
-export function getFilterFromPath(path: string): GraphFilter {
-  return {
-    _metadata: {
-      url: {
-        default: { eq: path },
-      },
-    },
-  };
-}
-
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
@@ -99,7 +81,7 @@ export class GraphClient {
   /** Perform a GraphQL query with variables */
   async request(
     query: string,
-    variables: GraphVariables,
+    variables: GraphQueryFilters,
     previewToken?: string
   ) {
     const url = new URL(this.graphUrl);
@@ -156,10 +138,10 @@ export class GraphClient {
   }
 
   /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
-  async fetchContentType(filter: GraphFilter, previewToken?: string) {
+  async fetchContentType(filters: GraphQueryFilters, previewToken?: string) {
     const data = await this.request(
       FETCH_CONTENT_TYPE_QUERY,
-      { filter },
+      filters,
       previewToken
     );
 
@@ -235,26 +217,26 @@ export class GraphClient {
 
   /** Fetches a content given its path */
   async fetchContent(path: string) {
-    const filter = getFilterFromPath(path);
+    const filter = pathFilter(path);
     const contentTypeName = await this.fetchContentType(filter);
 
     if (!contentTypeName) {
       throw new GraphResponseError(
         `No content found for path [${path}]. Check that your CMS contains something in the given path`,
-        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
+        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
       );
     }
 
     const query = createQuery(contentTypeName);
 
-    const response = await this.request(query, { filter });
+    const response = await this.request(query, filter);
 
     return response?._Content?.item;
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: PreviewParams) {
-    const filter = getFilterFromPreviewParams(params);
+    const filter = previewFilter(params);
     const contentTypeName = await this.fetchContentType(
       filter,
       params.preview_token
@@ -263,16 +245,12 @@ export class GraphClient {
     if (!contentTypeName) {
       throw new GraphResponseError(
         `No content found for key [${params.key}]. Check that your CMS contains something there`,
-        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
+        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
       );
     }
     const query = createQuery(contentTypeName);
 
-    const response = await this.request(
-      query,
-      { filter },
-      params.preview_token
-    );
+    const response = await this.request(query, filter, params.preview_token);
 
     return decorateWithContext(response?._Content?.item, params);
   }
