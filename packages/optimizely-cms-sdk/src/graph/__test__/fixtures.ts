@@ -297,6 +297,22 @@ export const ReviewPage = contentType({
   },
 });
 
+export const HomePage = contentType({
+  key: 'HomePage',
+  displayName: 'HomePage',
+  baseType: '_page',
+  properties: {
+    p_contentArea: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: ['_page', '_component', '_video', '_image', '_media'],
+      },
+      sortOrder: 8,
+    },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -321,4 +337,5 @@ export const allContentTypes: AnyContentType[] = [
   ContentPage,
   LocationPage,
   ReviewPage,
+  HomePage,
 ];
