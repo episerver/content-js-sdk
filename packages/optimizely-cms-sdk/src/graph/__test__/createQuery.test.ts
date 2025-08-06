@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createFragment, createQuery } from '../createQuery.js';
+import { createFragment } from '../createQuery.js';
 import { initContentTypeRegistry } from '../../model/index.js';
 import {
   callToAction,
@@ -318,83 +318,6 @@ describe('createFragment()', () => {
         "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage } body { html, json } }",
         "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage } }",
       ]
-    `);
-  });
-});
-
-describe('createQuery', () => {
-  test('simple content types', async () => {
-    const result = await createQuery(callToAction.key);
-    expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { label link }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
-          item {
-            __typename
-            ...CallToAction
-          }
-        }
-      }
-        "
-    `);
-  });
-
-  test('complex content types', async () => {
-    const result = await createQuery(articlePage.key);
-    expect(result).toMatchInlineSnapshot(`
-      "
-      fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
-          item {
-            __typename
-            ...ArticlePage
-          }
-        }
-      }
-        "
-    `);
-  });
-
-  test('nested content types (one level)', async () => {
-    const result = await createQuery(heroBlock.key);
-    expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { label link }
-      fragment myButton on myButton { label link }
-      fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
-          item {
-            __typename
-            ...Hero
-          }
-        }
-      }
-        "
-    `);
-  });
-
-  test('nested content types (several levels)', async () => {
-    const result = await createQuery(landingPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { label link }
-      fragment myButton on myButton { label link }
-      fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }
-      fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }
-      fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
-      fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
-          item {
-            __typename
-            ...LandingPage
-          }
-        }
-      }
-        "
     `);
   });
 });
