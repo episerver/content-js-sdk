@@ -26,6 +26,18 @@ export function isBaseType(key: string): boolean {
 }
 
 /**
+ * Check if the keyName is a built-in CMS baseType.
+ * @param key - The keyName of the content type.
+ * @returns True if the key is a built-in CMS baseType format, otherwise return the original key.
+ */
+export function toBaseTypeFragmentKey(key: string): string {
+  if (isBaseType(key)) {
+    return `_${key.charAt(1).toUpperCase()}${key.slice(2)}`;
+  }
+  return key;
+}
+
+/**
  * Check if the keyName is a Media type
  * @param key keyName of the content type
  * @returns boolean
