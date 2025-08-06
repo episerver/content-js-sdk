@@ -2,16 +2,57 @@ import {
   GraphContentResponseError,
   GraphHttpResponseError,
   GraphResponseError,
+  GraphResponseParseError,
 } from './error.js';
-import { createFragment, createQuery } from './createQuery.js';
-import {
-  filterHeading,
-  filterVariables,
-  GraphQueryFilters,
-  pathFilter,
-  previewFilter,
-} from './filters.js';
-import { metadataQueryBody, MetadataResponse } from './metadata.js';
+import { createFragment } from './createQuery.js';
+import { GraphQueryArguments, pathFilter, previewFilter } from './filters.js';
+import { MetadataResponse } from './metadata.js';
+
+const VARIABLES_TYPES = [
+  '$cursor: String',
+  '$ids: String[]',
+  '$limit: number',
+  '$locale: string[]',
+  '$orderBy: _ContentOrderByInput',
+  '$skip: int! = 20',
+  '$variation: VariationInput',
+  '$where: _ContentWhereInput',
+].join(',');
+
+const VARIABLES_MAPPING = [
+  'cursor: $cursor',
+  'ids: $ids',
+  'limit: $limit',
+  'locale: $locale',
+  'orderBy: $orderBy',
+  'skip: $skip',
+  'variation: $variation',
+  'where: $where',
+].join(',');
+
+const METADATA_FIELDS = `_metadata { key locale fallbackForLocale version displayName url {type default hierarchical internal graph} types published status changeset created lastModified sortOrder variation }`;
+
+function itemMetadataQuery() {
+  return `
+  query GetItemMetadata(${VARIABLES_TYPES}) {
+    _Content(${VARIABLES_MAPPING}) {
+      item {
+        ${METADATA_FIELDS}
+      }
+    }
+  }`;
+}
+
+function itemContentQuery(fragmentName: string, fragments: string[]) {
+  return `
+  ${fragments.join('\n')}
+  query GetItemContent(${VARIABLES_TYPES}) {
+    _Content(${VARIABLES_MAPPING}) {
+      item { __typename ${fragmentName} }
+    }
+  }
+  `;
+}
 
 /** Options for Graph */
 type GraphOptions = {
@@ -27,31 +68,11 @@ export type PreviewParams = {
   loc: string;
 };
 
-// TODO: this type definition is provisional
-export type GraphFilter = {
-  _metadata: {
-    [key: string]: any;
-  };
-};
-
-export type GraphVariables = {
-  filter: GraphFilter;
-};
-
-const FETCH_CONTENT_TYPE_QUERY = `
-query FetchContentType($filter: _ContentWhereInput) {
-  _Content(where: $filter) {
-    item {
-      _metadata {
-        types
-      }
-    }
-  }
-}
-`;
-
 /** Adds an extra `__context` property next to each `__typename` property */
-function decorateWithContext(obj: any, params: PreviewParams): any {
+function decorateWithContext(
+  obj: any,
+  params: { ctx: string; preview_token: string }
+): any {
   if (Array.isArray(obj)) {
     return obj.map((e) => decorateWithContext(e, params));
   }
@@ -75,6 +96,16 @@ export class GraphClient {
   ctx: string;
   graphUrl: string;
 
+  /**
+   * Constructs a new instance of GraphClient
+   *
+   * @param key - Either a string representing a single API key, or a `PreviewParams` object containing a preview token and context.
+   * @param options - Optional configuration for the graph client.
+   * @param options.graphUrl - The URL of the graph API. Defaults to `'https://cg.optimizely.com/content/v2'` if not provided.
+   *
+   * If `key` is a string, it is treated as a single API key. If `key` is a `PreviewParams` object,
+   * the preview token and context are extracted for preview mode.
+   */
   constructor(key: string | PreviewParams, options: GraphOptions = {}) {
     if (typeof key === 'string') {
       this.key = key;
@@ -89,7 +120,7 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(query: string, variables: GraphQueryFilters) {
+  async request(query: string, variables: GraphQueryArguments) {
     const url = new URL(this.graphUrl);
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -145,109 +176,74 @@ export class GraphClient {
     return json.data;
   }
 
-  /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
-  async fetchContentType(filters: GraphQueryFilters) {
-    const data = await this.getItemMetadata(filters);
+  async getItemContentType(variables: GraphQueryArguments) {
+    const data = await this.getItemMetadata(variables);
+    const query = itemMetadataQuery();
 
-    return data.types?.[0];
-  }
-
-  async getItem(filters: GraphQueryFilters) {
-    const metadata = await this.getItemMetadata(filters);
-    const type = metadata?.types?.[0];
-
-    if (!type) {
-      throw new Error(`No content found`);
+    if (!data.types) {
+      throw new GraphResponseParseError(
+        'The item has a non-null `key` but `types` are null',
+        { request: { query, variables: variables }, response: data }
+      );
     }
 
-    return this.getItemContent(type, filters);
+    const nonNullTypes = data.types.filter((t) => t !== null);
+
+    if (nonNullTypes.length === 0) {
+      throw new GraphResponseParseError(
+        'The `types` field is either empty or all its elements are `null`',
+        { request: { query, variables: variables }, response: data }
+      );
+    }
+
+    return nonNullTypes[0];
   }
 
-  async getItemMetadata(filters: GraphQueryFilters) {
-    const query = `
-      query GetItemMetadata(${filterVariables}) {
-        _Content(${filterHeading}) {
-          item {
-            ${metadataQueryBody}
-          }
-        }
-      }
-    `;
-    const response = await this.request(query, filters);
+  async getItem(variables: GraphQueryArguments) {
+    const type = await this.getItemContentType(variables);
 
-    return response._Content?.item?._metadata as MetadataResponse;
+    return this.getItemContent(type, variables);
+  }
+
+  async getItemMetadata(variables: GraphQueryArguments) {
+    const query = itemMetadataQuery();
+    const response = await this.request(query, variables);
+    const metadata = response._Content?.item?._metadata as MetadataResponse;
+
+    if (!metadata.key) {
+      throw new GraphResponseError('No item found', {
+        request: { query, variables: variables },
+      });
+    }
+
+    return metadata;
   }
 
   async getItemContent(
     contentTypeName: string,
-    filters: GraphQueryFilters = {}
+    variables: GraphQueryArguments = {}
   ) {
     const fragments = createFragment(contentTypeName);
-    const query = `
-      ${fragments.join('\n')}
-      query GetItemContent(${filterVariables}) {
-        _Content(${filterHeading}) {
-          item { __typename ${contentTypeName} }
-        }
-      }
-    `;
+    const query = itemContentQuery(contentTypeName, fragments);
+    const response = await this.request(query, variables);
 
-    const response = await this.request(query, filters);
-
-    if (typeof this.key !== 'string') {
-      return decorateWithContext(response?._Content?.item, this.key);
+    if (this.keyType === 'preview_token') {
+      return decorateWithContext(response?._Content?.item, {
+        ctx: this.ctx,
+        preview_token: this.key,
+      });
     }
 
     return response?._Content?.item;
   }
 
-  async listItemsMetadata(filters: GraphQueryFilters = {}) {
-    const query = `
-      query ListItemsMetadata(${filterVariables}) {
-        _Content(${filterHeading}) {
-          items {
-            ${metadataQueryBody}
-          }
-        }
-      }
-    `;
-
-    const response = await this.request(query, filters);
-
-    return response._Content?.items?.map(
-      (item: any) => item?._metadata
-    ) as MetadataResponse[];
-  }
-
-  /** Fetches a content given its path */
+  /** Fetches a content given its path. */
   async fetchContent(path: string) {
-    const filter = pathFilter(path);
-    const contentTypeName = await this.fetchContentType(filter);
-
-    if (!contentTypeName) {
-      throw new GraphResponseError(
-        `No content found for path [${path}]. Check that your CMS contains something in the given path`,
-        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
-      );
-    }
-
-    const query = createQuery(contentTypeName);
-    const response = await this.request(query, filter);
-
-    return response?._Content?.item;
+    return this.getItem(pathFilter(path));
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: { key: string; loc: string; ver: string }) {
-    const filter = previewFilter(params);
-    const contentTypeName = await this.fetchContentType(filter);
-
-    if (!contentTypeName) {
-      throw new GraphResponseError(
-        `No content found for key [${params.key}]. Check that your CMS contains something there`,
-        { request: { variables: filter, query: FETCH_CONTENT_TYPE_QUERY } }
-      );
-    }
-    return this.getItemContent(contentTypeName, filter);
+    return this.getItem(previewFilter(params));
   }
 }

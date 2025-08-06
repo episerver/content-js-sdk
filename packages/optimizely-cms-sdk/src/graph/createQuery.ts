@@ -1,3 +1,6 @@
+/**
+ * This module generates GraphQL fragments based on the registered content types
+ */
 import { AnyProperty } from '../model/properties.js';
 import {
   AnyContentType,
@@ -235,27 +238,6 @@ export function createFragment(
     ...new Set(extraFragments), // unique dependency fragments
     `fragment ${fragmentName} on ${fragmentName} { ${uniqueFields} }`,
   ];
-}
-
-/**
- * Generates a complete GraphQL query for fetching a content type and its fragment.
- * @param contentType - The key of the content type to query.
- * @returns A string representing the GraphQL query.
- */
-export function createQuery(contentType: string) {
-  const fragment = createFragment(contentType);
-
-  return `
-${fragment.join('\n')}
-query FetchContent($filter: _ContentWhereInput) {
-  _Content(where: $filter) {
-    item {
-      __typename
-      ...${contentType}
-    }
-  }
-}
-  `;
 }
 
 /**

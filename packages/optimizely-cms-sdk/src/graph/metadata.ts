@@ -21,5 +21,3 @@ export type MetadataResponse = {
   sortOrder?: number;
   variation?: string;
 };
-
-export const metadataQueryBody = `_metadata { key locale fallbackForLocale version displayName url {type default hierarchical internal graph} types published status changeset created lastModified sortOrder variation }`;

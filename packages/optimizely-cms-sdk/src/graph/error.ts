@@ -1,4 +1,4 @@
-import type { GraphQueryFilters } from './filters.js';
+import type { GraphQueryArguments } from './filters.js';
 
 /** Represents the request sent to graph */
 type GraphRequest = {
@@ -6,7 +6,7 @@ type GraphRequest = {
   query: string;
 
   /** Variables sent to Graph */
-  variables: GraphQueryFilters;
+  variables: GraphQueryArguments;
 };
 
 /** Super-class for all errors related to Optimizely Graph */
@@ -61,5 +61,17 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     super(message, options);
 
     this.errors = errors;
+  }
+}
+
+/** Thrown when the response from Graph is unexpected probably due to a bug */
+export class GraphResponseParseError extends GraphResponseError {
+  response: any;
+  constructor(
+    message: string,
+    options: { request: GraphRequest; response: any }
+  ) {
+    super(message, options);
+    this.response = options.response;
   }
 }
