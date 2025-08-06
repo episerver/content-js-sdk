@@ -8,14 +8,12 @@ type Props = {
 };
 
 export default async function Page({ searchParams }: Props) {
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
+  const previewParams = (await searchParams) as PreviewParams;
+  const client = new GraphClient(previewParams, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  const response = await client.fetchPreviewContent(
-    // TODO: check types in runtime properly
-    (await searchParams) as PreviewParams
-  );
+  const response = await client.fetchPreviewContent(previewParams);
 
   return (
     <>
