@@ -8,14 +8,20 @@ export {
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
 } from './model/index.js';
-export { GraphClient, getFilterFromPath } from './graph/index.js';
-export { createQuery } from './graph/createQuery.js';
+export {
+  GraphClient,
+  itemContentQuery,
+  itemMetadataQuery,
+} from './graph/index.js';
+export { createFragment } from './graph/createQuery.js';
 export type { PreviewParams } from './graph/index.js';
 export {
   BlankSectionContentType,
   BlankExperienceContentType,
 } from './model/internalContentTypes.js';
 
+export * as filters from './graph/filters.js';
+export * as GraphErrors from './graph/error.js';
 export * as ContentTypes from './model/contentTypes.js';
 export * as DisplayTemplates from './model/displayTemplates.js';
 export * as Properties from './model/properties.js';
