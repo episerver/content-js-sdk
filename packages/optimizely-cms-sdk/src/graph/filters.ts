@@ -1,7 +1,6 @@
-import { PreviewParams } from './index.js';
 import { MetadataResponse } from './metadata.js';
 
-export function pathFilter(path: string): GraphQueryFilters {
+export function pathFilter(path: string): GraphQueryArguments {
   return {
     where: {
       _metadata: {
@@ -19,7 +18,7 @@ export function previewFilter(params: {
   key: string;
   ver: string;
   loc: string;
-}): GraphQueryFilters {
+}): GraphQueryArguments {
   return {
     where: {
       _metadata: {
@@ -34,7 +33,7 @@ export function previewFilter(params: {
 export function variationsFilter(
   values?: string | (string | undefined | null)[],
   includeOriginal?: boolean
-): GraphQueryFilters {
+): GraphQueryArguments {
   if (!values) {
     return {
       variation: {
@@ -64,7 +63,9 @@ export function variationsFilter(
   };
 }
 
-export function metadataFilter(metadata: MetadataResponse): GraphQueryFilters {
+export function metadataFilter(
+  metadata: MetadataResponse
+): GraphQueryArguments {
   return {
     where: {
       _metadata: {
@@ -75,7 +76,7 @@ export function metadataFilter(metadata: MetadataResponse): GraphQueryFilters {
   };
 }
 
-export type GraphQueryFilters = {
+export type GraphQueryArguments = {
   cursor?: string;
   ids?: string[];
   limit?: number;
@@ -85,12 +86,6 @@ export type GraphQueryFilters = {
   variation?: VariationInput;
   where?: ContentWhereInput;
 };
-
-export const filterVariables =
-  '$cursor: String, $ids: String[], $limit: number, $locale: string[], $orderBy: _ContentOrderByInput, $skip: int! = 20, $variation: VariationInput, $where: _ContentWhereInput';
-
-export const filterHeading =
-  'cursor: $cursor, ids: $ids, limit: $limit, locale: $locale, orderBy: $orderBy, skip: $skip, variation: $variation, where: $where';
 
 type OrderBy = 'ASC' | 'DESC';
 
