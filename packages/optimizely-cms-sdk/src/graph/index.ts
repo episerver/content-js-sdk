@@ -119,7 +119,6 @@ export class GraphClient {
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
   }
 
-  /** Perform a GraphQL query with variables */
   async request(query: string, variables: GraphQueryArguments) {
     const url = new URL(this.graphUrl);
     const headers: Record<string, string> = {
@@ -176,6 +175,11 @@ export class GraphClient {
     return json.data;
   }
 
+  /**
+   * Retrieves the content type of an item.
+   *
+   * @param variables - The arguments to be used in the GraphQL query for fetching item metadata.
+   */
   async getItemContentType(variables: GraphQueryArguments) {
     const data = await this.getItemMetadata(variables);
     const query = itemMetadataQuery();
@@ -199,6 +203,11 @@ export class GraphClient {
     return nonNullTypes[0];
   }
 
+  /**
+   * Retrieves the content of an item
+   *
+   * @param variables - The arguments used in the GraphQL query for fetching the item.
+   */
   async getItem(variables: GraphQueryArguments) {
     const type = await this.getItemContentType(variables);
 
@@ -219,6 +228,12 @@ export class GraphClient {
     return metadata;
   }
 
+  /**
+   * Retrieves the content of an item
+   *
+   * @param contentTypeName - Item's content type.
+   * @param variables - The arguments used in the GraphQL query for fetching the item.
+   */
   async getItemContent(
     contentTypeName: string,
     variables: GraphQueryArguments = {}
@@ -237,12 +252,23 @@ export class GraphClient {
     return response?._Content?.item;
   }
 
-  /** Fetches a content given its path. */
+  /**
+   * Fetches content from the CMS using the specified path.
+   *
+   * @param path - The path to the content item to retrieve.
+   */
   async fetchContent(path: string) {
     return this.getItem(pathFilter(path));
   }
 
-  /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
+  /**
+   * Fetches a preview version of content based on the provided parameters.
+   *
+   * @param params - An object containing the following properties:
+   * @param params.key - The unique identifier for the content item.
+   * @param params.loc - The locale or location identifier for the content.
+   * @param params.ver - The version of the content to preview.
+   */
   async fetchPreviewContent(params: { key: string; loc: string; ver: string }) {
     return this.getItem(previewFilter(params));
   }

@@ -1,5 +1,11 @@
 import { MetadataResponse } from './metadata.js';
 
+/**
+ * Creates a {@linkcode GraphQueryArguments} object that filters results by a specific URL path.
+ *
+ * @param path - The URL path to filter by.
+ * @returns A `GraphQueryArguments` object with a `where` clause that matches the given path.
+ */
 export function pathFilter(path: string): GraphQueryArguments {
   return {
     where: {
@@ -14,6 +20,16 @@ export function pathFilter(path: string): GraphQueryArguments {
   };
 }
 
+/**
+ * Creates a {@linkcode GraphQueryArguments} object for previewing content based on key, version, and locale.
+ *
+ * @param params - An object containing the following properties:
+ * @param params.key - The unique key identifying the content.
+ * @param params.ver - The version of the content to preview.
+ * @param params.loc - The locale of the content to preview.
+ *
+ * @returns A `GraphQueryArguments` object with a `where` clause filtering by key, version, and locale.
+ */
 export function previewFilter(params: {
   key: string;
   ver: string;
@@ -76,6 +92,9 @@ export function metadataFilter(
   };
 }
 
+/**
+ * Arguments for querying content via the Graph API.
+ */
 export type GraphQueryArguments = {
   cursor?: string;
   ids?: string[];
