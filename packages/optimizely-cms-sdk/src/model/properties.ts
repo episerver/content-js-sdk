@@ -22,6 +22,8 @@ type WithEnum<T> = {
 export type ArrayProperty<T extends ArrayItems> = BaseProperty & {
   type: 'array';
   items: T;
+  minItems?: number | null;
+  maxItems?: number | null;
 };
 
 export type ArrayItems =
@@ -58,6 +60,8 @@ export type BinaryProperty = BaseProperty & { type: 'binary' };
 export type JsonProperty = BaseProperty & { type: 'json' };
 export type DateTimeProperty = BaseProperty & {
   type: 'dateTime';
+  minimum?: string;
+  maximum?: string;
 };
 
 // Note: `RichText` type does not exist in the REST API. However, we need it to extract the right GraphQL fields from there
