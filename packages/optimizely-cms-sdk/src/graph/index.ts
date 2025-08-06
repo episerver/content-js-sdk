@@ -9,49 +9,48 @@ import { GraphQueryArguments, pathFilter, previewFilter } from './filters.js';
 import { MetadataResponse } from './metadata.js';
 
 const VARIABLES_TYPES = [
-  '$cursor: String',
-  '$ids: String[]',
-  '$limit: number',
-  '$locale: string[]',
-  '$orderBy: _ContentOrderByInput',
-  '$skip: int! = 20',
-  '$variation: VariationInput',
-  '$where: _ContentWhereInput',
-].join(',');
+  '$cursor:String',
+  '$ids:[String]',
+  '$limit:Int',
+  '$locale:[String]',
+  '$orderBy:_ContentOrderByInput',
+  '$skip:Int! = 0',
+  '$variation:VariationInput',
+  '$where:_ContentWhereInput',
+].join(', ');
 
 const VARIABLES_MAPPING = [
-  'cursor: $cursor',
-  'ids: $ids',
-  'limit: $limit',
-  'locale: $locale',
-  'orderBy: $orderBy',
-  'skip: $skip',
-  'variation: $variation',
-  'where: $where',
-].join(',');
+  'cursor:$cursor',
+  'ids:$ids',
+  'limit:$limit',
+  'locale:$locale',
+  'orderBy:$orderBy',
+  'skip:$skip',
+  'variation:$variation',
+  'where:$where',
+].join(', ');
 
 const METADATA_FIELDS = `_metadata { key locale fallbackForLocale version displayName url {type default hierarchical internal graph} types published status changeset created lastModified sortOrder variation }`;
 
-function itemMetadataQuery() {
+export function itemMetadataQuery() {
   return `
-  query GetItemMetadata(${VARIABLES_TYPES}) {
-    _Content(${VARIABLES_MAPPING}) {
-      item {
-        ${METADATA_FIELDS}
-      }
-    }
-  }`;
-}
-
-function itemContentQuery(fragmentName: string, fragments: string[]) {
-  return `
-  ${fragments.join('\n')}
-  query GetItemContent(${VARIABLES_TYPES}) {
-    _Content(${VARIABLES_MAPPING}) {
-      item { __typename ${fragmentName} }
+query GetItemMetadata(${VARIABLES_TYPES}) {
+  _Content(${VARIABLES_MAPPING}) {
+    item {
+      ${METADATA_FIELDS}
     }
   }
-  `;
+}`;
+}
+
+export function itemContentQuery(fragmentName: string, fragments: string[]) {
+  return `${fragments.join('\n')}
+query GetItemContent(${VARIABLES_TYPES}) {
+  _Content(${VARIABLES_MAPPING}) {
+    item { __typename ...${fragmentName} }
+  }
+}
+`;
 }
 
 /** Options for Graph */
