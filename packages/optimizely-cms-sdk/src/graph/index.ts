@@ -26,12 +26,10 @@ export type PreviewParams = {
 };
 
 /** Arguments for the method `fetchContent` */
-type PathOrOptions =
-  | string
-  | {
-      path: string;
-      variation: string;
-    };
+type FetchContentOptions = {
+  path: string;
+  variation: string;
+};
 
 const FETCH_CONTENT_TYPE_QUERY = `
 query FetchContentType($where: _ContentWhereInput, $variation: VariationInput) {
@@ -128,7 +126,13 @@ export class GraphClient {
     return json.data;
   }
 
-  /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
+  /**
+   * Fetches the content type metadata for a given content input.
+   *
+   * @param input - The content input used to query the content type.
+   * @param previewToken - Optional preview token for fetching preview content.
+   * @returns A promise that resolves to the first content type metadata object, or `undefined` if not found.
+   */
   private async fetchContentType(input: ContentInput, previewToken?: string) {
     const data = await this.request(
       FETCH_CONTENT_TYPE_QUERY,
@@ -139,8 +143,18 @@ export class GraphClient {
     return data._Content?.item?._metadata?.types?.[0];
   }
 
-  /** Fetches a content given its path */
-  async fetchContent(options: PathOrOptions) {
+  /**
+   * Fetches content from the CMS based on the provided path or options.
+   *
+   * If a string is provided, it is treated as a content path. If an object is provided,
+   * it may include both a path and a variation to filter the content.
+   *
+   * @param options - A string representing the content path,
+   *   or an {@linkcode FetchContentOptions} containing path and variation filters.
+   *
+   * @returns A promise that resolves to the fetched content item.
+   */
+  async fetchContent(options: string | FetchContentOptions) {
     let input: ContentInput;
 
     if (typeof options === 'string') {
