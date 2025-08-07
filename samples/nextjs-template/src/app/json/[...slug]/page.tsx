@@ -13,16 +13,12 @@ type Props = {
 
 function handleGraphErrors(err: unknown): never {
   if (err instanceof GraphErrors.GraphResponseError) {
-    console.log('---- ERROR -----');
-    console.log(err.message);
-    console.log('---- QUERY -----');
-    console.log(err.request.query);
-    console.log('----- VARIABLES -----');
-    console.log(JSON.stringify(err.request.variables, null, 2));
+    console.log('Error message:', err.message);
+    console.log('Query:', err.request.query);
+    console.log('Variables:', err.request.variables);
   }
   if (err instanceof GraphErrors.GraphContentResponseError) {
-    console.log('---- ERRRORS ----');
-    console.log(err.errors);
+    console.log('Detailed errors: ', err.errors);
   }
 
   throw err;
