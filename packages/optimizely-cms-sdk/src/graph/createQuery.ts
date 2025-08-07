@@ -18,6 +18,7 @@ import {
   MEDIA_METADATA_FRAGMENT,
   COMMON_MEDIA_METADATA_BLOCK,
   isBaseType,
+  toBaseTypeFragmentKey,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 
@@ -229,11 +230,15 @@ export function createFragment(
     }
   }
 
+  // Convert base type key to GraphQL fragment format
+  // eg: "_image" -> "_Image"
+  const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
+
   // Compose unique fragment
   const uniqueFields = [...new Set(fields)].join(' ');
   return [
     ...new Set(extraFragments), // unique dependency fragments
-    `fragment ${fragmentName} on ${fragmentName} { ${uniqueFields} }`,
+    `fragment ${fragmentName} on ${parsedFragmentName} { ${uniqueFields} }`,
   ];
 }
 
