@@ -1,4 +1,8 @@
-import { getFilterFromPath, GraphClient } from '@episerver/cms-sdk';
+import {
+  getFilterFromPath,
+  GraphClient,
+  GraphErrors,
+} from '@episerver/cms-sdk';
 import { createQuery } from '@episerver/cms-sdk';
 
 type Props = {
@@ -6,6 +10,19 @@ type Props = {
     slug: string[];
   }>;
 };
+
+function handleGraphErrors(err: unknown): never {
+  if (err instanceof GraphErrors.GraphResponseError) {
+    console.log('Error message:', err.message);
+    console.log('Query:', err.request.query);
+    console.log('Variables:', err.request.variables);
+  }
+  if (err instanceof GraphErrors.GraphContentResponseError) {
+    console.log('Detailed errors: ', err.errors);
+  }
+
+  throw err;
+}
 
 export default async function Page({ params }: Props) {
   const { slug } = await params;
@@ -18,9 +35,11 @@ export default async function Page({ params }: Props) {
 
   // Note: this is shown for demo purposes.
   // `fetchContentType` and `createQuery` are not needed
-  const contentType = await client.fetchContentType(getFilterFromPath(path));
+  const contentType = await client
+    .fetchContentType(getFilterFromPath(path))
+    .catch(handleGraphErrors);
   const query = createQuery(contentType);
-  const response = await client.fetchContent(path);
+  const response = await client.fetchContent(path).catch(handleGraphErrors);
 
   return (
     <div>
