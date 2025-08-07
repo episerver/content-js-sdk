@@ -25,16 +25,13 @@ export type PreviewParams = {
   loc: string;
 };
 
-// TODO: this type definition is provisional
-export type GraphFilter = {
-  _metadata: {
-    [key: string]: any;
-  };
-};
-
-export type GraphVariables = {
-  filter: GraphFilter;
-};
+/** Arguments for the method `fetchContent` */
+type PathOrOptions =
+  | string
+  | {
+      path: string;
+      variation: string;
+    };
 
 const FETCH_CONTENT_TYPE_QUERY = `
 query FetchContentType($where: _ContentWhereInput, $variation: VariationInput) {
@@ -47,26 +44,6 @@ query FetchContentType($where: _ContentWhereInput, $variation: VariationInput) {
   }
 }
 `;
-
-export function getFilterFromPreviewParams(params: PreviewParams): GraphFilter {
-  return {
-    _metadata: {
-      key: { eq: params.key },
-      version: { eq: params.ver },
-      locale: { eq: params.loc },
-    },
-  };
-}
-
-export function getFilterFromPath(path: string): GraphFilter {
-  return {
-    _metadata: {
-      url: {
-        default: { eq: path },
-      },
-    },
-  };
-}
 
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
@@ -163,20 +140,29 @@ export class GraphClient {
   }
 
   /** Fetches a content given its path */
-  async fetchContent(path: string) {
-    const filter = getFilterFromPath(path);
-    const contentTypeName = await this.fetchContentType(filter);
+  async fetchContent(options: PathOrOptions) {
+    let input: ContentInput;
+
+    if (typeof options === 'string') {
+      input = pathFilter(options);
+    } else {
+      input = {
+        ...pathFilter(options.path),
+        ...variationsFilter(options.variation),
+      };
+    }
+
+    const contentTypeName = await this.fetchContentType(input);
 
     if (!contentTypeName) {
-      throw new GraphResponseError(
-        `No content found for path [${path}]. Check that your CMS contains something in the given path`,
-        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
-      );
+      throw new GraphResponseError(`No content found.`, {
+        request: { variables: input, query: FETCH_CONTENT_TYPE_QUERY },
+      });
     }
 
     const query = createQuery(contentTypeName);
 
-    const response = await this.request(query, { filter });
+    const response = await this.request(query, input);
 
     return response?._Content?.item;
   }
