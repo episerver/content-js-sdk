@@ -22,8 +22,8 @@ type WithEnum<T> = {
 export type ArrayProperty<T extends ArrayItems> = BaseProperty & {
   type: 'array';
   items: T;
-  minItems?: number | null;
-  maxItems?: number | null;
+  minItems?: number;
+  maxItems?: number;
 };
 
 export type ArrayItems =
