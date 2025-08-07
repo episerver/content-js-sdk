@@ -4,6 +4,12 @@ import {
   GraphHttpResponseError,
   GraphResponseError,
 } from './error.js';
+import {
+  ContentInput,
+  pathFilter,
+  previewFilter,
+  variationsFilter,
+} from './filters.js';
 
 /** Options for Graph */
 type GraphOptions = {
@@ -31,8 +37,8 @@ export type GraphVariables = {
 };
 
 const FETCH_CONTENT_TYPE_QUERY = `
-query FetchContentType($filter: _ContentWhereInput) {
-  _Content(where: $filter) {
+query FetchContentType($where: _ContentWhereInput, $variation: VariationInput) {
+  _Content(where: $where, variation: $variation) {
     item {
       _metadata {
         types
@@ -91,11 +97,7 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(
-    query: string,
-    variables: GraphVariables,
-    previewToken?: string
-  ) {
+  async request(query: string, variables: ContentInput, previewToken?: string) {
     const url = new URL(this.graphUrl);
 
     if (!previewToken) {
@@ -150,10 +152,10 @@ export class GraphClient {
   }
 
   /** Fetches the content type of a content. Returns `undefined` if the content doesn't exist */
-  async fetchContentType(filter: GraphFilter, previewToken?: string) {
+  private async fetchContentType(input: ContentInput, previewToken?: string) {
     const data = await this.request(
       FETCH_CONTENT_TYPE_QUERY,
-      { filter },
+      input,
       previewToken
     );
 
@@ -181,25 +183,20 @@ export class GraphClient {
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: PreviewParams) {
-    const filter = getFilterFromPreviewParams(params);
+    const input = previewFilter(params);
     const contentTypeName = await this.fetchContentType(
-      filter,
+      input,
       params.preview_token
     );
 
     if (!contentTypeName) {
       throw new GraphResponseError(
         `No content found for key [${params.key}]. Check that your CMS contains something there`,
-        { request: { variables: { filter }, query: FETCH_CONTENT_TYPE_QUERY } }
+        { request: { variables: input, query: FETCH_CONTENT_TYPE_QUERY } }
       );
     }
     const query = createQuery(contentTypeName);
-
-    const response = await this.request(
-      query,
-      { filter },
-      params.preview_token
-    );
+    const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(response?._Content?.item, params);
   }
