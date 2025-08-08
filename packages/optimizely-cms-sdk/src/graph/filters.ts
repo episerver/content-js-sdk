@@ -52,35 +52,11 @@ export function previewFilter(params: {
   };
 }
 
-export function variationsFilter(
-  values?: string | (string | undefined | null)[],
-  includeOriginal?: boolean
-): ContentInput {
-  if (!values) {
-    return {
-      variation: {
-        include: 'ALL',
-      },
-    };
-  }
-
-  if (typeof values === 'string') {
-    return {
-      variation: {
-        include: 'SOME',
-        value: [values],
-        includeOriginal: includeOriginal ?? true,
-      },
-    };
-  }
-
-  const notNulls = values.filter((v) => typeof v === 'string');
-
+export function variationFilter(value: string): ContentInput {
   return {
     variation: {
       include: 'SOME',
-      value: notNulls,
-      includeOriginal: notNulls.length !== values.length,
+      value: [value],
     },
   };
 }

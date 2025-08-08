@@ -8,7 +8,7 @@ import {
   ContentInput as GraphVariables,
   pathFilter,
   previewFilter,
-  variationsFilter,
+  variationFilter,
 } from './filters.js';
 
 /** Options for Graph */
@@ -50,7 +50,7 @@ function buildGraphVariables(
 
   return {
     ...(options.path && pathFilter(options.path)),
-    ...(options.variation && variationsFilter(options.variation)),
+    ...(options.variation && variationFilter(options.variation)),
   };
 }
 
