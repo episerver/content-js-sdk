@@ -51,6 +51,15 @@ export const dt2 = displayTemplate({
   tag: 'tagB',
 });
 
+export const dt3 = displayTemplate({
+  key: 'test_dt3',
+  baseType: '_experience',
+  displayName: 'test dt3',
+  isDefault: false,
+  settings: {},
+  tag: 'tagC',
+});
+
 type Props1 = { opti: Infer<typeof ct1> };
 type Props2 = { opti: Infer<typeof ct2> };
 type Props3 = { opti: Infer<typeof ct3> };
@@ -82,7 +91,16 @@ export function Component2A({ opti }: Props2) {
 export function Component3({ opti }: Props3) {
   return (
     <div>
-      <h1>This is an experience</h1>
+      <h1>This is an experience (Component3)</h1>
+      <OptimizelyExperience nodes={opti.composition.nodes ?? []} />
+    </div>
+  );
+}
+
+export function Component3C({ opti }: Props3) {
+  return (
+    <div>
+      <h1>This is an experience (Component3C)</h1>
       <OptimizelyExperience nodes={opti.composition.nodes ?? []} />
     </div>
   );

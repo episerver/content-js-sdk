@@ -6,6 +6,7 @@ import {
   Component2,
   Component2A,
   Component3,
+  Component3C,
   ct1,
   ct2,
   ct3,
@@ -31,7 +32,12 @@ initReactComponentRegistry({
     },
     test_c2: Component2,
     'test_c2:tagA': Component2A,
-    test_c3: Component3,
+    test_c3: {
+      default: Component3,
+      tags: {
+        tagC: Component3C,
+      },
+    },
     BlankSection: BlankSection,
   },
 });
