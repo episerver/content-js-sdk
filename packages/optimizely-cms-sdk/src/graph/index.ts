@@ -5,7 +5,7 @@ import {
   GraphResponseError,
 } from './error.js';
 import {
-  ContentInput,
+  ContentInput as GraphVariables,
   pathFilter,
   previewFilter,
   variationsFilter,
@@ -25,11 +25,34 @@ export type PreviewParams = {
   loc: string;
 };
 
-/** Arguments for the method `fetchContent` */
+/** Arguments for the public methods `fetchContent`, `fetchContentType` */
 type FetchContentOptions = {
-  path: string;
-  variation: string;
+  path?: string;
+  variation?: string;
 };
+
+/**
+ * Builds the variables object for a GraphQL query based on the provided options.
+ *
+ * If a string is provided, it is treated as a path and passed to `pathFilter`.
+ * If an object is provided, it may contain `path` and/or `variation` properties,
+ * which are processed by `pathFilter` and `variationsFilter` respectively.
+ *
+ * @param options - Either a string representing the content path, or an object containing fetch options.
+ * @returns A `GraphVariables` object containing the appropriate filters for the query.
+ */
+function buildGraphVariables(
+  options: string | FetchContentOptions
+): GraphVariables {
+  if (typeof options === 'string') {
+    return pathFilter(options);
+  }
+
+  return {
+    ...(options.path && pathFilter(options.path)),
+    ...(options.variation && variationsFilter(options.variation)),
+  };
+}
 
 const FETCH_CONTENT_TYPE_QUERY = `
 query FetchContentType($where: _ContentWhereInput, $variation: VariationInput) {
@@ -72,7 +95,11 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(query: string, variables: ContentInput, previewToken?: string) {
+  async request(
+    query: string,
+    variables: GraphVariables,
+    previewToken?: string
+  ) {
     const url = new URL(this.graphUrl);
 
     if (!previewToken) {
@@ -133,7 +160,7 @@ export class GraphClient {
    * @param previewToken - Optional preview token for fetching preview content.
    * @returns A promise that resolves to the first content type metadata object, or `undefined` if not found.
    */
-  private async fetchContentType(input: ContentInput, previewToken?: string) {
+  private async getContentType(input: GraphVariables, previewToken?: string) {
     const data = await this.request(
       FETCH_CONTENT_TYPE_QUERY,
       input,
@@ -141,6 +168,19 @@ export class GraphClient {
     );
 
     return data._Content?.item?._metadata?.types?.[0];
+  }
+
+  /**
+   * Fetches a content type from the CMS using the provided options.
+   *
+   * @param options - A string representing the content path,
+   *   or an {@linkcode FetchContentOptions} containing path and variation filters.
+   * @returns A promise that resolves to the requested content type.
+   */
+  async fetchContentType(options: string | FetchContentOptions) {
+    let input: GraphVariables = buildGraphVariables(options);
+
+    return this.getContentType(input);
   }
 
   /**
@@ -155,18 +195,8 @@ export class GraphClient {
    * @returns A promise that resolves to the fetched content item.
    */
   async fetchContent(options: string | FetchContentOptions) {
-    let input: ContentInput;
-
-    if (typeof options === 'string') {
-      input = pathFilter(options);
-    } else {
-      input = {
-        ...pathFilter(options.path),
-        ...variationsFilter(options.variation),
-      };
-    }
-
-    const contentTypeName = await this.fetchContentType(input);
+    const input: GraphVariables = buildGraphVariables(options);
+    const contentTypeName = await this.getContentType(input);
 
     if (!contentTypeName) {
       throw new GraphResponseError(`No content found.`, {
@@ -175,7 +205,6 @@ export class GraphClient {
     }
 
     const query = createQuery(contentTypeName);
-
     const response = await this.request(query, input);
 
     return response?._Content?.item;
@@ -184,7 +213,7 @@ export class GraphClient {
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: PreviewParams) {
     const input = previewFilter(params);
-    const contentTypeName = await this.fetchContentType(
+    const contentTypeName = await this.getContentType(
       input,
       params.preview_token
     );

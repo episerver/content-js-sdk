@@ -2,6 +2,8 @@
  * This module contains the TypeScript definitions of a Graph Query
  * and functions to build those filters based on path,
  * preview parameters, etc.
+ *
+ * This is used internally in the SDK
  */
 
 /**
