@@ -31,11 +31,9 @@ export default async function Page({ params, searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  const path = `/${slug.join('/')}/`;
-
-  const content = variation
-    ? await client.fetchContent({ path, variation }).catch(handleGraphErrors)
-    : await client.fetchContent(path).catch(handleGraphErrors);
+  const content = await client
+    .fetchContent({ path: `/${slug.join('/')}/`, variation })
+    .catch(handleGraphErrors);
 
   return <OptimizelyComponent opti={content} />;
 }
