@@ -212,7 +212,10 @@ export class GraphClient {
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async fetchPreviewContent(params: PreviewParams) {
-    const input = previewFilter(params);
+    const input: GraphVariables = {
+      ...previewFilter(params),
+      variation: { include: 'ALL', includeOriginal: true },
+    };
     const contentTypeName = await this.getContentType(
       input,
       params.preview_token
