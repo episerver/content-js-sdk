@@ -12,6 +12,7 @@ import {
   ct3,
   dt1,
   dt2,
+  dt3,
 } from '@/components/with-display-templates';
 import {
   initContentTypeRegistry,
@@ -20,7 +21,7 @@ import {
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
 initContentTypeRegistry([ct1, ct2, ct3]);
-initDisplayTemplateRegistry([dt1, dt2]);
+initDisplayTemplateRegistry([dt1, dt2, dt3]);
 initReactComponentRegistry({
   resolver: {
     test_c1: {
