@@ -9,6 +9,7 @@ import {
   ExperienceNode,
   ExperienceComponentNode,
   DisplaySettingsType,
+  ExperienceCompositionNode,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
@@ -80,6 +81,8 @@ type OptimizelyComponentProps = {
 
     /** Preview context */
     __context?: { edit: boolean; preview_token: string };
+
+    composition?: ExperienceCompositionNode;
   };
 
   displaySettings?: Record<string, string>;
@@ -95,7 +98,8 @@ export async function OptimizelyComponent({
   }
 
   const Component = await componentRegistry.getComponent(opti.__typename, {
-    tag: opti.__tag,
+    tag:
+      opti.__tag ?? getDisplayTemplateTag(opti.composition?.displayTemplateKey),
   });
 
   if (!Component) {

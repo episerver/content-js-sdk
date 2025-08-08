@@ -6,11 +6,13 @@ import {
   Component2,
   Component2A,
   Component3,
+  Component3C,
   ct1,
   ct2,
   ct3,
   dt1,
   dt2,
+  dt3,
 } from '@/components/with-display-templates';
 import {
   initContentTypeRegistry,
@@ -19,7 +21,7 @@ import {
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 
 initContentTypeRegistry([ct1, ct2, ct3]);
-initDisplayTemplateRegistry([dt1, dt2]);
+initDisplayTemplateRegistry([dt1, dt2, dt3]);
 initReactComponentRegistry({
   resolver: {
     test_c1: {
@@ -31,7 +33,12 @@ initReactComponentRegistry({
     },
     test_c2: Component2,
     'test_c2:tagA': Component2A,
-    test_c3: Component3,
+    test_c3: {
+      default: Component3,
+      tags: {
+        tagC: Component3C,
+      },
+    },
     BlankSection: BlankSection,
   },
 });
