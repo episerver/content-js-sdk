@@ -95,8 +95,8 @@ export type ExperienceCompositionNode = {
 
   key: string;
   displayName: string;
-  displayTemplateKey: string;
-  displaySettings: DisplaySettingsType[];
+  displayTemplateKey: string | null;
+  displaySettings: DisplaySettingsType[] | null;
 };
 
 export type ExperienceStructureNode = ExperienceCompositionNode & {

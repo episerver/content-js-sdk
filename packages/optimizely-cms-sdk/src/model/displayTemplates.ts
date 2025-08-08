@@ -63,7 +63,7 @@ export type DisplayTemplate<T = DisplayTemplateVariant> = T & {
 };
 
 export function parseDisplaySettings(
-  displaySettings?: DisplaySettingsType[]
+  displaySettings?: DisplaySettingsType[] | null
 ): Record<string, string> | undefined {
   if (!displaySettings) {
     return undefined; // Return undefined if displaySettings is not provided
