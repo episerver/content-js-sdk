@@ -546,7 +546,6 @@ a:hover span.animate {
   text-align: center;
   gap: 1rem;
   padding: 2rem;
-  background: white;
   border-radius: 1rem;
   border: 1px;
   background-color: #1e232e;
@@ -574,10 +573,8 @@ a:hover span.animate {
   text-align: center;
   gap: 1rem;
   padding: 2rem;
-  background: white;
   border-radius: 0; /* Changed to square edges */
   border: 1px solid #ddd;
-  background-color: #ffffff;
   min-height: 240px;
 }
 
