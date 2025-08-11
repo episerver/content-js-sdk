@@ -18,8 +18,10 @@ export function getDisplayTemplate(name: string) {
  *
  * @param key DisplayTemplate's key
  */
-export function getDisplayTemplateTag(key: string): string | undefined {
-  return getDisplayTemplate(key)?.tag;
+export function getDisplayTemplateTag(key?: string | null): string | undefined {
+  if (key) {
+    return getDisplayTemplate(key)?.tag;
+  }
 }
 
 /** Get all the DisplayTemplates */
