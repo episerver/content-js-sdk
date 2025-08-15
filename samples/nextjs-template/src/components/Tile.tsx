@@ -72,10 +72,10 @@ export const TileColumnDisplayTemplate = displayTemplate({
   },
 });
 
-export const SquarTileDisplayTemplate = displayTemplate({
-  key: 'SquarTileDisplayTemplate',
+export const SquareDisplayTemplate = displayTemplate({
+  key: 'SquareDisplayTemplate',
   isDefault: false,
-  displayName: 'SquarTileDisplayTemplate',
+  displayName: 'SquareDisplayTemplate',
   baseType: '_component',
   settings: {
     color: {
@@ -116,7 +116,7 @@ export default function Tile({ opti }: Props) {
   );
 }
 
-// This is a specific tile component that uses the SquarTileDisplayTemplate
+// This is a specific tile component that uses the SquareDisplayTemplate
 export function SquareTile({ opti, displaySettings }: Props) {
   const { pa } = getPreviewUtils(opti);
   return (
