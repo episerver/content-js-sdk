@@ -39,7 +39,7 @@ import BlogCard, { BlogCardContentType } from '@/components/BlogCard';
 import Banner, { BannerContentType } from '@/components/Banner';
 import Tile, {
   SquareTile,
-  SquarTileDisplayTemplate,
+  SquareDisplayTemplate,
   TileColumnDisplayTemplate,
   TileContentType,
   TileRowDisplayTemplate,
@@ -116,7 +116,7 @@ initDisplayTemplateRegistry([
   TileRowDisplayTemplate,
   TileColumnDisplayTemplate,
   LandingSectionDisplayTemplate,
-  SquarTileDisplayTemplate,
+  SquareDisplayTemplate,
 ]);
 
 const serifFont = Bodoni_Moda({

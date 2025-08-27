@@ -35,7 +35,8 @@ type BaseContentType = {
 export type PageContentType = BaseContentType & {
   baseType: '_page';
   mayContainTypes?: Array<
-    ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | string
   >;
 };
 
@@ -43,21 +44,22 @@ export type PageContentType = BaseContentType & {
 export type ExperienceContentType = BaseContentType & {
   baseType: '_experience';
   mayContainTypes?: Array<
-    ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | string
   >;
 };
 
 /** Represents the Folder (Used in the asset panel to organizing content and not in Graph) type in CMS */
 export type FolderContentType = BaseContentType & {
   baseType: '_folder';
-  mayContainTypes?: Array<ContentType<AnyContentType>>;
+  mayContainTypes?: Array<ContentType<AnyContentType> | string>;
 };
 
 /** Represents the "Component" type (also called "Block") in CMS */
 export type ComponentContentType = BaseContentType & {
   baseType: '_component';
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
-  mayContainTypes?: Array<ContentType<ComponentContentType>>;
+  mayContainTypes?: Array<ContentType<ComponentContentType> | string>;
 };
 
 /** This content type is used only internally */

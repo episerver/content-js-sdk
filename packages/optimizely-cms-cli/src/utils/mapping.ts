@@ -4,16 +4,62 @@ import { isKeyInvalid } from './validate.js';
 /**
  * Parses the content type object to extract relevant information.
  * It processes the `mayContainTypes` field to ensure it is an array of key names.
+ * If a string entry appears, it must match a key in allowedKeys.
  * @param contentType - The content type object to parse.
+ * @param allowedKeys - Set of valid content type keys for validation.
  * @returns A simplified representation of the content type.
  */
-export function parseChildContentType(contentType: Record<string, any>): any {
+export function parseChildContentType(
+  contentType: Record<string, any>,
+  allowedKeys?: Set<string>
+): any {
   const { mayContainTypes, ...rest } = contentType;
+
+  if (!Array.isArray(mayContainTypes)) return rest;
+
+  const invalid: string[] = [];
+
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
+  const normalized = mayContainTypes.map((entry: any) => {
+    let key: string;
+    if (typeof entry === 'string') {
+      key = entry.trim();
+    } else {
+      key = extractKeyName(entry);
+    }
+
+    // Do not allow keys that start with '_' to be validated against allowedKeys
+    if (!key.startsWith('_') && allowedKeys && !allowedKeys.has(key)) {
+      invalid.push(key);
+    }
+    if (seen.has(key)) {
+      duplicates.push(key);
+    } else {
+      seen.add(key);
+    }
+    return key;
+  });
+
+  if (duplicates.length > 0) {
+    throw new Error(
+      `❌ [optimizely-cms-cli] Duplicate entries in mayContainTypes for content type "${
+        contentType.key
+      }": ${duplicates.join(', ')}`
+    );
+  }
+
+  if (invalid.length > 0) {
+    throw new Error(
+      `❌ [optimizely-cms-cli] Invalid mayContainTypes for content type "${
+        contentType.key
+      }". Unknown content types: ${invalid.join(', ')}`
+    );
+  }
+
   return {
     ...rest,
-    ...(Array.isArray(mayContainTypes) && {
-      mayContainTypes: mayContainTypes.map(extractKeyName),
-    }),
+    mayContainTypes: normalized,
   };
 }
 
