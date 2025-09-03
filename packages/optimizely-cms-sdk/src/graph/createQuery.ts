@@ -21,6 +21,7 @@ import {
   toBaseTypeFragmentKey,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
+import { GraphMissingContentTypeError } from './error.js';
 
 let allContentTypes: AnyContentType[] = [];
 
@@ -204,7 +205,9 @@ export function createFragment(
     // Handle User defined contentType
   } else {
     const ct = getContentType(contentTypeName);
-    if (!ct) throw new Error(`Unknown content type: ${contentTypeName}`);
+    if (!ct) {
+      throw new GraphMissingContentTypeError(contentTypeName);
+    }
 
     // Gather fields for every property
     for (const [propKey, prop] of Object.entries(ct.properties ?? {})) {
