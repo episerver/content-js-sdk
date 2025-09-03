@@ -252,8 +252,8 @@ export function createQuery(contentType: string) {
 
   return `
 ${fragment.join('\n')}
-query FetchContent($filter: _ContentWhereInput) {
-  _Content(where: $filter) {
+query FetchContent($where: _ContentWhereInput, $variation: VariationInput) {
+  _Content(where: $where, variation: $variation) {
     item {
       __typename
       ...${contentType}

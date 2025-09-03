@@ -1,8 +1,4 @@
-import {
-  getFilterFromPath,
-  GraphClient,
-  GraphErrors,
-} from '@episerver/cms-sdk';
+import { GraphClient, GraphErrors } from '@episerver/cms-sdk';
 import { createQuery } from '@episerver/cms-sdk';
 
 type Props = {
@@ -36,7 +32,7 @@ export default async function Page({ params }: Props) {
   // Note: this is shown for demo purposes.
   // `fetchContentType` and `createQuery` are not needed
   const contentType = await client
-    .fetchContentType(getFilterFromPath(path))
+    .fetchContentType(path)
     .catch(handleGraphErrors);
   const query = createQuery(contentType);
   const response = await client.fetchContent(path).catch(handleGraphErrors);
