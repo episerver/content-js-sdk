@@ -14,7 +14,7 @@ export const notSynced = contentType({
 export const ct4 = contentType({
   baseType: '_page',
   displayName:
-    'test_c4: SHOULD NOT BE SYNCED. Refer to a content type that is not synecd to graph (missing in the CMS)',
+    'test_c4: SHOULD NOT BE SYNCED. Refer to a content type that is not synced to graph (missing in the CMS)',
   key: 'test_c4_refs_missing',
 
   properties: {
