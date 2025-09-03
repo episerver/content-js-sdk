@@ -51,7 +51,10 @@ export class GraphContentResponseError extends GraphHttpResponseError {
         ? errors[0].message
         : `${errors.length} errors in the GraphQL query. Check "errors" object`;
 
-    if (message.startsWith('Cannot query field')) {
+    if (
+      message.startsWith('Unknown type') ||
+      message.startsWith('Cannot query field')
+    ) {
       message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@episerver/cms-cli" CLI app to sync them`;
     } else if (message.startsWith('Syntax Error')) {
       message +=
