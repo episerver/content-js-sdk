@@ -180,10 +180,19 @@ export async function readFromPath(configPath: string) {
 }
 
 /**
- * Extracts the key name from a PermittedTypes.
- * @param input - A value that can either be a string (MediaStringTypes) or a ContentType object.
- * @returns The extracted key as a string.
+ * Returns the key name for a PermittedTypes value.
+ * If the value is the string '_self', returns the parentKey; otherwise, returns the string or the object's key property.
+ * @param input - The PermittedTypes value (string or object).
+ * @param parentKey - The parent key to use if input is '_self'.
+ * @returns The resolved key name as a string.
  */
-export function extractKeyName(input: PermittedTypes): string {
-  return typeof input === 'string' ? input : input.key;
+export function extractKeyName(
+  input: PermittedTypes,
+  parentKey: string
+): string {
+  return typeof input === 'string'
+    ? input === '_self'
+      ? parentKey
+      : input.trim()
+    : input.key;
 }
