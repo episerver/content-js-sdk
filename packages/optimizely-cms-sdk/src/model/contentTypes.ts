@@ -36,6 +36,7 @@ export type PageContentType = BaseContentType & {
   baseType: '_page';
   mayContainTypes?: Array<
     | ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | '_self'
     | string
   >;
 };
@@ -45,6 +46,7 @@ export type ExperienceContentType = BaseContentType & {
   baseType: '_experience';
   mayContainTypes?: Array<
     | ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | '_self'
     | string
   >;
 };
@@ -52,14 +54,14 @@ export type ExperienceContentType = BaseContentType & {
 /** Represents the Folder (Used in the asset panel to organizing content and not in Graph) type in CMS */
 export type FolderContentType = BaseContentType & {
   baseType: '_folder';
-  mayContainTypes?: Array<ContentType<AnyContentType> | string>;
+  mayContainTypes?: Array<ContentType<AnyContentType> | '_self' | string>;
 };
 
 /** Represents the "Component" type (also called "Block") in CMS */
 export type ComponentContentType = BaseContentType & {
   baseType: '_component';
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
-  mayContainTypes?: Array<ContentType<ComponentContentType> | string>;
+  mayContainTypes?: Array<ContentType<ComponentContentType> | '_self' | string>;
 };
 
 /** This content type is used only internally */
@@ -90,4 +92,4 @@ export type AnyContentType =
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
 
 /** All possible content type for allowed and restricted fields */
-export type PermittedTypes = ContentType | AnyContentType['baseType'];
+export type PermittedTypes = ContentType | AnyContentType['baseType'] | '_self';

@@ -20,6 +20,7 @@ import {
   LocationPage,
   ReviewPage,
   HomePage,
+  SelfPage,
 } from './fixtures.js';
 
 beforeAll(() => {
@@ -124,11 +125,12 @@ describe('createFragment()', () => {
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment LocationPage on LocationPage { location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero } }",
-        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } body { html, json } }",
+        "fragment SelfPage on SelfPage { p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } body { html, json } }",
       ]
     `);
   });
@@ -190,11 +192,12 @@ describe('createFragment()', () => {
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment LocationPage on LocationPage { location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero } }",
-        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } body { html, json } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
+        "fragment SelfPage on SelfPage { p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } body { html, json } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
       ]
     `);
   });
@@ -255,11 +258,12 @@ describe('createFragment()', () => {
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment LocationPage on LocationPage { location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero } }",
-        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } body { html, json } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
+        "fragment SelfPage on SelfPage { p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } body { html, json } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
       ]
     `);
   });
@@ -317,11 +321,12 @@ describe('createFragment()', () => {
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment LocationPage on LocationPage { location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero } }",
-        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } body { html, json } }",
-        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
+        "fragment SelfPage on SelfPage { p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } body { html, json } }",
+        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
       ]
     `);
   });
@@ -354,11 +359,21 @@ describe('createFragment()', () => {
         "fragment NewHeroProperty on NewHeroProperty { heading summary background { url { type default }} theme }",
         "fragment FeedBackPage on FeedBackPage { p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment LocationPage on LocationPage { location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero } }",
-        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } }",
-        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage } body { html, json } }",
-        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment SelfPage on SelfPage { p_contentArea { __typename ...SelfPage } }",
+        "fragment ReviewPage on ReviewPage { location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment ContentPage on ContentPage { p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment specialPage on specialPage { media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } body { html, json } }",
+        "fragment HomePage on HomePage { p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+      ]
+    `);
+  });
+
+  test('works for HomePage content type', async () => {
+    const result = await createFragment(SelfPage.key);
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment SelfPage on SelfPage { p_contentArea { __typename ...SelfPage } }",
       ]
     `);
   });
@@ -370,8 +385,8 @@ describe('createQuery', () => {
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query FetchContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...CallToAction
@@ -387,8 +402,8 @@ describe('createQuery', () => {
     expect(result).toMatchInlineSnapshot(`
       "
       fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query FetchContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...ArticlePage
@@ -406,8 +421,8 @@ describe('createQuery', () => {
       fragment CallToAction on CallToAction { label link }
       fragment myButton on myButton { label link }
       fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query FetchContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...Hero
@@ -428,8 +443,8 @@ describe('createQuery', () => {
       fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }
       fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
       fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query FetchContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...LandingPage

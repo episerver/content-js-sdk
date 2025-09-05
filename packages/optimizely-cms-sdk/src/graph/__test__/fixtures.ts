@@ -313,6 +313,22 @@ export const HomePage = contentType({
   },
 });
 
+export const SelfPage = contentType({
+  key: 'SelfPage',
+  displayName: 'SelfPage',
+  baseType: '_page',
+  properties: {
+    p_contentArea: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: ['_self'],
+      },
+      sortOrder: 0,
+    },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -338,4 +354,5 @@ export const allContentTypes: AnyContentType[] = [
   LocationPage,
   ReviewPage,
   HomePage,
+  SelfPage,
 ];
