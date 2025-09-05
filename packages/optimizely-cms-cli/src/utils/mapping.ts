@@ -2,33 +2,29 @@ import { extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
 
 /**
- * Parses the content type object to extract relevant information.
- * It processes the `mayContainTypes` field to ensure it is an array of key names.
- * If a string entry appears, it must match a key in allowedKeys.
- * @param contentType - The content type object to parse.
- * @param allowedKeys - Set of valid content type keys for validation.
- * @returns A simplified representation of the content type.
+ * Normalizes the `mayContainTypes` field of a content type object.
+ * - Converts each entry to a key name (string).
+ * - For self-referential entries (e.g., '_self'), it uses the parent key.
+ * - Validates keys against the provided `allowedKeys` set (if given), except for keys starting with '_'.
+ * - Detects and throws errors for duplicate or unknown keys.
+ * @param contentType - The content type object to process.
+ * @param allowedKeys - Optional set of valid content type keys for validation.
+ * @returns The content type object with a normalized `mayContainTypes` array.
  */
 export function parseChildContentType(
   contentType: Record<string, any>,
   allowedKeys?: Set<string>
 ): any {
-  const { mayContainTypes, ...rest } = contentType;
+  const { mayContainTypes, key: parentKey, ...rest } = contentType;
 
-  if (!Array.isArray(mayContainTypes)) return rest;
+  if (!Array.isArray(mayContainTypes)) return { ...rest, key: parentKey };
 
   const invalid: string[] = [];
 
   const seen = new Set<string>();
   const duplicates: string[] = [];
   const normalized = mayContainTypes.map((entry: any) => {
-    let key: string;
-    if (typeof entry === 'string') {
-      key = entry.trim();
-    } else {
-      key = extractKeyName(entry);
-    }
-
+    const key = extractKeyName(entry, parentKey);
     // Do not allow keys that start with '_' to be validated against allowedKeys
     if (!key.startsWith('_') && allowedKeys && !allowedKeys.has(key)) {
       invalid.push(key);
@@ -59,6 +55,7 @@ export function parseChildContentType(
 
   return {
     ...rest,
+    key: parentKey,
     mayContainTypes: normalized,
   };
 }
@@ -69,10 +66,11 @@ export function parseChildContentType(
  * @returns A new object with the same keys as the input object, but with transformed values.
  */
 export function transformProperties(
-  properties: Record<string, any>
+  properties: Record<string, any>,
+  key: string
 ): Record<string, any> {
   return Object.entries(properties).reduce((acc, [key, value]) => {
-    acc[key] = transformProperty(value);
+    acc[key] = transformProperty(value, key);
     return acc;
   }, {} as Record<string, any>);
 }
@@ -88,16 +86,17 @@ export function transformProperties(
  * - Mapping allowed and restricted types.
  *
  * @param property - The property object to be transformed.
+ * @param key - The parent contentType key, used for context in certain transformations (when '_self' is used).
  * @returns The transformed property object after applying all handlers.
  */
-function transformProperty(property: any): any {
+function transformProperty(property: any, key: string): any {
   let updatedProperty = { ...property };
 
   updatedProperty = handleComponentType(updatedProperty);
   updatedProperty = handleEnumFormat(updatedProperty);
   updatedProperty = handleArrayType(updatedProperty);
   updatedProperty = handleContentReferenceType(updatedProperty);
-  updatedProperty = mapAllowedRestrictedTypes(updatedProperty);
+  updatedProperty = mapAllowedRestrictedTypes(updatedProperty, key);
 
   return updatedProperty;
 }
@@ -225,25 +224,27 @@ function hasContentTypeWithKey(obj: any): boolean {
 /**
  * Recursively maps and normalizes `allowedTypes` and `restrictedTypes`
  * and handles nested `items` when the type is "array".
+ * Uses the provided `key` for context when extracting key names when '_self' is used.
  * @param updatedValue - The schema object to transform.
+ * @param key - The parent contentType key, used for context in certain transformations.
  * @returns The same object, with allowed/restricted types normalized.
  */
-function mapAllowedRestrictedTypes(updatedValue: any) {
+function mapAllowedRestrictedTypes(updatedValue: any, key: string) {
   // Recursively handle nested 'items' if it's an array
   if (updatedValue.type === 'array' && updatedValue.items) {
-    updatedValue.items = mapAllowedRestrictedTypes(updatedValue.items);
+    updatedValue.items = mapAllowedRestrictedTypes(updatedValue.items, key);
   }
 
   if (['contentReference', 'content'].includes(updatedValue.type)) {
     if (Array.isArray(updatedValue.allowedTypes)) {
-      updatedValue.allowedTypes = updatedValue.allowedTypes.map(
-        extractKeyName
+      updatedValue.allowedTypes = updatedValue.allowedTypes.map((input: any) =>
+        extractKeyName(input, key)
       ) as any;
     }
 
     if (Array.isArray(updatedValue.restrictedTypes)) {
       updatedValue.restrictedTypes = updatedValue.restrictedTypes.map(
-        extractKeyName
+        (input: any) => extractKeyName(input, key)
       ) as any;
     }
   }
