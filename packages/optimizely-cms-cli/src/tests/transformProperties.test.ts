@@ -8,7 +8,10 @@ import {
 
 describe('Testing transformProperties', () => {
   it('should transform heading property correctly', () => {
-    const result = transformProperties(HeroComponentType.properties);
+    const result = transformProperties(
+      HeroComponentType.properties,
+      HeroComponentType.key
+    );
     expect(result).toMatchInlineSnapshot(`
       {
         "background": {
@@ -42,7 +45,10 @@ describe('Testing transformProperties', () => {
   });
 
   it('should transform AboutExperienceType properties correctly', () => {
-    const result = transformProperties(AboutExperienceType.properties);
+    const result = transformProperties(
+      AboutExperienceType.properties,
+      AboutExperienceType.key
+    );
     expect(result).toMatchInlineSnapshot(`
       {
         "section": {
@@ -65,7 +71,10 @@ describe('Testing transformProperties', () => {
   });
 
   it('should transform BannerComponentType properties correctly', () => {
-    const result = transformProperties(BannerComponentType.properties);
+    const result = transformProperties(
+      BannerComponentType.properties,
+      BannerComponentType.key
+    );
     expect(result).toMatchInlineSnapshot(`
       {
         "submit": {
