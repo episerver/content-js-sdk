@@ -16,6 +16,23 @@ export class OptimizelyGraphError extends Error {
   }
 }
 
+// Note: maybe we want to create an abstraction called `GraphCreateQueryError`
+// to group all errors that happen before the request?
+
+/**
+ * Thrown when a content type is referred but can't be found by the SDK.
+ */
+export class GraphMissingContentTypeError extends OptimizelyGraphError {
+  contentType: string;
+
+  constructor(contentType: string) {
+    super(
+      `Content type "${contentType}" not included in the registry. Ensure that you called "initContentTypeRegistry()" with it before fetching content.`
+    );
+    this.contentType = contentType;
+  }
+}
+
 /** Errors related to the response */
 export class GraphResponseError extends OptimizelyGraphError {
   request: GraphRequest;
@@ -51,7 +68,10 @@ export class GraphContentResponseError extends GraphHttpResponseError {
         ? errors[0].message
         : `${errors.length} errors in the GraphQL query. Check "errors" object`;
 
-    if (message.startsWith('Cannot query field')) {
+    if (
+      message.startsWith('Unknown type') ||
+      message.startsWith('Cannot query field')
+    ) {
       message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@episerver/cms-cli" CLI app to sync them`;
     } else if (message.startsWith('Syntax Error')) {
       message +=
