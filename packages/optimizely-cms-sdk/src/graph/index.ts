@@ -1,4 +1,4 @@
-import { createQuery } from './createQuery.js';
+import { getContentQuery } from './createQuery.js';
 import {
   GraphContentResponseError,
   GraphHttpResponseError,
@@ -54,8 +54,8 @@ function buildGraphVariables(
   };
 }
 
-const FETCH_CONTENT_TYPE_QUERY = `
-query FetchContentType($where: _ContentWhereInput, $variation: VariationInput) {
+const GET_CONTENT_METADATA_QUERY = `
+query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     item {
       _metadata {
@@ -162,25 +162,12 @@ export class GraphClient {
    */
   private async getContentType(input: GraphVariables, previewToken?: string) {
     const data = await this.request(
-      FETCH_CONTENT_TYPE_QUERY,
+      GET_CONTENT_METADATA_QUERY,
       input,
       previewToken
     );
 
     return data._Content?.item?._metadata?.types?.[0];
-  }
-
-  /**
-   * Fetches a content type from the CMS using the provided options.
-   *
-   * @param options - A string representing the content path,
-   *   or an {@linkcode FetchContentOptions} containing path and variation filters.
-   * @returns A promise that resolves to the requested content type.
-   */
-  async fetchContentType(options: string | FetchContentOptions) {
-    let input: GraphVariables = buildGraphVariables(options);
-
-    return this.getContentType(input);
   }
 
   /**
@@ -192,19 +179,44 @@ export class GraphClient {
    * @param options - A string representing the content path,
    *   or an {@linkcode FetchContentOptions} containing path and variation filters.
    *
+   * @param contentType - A string representing the content type. If omitted, the method
+   *   will try to get the content type name from the CMS.
+   *
    * @returns A promise that resolves to the fetched content item.
    */
-  async fetchContent(options: string | FetchContentOptions) {
+  async getContent(
+    options: string | FetchContentOptions,
+    contentType?: string
+  ) {
     const input: GraphVariables = buildGraphVariables(options);
-    const contentTypeName = await this.getContentType(input);
 
-    if (!contentTypeName) {
-      throw new GraphResponseError(`No content found.`, {
-        request: { variables: input, query: FETCH_CONTENT_TYPE_QUERY },
-      });
-    }
+    const contentTypeName = contentType ?? (await this.getContentType(input));
+    const query = getContentQuery(contentTypeName);
+    const response = await this.request(query, input);
 
-    const query = createQuery(contentTypeName);
+    return response?._Content?.item;
+  }
+
+  /**
+   * Fetches multiple content from the CMS based on the provided path.
+   *
+   * @param path - A string representing the content path.
+   *
+   * @param contentType - A string representing the content type. If omitted, the method
+   *   will try to get the content type name from the CMS.
+   *
+   * @returns A promise that resolves to the fetched content item.
+   */
+  async listContent(path: string, contentType?: string) {
+    const input: GraphVariables = {
+      ...pathFilter(path),
+      variation: {
+        include: 'ALL',
+      },
+    };
+
+    const contentTypeName = contentType ?? (await this.getContentType(input));
+    const query = getContentQuery(contentTypeName);
     const response = await this.request(query, input);
 
     return response?._Content?.item;
@@ -221,10 +233,10 @@ export class GraphClient {
     if (!contentTypeName) {
       throw new GraphResponseError(
         `No content found for key [${params.key}]. Check that your CMS contains something there`,
-        { request: { variables: input, query: FETCH_CONTENT_TYPE_QUERY } }
+        { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } }
       );
     }
-    const query = createQuery(contentTypeName);
+    const query = getContentQuery(contentTypeName);
     const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(response?._Content?.item, params);

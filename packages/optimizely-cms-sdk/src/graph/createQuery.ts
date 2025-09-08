@@ -243,18 +243,42 @@ export function createFragment(
 }
 
 /**
- * Generates a complete GraphQL query for fetching a content type and its fragment.
+ * Generates a complete GraphQL query for fetching one item.
+ *
  * @param contentType - The key of the content type to query.
  * @returns A string representing the GraphQL query.
  */
-export function createQuery(contentType: string) {
+export function getContentQuery(contentType: string) {
   const fragment = createFragment(contentType);
 
   return `
 ${fragment.join('\n')}
-query FetchContent($where: _ContentWhereInput, $variation: VariationInput) {
+query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     item {
+      __typename
+      ...${contentType}
+    }
+  }
+}
+  `;
+}
+
+/**
+ * Generates a complete GraphQL query for fetching multiple items.
+ * All items must have the same content type
+ *
+ * @param contentType - The key of the content type to query.
+ * @returns A string representing the GraphQL query.
+ */
+export function listContentQuery(contentType: string) {
+  const fragment = createFragment(contentType);
+
+  return `
+${fragment.join('\n')}
+query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
+  _Content(where: $where, variation: $variation) {
+    items {
       __typename
       ...${contentType}
     }
