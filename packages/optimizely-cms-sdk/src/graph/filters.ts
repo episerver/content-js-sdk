@@ -49,6 +49,10 @@ export function previewFilter(params: {
         locale: { eq: params.loc },
       },
     },
+    variation: {
+      include: 'ALL',
+      includeOriginal: true,
+    },
   };
 }
 
