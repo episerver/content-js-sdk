@@ -1,4 +1,4 @@
-import type { GraphVariables } from './index.js';
+import type { ContentInput } from './filters.js';
 
 /** Represents the request sent to graph */
 type GraphRequest = {
@@ -6,7 +6,7 @@ type GraphRequest = {
   query: string;
 
   /** Variables sent to Graph */
-  variables: GraphVariables;
+  variables: ContentInput;
 };
 
 /** Super-class for all errors related to Optimizely Graph */
