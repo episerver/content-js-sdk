@@ -191,6 +191,12 @@ export class GraphClient {
     return data._Content?.item?._metadata?.types?.[0];
   }
 
+  /**
+   * Retrieves metadata for a specific content item using a GraphQL query.
+   *
+   * @param options - Either a string representing the content identifier or an object containing fetch options.
+   * @returns A promise that resolves to the metadata response of the requested content item.
+   */
   async getContentMetadata(options: string | FetchContentOptions) {
     const input: GraphVariables = buildGraphVariables(options);
     const data = await this.request(GET_CONTENT_METADATA_QUERY, input);
@@ -198,6 +204,12 @@ export class GraphClient {
     return data._Content?.item as MetadataResponse;
   }
 
+  /**
+   * Retrieves a list of content metadata for the specified content path.
+   *
+   * @param path - The content path to filter metadata by.
+   * @returns A promise that resolves to an array of `MetadataResponse` objects containing metadata for the matched content items.
+   */
   async listContentMetadata(path: string) {
     const input: GraphVariables = {
       ...pathFilter(path),
