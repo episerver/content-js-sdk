@@ -60,11 +60,32 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
     item {
       _metadata {
         types
+        variation
       }
     }
   }
 }
 `;
+
+const LIST_CONTENT_METADATA_QUERY = `
+query ListContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
+  _Content(where: $where, variation: $variation) {
+    items {
+      _metadata {
+        types
+        variation
+      }
+    }
+  }
+}
+`;
+
+type MetadataResponse = {
+  _metadata: {
+    types: string[] | null;
+    variation: string | null;
+  };
+};
 
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
@@ -168,6 +189,26 @@ export class GraphClient {
     );
 
     return data._Content?.item?._metadata?.types?.[0];
+  }
+
+  async getContentMetadata(options: string | FetchContentOptions) {
+    const input: GraphVariables = buildGraphVariables(options);
+    const data = await this.request(GET_CONTENT_METADATA_QUERY, input);
+
+    return data._Content?.item as MetadataResponse;
+  }
+
+  async listContentMetadata(path: string) {
+    const input: GraphVariables = {
+      ...pathFilter(path),
+      variation: {
+        include: 'ALL',
+      },
+    };
+
+    const data = await this.request(LIST_CONTENT_METADATA_QUERY, input);
+
+    return data._Content?.items as MetadataResponse[];
   }
 
   /**
