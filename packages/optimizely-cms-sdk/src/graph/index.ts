@@ -1,4 +1,8 @@
-import { createQuery } from './createQuery.js';
+import {
+  createSingleContentQuery,
+  ItemsResponse,
+  createMultipleContentQuery,
+} from './createQuery.js';
 import {
   GraphContentResponseError,
   GraphHttpResponseError,
@@ -8,7 +12,7 @@ import {
   ContentInput as GraphVariables,
   pathFilter,
   previewFilter,
-  variationFilter,
+  VariationInput,
 } from './filters.js';
 
 /** Options for Graph */
@@ -25,41 +29,17 @@ export type PreviewParams = {
   loc: string;
 };
 
-/** Arguments for the public methods `fetchContent`, `fetchContentType` */
 type FetchContentOptions = {
-  path?: string;
-  variation?: string;
+  variation?: VariationInput;
 };
 
-/**
- * Builds the variables object for a GraphQL query based on the provided options.
- *
- * If a string is provided, it is treated as a path and passed to `pathFilter`.
- * If an object is provided, it may contain `path` and/or `variation` properties,
- * which are processed by `pathFilter` and `variationsFilter` respectively.
- *
- * @param options - Either a string representing the content path, or an object containing fetch options.
- * @returns A `GraphVariables` object containing the appropriate filters for the query.
- */
-function buildGraphVariables(
-  options: string | FetchContentOptions
-): GraphVariables {
-  if (typeof options === 'string') {
-    return pathFilter(options);
-  }
-
-  return {
-    ...(options.path && pathFilter(options.path)),
-    ...(options.variation && variationFilter(options.variation)),
-  };
-}
-
-const FETCH_CONTENT_TYPE_QUERY = `
-query FetchContentType($where: _ContentWhereInput, $variation: VariationInput) {
+const GET_CONTENT_METADATA_QUERY = `
+query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     item {
       _metadata {
         types
+        variation
       }
     }
   }
@@ -158,29 +138,39 @@ export class GraphClient {
    *
    * @param input - The content input used to query the content type.
    * @param previewToken - Optional preview token for fetching preview content.
-   * @returns A promise that resolves to the first content type metadata object, or `undefined` if not found.
+   * @returns A promise that resolves to the first content type metadata object
    */
   private async getContentType(input: GraphVariables, previewToken?: string) {
     const data = await this.request(
-      FETCH_CONTENT_TYPE_QUERY,
+      GET_CONTENT_METADATA_QUERY,
       input,
       previewToken
     );
 
-    return data._Content?.item?._metadata?.types?.[0];
-  }
+    const type = data._Content?.item?._metadata?.types?.[0];
 
-  /**
-   * Fetches a content type from the CMS using the provided options.
-   *
-   * @param options - A string representing the content path,
-   *   or an {@linkcode FetchContentOptions} containing path and variation filters.
-   * @returns A promise that resolves to the requested content type.
-   */
-  async fetchContentType(options: string | FetchContentOptions) {
-    let input: GraphVariables = buildGraphVariables(options);
+    if (!type) {
+      throw new GraphResponseError('No content found', {
+        request: {
+          query: GET_CONTENT_METADATA_QUERY,
+          variables: input,
+        },
+      });
+    }
 
-    return this.getContentType(input);
+    if (typeof type !== 'string') {
+      throw new GraphResponseError(
+        "Returned type is not 'string'. This might be a bug in the SDK. Try again later. If the error persists, contact Optimizely support",
+        {
+          request: {
+            query: GET_CONTENT_METADATA_QUERY,
+            variables: input,
+          },
+        }
+      );
+    }
+
+    return type;
   }
 
   /**
@@ -189,29 +179,28 @@ export class GraphClient {
    * If a string is provided, it is treated as a content path. If an object is provided,
    * it may include both a path and a variation to filter the content.
    *
-   * @param options - A string representing the content path,
-   *   or an {@linkcode FetchContentOptions} containing path and variation filters.
+   * @param path - A string representing the content path
+   * @param options - Options to include or exclude variations
    *
-   * @returns A promise that resolves to the fetched content item.
+   * @param contentType - A string representing the content type. If omitted, the method
+   *   will try to get the content type name from the CMS.
+   *
+   * @returns An iterator that traverses all found items
    */
-  async fetchContent(options: string | FetchContentOptions) {
-    const input: GraphVariables = buildGraphVariables(options);
+  async getContentByPath<T = any>(path: string, options?: FetchContentOptions) {
+    const input: GraphVariables = {
+      ...pathFilter(path),
+      variation: options?.variation,
+    };
     const contentTypeName = await this.getContentType(input);
+    const query = createMultipleContentQuery(contentTypeName);
+    const response = (await this.request(query, input)) as ItemsResponse<T>;
 
-    if (!contentTypeName) {
-      throw new GraphResponseError(`No content found.`, {
-        request: { variables: input, query: FETCH_CONTENT_TYPE_QUERY },
-      });
-    }
-
-    const query = createQuery(contentTypeName);
-    const response = await this.request(query, input);
-
-    return response?._Content?.item;
+    return response?._Content?.items;
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
-  async fetchPreviewContent(params: PreviewParams) {
+  async getPreviewContent(params: PreviewParams) {
     const input = previewFilter(params);
     const contentTypeName = await this.getContentType(
       input,
@@ -221,10 +210,10 @@ export class GraphClient {
     if (!contentTypeName) {
       throw new GraphResponseError(
         `No content found for key [${params.key}]. Check that your CMS contains something there`,
-        { request: { variables: input, query: FETCH_CONTENT_TYPE_QUERY } }
+        { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } }
       );
     }
-    const query = createQuery(contentTypeName);
+    const query = createSingleContentQuery(contentTypeName);
     const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(response?._Content?.item, params);

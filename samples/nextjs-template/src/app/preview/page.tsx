@@ -12,7 +12,7 @@ export default async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  const response = await client.fetchPreviewContent(
+  const response = await client.getPreviewContent(
     // TODO: check types in runtime properly
     (await searchParams) as PreviewParams
   );

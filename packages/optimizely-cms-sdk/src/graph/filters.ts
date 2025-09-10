@@ -73,13 +73,14 @@ export type ContentInput = {
   where?: ContentWhereInput;
 };
 
-type VariationInput = {
-  include?: VariationIncludeMode;
-  value?: string[];
-  includeOriginal?: boolean;
-};
-
-type VariationIncludeMode = 'ALL' | 'SOME' | 'NONE';
+export type VariationInput =
+  | { include: 'NONE' }
+  | { include: 'ALL' }
+  | {
+      include: 'SOME';
+      value: string[];
+      includeOriginal?: boolean;
+    };
 
 type ContentWhereInput = {
   _and?: ContentWhereInput[];

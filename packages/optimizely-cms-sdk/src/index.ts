@@ -9,7 +9,7 @@ export {
   initDisplayTemplateRegistry,
 } from './model/index.js';
 export { GraphClient } from './graph/index.js';
-export { createQuery } from './graph/createQuery.js';
+export { createSingleContentQuery } from './graph/createQuery.js';
 export type { PreviewParams } from './graph/index.js';
 export {
   BlankSectionContentType,
