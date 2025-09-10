@@ -200,7 +200,7 @@ export class GraphClient {
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
-  async fetchPreviewContent(params: PreviewParams) {
+  async getPreviewContent(params: PreviewParams) {
     const input = previewFilter(params);
     const contentTypeName = await this.getContentType(
       input,

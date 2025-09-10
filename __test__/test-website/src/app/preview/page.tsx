@@ -13,7 +13,7 @@ export default async function Page({ searchParams }: Props) {
   });
 
   const response = await client
-    .fetchPreviewContent(
+    .getPreviewContent(
       // TODO: check types in runtime properly
       (await searchParams) as PreviewParams
     )

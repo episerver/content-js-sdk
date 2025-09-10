@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createFragment, getContentQuery } from '../createQuery.js';
+import { createFragment, createSingleContentQuery } from '../createQuery.js';
 import { initContentTypeRegistry } from '../../model/index.js';
 import {
   callToAction,
@@ -366,7 +366,7 @@ describe('createFragment()', () => {
 
 describe('createQuery', () => {
   test('simple content types', async () => {
-    const result = await getContentQuery(callToAction.key);
+    const result = await createSingleContentQuery(callToAction.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
@@ -383,7 +383,7 @@ describe('createQuery', () => {
   });
 
   test('complex content types', async () => {
-    const result = await getContentQuery(articlePage.key);
+    const result = await createSingleContentQuery(articlePage.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }
@@ -400,7 +400,7 @@ describe('createQuery', () => {
   });
 
   test('nested content types (one level)', async () => {
-    const result = await getContentQuery(heroBlock.key);
+    const result = await createSingleContentQuery(heroBlock.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
@@ -419,7 +419,7 @@ describe('createQuery', () => {
   });
 
   test('nested content types (several levels)', async () => {
-    const result = await getContentQuery(landingPage.key);
+    const result = await createSingleContentQuery(landingPage.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
