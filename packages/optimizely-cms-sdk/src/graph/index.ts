@@ -28,7 +28,7 @@ export type PreviewParams = {
 /** Arguments for the public methods `fetchContent`, `fetchContentType` */
 type FetchContentOptions = {
   path?: string;
-  variation?: string;
+  variation?: string | null;
 };
 
 /**
