@@ -37,7 +37,7 @@ async function getRandomVariation(client: GraphClient, path: string) {
 
 export default async function Page({ params, searchParams }: Props) {
   const { slug } = await params;
-  const path = `/${slug.join('/')}/`;
+  const path = `/en/${slug.join('/')}/`;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
