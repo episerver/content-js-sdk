@@ -281,11 +281,25 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
     items {
       __typename
       ...${contentType}
+      _metadata {
+        variation
+      }
     }
   }
 }
   `;
 }
+
+export type ItemsResponse<T> = {
+  _Content: {
+    items: ({
+      __typename: string;
+      _metadata: {
+        variation: string;
+      };
+    } & T)[];
+  };
+};
 
 /**
  * Resolves the set of allowed content types for a property, excluding restricted and recursive entries.
