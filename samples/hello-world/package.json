@@ -11,7 +11,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@episerver/cms-sdk": "0.1.0-alpha.5",
+    "@episerver/cms-sdk": "0.1.0-alpha.8",
     "next": "15.4.3",
     "react": "19.1.0",
     "react-dom": "19.1.0"

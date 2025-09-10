@@ -100,8 +100,8 @@ export default function RootLayout({
 Open `src/app/[...slug]/page.tsx` file and replace the last line inside the `Page` function:
 
 ```diff
-- return <pre>{JSON.stringify(content, null, 2)}</pre>
-+ return <OptimizelyComponent opti={content} />;
+- return <pre>{JSON.stringify(content[0], null, 2)}</pre>
++ return <OptimizelyComponent opti={content[0]} />;
 ```
 
 Your entire file should look like this:
@@ -123,9 +123,9 @@ export default async function Page({ params }: Props) {
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
-  const content = await client.fetchContent(`/${slug.join('/')}/`);
+  const content = await client.getContentByPath(`/${slug.join('/')}/`);
 
-  return <OptimizelyComponent opti={content} />;
+  return <OptimizelyComponent opti={content[0]} />;
 }
 ```
 
