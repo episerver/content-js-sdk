@@ -12,10 +12,16 @@ export default async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  const response = await client.fetchPreviewContent(
-    // TODO: check types in runtime properly
-    (await searchParams) as PreviewParams
-  );
+  const response = await client
+    .fetchPreviewContent(
+      // TODO: check types in runtime properly
+      (await searchParams) as PreviewParams
+    )
+    .catch((err) => {
+      console.log(err.errors);
+      console.log(err.request.query);
+      throw err;
+    });
 
   return (
     <>

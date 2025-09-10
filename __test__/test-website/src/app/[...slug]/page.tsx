@@ -23,16 +23,31 @@ function handleGraphErrors(err: unknown): never {
   throw err;
 }
 
+function getRandomElement<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+async function getRandomVariation(client: GraphClient, path: string) {
+  const list = await client.listContentMetadata(path);
+  const variations = list.map((item) => item._metadata.variation);
+  console.log('Variations are: ', variations);
+
+  return getRandomElement(variations);
+}
+
 export default async function Page({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { variation } = await searchParams;
+  const path = `/${slug.join('/')}/`;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
+  const variation =
+    (await searchParams).variation ?? (await getRandomVariation(client, path));
+
   const content = await client
-    .fetchContent({ path: `/${slug.join('/')}/`, variation })
+    .getContent({ path, variation })
     .catch(handleGraphErrors);
 
   return <OptimizelyComponent opti={content} />;
