@@ -1,7 +1,7 @@
 import {
-  getContentQuery,
+  createSingleContentQuery,
   ItemsResponse,
-  listContentQuery,
+  createMultipleContentQuery,
 } from './createQuery.js';
 import {
   GraphContentResponseError,
@@ -193,7 +193,7 @@ export class GraphClient {
       variation: options?.variation,
     };
     const contentTypeName = await this.getContentType(input);
-    const query = listContentQuery(contentTypeName);
+    const query = createMultipleContentQuery(contentTypeName);
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items;
@@ -213,7 +213,7 @@ export class GraphClient {
         { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } }
       );
     }
-    const query = getContentQuery(contentTypeName);
+    const query = createSingleContentQuery(contentTypeName);
     const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(response?._Content?.item, params);

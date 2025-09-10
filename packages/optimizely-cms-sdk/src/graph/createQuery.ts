@@ -248,7 +248,7 @@ export function createFragment(
  * @param contentType - The key of the content type to query.
  * @returns A string representing the GraphQL query.
  */
-export function getContentQuery(contentType: string) {
+export function createSingleContentQuery(contentType: string) {
   const fragment = createFragment(contentType);
 
   return `
@@ -271,7 +271,7 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
  * @param contentType - The key of the content type to query.
  * @returns A string representing the GraphQL query.
  */
-export function listContentQuery(contentType: string) {
+export function createMultipleContentQuery(contentType: string) {
   const fragment = createFragment(contentType);
 
   return `
