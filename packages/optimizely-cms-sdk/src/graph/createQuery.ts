@@ -211,6 +211,10 @@ export function createFragment(
 
     // Gather fields for every property
     for (const [propKey, prop] of Object.entries(ct.properties ?? {})) {
+      // Skip properties with indexingType "disabled"
+      if (prop.indexingType === 'disabled') {
+        continue;
+      }
       const { fields: f, extraFragments: e } = convertProperty(
         propKey,
         prop,
@@ -231,6 +235,12 @@ export function createFragment(
       fields.push('..._IExperience');
       extraFragments.push(...createExperienceFragments(visited));
     }
+  }
+
+  // If there are no fields (e.g., empty properties or all properties have indexingType "disabled"),
+  // We return an empty array to avoid creating empty fragments.
+  if (!fields.length) {
+    return [];
   }
 
   // Convert base type key to GraphQL fragment format
