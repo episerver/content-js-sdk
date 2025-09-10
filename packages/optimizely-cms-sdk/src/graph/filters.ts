@@ -75,7 +75,7 @@ export type ContentInput = {
 
 export type VariationInput =
   | { include: 'NONE' }
-  | { include: 'ALL' }
+  | { include: 'ALL'; includeOriginal?: boolean }
   | {
       include: 'SOME';
       value: string[];
