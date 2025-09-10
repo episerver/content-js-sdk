@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createFragment, createQuery } from '../createQuery.js';
+import { createFragment, createSingleContentQuery } from '../createQuery.js';
 import { initContentTypeRegistry } from '../../model/index.js';
 import {
   callToAction,
@@ -366,12 +366,12 @@ describe('createFragment()', () => {
 
 describe('createQuery', () => {
   test('simple content types', async () => {
-    const result = await createQuery(callToAction.key);
+    const result = await createSingleContentQuery(callToAction.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...CallToAction
@@ -383,12 +383,12 @@ describe('createQuery', () => {
   });
 
   test('complex content types', async () => {
-    const result = await createQuery(articlePage.key);
+    const result = await createSingleContentQuery(articlePage.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment ArticlePage on ArticlePage { body { html, json } relatedArticle { url { type, default }} source { type, default } tags }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...ArticlePage
@@ -400,14 +400,14 @@ describe('createQuery', () => {
   });
 
   test('nested content types (one level)', async () => {
-    const result = await createQuery(heroBlock.key);
+    const result = await createSingleContentQuery(heroBlock.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
       fragment myButton on myButton { label link }
       fragment Hero on Hero { heading callToAction { __typename ...CallToAction ...myButton } }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...Hero
@@ -419,7 +419,7 @@ describe('createQuery', () => {
   });
 
   test('nested content types (several levels)', async () => {
-    const result = await createQuery(landingPage.key);
+    const result = await createSingleContentQuery(landingPage.key);
     expect(result).toMatchInlineSnapshot(`
       "
       fragment CallToAction on CallToAction { label link }
@@ -428,8 +428,8 @@ describe('createQuery', () => {
       fragment SuperHero on SuperHero { heading embed_video callToAction { __typename ...CallToAction } }
       fragment SpecialHero on SpecialHero { heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
       fragment LandingPage on LandingPage { hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
-      query FetchContent($filter: _ContentWhereInput) {
-        _Content(where: $filter) {
+      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
+        _Content(where: $where, variation: $variation) {
           item {
             __typename
             ...LandingPage

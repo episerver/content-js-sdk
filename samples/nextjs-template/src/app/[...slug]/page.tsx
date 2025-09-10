@@ -14,7 +14,7 @@ export default async function Page({ params }: Props) {
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
-  const c = await client.fetchContent(`/${slug.join('/')}/`);
+  const c = await client.getContentByPath(`/${slug.join('/')}/`);
 
-  return <OptimizelyComponent opti={c} />;
+  return <OptimizelyComponent opti={c[0]} />;
 }

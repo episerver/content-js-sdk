@@ -21,6 +21,7 @@ import {
   toBaseTypeFragmentKey,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
+import { GraphMissingContentTypeError } from './error.js';
 
 let allContentTypes: AnyContentType[] = [];
 
@@ -204,7 +205,9 @@ export function createFragment(
     // Handle User defined contentType
   } else {
     const ct = getContentType(contentTypeName);
-    if (!ct) throw new Error(`Unknown content type: ${contentTypeName}`);
+    if (!ct) {
+      throw new GraphMissingContentTypeError(contentTypeName);
+    }
 
     // Gather fields for every property
     for (const [propKey, prop] of Object.entries(ct.properties ?? {})) {
@@ -243,17 +246,18 @@ export function createFragment(
 }
 
 /**
- * Generates a complete GraphQL query for fetching a content type and its fragment.
+ * Generates a complete GraphQL query for fetching one item.
+ *
  * @param contentType - The key of the content type to query.
  * @returns A string representing the GraphQL query.
  */
-export function createQuery(contentType: string) {
+export function createSingleContentQuery(contentType: string) {
   const fragment = createFragment(contentType);
 
   return `
 ${fragment.join('\n')}
-query FetchContent($filter: _ContentWhereInput) {
-  _Content(where: $filter) {
+query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
+  _Content(where: $where, variation: $variation) {
     item {
       __typename
       ...${contentType}
@@ -262,6 +266,43 @@ query FetchContent($filter: _ContentWhereInput) {
 }
   `;
 }
+
+/**
+ * Generates a complete GraphQL query for fetching multiple items.
+ * All items must have the same content type
+ *
+ * @param contentType - The key of the content type to query.
+ * @returns A string representing the GraphQL query.
+ */
+export function createMultipleContentQuery(contentType: string) {
+  const fragment = createFragment(contentType);
+
+  return `
+${fragment.join('\n')}
+query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
+  _Content(where: $where, variation: $variation) {
+    items {
+      __typename
+      ...${contentType}
+      _metadata {
+        variation
+      }
+    }
+  }
+}
+  `;
+}
+
+export type ItemsResponse<T> = {
+  _Content: {
+    items: ({
+      __typename: string;
+      _metadata: {
+        variation: string;
+      };
+    } & T)[];
+  };
+};
 
 /**
  * Resolves the set of allowed content types for a property, excluding restricted and recursive entries.
