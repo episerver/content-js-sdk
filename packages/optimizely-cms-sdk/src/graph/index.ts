@@ -179,7 +179,7 @@ export class GraphClient {
    *
    * @param input - The content input used to query the content type.
    * @param previewToken - Optional preview token for fetching preview content.
-   * @returns A promise that resolves to the first content type metadata object, or `undefined` if not found.
+   * @returns A promise that resolves to the first content type metadata object
    */
   private async getContentType(input: GraphVariables, previewToken?: string) {
     const data = await this.request(
@@ -188,7 +188,30 @@ export class GraphClient {
       previewToken
     );
 
-    return data._Content?.item?._metadata?.types?.[0];
+    const type = data._Content?.item?._metadata?.types?.[0];
+
+    if (!type) {
+      throw new GraphResponseError('No content found', {
+        request: {
+          query: GET_CONTENT_METADATA_QUERY,
+          variables: input,
+        },
+      });
+    }
+
+    if (typeof type !== 'string') {
+      throw new GraphResponseError(
+        "Returned type is not 'string'. This might be a bug in the SDK. Try again later. If the error persists, contact Optimizely support",
+        {
+          request: {
+            query: GET_CONTENT_METADATA_QUERY,
+            variables: input,
+          },
+        }
+      );
+    }
+
+    return type;
   }
 
   /**
