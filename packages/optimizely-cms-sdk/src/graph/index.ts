@@ -1,4 +1,8 @@
-import { getContentQuery, listContentQuery } from './createQuery.js';
+import {
+  getContentQuery,
+  ItemsResponse,
+  listContentQuery,
+} from './createQuery.js';
 import {
   GraphContentResponseError,
   GraphHttpResponseError,
@@ -8,7 +12,7 @@ import {
   ContentInput as GraphVariables,
   pathFilter,
   previewFilter,
-  variationFilter,
+  VariationInput,
 } from './filters.js';
 
 /** Options for Graph */
@@ -25,34 +29,9 @@ export type PreviewParams = {
   loc: string;
 };
 
-/** Arguments for the public methods `fetchContent`, `fetchContentType` */
 type FetchContentOptions = {
-  path?: string;
-  variation?: string | null;
+  variation?: VariationInput;
 };
-
-/**
- * Builds the variables object for a GraphQL query based on the provided options.
- *
- * If a string is provided, it is treated as a path and passed to `pathFilter`.
- * If an object is provided, it may contain `path` and/or `variation` properties,
- * which are processed by `pathFilter` and `variationsFilter` respectively.
- *
- * @param options - Either a string representing the content path, or an object containing fetch options.
- * @returns A `GraphVariables` object containing the appropriate filters for the query.
- */
-function buildGraphVariables(
-  options: string | FetchContentOptions
-): GraphVariables {
-  if (typeof options === 'string') {
-    return pathFilter(options);
-  }
-
-  return {
-    ...(options.path && pathFilter(options.path)),
-    ...(options.variation && variationFilter(options.variation)),
-  };
-}
 
 const GET_CONTENT_METADATA_QUERY = `
 query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
@@ -66,26 +45,6 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   }
 }
 `;
-
-const LIST_CONTENT_METADATA_QUERY = `
-query ListContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
-    items {
-      _metadata {
-        types
-        variation
-      }
-    }
-  }
-}
-`;
-
-type MetadataResponse = {
-  _metadata: {
-    types: string[] | null;
-    variation: string | null;
-  };
-};
 
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
@@ -215,85 +174,27 @@ export class GraphClient {
   }
 
   /**
-   * Retrieves metadata for a specific content item using a GraphQL query.
-   *
-   * @param options - Either a string representing the content identifier or an object containing fetch options.
-   * @returns A promise that resolves to the metadata response of the requested content item.
-   */
-  async getContentMetadata(options: string | FetchContentOptions) {
-    const input: GraphVariables = buildGraphVariables(options);
-    const data = await this.request(GET_CONTENT_METADATA_QUERY, input);
-
-    return data._Content?.item as MetadataResponse;
-  }
-
-  /**
-   * Retrieves a list of content metadata for the specified content path.
-   *
-   * @param path - The content path to filter metadata by.
-   * @returns A promise that resolves to an array of `MetadataResponse` objects containing metadata for the matched content items.
-   */
-  async listContentMetadata(path: string) {
-    const input: GraphVariables = {
-      ...pathFilter(path),
-      variation: {
-        include: 'ALL',
-      },
-    };
-
-    const data = await this.request(LIST_CONTENT_METADATA_QUERY, input);
-
-    return data._Content?.items as MetadataResponse[];
-  }
-
-  /**
    * Fetches content from the CMS based on the provided path or options.
    *
    * If a string is provided, it is treated as a content path. If an object is provided,
    * it may include both a path and a variation to filter the content.
    *
-   * @param options - A string representing the content path,
-   *   or an {@linkcode FetchContentOptions} containing path and variation filters.
+   * @param path - A string representing the content path
+   * @param options - Options to include or exclude variations
    *
    * @param contentType - A string representing the content type. If omitted, the method
    *   will try to get the content type name from the CMS.
    *
-   * @returns A promise that resolves to the fetched content item.
+   * @returns An iterator that traverses all found items
    */
-  async getContent(
-    options: string | FetchContentOptions,
-    contentType?: string
-  ) {
-    const input: GraphVariables = buildGraphVariables(options);
-
-    const contentTypeName = contentType ?? (await this.getContentType(input));
-    const query = getContentQuery(contentTypeName);
-    const response = await this.request(query, input);
-
-    return response?._Content?.item;
-  }
-
-  /**
-   * Fetches multiple content from the CMS based on the provided path.
-   *
-   * @param path - A string representing the content path.
-   *
-   * @param contentType - A string representing the content type. If omitted, the method
-   *   will try to get the content type name from the CMS.
-   *
-   * @returns A promise that resolves to the fetched content item.
-   */
-  async listContent(path: string, contentType?: string) {
+  async getContentByPath<T = any>(path: string, options?: FetchContentOptions) {
     const input: GraphVariables = {
       ...pathFilter(path),
-      variation: {
-        include: 'ALL',
-      },
+      variation: options?.variation,
     };
-
-    const contentTypeName = contentType ?? (await this.getContentType(input));
+    const contentTypeName = await this.getContentType(input);
     const query = listContentQuery(contentTypeName);
-    const response = await this.request(query, input);
+    const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items;
   }
