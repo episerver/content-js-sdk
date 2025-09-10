@@ -40,7 +40,7 @@ export default async function Page({ params, searchParams }: Props) {
   if (variation) {
     const list = await client
       .getContentByPath(path, {
-        variation: { include: 'SOME', value: [] },
+        variation: { include: 'SOME', value: [variation] },
       })
       .catch(handleGraphErrors);
     return <OptimizelyComponent opti={list[0]} />;
