@@ -27,14 +27,6 @@ function getRandomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-async function getRandomVariation(client: GraphClient, path: string) {
-  const list = await client.listContentMetadata(path);
-  const variations = list.map((item) => item._metadata.variation);
-  console.log('Variations are: ', variations);
-
-  return getRandomElement(variations);
-}
-
 export default async function Page({ params, searchParams }: Props) {
   const { slug } = await params;
   const path = `/en/${slug.join('/')}/`;
@@ -43,12 +35,24 @@ export default async function Page({ params, searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  const variation =
-    (await searchParams).variation ?? (await getRandomVariation(client, path));
+  const variation = (await searchParams).variation;
 
-  const content = await client
-    .getContent({ path, variation })
+  if (variation) {
+    const list = await client
+      .getContentByPath(path, {
+        variation: { include: 'SOME', value: [] },
+      })
+      .catch(handleGraphErrors);
+    return <OptimizelyComponent opti={list[0]} />;
+  }
+
+  const items = await client
+    .getContentByPath(path, {
+      variation: { include: 'ALL' },
+    })
     .catch(handleGraphErrors);
+
+  const content = getRandomElement(items);
 
   return <OptimizelyComponent opti={content} />;
 }
