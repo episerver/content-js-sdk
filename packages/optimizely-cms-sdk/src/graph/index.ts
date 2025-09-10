@@ -1,4 +1,4 @@
-import { getContentQuery } from './createQuery.js';
+import { getContentQuery, listContentQuery } from './createQuery.js';
 import {
   GraphContentResponseError,
   GraphHttpResponseError,
@@ -269,10 +269,10 @@ export class GraphClient {
     };
 
     const contentTypeName = contentType ?? (await this.getContentType(input));
-    const query = getContentQuery(contentTypeName);
+    const query = listContentQuery(contentTypeName);
     const response = await this.request(query, input);
 
-    return response?._Content?.item;
+    return response?._Content?.items;
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
