@@ -48,11 +48,19 @@ export default async function Page({ params, searchParams }: Props) {
 
   const items = await client
     .getContentByPath(path, {
-      variation: { include: 'ALL' },
+      variation: { include: 'SOME', value: [], includeOriginal: true },
     })
     .catch(handleGraphErrors);
 
+  console.log('Variations', items.length);
+
   const content = getRandomElement(items);
 
-  return <OptimizelyComponent opti={content} />;
+  return (
+    <>
+      <p>Number of variations: {items.length}</p>
+      <hr />
+      <OptimizelyComponent opti={content} />
+    </>
+  );
 }
