@@ -371,7 +371,7 @@ describe('createFragment()', () => {
     `);
   });
 
-  test('When the contentType properties has the field indexType:disabled', async () => {
+  test('should handle content type with some properties having indexType:disabled', async () => {
     const result = await createFragment(Paragraph.key);
     expect(result).toMatchInlineSnapshot(`
       [
@@ -380,7 +380,7 @@ describe('createFragment()', () => {
     `);
   });
 
-  test('When the contentType properties has the field indexType:disabled', async () => {
+  test('should return empty fragments for content type with only indexType:disabled properties', async () => {
     const result = await createFragment(Card.key);
     expect(result).toMatchInlineSnapshot(`[]`);
   });

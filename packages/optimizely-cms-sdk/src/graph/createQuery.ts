@@ -44,6 +44,20 @@ function refreshCache() {
   allContentTypes = getAllContentTypes();
 }
 
+/** Checks if all properties of a content type have indexingType set to 'disabled'.
+ * @param ct - The content type to check.
+ * @returns True if all properties are disabled, false otherwise.
+ */
+function allPropertiesAreDisabled(ct: any): boolean {
+  if (!ct || !ct.properties) return false;
+  let hasProperties = false;
+  for (const k in ct.properties) {
+    hasProperties = true;
+    if (ct.properties[k]?.indexingType !== 'disabled') return false;
+  }
+  return hasProperties;
+}
+
 /**
  * Converts a property definition into GraphQL fields and fragments.
  * Logs warnings for potential performance or recursion issues based on configuration.
@@ -341,6 +355,11 @@ function resolveAllowedTypes(
 
   const add = (ct: PermittedTypes | AnyContentType) => {
     const key = getKeyName(ct);
+    // Skip content types where all properties are disabled
+    const ctObj =
+      typeof ct === 'object' && 'key' in ct ? ct : getContentType(key);
+    if (ctObj && allPropertiesAreDisabled(ctObj)) return;
+    // Skip if in skip list, already seen, or is a main base type
     if (skip.has(key) || seen.has(key) || MAIN_BASE_TYPES.includes(key as any))
       return;
     seen.add(key);
