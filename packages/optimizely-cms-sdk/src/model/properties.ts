@@ -3,6 +3,8 @@ import { AnyContentType, PermittedTypes } from './contentTypes.js';
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
+export type INDEX_TYPE = 'disabled' | 'queryable' | 'searchable';
+
 /** A "Base" content type property that includes all common attributes for all content type properties */
 type BaseProperty = {
   format?: string;
@@ -12,7 +14,7 @@ type BaseProperty = {
   localized?: boolean;
   group?: string;
   sortOrder?: number;
-  indexingType?: {};
+  indexingType?: INDEX_TYPE;
 };
 
 type WithEnum<T> = {

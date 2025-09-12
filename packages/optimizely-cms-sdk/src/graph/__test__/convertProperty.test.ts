@@ -21,7 +21,11 @@ describe('createFragment > Fragment threshold warning', () => {
       key: `Type${i}`,
       baseType: '_component',
       displayName: `Type ${i}`,
-      properties: {},
+      properties: {
+        [`title_${i}`]: {
+          type: 'string',
+        },
+      },
     })
   );
 

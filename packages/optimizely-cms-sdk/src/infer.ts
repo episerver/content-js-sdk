@@ -66,12 +66,17 @@ export type InferredBase = {
   __context?: { edit: boolean; preview_token: string };
 };
 
+/** Only include keys where indexingType is not 'disabled' */
+type EnabledKeys<T extends Record<string, AnyProperty>> = {
+  [K in keyof T]: T[K]['indexingType'] extends 'disabled' ? never : K;
+}[keyof T];
+
 /** Infers an `object` with the TS type inferred for each type */
 type InferProps<T extends AnyContentType> = T extends {
   properties: Record<string, AnyProperty>;
 }
   ? {
-      [Key in keyof T['properties']]: InferFromProperty<
+      [Key in EnabledKeys<T['properties']>]: InferFromProperty<
         T['properties'][Key]
       > | null;
     }
