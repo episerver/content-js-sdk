@@ -51,7 +51,6 @@ export function previewFilter(params: {
     },
     variation: {
       include: 'ALL',
-      includeOriginal: true,
     },
   };
 }
@@ -74,8 +73,8 @@ export type ContentInput = {
 };
 
 export type GraphVariationInput =
-  | { include: 'NONE'; includeOriginal?: boolean }
-  | { include: 'ALL'; includeOriginal?: boolean }
+  | { include: 'NONE' }
+  | { include: 'ALL' }
   | {
       include: 'SOME';
       value: string[];
