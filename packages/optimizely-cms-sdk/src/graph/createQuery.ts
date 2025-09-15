@@ -44,6 +44,20 @@ function refreshCache() {
   allContentTypes = getAllContentTypes();
 }
 
+/** Checks if all properties of a content type have indexingType set to 'disabled' or if there are no properties.
+ * @param ct - The content type to check.
+ * @returns True if all properties are disabled, false otherwise.
+ */
+function allPropertiesAreDisabled(ct: AnyContentType): boolean {
+  if (!ct || !ct.properties) return false;
+  let hasProperties = false;
+  for (const k in ct.properties) {
+    hasProperties = true;
+    if (ct.properties[k]?.indexingType !== 'disabled') return false;
+  }
+  return hasProperties;
+}
+
 /**
  * Converts a property definition into GraphQL fields and fragments.
  * Logs warnings for potential performance or recursion issues based on configuration.
@@ -211,6 +225,10 @@ export function createFragment(
 
     // Gather fields for every property
     for (const [propKey, prop] of Object.entries(ct.properties ?? {})) {
+      // Skip properties with indexingType "disabled"
+      if (prop.indexingType === 'disabled') {
+        continue;
+      }
       const { fields: f, extraFragments: e } = convertProperty(
         propKey,
         prop,
@@ -231,6 +249,12 @@ export function createFragment(
       fields.push('..._IExperience');
       extraFragments.push(...createExperienceFragments(visited));
     }
+  }
+
+  // If there are no fields (e.g., empty properties or all properties have indexingType "disabled"),
+  // We return an empty array to avoid creating empty fragments.
+  if (!fields.length) {
+    return [];
   }
 
   // Convert base type key to GraphQL fragment format
@@ -331,6 +355,11 @@ function resolveAllowedTypes(
 
   const add = (ct: PermittedTypes | AnyContentType) => {
     const key = getKeyName(ct);
+    // Skip content types where all properties are disabled
+    const ctObj =
+      typeof ct === 'object' && 'key' in ct ? ct : getContentType(key);
+    if (ctObj && allPropertiesAreDisabled(ctObj)) return;
+    // Skip if in skip list, already seen, or is a main base type
     if (skip.has(key) || seen.has(key) || MAIN_BASE_TYPES.includes(key as any))
       return;
     seen.add(key);

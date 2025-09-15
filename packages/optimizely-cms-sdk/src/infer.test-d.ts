@@ -88,3 +88,22 @@ test('infer works for component properties', () => {
 
   expectTypeOf<Infer<typeof Article>>().toExtend<ExpectedType>();
 });
+
+test('infer works for disabled keys', () => {
+  type ExpectedType = {
+    p2: string | null;
+  };
+
+  const c1 = contentType({
+    key: 'c1',
+    baseType: '_component',
+    properties: {
+      p1: { type: 'string', indexingType: 'disabled' },
+      p2: { type: 'string', indexingType: 'queryable' },
+    },
+  });
+
+  type X = Infer<typeof c1>;
+
+  expectTypeOf<Infer<typeof c1>>().toExtend<ExpectedType>();
+});

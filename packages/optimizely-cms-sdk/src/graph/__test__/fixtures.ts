@@ -313,6 +313,33 @@ export const HomePage = contentType({
   },
 });
 
+export const Paragraph = contentType({
+  key: 'Paragraph',
+  displayName: 'Paragraph',
+  baseType: '_component',
+  properties: {
+    title: {
+      type: 'string',
+    },
+    description: {
+      type: 'string',
+      indexingType: 'disabled',
+    },
+  },
+});
+
+export const Card = contentType({
+  key: 'Card',
+  displayName: 'Card',
+  baseType: '_component',
+  properties: {
+    title: {
+      type: 'string',
+      indexingType: 'disabled',
+    },
+  },
+});
+
 export const allContentTypes: AnyContentType[] = [
   callToAction,
   specialHeroBlock,
@@ -338,4 +365,6 @@ export const allContentTypes: AnyContentType[] = [
   LocationPage,
   ReviewPage,
   HomePage,
+  Paragraph,
+  Card,
 ];
