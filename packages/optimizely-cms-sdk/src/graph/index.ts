@@ -12,7 +12,7 @@ import {
   ContentInput as GraphVariables,
   pathFilter,
   previewFilter,
-  VariationInput,
+  GraphVariationInput,
 } from './filters.js';
 
 /** Options for Graph */
@@ -29,9 +29,11 @@ export type PreviewParams = {
   loc: string;
 };
 
-type FetchContentOptions = {
-  variation?: VariationInput;
+export type GraphGetContentOptions = {
+  variation?: GraphVariationInput;
 };
+
+export { GraphVariationInput };
 
 const GET_CONTENT_METADATA_QUERY = `
 query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
@@ -187,7 +189,10 @@ export class GraphClient {
    *
    * @returns An iterator that traverses all found items
    */
-  async getContentByPath<T = any>(path: string, options?: FetchContentOptions) {
+  async getContentByPath<T = any>(
+    path: string,
+    options?: GraphGetContentOptions
+  ) {
     const input: GraphVariables = {
       ...pathFilter(path),
       variation: options?.variation,

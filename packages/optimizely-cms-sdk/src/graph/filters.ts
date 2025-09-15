@@ -69,11 +69,11 @@ export function variationFilter(value: string): ContentInput {
  * Arguments for querying content via the Graph API.
  */
 export type ContentInput = {
-  variation?: VariationInput;
+  variation?: GraphVariationInput;
   where?: ContentWhereInput;
 };
 
-export type VariationInput =
+export type GraphVariationInput =
   | { include: 'NONE'; includeOriginal?: boolean }
   | { include: 'ALL'; includeOriginal?: boolean }
   | {
