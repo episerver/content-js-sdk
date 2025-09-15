@@ -13,7 +13,6 @@ export {
   GraphGetContentOptions,
   GraphVariationInput,
 } from './graph/index.js';
-export { createSingleContentQuery } from './graph/createQuery.js';
 export type { PreviewParams } from './graph/index.js';
 export {
   BlankSectionContentType,
