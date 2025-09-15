@@ -115,7 +115,11 @@ function convertPropertyField(
     );
 
     for (const t of allowed) {
-      const key = getKeyName(t);
+      let key = getKeyName(t);
+      // If the key is '_self', we use the root name (since it's self-referential)
+      if (key === '_self') {
+        key = rootName;
+      }
       extraFragments.push(...createFragment(key, visited));
       subfields.push(`...${key}`);
 

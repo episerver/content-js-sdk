@@ -31,6 +31,25 @@ describe('parseChildContentType', () => {
     `);
   });
 
+  it('should handle content types that self-reference mayContainTypes', () => {
+    const input = contentType({
+      key: 'example',
+      baseType: '_component',
+      mayContainTypes: ['_self'],
+    });
+
+    expect(parseChildContentType(input)).toMatchInlineSnapshot(`
+      {
+        "__type": "contentType",
+        "baseType": "_component",
+        "key": "example",
+        "mayContainTypes": [
+          "example",
+        ],
+      }
+    `);
+  });
+
   it('should handle content types without mayContainTypes', () => {
     const input = contentType({
       key: 'example',

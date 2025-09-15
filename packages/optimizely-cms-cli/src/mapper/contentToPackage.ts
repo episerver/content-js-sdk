@@ -18,9 +18,9 @@ function transformContentType(
 ): any {
   validateContentTypeKey(contentType.key);
 
-  const { properties = {} } = contentType;
+  const { key, properties = {} } = contentType;
   const parsedContentType = parseChildContentType(contentType, allowedKeys);
-  const formattedProperties = transformProperties(properties);
+  const formattedProperties = transformProperties(properties, key);
 
   return {
     ...parsedContentType,
