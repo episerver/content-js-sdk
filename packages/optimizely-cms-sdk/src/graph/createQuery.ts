@@ -289,6 +289,9 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
     item {
       __typename
       ...${contentType}
+      _metadata {
+        variation
+      }
     }
   }
 }

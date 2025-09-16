@@ -51,7 +51,6 @@ export function previewFilter(params: {
     },
     variation: {
       include: 'ALL',
-      includeOriginal: true,
     },
   };
 }
@@ -69,13 +68,13 @@ export function variationFilter(value: string): ContentInput {
  * Arguments for querying content via the Graph API.
  */
 export type ContentInput = {
-  variation?: VariationInput;
+  variation?: GraphVariationInput;
   where?: ContentWhereInput;
 };
 
-export type VariationInput =
+export type GraphVariationInput =
   | { include: 'NONE' }
-  | { include: 'ALL'; includeOriginal?: boolean }
+  | { include: 'ALL' }
   | {
       include: 'SOME';
       value: string[];
