@@ -5,7 +5,6 @@ export const FxFeatureCT = contentType({
   displayName: 'Fx Feature',
   baseType: '_component',
   properties: {
-    icon: { type: 'string' },
     title: { type: 'string' },
     text: { type: 'string' },
   },

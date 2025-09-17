@@ -5,7 +5,6 @@ export const FxCallToActionCT = contentType({
   displayName: 'Fx Call to Action',
   baseType: '_component',
   properties: {
-    icon: { type: 'string' },
     text: { type: 'string' },
     link: { type: 'link' },
     appearance: {

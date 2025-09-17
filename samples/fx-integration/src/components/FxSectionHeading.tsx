@@ -5,7 +5,6 @@ export const FxSectionHeadingCT = contentType({
   displayName: 'Fx Section heading',
   baseType: '_component',
   properties: {
-    icon: { type: 'string' },
     pretitle: { type: 'string' },
     title: { type: 'string' },
     subtitle: { type: 'string' },
