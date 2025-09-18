@@ -1,4 +1,6 @@
 import { getVariation } from '@/lib/fx';
+import { GraphClient } from '@episerver/cms-sdk';
+import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
 
 type Props = {
   params: Promise<{
@@ -9,12 +11,27 @@ type Props = {
 export default async function Page({ params }: Props) {
   const { slug } = await params;
   const path = `/en/${slug.join('/')}/`;
-
   const variation = await getVariation(path);
 
+  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
+    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
+  });
+
   if (!variation) {
-    return <div>show original</div>;
+    console.log('Showing original');
+
+    const content = await client.getContentByPath(path);
+
+    return <OptimizelyComponent opti={content[0]} />;
   }
 
-  return <div>show variation {variation}</div>;
+  const content = await client
+    .getContentByPath(path, {
+      variation: { include: 'SOME', value: [variation] },
+    })
+    .catch(() => client.getContentByPath(path));
+
+  console.log('Showing variation', variation);
+
+  return <OptimizelyComponent opti={content[0]} />;
 }
