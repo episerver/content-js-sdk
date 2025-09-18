@@ -1,13 +1,13 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
 import { FxCallToActionCT } from './FxCallToAction';
-import FxText, { FxTextCt } from './FxText';
 
 export const FxCalloutCT = contentType({
   key: 'FxCallout',
   displayName: 'Fx Callout',
   baseType: '_component',
   properties: {
-    text: { type: 'content', allowedTypes: [FxTextCt] },
+    highlightText: { type: 'string' },
+    normalText: { type: 'string' },
     ctas: {
       type: 'array',
       items: { type: 'content', allowedTypes: [FxCallToActionCT] },

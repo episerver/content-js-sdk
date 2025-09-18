@@ -48,18 +48,8 @@ async function createUserContext() {
 }
 
 function getCmsVariation(fxVariation: string | null) {
-  if (!fxVariation) {
-    return null;
-  }
-
-  // Maps between FX variation keys and CMS variation keys
-  const mapping: Record<string, string> = {
-    k_drama: 'k_drama',
-    action: 'action',
-    science_fiction: 'science_fiction',
-  };
-
-  return mapping[fxVariation] ?? null;
+  // Here we can add custom mapping between `fxVariation` and `cmsVariation`
+  return fxVariation;
 }
 
 export async function getVariation(path: string) {
