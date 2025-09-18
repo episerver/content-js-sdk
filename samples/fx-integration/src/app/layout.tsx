@@ -18,7 +18,6 @@ import FxSectionHeading, {
 } from '@/components/FxSectionHeading';
 import BlankExperience from '@/components/BlankExperience';
 import BlankSection from '@/components/BlankSection';
-import FxText, { FxTextCt } from '@/components/FxText';
 
 initContentTypeRegistry([
   BlankExperienceContentType,
@@ -27,7 +26,6 @@ initContentTypeRegistry([
   FxCalloutCT,
   FxFeatureCT,
   FxFigureCT,
-  FxTextCt,
   FxHeroContentType,
   FxQuoteCT,
   FxSectionHeadingCT,
@@ -37,7 +35,6 @@ initReactComponentRegistry({
     FxCallToAction,
     BlankExperience,
     BlankSection,
-    FxText,
     FxCallout,
     FxFeature,
     FxFigure,
