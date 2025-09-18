@@ -10,6 +10,7 @@ export const FxSectionHeadingCT = contentType({
     subtitle: { type: 'string' },
     align: { type: 'string' },
   },
+  compositionBehaviors: ['sectionEnabled'],
 });
 
 type Props = {

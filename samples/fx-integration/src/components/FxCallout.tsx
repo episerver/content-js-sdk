@@ -13,6 +13,7 @@ export const FxCalloutCT = contentType({
       items: { type: 'content', allowedTypes: [FxCallToActionCT] },
     },
   },
+  compositionBehaviors: ['sectionEnabled'],
 });
 
 type Props = {

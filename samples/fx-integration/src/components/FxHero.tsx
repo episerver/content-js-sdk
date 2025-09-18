@@ -13,6 +13,7 @@ export const FxHeroContentType = contentType({
       items: { type: 'content', allowedTypes: [FxCallToActionCT] },
     },
   },
+  compositionBehaviors: ['sectionEnabled'],
 });
 
 type Props = {

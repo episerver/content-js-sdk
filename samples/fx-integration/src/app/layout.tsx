@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { initContentTypeRegistry } from '@episerver/cms-sdk';
+import {
+  BlankExperienceContentType,
+  BlankSectionContentType,
+  initContentTypeRegistry,
+} from '@episerver/cms-sdk';
 import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
 import FxCallToAction, { FxCallToActionCT } from '@/components/FxCallToAction';
 import FxCallout, { FxCalloutCT } from '@/components/FxCallout';
@@ -12,12 +16,18 @@ import FxQuote, { FxQuoteCT } from '@/components/FxQuote';
 import FxSectionHeading, {
   FxSectionHeadingCT,
 } from '@/components/FxSectionHeading';
+import BlankExperience from '@/components/BlankExperience';
+import BlankSection from '@/components/BlankSection';
+import FxText, { FxTextCt } from '@/components/FxText';
 
 initContentTypeRegistry([
+  BlankExperienceContentType,
+  BlankSectionContentType,
   FxCallToActionCT,
   FxCalloutCT,
   FxFeatureCT,
   FxFigureCT,
+  FxTextCt,
   FxHeroContentType,
   FxQuoteCT,
   FxSectionHeadingCT,
@@ -25,6 +35,9 @@ initContentTypeRegistry([
 initReactComponentRegistry({
   resolver: {
     FxCallToAction,
+    BlankExperience,
+    BlankSection,
+    FxText,
     FxCallout,
     FxFeature,
     FxFigure,

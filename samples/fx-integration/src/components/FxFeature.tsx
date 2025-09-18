@@ -8,6 +8,7 @@ export const FxFeatureCT = contentType({
     title: { type: 'string' },
     text: { type: 'string' },
   },
+  compositionBehaviors: ['elementEnabled'],
 });
 
 type Props = {

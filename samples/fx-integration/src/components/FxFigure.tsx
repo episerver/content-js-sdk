@@ -1,15 +1,16 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
-import { FxTextCt } from './FxText';
 
 export const FxFigureCT = contentType({
   key: 'FxFigure',
   displayName: 'Fx Figure',
   baseType: '_component',
   properties: {
-    text: { type: 'content', allowedTypes: [FxTextCt] },
+    highlightText: { type: 'string' },
+    normalText: { type: 'string' },
     logo: { type: 'string' },
     link: { type: 'link' },
   },
+  compositionBehaviors: ['elementEnabled'],
 });
 
 type Props = {
