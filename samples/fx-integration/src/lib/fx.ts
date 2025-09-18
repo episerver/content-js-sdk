@@ -54,9 +54,9 @@ function getCmsVariation(fxVariation: string | null) {
 
 export async function getVariation(path: string) {
   if (!hasRuleset(path)) {
-    console.log('No variatioin in path', path);
     return null;
   }
+  console.log('Variation for path', path);
 
   const user = await createUserContext();
   const decision = user.decide('tv_genre');

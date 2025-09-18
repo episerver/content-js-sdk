@@ -1,4 +1,5 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
+import css from './components.module.css';
 
 export const FxFeatureCT = contentType({
   key: 'FxFeature',
@@ -16,5 +17,10 @@ type Props = {
 };
 
 export default function FxFeature({ opti }: Props) {
-  return <></>;
+  return (
+    <div className={css.FxFeature}>
+      <h3>{opti.title}</h3>
+      <p>{opti.text}</p>
+    </div>
+  );
 }

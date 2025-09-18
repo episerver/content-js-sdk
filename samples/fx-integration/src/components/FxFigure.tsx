@@ -1,4 +1,5 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
+import css from './components.module.css';
 
 export const FxFigureCT = contentType({
   key: 'FxFigure',
@@ -18,5 +19,13 @@ type Props = {
 };
 
 export default function FxFigure({ opti }: Props) {
-  return <></>;
+  return (
+    <div className={css.FxFigure}>
+      <div>
+        {opti.highlightText}
+
+        <span className={css.muted}>{opti.normalText}</span>
+      </div>
+    </div>
+  );
 }

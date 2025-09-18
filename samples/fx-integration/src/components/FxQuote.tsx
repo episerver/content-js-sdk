@@ -18,5 +18,9 @@ type Props = {
 };
 
 export default function FxQuote({ opti }: Props) {
-  return <></>;
+  return (
+    <div>
+      <div>{opti.quote}</div>
+    </div>
+  );
 }

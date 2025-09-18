@@ -1,5 +1,7 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
 import { FxCallToActionCT } from './FxCallToAction';
+import css from './components.module.css';
+import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
 
 export const FxHeroContentType = contentType({
   key: 'FxHero',
@@ -22,9 +24,15 @@ type Props = {
 
 export default function FxHero({ opti }: Props) {
   return (
-    <>
+    <div className={css.FxHero}>
       <h1>{opti.title}</h1>
       <p>{opti.subtitle}</p>
-    </>
+
+      <div className={css.ctas}>
+        {opti.ctas?.map((cta) => (
+          <OptimizelyComponent opti={cta} />
+        ))}
+      </div>
+    </div>
   );
 }

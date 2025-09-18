@@ -6,8 +6,8 @@ export const FxCalloutCT = contentType({
   displayName: 'Fx Callout',
   baseType: '_component',
   properties: {
-    highlightText: { type: 'string' },
-    normalText: { type: 'string' },
+    // highlightText: { type: 'string' },
+    // normalText: { type: 'string' },
     ctas: {
       type: 'array',
       items: { type: 'content', allowedTypes: [FxCallToActionCT] },

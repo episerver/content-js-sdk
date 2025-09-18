@@ -4,6 +4,7 @@ import {
   OptimizelyExperience,
   getPreviewUtils,
 } from '@episerver/cms-sdk/react/server';
+import css from './components.module.css';
 
 type Props = {
   opti: Infer<typeof BlankExperienceContentType>;
@@ -11,12 +12,16 @@ type Props = {
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
+  return (
+    <section className={css.BlankExperienceSection} {...pa(node)}>
+      {children}
+    </section>
+  );
 }
 
 export default function BlankExperience({ opti }: Props) {
   return (
-    <main>
+    <main className={css.BlankExperience}>
       <OptimizelyExperience
         nodes={opti.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}

@@ -1,4 +1,5 @@
 import { contentType, Infer } from '@episerver/cms-sdk';
+import css from './components.module.css';
 
 export const FxCallToActionCT = contentType({
   key: 'FxCallToAction',
@@ -22,9 +23,12 @@ type Props = {
 };
 
 export default function FxCallToAction({ opti }: Props) {
+  const cls = [
+    css.FxCallToAction,
+    opti.appearance && css[opti.appearance],
+  ].join(' ');
   return (
-    <a href={opti.link ?? '#'} className={opti.appearance ?? ''}>
-      <span>{opti.icon}</span>
+    <a className={cls} href={opti.link?.url.default ?? '#'}>
       {opti.text}
     </a>
   );
