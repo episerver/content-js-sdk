@@ -25,9 +25,13 @@ const optimizelyFxClient = createInstance({
   odpManager: odpManager,
 });
 
-// Returns true if we are running an experiment under `path`
-function hasRuleset(path: string) {
-  return path === '/en/landing/';
+// Returns the name of the ruleset in the given path
+function getRuleset(path: string) {
+  if (path === '/en/landing/') {
+    return 'tv_genre';
+  }
+
+  return null;
 }
 
 // Creates a user context.
@@ -53,13 +57,19 @@ function getCmsVariation(fxVariation: string | null) {
 }
 
 export async function getVariation(path: string) {
-  if (!hasRuleset(path)) {
+  const ruleset = getRuleset(path);
+
+  if (!ruleset) {
     return null;
   }
-  console.log('Variation for path', path);
+  console.log(
+    'Path: "%s". Running an experiment with ruleset "%s"',
+    path,
+    ruleset
+  );
 
   const user = await createUserContext();
-  const decision = user.decide('tv_genre');
+  const decision = user.decide(ruleset);
 
   return getCmsVariation(decision.variationKey);
 }
