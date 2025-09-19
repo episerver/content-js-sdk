@@ -1,4 +1,5 @@
-'use server';
+// This module encapsulates all the FX related functions
+// These are not part of any Optimizely SDK
 import {
   createBatchEventProcessor,
   createInstance,
@@ -24,20 +25,21 @@ const optimizelyFxClient = createInstance({
   odpManager: odpManager,
 });
 
-// Returns the name of the ruleset in the given path
+/**
+ * Returns the name of the ruleset in the given path. Returns `null`
+ * if there is no experiment running
+ */
 function getRuleset(path: string) {
-  if (path === '/en/landing/') {
-    return 'tv_genre';
-  }
+  // In this example, we are mapping specific paths with experiments
+  const mapping: Record<string, string> = {
+    '/en/landing/': 'tv_genre',
+  };
 
-  return null;
+  return mapping[path] ?? null;
 }
 
-// Creates a user context.
-// - Reads the "user id" from the cookie.
-// - Sets the cookie with a random value otherwise
-// Returns the user context
-async function createUserContext() {
+/** Returns the Optimizely user context object from cookies */
+async function getUserContext() {
   await optimizelyFxClient.onReady();
 
   const cookieStore = await cookies();
@@ -50,11 +52,14 @@ async function createUserContext() {
   throw new Error('User ID not set in the cookie');
 }
 
+/** Gets the variation in the CMS given the variation in FX */
 function getCmsVariation(fxVariation: string | null) {
-  // Here we can add custom mapping between `fxVariation` and `cmsVariation`
+  // In this example, we have chosen to use the same name for
+  // FX variations and CMS variations.
   return fxVariation;
 }
 
+/** Gets the variation in the given path for the current visiting user */
 export async function getVariation(path: string) {
   const ruleset = getRuleset(path);
 
@@ -67,14 +72,14 @@ export async function getVariation(path: string) {
     ruleset
   );
 
-  const user = await createUserContext();
+  const user = await getUserContext();
   const decision = user.decide(ruleset);
 
   return getCmsVariation(decision.variationKey);
 }
 
 export async function trackRegistration() {
-  const user = await createUserContext();
+  const user = await getUserContext();
 
   user.trackEvent('registrations');
 }

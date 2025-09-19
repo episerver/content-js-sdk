@@ -29,7 +29,11 @@ export default async function Page({ params }: Props) {
     .getContentByPath(path, {
       variation: { include: 'SOME', value: [variation] },
     })
-    .catch(() => client.getContentByPath(path));
+    .catch(
+      // If fetching variations result in an error,
+      // we try to fetch the original content
+      () => client.getContentByPath(path)
+    );
 
   console.log('Showing variation', variation);
 
