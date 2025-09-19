@@ -5,7 +5,6 @@ import {
   createOdpManager,
   createPollingProjectConfigManager,
 } from '@optimizely/optimizely-sdk';
-import { nanoid } from 'nanoid';
 import { cookies } from 'next/headers';
 
 const SDK_KEY = process.env.OPTIMIZELY_FX_SDK_KEY!;
@@ -72,4 +71,10 @@ export async function getVariation(path: string) {
   const decision = user.decide(ruleset);
 
   return getCmsVariation(decision.variationKey);
+}
+
+export async function trackRegistration() {
+  const user = await createUserContext();
+
+  user.trackEvent('registrations');
 }
