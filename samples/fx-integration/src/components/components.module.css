@@ -1,0 +1,110 @@
+.BlankExperience {
+  --gray-rgb: 0, 0, 0;
+  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
+  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
+  --text-muted: rgba(var(--gray-rgb), 0.8);
+  --text-normal: rgba(var(--gray-rgb), 1);
+
+  --button-primary-hover: #383838;
+  --button-secondary-hover: #f2f2f2;
+
+  max-width: 60rem;
+  margin-inline: auto;
+  margin-block: 2rem;
+  font-family: var(--font-geist-sans);
+}
+
+@media (prefers-color-scheme: dark) {
+  .BlankExperience {
+    --gray-rgb: 255, 255, 255;
+    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
+    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
+    /* --text-muted: rgba(var(--gray-rgb), 0.9); */
+
+    --button-primary-hover: #ccc;
+    --button-secondary-hover: #1a1a1a;
+  }
+}
+
+.BlankExperienceSection {
+  border: 1px solid var(--gray-alpha-200);
+}
+
+.BlankSectionRow {
+  display: flex;
+}
+.BlankSectionColumn {
+  flex: 1;
+  border: 1px solid var(--gray-alpha-200);
+}
+
+.FxHero {
+  padding: 3rem 4rem;
+  text-align: center;
+
+  h1 {
+    font-size: 3rem;
+    text-wrap: balance;
+  }
+
+  p {
+    padding-block-start: 2rem;
+    font-size: 1.2rem;
+  }
+
+  .ctas {
+    display: flex;
+    margin: 1rem;
+    justify-content: center;
+  }
+}
+
+.FxFigure {
+  padding: 2rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+
+  .muted {
+    font-weight: inherit;
+    color: var(--text-muted);
+  }
+}
+
+.FxSectionHeading {
+  padding: 2rem;
+  max-width: 50rem;
+
+  h2 {
+    font-size: 1rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    padding-block-end: 1rem;
+    color: var(--text-muted);
+  }
+
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+  }
+}
+
+.FxFeature {
+  padding: 2rem;
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-block-end: 1rem;
+  }
+}
+
+.FxCallToAction {
+  display: inline-block;
+  padding: 0.5rem 2rem;
+  height: 2.5rem;
+  border-radius: 2rem;
+  background: white;
+  color: black;
+}
