@@ -27,6 +27,7 @@ import {
   ExperienceContentType,
   SectionContentType,
 } from './model/contentTypes.js';
+import { Node } from './components/richText/renderer.js';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {
@@ -38,6 +39,11 @@ export type InferredUrl = {
   default: string | null;
 };
 
+type InferredRichText = {
+  html: string;
+  json: { type: 'richText'; children: Node[] };
+};
+
 /** Infers the Typescript type for each content type property */
 // prettier-ignore
 export type InferFromProperty<T extends AnyProperty> =
@@ -46,7 +52,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends StringProperty ? string
   : T extends DateTimeProperty ? string
   : T extends JsonProperty ? any
-  : T extends RichTextProperty ? {html: string; json: any}
+  : T extends RichTextProperty ? InferredRichText
   : T extends UrlProperty ? InferredUrl
   : T extends LinkProperty ? { url: InferredUrl }
   : T extends IntegerProperty ? number
