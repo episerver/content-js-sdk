@@ -9,7 +9,6 @@ You need a Optimizely CMS instance and Optimizely Feature Experimentation instan
 Create an `.env` file with the following environment variables:
 
 ```
-# Saito p1
 OPTIMIZELY_CMS_HOST=
 OPTIMIZELY_GRAPH_SINGLE_KEY=
 OPTIMIZELY_CMS_CLIENT_ID=
