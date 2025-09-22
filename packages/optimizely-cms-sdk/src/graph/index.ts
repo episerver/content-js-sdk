@@ -77,11 +77,7 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(
-    query: string,
-    variables: GraphVariables,
-    previewToken?: string
-  ) {
+  async request(query: string, variables: any, previewToken?: string) {
     const url = new URL(this.graphUrl);
 
     if (!previewToken) {
