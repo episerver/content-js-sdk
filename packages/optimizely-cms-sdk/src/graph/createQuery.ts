@@ -134,7 +134,7 @@ function convertPropertyField(
     }
 
     const uniqueSubfields = [...new Set(subfields)].join(' '); // remove duplicates
-    fields.push(`${name} { __typename ${uniqueSubfields} }`);
+    fields.push(`${name} { ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
   } else if (property.type === 'url') {
@@ -209,7 +209,7 @@ export function createFragment(
   if (visited.size === 0) refreshCache();
   visited.add(fragmentName);
 
-  const fields: string[] = [];
+  const fields: string[] = ['__typename'];
   const extraFragments: string[] = [];
 
   // Built‑in CMS baseTypes  ("_image", "_video", "_media" etc.)
@@ -255,12 +255,6 @@ export function createFragment(
     }
   }
 
-  // If there are no fields (e.g., empty properties or all properties have indexingType "disabled"),
-  // We return an empty array to avoid creating empty fragments.
-  if (!fields.length) {
-    return [];
-  }
-
   // Convert base type key to GraphQL fragment format
   // eg: "_image" -> "_Image"
   const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
@@ -281,6 +275,7 @@ export function createFragment(
  */
 export function createSingleContentQuery(contentType: string) {
   const fragment = createFragment(contentType);
+  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
   return `
 ${fragment.join('\n')}
@@ -288,7 +283,7 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     item {
       __typename
-      ...${contentType}
+      ${fragmentName}
       _metadata {
         variation
       }
@@ -307,14 +302,15 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
  */
 export function createMultipleContentQuery(contentType: string) {
   const fragment = createFragment(contentType);
+  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
   return `
 ${fragment.join('\n')}
 query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     items {
-      __typename
-      ...${contentType}
+
+      ${fragmentName}
       _metadata {
         variation
       }
