@@ -134,7 +134,7 @@ function convertPropertyField(
     }
 
     const uniqueSubfields = [...new Set(subfields)].join(' '); // remove duplicates
-    fields.push(`${name} { __typename ${uniqueSubfields} }`);
+    fields.push(`${name} { ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
   } else if (property.type === 'url') {
@@ -253,12 +253,6 @@ export function createFragment(
       fields.push('..._IExperience');
       extraFragments.push(...createExperienceFragments(visited));
     }
-  }
-
-  // If there are no fields (e.g., empty properties or all properties have indexingType "disabled"),
-  // We return an empty array to avoid creating empty fragments.
-  if (!fields.length) {
-    return [];
   }
 
   // Convert base type key to GraphQL fragment format
