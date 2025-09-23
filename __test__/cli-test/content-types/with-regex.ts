@@ -1,4 +1,4 @@
-import { contentType } from '@episerver/cms-sdk';
+import { contentType } from '@optimizely/cms-sdk';
 
 export const contentTypeWithRegexProperty = contentType({
   key: 'CT_with_regex_property',

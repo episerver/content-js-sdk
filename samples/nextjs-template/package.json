@@ -10,13 +10,13 @@
     "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
-    "@episerver/cms-sdk": "workspace:^0.1.0-alpha.5",
+    "@optimizely/cms-sdk": "workspace:^0.1.0-alpha.5",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@episerver/cms-cli": "workspace:*",
+    "@optimizely/cms-cli": "workspace:*",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",

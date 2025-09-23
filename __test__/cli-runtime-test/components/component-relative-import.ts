@@ -1,4 +1,4 @@
-import { contentType } from '@episerver/cms-sdk';
+import { contentType } from '@optimizely/cms-sdk';
 import { getString } from './subdir/something';
 
 export const ct2 = contentType({

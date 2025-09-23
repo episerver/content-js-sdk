@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 
 // An "Article" content type
 export const ArticleContentType = contentType({

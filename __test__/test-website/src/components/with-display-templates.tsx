@@ -3,12 +3,12 @@ import {
   contentType,
   displayTemplate,
   Infer,
-} from '@episerver/cms-sdk';
+} from '@optimizely/cms-sdk';
 import {
   OptimizelyExperience,
   OptimizelyGridSection,
   StructureContainerProps,
-} from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk/react/server';
 
 export const ct1 = contentType({
   key: 'test_c1',

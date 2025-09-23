@@ -1,8 +1,8 @@
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 import {
   getPreviewUtils,
   OptimizelyComponent,
-} from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk/react/server';
 import { LandingSectionContentType } from './LandingSection';
 import { HeroContentType } from './Hero';
 import Image from 'next/image';

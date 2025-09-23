@@ -8,7 +8,7 @@ import {
   isContentType,
   DisplayTemplates,
   isDisplayTemplate,
-} from '@episerver/cms-sdk';
+} from '@optimizely/cms-sdk';
 import chalk from 'chalk';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';

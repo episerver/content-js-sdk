@@ -72,7 +72,7 @@ export class GraphContentResponseError extends GraphHttpResponseError {
       message.startsWith('Unknown type') ||
       message.startsWith('Cannot query field')
     ) {
-      message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@episerver/cms-cli" CLI app to sync them`;
+      message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@optimizely/cms-cli" CLI app to sync them`;
     } else if (message.startsWith('Syntax Error')) {
       message +=
         ' Try again later. If the error persists, contact Optimizely support';

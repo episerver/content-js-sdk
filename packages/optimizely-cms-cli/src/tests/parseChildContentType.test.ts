@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseChildContentType } from '../utils/mapping.js';
-import { contentType } from '@episerver/cms-sdk';
+import { contentType } from '@optimizely/cms-sdk';
 
 describe('parseChildContentType', () => {
   it('should parse a content type with mayContainTypes', () => {

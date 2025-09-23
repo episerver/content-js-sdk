@@ -17,8 +17,8 @@ import {
 import {
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
-} from '@episerver/cms-sdk';
-import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 initContentTypeRegistry([ct1, ct2, ct3]);
 initDisplayTemplateRegistry([dt1, dt2, dt3]);

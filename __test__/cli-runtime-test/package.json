@@ -8,8 +8,8 @@
     "test:manual": "pnpm exec optimizely-cms-cli config push cli-runtime.optimizely.config.mjs --dryRun"
   },
   "dependencies": {
-    "@episerver/cms-cli": "workspace:*",
-    "@episerver/cms-sdk": "workspace:*",
+    "@optimizely/cms-cli": "workspace:*",
+    "@optimizely/cms-sdk": "workspace:*",
     "react": "^19.0.0"
   },
   "keywords": [],

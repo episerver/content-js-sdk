@@ -1,5 +1,5 @@
 // The content types in this file ARE NOT synced to the CMS
-import { contentType } from '@episerver/cms-sdk';
+import { contentType } from '@optimizely/cms-sdk';
 import { notInRegistry } from './not-included-in-registry';
 
 export const notSynced = contentType({

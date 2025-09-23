@@ -8,8 +8,8 @@
     "test:manual": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@episerver/cms-sdk": "workspace:*",
-    "@episerver/cms-cli": "workspace:*"
+    "@optimizely/cms-sdk": "workspace:*",
+    "@optimizely/cms-cli": "workspace:*"
   },
   "keywords": [],
   "author": "",

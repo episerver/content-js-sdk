@@ -3,7 +3,7 @@ import {
   ct5,
   notSynced,
 } from '@/components/missing-content-types/not-synced';
-import { GraphClient, initContentTypeRegistry } from '@episerver/cms-sdk';
+import { GraphClient, initContentTypeRegistry } from '@optimizely/cms-sdk';
 import React from 'react';
 
 initContentTypeRegistry([ct4, ct5, notSynced]);

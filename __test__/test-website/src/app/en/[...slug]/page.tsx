@@ -1,5 +1,5 @@
-import { GraphClient, GraphErrors } from '@episerver/cms-sdk';
-import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
+import { GraphClient, GraphErrors } from '@optimizely/cms-sdk';
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import React from 'react';
 
 type Props = {

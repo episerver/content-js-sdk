@@ -1,5 +1,5 @@
 {
-  "name": "@episerver/cms-cli",
+  "name": "@optimizely/cms-cli",
   "version": "0.1.0-alpha.7",
   "description": "CLI application for integration with Optimizely CMS",
   "repository": {
@@ -20,7 +20,7 @@
   "type": "module",
   "dependencies": {
     "@babel/plugin-transform-react-jsx": "^7.25.9",
-    "@episerver/cms-sdk": "workspace:^0.1.0-alpha.7",
+    "@optimizely/cms-sdk": "workspace:^0.1.0-alpha.7",
     "@inquirer/prompts": "^7.4.0",
     "@oclif/core": "^4.2.10",
     "chalk": "^5.4.1",

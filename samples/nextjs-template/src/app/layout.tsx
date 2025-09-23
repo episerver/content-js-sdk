@@ -6,8 +6,8 @@ import {
   BlankExperienceContentType,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
-} from '@episerver/cms-sdk';
-import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 import Landing, { LandingPageContentType } from '@/components/Landing';
 import LandingSection, {

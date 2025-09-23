@@ -11,8 +11,8 @@
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "@episerver/cms-cli": "workspace:*",
-    "@episerver/cms-sdk": "workspace:*",
+    "@optimizely/cms-cli": "workspace:*",
+    "@optimizely/cms-sdk": "workspace:*",
     "next": "15.4.5"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 {
-  "name": "@episerver/cms-sdk",
+  "name": "@optimizely/cms-sdk",
   "version": "0.1.0-alpha.8",
   "description": "JavaScript tools for integration with Optimizely CMS",
   "type": "module",

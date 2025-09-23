@@ -1,4 +1,4 @@
-import { contentType } from '@episerver/cms-sdk';
+import { contentType } from '@optimizely/cms-sdk';
 
 // This content type IS synced to the CMS but is not included in the Registry (via initContentType)
 export const notInRegistry = contentType({

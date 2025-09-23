@@ -6,8 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "cms:login": "npx @episerver/cms-cli login",
-    "cms:push-config": "npx @episerver/cms-cli config push ./optimizely.config.mjs",
+    "cms:login": "npx @optimizely/cms-cli login",
+    "cms:push-config": "npx @optimizely/cms-cli config push ./optimizely.config.mjs",
     "lint": "next lint"
   },
   "dependencies": {

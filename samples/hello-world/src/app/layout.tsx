@@ -1,6 +1,6 @@
 import Article, { ArticleContentType } from '@/components/Article';
-import { initContentTypeRegistry } from '@episerver/cms-sdk';
-import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
+import { initContentTypeRegistry } from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 initContentTypeRegistry([ArticleContentType]);
 initReactComponentRegistry({

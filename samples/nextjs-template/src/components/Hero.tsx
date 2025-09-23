@@ -1,4 +1,4 @@
-import { contentType } from '@episerver/cms-sdk';
+import { contentType } from '@optimizely/cms-sdk';
 
 export const HeroContentType = contentType({
   key: 'Hero',

@@ -1,5 +1,5 @@
-import { contentType, Infer } from '@episerver/cms-sdk';
-import { getPreviewUtils } from '@episerver/cms-sdk/react/server';
+import { contentType, Infer } from '@optimizely/cms-sdk';
+import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const BannerContentType = contentType({
   key: 'Banner',

@@ -1,10 +1,10 @@
 import Image from 'next/image';
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyExperience,
   getPreviewUtils,
-} from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk/react/server';
 import { HeroContentType } from './Hero';
 
 export const LandingExperienceContentType = contentType({

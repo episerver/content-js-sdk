@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 import { HeroContentType } from './Hero';
 import { BannerContentType } from './Banner';
 import {
@@ -6,7 +6,7 @@ import {
   getPreviewUtils,
   OptimizelyComponent,
   OptimizelyExperience,
-} from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk/react/server';
 
 export const AboutExperienceContentType = contentType({
   key: 'AboutExperience',

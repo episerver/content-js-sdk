@@ -1,5 +1,5 @@
-import { contentType, displayTemplate, Infer } from '@episerver/cms-sdk';
-import { getPreviewUtils } from '@episerver/cms-sdk/react/server';
+import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const TileContentType = contentType({
   key: 'Tile',

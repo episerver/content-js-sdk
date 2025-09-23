@@ -50,7 +50,7 @@ You can also pass the `--help` flag to any command to see the flags and argument
 3. Push the release branch (`git push`)
 4. Go to GitHub and create one Draft release **for every released package**.
 
-   - Tag: `<<package name>>@<<version>>`. E.g. `@episerver/cms-cli@0.1.0`
+   - Tag: `<<package name>>@<<version>>`. E.g. `@optimizely/cms-cli@0.1.0`
    - Release name (same as tag)
    - Branch: choose the branch you have just created
 

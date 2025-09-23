@@ -1,9 +1,9 @@
-import { BlankExperienceContentType, Infer } from '@episerver/cms-sdk';
+import { BlankExperienceContentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyExperience,
   getPreviewUtils,
-} from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk/react/server';
 
 type Props = {
   opti: Infer<typeof BlankExperienceContentType>;
