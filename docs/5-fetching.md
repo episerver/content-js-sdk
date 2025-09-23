@@ -18,7 +18,7 @@ Locate the file `src/app/layout.tsx` or create it if it doesn't exist. Put the f
 
 ```tsx
 import { ArticleContentType } from '@/components/Article';
-import { initContentTypeRegistry } from '@episerver/cms-sdk';
+import { initContentTypeRegistry } from '@optimizely/cms-sdk';
 
 initContentTypeRegistry([ArticleContentType]);
 
@@ -57,7 +57,7 @@ Create a file `src/app/[...slug]/page.tsx`. Your file structure should look like
 Put the following content in `page.tsx`
 
 ```tsx
-import { GraphClient } from '@episerver/cms-sdk';
+import { GraphClient } from '@optimizely/cms-sdk';
 import React from 'react';
 
 type Props = {

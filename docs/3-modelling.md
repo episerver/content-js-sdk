@@ -25,7 +25,7 @@ Your project structure will look like this:
 Fill `Article.tsx` with the following content:
 
 ```ts
-import { contentType } from '@episerver/cms-sdk';
+import { contentType } from '@optimizely/cms-sdk';
 
 export const ArticleContentType = contentType({
   key: 'Article',
@@ -44,7 +44,7 @@ export const ArticleContentType = contentType({
 Fill `optimizely.config.mjs` with the following content
 
 ```js
-import { buildConfig } from '@episerver/cms-sdk';
+import { buildConfig } from '@optimizely/cms-sdk';
 
 export default buildConfig({
   components: ['./src/components/**/*.tsx'],
@@ -56,7 +56,7 @@ export default buildConfig({
 Run the following command:
 
 ```sh
-npx @episerver/cms-cli@latest config push optimizely.config.mjs
+npx @optimizely/cms-cli@latest config push optimizely.config.mjs
 ```
 
 ## Next steps

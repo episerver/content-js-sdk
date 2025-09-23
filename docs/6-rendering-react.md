@@ -27,7 +27,7 @@ export default function Article({ opti }: Props) {
 The entire file should look like this:
 
 ```tsx
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 
 export const ArticleContentType = contentType({
   key: 'Article',
@@ -72,8 +72,8 @@ The entire `layout.tsx` should look like this:
 
 ```tsx
 import Article, { ArticleContentType } from '@/components/Article';
-import { initContentTypeRegistry } from '@episerver/cms-sdk';
-import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
+import { initContentTypeRegistry } from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 initContentTypeRegistry([ArticleContentType]);
 initReactComponentRegistry({
@@ -107,8 +107,8 @@ Open `src/app/[...slug]/page.tsx` file and replace the last line inside the `Pag
 Your entire file should look like this:
 
 ```tsx
-import { GraphClient } from '@episerver/cms-sdk';
-import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
+import { GraphClient } from '@optimizely/cms-sdk';
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import React from 'react';
 
 type Props = {
