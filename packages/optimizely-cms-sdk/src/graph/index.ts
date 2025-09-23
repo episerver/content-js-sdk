@@ -152,12 +152,7 @@ export class GraphClient {
     const type = data._Content?.item?._metadata?.types?.[0];
 
     if (!type) {
-      throw new GraphResponseError('No content found', {
-        request: {
-          query: GET_CONTENT_METADATA_QUERY,
-          variables: input,
-        },
-      });
+      return null;
     }
 
     if (typeof type !== 'string') {
@@ -187,7 +182,7 @@ export class GraphClient {
    * @param contentType - A string representing the content type. If omitted, the method
    *   will try to get the content type name from the CMS.
    *
-   * @returns An iterator that traverses all found items
+   * @returns An array of all items matching the path and options
    */
   async getContentByPath<T = any>(
     path: string,
@@ -198,6 +193,11 @@ export class GraphClient {
       variation: options?.variation,
     };
     const contentTypeName = await this.getContentType(input);
+
+    if (!contentTypeName) {
+      return [];
+    }
+
     const query = createMultipleContentQuery(contentTypeName);
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
