@@ -5,18 +5,18 @@
 
 JavaScript library and CLI app for Optimizely CMS
 
+<!--
 ## Getting started
 
 ### From sample site
 
 (TODO)
 
-<!--
 
 The easiest way to get started is using the sample site based on Next.js, which showcases both the SDK and CLI
 -->
 
-### From scratch
+## Getting started from scratch
 
 If you want to start from scratch, you can follow this guide:
 
