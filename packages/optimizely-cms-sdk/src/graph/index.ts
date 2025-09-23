@@ -182,7 +182,7 @@ export class GraphClient {
    * @param contentType - A string representing the content type. If omitted, the method
    *   will try to get the content type name from the CMS.
    *
-   * @returns An array of all items matching the path and options
+   * @returns An array of all items matching the path and options. Returns an empty array if no content is found.
    */
   async getContentByPath<T = any>(
     path: string,
