@@ -16,6 +16,10 @@
     "./react/client": {
       "import": "./dist/esm/react/client.js",
       "require": "./dist/cjs/react/client.js"
+    },
+    "./react/richText": {
+      "import": "./dist/esm/react/richText/index.js",
+      "require": "./dist/cjs/react/richText/index.js"
     }
   },
   "repository": {

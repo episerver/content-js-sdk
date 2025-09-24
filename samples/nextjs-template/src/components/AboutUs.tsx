@@ -36,9 +36,14 @@ export default function AboutUs({ opti }: AboutUsProps) {
       <h2>{opti.heading}</h2>
       <div className="about-us-content">
         <div className="about-us-text">
-          <div
+          <RichText
             {...pa('body')}
-            dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
+            content={opti.body?.json}
+            elements={{
+              'heading-two': (props) => (
+                <h1 style={{ color: 'blue' }}>{props.text}</h1>
+              ),
+            }}
           />
         </div>
       </div>
