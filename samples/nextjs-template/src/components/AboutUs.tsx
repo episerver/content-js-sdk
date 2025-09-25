@@ -1,5 +1,9 @@
 import { contentType, Infer } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
+import {
+  ElementRendererProps,
+  RichText,
+} from '@optimizely/cms-sdk/react/richText';
 
 export const AboutUsContentType = contentType({
   key: 'AboutUs',
@@ -24,6 +28,11 @@ export type AboutUsProps = {
   opti: Infer<typeof AboutUsContentType>;
 };
 
+// Custom renderer for 'heading-two' elements to apply specific styles
+const customHeadingTwo = (props: ElementRendererProps) => {
+  return <h1 style={{ color: 'blue' }}>{props.text}</h1>;
+};
+
 export default function AboutUs({ opti }: AboutUsProps) {
   const { pa } = getPreviewUtils(opti);
   return (
@@ -40,9 +49,7 @@ export default function AboutUs({ opti }: AboutUsProps) {
             {...pa('body')}
             content={opti.body?.json}
             elements={{
-              'heading-two': (props) => (
-                <h1 style={{ color: 'blue' }}>{props.text}</h1>
-              ),
+              'heading-two': customHeadingTwo,
             }}
           />
         </div>
