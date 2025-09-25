@@ -195,7 +195,7 @@ export function createHtmlComponent<T extends keyof JSX.IntrinsicElements>(
         undefined,
     };
 
-    // Don't pass children to self-closing elements
+    // We don't pass children to self-closing elements
     if (config.selfClosing) {
       return React.createElement(tag, mergedProps);
     }
