@@ -1,0 +1,4 @@
+node_modules
+.next
+public
+lib/optimizely/types/generated.ts
