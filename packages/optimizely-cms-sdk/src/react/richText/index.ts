@@ -11,3 +11,16 @@ export type {
   ElementMap,
   LeafMap,
 } from './lib.js';
+
+// Class-based renderer (alternative approach)
+export { ReactRichTextRenderer, createReactRenderer } from './renderer.js';
+export type { ReactRendererConfig } from './renderer.js';
+
+// Re-export core types that React users might need
+export type {
+  Node,
+  Element,
+  Text,
+  ElementType,
+  MarkType,
+} from '../../components/richText/renderer.js';

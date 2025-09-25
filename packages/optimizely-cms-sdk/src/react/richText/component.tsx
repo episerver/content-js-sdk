@@ -1,10 +1,10 @@
 import React from 'react';
 import {
-  renderContent,
   generateDefaultElements,
   generateDefaultLeafs,
   type RichTextProps,
 } from './lib.js';
+import { createReactRenderer } from './renderer.js';
 
 /**
  * React component for rendering Optimizely CMS RichText content.
@@ -52,8 +52,9 @@ export const RichText: React.FC<RichTextProps> = ({
     leafs,
   };
 
-  // Render content using React utilities
-  const renderedElements = renderContent(nodes, renderConfig);
+  // Create renderer instance and render content
+  const renderer = createReactRenderer(renderConfig);
+  const renderedElements = renderer.render(nodes);
 
   return <>{renderedElements}</>;
 };
