@@ -22,9 +22,7 @@ export {
   defaultMarkTypeMap,
   RESERVED_PROPS,
 } from './renderer.js';
-export type { AdapterConfig, FrameworkAdapter } from './adapter.js';
-export {
-  UniversalRichTextRenderer,
-  createRenderer,
-  BaseFrameworkAdapter,
-} from './adapter.js';
+
+// Base class for rich text renderers
+export { BaseRichTextRenderer } from './base.js';
+export type { BaseRendererConfig } from './base.js';

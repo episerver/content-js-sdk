@@ -1,12 +1,10 @@
 import React from 'react';
-import type { PropsWithChildren, FC, JSX } from 'react';
+import type { PropsWithChildren, JSX } from 'react';
 import {
   defaultElementTypeMap,
   defaultMarkTypeMap,
 } from '../../components/richText/renderer.js';
-import { buildRenderTree } from '../../components/richText/renderer.js';
 import type {
-  RenderNode,
   Node,
   Text,
   Element,
@@ -85,17 +83,6 @@ export type LeafMap = {
 } & {
   [key: string]: LeafRenderer;
 };
-
-/**
- * Internal configuration for React rendering
- */
-export interface RenderConfig {
-  decodeHtmlEntities?: boolean; // Decode HTML entities in text content
-  elements: ElementMap; // Custom React components for rendering elements by type
-  leafs: LeafMap; // Custom React components for rendering text marks
-  elementFallback?: string; // Default tag for unknown elements
-  leafFallback?: string; // Default tag for unknown text marks
-}
 
 /**
  * Props for the main React RichText component
@@ -233,37 +220,6 @@ export function createLeafComponent<T extends keyof JSX.IntrinsicElements>(
 }
 
 /**
- * Gets fallback element renderer
- */
-export function elementFromFallback(
-  type: string,
-  fallback: string = 'div'
-): ElementRenderer {
-  const elementConfig = defaultElementTypeMap[type];
-  if (elementConfig) {
-    return createHtmlComponent(
-      elementConfig.tag as keyof JSX.IntrinsicElements,
-      elementConfig.config
-    );
-  }
-  return createHtmlComponent(fallback as keyof JSX.IntrinsicElements);
-}
-
-/**
- * Gets fallback leaf renderer
- */
-export function leafFromFallback(
-  mark: string,
-  fallback: string = 'span'
-): LeafRenderer {
-  const tag = defaultMarkTypeMap[mark];
-  if (tag) {
-    return createLeafComponent(tag as keyof JSX.IntrinsicElements);
-  }
-  return createLeafComponent(fallback as keyof JSX.IntrinsicElements);
-}
-
-/**
  * Generate complete element map from core defaults
  */
 export function generateDefaultElements(): ElementMap {
@@ -290,116 +246,4 @@ export function generateDefaultLeafs(): LeafMap {
   });
 
   return leafMap;
-}
-
-/**
- * Converts framework-agnostic render tree to React elements
- */
-export function renderNodes(
-  nodes: RenderNode[],
-  config: RenderConfig
-): React.ReactElement[] {
-  return nodes.map((node, index) => renderNode(node, index, config));
-}
-
-function renderNode(
-  node: RenderNode,
-  key: number,
-  config: RenderConfig
-): React.ReactElement {
-  if (node.type === 'text') {
-    return renderTextNode(node, key, config);
-  } else {
-    return renderElementNode(node, key, config);
-  }
-}
-
-function renderTextNode(
-  node: RenderNode,
-  key: number,
-  config: RenderConfig
-): React.ReactElement {
-  let element: React.ReactElement = React.createElement(
-    'span',
-    { key },
-    node.content
-  );
-
-  // Apply marks by wrapping in leaf components
-  if (node.marks && node.marks.length > 0) {
-    for (const mark of node.marks) {
-      const LeafComponent =
-        config.leafs[mark] || leafFromFallback(mark, config.leafFallback);
-      const leafData: Text = {
-        text: node.content || '',
-        [mark]: true,
-      } as Text;
-      const currentContent = React.isValidElement(element)
-        ? (element.props as { children?: React.ReactNode }).children
-        : element;
-
-      const enhancedProps: LeafRendererProps = {
-        leaf: leafData,
-        attributes: {},
-        text: node.content || '',
-        children: currentContent,
-      };
-
-      element = React.createElement(LeafComponent, enhancedProps);
-    }
-  }
-
-  return element;
-}
-
-function renderElementNode(
-  node: RenderNode,
-  key: number,
-  config: RenderConfig
-): React.ReactElement {
-  const ElementComponent =
-    config.elements[node.elementType!] ||
-    elementFromFallback(node.elementType!, config.elementFallback);
-
-  const children = node.children ? renderNodes(node.children, config) : [];
-
-  // For the elementData, we need to reconstruct the original element structure
-  const elementData: Element & { originalChildren?: Node[] } = {
-    type: node.elementType!,
-    children: [],
-    originalChildren: [],
-    ...node.attributes,
-  } as Element & { originalChildren?: Node[] };
-
-  // Extract text content
-  const textContent = node.children
-    ? node.children
-        .filter((child) => child.type === 'text')
-        .map((child) => child.content || '')
-        .join('')
-    : '';
-
-  // Enhanced props for the component
-  const enhancedProps: ElementRendererProps = {
-    element: elementData,
-    attributes: node.attributes,
-    text: textContent,
-    children: React.createElement(React.Fragment, {}, ...children),
-  };
-
-  return React.createElement(ElementComponent, { ...enhancedProps, key });
-}
-
-/**
- * Main rendering function that converts Slate content to React elements
- */
-export function renderContent(
-  content: Node[],
-  config: RenderConfig
-): React.ReactElement[] {
-  const renderTree = buildRenderTree(content, {
-    decodeHtmlEntities: config.decodeHtmlEntities,
-  });
-
-  return renderNodes(renderTree, config);
 }
