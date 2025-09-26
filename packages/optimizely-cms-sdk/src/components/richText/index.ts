@@ -9,6 +9,11 @@ export type {
   TextWithMark,
   RendererConfig,
   HtmlComponentConfig,
+  BaseElementRendererProps,
+  BaseLeafRendererProps,
+  BaseElementMap,
+  BaseLeafMap,
+  RichTextPropsBase,
 } from './renderer.js';
 export { isText, isElement } from './renderer.js';
 export type { RenderNode } from './renderer.js';

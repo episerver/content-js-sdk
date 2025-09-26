@@ -3,42 +3,35 @@ import type { PropsWithChildren, JSX } from 'react';
 import {
   defaultElementTypeMap,
   defaultMarkTypeMap,
-} from '../../components/richText/renderer.js';
-import type {
-  Node,
-  Text,
-  Element,
-  ElementType,
-  MarkType,
+  type BaseElementRendererProps,
+  type BaseLeafRendererProps,
+  type BaseElementMap,
+  type BaseLeafMap,
+  type HtmlComponentConfig,
+  type RichTextPropsBase,
 } from '../../components/richText/renderer.js';
 
 /**
- * Props for React element renderer components
+ * React-specific element renderer props (extends shared props with React children)
  */
-export interface ElementRendererProps extends PropsWithChildren {
-  element: Element;
-  attributes?: Record<string, unknown>;
-  text?: string; // Enhanced API - direct text access (optional for backward compatibility)
-}
+export interface ElementRendererProps
+  extends BaseElementRendererProps,
+    PropsWithChildren {}
 
 /**
- * Better named alias for ElementRendererProps - more intuitive and developer-friendly
- * Use this for new code: ({ text, attributes, element }: ElementProps) => JSX.Element
+ * Prop type used for custom Element components
  */
 export type ElementProps = ElementRendererProps;
 
 /**
- * Props for React leaf renderer components
+ * React-specific leaf renderer props (extends shared props with React children)
  */
-export interface LeafRendererProps extends PropsWithChildren {
-  leaf: Text;
-  attributes?: Record<string, unknown>;
-  text?: string; // Enhanced API - direct text access (optional for backward compatibility)
-}
+export interface LeafRendererProps
+  extends BaseLeafRendererProps,
+    PropsWithChildren {}
 
 /**
- * Better named alias for LeafRendererProps - more intuitive and developer-friendly
- * Use this for new code: ({ text, attributes, leaf }: LeafProps) => JSX.Element
+ * Prop type used for custom Leaf components
  */
 export type LeafProps = LeafRendererProps;
 
@@ -48,104 +41,25 @@ export type LeafProps = LeafRendererProps;
 export type ElementRenderer = React.ComponentType<ElementRendererProps>;
 
 /**
- * Better named alias for ElementRenderer - more intuitive and developer-friendly
- * Use this for new code: const MyComponent: ElementComponent = ({ text, attributes }) => JSX.Element
- */
-export type ElementComponent = ElementRenderer;
-
-/**
  * React component for rendering Slate text leaves
  */
 export type LeafRenderer = React.ComponentType<LeafRendererProps>;
 
 /**
- * Better named alias for LeafRenderer - more intuitive and developer-friendly
- * Use this for new code: const MyComponent: LeafComponent = ({ text, attributes }) => JSX.Element
+ * React-specific mapping types (specializes generic types with React components)
  */
-export type LeafComponent = LeafRenderer;
+export type ElementMap = BaseElementMap<ElementRenderer>;
 
 /**
- * Mapping from element types to React renderer components
- * Provides IntelliSense for known element types while allowing custom types
+ * React-specific mapping types (specializes generic types with React components)
  */
-export type ElementMap = {
-  [K in ElementType]?: ElementRenderer;
-} & {
-  [key: string]: ElementRenderer;
-};
+export type LeafMap = BaseLeafMap<LeafRenderer>;
 
 /**
- * Mapping from leaf mark types to React renderer components
- * Provides IntelliSense for known mark types while allowing custom types
+ * React-specific RichText props
  */
-export type LeafMap = {
-  [K in MarkType]?: LeafRenderer;
-} & {
-  [key: string]: LeafRenderer;
-};
-
-/**
- * Props for the main React RichText component
- */
-export interface RichTextProps {
-  /**
-   * Slate.js compatible JSON content to render
-   */
-  content?: {
-    type: 'richText';
-    children: Node[];
-  };
-
-  /**
-   * Custom React components for rendering elements by type
-   */
-  elements?: ElementMap;
-
-  /**
-   * Custom React components for rendering text marks
-   */
-  leafs?: LeafMap;
-
-  /**
-   * Fallback element type when no custom renderer is found
-   */
-  elementFallback?: string;
-
-  /**
-   * Fallback leaf element type when no custom renderer is found
-   */
-  leafFallback?: string;
-
-  /**
-   * Whether to decode HTML entities in text content
-   */
-  decodeHtmlEntities?: boolean;
-}
-
-/**
- * Utility type for Slate.js content arrays
- */
-export type Content = Node[];
-
-/**
- * Configuration for HTML component creation
- */
-export interface HtmlComponentConfig {
-  /**
-   * Whether the element is self-closing (like <img>, <br>)
-   */
-  selfClosing?: boolean;
-
-  /**
-   * Default CSS class to apply
-   */
-  className?: string;
-
-  /**
-   * Additional HTML attributes to apply
-   */
-  attributes?: Record<string, unknown>;
-}
+export interface RichTextProps
+  extends RichTextPropsBase<ElementRenderer, LeafRenderer> {}
 
 /**
  * Converts framework-agnostic attributes to React props

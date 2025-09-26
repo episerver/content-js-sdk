@@ -64,6 +64,86 @@ export type TextWithMark<T extends MarkType> = Text & {
 };
 
 /**
+ * Props for element renderer components (framework-agnostic)
+ */
+export interface BaseElementRendererProps {
+  element: Element;
+  attributes?: Record<string, unknown>;
+  text?: string; // Enhanced API - direct text access (optional for backward compatibility)
+}
+
+/**
+ * Props for leaf renderer components (framework-agnostic)
+ */
+export interface BaseLeafRendererProps {
+  leaf: Text;
+  attributes?: Record<string, unknown>;
+  text?: string; // Enhanced API - direct text access (optional for backward compatibility)
+}
+
+/**
+ * Generic mapping from element types to renderer components
+ * Can be specialized for each framework: ElementMap<ReactComponent>, ElementMap<VueComponent>, etc.
+ */
+export type BaseElementMap<TRenderer = unknown> = {
+  [K in ElementType]?: TRenderer;
+} & {
+  [key: string]: TRenderer;
+};
+
+/**
+ * Generic mapping from leaf mark types to renderer components
+ * Can be specialized for each framework: LeafMap<ReactComponent>, LeafMap<VueComponent>, etc.
+ */
+export type BaseLeafMap<TRenderer = unknown> = {
+  [K in MarkType]?: TRenderer;
+} & {
+  [key: string]: TRenderer;
+};
+
+/**
+ * Generic props for RichText component (framework-agnostic)
+ * Can be specialized for each framework with specific renderer types
+ */
+export interface RichTextPropsBase<
+  TElementRenderer = unknown,
+  TLeafRenderer = unknown
+> {
+  /**
+   * Slate.js compatible JSON content to render
+   */
+  content?: {
+    type: 'richText';
+    children: Node[];
+  };
+
+  /**
+   * Custom components for rendering elements by type
+   */
+  elements?: BaseElementMap<TElementRenderer>;
+
+  /**
+   * Custom components for rendering text marks
+   */
+  leafs?: BaseLeafMap<TLeafRenderer>;
+
+  /**
+   * Fallback element type when no custom renderer is found
+   */
+  elementFallback?: string;
+
+  /**
+   * Fallback leaf element type when no custom renderer is found
+   */
+  leafFallback?: string;
+
+  /**
+   * Whether to decode HTML entities in text content
+   */
+  decodeHtmlEntities?: boolean;
+}
+
+/**
  * Available element types in the default implementation
  */
 export type ElementType =

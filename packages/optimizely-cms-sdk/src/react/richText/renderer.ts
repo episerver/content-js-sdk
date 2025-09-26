@@ -76,10 +76,10 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
       ...node.attributes,
     };
 
-    // Extract text content for direct text access
-    const textContent = children
-      .filter((child): child is string => typeof child === 'string')
-      .join('');
+    // Extract text content from render nodes
+    const textContent = node.children
+      ? this.extractTextFromRenderNodes(node.children)
+      : '';
 
     // Create the React element with enhanced props
     return React.createElement(
@@ -135,6 +135,22 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
     }
 
     return element;
+  }
+
+  /**
+   * Extract text content from render nodes recursively
+   */
+  private extractTextFromRenderNodes(nodes: RenderNode[]): string {
+    return nodes
+      .map((node) => {
+        if (node.type === 'text') {
+          return this.decodeEntities(node.content || '');
+        } else if (node.children) {
+          return this.extractTextFromRenderNodes(node.children);
+        }
+        return '';
+      })
+      .join('');
   }
 
   /**
