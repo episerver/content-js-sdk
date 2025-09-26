@@ -66,7 +66,6 @@ export type DateTimeProperty = BaseProperty & {
   maximum?: string;
 };
 
-// Note: `RichText` type does not exist in the REST API. However, we need it to extract the right GraphQL fields from there
 export type RichTextProperty = BaseProperty & { type: 'richText' };
 export type UrlProperty = BaseProperty & { type: 'url' };
 export type IntegerProperty = BaseProperty & {
