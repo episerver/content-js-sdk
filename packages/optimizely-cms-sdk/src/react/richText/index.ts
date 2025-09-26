@@ -5,18 +5,17 @@ export {
   createHtmlComponent,
   createLeafComponent,
 } from './lib.js';
+
 export type {
-  ElementRendererProps,
-  LeafRendererProps,
+  ElementProps,
+  LeafProps,
+  ElementRenderer,
+  LeafRenderer,
   ElementMap,
   LeafMap,
+  RichTextProps,
 } from './lib.js';
 
-// Class-based renderer (alternative approach)
-export { ReactRichTextRenderer, createReactRenderer } from './renderer.js';
-export type { ReactRendererConfig } from './renderer.js';
-
-// Re-export core types that React users might need
 export type {
   Node,
   Element,

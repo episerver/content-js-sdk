@@ -1,9 +1,6 @@
 import { contentType, Infer } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import {
-  ElementRendererProps,
-  RichText,
-} from '@optimizely/cms-sdk/react/richText';
+import { RichText, ElementProps } from '@optimizely/cms-sdk/react/richText';
 
 export const AboutUsContentType = contentType({
   key: 'AboutUs',
@@ -29,7 +26,7 @@ export type AboutUsProps = {
 };
 
 // Custom renderer for 'heading-two' elements to apply specific styles
-const customHeadingTwo = (props: ElementRendererProps) => {
+const customHeadingTwo = (props: ElementProps) => {
   return <h1 style={{ color: 'blue' }}>{props.text}</h1>;
 };
 
