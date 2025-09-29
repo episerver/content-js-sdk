@@ -63,14 +63,15 @@ export function parseChildContentType(
 /**
  * Transforms the properties of an object by applying a transformation function to each property value.
  * @param properties - An object containing key-value pairs where the values are to be transformed.
+ * @param parentKey - The parent contentType key, used for context in certain transformations (when '_self' is used).
  * @returns A new object with the same keys as the input object, but with transformed values.
  */
 export function transformProperties(
   properties: Record<string, any>,
-  key: string
+  parentKey: string
 ): Record<string, any> {
   return Object.entries(properties).reduce((acc, [key, value]) => {
-    acc[key] = transformProperty(value, key);
+    acc[key] = transformProperty(value, parentKey);
     return acc;
   }, {} as Record<string, any>);
 }
@@ -86,17 +87,17 @@ export function transformProperties(
  * - Mapping allowed and restricted types.
  *
  * @param property - The property object to be transformed.
- * @param key - The parent contentType key, used for context in certain transformations (when '_self' is used).
+ * @param parentKey - The parent contentType key, used for context in certain transformations (when '_self' is used).
  * @returns The transformed property object after applying all handlers.
  */
-function transformProperty(property: any, key: string): any {
+function transformProperty(property: any, parentKey: string): any {
   let updatedProperty = { ...property };
 
   updatedProperty = handleComponentType(updatedProperty);
   updatedProperty = handleEnumFormat(updatedProperty);
   updatedProperty = handleArrayType(updatedProperty);
   updatedProperty = handleContentReferenceType(updatedProperty);
-  updatedProperty = mapAllowedRestrictedTypes(updatedProperty, key);
+  updatedProperty = mapAllowedRestrictedTypes(updatedProperty, parentKey);
 
   return updatedProperty;
 }
@@ -224,27 +225,30 @@ function hasContentTypeWithKey(obj: any): boolean {
 /**
  * Recursively maps and normalizes `allowedTypes` and `restrictedTypes`
  * and handles nested `items` when the type is "array".
- * Uses the provided `key` for context when extracting key names when '_self' is used.
+ * Uses the provided `parentKey` for context when extracting key names when '_self' is used.
  * @param updatedValue - The schema object to transform.
- * @param key - The parent contentType key, used for context in certain transformations.
+ * @param parentKey - The parent contentType key, used for context in certain transformations.
  * @returns The same object, with allowed/restricted types normalized.
  */
-function mapAllowedRestrictedTypes(updatedValue: any, key: string) {
+function mapAllowedRestrictedTypes(updatedValue: any, parentKey: string) {
   // Recursively handle nested 'items' if it's an array
   if (updatedValue.type === 'array' && updatedValue.items) {
-    updatedValue.items = mapAllowedRestrictedTypes(updatedValue.items, key);
+    updatedValue.items = mapAllowedRestrictedTypes(
+      updatedValue.items,
+      parentKey
+    );
   }
 
   if (['contentReference', 'content'].includes(updatedValue.type)) {
     if (Array.isArray(updatedValue.allowedTypes)) {
       updatedValue.allowedTypes = updatedValue.allowedTypes.map((input: any) =>
-        extractKeyName(input, key)
+        extractKeyName(input, parentKey)
       ) as any;
     }
 
     if (Array.isArray(updatedValue.restrictedTypes)) {
       updatedValue.restrictedTypes = updatedValue.restrictedTypes.map(
-        (input: any) => extractKeyName(input, key)
+        (input: any) => extractKeyName(input, parentKey)
       ) as any;
     }
   }
