@@ -22,7 +22,7 @@ jobs:
         uses: pnpm/action-setup@v2
 
       - name: Install (all) dependencies)
-        run: pnpm install
+        run: pnpm  --filter "./packages/**" install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
