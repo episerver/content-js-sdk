@@ -29,8 +29,8 @@ export default function FxHero({ opti }: Props) {
       <p>{opti.subtitle}</p>
 
       <div className={css.ctas}>
-        {opti.ctas?.map((cta) => (
-          <OptimizelyComponent opti={cta} />
+        {opti.ctas?.map((cta, i) => (
+          <OptimizelyComponent key={i} opti={cta} />
         ))}
       </div>
     </div>
