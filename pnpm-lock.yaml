@@ -83,7 +83,7 @@ importers:
         specifier: ^4.2.10
         version: 4.2.10
       '@optimizely/cms-sdk':
-        specifier: workspace:^0.1.0-alpha.7
+        specifier: workspace:^0.1.0-alpha.9
         version: link:../optimizely-cms-sdk
       chalk:
         specifier: ^5.4.1
