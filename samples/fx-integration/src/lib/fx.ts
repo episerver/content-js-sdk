@@ -9,9 +9,11 @@ import {
 import { cookies } from 'next/headers';
 
 const SDK_KEY = process.env.OPTIMIZELY_FX_SDK_KEY!;
+const ACCESS_TOKEN = process.env.OPTIMIZELY_FX_ACCESS_TOKEN;
 
 const pollingConfigManager = createPollingProjectConfigManager({
   sdkKey: SDK_KEY,
+  datafileAccessToken: ACCESS_TOKEN,
   autoUpdate: true,
   updateInterval: 60000, // 1 minute
 });
@@ -66,11 +68,6 @@ export async function getVariation(path: string) {
   if (!ruleset) {
     return null;
   }
-  console.log(
-    'Path: "%s". Running an experiment with ruleset "%s"',
-    path,
-    ruleset
-  );
 
   const user = await getUserContext();
   const decision = user.decide(ruleset);
