@@ -147,9 +147,9 @@ importers:
 
   samples/fx-integration:
     dependencies:
-      '@episerver/cms-sdk':
-        specifier: 0.1.0-alpha.8
-        version: 0.1.0-alpha.8(react@19.1.0)
+      '@optimizely/cms-sdk':
+        specifier: 0.1.0-alpha.10
+        version: 0.1.0-alpha.10(react@19.1.0)
       '@optimizely/optimizely-sdk':
         specifier: ^6.1.0
         version: 6.1.0
@@ -190,9 +190,9 @@ importers:
 
   samples/hello-world:
     dependencies:
-      '@episerver/cms-sdk':
-        specifier: 0.1.0-alpha.8
-        version: 0.1.0-alpha.8(react@19.1.0)
+      '@optimizely/cms-sdk':
+        specifier: 0.1.0-alpha.10
+        version: 0.1.0-alpha.10(react@19.1.0)
       next:
         specifier: 15.4.3
         version: 15.4.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -365,14 +365,6 @@ packages:
 
   '@emnapi/wasi-threads@1.0.1':
     resolution: {integrity: sha512-iIBu7mwkq4UQGeMEM8bLwNK962nXdhodeScX4slfQnRhEMMzvYivHhutCIk8uojvmASXXPC2WNEjwxFWk72Oqw==}
-
-  '@episerver/cms-sdk@0.1.0-alpha.8':
-    resolution: {integrity: sha512-AOh+4J5If8d1dTaDRuvgcQ74AHy+G38VYu5UorYyiHsOFFTSSAO8gO265hleawuhRIiesDuTSlxowyN5R/1K+w==, tarball: https://npm.pkg.github.com/download/@episerver/cms-sdk/0.1.0-alpha.8/9fea1d394cea7c32f68c413789a3974b1e6f74cf}
-    peerDependencies:
-      react: ^19.0.0
-    peerDependenciesMeta:
-      react:
-        optional: true
 
   '@esbuild/aix-ppc64@0.25.8':
     resolution: {integrity: sha512-urAvrUedIqEiFR3FYSLTWQgLu5tb+m0qZw0NBEasUeo6wuqatkMDaRT+1uABiGXEu5vqgPd7FGE1BhsAIy9QVA==}
@@ -1389,6 +1381,14 @@ packages:
 
   '@octokit/types@13.10.0':
     resolution: {integrity: sha512-ifLaO34EbbPj0Xgro4G5lP5asESjwHracYJvVaPIyXMuiuXLlhic3S47cBdTb+jfODkTE5YtGCLt3Ay3+J97sA==}
+
+  '@optimizely/cms-sdk@0.1.0-alpha.10':
+    resolution: {integrity: sha512-HJZWlSv2DLM9wPXgsS7J35dVeI5tdG9poSa3iTmTIuZFcKtkQJR9CAw/AsFDd0q8bLmnDArPY2ZuCqknkFH2kQ==}
+    peerDependencies:
+      react: ^19.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@optimizely/optimizely-sdk@6.1.0':
     resolution: {integrity: sha512-p678Osy8QUiue7kdHiujeuKHHwNL82BPH2ubXeaFX8oJ4PASnSHzcVhpaCBI7GjuRPz3ZYVlZqL/Kylc3AO70Q==}
@@ -5103,10 +5103,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@episerver/cms-sdk@0.1.0-alpha.8(react@19.1.0)':
-    optionalDependencies:
-      react: 19.1.0
-
   '@esbuild/aix-ppc64@0.25.8':
     optional: true
 
@@ -6035,6 +6031,10 @@ snapshots:
   '@octokit/types@13.10.0':
     dependencies:
       '@octokit/openapi-types': 24.2.0
+
+  '@optimizely/cms-sdk@0.1.0-alpha.10(react@19.1.0)':
+    optionalDependencies:
+      react: 19.1.0
 
   '@optimizely/optimizely-sdk@6.1.0':
     dependencies:

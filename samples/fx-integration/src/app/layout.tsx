@@ -5,8 +5,8 @@ import {
   BlankExperienceContentType,
   BlankSectionContentType,
   initContentTypeRegistry,
-} from '@episerver/cms-sdk';
-import { initReactComponentRegistry } from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 import FxCallToAction, { FxCallToActionCT } from '@/components/FxCallToAction';
 import FxCallout, { FxCalloutCT } from '@/components/FxCallout';
 import FxFeature, { FxFeatureCT } from '@/components/FxFeature';

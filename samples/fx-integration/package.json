@@ -6,12 +6,12 @@
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "cms:login": "npx @episerver/cms-cli login",
-    "cms:push-config": "npx @episerver/cms-cli config push ./optimizely.config.mjs",
+    "cms:login": "npx @optimizely/cms-cli login",
+    "cms:push-config": "npx @optimizely/cms-cli config push ./optimizely.config.mjs",
     "lint": "eslint"
   },
   "dependencies": {
-    "@episerver/cms-sdk": "0.1.0-alpha.8",
+    "@optimizely/cms-sdk": "0.1.0-alpha.10",
     "@optimizely/optimizely-sdk": "^6.1.0",
     "nanoid": "^5.1.5",
     "next": "15.5.3",

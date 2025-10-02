@@ -1,7 +1,7 @@
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 import { FxCallToActionCT } from './FxCallToAction';
 import css from './components.module.css';
-import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 
 export const FxHeroContentType = contentType({
   key: 'FxHero',

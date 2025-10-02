@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 import css from './components.module.css';
 
 export const FxFeatureCT = contentType({

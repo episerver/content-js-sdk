@@ -1,9 +1,9 @@
-import { BlankSectionContentType, Infer } from '@episerver/cms-sdk';
+import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
   getPreviewUtils,
-} from '@episerver/cms-sdk/react/server';
+} from '@optimizely/cms-sdk/react/server';
 import css from './components.module.css';
 
 type BlankSectionProps = {
