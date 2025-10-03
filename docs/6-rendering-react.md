@@ -7,6 +7,8 @@ In this page you will learn how to create a React component for your content typ
 Open the `src/app/components/Article.tsx` file and add the following
 
 ```tsx
+import { RichText } from '@episerver/cms-sdk/react/richText';
+
 type Props = {
   opti: Infer<typeof ArticleContentType>;
 };
@@ -15,19 +17,60 @@ export default function Article({ opti }: Props) {
   return (
     <main>
       <h1>{opti.heading}</h1>
-      <div dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }} />
+      <RichText content={opti.body?.json} />
     </main>
   );
 }
 ```
 
-> [!WARNING]
-> Using [React `dangerouslySetInnerHTML`](https://legacy.reactjs.org/docs/dom-elements.html#dangerouslysetinnerhtml) can introduce XSS risks. In production environments you should sanitize the HTML or use `opti.body?.json` (which gives the content as JSON)
+> [!TIP]
+> Using the `<RichText/>` component is the recommended way to render rich text content. It's safer than `dangerouslySetInnerHTML` as it doesn't rely on HTML parsing, and allows you to customize how elements are rendered with your own React components.
+
+### Customizing Rich Text Elements
+
+You can customize how specific elements are rendered by providing custom components:
+
+```tsx
+import { RichText, type ElementProps } from '@episerver/cms-sdk/react/richText';
+
+// Custom heading renderer
+const CustomHeading = (props: ElementProps) => (
+  <h2 style={{ color: 'blue', fontSize: '1.8rem' }}>{props.children}</h2>
+);
+
+// Custom link renderer
+const CustomLink = (props: ElementProps) => (
+  <a
+    href={props.element.url}
+    style={{ color: 'purple', textDecoration: 'underline' }}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    {props.children}
+  </a>
+);
+
+export default function Article({ opti }: Props) {
+  return (
+    <main>
+      <h1>{opti.heading}</h1>
+      <RichText
+        content={opti.body?.json}
+        elements={{
+          'heading-two': CustomHeading,
+          link: CustomLink,
+        }}
+      />
+    </main>
+  );
+}
+```
 
 The entire file should look like this:
 
 ```tsx
 import { contentType, Infer } from '@optimizely/cms-sdk';
+import { RichText } from '@optimizely/cms-sdk/react/richText';
 
 export const ArticleContentType = contentType({
   key: 'Article',
@@ -50,7 +93,7 @@ export default function Article({ opti }: Props) {
   return (
     <main>
       <h1>{opti.heading}</h1>
-      <div dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }} />
+      <RichText content={opti.body?.json} />
     </main>
   );
 }
