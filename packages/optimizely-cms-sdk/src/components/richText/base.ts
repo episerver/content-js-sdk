@@ -1,10 +1,7 @@
 import {
   buildRenderTree,
-  extractTextContent,
   decodeHTML,
-  mapAttributes,
   type Node,
-  type Element,
   type RenderNode,
   type RendererConfig,
 } from './renderer.js';
@@ -47,20 +44,6 @@ export abstract class BaseRichTextRenderer<
    */
   protected buildRenderTree(nodes: Node[]): RenderNode[] {
     return buildRenderTree(nodes, this.config);
-  }
-
-  /**
-   * Framework-agnostic text extraction (shared across all implementations)
-   */
-  protected extractText(nodes: Node[]): string {
-    return extractTextContent(nodes);
-  }
-
-  /**
-   * Framework-agnostic attribute processing (shared across all implementations)
-   */
-  protected processAttributes(node: Element): Record<string, unknown> {
-    return mapAttributes(node);
   }
 
   /**

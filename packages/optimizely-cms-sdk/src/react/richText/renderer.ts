@@ -6,6 +6,8 @@ import {
 import {
   type RenderNode,
   type Node,
+  type Element,
+  createElementData,
 } from '../../components/richText/renderer.js';
 import {
   generateDefaultElements,
@@ -69,12 +71,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
       this.elements[node.elementType!] ||
       this.getDefaultElement(node.elementType!);
 
-    // Create the element data for the component
-    const elementData = {
-      type: node.elementType!,
-      children: [],
-      ...node.attributes,
-    };
+    const elementData = createElementData(node.elementType!, node.attributes);
 
     // Extract text content from render nodes
     const textContent = node.children

@@ -1,4 +1,90 @@
 /**
+ * Available types for generic elements that don't need special properties
+ */
+export type GenericElementType =
+  | 'paragraph'
+  | 'heading-one'
+  | 'heading-two'
+  | 'heading-three'
+  | 'heading-four'
+  | 'heading-five'
+  | 'heading-six'
+  | 'bulleted-list'
+  | 'numbered-list'
+  | 'list-item'
+  | 'quote'
+  | 'code'
+  | 'pre'
+  | 'var'
+  | 'samp'
+  | 'div'
+  | 'richText'
+  | 'br'
+  | 'table'
+  | 'tbody'
+  | 'tr';
+
+/**
+ * Base element properties shared by all element types
+ */
+export interface BaseElement {
+  children: Node[];
+  class?: string; // allow headless CMS to pass CSS classes
+  [key: string]: unknown; // custom attributes
+}
+
+/**
+ * Generic element for types that don't need special properties
+ */
+export interface GenericElement extends BaseElement {
+  type: GenericElementType;
+}
+
+/**
+ * Link element with required href (mapped from url)
+ */
+export interface LinkElement extends BaseElement {
+  type: 'link';
+  url: string; // Required for links - will be mapped to href
+  target?: '_blank' | '_self' | '_parent' | '_top';
+  rel?: string;
+  title?: string;
+}
+
+/**
+ * Image element with required src (mapped from url)
+ */
+export interface ImageElement extends BaseElement {
+  type: 'image';
+  url: string; // Required for images - will be mapped to src
+  alt?: string;
+  title?: string;
+  width?: number | string;
+  height?: number | string;
+  loading?: 'lazy' | 'eager';
+}
+
+/**
+ * Table cell elements with table-specific attributes
+ */
+export interface TableCellElement extends BaseElement {
+  type: 'td' | 'th';
+  colspan?: number;
+  rowspan?: number;
+  scope?: 'col' | 'row' | 'colgroup' | 'rowgroup';
+}
+
+/**
+ * Element node (blocks and inline elements) - Discriminated Union
+ * Based on Slate.js JSON structure with type-specific properties
+ */
+export type Element =
+  | GenericElement
+  | LinkElement
+  | ImageElement
+  | TableCellElement;
+
+/**
  * Text node with formatting marks
  * Based on Slate.js JSON structure
  */
@@ -10,18 +96,6 @@ export type Text = {
   code?: boolean;
   strikethrough?: boolean;
   [key: string]: unknown; // allow custom marks (e.g., highlight, color)
-};
-
-/**
- * Element node (blocks and inline elements)
- * Based on Slate.js JSON structure
- */
-export type Element = {
-  type: string; // e.g., 'paragraph', 'heading-one', 'link', 'image'
-  children: Node[];
-  url?: string; // common on 'link', 'image', 'video'
-  class?: string; // allow headless CMS to pass CSS classes
-  [key: string]: unknown; // custom attributes
 };
 
 /**
@@ -43,25 +117,6 @@ export function isText(node: Node): node is Text {
 export function isElement(node: Node): node is Element {
   return !isText(node);
 }
-
-/**
- * Utility type to extract text content from Slate.js content
- */
-export type Content = Node[];
-
-/**
- * Utility type for working with specific element types
- */
-export type ElementOfType<T extends ElementType> = Element & {
-  type: T;
-};
-
-/**
- * Utility type for working with text nodes with specific marks
- */
-export type TextWithMark<T extends MarkType> = Text & {
-  [K in T]: true;
-};
 
 /**
  * Props for element renderer components (framework-agnostic)
@@ -145,33 +200,9 @@ export interface RichTextPropsBase<
 
 /**
  * Available element types in the default implementation
+ * Derived from the actual Element discriminated union to ensure consistency
  */
-export type ElementType =
-  | 'paragraph'
-  | 'heading-one'
-  | 'heading-two'
-  | 'heading-three'
-  | 'heading-four'
-  | 'heading-five'
-  | 'heading-six'
-  | 'bulleted-list'
-  | 'numbered-list'
-  | 'list-item'
-  | 'table'
-  | 'tbody'
-  | 'tr'
-  | 'td'
-  | 'th'
-  | 'quote'
-  | 'link'
-  | 'image'
-  | 'br'
-  | 'code'
-  | 'pre'
-  | 'var'
-  | 'samp'
-  | 'div'
-  | 'richText';
+export type ElementType = Element['type'];
 
 /**
  * Available text marks in the default implementation
@@ -229,20 +260,34 @@ export function mapAttributes(node: Element): Record<string, unknown> {
     nodeProps.class = node.class;
   }
 
-  // Map URL-ish attributes based on common element semantics
-  if ('url' in node) {
-    switch (node.type) {
-      case 'link':
-        nodeProps.href = node.url;
-        break;
-      case 'image':
-      case 'video':
-        nodeProps.src = node.url;
-        break;
-      default:
+  // Map URL-ish attributes based on specific element types (type-safe)
+  switch (node.type) {
+    case 'link':
+      nodeProps.href = node.url;
+      if (node.target) nodeProps.target = node.target;
+      if (node.rel) nodeProps.rel = node.rel;
+      if (node.title) nodeProps.title = node.title;
+      break;
+    case 'image':
+      nodeProps.src = node.url;
+      if (node.alt) nodeProps.alt = node.alt;
+      if (node.title) nodeProps.title = node.title;
+      if (node.width) nodeProps.width = node.width;
+      if (node.height) nodeProps.height = node.height;
+      if (node.loading) nodeProps.loading = node.loading;
+      break;
+    case 'td':
+    case 'th':
+      if (node.colspan) nodeProps.colspan = node.colspan;
+      if (node.rowspan) nodeProps.rowspan = node.rowspan;
+      if (node.scope) nodeProps.scope = node.scope;
+      break;
+    default:
+      // For generic elements, check if they have a url and map it as data-url
+      if ('url' in node && node.url) {
         nodeProps['data-url'] = node.url;
-        break;
-    }
+      }
+      break;
   }
 
   return nodeProps;
@@ -272,6 +317,55 @@ export function extractTextContent(children: Node[]): string {
       }
     })
     .join('');
+}
+
+/**
+ * Creates type-safe element data based on element type and attributes
+ * This is a utility function that can be used by framework-specific renderers
+ */
+export function createElementData(
+  type: string,
+  attributes: Record<string, unknown> = {}
+): Element {
+  const baseProps = { children: [], ...attributes };
+
+  switch (type) {
+    case 'link':
+      return {
+        type: 'link',
+        url: (attributes.url as string) || (attributes.href as string) || '',
+        target: attributes.target as any,
+        rel: attributes.rel as string,
+        title: attributes.title as string,
+        ...baseProps,
+      };
+    case 'image':
+      return {
+        type: 'image',
+        url: (attributes.url as string) || (attributes.src as string) || '',
+        alt: attributes.alt as string,
+        title: attributes.title as string,
+        width: attributes.width as number | string,
+        height: attributes.height as number | string,
+        loading: attributes.loading as 'lazy' | 'eager',
+        ...baseProps,
+      };
+    case 'td':
+    case 'th':
+      return {
+        type: type as 'td' | 'th',
+        colspan: attributes.colspan as number,
+        rowspan: attributes.rowspan as number,
+        scope: attributes.scope as any,
+        ...baseProps,
+      };
+    default:
+      // For generic elements, we need to cast to the proper generic type
+      return {
+        type: type as any, // Type assertion for generic elements
+        ...baseProps,
+      } as Element;
+  }
 }
 
 /**

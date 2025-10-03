@@ -4,13 +4,18 @@ export {
   generateDefaultLeafs,
   createHtmlComponent,
   createLeafComponent,
+  createLinkComponent,
+  createImageComponent,
+  createTableCellComponent,
 } from './lib.js';
 
 export type {
   ElementProps,
   LeafProps,
-  ElementRenderer,
-  LeafRenderer,
+  ElementRendererProps,
+  LinkElementProps,
+  ImageElementProps,
+  TableCellElementRendererProps,
   ElementMap,
   LeafMap,
   RichTextProps,
@@ -20,6 +25,12 @@ export type {
   Node,
   Element,
   Text,
+  LinkElement,
+  ImageElement,
+  TableCellElement,
+  GenericElement,
+  GenericElementType,
+  BaseElement,
   ElementType,
   MarkType,
 } from '../../components/richText/renderer.js';
