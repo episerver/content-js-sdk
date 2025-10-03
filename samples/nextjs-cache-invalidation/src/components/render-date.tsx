@@ -1,3 +1,7 @@
+// This file contains a Client-side component.
+//
+// Given a `date` it renders the number of seconds elapsed from that time to the current time.
+// The "current time" is calculated from visitors browser.
 'use client';
 import { useEffect, useState } from 'react';
 

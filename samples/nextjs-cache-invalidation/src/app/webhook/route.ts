@@ -1,7 +1,12 @@
+// This file handles the endpoint "webhook", which handles incoming
+// webhook requests from Optimizely Graph
+//
+// For this example, when a content in a given path is modified and published,
+// the same path in this project is revalidated.
 import { GraphClient } from '@optimizely/cms-sdk';
 import { revalidatePath } from 'next/cache';
 
-// This GraphQL query fetches
+// With this GraphQL query, you can fetch the path of a document given its ID
 const GET_PATH_QUERY = `
 query GetPath($id:String) {
   _Content(ids: [$id]) {
@@ -12,7 +17,6 @@ query GetPath($id:String) {
   }
 }`;
 
-// Handles requests to the endpoint /webhook
 export async function POST(request: Request) {
   const body = await request.json();
   const docId = body.data.docId;
@@ -22,7 +26,8 @@ export async function POST(request: Request) {
     return Response.json({ message: 'docId is not a string' });
   }
 
-  // Transform "aaa-bbb-ccc_lang_state" to "aaabbbccc"
+  // The field `docId` has the format <UUID>_<language>_status,
+  // but to search in Graph, we need only the UUID without separation dashes `-`
   const id = docId.split('_')[0].replaceAll('-', '');
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
