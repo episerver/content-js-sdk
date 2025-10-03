@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "webhook:create": "node scripts/create-webhook.mjs",
     "lint": "eslint"
   },
   "dependencies": {
+    "@clack/prompts": "^0.11.0",
     "@optimizely/cms-sdk": "0.1.0-alpha.10",
     "next": "15.5.4",
     "react": "19.1.0",

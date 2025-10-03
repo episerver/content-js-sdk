@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project that shows how to use Optimizely Graph Webhooks with Next.js cache invalidation.
 
-## Getting Started
+## Get started
 
-First, run the development server:
+### Deploy or use a tunnel
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+To try this project, you need an actual URL that can receive requests from Graph (`localhost` is not valid). Here are some options:
+
+- Deploy this project to [Vercel](https://vercel.com)
+- Use a local tunneling service like [ngrok](https://ngrok.com)
+
+### Create the webhook
+
+Run `npm run webhook:create` to create a webhook in Graph that points to your project.
+
+### Set up the Graph client
+
+Go to your CMS &rarr; Settings &rarr; API Key. Under "Render Content", copy the value "Single Key"
+
+Create an `.env` file with the following content:
+
+```ini
+OPTIMIZELY_GRAPH_SINGLE_KEY=<the single key you copy>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Create content
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Go to your CMS and create a page in the path `/en/` (homepage for English language)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Build and start the project
 
-## Learn More
+Run `npm run build` and `npm start`
 
-To learn more about Next.js, take a look at the following resources:
+> [!Note]
+> The command `npm run dev` does not work because Next.js cache is disabled in dev mode
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Test the cache
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Go to `<your project URL>/en`. You will see a page with the message:
 
-## Deploy on Vercel
+```
+This page is generated and cached: 2025-10-03T12:42:40.453Z. 15 seconds ago
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Refresh the page. You will see that the date is the same and that the seconds counter has _not_ restarted.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Trigger a cache revalidation
+
+Go to your CMS, make changes to the page `/en/` you created previously and publish them.
+
+Go to `<your project URL>/en`. You will see that a different date and that the counter has restarted
