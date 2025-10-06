@@ -34,7 +34,8 @@ query GetPath($id:String) {
 }`;
 
   const response = await client.request(getPathQuery, { id });
-  const path = response._Content.item._metadata.url.default.slice(0, -1);
+  const raw = response._Content.item._metadata.url.default;
+  const path = raw.endsWith('/') ? raw.slice(0, -1) : raw;
   revalidatePath(path);
   console.log('Path "%s" successfully revalidated', path);
 }
