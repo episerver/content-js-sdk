@@ -86,11 +86,11 @@ log.step(
     JSON.stringify(requestBody, null, 2)
 );
 
-const confirmCreatioin = await confirm({ message: 'Confirm?' }).then(
+const confirmCreation = await confirm({ message: 'Confirm?' }).then(
   exitIfCancelled
 );
 
-if (!confirmCreatioin) {
+if (!confirmCreation) {
   cancel('Operation cancelled');
   process.exit(0);
 }
