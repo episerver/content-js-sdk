@@ -188,44 +188,7 @@ importers:
         specifier: ^5
         version: 5.8.3
 
-  samples/hello-world:
-    dependencies:
-      '@optimizely/cms-sdk':
-        specifier: 0.1.0-alpha.10
-        version: 0.1.0-alpha.10(react@19.1.0)
-      next:
-        specifier: 15.4.3
-        version: 15.4.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      react:
-        specifier: 19.1.0
-        version: 19.1.0
-      react-dom:
-        specifier: 19.1.0
-        version: 19.1.0(react@19.1.0)
-    devDependencies:
-      '@eslint/eslintrc':
-        specifier: ^3
-        version: 3.3.1
-      '@types/node':
-        specifier: ^20
-        version: 20.17.28
-      '@types/react':
-        specifier: ^19
-        version: 19.0.12
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.0.4(@types/react@19.0.12)
-      eslint:
-        specifier: ^9
-        version: 9.23.0(jiti@2.4.2)
-      eslint-config-next:
-        specifier: 15.4.3
-        version: 15.4.3(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.3)
-      typescript:
-        specifier: ^5
-        version: 5.8.3
-
-  samples/nextjs-cache-invalidation:
+  samples/graph-webhooks-cache-invalidation:
     dependencies:
       '@clack/prompts':
         specifier: ^0.11.0
@@ -264,6 +227,43 @@ importers:
       eslint-config-next:
         specifier: 15.5.4
         version: 15.5.4(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.3)
+      typescript:
+        specifier: ^5
+        version: 5.8.3
+
+  samples/hello-world:
+    dependencies:
+      '@optimizely/cms-sdk':
+        specifier: 0.1.0-alpha.10
+        version: 0.1.0-alpha.10(react@19.1.0)
+      next:
+        specifier: 15.4.3
+        version: 15.4.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3
+        version: 3.3.1
+      '@types/node':
+        specifier: ^20
+        version: 20.17.28
+      '@types/react':
+        specifier: ^19
+        version: 19.0.12
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.0.4(@types/react@19.0.12)
+      eslint:
+        specifier: ^9
+        version: 9.23.0(jiti@2.4.2)
+      eslint-config-next:
+        specifier: 15.4.3
+        version: 15.4.3(eslint@9.23.0(jiti@2.4.2))(typescript@5.8.3)
       typescript:
         specifier: ^5
         version: 5.8.3

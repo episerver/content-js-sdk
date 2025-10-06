@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-cache-invalidation",
+  "name": "graph-webhooks-cache-invalidation",
   "version": "0.1.0",
   "private": true,
   "scripts": {
