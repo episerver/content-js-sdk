@@ -15,6 +15,9 @@ export function generateStaticParams() {
 }
 
 export default function Page() {
+  // The `Page` component is a Server Side Rendered component,
+  // which means that this `date` variable is generated in build time,
+  // not when the visitor comes in
   const date = new Date().toISOString();
 
   return (
