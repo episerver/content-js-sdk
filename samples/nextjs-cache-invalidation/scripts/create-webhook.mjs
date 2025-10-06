@@ -26,6 +26,14 @@ function exitIfCancelled(value) {
 
 intro('Create a webhook in Optimizely Graph');
 
+const webhookId = process.env.WEBHOOK_ID;
+
+if (!webhookId) {
+  log.error('The environment variable `WEBHOOK_ID` is required.');
+  cancel('Operation cancelled');
+  process.exit(0);
+}
+
 const url = await text({
   message: 'Input the URL where this project is deployed',
   placeholder: 'https://example.com',
@@ -63,7 +71,7 @@ const endpoint = `${graphApiUrl}/webhooks`;
 const requestBody = {
   disabled: false,
   request: {
-    url: `${url}/webhook`,
+    url: `${url}/webhooks/${webhookId}`,
     method: 'post',
   },
   topic: ['*.*'],
