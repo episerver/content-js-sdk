@@ -5,6 +5,14 @@
 // the same path in this project is revalidated.
 import { GraphClient } from '@optimizely/cms-sdk';
 import { revalidatePath } from 'next/cache';
+import { notFound } from 'next/navigation';
+
+// Security. The hook URL must be unique. Anyone with the URL would be able to
+// revoke a cache, so treat it with the same security as you would with any token
+// or password
+//
+// Ensure that `WEBHOOK_ID` is a valid URL. Be careful with non-ASCII characters
+const WEBHOOK_ID = process.env.WEBHOOK_ID!;
 
 // With this GraphQL query, you can fetch the path of a document given its ID
 const GET_PATH_QUERY = `
@@ -17,7 +25,17 @@ query GetPath($id:String) {
   }
 }`;
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const webhookId = (await params).id;
+
+  // Always check the incoming "id" in the path.
+  if (webhookId !== WEBHOOK_ID) {
+    notFound();
+  }
+
   const body = await request.json();
   const docId = body.data.docId;
 
