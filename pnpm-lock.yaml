@@ -233,6 +233,9 @@ importers:
       '@optimizely/cms-sdk':
         specifier: 0.1.0-alpha.10
         version: 0.1.0-alpha.10(react@19.1.0)
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       next:
         specifier: 15.5.4
         version: 15.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

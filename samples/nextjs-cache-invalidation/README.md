@@ -19,7 +19,7 @@ Create an `.env` file with the following content:
 OPTIMIZELY_GRAPH_SINGLE_KEY=<the single key you copy>
 ```
 
-Add one more line to the `.env` file with a randomly generated string.
+Add one more line to the `.env` file with a randomly generated string. This string will be part of the webhook URL `https://example.com/webhooks/<WEBHOOK_ID>`, so ensure that the value is URL-friendly.
 
 ```ini
 WEBHOOK_ID=randomly_generated_id

@@ -11,6 +11,7 @@ import {
   spinner,
   text,
 } from '@clack/prompts';
+import 'dotenv/config';
 
 function validate(str) {
   if (!str) return 'Value is required';
