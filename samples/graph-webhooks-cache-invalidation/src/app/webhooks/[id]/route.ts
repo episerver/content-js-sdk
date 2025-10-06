@@ -54,10 +54,14 @@ export async function POST(
   // Learn more about the format of webhook responses:
   // https://docs.developers.optimizely.com/platform-optimizely/docs/webhook-response
   if (body.type.subject === 'bulk' && body.type.action === 'completed') {
-    for (const [docId, status] of Object.entries(body.data.items)) {
-      if (status === 'deleted') {
-        await revalidateDocId(docId);
-      }
+    const deleted = Object.values(body.data.items ?? {}).find(
+      (status) => status === 'deleted'
+    );
+
+    // At this moment, there is no way to retrieve which page has been deleted
+    // so for this example, we are going to revalidate all data
+    if (deleted) {
+      revalidatePath('/', 'layout');
     }
   } else if (body.type.subject === 'doc' && body.type.action === 'updated') {
     await revalidateDocId(body.data.docId);
