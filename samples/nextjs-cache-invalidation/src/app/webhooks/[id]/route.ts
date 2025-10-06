@@ -14,8 +14,16 @@ import { notFound } from 'next/navigation';
 // Ensure that `WEBHOOK_ID` is a valid URL. Be careful with non-ASCII characters
 const WEBHOOK_ID = process.env.WEBHOOK_ID!;
 
-// With this GraphQL query, you can fetch the path of a document given its ID
-const GET_PATH_QUERY = `
+/** Given a `docId`, revalidate the path of that item */
+async function revalidateDocId(docId: string) {
+  // The field `docId` has the format <UUID>_<language>_status,
+  // but to search in Graph, we need only the UUID without separation dashes `-`
+  const id = docId.split('_')[0].replaceAll('-', '');
+  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
+    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
+  });
+
+  const getPathQuery = `
 query GetPath($id:String) {
   _Content(ids: [$id]) {
     item {
@@ -25,37 +33,35 @@ query GetPath($id:String) {
   }
 }`;
 
+  const response = await client.request(getPathQuery, { id });
+  const path = response._Content.item._metadata.url.default.slice(0, -1);
+  revalidatePath(path);
+  console.log('Path "%s" successfully revalidated', path);
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const webhookId = (await params).id;
 
-  // Always check the incoming "id" in the path.
   if (webhookId !== WEBHOOK_ID) {
     notFound();
   }
 
   const body = await request.json();
-  const docId = body.data.docId;
 
-  if (typeof docId !== 'string') {
-    console.error('docId is not a string');
-    return Response.json({ message: 'docId is not a string' });
+  // Learn more about the format of webhook responses:
+  // https://docs.developers.optimizely.com/platform-optimizely/docs/webhook-response
+  if (body.type.subject === 'bulk' && body.type.action === 'completed') {
+    for (const [docId, status] of Object.entries(body.data.items)) {
+      if (status === 'deleted') {
+        await revalidateDocId(docId);
+      }
+    }
+  } else if (body.type.subject === 'doc' && body.type.action === 'updated') {
+    await revalidateDocId(body.data.docId);
   }
-
-  // The field `docId` has the format <UUID>_<language>_status,
-  // but to search in Graph, we need only the UUID without separation dashes `-`
-  const id = docId.split('_')[0].replaceAll('-', '');
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
-  });
-
-  const response = await client.request(GET_PATH_QUERY, { id });
-  const path = response._Content.item._metadata.url.default.slice(0, -1);
-
-  revalidatePath(path);
-  console.log('Path "%s" successfully revalidated', path);
 
   return Response.json({ message: 'OK' });
 }
