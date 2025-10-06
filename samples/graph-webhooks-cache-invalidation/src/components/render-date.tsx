@@ -18,7 +18,7 @@ export function ShowElapsed({ date }: { date: string }) {
     return () => {
       clearInterval(i);
     };
-  });
+  }, [date]);
 
   const seconds = Math.floor(elapsedTime / 1000);
   if (seconds <= 0) {
