@@ -1,50 +1,31 @@
 import React from 'react';
-import { contentType, Infer } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 
 export const ContactContentType = contentType({
   key: 'Contact',
   displayName: 'Contact',
   baseType: '_component',
   properties: {
-    teaser_image: {
+    image: {
       type: 'contentReference',
       allowedTypes: ['_image'],
-      displayName: 'Teaser Image',
+      displayName: 'Image',
     },
-    teaser_text: {
+    heading: {
       type: 'string',
-      displayName: 'Teaser Text',
+      displayName: 'Heading',
     },
-    unique_selling_points: {
+    contact: {
+      type: 'content',
+      displayName: 'Contact',
+    },
+    link: {
+      type: 'url',
+      displayName: 'Link',
+    },
+    link_text: {
       type: 'string',
-      displayName: 'Unique Selling Points',
-    },
-    main_body: {
-      type: 'richText',
-      displayName: 'Main Body',
-    },
-    large_content_area: {
-      type: 'array',
-      displayName: 'Large Content Area',
-      items: {
-        type: 'contentReference',
-      },
-    },
-    small_content_area: {
-      type: 'array',
-      displayName: 'Small Content Area',
-      items: {
-        type: 'contentReference',
-      },
-    },
-    title: {
-      type: 'string',
-    },
-    keywords: {
-      type: 'string',
-    },
-    page_description: {
-      type: 'string',
+      displayName: 'Link Text',
     },
   },
 });
