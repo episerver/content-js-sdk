@@ -1,6 +1,6 @@
-import { GraphClient, type PreviewParams } from '@episerver/cms-sdk';
-import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
-import { PreviewComponent } from '@episerver/cms-sdk/react/client';
+import { GraphClient, type PreviewParams } from '@optimizely/cms-sdk';
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import { PreviewComponent } from '@optimizely/cms-sdk/react/client';
 import Script from 'next/script';
 
 type Props = {
@@ -12,10 +12,16 @@ export default async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  const response = await client.getPreviewContent(
-    // TODO: check types in runtime properly
-    (await searchParams) as PreviewParams
-  );
+  const response = await client
+    .getPreviewContent(
+      // TODO: check types in runtime properly
+      (await searchParams) as PreviewParams
+    )
+    .catch((err) => {
+      console.log(err.errors);
+      console.log(err.request.query);
+      throw err;
+    });
 
   return (
     <>

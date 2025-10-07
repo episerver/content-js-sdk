@@ -1,5 +1,5 @@
-import { GraphClient } from '@episerver/cms-sdk';
-import { OptimizelyComponent } from '@episerver/cms-sdk/react/server';
+import { GraphClient } from '@optimizely/cms-sdk';
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { notFound } from 'next/navigation';
 import React from 'react';
 
