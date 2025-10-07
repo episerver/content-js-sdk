@@ -1,7 +1,13 @@
-import { contentType } from '@episerver/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
+import { RichText } from '@optimizely/cms-sdk/react/richText';
+import {
+  ComponentContainerProps,
+  getPreviewUtils,
+  OptimizelyExperience,
+} from '@optimizely/cms-sdk/react/server';
 
-export const StandardPage = contentType({
-  key: 'StandardPage',
+export const StandardContentType = contentType({
+  key: 'Standard',
   displayName: 'Standard Page',
   baseType: '_experience',
   properties: {
@@ -13,10 +19,6 @@ export const StandardPage = contentType({
       type: 'string',
       displayName: 'Teaser Text',
     },
-    unique_selling_points: {
-      type: 'string',
-      displayName: 'Unique Selling Points',
-    },
     main_body: {
       type: 'richText',
       displayName: 'Main Body',
@@ -25,14 +27,7 @@ export const StandardPage = contentType({
       type: 'array',
       displayName: 'Large Content Area',
       items: {
-        type: 'contentReference',
-      },
-    },
-    small_content_area: {
-      type: 'array',
-      displayName: 'Small Content Area',
-      items: {
-        type: 'contentReference',
+        type: 'content',
       },
     },
     title: {
@@ -46,3 +41,33 @@ export const StandardPage = contentType({
     },
   },
 });
+
+type StandardPageProps = {
+  opti: Infer<typeof StandardContentType>;
+};
+
+function ComponentWrapper({ children, node }: ComponentContainerProps) {
+  const { pa } = getPreviewUtils(node);
+  return <div {...pa(node)}>{children}</div>;
+}
+
+function StandardPage({ opti }: StandardPageProps) {
+  return (
+    <div>
+      <h2>{opti.title}</h2>
+      <p>{opti.teaser_text}</p>
+      <div>
+        {opti.teaser_image?.url.default && (
+          <img src={opti.teaser_image.url.default} alt={'Teaser Image'} />
+        )}
+      </div>
+      <RichText content={opti.main_body?.json} />
+      <OptimizelyExperience
+        nodes={opti.composition.nodes ?? []}
+        ComponentWrapper={ComponentWrapper}
+      />
+    </div>
+  );
+}
+
+export default StandardPage;
