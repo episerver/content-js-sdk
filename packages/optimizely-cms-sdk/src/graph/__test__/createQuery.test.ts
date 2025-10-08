@@ -45,7 +45,7 @@ describe('createFragment()', () => {
       [
         "fragment CallToAction on CallToAction { __typename label link }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
       ]
     `);
   });
@@ -56,10 +56,10 @@ describe('createFragment()', () => {
       [
         "fragment CallToAction on CallToAction { __typename label link }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
       ]
     `);
   });
@@ -69,7 +69,7 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
       ]
     `);
   });
@@ -80,8 +80,8 @@ describe('createFragment()', () => {
       [
         "fragment CallToAction on CallToAction { __typename label link }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment AboutPage on AboutPage { __typename hero { ...Hero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
       ]
     `);
   });
@@ -92,9 +92,9 @@ describe('createFragment()', () => {
       [
         "fragment myButton on myButton { __typename label link }",
         "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment fAQPage on fAQPage { __typename hero { ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
       ]
     `);
   });
@@ -104,15 +104,15 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
         "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
+        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
         "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
@@ -120,20 +120,20 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { ...mediaPage } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
+        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
+        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
+        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
       ]
     `);
   });
@@ -146,7 +146,7 @@ describe('createFragment()', () => {
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
         "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment blogPage on blogPage { __typename blog { ...ArticlePage ...customImage ..._image } }",
+        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
       ]
     `);
   });
@@ -162,7 +162,7 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
       ]
     `);
   });
@@ -172,15 +172,15 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
         "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
+        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
         "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
@@ -188,20 +188,20 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { ...mediaPage } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
+        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment specialPage on specialPage { __typename media { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
+        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
+        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
       ]
     `);
   });
@@ -217,8 +217,8 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment mediaBlock on mediaBlock { __typename media { ...mediaPage } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
       ]
     `);
   });
@@ -229,7 +229,7 @@ describe('createFragment()', () => {
       [
         "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
       ]
     `);
   });
@@ -239,15 +239,15 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
         "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
+        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
         "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
@@ -255,20 +255,20 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { ...mediaPage } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
+        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
+        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
+        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
       ]
     `);
   });
@@ -278,11 +278,11 @@ describe('createFragment()', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { ...CallToAction ...myButton } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
         "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
@@ -290,11 +290,11 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment mediaBlock on mediaBlock { __typename media { ...mediaPage } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
         "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
+        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
       ]
     `);
   });
@@ -305,14 +305,14 @@ describe('createFragment()', () => {
       [
         "fragment CallToAction on CallToAction { __typename label link }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
         "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
+        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
         "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
@@ -320,20 +320,20 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { ...mediaPage } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
+        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
+        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
+        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
+        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
       ]
     `);
   });
@@ -344,14 +344,14 @@ describe('createFragment()', () => {
       [
         "fragment CallToAction on CallToAction { __typename label link }",
         "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
+        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
+        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
         "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { ...myButton ...Hero ...SuperHero } body { html, json } }",
+        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
+        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
         "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
         "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
         "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
@@ -359,20 +359,20 @@ describe('createFragment()', () => {
         "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
         "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
         "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { ...mediaPage } }",
+        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
+        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
+        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
         "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
         "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { ...NewHero } p_block { ...NewHeroProperty } }",
+        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
         "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { ...SelfPage } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
+        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
+        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
+        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
+        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
+        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
+        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
       ]
     `);
   });
@@ -381,7 +381,7 @@ describe('createFragment()', () => {
     const result = await createFragment(SelfPage.key);
     expect(result).toMatchInlineSnapshot(`
       [
-        "fragment SelfPage on SelfPage { __typename p_contentArea { ...SelfPage } }",
+        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
       ]
     `);
   });
@@ -452,7 +452,7 @@ describe('createQuery', () => {
       "
       fragment CallToAction on CallToAction { __typename label link }
       fragment myButton on myButton { __typename label link }
-      fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }
+      fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }
       query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
         _Content(where: $where, variation: $variation) {
           item {
@@ -474,10 +474,10 @@ describe('createQuery', () => {
       "
       fragment CallToAction on CallToAction { __typename label link }
       fragment myButton on myButton { __typename label link }
-      fragment Hero on Hero { __typename heading callToAction { ...CallToAction ...myButton } }
-      fragment SuperHero on SuperHero { __typename heading embed_video callToAction { ...CallToAction } }
-      fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { ...CallToAction } callToAction { ...CallToAction } }
-      fragment LandingPage on LandingPage { __typename hero { ...Hero ...SuperHero ...SpecialHero } body { html, json } }
+      fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }
+      fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }
+      fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
+      fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
       query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
         _Content(where: $where, variation: $variation) {
           item {
