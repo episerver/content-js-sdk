@@ -1,495 +1,435 @@
-import { beforeAll, describe, expect, test } from 'vitest';
-import { createFragment, createSingleContentQuery } from '../createQuery.js';
-import { initContentTypeRegistry } from '../../model/index.js';
-import {
-  callToAction,
-  heroBlock,
-  landingPage,
-  aboutPage,
-  articlePage,
-  allContentTypes,
-  superHeroBlock,
-  fAQPage,
-  contactUsPage,
-  mediaPage,
-  blogPage,
-  specialPage,
-  mediaBlock,
-  FeedBackPage,
-  ContentPage,
-  LocationPage,
-  ReviewPage,
-  HomePage,
-  Paragraph,
-  Card,
-  SelfPage,
-} from './fixtures.js';
+import { describe, expect, test } from 'vitest';
+import { createFragment } from '../createQuery.js';
+import { contentType, initContentTypeRegistry } from '../../model/index.js';
 
-beforeAll(() => {
-  initContentTypeRegistry(allContentTypes);
-});
+describe('createFragment() simple cases', () => {
+  test('works for scalar properties', async () => {
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        str: { type: 'string' },
+        bin: { type: 'binary' },
+        boo: { type: 'boolean' },
+        flo: { type: 'float' },
+        int: { type: 'integer' },
+        dat: { type: 'dateTime' },
+      },
+    });
+    initContentTypeRegistry([ct1]);
 
-describe('createFragment()', () => {
-  test('works for simple properties', async () => {
-    const result = await createFragment(callToAction.key);
+    const result = await createFragment('ct1');
     expect(result).toMatchInlineSnapshot(`
       [
-        "fragment CallToAction on CallToAction { __typename label link }",
+        "fragment ct1 on ct1 { __typename str bin boo flo int dat }",
       ]
     `);
   });
 
-  test('works for components inside components', async () => {
-    const result = await createFragment(heroBlock.key);
+  test('works for arrays of scalar properties', async () => {
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        str: { type: 'array', items: { type: 'string' } },
+        bin: { type: 'array', items: { type: 'binary' } },
+        boo: { type: 'array', items: { type: 'boolean' } },
+        flo: { type: 'array', items: { type: 'float' } },
+        int: { type: 'array', items: { type: 'integer' } },
+        dat: { type: 'array', items: { type: 'dateTime' } },
+      },
+    });
+    initContentTypeRegistry([ct1]);
+
+    const result = await createFragment('ct1');
     expect(result).toMatchInlineSnapshot(`
       [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
+        "fragment ct1 on ct1 { __typename str bin boo flo int dat }",
       ]
     `);
   });
 
-  test('works for components inside components (several levels) : landingPage', async () => {
-    const result = await createFragment(landingPage.key);
+  test('works for compound properties', async () => {
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        lin: { type: 'link' },
+        ric: { type: 'richText' },
+        lin2: { type: 'array', items: { type: 'link' } },
+        ric2: { type: 'array', items: { type: 'richText' } },
+      },
+    });
+    initContentTypeRegistry([ct1]);
+
+    const result = await createFragment('ct1');
     expect(result).toMatchInlineSnapshot(`
       [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
+        "fragment ct1 on ct1 { __typename lin { url { type, default }} ric { html, json } lin2 { url { type, default }} ric2 { html, json } }",
       ]
     `);
   });
 
-  test('works when the same reference is repeated', async () => {
-    const result = await createFragment(superHeroBlock.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-      ]
-    `);
-  });
+  test('correct syntax with content types without properties', async () => {
+    const ct1 = contentType({ key: 'ct1', baseType: '_page' });
+    initContentTypeRegistry([ct1]);
 
-  test('When contentType has both allowedTypes and restrictedTypes', async () => {
-    const result = await createFragment(aboutPage.key);
+    const result = await createFragment('ct1');
     expect(result).toMatchInlineSnapshot(`
       [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has only allowedTypes defined', async () => {
-    const result = await createFragment(fAQPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment myButton on myButton { __typename label link }",
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has only restrictedTypes (no allowedTypes) defined', async () => {
-    const result = await createFragment(contactUsPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
-        "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
-        "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has allowedTypes defined with special type', async () => {
-    const result = await createFragment(blogPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has special allowedTypes defined (_image, _media, _video)', async () => {
-    const result = await createFragment(mediaPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has only restrictedTypes (no allowedTypes) defined and its a BaseType (_image, _media, _video)', async () => {
-    const result = await createFragment(specialPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
-        "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
-        "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has allowedTypes and has baseType as restricted (_image, _media, _video)', async () => {
-    const result = await createFragment(mediaBlock.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has both contentArea and Block with the same contentType', async () => {
-    const result = await createFragment(FeedBackPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-      ]
-    `);
-  });
-
-  test('When no allowedType is defined and a content type is included in its own content area', async () => {
-    const result = await createFragment(ContentPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
-        "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
-        "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has both contentArea with main allowedTpes', async () => {
-    const result = await createFragment(LocationPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
-        "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
-        "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-      ]
-    `);
-  });
-
-  test('When the contentType has both contentArea with main restrictedTypes', async () => {
-    const result = await createFragment(ReviewPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
-        "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
-        "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-      ]
-    `);
-  });
-
-  test('works for HomePage content type', async () => {
-    const result = await createFragment(HomePage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment CallToAction on CallToAction { __typename label link }",
-        "fragment myButton on myButton { __typename label link }",
-        "fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }",
-        "fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }",
-        "fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }",
-        "fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }",
-        "fragment AboutPage on AboutPage { __typename hero { __typename ...Hero } body { html, json } }",
-        "fragment AboutContent on AboutContent { __typename heading embed_video callToAction { __typename ...CallToAction ...myButton } }",
-        "fragment fAQPage on fAQPage { __typename hero { __typename ...myButton ...Hero ...SuperHero } body { html, json } }",
-        "fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }",
-        "fragment customImage on customImage { __typename name alt _metadata { ...mediaMetaData } }",
-        "fragment _image on _Image { __typename _metadata { ...mediaMetaData } }",
-        "fragment customMedia on customMedia { __typename name fileType _metadata { ...mediaMetaData } }",
-        "fragment _media on _Media { __typename _metadata { ...mediaMetaData } }",
-        "fragment customVideo on customVideo { __typename name date _metadata { ...mediaMetaData } }",
-        "fragment _video on _Video { __typename _metadata { ...mediaMetaData } }",
-        "fragment mediaPage on mediaPage { __typename media { __typename ...customImage ..._image ...customMedia ..._media ...customVideo ..._video } }",
-        "fragment blogPage on blogPage { __typename blog { __typename ...ArticlePage ...customImage ..._image } }",
-        "fragment mediaBlock on mediaBlock { __typename media { __typename ...mediaPage } }",
-        "fragment NewHero on NewHero { __typename heading summary background { url { type default }} theme }",
-        "fragment NewHeroProperty on NewHeroProperty { __typename heading summary background { url { type default }} theme }",
-        "fragment FeedBackPage on FeedBackPage { __typename p_contentArea { __typename ...NewHero } p_block { ...NewHeroProperty } }",
-        "fragment Paragraph on Paragraph { __typename title }",
-        "fragment LocationPage on LocationPage { __typename location_area { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph } }",
-        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
-        "fragment ReviewPage on ReviewPage { __typename location_area { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage } }",
-        "fragment ContentPage on ContentPage { __typename p_contentArea { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment specialPage on specialPage { __typename media { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...myButton ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } }",
-        "fragment contactUsPage on contactUsPage { __typename others { __typename ...CallToAction ...SpecialHero ...Hero ...SuperHero ...LandingPage ...ArticlePage ...AboutPage ...AboutContent ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...customImage ..._image ...customMedia ..._media ...customVideo ..._video ...specialPage ...mediaBlock ...NewHero ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...Paragraph ...SelfPage } body { html, json } }",
-        "fragment HomePage on HomePage { __typename p_contentArea { __typename ...LandingPage ...ArticlePage ...AboutPage ...contactUsPage ...fAQPage ...mediaPage ...blogPage ...specialPage ...FeedBackPage ...ContentPage ...LocationPage ...ReviewPage ...HomePage ...SelfPage ...CallToAction ...SpecialHero ...Hero ...SuperHero ...myButton ...AboutContent ...mediaBlock ...NewHero ...Paragraph ...customVideo ..._video ...customImage ..._image ...customMedia ..._media } }",
-      ]
-    `);
-  });
-
-  test('When self reference (_self) is used', async () => {
-    const result = await createFragment(SelfPage.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment SelfPage on SelfPage { __typename p_contentArea { __typename ...SelfPage } }",
-      ]
-    `);
-  });
-
-  test('should handle content type with some properties having indexType:disabled', async () => {
-    const result = await createFragment(Paragraph.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment Paragraph on Paragraph { __typename title }",
-      ]
-    `);
-  });
-
-  test('should return empty fragments for content type with only indexType:disabled properties', async () => {
-    const result = await createFragment(Card.key);
-    expect(result).toMatchInlineSnapshot(`
-      [
-        "fragment Card on Card { __typename }",
+        "fragment ct1 on ct1 { __typename }",
       ]
     `);
   });
 });
 
-describe('createQuery', () => {
-  test('simple content types', async () => {
-    const result = await createSingleContentQuery(callToAction.key);
+describe('createFragment() with `content` properties. Explicit reference via `allowedTypes`', () => {
+  test('one level', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: { p1: { type: 'content', allowedTypes: [r1] } },
+    });
+    initContentTypeRegistry([r1, ct1]);
+    const result = await createFragment('ct1');
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { __typename label link }
-      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
-        _Content(where: $where, variation: $variation) {
-          item {
-            __typename
-            ...CallToAction
-            _metadata {
-              variation
-            }
-          }
-        }
-      }
-        "
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } }",
+      ]
     `);
   });
 
-  test('complex content types', async () => {
-    const result = await createSingleContentQuery(articlePage.key);
+  test('two levels', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r2 = contentType({
+      key: 'r2',
+      baseType: '_component',
+      properties: { p1: { type: 'content', allowedTypes: [r1] } },
+    });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: { p1: { type: 'content', allowedTypes: [r2] } },
+    });
+    initContentTypeRegistry([r1, r2, ct1]);
+    const result = await createFragment('ct1');
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment ArticlePage on ArticlePage { __typename body { html, json } relatedArticle { url { type, default }} source { type, default } tags }
-      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
-        _Content(where: $where, variation: $variation) {
-          item {
-            __typename
-            ...ArticlePage
-            _metadata {
-              variation
-            }
-          }
-        }
-      }
-        "
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment r2 on r2 { __typename p1 { __typename ...r1 } }",
+        "fragment ct1 on ct1 { __typename p1 { __typename ...r2 } }",
+      ]
     `);
   });
 
-  test('nested content types (one level)', async () => {
-    const result = await createSingleContentQuery(heroBlock.key);
+  test('repeated reference', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const ct1 = contentType({
+      key: 'r2',
+      baseType: '_component',
+      properties: { p1: { type: 'content', allowedTypes: [r1] } },
+    });
+    const ct2 = contentType({
+      key: 'ct2',
+      baseType: '_page',
+      properties: {
+        p1: { type: 'content', allowedTypes: [r1] },
+        pct1: { type: 'content', allowedTypes: [ct1] },
+      },
+    });
+    initContentTypeRegistry([r1, ct1, ct2]);
+    const result = await createFragment('ct2');
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { __typename label link }
-      fragment myButton on myButton { __typename label link }
-      fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }
-      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
-        _Content(where: $where, variation: $variation) {
-          item {
-            __typename
-            ...Hero
-            _metadata {
-              variation
-            }
-          }
-        }
-      }
-        "
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment r2 on r2 { __typename p1 { __typename ...r1 } }",
+        "fragment ct2 on ct2 { __typename p1 { __typename ...r1 } pct1 { __typename ...r2 } }",
+      ]
+    `);
+  });
+});
+
+describe('createFragment() with `content` properties. Base types', () => {
+  test('one level', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
+    });
+    initContentTypeRegistry([r1, ct1]);
+    const result = await createFragment('ct1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } }",
+      ]
     `);
   });
 
-  test('nested content types (several levels)', async () => {
-    const result = await createSingleContentQuery(landingPage.key);
+  test('two levels', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r2 = contentType({
+      key: 'r2',
+      baseType: '_component',
+      properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
+    });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
+    });
+    initContentTypeRegistry([r1, r2, ct1]);
+    const result = await createFragment('ct1');
     expect(result).toMatchInlineSnapshot(`
-      "
-      fragment CallToAction on CallToAction { __typename label link }
-      fragment myButton on myButton { __typename label link }
-      fragment Hero on Hero { __typename heading callToAction { __typename ...CallToAction ...myButton } }
-      fragment SuperHero on SuperHero { __typename heading embed_video callToAction { __typename ...CallToAction } }
-      fragment SpecialHero on SpecialHero { __typename heading primaryCallToAction { __typename ...CallToAction } callToAction { __typename ...CallToAction } }
-      fragment LandingPage on LandingPage { __typename hero { __typename ...Hero ...SuperHero ...SpecialHero } body { html, json } }
-      query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
-        _Content(where: $where, variation: $variation) {
-          item {
-            __typename
-            ...LandingPage
-            _metadata {
-              variation
-            }
-          }
-        }
-      }
-        "
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment r2 on r2 { __typename p1 { __typename ...r1 ...r2 } }",
+        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r2 } }",
+      ]
+    `);
+  });
+
+  test('resolve correctly when `allowedTypes` is a base type', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', baseType: '_component' });
+    const r3 = contentType({ key: 'r3', baseType: '_component' });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        p1: {
+          type: 'content',
+          allowedTypes: ['_component'],
+        },
+      },
+    });
+
+    initContentTypeRegistry([r1, r2, r3, ct1]);
+    const result = await createFragment('ct1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment r2 on r2 { __typename }",
+        "fragment r3 on r3 { __typename }",
+        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r2 ...r3 } }",
+      ]
+    `);
+  });
+
+  test('repeated reference', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r2 = contentType({
+      key: 'r2',
+      baseType: '_component',
+      properties: { p1: { type: 'content', allowedTypes: [r1] } },
+    });
+    const ct2 = contentType({
+      key: 'ct2',
+      baseType: '_page',
+      properties: {
+        p1: { type: 'content', allowedTypes: [r1] },
+        p2: { type: 'content', allowedTypes: ['_component'] },
+      },
+    });
+    initContentTypeRegistry([r1, r2, ct2]);
+    const result = await createFragment('ct2');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment r2 on r2 { __typename p1 { __typename ...r1 } }",
+        "fragment ct2 on ct2 { __typename p1 { __typename ...r1 } p2 { __typename ...r1 ...r2 } }",
+      ]
+    `);
+  });
+});
+
+describe('createFragment() with `content` properties. Allowed and restricted types', () => {
+  test('only restricted', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', baseType: '_component' });
+    const r3 = contentType({ key: 'r3', baseType: '_component' });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        p1: {
+          type: 'content',
+          restrictedTypes: [r2],
+        },
+      },
+    });
+
+    initContentTypeRegistry([r1, r2, r3, ct1]);
+    const result = await createFragment('ct1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment r3 on r3 { __typename }",
+        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r3 ...ct1 } }",
+      ]
+    `);
+  });
+
+  test('allowed and restricted', async () => {
+    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', baseType: '_component' });
+    const r3 = contentType({ key: 'r3', baseType: '_component' });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        p1: {
+          type: 'content',
+          allowedTypes: ['_component'],
+          restrictedTypes: [r2],
+        },
+      },
+    });
+
+    initContentTypeRegistry([r1, r2, r3, ct1]);
+    const result = await createFragment('ct1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename }",
+        "fragment r3 on r3 { __typename }",
+        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r3 } }",
+      ]
+    `);
+  });
+});
+
+describe('createFragment() with self references', () => {
+  test('explicit self-reference', async () => {
+    const r1 = contentType({
+      key: 'r1',
+      baseType: '_component',
+      properties: { p1: { type: 'content', allowedTypes: ['_self'] } },
+    });
+
+    initContentTypeRegistry([r1]);
+    const result = await createFragment('r1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename p1 { __typename ...r1 } }",
+      ]
+    `);
+  });
+
+  test('without any limitations', async () => {
+    const r1 = contentType({
+      key: 'r1',
+      baseType: '_component',
+      properties: { p1: { type: 'content' } },
+    });
+
+    initContentTypeRegistry([r1]);
+    const result = await createFragment('r1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename p1 { __typename ...r1 } }",
+      ]
+    `);
+  });
+
+  test('with allowed (its own base type)', async () => {
+    const r1 = contentType({
+      key: 'r1',
+      baseType: '_component',
+      properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
+    });
+
+    initContentTypeRegistry([r1]);
+    const result = await createFragment('r1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename p1 { __typename ...r1 } }",
+      ]
+    `);
+  });
+
+  test('with allowed (its own base type)', async () => {
+    const r2 = contentType({ key: 'r2', baseType: '_component' });
+    const r1 = contentType({
+      key: 'r1',
+      baseType: '_component',
+      properties: {
+        p1: {
+          type: 'content',
+          allowedTypes: ['_component'],
+          restrictedTypes: [r2],
+        },
+      },
+    });
+
+    initContentTypeRegistry([r1]);
+    const result = await createFragment('r1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment r1 on r1 { __typename p1 { __typename ...r1 } }",
+      ]
+    `);
+  });
+});
+
+describe('createFragment() empty objects', () => {
+  test('properties with indexType', async () => {
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        p1: { type: 'string', indexingType: 'disabled' },
+        p2: { type: 'string', indexingType: 'queryable' },
+        p3: { type: 'string', indexingType: 'searchable' },
+      },
+    });
+    initContentTypeRegistry([ct1]);
+    const result = await createFragment('ct1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment ct1 on ct1 { __typename p2 p3 }",
+      ]
+    `);
+  });
+
+  test('only with disabled indexType', async () => {
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        p1: { type: 'string', indexingType: 'disabled' },
+        p2: { type: 'string', indexingType: 'disabled' },
+      },
+    });
+    initContentTypeRegistry([ct1]);
+    const result = await createFragment('ct1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment ct1 on ct1 { __typename }",
+      ]
+    `);
+  });
+
+  test('correct syntax when referring to an empty set', async () => {
+    // In this test, there is one content type "ct1" that has a `content` property, with allowed types = "_component"
+    // But there is no content type with base type '_component'.
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        p1: { type: 'content', allowedTypes: ['_component'] },
+      },
+    });
+    initContentTypeRegistry([ct1]);
+    const result = await createFragment('ct1');
+
+    // Make sure that the query is correct. The `p1 {}` part should have something between the curly braces
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment ct1 on ct1 { __typename p1 { __typename } }",
+      ]
     `);
   });
 });
