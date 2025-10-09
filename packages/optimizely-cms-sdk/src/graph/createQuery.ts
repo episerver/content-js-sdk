@@ -133,7 +133,7 @@ function convertPropertyField(
       }
     }
 
-    const uniqueSubfields = [...new Set(subfields)].join(' '); // remove duplicates
+    const uniqueSubfields = ['__typename', ...new Set(subfields)].join(' '); // remove duplicates
     fields.push(`${name} { ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
