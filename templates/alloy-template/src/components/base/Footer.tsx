@@ -16,33 +16,33 @@ const defaultSections: FooterSection[] = [
   {
     title: 'PRODUCTS',
     links: [
-      { label: 'Alloy Plan', href: '/alloy-plan' },
-      { label: 'Alloy Track', href: '/alloy-track' },
-      { label: 'Alloy Meet', href: '/alloy-meet' },
+      { label: 'Alloy Plan', href: '/en/alloy-plan' },
+      { label: 'Alloy Track', href: '/en/alloy-track' },
+      { label: 'Alloy Meet', href: '/en/alloy-meet' },
     ],
   },
   {
     title: 'THE COMPANY',
     links: [
-      { label: 'History', href: '/history' },
-      { label: 'News & Events', href: '/news' },
-      { label: 'Management', href: '/management' },
-      { label: 'Contact us', href: '/contact' },
-      { label: 'Become a reseller', href: '/reseller' },
+      { label: 'History', href: '/en/history' },
+      { label: 'News & Events', href: '/en/news' },
+      { label: 'Management', href: '/en/management' },
+      { label: 'Contact us', href: '/en/contact' },
+      { label: 'Become a reseller', href: '/en/reseller' },
     ],
   },
   {
     title: 'NEWS & EVENTS',
     links: [
-      { label: 'Events', href: '/events' },
-      { label: 'Press Releases', href: '/press' },
+      { label: 'Events', href: '/en/events' },
+      { label: 'Press Releases', href: '/en/press' },
     ],
   },
   {
     title: 'CUSTOMER ZONE',
     links: [
-      { label: 'Reseller extranet', href: '/reseller-extranet' },
-      { label: 'Log out', href: '/logout' },
+      { label: 'Reseller extranet', href: '/en/reseller-extranet' },
+      { label: 'Log out', href: '/en/logout' },
     ],
   },
 ];
