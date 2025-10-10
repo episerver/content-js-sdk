@@ -9,13 +9,16 @@ import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 import './globals.css';
 import Header from '@/components/base/Header';
 import Footer from '@/components/base/Footer';
-import Jumbotron, { JumbotronContentType } from '@/components/Jumbotron';
-import Teaser, { TeaserContentType } from '@/components/Teaser';
-import Editorial, { EditorialContentType } from '@/components/Editorial';
-import Contact, { ContactContentType } from '@/components/Contact';
-import StartPage, { StartPageContentType } from '@/components/StartPage';
+import Teaser, { TeaserContentType } from '@/components/base/Teaser';
+import Editorial, { EditorialContentType } from '@/components/base/Editorial';
+import Contact, { ContactContentType } from '@/components/base/Contact';
+import StartPage, { StartPageContentType } from '@/components/Start';
 import Product, { ProductContentType } from '@/components/Product';
-import StandardPage from '@/components/StandardPage';
+import StandardPage, { StandardContentType } from '@/components/Standard';
+import Notice, { NoticeContentType } from '@/components/base/Notice';
+import News, { NewsContentType } from '@/components/News';
+import Article, { ArticleContentType } from '@/components/base/Article';
+import BlankSection from '@/components/base/BlankSection';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -33,24 +36,30 @@ export const metadata: Metadata = {
 };
 
 initContentTypeRegistry([
+  ArticleContentType,
   BlankExperienceContentType,
-  StartPageContentType,
-  JumbotronContentType,
-  TeaserContentType,
-  EditorialContentType,
   ContactContentType,
+  EditorialContentType,
+  NewsContentType,
+  NoticeContentType,
   ProductContentType,
+  StartPageContentType,
+  TeaserContentType,
+  StandardContentType,
 ]);
 
 initReactComponentRegistry({
   resolver: {
-    StartPage,
-    Jumbotron,
-    Teaser,
-    Editorial,
+    Article,
     Contact,
+    Editorial,
+    News,
+    Notice,
     Product,
     StandardPage,
+    StartPage,
+    Teaser,
+    BlankSection,
   },
 });
 
@@ -65,7 +74,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header />
-        {children}
+        <div className="container mx-auto p-10">{children}</div>
         <Footer />
       </body>
     </html>
