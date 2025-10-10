@@ -3,58 +3,37 @@ import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   ComponentContainerProps,
   getPreviewUtils,
+  OptimizelyComponent,
   OptimizelyExperience,
 } from '@optimizely/cms-sdk/react/server';
-import { JumbotronContentType } from './Jumbotron';
-import Notice from './base/Notice';
 
 export const ProductContentType = contentType({
   key: 'Product',
   displayName: 'Product Page',
   baseType: '_experience',
   properties: {
-    teaser_image: {
-      type: 'contentReference',
-      displayName: 'Teaser Image',
-    },
-    teaser_text: {
+    heading: {
       type: 'string',
-      displayName: 'Teaser Text',
+      displayName: 'Heading',
     },
-    unique_selling_points: {
-      type: 'array',
-      items: {
-        type: 'string',
-      },
-      displayName: 'Unique Selling Points',
+    description: {
+      type: 'string',
+      displayName: 'Description',
     },
     main_body: {
       type: 'richText',
       displayName: 'Main Body',
     },
-    large_content_area: {
-      type: 'array',
-      displayName: 'Large Content Area',
-      items: {
-        type: 'content',
-      },
-    },
-    small_content_area: {
-      type: 'array',
-      displayName: 'Small Content Area',
-      items: {
-        type: 'content',
-        restrictedTypes: [JumbotronContentType],
-      },
-    },
     title: {
       type: 'string',
+      displayName: 'Title',
     },
-    keywords: {
-      type: 'string',
-    },
-    page_description: {
-      type: 'string',
+    content_area: {
+      type: 'array',
+      items: {
+        type: 'content',
+      },
+      displayName: 'Content Area',
     },
   },
 });
@@ -69,28 +48,49 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 }
 
 function Product({ opti }: ProductProps) {
+  const { pa } = getPreviewUtils(opti);
+
   return (
-    <div>
-      <h2>{opti.title}</h2>
-      <p>{opti.page_description}</p>
-      {opti.teaser_image?.url.default && (
-        <img src={opti.teaser_image?.url.default} alt="" />
-      )}
-      <RichText content={opti.main_body?.json} />
-      {opti.unique_selling_points && (
-        <Notice title="Unique Selling Points">
-          <ul>
-            {opti.unique_selling_points.map((point, index) => (
-              <li key={index}>{point}</li>
-            ))}
-          </ul>
-        </Notice>
-      )}
-      <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
-        ComponentWrapper={ComponentWrapper}
-      />
-    </div>
+    <main className="min-h-screen bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+          {/* Main Content */}
+          <div className="space-y-8">
+            {/* Heading and Description */}
+            <div className="space-y-4">
+              <h1
+                {...pa('heading')}
+                className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl"
+              >
+                {opti.heading}
+              </h1>
+              <p
+                {...pa('description')}
+                className="text-lg leading-relaxed text-gray-700"
+              >
+                {opti.description}
+              </p>
+            </div>
+
+            {/* Main Body Content */}
+            <div className="space-y-6">
+              <RichText {...pa('main_body')} content={opti.main_body?.json} />
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div {...pa('content_area')} className="space-y-8">
+            {opti.content_area?.map((contentItem, index) => {
+              return <OptimizelyComponent key={index} opti={contentItem} />;
+            })}
+          </div>
+          <OptimizelyExperience
+            nodes={opti.composition.nodes ?? []}
+            ComponentWrapper={ComponentWrapper}
+          />
+        </div>
+      </div>
+    </main>
   );
 }
 

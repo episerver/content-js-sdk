@@ -19,7 +19,7 @@ export default async function Page({ searchParams }: Props) {
     )
     .catch((err) => {
       console.log(err.errors);
-      console.log(err.request.query);
+      console.log(err.request?.query);
       throw err;
     });
 

@@ -11,6 +11,7 @@ export const EditorialContentType = contentType({
       displayName: 'Main Body',
     },
   },
+  compositionBehaviors: ['elementEnabled'],
 });
 
 type EditorialProps = {
