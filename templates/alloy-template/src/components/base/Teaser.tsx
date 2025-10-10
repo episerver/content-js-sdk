@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
 
 export const TeaserContentType = contentType({
   key: 'Teaser',
@@ -23,15 +23,42 @@ export const TeaserContentType = contentType({
       displayName: 'Link',
     },
   },
+  compositionBehaviors: ['elementEnabled'],
+});
+
+// Display Template for Teaser component orientation
+export const TeaserDisplayTemplate = displayTemplate({
+  key: 'TeaserDisplayTemplate',
+  isDefault: false,
+  displayName: 'TeaserDisplayTemplate',
+  baseType: '_component',
+  settings: {
+    orientation: {
+      editor: 'select',
+      displayName: 'Teaser Orientation',
+      sortOrder: 0,
+      choices: {
+        vertical: {
+          displayName: 'Vertical',
+          sortOrder: 1,
+        },
+        horizontal: {
+          displayName: 'Horizontal',
+          sortOrder: 2,
+        },
+      },
+    },
+  },
 });
 
 type TeaserProps = {
   opti: Infer<typeof TeaserContentType>;
-  layout?: 'vertical' | 'horizontal';
+  displaySettings?: Record<string, string>;
 };
 
-function Teaser({ opti, layout }: TeaserProps) {
-  if (layout === 'horizontal') {
+function Teaser({ opti, displaySettings }: TeaserProps) {
+  // Horizontal layout
+  if (displaySettings?.orientation === 'horizontal') {
     return (
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">

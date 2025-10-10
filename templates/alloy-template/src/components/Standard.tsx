@@ -10,9 +10,11 @@ export const StandardContentType = contentType({
   key: 'Standard',
   displayName: 'Standard Page',
   baseType: '_experience',
+  mayContainTypes: ['_self'],
   properties: {
     teaser_image: {
       type: 'contentReference',
+      allowedTypes: ['_image'],
       displayName: 'Teaser Image',
     },
     teaser_text: {
@@ -22,13 +24,6 @@ export const StandardContentType = contentType({
     main_body: {
       type: 'richText',
       displayName: 'Main Body',
-    },
-    large_content_area: {
-      type: 'array',
-      displayName: 'Large Content Area',
-      items: {
-        type: 'content',
-      },
     },
     title: {
       type: 'string',
