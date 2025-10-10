@@ -13,32 +13,27 @@ export const NewsContentType = contentType({
   baseType: '_experience',
   mayContainTypes: [StandardContentType],
   properties: {
-    teaser_image: {
+    image: {
       type: 'contentReference',
       displayName: 'Teaser Image',
     },
-    teaser_text: {
+    title: {
       type: 'string',
       displayName: 'Teaser Text',
+    },
+    description: {
+      type: 'string',
+      displayName: 'Description',
     },
     main_body: {
       type: 'richText',
       displayName: 'Main Body',
     },
-    title: {
-      type: 'string',
-    },
-    keywords: {
-      type: 'string',
-    },
-    page_description: {
-      type: 'string',
-    },
   },
 });
 
-type StandardPageProps = {
-  opti: Infer<typeof StandardContentType>;
+type NewsPageProps = {
+  opti: Infer<typeof NewsContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -46,14 +41,14 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-function StandardPage({ opti }: StandardPageProps) {
+function News({ opti }: NewsPageProps) {
   return (
     <div>
       <h2>{opti.title}</h2>
-      <p>{opti.teaser_text}</p>
+      <p>{opti.description}</p>
       <div>
-        {opti.teaser_image?.url.default && (
-          <img src={opti.teaser_image.url.default} alt={'Teaser Image'} />
+        {opti.image?.url.default && (
+          <img src={opti.image.url.default} alt={'Teaser Image'} />
         )}
       </div>
       <RichText content={opti.main_body?.json} />
@@ -65,4 +60,4 @@ function StandardPage({ opti }: StandardPageProps) {
   );
 }
 
-export default StandardPage;
+export default News;

@@ -14,7 +14,7 @@ import Editorial, { EditorialContentType } from '@/components/base/Editorial';
 import Contact, { ContactContentType } from '@/components/base/Contact';
 import StartPage, { StartPageContentType } from '@/components/Start';
 import Product, { ProductContentType } from '@/components/Product';
-import StandardPage, { StandardContentType } from '@/components/Standard';
+import Standard, { StandardContentType } from '@/components/Standard';
 import Notice, { NoticeContentType } from '@/components/base/Notice';
 import News, { NewsContentType } from '@/components/News';
 import Article, { ArticleContentType } from '@/components/base/Article';
@@ -56,7 +56,7 @@ initReactComponentRegistry({
     News,
     Notice,
     Product,
-    StandardPage,
+    Standard,
     StartPage,
     Teaser,
     BlankSection,

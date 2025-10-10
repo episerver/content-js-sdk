@@ -12,7 +12,7 @@ const defaultNavigationItems: NavigationItem[] = [
   { label: 'ALLOY PLAN', href: '/en/alloy-plan' },
   { label: 'ALLOY TRACK', href: '/en/alloy-track' },
   { label: 'ALLOY MEET', href: '/en/alloy-meet' },
-  { label: 'ABOUT US', href: '/about' },
+  { label: 'ABOUT US', href: '/en/about-us' },
 ];
 
 function Header({ navigationItems = defaultNavigationItems }: HeaderProps) {
