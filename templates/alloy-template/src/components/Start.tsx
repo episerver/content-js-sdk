@@ -2,11 +2,10 @@ import { contentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   getPreviewUtils,
-  OptimizelyComponent,
   OptimizelyExperience,
 } from '@optimizely/cms-sdk/react/server';
 import { ProductContentType } from './Product';
-import { StandardContentType } from './StandardPage';
+import { StandardContentType } from './Standard';
 
 export const StartPageContentType = contentType({
   key: 'StartPage',
@@ -17,26 +16,33 @@ export const StartPageContentType = contentType({
     'The StartPage content type represents the start page of the website.',
   properties: {
     // Content group
-    teaser_image: {
+    image: {
       type: 'contentReference',
       allowedTypes: ['_image'],
       displayName: 'Teaser Image',
       group: 'Information',
     },
-    teaser_text: {
+    title: {
       type: 'string',
-      displayName: 'Teaser Text',
+      displayName: 'Title',
       group: 'Information',
     },
-    large_content_area: {
-      type: 'array',
-      items: {
-        type: 'content',
-        allowedTypes: ['_component'],
-      },
-      displayName: 'Large Content Area',
+    description: {
+      type: 'string',
+      displayName: 'Description',
       group: 'Information',
     },
+    button_link: {
+      type: 'url',
+      displayName: 'Button Link',
+      group: 'Information',
+    },
+    button_text: {
+      type: 'string',
+      displayName: 'Button Text',
+      group: 'Information',
+    },
+
     // Settings group
     hide_site_header: {
       type: 'boolean',
@@ -49,7 +55,7 @@ export const StartPageContentType = contentType({
       group: 'Advanced',
     },
     // Metadata group
-    title: {
+    site_title: {
       type: 'string',
       displayName: 'Title',
     },
@@ -128,23 +134,52 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 function StartPage({ opti }: StartPageProps) {
   const { pa } = getPreviewUtils(opti);
-  return (
-    <div>
-      <div
-        {...pa('large_content_area')}
-        className="space-y-8 my-8 flex flex-col"
-      >
-        {opti?.large_content_area &&
-          opti.large_content_area.map((item, i) => (
-            <OptimizelyComponent opti={item} key={i} />
-          ))}
-      </div>
 
-      <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
-        ComponentWrapper={ComponentWrapper}
-      />
-    </div>
+  console.log(opti.image?.url.default);
+
+  return (
+    <>
+      <div
+        style={{ backgroundImage: `url(${opti.image?.url.default})` }}
+        className="relative h-[60vh] w-full flex items-center bg-cover bg-center rounded-sm"
+      >
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/40" />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="max-w-3xl">
+            {/* Large Heading */}
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight tracking-tight">
+              {opti.title}
+            </h1>
+
+            {/* Description */}
+            {opti.description && (
+              <p className="text-lg md:text-xl text-white mb-8 leading-relaxed max-w-2xl font-light">
+                {opti.description}
+              </p>
+            )}
+
+            {/* Call to Action Button */}
+            {opti.button_link && opti.button_text && (
+              <a
+                href={opti.button_link.default ?? undefined}
+                className="inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-8 rounded-md transition-colors duration-200 text-base"
+              >
+                {opti.button_text}
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="my-5">
+        <OptimizelyExperience
+          nodes={opti.composition.nodes ?? []}
+          ComponentWrapper={ComponentWrapper}
+        />
+      </div>
+    </>
   );
 }
 
