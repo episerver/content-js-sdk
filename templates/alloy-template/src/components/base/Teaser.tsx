@@ -1,4 +1,5 @@
 import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import Link from 'next/link';
 
 export const TeaserContentType = contentType({
   key: 'Teaser',
@@ -57,9 +58,21 @@ type TeaserProps = {
 };
 
 function Teaser({ opti, displaySettings }: TeaserProps) {
+  // Helper function to wrap content with link if available
+  const wrapWithLink = (content: React.ReactNode) => {
+    if (opti.link?.default) {
+      return (
+        <Link href={opti.link.default} className="cursor-pointer">
+          {content}
+        </Link>
+      );
+    }
+    return content;
+  };
+
   // Horizontal layout
   if (displaySettings?.orientation === 'horizontal') {
-    return (
+    const content = (
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">
           {opti.image?.url.default && (
@@ -82,11 +95,13 @@ function Teaser({ opti, displaySettings }: TeaserProps) {
         </div>
       </div>
     );
+
+    return wrapWithLink(content);
   }
 
   // Vertical layout (default)
-  return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
+  const verticalContent = (
+    <div className="max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
       {opti.image?.url.default && (
         <div className="h-48 w-full overflow-hidden">
           <img
@@ -104,6 +119,8 @@ function Teaser({ opti, displaySettings }: TeaserProps) {
       </div>
     </div>
   );
+
+  return wrapWithLink(verticalContent);
 }
 
 export default Teaser;
