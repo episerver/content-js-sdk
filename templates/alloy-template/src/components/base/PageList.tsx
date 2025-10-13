@@ -12,35 +12,34 @@ const PageList = contentType({
     },
     IncludePublishDate: {
       type: 'boolean',
-      displayName: 'IncludePublishDate',
+      displayName: 'Include Publish Date',
     },
     IncludeIntroduction: {
       type: 'boolean',
-      displayName: 'IncludeIntroduction',
+      displayName: 'Include Introduction',
     },
     Count: {
       type: 'integer',
-      displayName: 'Count',
+      displayName: 'Max Count',
     },
     SortOrder: {
       type: 'integer',
-      displayName: 'SortOrder',
+      displayName: 'Sort Order',
     },
     Root: {
       type: 'contentReference',
       format: 'PageReference',
       displayName: 'Root',
-      restrictedTypes: [],
     },
     PageTypeFilter: {
       type: 'string',
       format: 'PageType',
-      displayName: 'PageTypeFilter',
+      displayName: 'Page Type Filter',
     },
     CategoryFilter: {
       type: 'array',
       format: 'categorization',
-      displayName: 'CategoryFilter',
+      displayName: 'Category Filter',
       items: {
         type: 'integer',
       },
