@@ -22,7 +22,12 @@ export type GenericElementType =
   | 'br'
   | 'table'
   | 'tbody'
-  | 'tr';
+  | 'tr'
+  | 'mark'
+  | 'sup'
+  | 'sub'
+  | 'ins'
+  | 'del';
 
 /**
  * Base element properties shared by all element types
@@ -381,10 +386,11 @@ export function decodeHTML(input: string): string {
     '&quot;': '"',
     '&#39;': "'",
     '&nbsp;': '\u00A0',
+    '&mdash;': '—',
   };
 
   return input.replace(
-    /(&amp;|&lt;|&gt;|&quot;|&#39;|&nbsp;)/g,
+    /(&amp;|&lt;|&gt;|&quot;|&#39;|&nbsp;|&mdash;)/g,
     (m) => map[m] ?? m
   );
 }
@@ -480,6 +486,11 @@ export const defaultElementTypeMap: Record<
 
   // Root wrapper
   richText: { tag: 'div', config: { className: 'cms:rich-text' } },
+  mark: { tag: 'mark' },
+  sup: { tag: 'sup' },
+  sub: { tag: 'sub' },
+  ins: { tag: 'ins' },
+  del: { tag: 'del' },
 };
 
 /**
