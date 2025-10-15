@@ -96,39 +96,36 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
    */
   protected createTextNode(node: RenderNode, index: number): ReactNode {
     const decodedText = this.decodeEntities(node.content || ''); // Using base class method
-    let element: ReactNode = React.createElement(
-      'span',
-      { key: `text-${index}` }, // unique key for text node
-      decodedText
-    );
+
+    // If no marks, return plain text
+    if (!node.marks || node.marks.length === 0) {
+      return decodedText;
+    }
+
+    // Start with plain text for marked content
+    let element: ReactNode = decodedText;
 
     // Apply marks by wrapping with leaf components
-    if (node.marks && node.marks.length > 0) {
-      for (let markIndex = 0; markIndex < node.marks.length; markIndex++) {
-        const mark = node.marks[markIndex];
-        const LeafComponent = this.leafs[mark] || this.getDefaultLeaf(mark);
+    for (let markIndex = 0; markIndex < node.marks.length; markIndex++) {
+      const mark = node.marks[markIndex];
+      const LeafComponent = this.leafs[mark] || this.getDefaultLeaf(mark);
 
-        // Create leaf data
-        const leafData = {
+      // Create leaf data
+      const leafData = {
+        text: decodedText,
+        [mark]: true,
+      };
+
+      element = React.createElement(
+        LeafComponent,
+        {
+          leaf: leafData,
+          attributes: {},
           text: decodedText,
-          [mark]: true,
-        };
-
-        const currentContent: ReactNode = React.isValidElement(element)
-          ? (element.props as { children?: ReactNode }).children
-          : element;
-
-        element = React.createElement(
-          LeafComponent,
-          {
-            leaf: leafData,
-            attributes: {},
-            text: decodedText,
-            key: `leaf-${mark}-${index}-${markIndex}`, // Unique key for each leaf
-          },
-          currentContent
-        );
-      }
+          key: `leaf-${mark}-${index}-${markIndex}`, // Unique key for each leaf
+        },
+        element
+      );
     }
 
     return element;
