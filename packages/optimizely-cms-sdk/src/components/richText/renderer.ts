@@ -476,6 +476,8 @@ export const defaultElementTypeMap: Record<
   link: { tag: 'a' },
   image: { tag: 'img', config: { selfClosing: true } },
   br: { tag: 'br', config: { selfClosing: true } },
+  span: { tag: 'span' },
+  mark: { tag: 'mark' },
 
   // Table
   table: { tag: 'table' },
@@ -486,7 +488,6 @@ export const defaultElementTypeMap: Record<
 
   // Root wrapper
   richText: { tag: 'div', config: { className: 'cms:rich-text' } },
-  mark: { tag: 'mark' },
   sup: { tag: 'sup' },
   sub: { tag: 'sub' },
   ins: { tag: 'ins' },
