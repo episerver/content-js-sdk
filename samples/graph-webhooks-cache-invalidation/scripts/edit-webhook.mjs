@@ -102,7 +102,7 @@ while (true) {
   }).then(async (r) => {
     if (!r.ok) {
       log.error(await r.text());
-      cancel('Something wrong happened when creating the webhook');
+      cancel('Something wrong happened when deleting the webhook');
       process.exit();
     }
   });
