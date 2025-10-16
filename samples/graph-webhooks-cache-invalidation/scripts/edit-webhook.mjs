@@ -101,7 +101,7 @@ while (true) {
     headers: { Authorization: auth },
   }).then(async (r) => {
     if (!r.ok) {
-      log.error(await response.text());
+      log.error(await r.text());
       cancel('Something wrong happened when creating the webhook');
       process.exit();
     }
