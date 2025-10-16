@@ -29,7 +29,7 @@ function exitIfCancelled(value) {
 async function handleResponse(response) {
   if (!response.ok) {
     log.error(await response.text());
-    cancel('Something wrong happened when creating the webhook');
+    cancel('Something wrong happened when listing the webhooks');
     process.exit();
   }
 
