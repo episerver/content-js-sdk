@@ -67,11 +67,17 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
     children: ReactNode[],
     index: number
   ): ReactNode {
-    const ElementComponent =
-      this.elements[node.elementType!] ||
-      this.getDefaultElement(node.elementType!);
+    // Normalize element type to lowercase for consistent lookup
+    const normalizedElementType = node.elementType!.toLowerCase();
 
-    const elementData = createElementData(node.elementType!, node.attributes);
+    const ElementComponent =
+      this.elements[normalizedElementType] ||
+      this.getDefaultElement(normalizedElementType);
+
+    const elementData = createElementData(
+      normalizedElementType,
+      node.attributes
+    );
 
     // Extract text content from render nodes
     const textContent = node.children
@@ -85,7 +91,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
         element: elementData,
         attributes: node.attributes,
         text: textContent,
-        key: `element-${node.elementType}-${index}`, // Unique key for each element
+        key: `element-${normalizedElementType}-${index}`, // Unique key for each element
       },
       ...children
     );
