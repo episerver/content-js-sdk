@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "webhook:create": "node scripts/create-webhook.mjs",
+    "webhook:edit": "node scripts/edit-webhook.mjs",
     "lint": "eslint"
   },
   "dependencies": {

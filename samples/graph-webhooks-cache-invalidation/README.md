@@ -62,3 +62,7 @@ Refresh the page. You will see that the date is the same and that the seconds co
 Go to your CMS, make changes to the page `/en/` you created previously and publish them.
 
 Go to `<your project URL>/en`. You will see that a different date and that the counter has restarted
+
+### 8. Clean-up
+
+Run `npm run webhook:edit` and follow the instructions to delete the webhook that you don't need anymore.
