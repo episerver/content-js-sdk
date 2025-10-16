@@ -1,4 +1,4 @@
-// Use this script to create a webhook in Optimizely Graph
+// Use this script to view and delete webhooks in Optimizely Graph
 // Read more: https://docs.developers.optimizely.com/platform-optimizely/reference/create-webhookhandler
 import { select } from '@clack/prompts';
 import {
