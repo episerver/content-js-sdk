@@ -151,7 +151,21 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
    * Get default element component for unknown types
    */
   private getDefaultElement(elementType: string): ElementRenderer {
-    const fallbackTag = this.getConfig('elementFallback', 'div') as string;
+    // Use span as fallback for inline elements to avoid hydration errors with block elements in paragraphs
+    const inlineElements = [
+      'span',
+      'mark',
+      'strong',
+      'em',
+      'u',
+      's',
+      'code',
+      'i',
+      'b',
+    ];
+    const fallbackTag = inlineElements.includes(elementType)
+      ? 'span'
+      : (this.getConfig('elementFallback', 'div') as string);
 
     return ({ children }) => {
       return React.createElement(fallbackTag, {}, children);
