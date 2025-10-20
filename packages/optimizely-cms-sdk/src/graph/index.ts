@@ -54,15 +54,17 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
 
 const GET_LINKS_QUERY = `
 query GetLinks($where: _ContentWhereInput, $type: LinkTypes) {
-  _Content(where: $where, variation: $variation) {
+  _Content(where: $where) {
     item {
       _id
       _link(type: $type) {
-        _Content {
+        _Page {
           items {
             _metadata {
               sortOrder
               displayName
+              locale
+              types
               url {
                 default
               }
@@ -84,6 +86,8 @@ type GetLinksResponse = {
             _metadata?: {
               sortOrder?: number;
               displayName?: string;
+              locale?: string;
+              types: string[];
               url?: {
                 default?: string;
               };
