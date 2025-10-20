@@ -33,6 +33,10 @@ export type GraphGetContentOptions = {
   variation?: GraphVariationInput;
 };
 
+export type GraphGetLinksOptions = {
+  type?: 'DEFAULT' | 'ITEMS' | 'ASSETS' | 'PATH';
+};
+
 export { GraphVariationInput };
 
 const GET_CONTENT_METADATA_QUERY = `
@@ -47,6 +51,49 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   }
 }
 `;
+
+const GET_LINKS_QUERY = `
+query GetLinks($where: _ContentWhereInput, $type: LinkTypes) {
+  _Content(where: $where, variation: $variation) {
+    item {
+      _id
+      _link(type: $type) {
+        _Content {
+          items {
+            _metadata {
+              sortOrder
+              displayName
+              url {
+                default
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+type GetLinksResponse = {
+  _Content: {
+    item: {
+      _id: string | null;
+      _link: {
+        _Content: {
+          items: Array<{
+            _metadata?: {
+              sortOrder?: number;
+              displayName?: string;
+              url?: {
+                default?: string;
+              };
+            };
+          }>;
+        };
+      };
+    };
+  };
+};
 
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
@@ -198,6 +245,25 @@ export class GraphClient {
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items;
+  }
+
+  async getLinksByPath(path: string, options?: GraphGetLinksOptions) {
+    const input = {
+      ...pathFilter(path),
+      type: options?.type,
+    };
+    const data = (await this.request(
+      GET_LINKS_QUERY,
+      input
+    )) as GetLinksResponse;
+
+    // Check if the page itself exist.
+    if (!data._Content.item._id) {
+      return null;
+    }
+
+    // Return the links
+    return data?._Content?.item._link._Content.items.map((i) => i._metadata);
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
