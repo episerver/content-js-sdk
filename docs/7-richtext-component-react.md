@@ -1,0 +1,466 @@
+# RichText Component Reference
+
+The `RichText` component is a React component for rendering Optimizely CMS rich text content. It transforms structured JSON content from the CMS into React elements with full customization support.
+
+## Import
+
+```tsx
+import { RichText } from '@optimizely/cms-sdk/react/richText';
+```
+
+## Basic Usage
+
+```tsx
+import { RichText } from '@optimizely/cms-sdk/react/richText';
+
+function Article({ content }) {
+  return (
+    <div>
+      <RichText content={content.body?.json} />
+    </div>
+  );
+}
+```
+
+> [!IMPORTANT] Integration API Limitations
+>
+> When rich text content is created through Optimizely's Integration API (REST API) rather than the CMS editor interface, certain features may not function correctly:
+>
+> - **Inline styles** will not be processed or rendered
+> - **HTML validation** is bypassed, which can result in malformed or invalid HTML that causes rendering issues
+> - **Advanced formatting** that relies on TinyMCE editor processing may be missing
+> - **Custom attributes or props** might not be mapped properly from raw HTML to React components
+> - **Security sanitization** performed by the editor may not occur
+>
+> For full feature compatibility and optimal rendering, create rich text content using the CMS's built-in TinyMCE editor interface.
+
+## Props Reference
+
+### `content`
+
+**Type:** `{ type: 'richText', children: Node[] } | null | undefined`
+
+The rich text content from Optimizely CMS. This is typically accessed from a content type property with `richText` type.
+
+```tsx
+<RichText content={article.body?.json} />
+```
+
+### `elements`
+
+**Type:** `Record<string, React.ComponentType<ElementProps>>`  
+**Default:** Built-in HTML element mappings
+
+Custom React components for rendering specific element types. Allows you to override how different block and inline elements are rendered.
+
+#### Available Element Types
+
+- **Headings:** `heading-one`, `heading-two`, `heading-three`, `heading-four`, `heading-five`, `heading-six`
+- **Text blocks:** `paragraph`, `quote`, `pre`, `div`
+- **Lists:** `bulleted-list`, `numbered-list`, `list-item`
+- **Inline:** `link`, `code`, `mark`, `sup`, `sub`, `ins`, `del`, `br`
+- **Tables:** `table`, `tbody`, `tr`, `th`, `td`
+- **Media:** `image`
+
+#### Example: Custom Elements
+
+```tsx
+import { RichText, ElementProps } from '@optimizely/cms-sdk/react/richText';
+
+// Custom heading with styling
+const CustomHeading = ({ children, element }: ElementProps) => (
+  <h1 className="text-4xl font-bold text-blue-600 mb-4">{children}</h1>
+);
+
+// Custom link with tracking
+const CustomLink = ({ children, element }: ElementProps) => {
+  const linkElement = element as LinkElement;
+
+  return (
+    <a
+      href={linkElement.url}
+      className="text-blue-500 hover:underline"
+      onClick={() => trackLinkClick(linkElement.url)}
+      target={linkElement.target}
+      rel={linkElement.rel}
+    >
+      {children}
+    </a>
+  );
+};
+
+// Custom quote block
+const CustomQuote = ({ children }: ElementProps) => (
+  <blockquote className="border-l-4 border-gray-300 pl-4 py-2 italic text-gray-600">
+    {children}
+  </blockquote>
+);
+
+function Article({ content }) {
+  return (
+    <RichText
+      content={content.body?.json}
+      elements={{
+        'heading-one': CustomHeading,
+        link: CustomLink,
+        quote: CustomQuote,
+      }}
+    />
+  );
+}
+```
+
+### `leafs`
+
+**Type:** `Record<string, React.ComponentType<LeafProps>>`  
+**Default:** Built-in text formatting mappings
+
+Custom React components for rendering text formatting marks (bold, italic, etc.).
+
+#### Available Leaf Types
+
+- `bold` - Bold text formatting
+- `italic` - Italic text formatting
+- `underline` - Underlined text
+- `strikethrough` - Strikethrough text
+- `code` - Inline code formatting
+
+#### Example: Custom Leafs
+
+```tsx
+import { RichText, LeafProps } from '@optimizely/cms-sdk/react/richText';
+
+// Custom bold with additional styling
+const CustomBold = ({ children }: LeafProps) => (
+  <strong className="font-extrabold text-gray-900">{children}</strong>
+);
+
+// Custom code with syntax highlighting theme
+const CustomCode = ({ children }: LeafProps) => (
+  <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-sm text-red-600">
+    {children}
+  </code>
+);
+
+// Custom highlight leaf (for custom mark)
+const CustomHighlight = ({ children }: LeafProps) => (
+  <mark className="bg-yellow-200 px-1 rounded">{children}</mark>
+);
+
+function Article({ content }) {
+  return (
+    <RichText
+      content={content.body?.json}
+      leafs={{
+        bold: CustomBold,
+        code: CustomCode,
+        highlight: CustomHighlight, // Custom mark
+      }}
+    />
+  );
+}
+```
+
+### `decodeHtmlEntities`
+
+**Type:** `boolean`  
+**Default:** `true`
+
+Controls whether HTML entities in text content should be decoded. When enabled, entities like `&lt;`, `&gt;`, `&amp;` are converted to their corresponding characters.
+
+#### Example: Controlling HTML Entity Decoding
+
+```tsx
+// Default behavior - entities are decoded
+<RichText
+  content={content.body?.json}
+  decodeHtmlEntities={true} // &lt;div&gt; becomes <div>
+/>
+
+// Preserve HTML entities as-is
+<RichText
+  content={content.body?.json}
+  decodeHtmlEntities={false} // &lt;div&gt; stays as &lt;div&gt;
+/>
+```
+
+#### Use Cases for Disabling
+
+```tsx
+// When displaying code examples where entities should remain encoded
+const CodeExample = ({ content }) => (
+  <div className="code-display">
+    <RichText
+      content={content}
+      decodeHtmlEntities={false}
+      elements={{
+        paragraph: ({ children }) => <pre>{children}</pre>,
+      }}
+    />
+  </div>
+);
+```
+
+### `elementFallback`
+
+**Type:** `string`  
+**Default:** `'div'`
+
+The HTML element to use when an unknown or unsupported element type is encountered. This provides graceful degradation for content with elements not explicitly handled.
+
+#### Example: Custom Element Fallback
+
+```tsx
+// Use span for unknown elements (better for inline contexts)
+<RichText
+  content={content.body?.json}
+  elementFallback="span"
+/>
+
+// Use section for semantic grouping
+<RichText
+  content={content.body?.json}
+  elementFallback="section"
+/>
+```
+
+#### Advanced Fallback with Custom Component
+
+```tsx
+// Create a custom fallback that logs unknown elements
+const CustomFallbackElement = ({ children, element }: ElementProps) => {
+  console.warn('Unknown element type:', element.type);
+
+  return (
+    <div
+      className="unknown-element"
+      data-type={element.type}
+      style={{ border: '1px dashed #ccc', padding: '8px' }}
+    >
+      <small>Unknown element: {element.type}</small>
+      {children}
+    </div>
+  );
+};
+
+<RichText
+  content={content.body?.json}
+  elements={{
+    // Handle known elements...
+    'unknown-element': CustomFallbackElement,
+  }}
+/>;
+```
+
+### `leafFallback`
+
+**Type:** `string`  
+**Default:** `'span'`
+
+The HTML element to use when an unknown text formatting mark is encountered.
+
+#### Example: Custom Leaf Fallback
+
+```tsx
+// Use em for unknown marks
+<RichText
+  content={content.body?.json}
+  leafFallback="em"
+/>
+
+// Use mark element for highlighting unknown formatting
+<RichText
+  content={content.body?.json}
+  leafFallback="mark"
+/>
+```
+
+#### Advanced Fallback with Styling
+
+```tsx
+// Visual indication of unknown formatting
+const CustomFallbackLeaf = ({ children, leaf }: LeafProps) => {
+  const unknownMarks = Object.keys(leaf).filter(
+    (key) =>
+      ![
+        'text',
+        'bold',
+        'italic',
+        'underline',
+        'code',
+        'strikethrough',
+      ].includes(key)
+  );
+
+  return (
+    <span
+      className="unknown-formatting"
+      title={`Unknown formatting: ${unknownMarks.join(', ')}`}
+      style={{ backgroundColor: 'yellow', padding: '0 2px' }}
+    >
+      {children}
+    </span>
+  );
+};
+
+// Apply to all unknown marks
+<RichText
+  content={content.body?.json}
+  leafs={{
+    // Known formatting...
+    bold: ({ children }) => <strong>{children}</strong>,
+    // This would handle any unknown marks
+  }}
+/>;
+```
+
+## Complete Example
+
+```tsx
+import React from 'react';
+import {
+  RichText,
+  ElementProps,
+  LeafProps,
+} from '@optimizely/cms-sdk/react/richText';
+
+// Custom element components
+const CustomHeading = ({ children, element }: ElementProps) => (
+  <h1 className="text-3xl font-bold mb-4 text-slate-800">{children}</h1>
+);
+
+const CustomParagraph = ({ children }: ElementProps) => (
+  <p className="mb-4 text-slate-600 leading-relaxed">{children}</p>
+);
+
+const CustomLink = ({ children, element }: ElementProps) => {
+  const link = element as { url: string; target?: string };
+  return (
+    <a
+      href={link.url}
+      target={link.target}
+      className="text-blue-600 hover:text-blue-800 underline"
+    >
+      {children}
+    </a>
+  );
+};
+
+// Custom leaf components
+const CustomBold = ({ children }: LeafProps) => (
+  <strong className="font-semibold text-slate-900">{children}</strong>
+);
+
+const CustomItalic = ({ children }: LeafProps) => (
+  <em className="italic text-slate-700">{children}</em>
+);
+
+const CustomCode = ({ children }: LeafProps) => (
+  <code className="bg-slate-100 px-2 py-1 rounded text-sm font-mono text-slate-800">
+    {children}
+  </code>
+);
+
+export default function Article({ content }) {
+  return (
+    <article className="prose max-w-none">
+      <RichText
+        content={content.body?.json}
+        elements={{
+          'heading-one': CustomHeading,
+          paragraph: CustomParagraph,
+          link: CustomLink,
+        }}
+        leafs={{
+          bold: CustomBold,
+          italic: CustomItalic,
+          code: CustomCode,
+        }}
+        decodeHtmlEntities={true}
+        elementFallback="div"
+        leafFallback="span"
+      />
+    </article>
+  );
+}
+```
+
+## TypeScript Support
+
+The component is fully typed with TypeScript. Import the prop types for better development experience:
+
+```tsx
+import {
+  RichText,
+  RichTextProps,
+  ElementProps,
+  LeafProps,
+  ElementMap,
+  LeafMap,
+} from '@optimizely/cms-sdk/react/richText';
+
+// Type-safe element mapping
+const elements: ElementMap = {
+  'heading-one': CustomHeading,
+  paragraph: CustomParagraph,
+};
+
+// Type-safe leaf mapping
+const leafs: LeafMap = {
+  bold: CustomBold,
+  italic: CustomItalic,
+};
+```
+
+## Best Practices
+
+1. **Performance**: Only override elements/leafs you need to customize
+2. **Accessibility**: Maintain semantic HTML structure in custom components
+3. **Fallbacks**: Always provide sensible fallback values for unknown content
+4. **Type Safety**: Use TypeScript interfaces for better development experience
+
+## Common Use Cases
+
+### Blog Content
+
+```tsx
+<RichText
+  content={post.content?.json}
+  elements={{
+    'heading-one': ({ children }) => (
+      <h1 className="article-title">{children}</h1>
+    ),
+    paragraph: ({ children }) => (
+      <p className="article-paragraph">{children}</p>
+    ),
+  }}
+/>
+```
+
+### Documentation
+
+```tsx
+<RichText
+  content={doc.body?.json}
+  elements={{
+    code: ({ children }) => <CodeBlock>{children}</CodeBlock>,
+    pre: ({ children }) => <PreformattedText>{children}</PreformattedText>,
+  }}
+  decodeHtmlEntities={false} // Preserve code entities
+/>
+```
+
+### Marketing Content
+
+```tsx
+<RichText
+  content={page.content?.json}
+  elements={{
+    link: ({ children, element }) => (
+      <TrackableLink url={element.url} eventName="content-click">
+        {children}
+      </TrackableLink>
+    ),
+  }}
+/>
+```
