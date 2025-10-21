@@ -452,6 +452,7 @@ export const defaultElementTypeMap: Record<
 > = {
   // Blocks
   paragraph: { tag: 'p' },
+  div: { tag: 'div' },
   'heading-one': { tag: 'h1' },
   'heading-two': { tag: 'h2' },
   'heading-three': { tag: 'h3' },
