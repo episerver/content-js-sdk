@@ -12,7 +12,7 @@
  * @param path - The URL path to filter by.
  * @returns A `GraphQueryArguments` object with a `where` clause that matches the given path.
  */
-export function pathFilter(path: string): ContentInput {
+export function pathFilter(path: string, host?: string): ContentInput {
   return {
     where: {
       _metadata: {
@@ -20,6 +20,7 @@ export function pathFilter(path: string): ContentInput {
           default: {
             eq: path,
           },
+          base: host ? { eq: host } : undefined,
         },
       },
     },

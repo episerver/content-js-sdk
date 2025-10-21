@@ -31,6 +31,7 @@ export type PreviewParams = {
 
 export type GraphGetContentOptions = {
   variation?: GraphVariationInput;
+  host?: string;
 };
 
 export { GraphVariationInput };
@@ -185,7 +186,7 @@ export class GraphClient {
     options?: GraphGetContentOptions
   ) {
     const input: GraphVariables = {
-      ...pathFilter(path),
+      ...pathFilter(path, options?.host),
       variation: options?.variation,
     };
     const contentTypeName = await this.getContentType(input);
