@@ -66,6 +66,7 @@ query GetLinks($where: _ContentWhereInput, $type: LinkTypes) {
               locale
               types
               url {
+                hierarchical
                 default
               }
             }
@@ -89,6 +90,7 @@ type GetLinksResponse = {
               locale?: string;
               types: string[];
               url?: {
+                hierarchical?: string;
                 default?: string;
               };
             };
@@ -177,7 +179,7 @@ export class GraphClient {
       }
     }
 
-    const json = await response.json();
+    const json = (await response.json()) as any;
 
     return json.data;
   }
@@ -266,8 +268,27 @@ export class GraphClient {
       return null;
     }
 
-    // Return the links
-    return data?._Content?.item._link._Page.items.map((i) => i._metadata);
+    const links = data?._Content?.item._link._Page.items.map(
+      (i) => i._metadata
+    );
+
+    if (options?.type === 'PATH') {
+      // Return sorted by "hierarchical"
+      return links.toSorted((a, b) => {
+        const ha = a?.url?.hierarchical ?? '';
+        const hb = b?.url?.hierarchical ?? '';
+
+        if (ha > hb) {
+          return 1;
+        }
+        if (ha < hb) {
+          return -1;
+        }
+        return 0;
+      });
+    }
+
+    return links;
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
