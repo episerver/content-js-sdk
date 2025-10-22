@@ -267,7 +267,7 @@ export class GraphClient {
     }
 
     // Return the links
-    return data?._Content?.item._link._Content.items.map((i) => i._metadata);
+    return data?._Content?.item._link._Page.items.map((i) => i._metadata);
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
