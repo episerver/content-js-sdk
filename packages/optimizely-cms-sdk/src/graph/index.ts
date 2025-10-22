@@ -81,7 +81,7 @@ type GetLinksResponse = {
     item: {
       _id: string | null;
       _link: {
-        _Content: {
+        _Page: {
           items: Array<{
             _metadata?: {
               sortOrder?: number;
