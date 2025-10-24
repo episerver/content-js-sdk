@@ -8,10 +8,13 @@ import {
   isContentType,
   DisplayTemplates,
   isDisplayTemplate,
+  PropertyGroupType,
+  isPropertyGroup,
 } from '@optimizely/cms-sdk';
 import chalk from 'chalk';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { object } from 'zod';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -61,9 +64,11 @@ function cleanType(obj: any) {
 export function extractMetaData(obj: unknown): {
   contentTypeData: AnyContentType[];
   displayTemplateData: DisplayTemplate[];
+  propertyGroupData: PropertyGroupType[];
 } {
   let contentTypeData: AnyContentType[] = [];
   let displayTemplateData: DisplayTemplate[] = [];
+  let propertyGroupData: PropertyGroupType[] = [];
 
   if (typeof obj === 'object' && obj !== null) {
     for (const value of Object.values(obj)) {
@@ -73,6 +78,27 @@ export function extractMetaData(obj: unknown): {
       } else if (isDisplayTemplate(value)) {
         cleanType(value);
         displayTemplateData.push(value);
+      } else if (isPropertyGroup(value)) {
+        cleanType(value);
+
+        // Check if this is an array-like object with numeric keys
+        const keys = Object.keys(value);
+        const isArrayLike = keys.every((key) => !isNaN(Number(key)));
+
+        if (isArrayLike && keys.length > 0) {
+          // Extract individual property groups from the array-like object
+          const groups = Object.values(value as any).filter(
+            (v: any): v is PropertyGroupType =>
+              typeof v === 'object' &&
+              v !== null &&
+              'key' in v &&
+              'displayName' in v
+          );
+          propertyGroupData.push(...groups);
+        } else {
+          // Single property group
+          propertyGroupData.push(value);
+        }
       }
     }
   }
@@ -80,6 +106,7 @@ export function extractMetaData(obj: unknown): {
   return {
     contentTypeData,
     displayTemplateData,
+    propertyGroupData,
   };
 }
 
@@ -116,13 +143,14 @@ async function compileAndImport(
   }
 }
 
-/** Finds metadata (contentTypes, displayTemplates) in the given paths */
+/** Finds metadata (contentTypes, displayTemplates, propertyGroups) in the given paths */
 export async function findMetaData(
   componentPaths: string[],
   cwd: string
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
+  propertyGroups: PropertyGroupType[];
 }> {
   const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
 
@@ -141,11 +169,13 @@ export async function findMetaData(
   const result2 = {
     contentTypes: [] as AnyContentType[],
     displayTemplates: [] as DisplayTemplate[],
+    propertyGroups: [] as PropertyGroupType[],
   };
 
   for (const file of allFiles) {
     const loaded = await compileAndImport(file, cwd, tmpDir);
-    const { contentTypeData, displayTemplateData } = extractMetaData(loaded);
+    const { contentTypeData, displayTemplateData, propertyGroupData } =
+      extractMetaData(loaded);
 
     for (const c of contentTypeData) {
       printFilesContnets('Content Type', file, c);
@@ -156,6 +186,11 @@ export async function findMetaData(
       printFilesContnets('Display Template', file, d);
       result2.displayTemplates.push(d);
     }
+
+    for (const p of propertyGroupData) {
+      printFilesContnets('Property Group', file, p);
+      result2.propertyGroups.push(p);
+    }
   }
 
   return result2;
@@ -164,7 +199,7 @@ export async function findMetaData(
 function printFilesContnets(
   type: string,
   path: string,
-  metaData: AnyContentType | DisplayTemplate
+  metaData: AnyContentType | DisplayTemplate | PropertyGroupType
 ) {
   console.log(
     '%s %s found in %s',
@@ -174,9 +209,50 @@ function printFilesContnets(
   );
 }
 
-export async function readFromPath(configPath: string) {
+export async function readFromPath(configPath: string, section: string) {
   const config = await import(configPath);
-  return config.default.components;
+  return config.default[section];
+}
+
+/**
+ * Validates and normalizes property groups from the config file.
+ * Ensures each property group has a key and displayName.
+ * If sortOrder is missing, assigns incrementing numbers starting from 1.
+ * @param propertyGroups - The property groups array from the config
+ * @returns Validated and normalized property groups array
+ * @throws Error if validation fails (missing key or displayName)
+ */
+export function normalizePropertyGroups(
+  propertyGroups: any[]
+): PropertyGroupType[] {
+  if (!Array.isArray(propertyGroups)) {
+    throw new Error('propertyGroups must be an array');
+  }
+
+  return propertyGroups.map((group, index) => {
+    // Validate required fields
+    if (!group.key || typeof group.key !== 'string') {
+      throw new Error(
+        `Property group at index ${index} is missing a valid "key" field`
+      );
+    }
+
+    if (!group.displayName || typeof group.displayName !== 'string') {
+      throw new Error(
+        `Property group "${group.key}" is missing a valid "displayName" field`
+      );
+    }
+
+    // Normalize sortOrder - assign incrementing number if not present
+    const sortOrder =
+      typeof group.sortOrder === 'number' ? group.sortOrder : index + 1;
+
+    return {
+      key: group.key,
+      displayName: group.displayName,
+      sortOrder,
+    };
+  });
 }
 
 /**

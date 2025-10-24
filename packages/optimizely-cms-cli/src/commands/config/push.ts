@@ -33,19 +33,19 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       path.resolve(process.cwd(), args.file)
     ).href;
 
-    const componentPaths = await readFromPath(configPath);
+    const componentPaths = await readFromPath(configPath, 'components');
+
     //the pattern is relative to the config file
     const configPathDirectory = path.dirname(configPath);
 
     // extracts metadata(contentTypes, displayTemplates) from the component paths
-    const { contentTypes, displayTemplates } = await findMetaData(
-      componentPaths,
-      configPathDirectory
-    );
+    const { contentTypes, displayTemplates, propertyGroups } =
+      await findMetaData(componentPaths, configPathDirectory);
 
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes),
       displayTemplates,
+      propertyGroups,
     };
 
     const restClient = await createApiClient(flags.host);
