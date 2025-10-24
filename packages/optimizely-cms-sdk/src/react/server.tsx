@@ -79,6 +79,8 @@ type OptimizelyComponentProps = {
     /** Display template tag (if any) */
     __tag?: string;
 
+    displayTemplateKey?: string | null;
+
     /** Preview context */
     __context?: { edit: boolean; preview_token: string };
 
@@ -96,10 +98,9 @@ export async function OptimizelyComponent({
   if (!componentRegistry) {
     throw new Error('You should call `initReactComponentRegistry` first');
   }
-
+  const dtKey = opti.composition?.displayTemplateKey ?? opti.displayTemplateKey;
   const Component = await componentRegistry.getComponent(opti.__typename, {
-    tag:
-      opti.__tag ?? getDisplayTemplateTag(opti.composition?.displayTemplateKey),
+    tag: opti.__tag ?? getDisplayTemplateTag(dtKey),
   });
 
   if (!Component) {
@@ -230,7 +231,7 @@ function FallbackComponent({ children }: { children: ReactNode }) {
 }
 
 type OptimizelyGridSectionProps = {
-  nodes?: ExperienceNode[];
+  nodes: ExperienceNode[];
   row?: StructureContainer;
   column?: StructureContainer;
   displaySettings?: DisplaySettingsType[];
@@ -297,7 +298,7 @@ export function OptimizelyGridSection({
         key={node.key}
         displaySettings={parsedDisplaySettings}
       >
-        <OptimizelyGridSection row={row} column={column} nodes={nodes} />
+        <OptimizelyGridSection row={row} column={column} nodes={nodes ?? []} />
       </Component>
     );
   });
