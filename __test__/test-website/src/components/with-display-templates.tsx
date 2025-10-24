@@ -116,7 +116,6 @@ export function Component2A({ opti }: Props2) {
 }
 
 export function Component3({ opti }: Props3) {
-  console.log('Component3 opti', opti);
   return (
     <div>
       <h1>This is an experience (Component3)</h1>
@@ -126,7 +125,6 @@ export function Component3({ opti }: Props3) {
 }
 
 export function Component3C({ opti }: Props3) {
-  console.log('Component3C opti', opti);
   return (
     <div>
       <h1>This is an experience (Component3C)</h1>
