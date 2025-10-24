@@ -60,6 +60,33 @@ export const dt3 = displayTemplate({
   tag: 'tagC',
 });
 
+export const dt4 = displayTemplate({
+  key: 'test_dt4',
+  baseType: '_section',
+  displayName: 'test dt4',
+  isDefault: false,
+  settings: {},
+  tag: 'tagA',
+});
+
+export const dt5 = displayTemplate({
+  key: 'test_dt5',
+  nodeType: 'row',
+  displayName: 'test dt5',
+  isDefault: false,
+  settings: {},
+  tag: 'tagA',
+});
+
+export const dt6 = displayTemplate({
+  key: 'test_dt6',
+  nodeType: 'column',
+  displayName: 'test dt6',
+  isDefault: false,
+  settings: {},
+  tag: 'tagA',
+});
+
 type Props1 = { opti: Infer<typeof ct1> };
 type Props2 = { opti: Infer<typeof ct2> };
 type Props3 = { opti: Infer<typeof ct3> };
@@ -89,6 +116,7 @@ export function Component2A({ opti }: Props2) {
 }
 
 export function Component3({ opti }: Props3) {
+  console.log('Component3 opti', opti);
   return (
     <div>
       <h1>This is an experience (Component3)</h1>
@@ -98,6 +126,7 @@ export function Component3({ opti }: Props3) {
 }
 
 export function Component3C({ opti }: Props3) {
+  console.log('Component3C opti', opti);
   return (
     <div>
       <h1>This is an experience (Component3C)</h1>
@@ -109,7 +138,7 @@ export function Component3C({ opti }: Props3) {
 export function Row({ children, node }: StructureContainerProps) {
   return (
     <>
-      <h3>This is row (Column) {node.key}</h3>
+      <h3>This is row (Row) {node.key}</h3>
       {children}
     </>
   );
@@ -142,19 +171,19 @@ export function Column2({ children, node }: StructureContainerProps) {
   );
 }
 
-export function Row3({ children, node }: StructureContainerProps) {
+export function RowA({ children, node }: StructureContainerProps) {
   return (
     <>
-      <h3>This is row (Row3) {node.key}</h3>
+      <h3>This is row (RowA) {node.key}</h3>
       {children}
     </>
   );
 }
 
-export function Column3({ children, node }: StructureContainerProps) {
+export function ColumnA({ children, node }: StructureContainerProps) {
   return (
     <>
-      <h4>This is column (Column3) {node.key}</h4>
+      <h4>This is column (ColumnA) {node.key}</h4>
       {children}
     </>
   );
@@ -163,8 +192,8 @@ export function Column3({ children, node }: StructureContainerProps) {
 export function BlankSection({ opti }: BlankSectionProps) {
   return (
     <>
-      <h2>This is section {opti.key}</h2>
-      <OptimizelyGridSection />
+      <h2>This is BlankSection {opti.key}</h2>
+      <OptimizelyGridSection nodes={opti.nodes} />
     </>
   );
 }
