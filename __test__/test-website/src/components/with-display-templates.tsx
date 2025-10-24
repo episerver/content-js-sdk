@@ -106,19 +106,55 @@ export function Component3C({ opti }: Props3) {
   );
 }
 
-function Row({ children, node }: StructureContainerProps) {
+export function Row({ children, node }: StructureContainerProps) {
   return (
     <>
-      <h3>This is row {node.key}</h3>
+      <h3>This is row (Column) {node.key}</h3>
       {children}
     </>
   );
 }
 
-function Column({ children, node }: StructureContainerProps) {
+export function Column({ children, node }: StructureContainerProps) {
   return (
     <>
-      <h4>This is column {node.key}</h4>
+      <h4>This is column (Column) {node.key}</h4>
+      {children}
+    </>
+  );
+}
+
+export function Row2({ children, node }: StructureContainerProps) {
+  return (
+    <>
+      <h3>This is row (Row2) {node.key}</h3>
+      {children}
+    </>
+  );
+}
+
+export function Column2({ children, node }: StructureContainerProps) {
+  return (
+    <>
+      <h4>This is column (Column2) {node.key}</h4>
+      {children}
+    </>
+  );
+}
+
+export function Row3({ children, node }: StructureContainerProps) {
+  return (
+    <>
+      <h3>This is row (Row3) {node.key}</h3>
+      {children}
+    </>
+  );
+}
+
+export function Column3({ children, node }: StructureContainerProps) {
+  return (
+    <>
+      <h4>This is column (Column3) {node.key}</h4>
       {children}
     </>
   );
@@ -128,7 +164,16 @@ export function BlankSection({ opti }: BlankSectionProps) {
   return (
     <>
       <h2>This is section {opti.key}</h2>
-      <OptimizelyGridSection nodes={opti.nodes} row={Row} column={Column} />
+      <OptimizelyGridSection />
+    </>
+  );
+}
+
+export function BlankSection2({ opti }: BlankSectionProps) {
+  return (
+    <>
+      <h2>This is BlankSection2 {opti.key}</h2>
+      <OptimizelyGridSection nodes={opti.nodes} row={Row2} column={Column2} />
     </>
   );
 }
