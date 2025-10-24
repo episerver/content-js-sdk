@@ -11,8 +11,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Build packages
-        run: pnpm --filter \"./packages/**\" build
+        run: pnpm --filter "./packages/**" build
       - name: Build sample sites
-        run: pnpm --filter \"./samples/**\" build
+        run: pnpm --filter "./samples/**" build
       - name: Run tests
-        run: pnpm --filter  \"./packages/**\" test
+        run: pnpm --filter  "./packages/**" test
