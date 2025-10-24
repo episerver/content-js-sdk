@@ -269,7 +269,7 @@ export function OptimizelyGridSection({
       );
     }
 
-    const { nodes, nodeType } = node;
+    const { nodeType } = node;
     const globalNames: Record<string, string> = {
       row: '_Row',
       column: '_Column',
@@ -293,7 +293,11 @@ export function OptimizelyGridSection({
         key={node.key}
         displaySettings={parsedDisplaySettings}
       >
-        <OptimizelyGridSection row={row} column={column} nodes={nodes ?? []} />
+        <OptimizelyGridSection
+          row={row}
+          column={column}
+          nodes={node.nodes ?? []}
+        />
       </Component>
     );
   });
