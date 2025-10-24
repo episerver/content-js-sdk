@@ -252,11 +252,6 @@ export function OptimizelyGridSection({
     column,
   };
 
-  if (!nodes) {
-    // TODO: Handle beter
-    throw new Error('Nodes must be an array');
-  }
-
   return nodes.map((node, i) => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
