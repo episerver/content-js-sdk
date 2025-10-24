@@ -34,6 +34,10 @@ export type GraphGetContentOptions = {
   host?: string;
 };
 
+export type GraphGetLinksOptions = {
+  type?: 'DEFAULT' | 'ITEMS' | 'ASSETS' | 'PATH';
+};
+
 export { GraphVariationInput };
 
 const GET_CONTENT_METADATA_QUERY = `
@@ -48,6 +52,55 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   }
 }
 `;
+
+const GET_LINKS_QUERY = `
+query GetLinks($where: _ContentWhereInput, $type: LinkTypes) {
+  _Content(where: $where) {
+    item {
+      _id
+      _link(type: $type) {
+        _Page {
+          items {
+            _metadata {
+              sortOrder
+              displayName
+              locale
+              types
+              url {
+                hierarchical
+                default
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+type GetLinksResponse = {
+  _Content: {
+    item: {
+      _id: string | null;
+      _link: {
+        _Page: {
+          items: Array<{
+            _metadata?: {
+              sortOrder?: number;
+              displayName?: string;
+              locale?: string;
+              types: string[];
+              url?: {
+                hierarchical?: string;
+                default?: string;
+              };
+            };
+          }>;
+        };
+      };
+    };
+  };
+};
 
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
@@ -127,7 +180,7 @@ export class GraphClient {
       }
     }
 
-    const json = await response.json();
+    const json = (await response.json()) as any;
 
     return json.data;
   }
@@ -199,6 +252,44 @@ export class GraphClient {
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items;
+  }
+
+  async getLinksByPath(path: string, options?: GraphGetLinksOptions) {
+    const input = {
+      ...pathFilter(path),
+      type: options?.type,
+    };
+    const data = (await this.request(
+      GET_LINKS_QUERY,
+      input
+    )) as GetLinksResponse;
+
+    // Check if the page itself exist.
+    if (!data._Content.item._id) {
+      return null;
+    }
+
+    const links = data?._Content?.item._link._Page.items.map(
+      (i) => i._metadata
+    );
+
+    if (options?.type === 'PATH') {
+      // Return sorted by "hierarchical"
+      return links.toSorted((a, b) => {
+        const ha = a?.url?.hierarchical ?? '';
+        const hb = b?.url?.hierarchical ?? '';
+
+        if (ha > hb) {
+          return 1;
+        }
+        if (ha < hb) {
+          return -1;
+        }
+        return 0;
+      });
+    }
+
+    return links;
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
