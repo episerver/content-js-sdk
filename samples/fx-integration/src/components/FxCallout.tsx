@@ -20,6 +20,6 @@ type Props = {
   opti: Infer<typeof FxCalloutCT>;
 };
 
-export default function FxCallout({ opti }: Props) {
+export default function FxCallout({}: Props) {
   return <></>;
 }

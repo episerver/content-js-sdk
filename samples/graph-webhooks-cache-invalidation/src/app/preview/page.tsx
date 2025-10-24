@@ -3,7 +3,7 @@ import React from 'react';
 export default function Page() {
   return (
     <div>
-      This sample site doesn't have Live Preview enabled. Go to{' '}
+      This sample site doesn&apos;t have Live Preview enabled. Go to{' '}
       <a href="/en/" target="_blank">
         /en
       </a>{' '}
