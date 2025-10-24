@@ -1,5 +1,8 @@
 import {
   BlankSection,
+  BlankSection2,
+  Column,
+  ColumnA,
   Component1,
   Component1A,
   Component1B,
@@ -13,6 +16,11 @@ import {
   dt1,
   dt2,
   dt3,
+  dt4,
+  dt5,
+  dt6,
+  Row,
+  RowA,
 } from '@/components/with-display-templates';
 import {
   initContentTypeRegistry,
@@ -21,7 +29,7 @@ import {
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 initContentTypeRegistry([ct1, ct2, ct3]);
-initDisplayTemplateRegistry([dt1, dt2, dt3]);
+initDisplayTemplateRegistry([dt1, dt2, dt3, dt4, dt5, dt6]);
 initReactComponentRegistry({
   resolver: {
     test_c1: {
@@ -40,6 +48,15 @@ initReactComponentRegistry({
       },
     },
     BlankSection: BlankSection,
+    'BlankSection:tagA': BlankSection2,
+    _Row: {
+      default: Row,
+      tags: {
+        tagA: RowA,
+      },
+    },
+    _Column: Column,
+    '_Column:tagA': ColumnA,
   },
 });
 

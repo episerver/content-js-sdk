@@ -79,6 +79,8 @@ type OptimizelyComponentProps = {
     /** Display template tag (if any) */
     __tag?: string;
 
+    displayTemplateKey?: string | null;
+
     /** Preview context */
     __context?: { edit: boolean; preview_token: string };
 
@@ -96,10 +98,9 @@ export async function OptimizelyComponent({
   if (!componentRegistry) {
     throw new Error('You should call `initReactComponentRegistry` first');
   }
-
+  const dtKey = opti.composition?.displayTemplateKey ?? opti.displayTemplateKey;
   const Component = await componentRegistry.getComponent(opti.__typename, {
-    tag:
-      opti.__tag ?? getDisplayTemplateTag(opti.composition?.displayTemplateKey),
+    tag: opti.__tag ?? getDisplayTemplateTag(dtKey),
   });
 
   if (!Component) {
@@ -230,25 +231,29 @@ function FallbackComponent({ children }: { children: ReactNode }) {
 }
 
 type OptimizelyGridSectionProps = {
-  nodes?: ExperienceNode[];
+  nodes: ExperienceNode[];
   row?: StructureContainer;
   column?: StructureContainer;
   displaySettings?: DisplaySettingsType[];
 };
 
+const fallbacks: Record<string, StructureContainer> = {
+  row: FallbackRow,
+  column: FallbackColumn,
+};
+
 export function OptimizelyGridSection({
   nodes,
-  row = FallbackRow,
-  column = FallbackColumn,
+  row,
+  column,
 }: OptimizelyGridSectionProps) {
-  if (!nodes) {
-    // TODO: Handle beter
-    throw new Error('Nodes must be an array');
-  }
+  const locallyDefined: Record<string, StructureContainer | undefined> = {
+    row,
+    column,
+  };
+
   return nodes.map((node, i) => {
-    // get component key(tag) from the display template
-    const key = getDisplayTemplateTag(node.displayTemplateKey);
-    // get the parsed display settings (stlyes, classes etc.)
+    const tag = getDisplayTemplateTag(node.displayTemplateKey);
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
@@ -256,7 +261,7 @@ export function OptimizelyGridSection({
         <OptimizelyComponent
           opti={{
             ...node.component,
-            __tag: key,
+            __tag: tag,
           }}
           key={node.key}
           displaySettings={parsedDisplaySettings}
@@ -264,12 +269,22 @@ export function OptimizelyGridSection({
       );
     }
 
-    const { nodes, nodeType } = node;
+    const { nodeType } = node;
+    const globalNames: Record<string, string> = {
+      row: '_Row',
+      column: '_Column',
+    };
 
-    const mapper: Record<string, StructureContainer> = { row, column };
-
-    // TODO: default component
-    const Component = mapper[nodeType] ?? React.Fragment;
+    // Pick the component in the following order:
+    // 1. Explicitly defined in this component
+    // 2. Globally defined (in the registry)
+    // 3. Fallback
+    // 4. React.Fragment
+    const Component =
+      locallyDefined[nodeType] ??
+      componentRegistry.getComponent(globalNames[nodeType], { tag }) ??
+      fallbacks[nodeType] ??
+      React.Fragment;
 
     return (
       <Component
@@ -278,7 +293,11 @@ export function OptimizelyGridSection({
         key={node.key}
         displaySettings={parsedDisplaySettings}
       >
-        <OptimizelyGridSection row={row} column={column} nodes={nodes} />
+        <OptimizelyGridSection
+          row={row}
+          column={column}
+          nodes={node.nodes ?? []}
+        />
       </Component>
     );
   });
