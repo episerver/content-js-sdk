@@ -62,6 +62,7 @@ query GetPath($where: _ContentWhereInput) {
         _Page {
           items {
             _metadata {
+              key
               sortOrder
               displayName
               locale
@@ -87,6 +88,7 @@ query GetPath($where: _ContentWhereInput) {
         _Page {
           items {
             _metadata {
+              key
               sortOrder
               displayName
               locale
@@ -111,6 +113,7 @@ type GetLinksResponse = {
         _Page: {
           items: Array<{
             _metadata?: {
+              key: string;
               sortOrder?: number;
               displayName?: string;
               locale?: string;
