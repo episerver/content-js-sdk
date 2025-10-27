@@ -13,6 +13,7 @@ import {
   pathFilter,
   previewFilter,
   GraphVariationInput,
+  localeFilter,
 } from './filters.js';
 
 /** Options for Graph */
@@ -36,6 +37,7 @@ export type GraphGetContentOptions = {
 
 export type GraphGetLinksOptions = {
   host?: string;
+  locales?: string[];
 };
 
 export { GraphVariationInput };
@@ -54,8 +56,8 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
 `;
 
 const GET_PATH_QUERY = `
-query GetPath($where: _ContentWhereInput) {
-  _Content(where: $where) {
+query GetPath($where: _ContentWhereInput, $locale: [Locale]) {
+  _Content(where: $where, locale: $locale) {
     item {
       _id
       _link(type: PATH) {
@@ -80,8 +82,8 @@ query GetPath($where: _ContentWhereInput) {
 }`;
 
 const GET_ITEMS_QUERY = `
-query GetPath($where: _ContentWhereInput) {
-  _Content(where: $where) {
+query GetPath($where: _ContentWhereInput, $locale: [Locale]) {
+  _Content(where: $where, locale: $locale) {
     item {
       _id
       _link(type: ITEMS) {
@@ -290,10 +292,10 @@ export class GraphClient {
    * from the top-most to the current
    */
   async getPath(path: string, options?: GraphGetLinksOptions) {
-    const data = (await this.request(
-      GET_PATH_QUERY,
-      pathFilter(path, options?.host)
-    )) as GetLinksResponse;
+    const data = (await this.request(GET_PATH_QUERY, {
+      ...pathFilter(path, options?.host),
+      ...localeFilter(options?.locales),
+    })) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
@@ -325,10 +327,10 @@ export class GraphClient {
    * from the top-most to the current
    */
   async getItems(path: string, options?: GraphGetLinksOptions) {
-    const data = (await this.request(
-      GET_ITEMS_QUERY,
-      pathFilter(path, options?.host)
-    )) as GetLinksResponse;
+    const data = (await this.request(GET_ITEMS_QUERY, {
+      ...pathFilter(path, options?.host),
+      ...localeFilter(options?.locales),
+    })) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {

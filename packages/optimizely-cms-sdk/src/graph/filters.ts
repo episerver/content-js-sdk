@@ -93,10 +93,17 @@ export function variationFilter(value: string): ContentInput {
   };
 }
 
+export function localeFilter(locale?: string[]): ContentInput {
+  return {
+    locale,
+  };
+}
+
 /**
  * Arguments for querying content via the Graph API.
  */
 export type ContentInput = {
+  locale?: string[];
   variation?: GraphVariationInput;
   where?: ContentWhereInput;
 };
