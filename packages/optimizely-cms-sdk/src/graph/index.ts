@@ -322,14 +322,12 @@ export class GraphClient {
       return null;
     }
 
-    const links = data?._Content?.item._link._Page.items.map(
-      (i) => i._metadata
-    );
+    const links = data?._Content?.item._link._Page.items;
 
     // Return sorted by "hierarchical"
     return links.toSorted((a, b) => {
-      const ha = a?.url?.hierarchical ?? '';
-      const hb = b?.url?.hierarchical ?? '';
+      const ha = a?._metadata?.url?.hierarchical ?? '';
+      const hb = b?._metadata?.url?.hierarchical ?? '';
 
       if (ha > hb) {
         return 1;
@@ -359,9 +357,7 @@ export class GraphClient {
       return null;
     }
 
-    const links = data?._Content?.item._link._Page.items.map(
-      (i) => i._metadata
-    );
+    const links = data?._Content?.item._link._Page.items;
 
     return links;
   }
