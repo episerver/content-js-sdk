@@ -9,7 +9,7 @@ type Props = {
   }>;
 };
 
-function returnFirst(content: any[]) {
+function returnFirst<T>(content: T[]) {
   if (content.length === 0) {
     notFound();
   }

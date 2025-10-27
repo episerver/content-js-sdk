@@ -1,0 +1,18 @@
+name: Check Pull requests
+on: push
+jobs:
+  Check-PullRequests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        id: pnpm-install
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build packages
+        run: pnpm --filter "./packages/**" build
+      - name: Build sample sites
+        run: pnpm --filter "./samples/**" build
+      - name: Run tests
+        run: pnpm --filter  "./packages/**" test
