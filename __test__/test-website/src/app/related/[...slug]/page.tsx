@@ -17,21 +17,8 @@ export default async function Page({ params }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
 
-  const children = [
-    ...((await client.getLinksByPath(`/${slug.join('/')}/`)) ?? []),
-    // NOTE: if you are using "simple address", you should fetch without trailing slash:
-    ...((await client.getLinksByPath(`/${slug.join('/')}`)) ?? []),
-  ];
-  const ancestors = [
-    ...((await client.getLinksByPath(`/${slug.join('/')}/`, {
-      type: 'PATH',
-    })) ?? []),
-    // Same here:
-    ...((await client.getLinksByPath(`/${slug.join('/')}`, {
-      type: 'PATH',
-    })) ?? []),
-  ];
-  // .catch(handleGraphErrors);
+  const children = (await client.getItems(`/${slug.join('/')}`)) ?? [];
+  const ancestors = (await client.getPath(`/${slug.join('/')}`)) ?? [];
 
   return (
     <div>
