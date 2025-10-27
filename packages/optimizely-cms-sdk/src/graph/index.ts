@@ -53,6 +53,56 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
 }
 `;
 
+const GET_PATH_QUERY = `
+query GetPath($where: _ContentWhereInput) {
+  _Content(where: $where) {
+    item {
+      _id
+      _link(type: PATH) {
+        _Page {
+          items {
+            _metadata {
+              sortOrder
+              displayName
+              locale
+              types
+              url {
+                hierarchical
+                default
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+const GET_ITEMS_QUERY = `
+query GetPath($where: _ContentWhereInput) {
+  _Content(where: $where) {
+    item {
+      _id
+      _link(type: ITEMS) {
+        _Page {
+          items {
+            _metadata {
+              sortOrder
+              displayName
+              locale
+              types
+              url {
+                hierarchical
+                default
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
 const GET_LINKS_QUERY = `
 query GetLinks($where: _ContentWhereInput, $type: LinkTypes) {
   _Content(where: $where) {
@@ -254,14 +304,17 @@ export class GraphClient {
     return response?._Content?.items;
   }
 
-  async getLinksByPath(path: string, options?: GraphGetLinksOptions) {
-    const input = {
-      ...pathFilter(path),
-      type: options?.type,
-    };
+  /**
+   * Given the path of a page, return its "path" (i.e. a list of ancestor pages).
+   *
+   * @param path The URL of the current page
+   * @returns A list with the metadata information of all ancestors sorted
+   * from the top-most to the current
+   */
+  async getPath(path: string, options?: GraphGetContentOptions) {
     const data = (await this.request(
-      GET_LINKS_QUERY,
-      input
+      GET_PATH_QUERY,
+      pathFilter(path, options?.host)
     )) as GetLinksResponse;
 
     // Check if the page itself exist.
@@ -273,21 +326,42 @@ export class GraphClient {
       (i) => i._metadata
     );
 
-    if (options?.type === 'PATH') {
-      // Return sorted by "hierarchical"
-      return links.toSorted((a, b) => {
-        const ha = a?.url?.hierarchical ?? '';
-        const hb = b?.url?.hierarchical ?? '';
+    // Return sorted by "hierarchical"
+    return links.toSorted((a, b) => {
+      const ha = a?.url?.hierarchical ?? '';
+      const hb = b?.url?.hierarchical ?? '';
 
-        if (ha > hb) {
-          return 1;
-        }
-        if (ha < hb) {
-          return -1;
-        }
-        return 0;
-      });
+      if (ha > hb) {
+        return 1;
+      }
+      if (ha < hb) {
+        return -1;
+      }
+      return 0;
+    });
+  }
+
+  /**
+   * Given the path of a page, get its "items" (i.e. the children pages)
+   *
+   * @param path The URL of the current page
+   * @returns A list with the metadata information of all ancestors sorted
+   * from the top-most to the current
+   */
+  async getItems(path: string, options?: GraphGetContentOptions) {
+    const data = (await this.request(
+      GET_ITEMS_QUERY,
+      pathFilter(path, options?.host)
+    )) as GetLinksResponse;
+
+    // Check if the page itself exist.
+    if (!data._Content.item._id) {
+      return null;
     }
+
+    const links = data?._Content?.item._link._Page.items.map(
+      (i) => i._metadata
+    );
 
     return links;
   }
