@@ -34,10 +34,6 @@ export type GraphGetContentOptions = {
   host?: string;
 };
 
-export type GraphGetLinksOptions = {
-  type?: 'DEFAULT' | 'ITEMS' | 'ASSETS' | 'PATH';
-};
-
 export { GraphVariationInput };
 
 const GET_CONTENT_METADATA_QUERY = `
