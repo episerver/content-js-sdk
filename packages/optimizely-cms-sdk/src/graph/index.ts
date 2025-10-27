@@ -34,6 +34,10 @@ export type GraphGetContentOptions = {
   host?: string;
 };
 
+export type GraphGetLinksOptions = {
+  host?: string;
+};
+
 export { GraphVariationInput };
 
 const GET_CONTENT_METADATA_QUERY = `
@@ -282,7 +286,7 @@ export class GraphClient {
    * @returns A list with the metadata information of all ancestors sorted
    * from the top-most to the current
    */
-  async getPath(path: string, options?: GraphGetContentOptions) {
+  async getPath(path: string, options?: GraphGetLinksOptions) {
     const data = (await this.request(
       GET_PATH_QUERY,
       pathFilter(path, options?.host)
@@ -317,7 +321,7 @@ export class GraphClient {
    * @returns A list with the metadata information of all ancestors sorted
    * from the top-most to the current
    */
-  async getItems(path: string, options?: GraphGetContentOptions) {
+  async getItems(path: string, options?: GraphGetLinksOptions) {
     const data = (await this.request(
       GET_ITEMS_QUERY,
       pathFilter(path, options?.host)
