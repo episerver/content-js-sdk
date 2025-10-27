@@ -103,31 +103,6 @@ query GetPath($where: _ContentWhereInput) {
   }
 }`;
 
-const GET_LINKS_QUERY = `
-query GetLinks($where: _ContentWhereInput, $type: LinkTypes) {
-  _Content(where: $where) {
-    item {
-      _id
-      _link(type: $type) {
-        _Page {
-          items {
-            _metadata {
-              sortOrder
-              displayName
-              locale
-              types
-              url {
-                hierarchical
-                default
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}`;
-
 type GetLinksResponse = {
   _Content: {
     item: {
