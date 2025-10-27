@@ -1,5 +1,4 @@
 import { GraphClient } from '@optimizely/cms-sdk';
-import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import React from 'react';
 
 type Props = {
@@ -27,7 +26,7 @@ export default async function Page({ params }: Props) {
       <ul>
         {children?.map((l) => (
           <li>
-            {l?.displayName} ({l?.url?.default})
+            {l?._metadata?.displayName} ({l?._metadata?.url?.default})
           </li>
         ))}
       </ul>
@@ -35,7 +34,7 @@ export default async function Page({ params }: Props) {
       <ol>
         {ancestors?.map((l) => (
           <li>
-            {l?.displayName} ({l?.url?.default})
+            {l?._metadata?.displayName} ({l?._metadata?.url?.default})
           </li>
         ))}
       </ol>
