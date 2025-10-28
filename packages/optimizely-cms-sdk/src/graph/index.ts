@@ -323,8 +323,7 @@ export class GraphClient {
    * Given the path of a page, get its "items" (i.e. the children pages)
    *
    * @param path The URL of the current page
-   * @returns A list with the metadata information of all ancestors sorted
-   * from the top-most to the current
+   * @returns A list with the metadata information of all child/descendant pages
    */
   async getItems(path: string, options?: GraphGetLinksOptions) {
     const data = (await this.request(GET_ITEMS_QUERY, {
