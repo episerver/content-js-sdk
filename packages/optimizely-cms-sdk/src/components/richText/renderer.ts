@@ -503,4 +503,5 @@ export const defaultMarkTypeMap: Record<string, string> = {
   italic: 'em',
   underline: 'u',
   strikethrough: 's',
+  code: 'code',
 };
