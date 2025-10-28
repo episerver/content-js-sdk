@@ -13,6 +13,7 @@ import {
   pathFilter,
   previewFilter,
   GraphVariationInput,
+  localeFilter,
 } from './filters.js';
 
 /** Options for Graph */
@@ -35,7 +36,8 @@ export type GraphGetContentOptions = {
 };
 
 export type GraphGetLinksOptions = {
-  type?: 'DEFAULT' | 'ITEMS' | 'ASSETS' | 'PATH';
+  host?: string;
+  locales?: string[];
 };
 
 export { GraphVariationInput };
@@ -53,15 +55,42 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
 }
 `;
 
-const GET_LINKS_QUERY = `
-query GetLinks($where: _ContentWhereInput, $type: LinkTypes) {
-  _Content(where: $where) {
+const GET_PATH_QUERY = `
+query GetPath($where: _ContentWhereInput, $locale: [Locale]) {
+  _Content(where: $where, locale: $locale) {
     item {
       _id
-      _link(type: $type) {
+      _link(type: PATH) {
         _Page {
           items {
             _metadata {
+              key
+              sortOrder
+              displayName
+              locale
+              types
+              url {
+                hierarchical
+                default
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+const GET_ITEMS_QUERY = `
+query GetPath($where: _ContentWhereInput, $locale: [Locale]) {
+  _Content(where: $where, locale: $locale) {
+    item {
+      _id
+      _link(type: ITEMS) {
+        _Page {
+          items {
+            _metadata {
+              key
               sortOrder
               displayName
               locale
@@ -86,6 +115,7 @@ type GetLinksResponse = {
         _Page: {
           items: Array<{
             _metadata?: {
+              key: string;
               sortOrder?: number;
               displayName?: string;
               locale?: string;
@@ -254,40 +284,59 @@ export class GraphClient {
     return response?._Content?.items;
   }
 
-  async getLinksByPath(path: string, options?: GraphGetLinksOptions) {
-    const input = {
-      ...pathFilter(path),
-      type: options?.type,
-    };
-    const data = (await this.request(
-      GET_LINKS_QUERY,
-      input
-    )) as GetLinksResponse;
+  /**
+   * Given the path of a page, return its "path" (i.e. a list of ancestor pages).
+   *
+   * @param path The URL of the current page
+   * @returns A list with the metadata information of all ancestors sorted
+   * from the top-most to the current
+   */
+  async getPath(path: string, options?: GraphGetLinksOptions) {
+    const data = (await this.request(GET_PATH_QUERY, {
+      ...pathFilter(path, options?.host),
+      ...localeFilter(options?.locales),
+    })) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
       return null;
     }
 
-    const links = data?._Content?.item._link._Page.items.map(
-      (i) => i._metadata
-    );
+    const links = data?._Content?.item._link._Page.items;
 
-    if (options?.type === 'PATH') {
-      // Return sorted by "hierarchical"
-      return links.toSorted((a, b) => {
-        const ha = a?.url?.hierarchical ?? '';
-        const hb = b?.url?.hierarchical ?? '';
+    // Return sorted by "hierarchical"
+    return links.toSorted((a, b) => {
+      const ha = a?._metadata?.url?.hierarchical ?? '';
+      const hb = b?._metadata?.url?.hierarchical ?? '';
 
-        if (ha > hb) {
-          return 1;
-        }
-        if (ha < hb) {
-          return -1;
-        }
-        return 0;
-      });
+      if (ha > hb) {
+        return 1;
+      }
+      if (ha < hb) {
+        return -1;
+      }
+      return 0;
+    });
+  }
+
+  /**
+   * Given the path of a page, get its "items" (i.e. the children pages)
+   *
+   * @param path The URL of the current page
+   * @returns A list with the metadata information of all child/descendant pages
+   */
+  async getItems(path: string, options?: GraphGetLinksOptions) {
+    const data = (await this.request(GET_ITEMS_QUERY, {
+      ...pathFilter(path, options?.host),
+      ...localeFilter(options?.locales),
+    })) as GetLinksResponse;
+
+    // Check if the page itself exist.
+    if (!data._Content.item._id) {
+      return null;
     }
+
+    const links = data?._Content?.item._link._Page.items;
 
     return links;
   }
