@@ -1,4 +1,4 @@
-import { BuildConfig, PropertyGroupType } from './buildConfig.js';
+import { BuildConfig } from './buildConfig.js';
 import { AnyContentType } from './contentTypes.js';
 import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
 
@@ -21,13 +21,6 @@ export function buildConfig<T extends BuildConfig>(
   options: T
 ): T & { __type: 'buildConfig' } {
   return { ...options, __type: 'buildConfig' };
-}
-
-/** Defines a Optimizely CMS property groups */
-export function propertyGroups<const T extends readonly PropertyGroupType[]>(
-  options: T
-) {
-  return { ...options, __type: 'propertyGroups' };
 }
 
 /**
@@ -53,18 +46,6 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
     '__type' in obj &&
     (obj as any).__type === 'displayTemplate' &&
     'key' in obj
-  );
-}
-
-/**
- * Checks if `obj` is a property group.
- */
-export function isPropertyGroup(obj: unknown): obj is PropertyGroupType {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    '__type' in obj &&
-    (obj as any).__type === 'propertyGroups'
   );
 }
 

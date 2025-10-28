@@ -8,8 +8,6 @@ export {
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
   PropertyGroupType,
-  propertyGroups,
-  isPropertyGroup,
 } from './model/index.js';
 export {
   GraphClient,

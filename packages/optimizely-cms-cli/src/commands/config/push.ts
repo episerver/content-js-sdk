@@ -4,7 +4,11 @@ import ora from 'ora';
 import { BaseCommand } from '../../baseCommand.js';
 import { writeFile } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import { findMetaData, readFromPath } from '../../service/utils.js';
+import {
+  findMetaData,
+  readFromPath,
+  normalizePropertyGroups,
+} from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import chalk from 'chalk';
@@ -34,18 +38,26 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     ).href;
 
     const componentPaths = await readFromPath(configPath, 'components');
+    const propertyGroups = await readFromPath(configPath, 'propertyGroups');
 
     //the pattern is relative to the config file
     const configPathDirectory = path.dirname(configPath);
 
     // extracts metadata(contentTypes, displayTemplates) from the component paths
-    const { contentTypes, displayTemplates, propertyGroups } =
-      await findMetaData(componentPaths, configPathDirectory);
+    const { contentTypes, displayTemplates } = await findMetaData(
+      componentPaths,
+      configPathDirectory
+    );
+
+    // Validate and normalize property groups
+    const normalizedPropertyGroups = propertyGroups
+      ? normalizePropertyGroups(propertyGroups)
+      : [];
 
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes),
       displayTemplates,
-      propertyGroups,
+      propertyGroups: normalizedPropertyGroups,
     };
 
     const restClient = await createApiClient(flags.host);
