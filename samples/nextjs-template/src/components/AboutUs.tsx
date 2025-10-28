@@ -43,7 +43,6 @@ export default function AboutUs({ opti }: AboutUsProps) {
       <div className="about-us-content">
         <div className="about-us-text">
           <RichText
-            {...pa('body')}
             content={opti.body?.json}
             elements={{
               'heading-two': customHeadingTwo,

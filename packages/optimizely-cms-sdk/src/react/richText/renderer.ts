@@ -40,14 +40,34 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
   constructor(config: Partial<ReactRendererConfig> = {}) {
     super(config);
 
+    // Convert custom element keys to lowercase for consistent lookup
+    const lowercaseElements = config.elements
+      ? Object.fromEntries(
+          Object.entries(config.elements).map(([key, value]) => [
+            key.toLowerCase(),
+            value,
+          ])
+        )
+      : {};
+
     this.elements = {
       ...generateDefaultElements(),
-      ...config.elements,
+      ...lowercaseElements,
     };
+
+    // Convert custom leaf keys to lowercase for consistent lookup
+    const lowercaseLeafs = config.leafs
+      ? Object.fromEntries(
+          Object.entries(config.leafs).map(([key, value]) => [
+            key.toLowerCase(),
+            value,
+          ])
+        )
+      : {};
 
     this.leafs = {
       ...generateDefaultLeafs(),
-      ...config.leafs,
+      ...lowercaseLeafs,
     };
   }
 
@@ -114,12 +134,15 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
     // Apply marks by wrapping with leaf components
     for (let markIndex = 0; markIndex < node.marks.length; markIndex++) {
       const mark = node.marks[markIndex];
-      const LeafComponent = this.leafs[mark] || this.getDefaultLeaf(mark);
+      // Normalize mark to lowercase for consistent lookup
+      const normalizedMark = mark.toLowerCase();
+      const LeafComponent =
+        this.leafs[normalizedMark] || this.getDefaultLeaf(normalizedMark);
 
       // Create leaf data
       const leafData = {
         text: decodedText,
-        [mark]: true,
+        [mark]: true, // Keep original mark name in the data
       };
 
       element = React.createElement(
@@ -128,7 +151,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
           leaf: leafData,
           attributes: {},
           text: decodedText,
-          key: `leaf-${mark}-${index}-${markIndex}`, // Unique key for each leaf
+          key: `leaf-${normalizedMark}-${index}-${markIndex}`, // Use normalized mark for key
         },
         element
       );
