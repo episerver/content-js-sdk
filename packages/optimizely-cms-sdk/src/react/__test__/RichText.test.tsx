@@ -57,7 +57,7 @@ describe('RichText Component', () => {
     expect(screen.getByText('bold text').tagName.toLowerCase()).toBe('strong');
     expect(screen.getByText('italic text').tagName.toLowerCase()).toBe('em');
     expect(screen.getByText('underlined text').tagName.toLowerCase()).toBe('u');
-    expect(screen.getByText('code text').tagName.toLowerCase()).toBe('span');
+    expect(screen.getByText('code text').tagName.toLowerCase()).toBe('code'); // Fixed: now correctly renders as <code>
     expect(screen.getByText('strikethrough text').tagName.toLowerCase()).toBe(
       's'
     );
