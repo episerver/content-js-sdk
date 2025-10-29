@@ -250,8 +250,16 @@ export function normalizePropertyGroups(
     );
   }
 
+  const deduplicatedGroups = Array.from(groupMap.values());
+
+  // Log found property groups
+  if (deduplicatedGroups.length > 0) {
+    const groupKeys = deduplicatedGroups.map((g) => g.displayName).join(', ');
+    console.log('Property Groups found: %s', chalk.bold.cyan(`[${groupKeys}]`));
+  }
+
   // Return deduplicated array in the order they were last seen
-  return Array.from(groupMap.values());
+  return deduplicatedGroups;
 }
 
 /**
