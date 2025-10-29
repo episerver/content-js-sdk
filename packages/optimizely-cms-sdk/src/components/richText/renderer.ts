@@ -189,6 +189,7 @@ export interface RichTextPropsBase<
 
   /**
    * Fallback element type when no custom renderer is found
+   * @default 'span'
    */
   elementFallback?: string;
 
@@ -201,13 +202,6 @@ export interface RichTextPropsBase<
    * Whether to decode HTML entities in text content
    */
   decodeHtmlEntities?: boolean;
-
-  /**
-   * When true, unknown elements default to inline elements (span) to prevent hydration errors
-   * when they might be rendered inside paragraphs. When false, uses elementFallback.
-   * @default true
-   */
-  safeInlineFallback?: boolean;
 }
 
 /**
@@ -480,12 +474,49 @@ export const defaultElementTypeMap: Record<
   var: { tag: 'var' },
   samp: { tag: 'samp' },
 
-  // Inlines
-  link: { tag: 'a' },
-  image: { tag: 'img', config: { selfClosing: true } },
-  br: { tag: 'br', config: { selfClosing: true } },
+  // Text-level semantics (inline)
   span: { tag: 'span' },
   mark: { tag: 'mark' },
+  strong: { tag: 'strong' },
+  em: { tag: 'em' },
+  u: { tag: 'u' },
+  s: { tag: 's' },
+  i: { tag: 'i' },
+  b: { tag: 'b' },
+  small: { tag: 'small' },
+  sub: { tag: 'sub' },
+  sup: { tag: 'sup' },
+  ins: { tag: 'ins' },
+  del: { tag: 'del' },
+  kbd: { tag: 'kbd' },
+  abbr: { tag: 'abbr' },
+  cite: { tag: 'cite' },
+  dfn: { tag: 'dfn' },
+  q: { tag: 'q' },
+  data: { tag: 'data' },
+  bdo: { tag: 'bdo' },
+  bdi: { tag: 'bdi' },
+
+  // Interactive elements
+  link: { tag: 'a' },
+  a: { tag: 'a' },
+  button: { tag: 'button' },
+  label: { tag: 'label' },
+
+  // Media (when inline)
+  image: { tag: 'img', config: { selfClosing: true } },
+  img: { tag: 'img', config: { selfClosing: true } },
+  svg: { tag: 'svg' },
+  canvas: { tag: 'canvas' },
+
+  // Form elements
+  input: { tag: 'input', config: { selfClosing: true } },
+  select: { tag: 'select' },
+  textarea: { tag: 'textarea' },
+
+  // Other inline elements
+  br: { tag: 'br', config: { selfClosing: true } },
+  wbr: { tag: 'wbr', config: { selfClosing: true } },
 
   // Table
   table: { tag: 'table' },
@@ -496,10 +527,6 @@ export const defaultElementTypeMap: Record<
 
   // Root wrapper
   richText: { tag: 'div', config: { className: 'cms:rich-text' } },
-  sup: { tag: 'sup' },
-  sub: { tag: 'sub' },
-  ins: { tag: 'ins' },
-  del: { tag: 'del' },
 };
 
 /**

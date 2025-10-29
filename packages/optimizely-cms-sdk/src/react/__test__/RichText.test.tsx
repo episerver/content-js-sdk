@@ -46,7 +46,7 @@ describe('RichText Component', () => {
 
   it('should handle unknown elements with fallback', () => {
     render(<RichText content={unknownElementContent} />);
-    // Should fallback to div and render content
+    // Should fallback to span and render content
     expect(screen.getByText('Content in unknown element')).toBeInTheDocument();
   });
 

@@ -12,12 +12,6 @@ import {
 export interface BaseRendererConfig extends RendererConfig {
   elementFallback?: string;
   leafFallback?: string;
-  /**
-   * When true, unknown elements default to inline elements (span) to prevent hydration errors
-   * when they might be rendered inside paragraphs. When false, uses elementFallback.
-   * @default true
-   */
-  safeInlineFallback?: boolean;
 }
 
 /**
@@ -34,9 +28,8 @@ export abstract class BaseRichTextRenderer<
   constructor(config: Partial<BaseRendererConfig> = {}) {
     this.config = {
       decodeHtmlEntities: true,
-      elementFallback: 'div',
+      elementFallback: 'span',
       leafFallback: 'span',
-      safeInlineFallback: true,
       ...config,
     };
   }
