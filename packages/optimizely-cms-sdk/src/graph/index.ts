@@ -56,7 +56,7 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
 `;
 
 const GET_PATH_QUERY = `
-query GetPath($where: _ContentWhereInput, $locale: [Locale]) {
+query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
   _Content(where: $where, locale: $locale) {
     item {
       _id
@@ -82,7 +82,7 @@ query GetPath($where: _ContentWhereInput, $locale: [Locale]) {
 }`;
 
 const GET_ITEMS_QUERY = `
-query GetPath($where: _ContentWhereInput, $locale: [Locale]) {
+query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
   _Content(where: $where, locale: $locale) {
     item {
       _id
