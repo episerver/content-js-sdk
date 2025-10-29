@@ -6,6 +6,7 @@ export {
   createLeafComponent,
   createLinkComponent,
   createImageComponent,
+  createTableComponent,
   createTableCellComponent,
 } from './lib.js';
 
@@ -15,6 +16,7 @@ export type {
   ElementRendererProps,
   LinkElementProps,
   ImageElementProps,
+  TableElementProps,
   TableCellElementRendererProps,
   ElementMap,
   LeafMap,
@@ -27,6 +29,7 @@ export type {
   Text,
   LinkElement,
   ImageElement,
+  TableElement,
   TableCellElement,
   GenericElement,
   GenericElementType,

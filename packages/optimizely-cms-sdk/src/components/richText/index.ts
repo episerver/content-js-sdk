@@ -11,6 +11,10 @@ export type {
   BaseElementMap,
   BaseLeafMap,
   RichTextPropsBase,
+  LinkElement,
+  ImageElement,
+  TableElement,
+  TableCellElement,
 } from './renderer.js';
 export { isText, isElement } from './renderer.js';
 export type { RenderNode } from './renderer.js';

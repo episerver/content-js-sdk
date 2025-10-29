@@ -11,6 +11,7 @@ import {
   type RichTextPropsBase,
   type LinkElement,
   type ImageElement,
+  type TableElement,
   type TableCellElement,
 } from '../../components/richText/renderer.js';
 
@@ -37,6 +38,15 @@ export interface ImageElementProps
   extends Omit<BaseElementRendererProps, 'element'>,
     PropsWithChildren {
   element: ImageElement;
+}
+
+/**
+ * React-specific props for table elements with type safety
+ */
+export interface TableElementProps
+  extends Omit<BaseElementRendererProps, 'element'>,
+    PropsWithChildren {
+  element: TableElement;
 }
 
 /**
@@ -81,6 +91,11 @@ export type LinkElementRenderer = React.ComponentType<LinkElementProps>;
 export type ImageElementRenderer = React.ComponentType<ImageElementProps>;
 
 /**
+ * React component for rendering table elements with type safety
+ */
+export type TableElementRenderer = React.ComponentType<TableElementProps>;
+
+/**
  * React component for rendering table cell elements with type safety
  */
 export type TableCellElementRenderer =
@@ -108,6 +123,14 @@ export interface RichTextProps
   extends RichTextPropsBase<ElementRenderer, LeafRenderer> {}
 
 /**
+ * Converts kebab-case to camelCase
+ * e.g., 'font-size' -> 'fontSize', 'background-color' -> 'backgroundColor'
+ */
+function kebabToCamelCase(str: string): string {
+  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+/**
  * Converts framework-agnostic attributes to React props
  */
 function toReactProps(
@@ -120,6 +143,102 @@ function toReactProps(
     reactProps.className = reactProps.class;
     delete reactProps.class;
   }
+
+  // Convert specific known HTML attributes to React camelCase
+  const attributeMapping: Record<string, string> = {
+    // Table attributes
+    cellpadding: 'cellPadding',
+    cellspacing: 'cellSpacing',
+    rowspan: 'rowSpan',
+    colspan: 'colSpan',
+    // Form attributes
+    maxlength: 'maxLength',
+    minlength: 'minLength',
+    readonly: 'readOnly',
+    tabindex: 'tabIndex',
+    // Media attributes
+    autoplay: 'autoPlay',
+    crossorigin: 'crossOrigin',
+    // Other common attributes
+    contenteditable: 'contentEditable',
+    spellcheck: 'spellCheck',
+    datetime: 'dateTime',
+    acceptcharset: 'acceptCharset',
+    accesskey: 'accessKey',
+    allowfullscreen: 'allowFullScreen',
+    autofocus: 'autoFocus',
+    autocomplete: 'autoComplete',
+    enctype: 'encType',
+    formaction: 'formAction',
+    formenctype: 'formEncType',
+    formmethod: 'formMethod',
+    formnovalidate: 'formNoValidate',
+    formtarget: 'formTarget',
+    frameborder: 'frameBorder',
+    marginheight: 'marginHeight',
+    marginwidth: 'marginWidth',
+    novalidate: 'noValidate',
+    usemap: 'useMap',
+  };
+
+  // Apply known attribute mappings
+  Object.keys(reactProps).forEach((key) => {
+    if (attributeMapping[key]) {
+      reactProps[attributeMapping[key]] = reactProps[key];
+      delete reactProps[key];
+    }
+  });
+
+  // Convert kebab-case attributes to camelCase using regex
+  // BUT only for known HTML attributes, not CSS properties
+  // Preserve data-* and aria-* attributes as-is (React expects these in kebab-case)
+  const validHtmlKebabAttributes = new Set([
+    'accept-charset',
+    'access-key',
+    'allow-full-screen',
+    'auto-complete',
+    'auto-focus',
+    'auto-play',
+    'cell-padding',
+    'cell-spacing',
+    'content-editable',
+    'cross-origin',
+    'date-time',
+    'enc-type',
+    'form-action',
+    'form-enc-type',
+    'form-method',
+    'form-no-validate',
+    'form-target',
+    'frame-border',
+    'margin-height',
+    'margin-width',
+    'max-length',
+    'min-length',
+    'no-validate',
+    'read-only',
+    'spell-check',
+    'tab-index',
+    'use-map',
+    'font-size',
+    'background-color',
+  ]);
+
+  Object.keys(reactProps).forEach((key) => {
+    if (
+      key.includes('-') &&
+      /^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/.test(key) &&
+      !key.startsWith('data-') &&
+      !key.startsWith('aria-') &&
+      validHtmlKebabAttributes.has(key)
+    ) {
+      const camelCaseKey = kebabToCamelCase(key);
+      if (camelCaseKey !== key) {
+        reactProps[camelCaseKey] = reactProps[key];
+        delete reactProps[key];
+      }
+    }
+  });
 
   return reactProps;
 }
@@ -236,6 +355,36 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
 }
 
 /**
+ * Creates a type-safe React component for table elements
+ */
+export function createTableComponent<T extends keyof JSX.IntrinsicElements>(
+  tag: T = 'table' as T,
+  config: HtmlComponentConfig = {}
+): TableElementRenderer {
+  const Component: TableElementRenderer = ({
+    children,
+    attributes,
+    element,
+  }) => {
+    // Convert to React props and merge with config
+    const reactProps = toReactProps(attributes || {});
+
+    const mergedProps = {
+      ...reactProps,
+      ...config.attributes,
+      className:
+        [reactProps.className, config.className].filter(Boolean).join(' ') ||
+        undefined,
+    };
+
+    return React.createElement(tag, mergedProps, children);
+  };
+
+  Component.displayName = `TableComponent(${tag})`;
+  return Component;
+}
+
+/**
  * Creates a type-safe React component for table cell elements
  */
 export function createTableCellComponent<T extends keyof JSX.IntrinsicElements>(
@@ -250,16 +399,8 @@ export function createTableCellComponent<T extends keyof JSX.IntrinsicElements>(
     // Convert to React props and merge with config
     const reactProps = toReactProps(attributes || {});
 
-    // Type-safe access to table cell properties
-    const cellProps = {
-      colSpan: element.colspan,
-      rowSpan: element.rowspan,
-      scope: element.scope,
-    };
-
     const mergedProps = {
       ...reactProps,
-      ...cellProps,
       ...config.attributes,
       className:
         [reactProps.className, config.className].filter(Boolean).join(' ') ||
@@ -316,6 +457,12 @@ export function generateDefaultElements(): ElementMap {
       case 'image':
         elementMap[type] = createImageComponent(
           'img',
+          config.config
+        ) as ElementRenderer;
+        break;
+      case 'table':
+        elementMap[type] = createTableComponent(
+          'table',
           config.config
         ) as ElementRenderer;
         break;
