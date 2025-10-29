@@ -29,6 +29,7 @@ export const RichText: React.FC<RichTextProps> = ({
   elementFallback,
   leafFallback,
   decodeHtmlEntities = true,
+  safeInlineFallback = true,
 }) => {
   const nodes = Array.isArray(content?.children) ? content.children : [];
 
@@ -36,6 +37,7 @@ export const RichText: React.FC<RichTextProps> = ({
     decodeHtmlEntities,
     elementFallback,
     leafFallback,
+    safeInlineFallback,
     elements,
     leafs,
   };

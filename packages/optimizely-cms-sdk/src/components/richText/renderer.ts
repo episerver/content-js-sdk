@@ -201,6 +201,13 @@ export interface RichTextPropsBase<
    * Whether to decode HTML entities in text content
    */
   decodeHtmlEntities?: boolean;
+
+  /**
+   * When true, unknown elements default to inline elements (span) to prevent hydration errors
+   * when they might be rendered inside paragraphs. When false, uses elementFallback.
+   * @default true
+   */
+  safeInlineFallback?: boolean;
 }
 
 /**

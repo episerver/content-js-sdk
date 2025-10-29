@@ -180,8 +180,9 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
    * Get default element component for unknown types
    */
   private getDefaultElement(elementType: string): ElementRenderer {
-    // Use span as fallback for inline elements to avoid hydration errors with block elements in paragraphs
+    // Comprehensive list of inline elements that can safely be rendered inside paragraphs
     const inlineElements = [
+      // Text formatting
       'span',
       'mark',
       'strong',
@@ -191,10 +192,126 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
       'code',
       'i',
       'b',
+      'small',
+      'sub',
+      'sup',
+      'ins',
+      'del',
+      'kbd',
+      'var',
+      'samp',
+
+      // Interactive elements
+      'a',
+      'button',
+      'label',
+
+      // Media (when inline)
+      'img',
+      'svg',
+      'canvas',
+
+      // Form elements
+      'input',
+      'select',
+      'textarea',
+
+      // Other inline elements
+      'br',
+      'wbr',
+      'time',
+      'data',
+      'abbr',
+      'cite',
+      'dfn',
+      'q',
     ];
-    const fallbackTag = inlineElements.includes(elementType)
-      ? 'span'
-      : (this.getConfig('elementFallback', 'div') as string);
+
+    // Block elements that should never be inside paragraphs
+    const blockElements = [
+      // Structural
+      'div',
+      'section',
+      'article',
+      'aside',
+      'nav',
+      'main',
+      'header',
+      'footer',
+
+      // Headings
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'heading-one',
+      'heading-two',
+      'heading-three',
+      'heading-four',
+      'heading-five',
+      'heading-six',
+
+      // Content blocks
+      'p',
+      'paragraph',
+      'blockquote',
+      'quote',
+      'pre',
+      'address',
+
+      // Lists
+      'ul',
+      'ol',
+      'li',
+      'dl',
+      'dt',
+      'dd',
+      'bulleted-list',
+      'numbered-list',
+      'list-item',
+
+      // Tables
+      'table',
+      'thead',
+      'tbody',
+      'tfoot',
+      'tr',
+      'td',
+      'th',
+
+      // Forms
+      'form',
+      'fieldset',
+      'legend',
+
+      // Media blocks
+      'figure',
+      'figcaption',
+      'video',
+      'audio',
+
+      // Other blocks
+      'hr',
+      'details',
+      'summary',
+    ];
+
+    // Determine the appropriate fallback
+    let fallbackTag: string;
+
+    if (inlineElements.includes(elementType)) {
+      fallbackTag = 'span';
+    } else if (blockElements.includes(elementType)) {
+      fallbackTag = this.getConfig('elementFallback', 'div') as string;
+    } else {
+      // For unknown elements, use safeInlineFallback setting
+      const useSafeFallback = this.getConfig('safeInlineFallback', true);
+      fallbackTag = useSafeFallback
+        ? 'span' // Safe default to prevent hydration errors
+        : (this.getConfig('elementFallback', 'div') as string);
+    }
 
     return ({ children }) => {
       return React.createElement(fallbackTag, {}, children);
