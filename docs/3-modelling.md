@@ -51,6 +51,38 @@ export default buildConfig({
 });
 ```
 
+### Optional: Define Property Groups
+
+Property groups help organize your content type properties in the CMS editor. You can define custom property groups in your config file:
+
+```js
+import { buildConfig } from '@optimizely/cms-sdk';
+
+export default buildConfig({
+  components: ['./src/components/**/*.tsx'],
+  propertyGroups: [
+    {
+      key: 'seo',
+      displayName: 'SEO',
+      sortOrder: 1,
+    },
+    {
+      key: 'meta',
+      displayName: 'Metadata',
+      sortOrder: 2,
+    },
+  ],
+});
+```
+
+Each property group has:
+
+- `key` (required): A unique identifier for the group
+- `displayName` (optional): The name shown in the CMS editor. If not provided, it's auto-generated from the key
+- `sortOrder` (optional): Controls the display order. If not provided, it's auto-assigned based on array position
+
+You can then reference these groups in your content type properties using the `group` field.
+
 ## Step 2. Sync content types to the CMS
 
 Run the following command:

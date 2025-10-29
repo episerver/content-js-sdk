@@ -185,6 +185,7 @@ export async function readFromPath(configPath: string, section: string) {
  * - Validates that each property group has a non-empty key
  * - Auto-generates displayName from key (capitalized) if missing
  * - Auto-assigns sortOrder based on array position (index + 1) if missing
+ * - Deduplicates property groups by key, keeping the last occurrence
  * @param propertyGroups - The property groups array from the config
  * @returns Validated and normalized property groups array
  * @throws Error if validation fails (empty or missing key)
@@ -196,7 +197,7 @@ export function normalizePropertyGroups(
     throw new Error('propertyGroups must be an array');
   }
 
-  return propertyGroups.map((group, index) => {
+  const normalizedGroups = propertyGroups.map((group, index) => {
     // Validate key is present and not empty
     if (
       !group.key ||
@@ -226,6 +227,31 @@ export function normalizePropertyGroups(
       sortOrder,
     };
   });
+
+  // Deduplicate by key, keeping the last occurrence
+  const groupMap = new Map<string, PropertyGroupType>();
+  const duplicates = new Set<string>();
+
+  for (const group of normalizedGroups) {
+    if (groupMap.has(group.key)) {
+      duplicates.add(group.key);
+    }
+    groupMap.set(group.key, group);
+  }
+
+  // Warn about duplicates
+  if (duplicates.size > 0) {
+    console.warn(
+      chalk.yellow(
+        `Warning: Duplicate property group keys found: ${Array.from(
+          duplicates
+        ).join(', ')}. Keeping the last occurrence of each.`
+      )
+    );
+  }
+
+  // Return deduplicated array in the order they were last seen
+  return Array.from(groupMap.values());
 }
 
 /**
