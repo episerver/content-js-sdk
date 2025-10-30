@@ -123,6 +123,344 @@ export interface RichTextProps
   extends RichTextPropsBase<ElementRenderer, LeafRenderer> {}
 
 /**
+ * Maps HTML attribute names to React JSX attribute names
+ * Handles camelCase conversion and reserved keywords
+ */
+export const HTML_TO_REACT_ATTRS: Record<string, string> = {
+  // Reserved keywords
+  class: 'className',
+  for: 'htmlFor',
+
+  // Table attributes (already handled in mapAttributes, but for completeness)
+  colspan: 'colSpan',
+  rowspan: 'rowSpan',
+
+  // Common form/input attributes
+  tabindex: 'tabIndex',
+  'tab-index': 'tabIndex',
+  readonly: 'readOnly',
+  maxlength: 'maxLength',
+  minlength: 'minLength',
+  autocomplete: 'autoComplete',
+  autofocus: 'autoFocus',
+  autoplay: 'autoPlay',
+  defaultvalue: 'defaultValue',
+  defaultchecked: 'defaultChecked',
+  defaultselected: 'defaultSelected',
+
+  // Media attributes (img, video, audio, canvas)
+  crossorigin: 'crossOrigin',
+  usemap: 'useMap',
+
+  // SVG attributes
+  viewbox: 'viewBox',
+  preserveaspectratio: 'preserveAspectRatio',
+  'stroke-width': 'strokeWidth',
+  'stroke-linecap': 'strokeLinecap',
+  'stroke-linejoin': 'strokeLinejoin',
+  'stroke-miterlimit': 'strokeMiterlimit',
+  'fill-opacity': 'fillOpacity',
+  'stroke-opacity': 'strokeOpacity',
+  'stroke-dasharray': 'strokeDasharray',
+  'stroke-dashoffset': 'strokeDashoffset',
+  'clip-path': 'clipPath',
+  'clip-rule': 'clipRule',
+  'fill-rule': 'fillRule',
+  'text-anchor': 'textAnchor',
+  'xml:base': 'xmlBase',
+  'xml:lang': 'xmlLang',
+  'xml:space': 'xmlSpace',
+  'xmlns:xlink': 'xmlnsXlink',
+
+  // Button/Label attributes
+  formaction: 'formAction',
+  formenctype: 'formEnctype',
+  formmethod: 'formMethod',
+  formnovalidate: 'formNoValidate',
+  formtarget: 'formTarget',
+
+  // Accessibility (ARIA attributes are kept lowercase with hyphens)
+  'aria-label': 'aria-label',
+  'aria-labelledby': 'aria-labelledby',
+  'aria-describedby': 'aria-describedby',
+  'aria-hidden': 'aria-hidden',
+  'aria-expanded': 'aria-expanded',
+  'aria-pressed': 'aria-pressed',
+  'aria-selected': 'aria-selected',
+  'aria-checked': 'aria-checked',
+  'aria-disabled': 'aria-disabled',
+  'aria-readonly': 'aria-readonly',
+  'aria-required': 'aria-required',
+  'aria-invalid': 'aria-invalid',
+  'aria-live': 'aria-live',
+  'aria-atomic': 'aria-atomic',
+  'aria-busy': 'aria-busy',
+  'aria-relevant': 'aria-relevant',
+  'aria-current': 'aria-current',
+  'aria-controls': 'aria-controls',
+  'aria-owns': 'aria-owns',
+  'aria-flowto': 'aria-flowto',
+  'aria-activedescendant': 'aria-activedescendant',
+
+  // Data attributes (kept as-is, just for reference)
+  // 'data-*': 'data-*', // These work as-is in React
+
+  // Other common attributes
+  'accept-charset': 'acceptCharset',
+  'http-equiv': 'httpEquiv',
+  charset: 'charSet',
+  contenteditable: 'contentEditable',
+  'content-editable': 'contentEditable',
+  contextmenu: 'contextMenu',
+  spellcheck: 'spellCheck',
+  draggable: 'draggable',
+  dropzone: 'dropZone',
+  enctype: 'encType',
+  novalidate: 'noValidate',
+  referrerpolicy: 'referrerPolicy',
+  allowfullscreen: 'allowFullScreen',
+  frameborder: 'frameBorder',
+  playsinline: 'playsInline',
+  preload: 'preLoad',
+  srcset: 'srcSet',
+  srcdoc: 'srcDoc',
+  srclang: 'srcLang',
+  datetime: 'dateTime',
+  hreflang: 'hrefLang',
+  inputmode: 'inputMode',
+  itemid: 'itemID',
+  itemprop: 'itemProp',
+  itemref: 'itemRef',
+  itemscope: 'itemScope',
+  itemtype: 'itemType',
+  accesskey: 'accessKey',
+  autocapitalize: 'autoCapitalize',
+  autocorrect: 'autoCorrect',
+  autosave: 'autoSave',
+  cellpadding: 'cellPadding',
+  cellspacing: 'cellSpacing',
+  challenge: 'challenge',
+  classid: 'classID',
+  codebase: 'codeBase',
+  codetype: 'codeType',
+  marginheight: 'marginHeight',
+  marginwidth: 'marginWidth',
+  nonce: 'nonce',
+  radiogroup: 'radioGroup',
+  sandbox: 'sandbox',
+  valuetype: 'valueType',
+  keytype: 'keyType',
+  keyparams: 'keyParams',
+  security: 'security',
+} as const;
+
+/**
+ * CSS properties that should be moved to the style object
+ * These are properties that are primarily CSS styling properties and not valid HTML attributes
+ */
+const CSS_PROPERTIES = new Set([
+  // Layout & Sizing (excluding width/height which can be HTML attributes)
+  'min-width',
+  'max-width',
+  'min-height',
+  'max-height',
+
+  // Spacing
+  'margin',
+  'margin-top',
+  'margin-right',
+  'margin-bottom',
+  'margin-left',
+  'padding',
+  'padding-top',
+  'padding-right',
+  'padding-bottom',
+  'padding-left',
+
+  // Typography
+  'font',
+  'font-family',
+  'font-size',
+  'font-weight',
+  'font-style',
+  'font-variant',
+  'line-height',
+  'letter-spacing',
+  'word-spacing',
+  'text-align',
+  'text-decoration',
+  'text-transform',
+  'text-indent',
+  'text-shadow',
+  'vertical-align',
+
+  // Colors & Backgrounds
+  'color',
+  'background',
+  'background-color',
+  'background-image',
+  'background-repeat',
+  'background-position',
+  'background-size',
+  'background-attachment',
+  'background-clip',
+  'background-origin',
+
+  // Borders (CSS-specific border properties, excluding simple 'border' which can be HTML attribute)
+  'border-width',
+  'border-style',
+  'border-color',
+  'border-radius',
+  'border-top',
+  'border-right',
+  'border-bottom',
+  'border-left',
+  'border-top-width',
+  'border-right-width',
+  'border-bottom-width',
+  'border-left-width',
+  'border-top-style',
+  'border-right-style',
+  'border-bottom-style',
+  'border-left-style',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'border-top-left-radius',
+  'border-top-right-radius',
+  'border-bottom-left-radius',
+  'border-bottom-right-radius',
+
+  // Outline
+  'outline',
+  'outline-width',
+  'outline-style',
+  'outline-color',
+  'outline-offset',
+
+  // Positioning
+  'position',
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'z-index',
+  'float',
+  'clear',
+
+  // Display & Visibility
+  'display',
+  'visibility',
+  'opacity',
+  'overflow',
+  'overflow-x',
+  'overflow-y',
+  'clip',
+  'clip-path',
+
+  // Flexbox
+  'flex',
+  'flex-direction',
+  'flex-wrap',
+  'flex-flow',
+  'justify-content',
+  'align-items',
+  'align-content',
+  'align-self',
+  'flex-grow',
+  'flex-shrink',
+  'flex-basis',
+
+  // Grid
+  'grid',
+  'grid-template',
+  'grid-template-rows',
+  'grid-template-columns',
+  'grid-template-areas',
+  'grid-area',
+  'grid-row',
+  'grid-column',
+  'grid-gap',
+  'gap',
+  'row-gap',
+  'column-gap',
+
+  // Text Layout
+  'white-space',
+  'word-wrap',
+  'word-break',
+  'overflow-wrap',
+  'hyphens',
+  'text-overflow',
+  'direction',
+  'unicode-bidi',
+  'writing-mode',
+
+  // Visual Effects
+  'box-shadow',
+  'text-shadow',
+  'filter',
+  'backdrop-filter',
+  'transform',
+  'transform-origin',
+  'perspective',
+  'perspective-origin',
+
+  // Animation & Transitions
+  'transition',
+  'transition-property',
+  'transition-duration',
+  'transition-timing-function',
+  'transition-delay',
+  'animation',
+  'animation-name',
+  'animation-duration',
+  'animation-timing-function',
+  'animation-delay',
+  'animation-iteration-count',
+  'animation-direction',
+  'animation-fill-mode',
+  'animation-play-state',
+
+  // Interaction
+  'cursor',
+  'pointer-events',
+  'user-select',
+  'resize',
+  'scroll-behavior',
+
+  // Tables (CSS-specific table properties, excluding cellpadding/cellspacing which are HTML attributes)
+  'table-layout',
+  'border-collapse',
+  'border-spacing',
+  'caption-side',
+  'empty-cells',
+
+  // Lists
+  'list-style',
+  'list-style-type',
+  'list-style-position',
+  'list-style-image',
+
+  // Modern CSS
+  'aspect-ratio',
+  'object-fit',
+  'object-position',
+  'overscroll-behavior',
+  'scroll-snap-type',
+  'scroll-snap-align',
+  'scroll-margin',
+  'scroll-padding',
+
+  // Content & Counters
+  'content',
+  'quotes',
+  'counter-reset',
+  'counter-increment',
+]);
+
+/**
  * Converts kebab-case to camelCase
  * e.g., 'font-size' -> 'fontSize', 'background-color' -> 'backgroundColor'
  */
@@ -132,115 +470,71 @@ function kebabToCamelCase(str: string): string {
 
 /**
  * Converts framework-agnostic attributes to React props
+ * Handles HTML attribute to React JSX attribute conversion and CSS properties
  */
 function toReactProps(
   attributes: Record<string, unknown>
 ): Record<string, unknown> {
-  const reactProps = { ...attributes };
+  const reactProps: Record<string, unknown> = {};
+  const styleProps: Record<string, string> = {};
 
-  // Convert class to className for React
-  if ('class' in reactProps) {
-    reactProps.className = reactProps.class;
-    delete reactProps.class;
+  for (const [key, value] of Object.entries(attributes)) {
+    // Handle CSS properties - move them to style object
+    if (CSS_PROPERTIES.has(key) || CSS_PROPERTIES.has(key.toLowerCase())) {
+      const camelKey = kebabToCamelCase(key);
+      styleProps[camelKey] = String(value);
+      continue;
+    }
+
+    // Convert HTML attribute names to React prop names
+    const reactKey = HTML_TO_REACT_ATTRS[key.toLowerCase()] || key;
+
+    // Special handling for existing style attribute (if it's a string, parse it to object)
+    if (reactKey === 'style' && typeof value === 'string') {
+      const parsedStyle = parseStyleString(value);
+      Object.assign(styleProps, parsedStyle);
+    } else if (reactKey === 'className' && reactProps.className) {
+      // Merge multiple class/className attributes
+      reactProps.className = `${reactProps.className} ${value}`;
+    } else {
+      reactProps[reactKey] = value;
+    }
   }
 
-  // Convert specific known HTML attributes to React camelCase
-  const attributeMapping: Record<string, string> = {
-    // Table attributes
-    cellpadding: 'cellPadding',
-    cellspacing: 'cellSpacing',
-    rowspan: 'rowSpan',
-    colspan: 'colSpan',
-    // Form attributes
-    maxlength: 'maxLength',
-    minlength: 'minLength',
-    readonly: 'readOnly',
-    tabindex: 'tabIndex',
-    // Media attributes
-    autoplay: 'autoPlay',
-    crossorigin: 'crossOrigin',
-    // Other common attributes
-    contenteditable: 'contentEditable',
-    spellcheck: 'spellCheck',
-    datetime: 'dateTime',
-    acceptcharset: 'acceptCharset',
-    accesskey: 'accessKey',
-    allowfullscreen: 'allowFullScreen',
-    autofocus: 'autoFocus',
-    autocomplete: 'autoComplete',
-    enctype: 'encType',
-    formaction: 'formAction',
-    formenctype: 'formEncType',
-    formmethod: 'formMethod',
-    formnovalidate: 'formNoValidate',
-    formtarget: 'formTarget',
-    frameborder: 'frameBorder',
-    marginheight: 'marginHeight',
-    marginwidth: 'marginWidth',
-    novalidate: 'noValidate',
-    usemap: 'useMap',
-  };
-
-  // Apply known attribute mappings
-  Object.keys(reactProps).forEach((key) => {
-    if (attributeMapping[key]) {
-      reactProps[attributeMapping[key]] = reactProps[key];
-      delete reactProps[key];
-    }
-  });
-
-  // Convert kebab-case attributes to camelCase using regex
-  // BUT only for known HTML attributes, not CSS properties
-  // Preserve data-* and aria-* attributes as-is (React expects these in kebab-case)
-  const validHtmlKebabAttributes = new Set([
-    'accept-charset',
-    'access-key',
-    'allow-full-screen',
-    'auto-complete',
-    'auto-focus',
-    'auto-play',
-    'cell-padding',
-    'cell-spacing',
-    'content-editable',
-    'cross-origin',
-    'date-time',
-    'enc-type',
-    'form-action',
-    'form-enc-type',
-    'form-method',
-    'form-no-validate',
-    'form-target',
-    'frame-border',
-    'margin-height',
-    'margin-width',
-    'max-length',
-    'min-length',
-    'no-validate',
-    'read-only',
-    'spell-check',
-    'tab-index',
-    'use-map',
-    'font-size',
-    'background-color',
-  ]);
-
-  Object.keys(reactProps).forEach((key) => {
-    if (
-      key.includes('-') &&
-      /^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$/.test(key) &&
-      !key.startsWith('data-') &&
-      !key.startsWith('aria-') &&
-      validHtmlKebabAttributes.has(key)
-    ) {
-      const camelCaseKey = kebabToCamelCase(key);
-      if (camelCaseKey !== key) {
-        reactProps[camelCaseKey] = reactProps[key];
-        delete reactProps[key];
-      }
-    }
-  });
+  // Add style object if we have CSS properties
+  if (Object.keys(styleProps).length > 0) {
+    reactProps.style = {
+      ...((reactProps.style as Record<string, string>) || {}),
+      ...styleProps,
+    };
+  }
 
   return reactProps;
+}
+
+/**
+ * Parses inline style string to React style object
+ * e.g., "font-size: 14px; color: red" -> { fontSize: '14px', color: 'red' }
+ */
+function parseStyleString(styleString: string): Record<string, string> {
+  const styleObj: Record<string, string> = {};
+
+  if (!styleString || typeof styleString !== 'string') {
+    return styleObj;
+  }
+
+  styleString.split(';').forEach((declaration) => {
+    const [property, value] = declaration.split(':').map((s) => s.trim());
+    if (property && value) {
+      // Convert kebab-case to camelCase for CSS properties
+      const camelProperty = property.replace(/-([a-z])/g, (_, letter) =>
+        letter.toUpperCase()
+      );
+      styleObj[camelProperty] = value;
+    }
+  });
+
+  return styleObj;
 }
 
 /**
