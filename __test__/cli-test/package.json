@@ -5,7 +5,7 @@
   "private": "true",
   "main": "index.js",
   "scripts": {
-    "test:manual": "echo \"Error: no test specified\" && exit 1"
+    "test:manual": "optimizely-cms-cli config push ./content-types.optimizely.config.mjs"
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:*",
