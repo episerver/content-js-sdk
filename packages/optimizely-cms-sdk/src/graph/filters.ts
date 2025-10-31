@@ -6,6 +6,21 @@
  * This is used internally in the SDK
  */
 
+/** Returns two versions of the same path. One with trailing slash and one without it */
+function normalizePath(path: string) {
+  if (path.endsWith('/')) {
+    return {
+      pathWithTrailingSlash: path,
+      pathWithoutTrailingSlash: path.slice(0, -1),
+    };
+  } else {
+    return {
+      pathWithTrailingSlash: path + '/',
+      pathWithoutTrailingSlash: path,
+    };
+  }
+}
+
 /**
  * Creates a {@linkcode ContentInput} object that filters results by a specific URL path.
  *
@@ -13,16 +28,29 @@
  * @returns A `GraphQueryArguments` object with a `where` clause that matches the given path.
  */
 export function pathFilter(path: string, host?: string): ContentInput {
+  const { pathWithTrailingSlash, pathWithoutTrailingSlash } =
+    normalizePath(path);
+
   return {
     where: {
-      _metadata: {
-        url: {
-          default: {
-            eq: path,
+      _or: [
+        {
+          _metadata: {
+            url: {
+              default: { eq: pathWithTrailingSlash },
+              base: host ? { eq: host } : undefined,
+            },
           },
-          base: host ? { eq: host } : undefined,
         },
-      },
+        {
+          _metadata: {
+            url: {
+              default: { eq: pathWithoutTrailingSlash },
+              base: host ? { eq: host } : undefined,
+            },
+          },
+        },
+      ],
     },
   };
 }
@@ -65,10 +93,17 @@ export function variationFilter(value: string): ContentInput {
   };
 }
 
+export function localeFilter(locale?: string[]): ContentInput {
+  return {
+    locale,
+  };
+}
+
 /**
  * Arguments for querying content via the Graph API.
  */
 export type ContentInput = {
+  locale?: string[];
   variation?: GraphVariationInput;
   where?: ContentWhereInput;
 };
