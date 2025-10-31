@@ -1,35 +1,4 @@
 /**
- * Available types for generic elements that don't need special properties
- */
-export type GenericElementType =
-  | 'paragraph'
-  | 'heading-one'
-  | 'heading-two'
-  | 'heading-three'
-  | 'heading-four'
-  | 'heading-five'
-  | 'heading-six'
-  | 'bulleted-list'
-  | 'numbered-list'
-  | 'list-item'
-  | 'quote'
-  | 'code'
-  | 'pre'
-  | 'var'
-  | 'samp'
-  | 'div'
-  | 'richText'
-  | 'br'
-  | 'table'
-  | 'tbody'
-  | 'tr'
-  | 'mark'
-  | 'sup'
-  | 'sub'
-  | 'ins'
-  | 'del';
-
-/**
  * Base element properties shared by all element types
  */
 export interface BaseElement {
@@ -186,16 +155,6 @@ export interface RichTextPropsBase<
    * Custom components for rendering text marks
    */
   leafs?: BaseLeafMap<TLeafRenderer>;
-
-  /**
-   * Fallback element type when no custom renderer is found
-   */
-  elementFallback?: string;
-
-  /**
-   * Fallback leaf element type when no custom renderer is found
-   */
-  leafFallback?: string;
 
   /**
    * Whether to decode HTML entities in text content
@@ -473,12 +432,49 @@ export const defaultElementTypeMap: Record<
   var: { tag: 'var' },
   samp: { tag: 'samp' },
 
-  // Inlines
-  link: { tag: 'a' },
-  image: { tag: 'img', config: { selfClosing: true } },
-  br: { tag: 'br', config: { selfClosing: true } },
+  // Text-level semantics (inline)
   span: { tag: 'span' },
   mark: { tag: 'mark' },
+  strong: { tag: 'strong' },
+  em: { tag: 'em' },
+  u: { tag: 'u' },
+  s: { tag: 's' },
+  i: { tag: 'i' },
+  b: { tag: 'b' },
+  small: { tag: 'small' },
+  sub: { tag: 'sub' },
+  sup: { tag: 'sup' },
+  ins: { tag: 'ins' },
+  del: { tag: 'del' },
+  kbd: { tag: 'kbd' },
+  abbr: { tag: 'abbr' },
+  cite: { tag: 'cite' },
+  dfn: { tag: 'dfn' },
+  q: { tag: 'q' },
+  data: { tag: 'data' },
+  bdo: { tag: 'bdo' },
+  bdi: { tag: 'bdi' },
+
+  // Interactive elements
+  link: { tag: 'a' },
+  a: { tag: 'a' },
+  button: { tag: 'button' },
+  label: { tag: 'label' },
+
+  // Media (when inline)
+  image: { tag: 'img', config: { selfClosing: true } },
+  img: { tag: 'img', config: { selfClosing: true } },
+  svg: { tag: 'svg' },
+  canvas: { tag: 'canvas' },
+
+  // Form elements
+  input: { tag: 'input', config: { selfClosing: true } },
+  select: { tag: 'select' },
+  textarea: { tag: 'textarea' },
+
+  // Other inline elements
+  br: { tag: 'br', config: { selfClosing: true } },
+  wbr: { tag: 'wbr', config: { selfClosing: true } },
 
   // Table
   table: { tag: 'table' },
@@ -489,11 +485,16 @@ export const defaultElementTypeMap: Record<
 
   // Root wrapper
   richText: { tag: 'div', config: { className: 'cms:rich-text' } },
-  sup: { tag: 'sup' },
-  sub: { tag: 'sub' },
-  ins: { tag: 'ins' },
-  del: { tag: 'del' },
-};
+} as const;
+
+/**
+ * Available types for generic elements that don't need special properties
+ * Derived from defaultElementTypeMap, excluding elements with specialized interfaces
+ */
+export type GenericElementType = Exclude<
+  keyof typeof defaultElementTypeMap,
+  'link' | 'image' | 'td' | 'th'
+>;
 
 /**
  * Default text mark mapping
@@ -503,4 +504,5 @@ export const defaultMarkTypeMap: Record<string, string> = {
   italic: 'em',
   underline: 'u',
   strikethrough: 's',
+  code: 'code',
 };

@@ -66,6 +66,9 @@ export default function Article({ opti }: Props) {
 }
 ```
 
+> [!NOTE]
+> For comprehensive documentation on the RichText component including all props, advanced customization options, fallback handling, and TypeScript support, see the [RichText Component Reference](./6.1-richtext-component-react.md).
+
 The entire file should look like this:
 
 ```tsx

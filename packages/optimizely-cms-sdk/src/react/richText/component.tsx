@@ -24,18 +24,26 @@ import { createReactRenderer } from './renderer.js';
  */
 export const RichText: React.FC<RichTextProps> = ({
   content,
-  elements = {},
-  leafs = {},
-  elementFallback,
-  leafFallback,
+  elements: customElements = {},
+  leafs: customLeafs = {},
   decodeHtmlEntities = true,
 }) => {
   const nodes = Array.isArray(content?.children) ? content.children : [];
 
+  // Merge default components with user overrides
+  const elements = {
+    ...generateDefaultElements(),
+    ...customElements,
+  };
+
+  // Merge default leafs with user overrides
+  const leafs = {
+    ...generateDefaultLeafs(),
+    ...customLeafs,
+  };
+
   const renderConfig = {
     decodeHtmlEntities,
-    elementFallback,
-    leafFallback,
     elements,
     leafs,
   };
