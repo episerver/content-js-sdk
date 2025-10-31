@@ -8,6 +8,7 @@ export const AboutUsContentType = contentType({
   properties: {
     heading: {
       type: 'string',
+      group: 'Information',
     },
     body: {
       type: 'richText',

@@ -7,6 +7,7 @@ export {
   isDisplayTemplate,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
+  PropertyGroupType,
 } from './model/index.js';
 export {
   GraphClient,
@@ -22,6 +23,7 @@ export {
 
 export * as GraphErrors from './graph/error.js';
 export * as ContentTypes from './model/contentTypes.js';
+export * as BuildConfig from './model/buildConfig.js';
 export * as DisplayTemplates from './model/displayTemplates.js';
 export * as Properties from './model/properties.js';
 export { Infer } from './infer.js';

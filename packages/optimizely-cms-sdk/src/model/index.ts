@@ -49,5 +49,6 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
   );
 }
 
+export { PropertyGroupType } from './buildConfig.js';
 export { init as initContentTypeRegistry } from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';
