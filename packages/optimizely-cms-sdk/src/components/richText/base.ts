@@ -9,10 +9,7 @@ import {
 /**
  * Configuration for rich text renderers
  */
-export interface BaseRendererConfig extends RendererConfig {
-  elementFallback?: string;
-  leafFallback?: string;
-}
+export interface BaseRendererConfig extends RendererConfig {}
 
 /**
  * Base class for rich text renderers that provides common functionality
@@ -28,8 +25,6 @@ export abstract class BaseRichTextRenderer<
   constructor(config: Partial<BaseRendererConfig> = {}) {
     this.config = {
       decodeHtmlEntities: true,
-      elementFallback: 'span',
-      leafFallback: 'span',
       ...config,
     };
   }

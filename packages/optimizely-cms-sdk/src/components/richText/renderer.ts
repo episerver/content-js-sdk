@@ -1,35 +1,4 @@
 /**
- * Available types for generic elements that don't need special properties
- */
-export type GenericElementType =
-  | 'paragraph'
-  | 'heading-one'
-  | 'heading-two'
-  | 'heading-three'
-  | 'heading-four'
-  | 'heading-five'
-  | 'heading-six'
-  | 'bulleted-list'
-  | 'numbered-list'
-  | 'list-item'
-  | 'quote'
-  | 'code'
-  | 'pre'
-  | 'var'
-  | 'samp'
-  | 'div'
-  | 'richText'
-  | 'br'
-  | 'table'
-  | 'tbody'
-  | 'tr'
-  | 'mark'
-  | 'sup'
-  | 'sub'
-  | 'ins'
-  | 'del';
-
-/**
  * Base element properties shared by all element types
  */
 export interface BaseElement {
@@ -186,17 +155,6 @@ export interface RichTextPropsBase<
    * Custom components for rendering text marks
    */
   leafs?: BaseLeafMap<TLeafRenderer>;
-
-  /**
-   * Fallback element type when no custom renderer is found
-   * @default 'span'
-   */
-  elementFallback?: string;
-
-  /**
-   * Fallback leaf element type when no custom renderer is found
-   */
-  leafFallback?: string;
 
   /**
    * Whether to decode HTML entities in text content
@@ -527,7 +485,16 @@ export const defaultElementTypeMap: Record<
 
   // Root wrapper
   richText: { tag: 'div', config: { className: 'cms:rich-text' } },
-};
+} as const;
+
+/**
+ * Available types for generic elements that don't need special properties
+ * Derived from defaultElementTypeMap, excluding elements with specialized interfaces
+ */
+export type GenericElementType = Exclude<
+  keyof typeof defaultElementTypeMap,
+  'link' | 'image' | 'td' | 'th'
+>;
 
 /**
  * Default text mark mapping

@@ -178,25 +178,22 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
 
   /**
    * Get default element component for unknown types
-   * Simple fallback - just use span for all unknown elements
+   * Always uses span for safe rendering in any context
    */
   private getDefaultElement(elementType: string): ElementRenderer {
-    // Simple fallback to span for all unknown elements - safe everywhere
-    const fallbackTag = this.getConfig('elementFallback', 'span') as string;
-
+    // Always use span for all unknown elements - safe everywhere
     return ({ children }) => {
-      return React.createElement(fallbackTag, {}, children);
+      return React.createElement('span', {}, children);
     };
   }
 
   /**
    * Get default leaf component for unknown marks
+   * Always uses span for safe rendering
    */
   private getDefaultLeaf(mark: string): LeafRenderer {
-    const fallbackTag = this.getConfig('leafFallback', 'span') as string;
-
     return ({ children }) => {
-      return React.createElement(fallbackTag, {}, children);
+      return React.createElement('span', {}, children);
     };
   }
 }
