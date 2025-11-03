@@ -221,7 +221,7 @@ export const HTML_TO_REACT_ATTRS: Record<string, string> = {
   allowfullscreen: 'allowFullScreen',
   frameborder: 'frameBorder',
   playsinline: 'playsInline',
-  preload: 'preLoad',
+  preload: 'preload',
   srcset: 'srcSet',
   srcdoc: 'srcDoc',
   srclang: 'srcLang',
