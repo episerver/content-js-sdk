@@ -124,18 +124,21 @@ export interface RichTextProps
 
 /**
  * Maps HTML attribute names to React JSX attribute names
- * Handles camelCase conversion and reserved keywords
+ * Only includes attributes that actually need conversion (camelCase changes or reserved keywords)
+ * Attributes that work as-is in React are omitted for better performance
  */
 export const HTML_TO_REACT_ATTRS: Record<string, string> = {
-  // Reserved keywords
+  // Reserved keywords (must be mapped)
   class: 'className',
   for: 'htmlFor',
 
-  // Table attributes (already handled in mapAttributes, but for completeness)
+  // Table attributes that need camelCase conversion
   colspan: 'colSpan',
   rowspan: 'rowSpan',
+  cellpadding: 'cellPadding',
+  cellspacing: 'cellSpacing',
 
-  // Common form/input attributes
+  // Common form/input attributes that need camelCase conversion
   tabindex: 'tabIndex',
   'tab-index': 'tabIndex',
   readonly: 'readOnly',
@@ -144,114 +147,40 @@ export const HTML_TO_REACT_ATTRS: Record<string, string> = {
   autocomplete: 'autoComplete',
   autofocus: 'autoFocus',
   autoplay: 'autoPlay',
-  defaultvalue: 'defaultValue',
-  defaultchecked: 'defaultChecked',
-  defaultselected: 'defaultSelected',
+  contenteditable: 'contentEditable',
+  'content-editable': 'contentEditable',
+  spellcheck: 'spellCheck',
+  novalidate: 'noValidate',
 
-  // Media attributes (img, video, audio, canvas)
+  // Media attributes commonly used in rich text
   crossorigin: 'crossOrigin',
   usemap: 'useMap',
+  allowfullscreen: 'allowFullScreen',
+  frameborder: 'frameBorder',
+  playsinline: 'playsInline',
+  srcset: 'srcSet',
+  srcdoc: 'srcDoc',
+  srclang: 'srcLang',
 
-  // SVG attributes
-  viewbox: 'viewBox',
-  preserveaspectratio: 'preserveAspectRatio',
-  'stroke-width': 'strokeWidth',
-  'stroke-linecap': 'strokeLinecap',
-  'stroke-linejoin': 'strokeLinejoin',
-  'stroke-miterlimit': 'strokeMiterlimit',
-  'fill-opacity': 'fillOpacity',
-  'stroke-opacity': 'strokeOpacity',
-  'stroke-dasharray': 'strokeDasharray',
-  'stroke-dashoffset': 'strokeDashoffset',
-  'clip-path': 'clipPath',
-  'clip-rule': 'clipRule',
-  'fill-rule': 'fillRule',
-  'text-anchor': 'textAnchor',
-  'xml:base': 'xmlBase',
-  'xml:lang': 'xmlLang',
-  'xml:space': 'xmlSpace',
-  'xmlns:xlink': 'xmlnsXlink',
+  // Meta attributes
+  'accept-charset': 'acceptCharset',
+  'http-equiv': 'httpEquiv',
+  charset: 'charSet',
+  datetime: 'dateTime',
+  hreflang: 'hrefLang',
 
-  // Button/Label attributes
+  // Form attributes
   formaction: 'formAction',
   formenctype: 'formEnctype',
   formmethod: 'formMethod',
   formnovalidate: 'formNoValidate',
   formtarget: 'formTarget',
-
-  // Accessibility (ARIA attributes are kept lowercase with hyphens)
-  'aria-label': 'aria-label',
-  'aria-labelledby': 'aria-labelledby',
-  'aria-describedby': 'aria-describedby',
-  'aria-hidden': 'aria-hidden',
-  'aria-expanded': 'aria-expanded',
-  'aria-pressed': 'aria-pressed',
-  'aria-selected': 'aria-selected',
-  'aria-checked': 'aria-checked',
-  'aria-disabled': 'aria-disabled',
-  'aria-readonly': 'aria-readonly',
-  'aria-required': 'aria-required',
-  'aria-invalid': 'aria-invalid',
-  'aria-live': 'aria-live',
-  'aria-atomic': 'aria-atomic',
-  'aria-busy': 'aria-busy',
-  'aria-relevant': 'aria-relevant',
-  'aria-current': 'aria-current',
-  'aria-controls': 'aria-controls',
-  'aria-owns': 'aria-owns',
-  'aria-flowto': 'aria-flowto',
-  'aria-activedescendant': 'aria-activedescendant',
-
-  // Data attributes (kept as-is, just for reference)
-  // 'data-*': 'data-*', // These work as-is in React
-
-  // Other common attributes
-  'accept-charset': 'acceptCharset',
-  'http-equiv': 'httpEquiv',
-  charset: 'charSet',
-  contenteditable: 'contentEditable',
-  'content-editable': 'contentEditable',
-  contextmenu: 'contextMenu',
-  spellcheck: 'spellCheck',
-  draggable: 'draggable',
-  dropzone: 'dropZone',
   enctype: 'encType',
-  novalidate: 'noValidate',
-  referrerpolicy: 'referrerPolicy',
-  allowfullscreen: 'allowFullScreen',
-  frameborder: 'frameBorder',
-  playsinline: 'playsInline',
-  preload: 'preload',
-  srcset: 'srcSet',
-  srcdoc: 'srcDoc',
-  srclang: 'srcLang',
-  datetime: 'dateTime',
-  hreflang: 'hrefLang',
-  inputmode: 'inputMode',
-  itemid: 'itemID',
-  itemprop: 'itemProp',
-  itemref: 'itemRef',
-  itemscope: 'itemScope',
-  itemtype: 'itemType',
+
+  // Other attributes that require camelCase conversion
   accesskey: 'accessKey',
   autocapitalize: 'autoCapitalize',
-  autocorrect: 'autoCorrect',
-  autosave: 'autoSave',
-  cellpadding: 'cellPadding',
-  cellspacing: 'cellSpacing',
-  challenge: 'challenge',
-  classid: 'classID',
-  codebase: 'codeBase',
-  codetype: 'codeType',
-  marginheight: 'marginHeight',
-  marginwidth: 'marginWidth',
-  nonce: 'nonce',
-  radiogroup: 'radioGroup',
-  sandbox: 'sandbox',
-  valuetype: 'valueType',
-  keytype: 'keyType',
-  keyparams: 'keyParams',
-  security: 'security',
+  referrerpolicy: 'referrerPolicy',
 } as const;
 
 /**
