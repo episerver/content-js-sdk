@@ -527,9 +527,7 @@ function parseStyleString(styleString: string): Record<string, string> {
     const [property, value] = declaration.split(':').map((s) => s.trim());
     if (property && value) {
       // Convert kebab-case to camelCase for CSS properties
-      const camelProperty = property.replace(/-([a-z])/g, (_, letter) =>
-        letter.toUpperCase()
-      );
+      const camelProperty = kebabToCamelCase(property);
       styleObj[camelProperty] = value;
     }
   });
