@@ -79,8 +79,8 @@ describe('Table Attributes', () => {
 
     // Check that the table has the correct attributes
     expect(tableElement).toHaveAttribute('border', '1');
-    expect(tableElement).toHaveAttribute('cellpadding', '5');
-    expect(tableElement).toHaveAttribute('cellspacing', '10');
+    expect(tableElement).toHaveAttribute('cellPadding', '5');
+    expect(tableElement).toHaveAttribute('cellSpacing', '10');
     expect(tableElement).toHaveAttribute('width', '100%');
   });
 
