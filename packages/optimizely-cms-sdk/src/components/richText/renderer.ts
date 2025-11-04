@@ -39,6 +39,18 @@ export interface ImageElement extends BaseElement {
 }
 
 /**
+ * Table element with table-specific attributes
+ */
+export interface TableElement extends BaseElement {
+  type: 'table';
+  border?: string | number;
+  cellpadding?: string | number;
+  cellspacing?: string | number;
+  width?: string | number;
+  height?: string | number;
+}
+
+/**
  * Table cell elements with table-specific attributes
  */
 export interface TableCellElement extends BaseElement {
@@ -56,6 +68,7 @@ export type Element =
   | GenericElement
   | LinkElement
   | ImageElement
+  | TableElement
   | TableCellElement;
 
 /**
@@ -240,6 +253,13 @@ export function mapAttributes(node: Element): Record<string, unknown> {
       if (node.height) nodeProps.height = node.height;
       if (node.loading) nodeProps.loading = node.loading;
       break;
+    case 'table':
+      if (node.border) nodeProps.border = node.border;
+      if (node.cellpadding) nodeProps.cellpadding = node.cellpadding;
+      if (node.cellspacing) nodeProps.cellspacing = node.cellspacing;
+      if (node.width) nodeProps.width = node.width;
+      if (node.height) nodeProps.height = node.height;
+      break;
     case 'td':
     case 'th':
       if (node.colspan) nodeProps.colspan = node.colspan;
@@ -312,6 +332,16 @@ export function createElementData(
         width: attributes.width as number | string,
         height: attributes.height as number | string,
         loading: attributes.loading as 'lazy' | 'eager',
+        ...baseProps,
+      };
+    case 'table':
+      return {
+        type: 'table',
+        border: attributes.border as string | number,
+        cellpadding: attributes.cellpadding as string | number,
+        cellspacing: attributes.cellspacing as string | number,
+        width: attributes.width as string | number,
+        height: attributes.height as string | number,
         ...baseProps,
       };
     case 'td':
