@@ -53,7 +53,7 @@ function hasVariants(obj: unknown): obj is ComponentWithVariants<unknown> {
 }
 
 /** Returns the default component in an {@linkcode ComponentEntry} */
-function getDefaultComponent<C>(entry: ComponentEntry<C>): C {
+function getDefaultComponent<C>(entry: ComponentEntry<C>): C | undefined {
   if (hasVariants(entry)) {
     return entry.default;
   } else {
@@ -100,19 +100,21 @@ export class ComponentRegistry<T> {
 
     const entry = this.resolver[contentType];
 
-    if (!entry) {
-      return undefined;
-    }
-
     if (!options.tag) {
+      if (!entry) {
+        return undefined;
+      }
       return getDefaultComponent(entry);
     }
 
-    // Search for the component `${contentType}:${tag}`
     const taggedEntry = this.resolver[`${contentType}:${options.tag}`];
 
     if (taggedEntry) {
       return getDefaultComponent(taggedEntry);
+    }
+
+    if (!entry) {
+      return undefined;
     }
 
     return (
