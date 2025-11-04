@@ -399,17 +399,43 @@ function kebabToCamelCase(str: string): string {
 }
 
 /**
+ * Properties that can be either HTML attributes or CSS properties depending on context
+ */
+const DUAL_PURPOSE_PROPERTIES = new Set(['border', 'width', 'height']);
+
+/**
+ * Element types that should treat dual-purpose properties as HTML attributes
+ */
+const HTML_ATTRIBUTE_ELEMENTS = new Set(['table', 'img', 'input', 'canvas']);
+
+/**
  * Converts framework-agnostic attributes to React props
  * Handles HTML attribute to React JSX attribute conversion and CSS properties
  */
-function toReactProps(
-  attributes: Record<string, unknown>
+export function toReactProps(
+  attributes: Record<string, unknown>,
+  elementType?: string
 ): Record<string, unknown> {
   const reactProps: Record<string, unknown> = {};
   const styleProps: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(attributes)) {
-    // Handle CSS properties - move them to style object
+    // Handle dual-purpose properties based on element context
+    if (DUAL_PURPOSE_PROPERTIES.has(key.toLowerCase())) {
+      if (elementType && HTML_ATTRIBUTE_ELEMENTS.has(elementType)) {
+        // Treat as HTML attribute for specific elements
+        const reactKey = HTML_TO_REACT_ATTRS[key.toLowerCase()] || key;
+        reactProps[reactKey] = value;
+        continue;
+      } else {
+        // Treat as CSS property for other elements
+        const camelKey = kebabToCamelCase(key);
+        styleProps[camelKey] = String(value);
+        continue;
+      }
+    }
+
+    // Handle other CSS properties - move them to style object
     if (CSS_PROPERTIES.has(key.toLowerCase())) {
       const camelKey = kebabToCamelCase(key);
       styleProps[camelKey] = String(value);
@@ -480,8 +506,8 @@ export function createHtmlComponent<T extends keyof JSX.IntrinsicElements>(
   config: HtmlComponentConfig = {}
 ): ElementRenderer {
   const Component: ElementRenderer = ({ children, attributes, element }) => {
-    // Convert to React props and merge with config
-    const reactProps = toReactProps(attributes || {});
+    // Convert to React props and merge with config, passing element type for context
+    const reactProps = toReactProps(attributes || {}, tag as string);
     const mergedProps = {
       ...reactProps,
       ...config.attributes,
@@ -515,7 +541,7 @@ export function createLinkComponent<T extends keyof JSX.IntrinsicElements>(
     element,
   }) => {
     // Convert to React props and merge with config
-    const reactProps = toReactProps(attributes || {});
+    const reactProps = toReactProps(attributes || {}, tag as string);
 
     // Type-safe access to link properties
     const linkProps = {
@@ -554,7 +580,7 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
     element,
   }) => {
     // Convert to React props and merge with config
-    const reactProps = toReactProps(attributes || {});
+    const reactProps = toReactProps(attributes || {}, tag as string);
 
     // Type-safe access to image properties
     const imageProps = {
@@ -596,7 +622,7 @@ export function createTableComponent<T extends keyof JSX.IntrinsicElements>(
     element,
   }) => {
     // Convert to React props and merge with config
-    const reactProps = toReactProps(attributes || {});
+    const reactProps = toReactProps(attributes || {}, tag as string);
 
     const mergedProps = {
       ...reactProps,
