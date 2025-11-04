@@ -8,6 +8,7 @@ import {
   isContentType,
   DisplayTemplates,
   isDisplayTemplate,
+  PropertyGroupType,
 } from '@optimizely/cms-sdk';
 import chalk from 'chalk';
 import * as path from 'node:path';
@@ -116,7 +117,7 @@ async function compileAndImport(
   }
 }
 
-/** Finds metadata (contentTypes, displayTemplates) in the given paths */
+/** Finds metadata (contentTypes, displayTemplates, propertyGroups) in the given paths */
 export async function findMetaData(
   componentPaths: string[],
   cwd: string
@@ -164,7 +165,7 @@ export async function findMetaData(
 function printFilesContnets(
   type: string,
   path: string,
-  metaData: AnyContentType | DisplayTemplate
+  metaData: AnyContentType | DisplayTemplate | PropertyGroupType
 ) {
   console.log(
     '%s %s found in %s',
@@ -174,9 +175,91 @@ function printFilesContnets(
   );
 }
 
-export async function readFromPath(configPath: string) {
+export async function readFromPath(configPath: string, section: string) {
   const config = await import(configPath);
-  return config.default.components;
+  return config.default[section];
+}
+
+/**
+ * Validates and normalizes property groups from the config file.
+ * - Validates that each property group has a non-empty key
+ * - Auto-generates displayName from key (capitalized) if missing
+ * - Auto-assigns sortOrder based on array position (index + 1) if missing
+ * - Deduplicates property groups by key, keeping the last occurrence
+ * @param propertyGroups - The property groups array from the config
+ * @returns Validated and normalized property groups array
+ * @throws Error if validation fails (empty or missing key)
+ */
+export function normalizePropertyGroups(
+  propertyGroups: any[]
+): PropertyGroupType[] {
+  if (!Array.isArray(propertyGroups)) {
+    throw new Error('propertyGroups must be an array');
+  }
+
+  const normalizedGroups = propertyGroups.map((group, index) => {
+    // Validate key is present and not empty
+    if (
+      !group.key ||
+      typeof group.key !== 'string' ||
+      group.key.trim() === ''
+    ) {
+      throw new Error(
+        `Error in property groups: Property group at index ${index} has an empty or missing "key" field`
+      );
+    }
+
+    // Auto-generate displayName from key if missing (capitalize first letter)
+    const displayName =
+      group.displayName &&
+      typeof group.displayName === 'string' &&
+      group.displayName.trim() !== ''
+        ? group.displayName
+        : group.key.charAt(0).toUpperCase() + group.key.slice(1);
+
+    // Auto-assign sortOrder based on array position if missing
+    const sortOrder =
+      typeof group.sortOrder === 'number' ? group.sortOrder : index + 1;
+
+    return {
+      key: group.key,
+      displayName,
+      sortOrder,
+    };
+  });
+
+  // Deduplicate by key, keeping the last occurrence
+  const groupMap = new Map<string, PropertyGroupType>();
+  const duplicates = new Set<string>();
+
+  for (const group of normalizedGroups) {
+    if (groupMap.has(group.key)) {
+      duplicates.add(group.key);
+    }
+    groupMap.set(group.key, group);
+  }
+
+  // Warn about duplicates
+  if (duplicates.size > 0) {
+    console.warn(
+      chalk.yellow(
+        `Warning: Duplicate property group keys found: ${Array.from(
+          duplicates
+        ).join(', ')}. Keeping the last occurrence of each.`
+      )
+    );
+  }
+
+  const deduplicatedGroups = Array.from(groupMap.values());
+
+  // Log found property groups
+  if (deduplicatedGroups.length > 0) {
+    const groupKeys = deduplicatedGroups.map((g) => g.displayName).join(', ');
+    console.log('Property Groups found: %s', chalk.bold.cyan(`[${groupKeys}]`));
+  }
+
+  // Return deduplicated array in the order they were last seen
+  return deduplicatedGroups;
 }
 
 /**
