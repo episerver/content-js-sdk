@@ -14,7 +14,7 @@
  */
 type ComponentWithVariants<C> = {
   /** Default component */
-  default: C;
+  default?: C;
 
   /**
    * Tagged variants, where the keys are tag names and the values are the corresponding components.
