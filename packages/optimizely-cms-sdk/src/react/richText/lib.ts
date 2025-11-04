@@ -235,7 +235,8 @@ const CSS_PROPERTIES = new Set([
   'background-clip',
   'background-origin',
 
-  // Borders (CSS-specific border properties, excluding simple 'border' which can be HTML attribute)
+  // Borders (CSS-specific border properties, including 'border' for general use)
+  'border',
   'border-width',
   'border-style',
   'border-color',
@@ -409,7 +410,7 @@ function toReactProps(
 
   for (const [key, value] of Object.entries(attributes)) {
     // Handle CSS properties - move them to style object
-    if (CSS_PROPERTIES.has(key) || CSS_PROPERTIES.has(key.toLowerCase())) {
+    if (CSS_PROPERTIES.has(key.toLowerCase())) {
       const camelKey = kebabToCamelCase(key);
       styleProps[camelKey] = String(value);
       continue;
@@ -453,7 +454,14 @@ function parseStyleString(styleString: string): Record<string, string> {
   }
 
   styleString.split(';').forEach((declaration) => {
-    const [property, value] = declaration.split(':').map((s) => s.trim());
+    const colonIndex = declaration.indexOf(':');
+
+    if (colonIndex === -1) return;
+
+    const property = declaration.slice(0, colonIndex).trim();
+
+    const value = declaration.slice(colonIndex + 1).trim();
+
     if (property && value) {
       // Convert kebab-case to camelCase for CSS properties
       const camelProperty = kebabToCamelCase(property);
