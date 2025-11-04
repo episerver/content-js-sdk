@@ -33,6 +33,18 @@ export const ct3 = contentType({
   baseType: '_experience',
 });
 
+export const ct6 = contentType({
+  key: 'test_ct6',
+  baseType: '_component',
+  compositionBehaviors: ['elementEnabled', 'sectionEnabled'],
+});
+
+export const ct7 = contentType({
+  key: 'test_c7',
+  baseType: '_component',
+  compositionBehaviors: ['elementEnabled', 'sectionEnabled'],
+});
+
 export const dt1 = displayTemplate({
   key: 'test_dt1',
   baseType: '_component',
@@ -90,6 +102,8 @@ export const dt6 = displayTemplate({
 type Props1 = { opti: Infer<typeof ct1> };
 type Props2 = { opti: Infer<typeof ct2> };
 type Props3 = { opti: Infer<typeof ct3> };
+type Props6 = { opti: Infer<typeof ct6> };
+type Props7 = { opti: Infer<typeof ct7> };
 
 type BlankSectionProps = {
   opti: Infer<typeof BlankSectionContentType>;
@@ -124,6 +138,13 @@ export function Component3({ opti }: Props3) {
   );
 }
 
+export function Component6({}: Props6) {
+  return <div>This is Component6</div>;
+}
+
+export function Component7({}: Props6) {
+  return <div>This is Component7</div>;
+}
 export function Component3C({ opti }: Props3) {
   return (
     <div>

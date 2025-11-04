@@ -10,9 +10,13 @@ import {
   Component2A,
   Component3,
   Component3C,
+  Component6,
+  Component7,
   ct1,
   ct2,
   ct3,
+  ct6,
+  ct7,
   dt1,
   dt2,
   dt3,
@@ -28,7 +32,7 @@ import {
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
-initContentTypeRegistry([ct1, ct2, ct3]);
+initContentTypeRegistry([ct1, ct2, ct3, ct6, ct7]);
 initDisplayTemplateRegistry([dt1, dt2, dt3, dt4, dt5, dt6]);
 initReactComponentRegistry({
   resolver: {
@@ -57,6 +61,15 @@ initReactComponentRegistry({
     },
     _Column: Column,
     '_Column:tagA': ColumnA,
+
+    // Content type "test_ct6" only has a component with tag
+    'test_ct6:tagA': Component6,
+    test_c7: {
+      // default: Component7,
+      tags: {
+        tagA: Component7,
+      },
+    },
   },
 });
 
