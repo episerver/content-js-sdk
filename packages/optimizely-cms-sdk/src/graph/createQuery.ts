@@ -140,7 +140,7 @@ function convertPropertyField(
   } else if (property.type === 'url') {
     fields.push(`${name} { type, default }`);
   } else if (property.type === 'link') {
-    fields.push(`${name} { url { type, default }}`);
+    fields.push(`${name} { text target url { type, default }}`);
   } else if (property.type === 'contentReference') {
     fields.push(`${name} { url { type default }}`);
   } else if (property.type === 'array') {
