@@ -3,11 +3,9 @@ import React from 'react';
 export default function Page() {
   return (
     <div>
-      This sample site doesn&apos;t have Live Preview enabled. Go to{' '}
-      <a href="/en/" target="_blank">
-        /en
-      </a>{' '}
-      to see the actual page instead
+      Preview mode doesn&apos;t cache content, to test the webhook cache
+      invalidation, navigate to view mode by clicking{' '}
+      <strong>Options &larr; View on website.</strong>
     </div>
   );
 }
