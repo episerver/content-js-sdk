@@ -142,7 +142,7 @@ export function Component6({}: Props6) {
   return <div>This is Component6</div>;
 }
 
-export function Component7({}: Props6) {
+export function Component7({}: Props7) {
   return <div>This is Component7</div>;
 }
 export function Component3C({ opti }: Props3) {
