@@ -63,7 +63,7 @@ initReactComponentRegistry({
     '_Column:tagA': ColumnA,
 
     // Content type "test_ct6" only has a component with tag
-    'test_ct6:tagA': Component6,
+    'test_c6:tagA': Component6,
     test_c7: {
       // default: Component7,
       tags: {

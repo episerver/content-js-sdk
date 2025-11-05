@@ -34,7 +34,7 @@ export const ct3 = contentType({
 });
 
 export const ct6 = contentType({
-  key: 'test_ct6',
+  key: 'test_c6',
   baseType: '_component',
   compositionBehaviors: ['elementEnabled', 'sectionEnabled'],
 });
