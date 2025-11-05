@@ -14,7 +14,7 @@
  */
 type ComponentWithVariants<C> = {
   /** Default component */
-  default: C;
+  default?: C;
 
   /**
    * Tagged variants, where the keys are tag names and the values are the corresponding components.
@@ -47,13 +47,11 @@ type ComponentMap<C> = Record<string, ComponentEntry<C>>;
 
 /** Returns true if `obj` is type {@linkcode ComponentWithVariants} */
 function hasVariants(obj: unknown): obj is ComponentWithVariants<unknown> {
-  return (
-    typeof obj === 'object' && obj !== null && 'default' in obj && 'tags' in obj
-  );
+  return typeof obj === 'object' && obj !== null && 'tags' in obj;
 }
 
 /** Returns the default component in an {@linkcode ComponentEntry} */
-function getDefaultComponent<C>(entry: ComponentEntry<C>): C {
+function getDefaultComponent<C>(entry: ComponentEntry<C>): C | undefined {
   if (hasVariants(entry)) {
     return entry.default;
   } else {
@@ -100,19 +98,21 @@ export class ComponentRegistry<T> {
 
     const entry = this.resolver[contentType];
 
-    if (!entry) {
-      return undefined;
-    }
-
     if (!options.tag) {
+      if (!entry) {
+        return undefined;
+      }
       return getDefaultComponent(entry);
     }
 
-    // Search for the component `${contentType}:${tag}`
     const taggedEntry = this.resolver[`${contentType}:${options.tag}`];
 
     if (taggedEntry) {
       return getDefaultComponent(taggedEntry);
+    }
+
+    if (!entry) {
+      return undefined;
     }
 
     return (
