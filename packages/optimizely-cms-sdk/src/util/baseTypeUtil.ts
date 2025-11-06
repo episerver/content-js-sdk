@@ -46,12 +46,13 @@ export function isBaseMediaType(key: string): key is MediaStringTypes {
   return (MEDIA_BASE_TYPES as readonly string[]).includes(key);
 }
 
-/** Common media meta‑data fragment */
-export const MEDIA_METADATA_FRAGMENT =
-  'fragment mediaMetaData on IContentMetadata { displayName url { default } ... on MediaMetadata { mimeType thumbnail content } }';
-
-/** Common media meta‑data block */
-export const COMMON_MEDIA_METADATA_BLOCK = '_metadata { ...mediaMetaData }';
+const COMMON_FRAGMENTS = [
+  'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
+  'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }',
+  'fragment IContentMetadata on IContentMetadata {key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }',
+  'fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }',
+];
+const COMMON_FIELDS = '..._IContent';
 
 /**
  * Generates and adds framents for base types
@@ -59,14 +60,10 @@ export const COMMON_MEDIA_METADATA_BLOCK = '_metadata { ...mediaMetaData }';
  * @returns { fields, extraFragments }
  */
 export function buildBaseTypeFragments(baseType: string) {
-  // note: Will add more support for other baseTypes later. For now its only media types
-  if (isBaseMediaType(baseType)) {
-    return {
-      fields: [COMMON_MEDIA_METADATA_BLOCK],
-      extraFragments: [MEDIA_METADATA_FRAGMENT],
-    };
-  }
-  return { fields: [], extraFragments: [] };
+  return {
+    fields: [COMMON_FIELDS],
+    extraFragments: COMMON_FRAGMENTS,
+  };
 }
 
 export function isComponentNode(
