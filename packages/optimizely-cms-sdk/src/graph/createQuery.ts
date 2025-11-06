@@ -13,10 +13,7 @@ import {
 } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
-  isBaseMediaType,
   buildBaseTypeFragments,
-  MEDIA_METADATA_FRAGMENT,
-  COMMON_MEDIA_METADATA_BLOCK,
   isBaseType,
   toBaseTypeFragmentKey,
 } from '../util/baseTypeUtil.js';
@@ -219,9 +216,8 @@ export function createFragment(
     );
     fields.push(...f);
     extraFragments.push(...e);
-
-    // Handle User defined contentType
   } else {
+    // User-defined content type
     const ct = getContentType(contentTypeName);
     if (!ct) {
       throw new GraphMissingContentTypeError(contentTypeName);
@@ -243,11 +239,10 @@ export function createFragment(
       extraFragments.push(...e);
     }
 
-    // Custom contentTypes which implements baseTypes (media/image/video): we append fragments for metadata
-    if (isBaseMediaType(ct.baseType)) {
-      extraFragments.unshift(MEDIA_METADATA_FRAGMENT); // maintain order
-      fields.push(COMMON_MEDIA_METADATA_BLOCK);
-    }
+    // Add fragments for the base type of the user-defined content type
+    const baseFragments = buildBaseTypeFragments(ct.baseType);
+    extraFragments.unshift(...baseFragments.extraFragments); // maintain order
+    fields.push(...baseFragments.fields);
 
     if (ct.baseType === '_experience') {
       fields.push('..._IExperience');

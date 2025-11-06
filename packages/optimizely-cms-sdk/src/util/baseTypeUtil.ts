@@ -58,7 +58,7 @@ export const COMMON_MEDIA_METADATA_BLOCK = '_metadata { ...mediaMetaData }';
  * @param baseTypeName name of the base content type
  * @returns { fields, extraFragments }
  */
-export function buildBaseTypeFragments(baseType: MediaStringTypes) {
+export function buildBaseTypeFragments(baseType: string) {
   // note: Will add more support for other baseTypes later. For now its only media types
   if (isBaseMediaType(baseType)) {
     return {
