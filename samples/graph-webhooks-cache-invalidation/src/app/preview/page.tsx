@@ -5,7 +5,7 @@ export default function Page() {
     <div>
       Preview mode doesn&apos;t cache content, to test the webhook cache
       invalidation, navigate to view mode by clicking{' '}
-      <strong>Options &larr; View on website.</strong>
+      <strong>Options &rarr; View on website.</strong>
     </div>
   );
 }
