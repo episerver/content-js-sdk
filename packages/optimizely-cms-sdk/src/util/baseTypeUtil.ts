@@ -46,9 +46,12 @@ export function isBaseMediaType(key: string): key is MediaStringTypes {
   return (MEDIA_BASE_TYPES as readonly string[]).includes(key);
 }
 
+export const CONTENT_URL_FRAGMENT =
+  'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }';
+
 const COMMON_FRAGMENTS = [
   'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
-  'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }',
+  CONTENT_URL_FRAGMENT,
   'fragment IContentMetadata on IContentMetadata {key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }',
   'fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }',
 ];

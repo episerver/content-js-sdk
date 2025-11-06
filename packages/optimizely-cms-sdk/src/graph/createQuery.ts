@@ -16,6 +16,7 @@ import {
   buildBaseTypeFragments,
   isBaseType,
   toBaseTypeFragmentKey,
+  CONTENT_URL_FRAGMENT,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError } from './error.js';
@@ -135,11 +136,14 @@ function convertPropertyField(
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
   } else if (property.type === 'url') {
-    fields.push(`${name} { type, default }`);
+    extraFragments.push(CONTENT_URL_FRAGMENT);
+    fields.push(`${name} { ...ContentUrl }`);
   } else if (property.type === 'link') {
-    fields.push(`${name} { url { type, default }}`);
+    extraFragments.push(CONTENT_URL_FRAGMENT);
+    fields.push(`${name} { url { ...ContentUrl }}`);
   } else if (property.type === 'contentReference') {
-    fields.push(`${name} { url { type default }}`);
+    extraFragments.push(CONTENT_URL_FRAGMENT);
+    fields.push(`${name} { key url { ...ContentUrl }}`);
   } else if (property.type === 'array') {
     const f = convertProperty(name, property.items, rootName, visited);
     fields.push(...f.fields);
