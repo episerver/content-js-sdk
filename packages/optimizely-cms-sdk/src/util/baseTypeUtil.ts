@@ -59,10 +59,9 @@ const COMMON_FIELDS = '..._IContent';
 
 /**
  * Generates and adds fragments for base types
- * @param baseTypeName name of the base content type
  * @returns { fields, extraFragments }
  */
-export function buildBaseTypeFragments(baseType: string) {
+export function buildBaseTypeFragments() {
   return {
     fields: [COMMON_FIELDS],
     extraFragments: COMMON_FRAGMENTS,
