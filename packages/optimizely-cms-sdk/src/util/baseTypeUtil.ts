@@ -52,13 +52,13 @@ export const CONTENT_URL_FRAGMENT =
 const COMMON_FRAGMENTS = [
   'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
   CONTENT_URL_FRAGMENT,
-  'fragment IContentMetadata on IContentMetadata {key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }',
+  'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }',
   'fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }',
 ];
 const COMMON_FIELDS = '..._IContent';
 
 /**
- * Generates and adds framents for base types
+ * Generates and adds fragments for base types
  * @param baseTypeName name of the base content type
  * @returns { fields, extraFragments }
  */
