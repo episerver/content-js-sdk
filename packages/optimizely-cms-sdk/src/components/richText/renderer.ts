@@ -500,6 +500,7 @@ export const defaultElementTypeMap: Record<
   // Form elements
   input: { tag: 'input', config: { selfClosing: true } },
   select: { tag: 'select' },
+  option: { tag: 'option' },
   textarea: { tag: 'textarea' },
 
   // Other inline elements
@@ -508,7 +509,10 @@ export const defaultElementTypeMap: Record<
 
   // Table
   table: { tag: 'table' },
+  thead: { tag: 'thead' },
   tbody: { tag: 'tbody' },
+  tfoot: { tag: 'tfoot' },
+  caption: { tag: 'caption' },
   tr: { tag: 'tr' },
   td: { tag: 'td' },
   th: { tag: 'th' },
