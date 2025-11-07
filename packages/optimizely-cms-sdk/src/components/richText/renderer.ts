@@ -494,7 +494,6 @@ export const defaultElementTypeMap: Record<
   // Media (when inline)
   image: { tag: 'img', config: { selfClosing: true } },
   img: { tag: 'img', config: { selfClosing: true } },
-  svg: { tag: 'svg' },
   canvas: { tag: 'canvas' },
 
   // Form elements
