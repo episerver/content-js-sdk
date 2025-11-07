@@ -213,6 +213,11 @@ function FallbackColumn({ node, children }: StructureContainerProps) {
   );
 }
 
+function FallbackGridComponent({ node, children }: StructureContainerProps) {
+  const { pa } = getPreviewUtils(node);
+  return <div {...pa(node)}>{children}</div>;
+}
+
 function FallbackComponent({ children }: { children: ReactNode }) {
   return isDev() ? (
     <div
@@ -234,45 +239,37 @@ type OptimizelyGridSectionProps = {
   nodes: ExperienceNode[];
   row?: StructureContainer;
   column?: StructureContainer;
+  component?: StructureContainer;
   displaySettings?: DisplaySettingsType[];
 };
 
 const fallbacks: Record<string, StructureContainer> = {
   row: FallbackRow,
   column: FallbackColumn,
+  component: FallbackGridComponent,
 };
 
 export function OptimizelyGridSection({
   nodes,
   row,
   column,
+  component,
 }: OptimizelyGridSectionProps) {
   const locallyDefined: Record<string, StructureContainer | undefined> = {
     row,
     column,
+    component,
   };
 
   return nodes.map((node, i) => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
-    if (isComponentNode(node)) {
-      return (
-        <OptimizelyComponent
-          opti={{
-            ...node.component,
-            __tag: tag,
-          }}
-          key={node.key}
-          displaySettings={parsedDisplaySettings}
-        />
-      );
-    }
-
     const { nodeType } = node;
     const globalNames: Record<string, string> = {
       row: '_Row',
       column: '_Column',
+      component: '_Component',
     };
 
     // Pick the component in the following order:
@@ -286,6 +283,21 @@ export function OptimizelyGridSection({
       fallbacks[nodeType] ??
       React.Fragment;
 
+    if (isComponentNode(node)) {
+      return (
+        <Component node={node} index={i} key={node.key}>
+          <OptimizelyComponent
+            opti={{
+              ...node.component,
+              __tag: tag,
+            }}
+            key={node.key}
+            displaySettings={parsedDisplaySettings}
+          />
+        </Component>
+      );
+    }
+
     return (
       <Component
         node={node}
@@ -296,6 +308,7 @@ export function OptimizelyGridSection({
         <OptimizelyGridSection
           row={row}
           column={column}
+          component={component}
           nodes={node.nodes ?? []}
         />
       </Component>
