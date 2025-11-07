@@ -215,9 +215,7 @@ export function createFragment(
 
   // Built‑in CMS baseTypes  ("_image", "_video", "_media" etc.)
   if (isBaseType(contentTypeName)) {
-    const { fields: f, extraFragments: e } = buildBaseTypeFragments(
-      contentTypeName as MediaStringTypes
-    );
+    const { fields: f, extraFragments: e } = buildBaseTypeFragments();
     fields.push(...f);
     extraFragments.push(...e);
   } else {
@@ -244,7 +242,7 @@ export function createFragment(
     }
 
     // Add fragments for the base type of the user-defined content type
-    const baseFragments = buildBaseTypeFragments(ct.baseType);
+    const baseFragments = buildBaseTypeFragments();
     extraFragments.unshift(...baseFragments.extraFragments); // maintain order
     fields.push(...baseFragments.fields);
 
