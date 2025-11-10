@@ -24,7 +24,7 @@ export const StartContentType = contentType({
     },
     title: {
       type: 'string',
-      displayName: 'Title',
+      displayName: 'Teaser Title',
       group: 'Information',
     },
     description: {
@@ -54,43 +54,53 @@ export const StartContentType = contentType({
       displayName: 'Hide Site Footer',
       group: 'Advanced',
     },
-    // Metadata group
+    // SEO group
     site_title: {
       type: 'string',
       displayName: 'Title',
+      group: 'SEO',
     },
     keywords: {
-      type: 'string',
+      type: 'array',
+      items: {
+        type: 'string',
+      },
       displayName: 'Keywords',
+      group: 'SEO',
     },
     page_description: {
       type: 'string',
       displayName: 'Page Description',
+      group: 'SEO',
     },
     disable_indexing: {
       type: 'boolean',
       displayName: 'Disable Indexing',
+      group: 'SEO',
     },
     // siteSettings group
-    content_pages: {
+    contact_pages: {
       type: 'contentReference',
       allowedTypes: ['_page'],
-      displayName: 'Content Pages',
+      displayName: 'Contact Pages',
     },
     global_news: {
       type: 'contentReference',
       allowedTypes: ['_page'],
       displayName: 'Global News',
-    },
-    logo_type: {
-      type: 'contentReference',
-      allowedTypes: ['_page'],
-      displayName: 'Logo Type',
+      group: 'SiteSettings',
     },
     search_page: {
       type: 'contentReference',
       allowedTypes: ['_page'],
       displayName: 'Search Page',
+      group: 'SiteSettings',
+    },
+    logo_type: {
+      type: 'contentReference',
+      allowedTypes: ['_page'],
+      displayName: 'Logo Type',
+      group: 'SiteSettings',
     },
     products: {
       type: 'array',
@@ -98,6 +108,7 @@ export const StartContentType = contentType({
         type: 'link',
       },
       displayName: 'Products',
+      group: 'SiteSettings',
     },
     company_information: {
       type: 'array',
@@ -105,6 +116,7 @@ export const StartContentType = contentType({
         type: 'link',
       },
       displayName: 'Company Information',
+      group: 'SiteSettings',
     },
     local_news: {
       type: 'array',
@@ -112,6 +124,7 @@ export const StartContentType = contentType({
         type: 'link',
       },
       displayName: 'Local News',
+      group: 'SiteSettings',
     },
     customer_zone: {
       type: 'array',
@@ -119,6 +132,7 @@ export const StartContentType = contentType({
         type: 'link',
       },
       displayName: 'Customer Zone',
+      group: 'SiteSettings',
     },
   },
 });
@@ -132,7 +146,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-function StartPage({ opti }: StartProps) {
+function Start({ opti }: StartProps) {
   return (
     <>
       <div
@@ -179,4 +193,4 @@ function StartPage({ opti }: StartProps) {
   );
 }
 
-export default StartPage;
+export default Start;
