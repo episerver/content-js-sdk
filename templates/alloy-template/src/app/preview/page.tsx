@@ -26,7 +26,7 @@ export default async function Page({ searchParams }: Props) {
   return (
     <>
       <Script
-        src={`${process.env.OPTIMIZELY_CMS_HOST}/util/javascript/communicationinjector.js`}
+        src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
       ></Script>
       <PreviewComponent />
       <OptimizelyComponent opti={response} />
