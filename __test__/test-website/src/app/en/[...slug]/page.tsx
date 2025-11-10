@@ -32,7 +32,7 @@ export default async function Page({ params, searchParams }: Props) {
   const path = `/en/${slug.join('/')}/`;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
+    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
   const variation = (await searchParams).variation;

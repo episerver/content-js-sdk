@@ -25,8 +25,13 @@ export function parseChildContentType(
   const duplicates: string[] = [];
   const normalized = mayContainTypes.map((entry: any) => {
     const key = extractKeyName(entry, parentKey);
-    // Do not allow keys that start with '_' to be validated against allowedKeys
-    if (!key.startsWith('_') && allowedKeys && !allowedKeys.has(key)) {
+    if (
+      key !== '*' &&
+      // Do not allow keys that start with '_' to be validated against allowedKeys
+      !key.startsWith('_') &&
+      allowedKeys &&
+      !allowedKeys.has(key)
+    ) {
       invalid.push(key);
     }
     if (seen.has(key)) {

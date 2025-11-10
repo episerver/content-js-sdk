@@ -37,6 +37,26 @@ export type Prettify<T> = {
 export type InferredUrl = {
   type: string | null;
   default: string | null;
+  hierarchical: string | null;
+  internal: string | null;
+  graph: string | null;
+  base: string | null;
+};
+
+type InferredMetadata = {
+  key: string;
+  locale: string;
+  fallbackForLocale: string;
+  version: string;
+  displayName: string;
+  url: InferredUrl;
+  types: string[];
+  published: string;
+  status: string;
+  created: string;
+  lastModified: string;
+  sortOrder: number;
+  variation: string;
 };
 
 type InferredRichText = {
@@ -54,7 +74,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends JsonProperty ? any
   : T extends RichTextProperty ? InferredRichText
   : T extends UrlProperty ? InferredUrl
-  : T extends LinkProperty ? { url: InferredUrl }
+  : T extends LinkProperty ? { text: string | null, title: string | null, target: string | null, url: InferredUrl }
   : T extends IntegerProperty ? number
   : T extends FloatProperty ? number
   : T extends ContentReferenceProperty ? { url: InferredUrl }
@@ -65,9 +85,8 @@ export type InferFromProperty<T extends AnyProperty> =
 
 /** Attributes included in the response from Graph in every content type */
 export type InferredBase = {
-  _metadata: {
-    url: InferredUrl;
-  };
+  _id: string;
+  _metadata: InferredMetadata;
   __typename: string;
   __context?: { edit: boolean; preview_token: string };
 };

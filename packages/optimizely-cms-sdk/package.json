@@ -20,6 +20,10 @@
     "./react/richText": {
       "import": "./dist/esm/react/richText/index.js",
       "require": "./dist/cjs/react/richText/index.js"
+    },
+    "./buildConfig": {
+      "import": "./dist/esm/model/buildConfig.js",
+      "types": "./dist/cjs/model/buildConfig.d.ts"
     }
   },
   "repository": {

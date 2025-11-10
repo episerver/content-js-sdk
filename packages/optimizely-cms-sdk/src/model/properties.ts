@@ -1,4 +1,5 @@
 import { AnyContentType, PermittedTypes } from './contentTypes.js';
+import { PropertyGroupKey } from './buildConfig.js';
 
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
@@ -12,7 +13,7 @@ type BaseProperty = {
   description?: string;
   required?: boolean;
   localized?: boolean;
-  group?: string;
+  group?: PropertyGroupKey;
   sortOrder?: number;
   indexingType?: INDEX_TYPE;
 };
