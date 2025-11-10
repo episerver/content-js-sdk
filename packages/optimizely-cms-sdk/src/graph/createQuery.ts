@@ -13,12 +13,10 @@ import {
 } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
-  isBaseMediaType,
   buildBaseTypeFragments,
-  MEDIA_METADATA_FRAGMENT,
-  COMMON_MEDIA_METADATA_BLOCK,
   isBaseType,
   toBaseTypeFragmentKey,
+  CONTENT_URL_FRAGMENT,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError } from './error.js';
@@ -138,11 +136,14 @@ function convertPropertyField(
   } else if (property.type === 'richText') {
     fields.push(`${name} { html, json }`);
   } else if (property.type === 'url') {
-    fields.push(`${name} { type, default }`);
+    extraFragments.push(CONTENT_URL_FRAGMENT);
+    fields.push(`${name} { ...ContentUrl }`);
   } else if (property.type === 'link') {
-    fields.push(`${name} { url { type, default }}`);
+    extraFragments.push(CONTENT_URL_FRAGMENT);
+    fields.push(`${name} { url { ...ContentUrl }}`);
   } else if (property.type === 'contentReference') {
-    fields.push(`${name} { url { type default }}`);
+    extraFragments.push(CONTENT_URL_FRAGMENT);
+    fields.push(`${name} { key url { ...ContentUrl }}`);
   } else if (property.type === 'array') {
     const f = convertProperty(name, property.items, rootName, visited);
     fields.push(...f.fields);
@@ -214,14 +215,11 @@ export function createFragment(
 
   // Built‑in CMS baseTypes  ("_image", "_video", "_media" etc.)
   if (isBaseType(contentTypeName)) {
-    const { fields: f, extraFragments: e } = buildBaseTypeFragments(
-      contentTypeName as MediaStringTypes
-    );
+    const { fields: f, extraFragments: e } = buildBaseTypeFragments();
     fields.push(...f);
     extraFragments.push(...e);
-
-    // Handle User defined contentType
   } else {
+    // User-defined content type
     const ct = getContentType(contentTypeName);
     if (!ct) {
       throw new GraphMissingContentTypeError(contentTypeName);
@@ -243,11 +241,10 @@ export function createFragment(
       extraFragments.push(...e);
     }
 
-    // Custom contentTypes which implements baseTypes (media/image/video): we append fragments for metadata
-    if (isBaseMediaType(ct.baseType)) {
-      extraFragments.unshift(MEDIA_METADATA_FRAGMENT); // maintain order
-      fields.push(COMMON_MEDIA_METADATA_BLOCK);
-    }
+    // Add fragments for the base type of the user-defined content type
+    const baseFragments = buildBaseTypeFragments();
+    extraFragments.unshift(...baseFragments.extraFragments); // maintain order
+    fields.push(...baseFragments.fields);
 
     if (ct.baseType === '_experience') {
       fields.push('..._IExperience');
