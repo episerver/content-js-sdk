@@ -1,3 +1,5 @@
+import Footer from '@/components/base/Footer';
+import Header from '@/components/base/Header';
 import { GraphClient } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { notFound } from 'next/navigation';
@@ -15,11 +17,23 @@ export default async function Page({ params }: Props) {
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
-  const c = await client.getContentByPath(`/${slug.join('/')}/`);
+  const path = `/${slug.join('/')}/`;
+  const c = await client.getContentByPath(path);
+
+  const children = (await client.getItems(path)) ?? [];
+  const ancestors = (await client.getPath(path)) ?? [];
 
   if (c.length === 0) {
     notFound();
   }
 
-  return <OptimizelyComponent opti={c[0]} />;
+  return (
+    <>
+      <Header currentPath={{ children, ancestors }} />
+      <div className="container mx-auto p-10">
+        <OptimizelyComponent opti={c[0]} />
+      </div>
+      <Footer />
+    </>
+  );
 }
