@@ -20,7 +20,7 @@ async function revalidateDocId(docId: string) {
   // but to search in Graph, we need only the UUID without separation dashes `-`
   const id = docId.split('_')[0].replaceAll('-', '');
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
+    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
   const getPathQuery = `
