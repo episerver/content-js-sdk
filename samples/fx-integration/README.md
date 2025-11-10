@@ -9,7 +9,7 @@ You need a Optimizely CMS instance and Optimizely Feature Experimentation instan
 Create an `.env` file with the following content. You will learn how to get the values for the variables in the next steps.
 
 ```
-OPTIMIZELY_CMS_HOST=
+OPTIMIZELY_CMS_URL=
 OPTIMIZELY_GRAPH_SINGLE_KEY=
 OPTIMIZELY_CMS_CLIENT_ID=
 OPTIMIZELY_CMS_CLIENT_SECRET=
@@ -20,7 +20,7 @@ OPTIMIZELY_FX_ACCESS_TOKEN=
 
 ### CMS credentials
 
-1. Put the URL of your CMS as the `OPTIMIZELY_CMS_HOST` variable. For example `https://app-1234.cms.optimizely.com/`
+1. Put the URL of your CMS as the `OPTIMIZELY_CMS_URL` variable. For example `https://app-1234.cms.optimizely.com/`
 2. Go to your CMS instance &rarr; Settings &rarr; API Keys.
 3. Under **Render Content**, the _Single Key_ variable, is the variable `OPTIMIZELY_GRAPH_SINGLE_KEY`
 4. In the same page, under **Manage Content**, click "Create API key".
