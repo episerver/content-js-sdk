@@ -7,8 +7,8 @@ import {
 import { ProductContentType } from './Product';
 import { StandardContentType } from './Standard';
 
-export const StartPageContentType = contentType({
-  key: 'StartPage',
+export const StartContentType = contentType({
+  key: 'Start',
   displayName: 'Start Page',
   baseType: '_experience',
   mayContainTypes: [StandardContentType, ProductContentType],
@@ -123,8 +123,8 @@ export const StartPageContentType = contentType({
   },
 });
 
-type StartPageProps = {
-  opti: Infer<typeof StartPageContentType>;
+type StartProps = {
+  opti: Infer<typeof StartContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -132,11 +132,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-function StartPage({ opti }: StartPageProps) {
-  const { pa } = getPreviewUtils(opti);
-
-  console.log(opti.image?.url.default);
-
+function StartPage({ opti }: StartProps) {
   return (
     <>
       <div
