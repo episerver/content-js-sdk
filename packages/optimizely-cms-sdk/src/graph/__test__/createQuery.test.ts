@@ -77,7 +77,7 @@ describe('createFragment() simple cases', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
         "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
-        "fragment ct1 on ct1 { __typename lin { url { ...ContentUrl }} ric { html, json } lin2 { url { ...ContentUrl }} ric2 { html, json } ..._IContent }",
+        "fragment ct1 on ct1 { __typename lin { text title target url { ...ContentUrl }} ric { html, json } lin2 { text title target url { ...ContentUrl }} ric2 { html, json } ..._IContent }",
       ]
     `);
   });
