@@ -10,7 +10,7 @@ import './globals.css';
 import Teaser, { TeaserContentType } from '@/components/base/Teaser';
 import Editorial, { EditorialContentType } from '@/components/base/Editorial';
 import Contact, { ContactContentType } from '@/components/base/Contact';
-import StartPage, { StartContentType } from '@/components/Start';
+import Start, { StartContentType } from '@/components/Start';
 import Product, { ProductContentType } from '@/components/Product';
 import Standard, { StandardContentType } from '@/components/Standard';
 import Notice, { NoticeContentType } from '@/components/base/Notice';
@@ -55,7 +55,7 @@ initReactComponentRegistry({
     Notice,
     Product,
     Standard,
-    StartPage,
+    Start,
     Teaser,
     BlankSection,
   },
