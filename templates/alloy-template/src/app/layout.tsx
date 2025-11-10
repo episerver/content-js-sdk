@@ -7,12 +7,10 @@ import {
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 import './globals.css';
-import Header from '@/components/base/Header';
-import Footer from '@/components/base/Footer';
 import Teaser, { TeaserContentType } from '@/components/base/Teaser';
 import Editorial, { EditorialContentType } from '@/components/base/Editorial';
 import Contact, { ContactContentType } from '@/components/base/Contact';
-import StartPage, { StartPageContentType } from '@/components/Start';
+import StartPage, { StartContentType } from '@/components/Start';
 import Product, { ProductContentType } from '@/components/Product';
 import Standard, { StandardContentType } from '@/components/Standard';
 import Notice, { NoticeContentType } from '@/components/base/Notice';
@@ -43,7 +41,7 @@ initContentTypeRegistry([
   NewsContentType,
   NoticeContentType,
   ProductContentType,
-  StartPageContentType,
+  StartContentType,
   TeaserContentType,
   StandardContentType,
 ]);
@@ -63,7 +61,7 @@ initReactComponentRegistry({
   },
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -73,9 +71,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Header />
-        <div className="container mx-auto p-10">{children}</div>
-        <Footer />
+        {children}
       </body>
     </html>
   );
