@@ -24,7 +24,7 @@ describe('createFragment() simple cases', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename str bin boo flo int dat ..._IContent }",
       ]
     `);
@@ -51,7 +51,7 @@ describe('createFragment() simple cases', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename str bin boo flo int dat ..._IContent }",
       ]
     `);
@@ -76,7 +76,7 @@ describe('createFragment() simple cases', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename lin { text title target url { ...ContentUrl }} ric { html, json } lin2 { text title target url { ...ContentUrl }} ric2 { html, json } ..._IContent }",
       ]
     `);
@@ -92,7 +92,7 @@ describe('createFragment() simple cases', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename ..._IContent }",
       ]
     `);
@@ -114,7 +114,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
@@ -140,7 +140,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r2 } ..._IContent }",
@@ -170,7 +170,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
         "fragment ct2 on ct2 { __typename p1 { __typename ...r1 } pct1 { __typename ...r2 } ..._IContent }",
@@ -194,7 +194,7 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
@@ -220,7 +220,7 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 ...r2 } ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r2 } ..._IContent }",
@@ -250,7 +250,7 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
@@ -281,7 +281,7 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
         "fragment ct2 on ct2 { __typename p1 { __typename ...r1 } p2 { __typename ...r1 ...r2 } ..._IContent }",
@@ -313,7 +313,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r3 ...ct1 } ..._IContent }",
@@ -344,7 +344,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r3 } ..._IContent }",
@@ -368,7 +368,7 @@ describe('createFragment() with self references', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
@@ -388,7 +388,7 @@ describe('createFragment() with self references', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
@@ -408,7 +408,7 @@ describe('createFragment() with self references', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
@@ -435,7 +435,7 @@ describe('createFragment() with self references', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
@@ -460,7 +460,7 @@ describe('createFragment() empty objects', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename p2 p3 ..._IContent }",
       ]
     `);
@@ -482,7 +482,7 @@ describe('createFragment() empty objects', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename ..._IContent }",
       ]
     `);
@@ -507,7 +507,7 @@ describe('createFragment() empty objects', () => {
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
-        "fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename p1 { __typename } ..._IContent }",
       ]
     `);
