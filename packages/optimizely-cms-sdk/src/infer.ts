@@ -74,7 +74,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends JsonProperty ? any
   : T extends RichTextProperty ? InferredRichText
   : T extends UrlProperty ? InferredUrl
-  : T extends LinkProperty ? { text: string, title: string, target: string, url: InferredUrl }
+  : T extends LinkProperty ? { text: string | null, title: string | null, target: string | null, url: InferredUrl }
   : T extends IntegerProperty ? number
   : T extends FloatProperty ? number
   : T extends ContentReferenceProperty ? { url: InferredUrl }
