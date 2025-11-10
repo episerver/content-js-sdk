@@ -53,7 +53,7 @@ const COMMON_FRAGMENTS = [
   'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
   CONTENT_URL_FRAGMENT,
   'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }',
-  'fragment _IContent on _IContent { _deleted _fulltext _modified _score _id _track _metadata {...IContentMetadata} }',
+  'fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }',
 ];
 const COMMON_FIELDS = '..._IContent';
 

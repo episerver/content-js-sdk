@@ -85,12 +85,7 @@ export type InferFromProperty<T extends AnyProperty> =
 
 /** Attributes included in the response from Graph in every content type */
 export type InferredBase = {
-  _deleted: boolean;
-  _fulltext: string[];
-  _modified: string;
-  _score: number;
   _id: string;
-  _track: string;
   _metadata: InferredMetadata;
   __typename: string;
   __context?: { edit: boolean; preview_token: string };
