@@ -140,7 +140,7 @@ function convertPropertyField(
     fields.push(`${name} { ...ContentUrl }`);
   } else if (property.type === 'link') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${name} { url { ...ContentUrl }}`);
+    fields.push(`${name} { text title target url { ...ContentUrl }}`);
   } else if (property.type === 'contentReference') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
     fields.push(`${name} { key url { ...ContentUrl }}`);
