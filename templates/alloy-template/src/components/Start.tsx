@@ -2,11 +2,13 @@ import { contentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   getPreviewUtils,
+  OptimizelyComponent,
   OptimizelyExperience,
 } from '@optimizely/cms-sdk/react/server';
 import { ProductContentType } from './Product';
 import { StandardContentType } from './Standard';
 import { SEOContentType } from './base/SEO';
+import { ButtonContentType } from './base/Button';
 
 export const StartContentType = contentType({
   key: 'Start',
@@ -33,14 +35,10 @@ export const StartContentType = contentType({
       displayName: 'Description',
       group: 'Information',
     },
-    button_link: {
-      type: 'url',
-      displayName: 'Button Link',
-      group: 'Information',
-    },
-    button_text: {
-      type: 'string',
-      displayName: 'Button Text',
+    button: {
+      type: 'component',
+      contentType: ButtonContentType,
+      displayName: 'Button',
       group: 'Information',
     },
 
@@ -152,16 +150,8 @@ function Start({ opti }: StartProps) {
                 {opti.description}
               </p>
             )}
-
-            {/* Call to Action Button */}
-            {opti.button_link && opti.button_text && (
-              <a
-                href={opti.button_link.default ?? undefined}
-                className="inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-8 rounded-md transition-colors duration-200 text-base"
-              >
-                {opti.button_text}
-              </a>
-            )}
+            {/* Button */}
+            <OptimizelyComponent opti={opti} />
           </div>
         </div>
       </div>
