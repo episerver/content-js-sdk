@@ -6,6 +6,7 @@ import {
   OptimizelyComponent,
   OptimizelyExperience,
 } from '@optimizely/cms-sdk/react/server';
+import { SEOContentType } from './base/SEO';
 
 export const ProductContentType = contentType({
   key: 'Product',
@@ -35,29 +36,10 @@ export const ProductContentType = contentType({
       },
       displayName: 'Content Area',
     },
-    // SEO group
-    site_title: {
-      type: 'string',
-      displayName: 'Title',
-      group: 'SEO',
-    },
-    keywords: {
-      type: 'array',
-      items: {
-        type: 'string',
-      },
-      displayName: 'Keywords',
-      group: 'SEO',
-    },
-    page_description: {
-      type: 'string',
-      displayName: 'Page Description',
-      group: 'SEO',
-    },
-    disable_indexing: {
-      type: 'boolean',
-      displayName: 'Disable Indexing',
-      group: 'SEO',
+    seo_properties: {
+      type: 'component',
+      contentType: SEOContentType,
+      displayName: 'SEO',
     },
   },
 });
