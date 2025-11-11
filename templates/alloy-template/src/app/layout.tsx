@@ -18,6 +18,7 @@ import News, { NewsContentType } from '@/components/News';
 import Article, { ArticleContentType } from '@/components/base/Article';
 import BlankSection from '@/components/base/BlankSection';
 import { SEOContentType } from '@/components/base/SEO';
+import Button, { ButtonContentType } from '@/components/base/Button';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -46,6 +47,7 @@ initContentTypeRegistry([
   TeaserContentType,
   StandardContentType,
   SEOContentType,
+  ButtonContentType,
 ]);
 
 initReactComponentRegistry({
@@ -60,6 +62,7 @@ initReactComponentRegistry({
     Start,
     Teaser,
     BlankSection,
+    Button,
   },
 });
 
