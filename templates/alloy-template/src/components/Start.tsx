@@ -6,6 +6,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 import { ProductContentType } from './Product';
 import { StandardContentType } from './Standard';
+import { SEOContentType } from './base/SEO';
 
 export const StartContentType = contentType({
   key: 'Start',
@@ -53,30 +54,6 @@ export const StartContentType = contentType({
       type: 'boolean',
       displayName: 'Hide Site Footer',
       group: 'Advanced',
-    },
-    // SEO group
-    site_title: {
-      type: 'string',
-      displayName: 'Title',
-      group: 'SEO',
-    },
-    keywords: {
-      type: 'array',
-      items: {
-        type: 'string',
-      },
-      displayName: 'Keywords',
-      group: 'SEO',
-    },
-    page_description: {
-      type: 'string',
-      displayName: 'Page Description',
-      group: 'SEO',
-    },
-    disable_indexing: {
-      type: 'boolean',
-      displayName: 'Disable Indexing',
-      group: 'SEO',
     },
     // siteSettings group
     contact_pages: {
@@ -133,6 +110,11 @@ export const StartContentType = contentType({
       },
       displayName: 'Customer Zone',
       group: 'SiteSettings',
+    },
+    seo_properties: {
+      type: 'component',
+      contentType: SEOContentType,
+      displayName: 'SEO',
     },
   },
 });
