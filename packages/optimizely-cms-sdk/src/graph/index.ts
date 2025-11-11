@@ -132,6 +132,39 @@ type GetLinksResponse = {
   };
 };
 
+/** Traverses all keys in an object recursively */
+function removeTypePrefix(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map((e) => removeTypePrefix(e));
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    const obj2: Record<string, any> = {};
+    if ('__typename' in obj) {
+      // Do something special with the object
+      const prefix = obj.__typename + '__';
+
+      // Copy all properties, remove the typename from prefix
+      for (const k in obj) {
+        if (k.startsWith(prefix)) {
+          obj2[k.slice(prefix.length)] = removeTypePrefix(obj[k]);
+        } else {
+          obj2[k] = removeTypePrefix(obj[k]);
+        }
+      }
+    } else {
+      // Traverse recursively
+      for (const k in obj) {
+        obj2[k] = removeTypePrefix(obj[k]);
+      }
+    }
+
+    return obj2;
+  }
+
+  return obj;
+}
+
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
@@ -281,7 +314,7 @@ export class GraphClient {
     const query = createMultipleContentQuery(contentTypeName);
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
-    return response?._Content?.items;
+    return response?._Content?.items.map(removeTypePrefix);
   }
 
   /**
@@ -358,6 +391,9 @@ export class GraphClient {
     const query = createSingleContentQuery(contentTypeName);
     const response = await this.request(query, input, params.preview_token);
 
-    return decorateWithContext(response?._Content?.item, params);
+    return decorateWithContext(
+      removeTypePrefix(response?._Content?.item),
+      params
+    );
   }
 }
