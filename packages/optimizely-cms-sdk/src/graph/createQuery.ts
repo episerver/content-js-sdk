@@ -100,12 +100,13 @@ function convertPropertyField(
   const fields: string[] = [];
   const subfields: string[] = [];
   const extraFragments: string[] = [];
+  const nameInFragment = `${rootName}__${name}:${name}`;
 
   if (property.type === 'component') {
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
     extraFragments.push(...createFragment(key, visited, 'Property'));
-    fields.push(`${name} { ...${fragmentName} }`);
+    fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
       property.allowedTypes,
@@ -132,24 +133,24 @@ function convertPropertyField(
     }
 
     const uniqueSubfields = ['__typename', ...new Set(subfields)].join(' '); // remove duplicates
-    fields.push(`${name} { ${uniqueSubfields} }`);
+    fields.push(`${nameInFragment} { ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
-    fields.push(`${name} { html, json }`);
+    fields.push(`${nameInFragment} { html, json }`);
   } else if (property.type === 'url') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${name} { ...ContentUrl }`);
+    fields.push(`${nameInFragment} { ...ContentUrl }`);
   } else if (property.type === 'link') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${name} { text title target url { ...ContentUrl }}`);
+    fields.push(`${nameInFragment} { text title target url { ...ContentUrl }}`);
   } else if (property.type === 'contentReference') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${name} { key url { ...ContentUrl }}`);
+    fields.push(`${nameInFragment} { key url { ...ContentUrl }}`);
   } else if (property.type === 'array') {
     const f = convertProperty(name, property.items, rootName, visited);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
-    fields.push(name);
+    fields.push(nameInFragment);
   }
 
   return {
