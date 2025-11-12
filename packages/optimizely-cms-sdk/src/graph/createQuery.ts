@@ -105,7 +105,7 @@ function convertPropertyField(
   if (property.type === 'component') {
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
-    extraFragments.push(...createFragment(key, visited, 'Property'));
+    extraFragments.push(...createFragment(key, visited, 'Property', false));
     fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
@@ -203,7 +203,8 @@ function createExperienceFragments(visited: Set<string>): string[] {
 export function createFragment(
   contentTypeName: string,
   visited: Set<string> = new Set(), // shared across recursion
-  suffix: string = ''
+  suffix: string = '',
+  includeBaseFragments: boolean = true
 ): string[] {
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return []; // cyclic ref guard
@@ -243,9 +244,11 @@ export function createFragment(
     }
 
     // Add fragments for the base type of the user-defined content type
-    const baseFragments = buildBaseTypeFragments();
-    extraFragments.unshift(...baseFragments.extraFragments); // maintain order
-    fields.push(...baseFragments.fields);
+    if (includeBaseFragments) {
+      const baseFragments = buildBaseTypeFragments();
+      extraFragments.unshift(...baseFragments.extraFragments); // maintain order
+      fields.push(...baseFragments.fields);
+    }
 
     if (ct.baseType === '_experience') {
       fields.push('..._IExperience');
