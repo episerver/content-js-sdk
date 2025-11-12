@@ -153,7 +153,7 @@ function removeTypePrefix(obj: any): any {
   if (typeof obj === 'object' && obj !== null) {
     const obj2: Record<string, any> = {};
     if ('__typename' in obj) {
-      // Do something special with the object
+      // Object has a GraphQL type, check for and remove aliased field prefixes
       const prefix = obj.__typename + '__';
 
       // Copy all properties, remove the typename from prefix
