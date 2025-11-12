@@ -33,7 +33,7 @@ export default async function Page({ params }: Props) {
   return (
     <>
       <h1>Query result</h1>
-      <pre>{JSON.stringify(items[0], null, 2)}</pre>;
+      <pre>{JSON.stringify(items[0], null, 2)}</pre>
     </>
   );
 }
