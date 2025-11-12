@@ -134,14 +134,14 @@ type GetLinksResponse = {
 
 /**
  * Removes GraphQL alias prefixes from object keys in the response data.
- * 
+ *
  * For objects with a `__typename` property, removes the `{typename}__` prefix
  * from all field names (e.g., `ContentType__p1` becomes `p1`).
  * This reverses the aliasing applied in query generation to prevent field
  * name collisions in GraphQL fragments.
- * 
+ *
  * Traverses all keys in an object recursively, processing arrays and nested objects.
- * 
+ *
  * @param obj - The object to process (typically a GraphQL response)
  * @returns A new object with prefixes removed, or the original value for primitives
  */
@@ -152,7 +152,7 @@ function removeTypePrefix(obj: any): any {
 
   if (typeof obj === 'object' && obj !== null) {
     const obj2: Record<string, any> = {};
-    if ('__typename' in obj) {
+    if ('__typename' in obj && typeof obj.__typename === 'string') {
       // Object has a GraphQL type, check for and remove aliased field prefixes
       const prefix = obj.__typename + '__';
 
