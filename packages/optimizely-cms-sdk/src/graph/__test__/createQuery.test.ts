@@ -22,8 +22,10 @@ describe('createFragment() simple cases', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename str bin boo flo int dat ..._IContent }",
       ]
@@ -49,8 +51,10 @@ describe('createFragment() simple cases', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename str bin boo flo int dat ..._IContent }",
       ]
@@ -74,8 +78,10 @@ describe('createFragment() simple cases', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename lin { text title target url { ...ContentUrl }} ric { html, json } lin2 { text title target url { ...ContentUrl }} ric2 { html, json } ..._IContent }",
       ]
@@ -90,8 +96,10 @@ describe('createFragment() simple cases', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename ..._IContent }",
       ]
@@ -112,8 +120,10 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } ..._IContent }",
@@ -138,8 +148,10 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
@@ -168,8 +180,10 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
@@ -192,8 +206,10 @@ describe('createFragment() with `content` properties. Base types', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } ..._IContent }",
@@ -218,8 +234,10 @@ describe('createFragment() with `content` properties. Base types', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 ...r2 } ..._IContent }",
@@ -248,8 +266,10 @@ describe('createFragment() with `content` properties. Base types', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename ..._IContent }",
@@ -279,8 +299,10 @@ describe('createFragment() with `content` properties. Base types', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
@@ -311,8 +333,10 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
@@ -342,8 +366,10 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
@@ -366,8 +392,10 @@ describe('createFragment() with self references', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
@@ -386,8 +414,10 @@ describe('createFragment() with self references', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
@@ -406,8 +436,10 @@ describe('createFragment() with self references', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
@@ -433,8 +465,10 @@ describe('createFragment() with self references', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
       ]
@@ -458,8 +492,10 @@ describe('createFragment() empty objects', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename p2 p3 ..._IContent }",
       ]
@@ -480,8 +516,10 @@ describe('createFragment() empty objects', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename ..._IContent }",
       ]
@@ -505,8 +543,10 @@ describe('createFragment() empty objects', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
-        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ct1 on ct1 { __typename p1 { __typename } ..._IContent }",
       ]

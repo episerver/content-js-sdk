@@ -68,7 +68,7 @@ describe('createFragment > Fragment threshold warning', () => {
     expect(result).toBeInstanceOf(Array);
     expect(warnSpy).toHaveBeenCalledOnce();
     expect(warnSpy.mock.calls[0][0]).toMatch(
-      String.raw`generated 105 inner fragments`
+      String.raw`generated 107 inner fragments`
     );
     expect(warnSpy.mock.calls[0][0]).toMatch(
       /Excessive fragment depth may breach GraphQL limits or degrade performance./
