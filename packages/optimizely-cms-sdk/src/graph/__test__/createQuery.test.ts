@@ -27,7 +27,7 @@ describe('createFragment() simple cases', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment ct1 on ct1 { __typename str bin boo flo int dat ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__str:str ct1__bin:bin ct1__boo:boo ct1__flo:flo ct1__int:int ct1__dat:dat ..._IContent }",
       ]
     `);
   });
@@ -56,7 +56,7 @@ describe('createFragment() simple cases', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment ct1 on ct1 { __typename str bin boo flo int dat ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__str:str ct1__bin:bin ct1__boo:boo ct1__flo:flo ct1__int:int ct1__dat:dat ..._IContent }",
       ]
     `);
   });
@@ -83,7 +83,7 @@ describe('createFragment() simple cases', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment ct1 on ct1 { __typename lin { text title target url { ...ContentUrl }} ric { html, json } lin2 { text title target url { ...ContentUrl }} ric2 { html, json } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__lin:lin { text title target url { ...ContentUrl }} ct1__ric:ric { html, json } ct1__lin2:lin2 { text title target url { ...ContentUrl }} ct1__ric2:ric2 { html, json } ..._IContent }",
       ]
     `);
   });
@@ -126,7 +126,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
-        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -154,8 +154,8 @@ describe('createFragment() with `content` properties. Explicit reference via `al
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
-        "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
-        "fragment ct1 on ct1 { __typename p1 { __typename ...r2 } ..._IContent }",
+        "fragment r2 on r2 { __typename r2__p1:p1 { __typename ...r1 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r2 } ..._IContent }",
       ]
     `);
   });
@@ -186,8 +186,8 @@ describe('createFragment() with `content` properties. Explicit reference via `al
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
-        "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
-        "fragment ct2 on ct2 { __typename p1 { __typename ...r1 } pct1 { __typename ...r2 } ..._IContent }",
+        "fragment r2 on r2 { __typename r2__p1:p1 { __typename ...r1 } ..._IContent }",
+        "fragment ct2 on ct2 { __typename ct2__p1:p1 { __typename ...r1 } ct2__pct1:pct1 { __typename ...r2 } ..._IContent }",
       ]
     `);
   });
@@ -212,7 +212,7 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
-        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -240,8 +240,8 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
-        "fragment r2 on r2 { __typename p1 { __typename ...r1 ...r2 } ..._IContent }",
-        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r2 } ..._IContent }",
+        "fragment r2 on r2 { __typename r2__p1:p1 { __typename ...r1 ...r2 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r2 } ..._IContent }",
       ]
     `);
   });
@@ -274,7 +274,7 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
-        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r2 ...r3 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r2 ...r3 } ..._IContent }",
       ]
     `);
   });
@@ -305,8 +305,8 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
-        "fragment r2 on r2 { __typename p1 { __typename ...r1 } ..._IContent }",
-        "fragment ct2 on ct2 { __typename p1 { __typename ...r1 } p2 { __typename ...r1 ...r2 } ..._IContent }",
+        "fragment r2 on r2 { __typename r2__p1:p1 { __typename ...r1 } ..._IContent }",
+        "fragment ct2 on ct2 { __typename ct2__p1:p1 { __typename ...r1 } ct2__p2:p2 { __typename ...r1 ...r2 } ..._IContent }",
       ]
     `);
   });
@@ -340,7 +340,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
-        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r3 ...ct1 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r3 ...ct1 } ..._IContent }",
       ]
     `);
   });
@@ -373,7 +373,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
-        "fragment ct1 on ct1 { __typename p1 { __typename ...r1 ...r3 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r3 } ..._IContent }",
       ]
     `);
   });
@@ -397,7 +397,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -419,7 +419,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -441,7 +441,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -470,7 +470,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename p1 { __typename ...r1 } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -497,7 +497,7 @@ describe('createFragment() empty objects', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment ct1 on ct1 { __typename p2 p3 ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p2:p2 ct1__p3:p3 ..._IContent }",
       ]
     `);
   });
@@ -548,7 +548,7 @@ describe('createFragment() empty objects', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment ct1 on ct1 { __typename p1 { __typename } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename } ..._IContent }",
       ]
     `);
   });
