@@ -553,3 +553,36 @@ describe('createFragment() empty objects', () => {
     `);
   });
 });
+
+describe('createFragment() with component properties', () => {
+  test('simple case', async () => {
+    const ctBlock = contentType({
+      key: 'ctBlock',
+      baseType: '_component',
+      properties: {
+        p1: { type: 'string' },
+      },
+    });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        p1: { type: 'component', contentType: ctBlock },
+      },
+    });
+    initContentTypeRegistry([ct1, ctBlock]);
+    const result = await createFragment('ct1');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
+        "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
+        "fragment ctBlockProperty on ctBlockProperty { __typename ctBlock__p1:p1 }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { ...ctBlockProperty } ..._IContent }",
+      ]
+    `);
+  });
+});
