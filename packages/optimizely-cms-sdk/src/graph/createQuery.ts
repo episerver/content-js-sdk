@@ -69,9 +69,16 @@ function convertProperty(
   name: string,
   property: AnyProperty,
   rootName: string,
+  suffix: string,
   visited: Set<string>
 ): { fields: string[]; extraFragments: string[] } {
-  const result = convertPropertyField(name, property, rootName, visited);
+  const result = convertPropertyField(
+    name,
+    property,
+    rootName,
+    suffix,
+    visited
+  );
 
   // logs warnings if the fragment generation causes potential issues
   const warningMessage = checkTypeConstraintIssues(rootName, property, result);
@@ -95,12 +102,13 @@ function convertPropertyField(
   name: string,
   property: AnyProperty,
   rootName: string,
+  suffix: string,
   visited: Set<string>
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
   const subfields: string[] = [];
   const extraFragments: string[] = [];
-  const nameInFragment = `${rootName}__${name}:${name}`;
+  const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
 
   if (property.type === 'component') {
     const key = property.contentType.key;
@@ -146,7 +154,7 @@ function convertPropertyField(
     extraFragments.push(CONTENT_URL_FRAGMENT);
     fields.push(`${nameInFragment} { key url { ...ContentUrl }}`);
   } else if (property.type === 'array') {
-    const f = convertProperty(name, property.items, rootName, visited);
+    const f = convertProperty(name, property.items, rootName, suffix, visited);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
@@ -237,6 +245,7 @@ export function createFragment(
         propKey,
         prop,
         contentTypeName,
+        suffix,
         visited
       );
       fields.push(...f);

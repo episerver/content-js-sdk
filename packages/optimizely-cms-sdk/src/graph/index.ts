@@ -144,8 +144,11 @@ type GetLinksResponse = {
  *
  * @param obj - The object to process (typically a GraphQL response)
  * @returns A new object with prefixes removed, or the original value for primitives
+ *
+ * Note: this function is exported only on this level for testing purposes.
+ * It should not be exported in the user-facing API
  */
-function removeTypePrefix(obj: any): any {
+export function removeTypePrefix(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map((e) => removeTypePrefix(e));
   }
