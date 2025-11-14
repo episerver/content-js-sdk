@@ -580,7 +580,7 @@ describe('createFragment() with component properties', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment ctBlockProperty on ctBlockProperty { __typename ctBlock__p1:p1 }",
+        "fragment ctBlockProperty on ctBlockProperty { __typename ctBlockProperty__p1:p1 }",
         "fragment ct1 on ct1 { __typename ct1__p1:p1 { ...ctBlockProperty } ..._IContent }",
       ]
     `);
