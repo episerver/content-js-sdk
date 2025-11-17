@@ -43,7 +43,24 @@ export type InferredUrl = {
   base: string | null;
 };
 
-type InferredMetadata = {
+type InferredItemMetadata = {
+  changeset: string | null;
+  displayOption: string | null;
+};
+
+type InferredInstanceMetadata = {
+  changeset: string | null;
+  locales: string[];
+  expired: string | null;
+  container: string | null;
+  owner: string | null;
+  routeSegment: string | null;
+  lastModifiedBy: string | null;
+  path: string[];
+  createdBy: string | null;
+};
+
+type InferredContentMetadata = {
   key: string;
   locale: string;
   fallbackForLocale: string;
@@ -57,7 +74,8 @@ type InferredMetadata = {
   lastModified: string;
   sortOrder: number;
   variation: string;
-};
+} & Partial<InferredInstanceMetadata> &
+  Partial<InferredItemMetadata>;
 
 type InferredRichText = {
   html: string;
@@ -86,7 +104,7 @@ export type InferFromProperty<T extends AnyProperty> =
 /** Attributes included in the response from Graph in every content type */
 export type InferredBase = {
   _id: string;
-  _metadata: InferredMetadata;
+  _metadata: InferredContentMetadata;
   __typename: string;
   __context?: { edit: boolean; preview_token: string };
 };

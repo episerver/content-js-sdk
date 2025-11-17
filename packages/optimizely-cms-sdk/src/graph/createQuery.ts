@@ -69,9 +69,16 @@ function convertProperty(
   name: string,
   property: AnyProperty,
   rootName: string,
+  suffix: string,
   visited: Set<string>
 ): { fields: string[]; extraFragments: string[] } {
-  const result = convertPropertyField(name, property, rootName, visited);
+  const result = convertPropertyField(
+    name,
+    property,
+    rootName,
+    suffix,
+    visited
+  );
 
   // logs warnings if the fragment generation causes potential issues
   const warningMessage = checkTypeConstraintIssues(rootName, property, result);
@@ -95,17 +102,19 @@ function convertPropertyField(
   name: string,
   property: AnyProperty,
   rootName: string,
+  suffix: string,
   visited: Set<string>
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
   const subfields: string[] = [];
   const extraFragments: string[] = [];
+  const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
 
   if (property.type === 'component') {
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
-    extraFragments.push(...createFragment(key, visited, 'Property'));
-    fields.push(`${name} { ...${fragmentName} }`);
+    extraFragments.push(...createFragment(key, visited, 'Property', false));
+    fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
       property.allowedTypes,
@@ -132,24 +141,24 @@ function convertPropertyField(
     }
 
     const uniqueSubfields = ['__typename', ...new Set(subfields)].join(' '); // remove duplicates
-    fields.push(`${name} { ${uniqueSubfields} }`);
+    fields.push(`${nameInFragment} { ${uniqueSubfields} }`);
   } else if (property.type === 'richText') {
-    fields.push(`${name} { html, json }`);
+    fields.push(`${nameInFragment} { html, json }`);
   } else if (property.type === 'url') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${name} { ...ContentUrl }`);
+    fields.push(`${nameInFragment} { ...ContentUrl }`);
   } else if (property.type === 'link') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${name} { text title target url { ...ContentUrl }}`);
+    fields.push(`${nameInFragment} { text title target url { ...ContentUrl }}`);
   } else if (property.type === 'contentReference') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${name} { key url { ...ContentUrl }}`);
+    fields.push(`${nameInFragment} { key url { ...ContentUrl }}`);
   } else if (property.type === 'array') {
-    const f = convertProperty(name, property.items, rootName, visited);
+    const f = convertProperty(name, property.items, rootName, suffix, visited);
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
-    fields.push(name);
+    fields.push(nameInFragment);
   }
 
   return {
@@ -202,7 +211,8 @@ function createExperienceFragments(visited: Set<string>): string[] {
 export function createFragment(
   contentTypeName: string,
   visited: Set<string> = new Set(), // shared across recursion
-  suffix: string = ''
+  suffix: string = '',
+  includeBaseFragments: boolean = true
 ): string[] {
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return []; // cyclic ref guard
@@ -235,6 +245,7 @@ export function createFragment(
         propKey,
         prop,
         contentTypeName,
+        suffix,
         visited
       );
       fields.push(...f);
@@ -242,9 +253,11 @@ export function createFragment(
     }
 
     // Add fragments for the base type of the user-defined content type
-    const baseFragments = buildBaseTypeFragments();
-    extraFragments.unshift(...baseFragments.extraFragments); // maintain order
-    fields.push(...baseFragments.fields);
+    if (includeBaseFragments) {
+      const baseFragments = buildBaseTypeFragments();
+      extraFragments.unshift(...baseFragments.extraFragments); // maintain order
+      fields.push(...baseFragments.fields);
+    }
 
     if (ct.baseType === '_experience') {
       fields.push('..._IExperience');

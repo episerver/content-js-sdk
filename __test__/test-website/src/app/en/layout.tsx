@@ -27,12 +27,36 @@ import {
   RowA,
 } from '@/components/with-display-templates';
 import {
+  ctArray,
+  ctBoolean,
+  ctContentReference,
+  ctInteger,
+  ctLink,
+  ctRich,
+  ctString,
+  ctWithCollision,
+} from '@/components/with-repeated-properties';
+import {
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
-initContentTypeRegistry([ct1, ct2, ct3, ct6, ct7]);
+initContentTypeRegistry([
+  ct1,
+  ct2,
+  ct3,
+  ct6,
+  ct7,
+  ctString,
+  ctBoolean,
+  ctInteger,
+  ctRich,
+  ctContentReference,
+  ctArray,
+  ctWithCollision,
+  ctLink,
+]);
 initDisplayTemplateRegistry([dt1, dt2, dt3, dt4, dt5, dt6]);
 initReactComponentRegistry({
   resolver: {
