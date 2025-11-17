@@ -107,6 +107,7 @@ export type InferredBase = {
   _metadata: InferredContentMetadata;
   __typename: string;
   __context?: { edit: boolean; preview_token: string };
+  composition?: ExperienceComponentNode;
 };
 
 /** Only include keys where indexingType is not 'disabled' */

@@ -261,6 +261,7 @@ export function OptimizelyGridSection({
         <OptimizelyComponent
           opti={{
             ...node.component,
+            composition: node,
             __tag: tag,
           }}
           key={node.key}
@@ -307,17 +308,19 @@ export function OptimizelyGridSection({
 export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
   return {
     /** Get the HTML data attributes required for a property */
-    pa(property: string | { key: string }) {
+    pa(property?: string | { key: string }) {
       if (opti.__context?.edit) {
         if (typeof property === 'string') {
           return {
             'data-epi-property-name': property,
           };
-        } else {
+        } else if (property) {
           return {
             'data-epi-block-id': property.key,
           };
         }
+
+        return {};
       } else {
         return {};
       }
