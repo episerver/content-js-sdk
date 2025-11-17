@@ -142,6 +142,7 @@ export type ExperienceCompositionNode = {
   type: string | null;
 
   key: string;
+  layoutType: string | null;
   displayName: string;
   displayTemplateKey: string | null;
   displaySettings: DisplaySettingsType[] | null;
