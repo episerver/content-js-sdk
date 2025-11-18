@@ -84,7 +84,7 @@ type OptimizelyComponentProps = {
     /** Preview context */
     __context?: { edit: boolean; preview_token: string };
 
-    composition?: ExperienceCompositionNode;
+    __composition?: ExperienceCompositionNode;
   };
 
   displaySettings?: Record<string, string>;
@@ -98,7 +98,8 @@ export async function OptimizelyComponent({
   if (!componentRegistry) {
     throw new Error('You should call `initReactComponentRegistry` first');
   }
-  const dtKey = opti.composition?.displayTemplateKey ?? opti.displayTemplateKey;
+  const dtKey =
+    opti.__composition?.displayTemplateKey ?? opti.displayTemplateKey;
   const Component = await componentRegistry.getComponent(opti.__typename, {
     tag: opti.__tag ?? getDisplayTemplateTag(dtKey),
   });
@@ -261,7 +262,7 @@ export function OptimizelyGridSection({
         <OptimizelyComponent
           opti={{
             ...node.component,
-            composition: node,
+            __composition: node,
             __tag: tag,
           }}
           key={node.key}
