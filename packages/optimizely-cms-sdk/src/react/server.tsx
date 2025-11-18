@@ -261,6 +261,7 @@ export function OptimizelyGridSection({
       return (
         <OptimizelyComponent
           opti={{
+            // `node.component` contains user-defined properties
             ...node.component,
             __composition: node,
             __tag: tag,
