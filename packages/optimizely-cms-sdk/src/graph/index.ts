@@ -372,7 +372,7 @@ export class GraphClient {
     if (!sortedKeys) {
       // This is an error
       throw new GraphResponseError(
-        'The `_metadata` does not contain any `path` field. Ensure that the path you requested is an actual page and not a block. If the problem persists, contact Optimizely Support',
+        'The `_metadata` does not contain any `path` field. Ensure that the path you requested is an actual page and not a block. If the problem persists, contact Optimizely support',
         {
           request: {
             query: GET_PATH_QUERY,
