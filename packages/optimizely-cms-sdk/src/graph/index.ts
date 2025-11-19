@@ -60,6 +60,11 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
   _Content(where: $where, locale: $locale) {
     item {
       _id
+      _metadata {
+        ...on InstanceMetadata {
+          path
+        }
+      }
       _link(type: PATH) {
         _Page {
           items {
@@ -70,6 +75,7 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
               locale
               types
               url {
+                base
                 hierarchical
                 default
               }
@@ -86,6 +92,11 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
   _Content(where: $where, locale: $locale) {
     item {
       _id
+      _metadata {
+        ...on InstanceMetadata {
+          path
+        }
+      }
       _link(type: ITEMS) {
         _Page {
           items {
@@ -96,6 +107,7 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
               locale
               types
               url {
+                base
                 hierarchical
                 default
               }
@@ -111,6 +123,9 @@ type GetLinksResponse = {
   _Content: {
     item: {
       _id: string | null;
+      _metadata: {
+        path?: string[];
+      };
       _link: {
         _Page: {
           items: Array<{
@@ -121,6 +136,7 @@ type GetLinksResponse = {
               locale?: string;
               types: string[];
               url?: {
+                base?: string;
                 hierarchical?: string;
                 default?: string;
               };
@@ -350,21 +366,29 @@ export class GraphClient {
       return null;
     }
 
-    const links = data?._Content?.item._link._Page.items;
+    const links = data._Content.item._link._Page.items;
+    const sortedKeys = data._Content.item._metadata.path;
 
-    // Return sorted by "hierarchical"
-    return links.toSorted((a, b) => {
-      const ha = a?._metadata?.url?.hierarchical ?? '';
-      const hb = b?._metadata?.url?.hierarchical ?? '';
+    if (!sortedKeys) {
+      // This is an error
+      throw new GraphResponseError(
+        'The `_metadata` does not contain any `path` field. Ensure that the path you requested is an actual page and not a block. If the problem persists, contact Optimizely Support',
+        {
+          request: {
+            query: GET_PATH_QUERY,
+            variables: {
+              ...pathFilter(path, options?.host),
+              ...localeFilter(options?.locales),
+            },
+          },
+        }
+      );
+    }
 
-      if (ha > hb) {
-        return 1;
-      }
-      if (ha < hb) {
-        return -1;
-      }
-      return 0;
-    });
+    // Return sorted by the "sortedKeys"
+    return sortedKeys
+      .map((key) => links.find((link) => link._metadata?.key === key))
+      .filter((item) => typeof item !== 'undefined');
   }
 
   /**
