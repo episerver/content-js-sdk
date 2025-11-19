@@ -105,8 +105,11 @@ export type InferFromProperty<T extends AnyProperty> =
 export type InferredBase = {
   _id: string;
   _metadata: InferredContentMetadata;
+
+  // Properties that don't come from Graph are prefixed with double-underscores
   __typename: string;
   __context?: { edit: boolean; preview_token: string };
+  __composition?: ExperienceComponentNode;
 };
 
 /** Only include keys where indexingType is not 'disabled' */
