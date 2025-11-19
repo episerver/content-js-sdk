@@ -2,14 +2,12 @@ import { AnyProperty } from '../model/properties.js';
 import {
   AnyContentType,
   MAIN_BASE_TYPES,
-  MediaStringTypes,
   PermittedTypes,
 } from '../model/contentTypes.js';
 import {
   getContentType,
   getAllContentTypes,
   getContentTypeByBaseType,
-  getAllMediaTypeKeys,
 } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
@@ -129,15 +127,6 @@ function convertPropertyField(
       }
       extraFragments.push(...createFragment(key, visited));
       subfields.push(`...${key}`);
-
-      // if the key name is one of the user defined media type we append the base type fragment
-      // eg: userDefinedImage (baseType:"image") -> _image
-      if (getAllMediaTypeKeys().includes(key)) {
-        const cc = getContentType(key);
-        if (cc) {
-          subfields.push(`...${cc.baseType.trim()}`);
-        }
-      }
     }
 
     const uniqueSubfields = ['__typename', ...new Set(subfields)].join(' '); // remove duplicates
