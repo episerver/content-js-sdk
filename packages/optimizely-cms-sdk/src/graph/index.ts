@@ -386,9 +386,10 @@ export class GraphClient {
     }
 
     // Return sorted by the "sortedKeys"
+    const linkMap = new Map(links.map((link) => [link._metadata?.key, link]));
     return sortedKeys
-      .map((key) => links.find((link) => link._metadata?.key === key))
-      .filter((item) => typeof item !== 'undefined');
+      .map((key) => linkMap.get(key))
+      .filter((item) => item !== undefined);
   }
 
   /**
