@@ -33,12 +33,12 @@ const customHeadingTwo = (props: ElementProps) => {
 };
 
 export default function AboutUs({ opti }: AboutUsProps) {
-  const {  src } = getPreviewUtils(opti);
+  const { src } = getPreviewUtils(opti);
   return (
     <section className="about-us">
       {opti?.image?.url?.default && (
         <div className="about-us-image">
-          <Image src={src(opti.image.url.default)} alt="" fill={true}/>
+          <Image src={src(opti.image.url.default)} alt="" fill={true} />
         </div>
       )}
       <h2>{opti.heading}</h2>

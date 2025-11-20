@@ -28,6 +28,11 @@ import {
   SectionContentType,
 } from './model/contentTypes.js';
 import { Node } from './components/richText/renderer.js';
+import {
+  PublicImageAsset,
+  PublicRawFileAsset,
+  PublicVideoAsset,
+} from './model/assets.js';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {
@@ -82,6 +87,12 @@ type InferredRichText = {
   json: { type: 'richText'; children: Node[] };
 };
 
+/** Asset types that can be returned in ContentReference */
+export type ContentReferenceItem =
+  | PublicImageAsset
+  | PublicVideoAsset
+  | PublicRawFileAsset;
+
 /** Infers the Typescript type for each content type property */
 // prettier-ignore
 export type InferFromProperty<T extends AnyProperty> =
@@ -95,7 +106,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends LinkProperty ? { text: string | null, title: string | null, target: string | null, url: InferredUrl }
   : T extends IntegerProperty ? number
   : T extends FloatProperty ? number
-  : T extends ContentReferenceProperty ? { url: InferredUrl }
+ : T extends ContentReferenceProperty ? { url: InferredUrl, item: ContentReferenceItem | null }
   : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
   : T extends ContentProperty ? {__typename: string, __viewname: string}
   : T extends ComponentProperty<infer E> ? Infer<E>

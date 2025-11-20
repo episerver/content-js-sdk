@@ -141,7 +141,9 @@ function convertPropertyField(
     fields.push(`${nameInFragment} { text title target url { ...ContentUrl }}`);
   } else if (property.type === 'contentReference') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(`${nameInFragment} { key url { ...ContentUrl }}`);
+    fields.push(
+      `${name} { key url { ...ContentUrl } ...ContentReferenceItem }`
+    );
   } else if (property.type === 'array') {
     const f = convertProperty(name, property.items, rootName, suffix, visited);
     fields.push(...f.fields);

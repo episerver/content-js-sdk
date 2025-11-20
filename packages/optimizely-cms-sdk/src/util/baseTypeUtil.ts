@@ -49,6 +49,13 @@ export function isBaseMediaType(key: string): key is MediaStringTypes {
 export const CONTENT_URL_FRAGMENT =
   'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }';
 
+export const CONTENT_REFERENCE_ITEM_FRAGMENTS = [
+  'fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }',
+  'fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description Renditions { Id Name Url Width Height } Tags { Guid Name } }',
+  'fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description Tags { Guid Name } }',
+  'fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }',
+];
+
 const COMMON_FRAGMENTS = [
   'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
   'fragment ItemMetadata on ItemMetadata { changeset displayOption }',
@@ -56,7 +63,9 @@ const COMMON_FRAGMENTS = [
   CONTENT_URL_FRAGMENT,
   'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }',
   'fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }',
+  ...CONTENT_REFERENCE_ITEM_FRAGMENTS,
 ];
+
 const COMMON_FIELDS = '..._IContent';
 
 /**
