@@ -1,5 +1,6 @@
 import { contentType, Infer } from '@optimizely/cms-sdk';
 import { RichText, ElementProps } from '@optimizely/cms-sdk/react/richText';
+import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import Image from 'next/image';
 
 export const AboutUsContentType = contentType({
@@ -32,11 +33,12 @@ const customHeadingTwo = (props: ElementProps) => {
 };
 
 export default function AboutUs({ opti }: AboutUsProps) {
+  const {  src } = getPreviewUtils(opti);
   return (
     <section className="about-us">
       {opti?.image?.url?.default && (
         <div className="about-us-image">
-          <Image src={opti.image.url.default} alt="aboutus_image" />
+          <Image src={src(opti.image.url.default)} alt="" fill={true}/>
         </div>
       )}
       <h2>{opti.heading}</h2>
