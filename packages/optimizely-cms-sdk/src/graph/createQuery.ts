@@ -68,14 +68,16 @@ function convertProperty(
   property: AnyProperty,
   rootName: string,
   suffix: string,
-  visited: Set<string>
+  visited: Set<string>,
+  damEnabled: boolean = false
 ): { fields: string[]; extraFragments: string[] } {
   const result = convertPropertyField(
     name,
     property,
     rootName,
     suffix,
-    visited
+    visited,
+    damEnabled
   );
 
   // logs warnings if the fragment generation causes potential issues
@@ -101,7 +103,8 @@ function convertPropertyField(
   property: AnyProperty,
   rootName: string,
   suffix: string,
-  visited: Set<string>
+  visited: Set<string>,
+  damEnabled: boolean = false
 ): { fields: string[]; extraFragments: string[] } {
   const fields: string[] = [];
   const subfields: string[] = [];
@@ -111,7 +114,9 @@ function convertPropertyField(
   if (property.type === 'component') {
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
-    extraFragments.push(...createFragment(key, visited, 'Property', false));
+    extraFragments.push(
+      ...createFragment(key, visited, 'Property', false, damEnabled)
+    );
     fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
@@ -125,7 +130,9 @@ function convertPropertyField(
       if (key === '_self') {
         key = rootName;
       }
-      extraFragments.push(...createFragment(key, visited));
+      extraFragments.push(
+        ...createFragment(key, visited, '', true, damEnabled)
+      );
       subfields.push(`...${key}`);
     }
 
@@ -141,11 +148,17 @@ function convertPropertyField(
     fields.push(`${nameInFragment} { text title target url { ...ContentUrl }}`);
   } else if (property.type === 'contentReference') {
     extraFragments.push(CONTENT_URL_FRAGMENT);
-    fields.push(
-      `${name} { key url { ...ContentUrl } ...ContentReferenceItem }`
-    );
+    const itemFragment = damEnabled ? ' ...ContentReferenceItem' : '';
+    fields.push(`${name} { key url { ...ContentUrl }${itemFragment} }`);
   } else if (property.type === 'array') {
-    const f = convertProperty(name, property.items, rootName, suffix, visited);
+    const f = convertProperty(
+      name,
+      property.items,
+      rootName,
+      suffix,
+      visited,
+      damEnabled
+    );
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
   } else {
@@ -163,7 +176,10 @@ function convertPropertyField(
  * @param visited - Set of fragment names already visited to avoid cycles.
  * @returns A list of GraphQL fragment strings.
  */
-function createExperienceFragments(visited: Set<string>): string[] {
+function createExperienceFragments(
+  visited: Set<string>,
+  damEnabled: boolean = false
+): string[] {
   // Fixed fragments for all experiences
   const fixedFragments = [
     'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
@@ -185,7 +201,7 @@ function createExperienceFragments(visited: Set<string>): string[] {
   // Get the required fragments
   const extraFragments = experienceNodes
     .filter((n) => !visited.has(n))
-    .flatMap((n) => createFragment(n, visited));
+    .flatMap((n) => createFragment(n, visited, '', true, damEnabled));
 
   const nodeNames = experienceNodes.map((n) => `...${n}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
@@ -203,7 +219,8 @@ export function createFragment(
   contentTypeName: string,
   visited: Set<string> = new Set(), // shared across recursion
   suffix: string = '',
-  includeBaseFragments: boolean = true
+  includeBaseFragments: boolean = true,
+  damEnabled: boolean = false
 ): string[] {
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return []; // cyclic ref guard
@@ -214,9 +231,9 @@ export function createFragment(
   const fields: string[] = ['__typename'];
   const extraFragments: string[] = [];
 
-  // Built‑in CMS baseTypes  ("_image", "_video", "_media" etc.)
+  // Built‑in CMS baseTypes
   if (isBaseType(contentTypeName)) {
-    const { fields: f, extraFragments: e } = buildBaseTypeFragments();
+    const { fields: f, extraFragments: e } = buildBaseTypeFragments(damEnabled);
     fields.push(...f);
     extraFragments.push(...e);
   } else {
@@ -237,7 +254,8 @@ export function createFragment(
         prop,
         contentTypeName,
         suffix,
-        visited
+        visited,
+        damEnabled
       );
       fields.push(...f);
       extraFragments.push(...e);
@@ -245,14 +263,14 @@ export function createFragment(
 
     // Add fragments for the base type of the user-defined content type
     if (includeBaseFragments) {
-      const baseFragments = buildBaseTypeFragments();
+      const baseFragments = buildBaseTypeFragments(damEnabled);
       extraFragments.unshift(...baseFragments.extraFragments); // maintain order
       fields.push(...baseFragments.fields);
     }
 
     if (ct.baseType === '_experience') {
       fields.push('..._IExperience');
-      extraFragments.push(...createExperienceFragments(visited));
+      extraFragments.push(...createExperienceFragments(visited, damEnabled));
     }
   }
 
@@ -274,8 +292,11 @@ export function createFragment(
  * @param contentType - The key of the content type to query.
  * @returns A string representing the GraphQL query.
  */
-export function createSingleContentQuery(contentType: string) {
-  const fragment = createFragment(contentType);
+export function createSingleContentQuery(
+  contentType: string,
+  damEnabled: boolean = false
+) {
+  const fragment = createFragment(contentType, new Set(), '', true, damEnabled);
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
   return `
@@ -301,8 +322,11 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
  * @param contentType - The key of the content type to query.
  * @returns A string representing the GraphQL query.
  */
-export function createMultipleContentQuery(contentType: string) {
-  const fragment = createFragment(contentType);
+export function createMultipleContentQuery(
+  contentType: string,
+  damEnabled: boolean = false
+) {
+  const fragment = createFragment(contentType, new Set(), '', true, damEnabled);
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
   return `

@@ -63,19 +63,25 @@ const COMMON_FRAGMENTS = [
   CONTENT_URL_FRAGMENT,
   'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }',
   'fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }',
-  ...CONTENT_REFERENCE_ITEM_FRAGMENTS,
 ];
 
 const COMMON_FIELDS = '..._IContent';
 
 /**
  * Generates and adds fragments for base types
+ * @param damEnabled - Whether DAM features are enabled
  * @returns { fields, extraFragments }
  */
-export function buildBaseTypeFragments() {
+export function buildBaseTypeFragments(damEnabled: boolean = false) {
+  const extraFragments = [...COMMON_FRAGMENTS];
+
+  if (damEnabled) {
+    extraFragments.push(...CONTENT_REFERENCE_ITEM_FRAGMENTS);
+  }
+
   return {
     fields: [COMMON_FIELDS],
-    extraFragments: COMMON_FRAGMENTS,
+    extraFragments,
   };
 }
 
