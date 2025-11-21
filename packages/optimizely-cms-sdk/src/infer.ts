@@ -93,6 +93,11 @@ export type ContentReferenceItem =
   | PublicVideoAsset
   | PublicRawFileAsset;
 
+export type InferredContentReference = {
+  url: InferredUrl;
+  item: ContentReferenceItem | null;
+};
+
 /** Infers the Typescript type for each content type property */
 // prettier-ignore
 export type InferFromProperty<T extends AnyProperty> =
@@ -106,7 +111,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends LinkProperty ? { text: string | null, title: string | null, target: string | null, url: InferredUrl }
   : T extends IntegerProperty ? number
   : T extends FloatProperty ? number
- : T extends ContentReferenceProperty ? { url: InferredUrl, item: ContentReferenceItem | null }
+  : T extends ContentReferenceProperty ? InferredContentReference
   : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
   : T extends ContentProperty ? {__typename: string, __viewname: string}
   : T extends ComponentProperty<infer E> ? Infer<E>

@@ -10,7 +10,9 @@ import {
   ExperienceComponentNode,
   DisplaySettingsType,
   ExperienceCompositionNode,
+  InferredContentReference,
 } from '../infer.js';
+import { Renditions } from '../model/assets.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
@@ -308,6 +310,15 @@ export function OptimizelyGridSection({
 
 /** Get context-aware functions for preview */
 export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
+  /** Helper function to append preview token to URL */
+  const appendPreviewToken = (url: string): string => {
+    if (opti.__context?.preview_token) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}preview_token=${opti.__context.preview_token}`;
+    }
+    return url;
+  };
+
   return {
     /** Get the HTML data attributes required for a property */
     pa(property?: string | { key: string }) {
@@ -328,13 +339,81 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
       }
     },
 
-    /** Appends the preview token to the provided image URL */
-    src(url: string) {
-      if (opti.__context?.preview_token) {
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}preview_token=${opti.__context.preview_token}`;
+    /** Appends the preview token to the provided image URL or ContentReference */
+    src(
+      input: string | InferredContentReference | null | undefined,
+      options?: { renditionName?: string }
+    ): string {
+      if (!input) return '';
+
+      let url: string;
+      if (typeof input === 'string') {
+        url = input;
+      } else {
+        // If renditionName is specified, find the matching rendition
+        if (
+          options?.renditionName &&
+          input.item &&
+          'Renditions' in input.item
+        ) {
+          const rendition = input.item.Renditions?.find(
+            (r) => r.Name === options.renditionName
+          );
+          if (rendition?.Url) {
+            url = rendition.Url;
+          } else {
+            // Fallback to default URL if rendition not found
+            url = input.item?.Url ?? input.url?.default ?? '';
+          }
+        } else {
+          // Prefer item.Url if available (DAM asset), otherwise use url.default
+          url = input.item?.Url ?? input.url?.default ?? '';
+        }
       }
-      return url;
+
+      return appendPreviewToken(url);
+    },
+
+    /** Generates srcset from ContentReference renditions */
+    srcset(input: InferredContentReference | null | undefined): string {
+      if (!input?.item || !('Renditions' in input.item)) return '';
+
+      const renditions = input.item.Renditions;
+      if (!renditions || renditions.length === 0) return '';
+
+      // Track seen widths to avoid duplicate width descriptors
+      const seenWidths = new Set<number>();
+
+      const srcsetEntries = renditions
+        .filter((r) => {
+          if (!r.Url || !r.Width) return false;
+          // Skip if we've already seen this width
+          if (seenWidths.has(r.Width)) return false;
+          seenWidths.add(r.Width);
+          return true;
+        })
+        .map((r) => {
+          const url = appendPreviewToken(r.Url!);
+          return `${url} ${r.Width}w`;
+        });
+
+      return srcsetEntries.join(', ');
+    },
+
+    /** Gets the alt text from a ContentReference or returns the string as-is */
+    alt(input: string | InferredContentReference | null | undefined): string {
+      if (!input) return '';
+
+      if (typeof input === 'string') {
+        return input;
+      }
+
+      // Check if item has AltText property (PublicImageAsset or PublicVideoAsset)
+      if (input.item && 'AltText' in input.item) {
+        return input.item.AltText ?? '';
+      }
+
+      return '';
     },
   };
 }

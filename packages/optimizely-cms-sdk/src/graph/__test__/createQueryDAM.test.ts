@@ -17,6 +17,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     initContentTypeRegistry([ct1]);
 
+    // DAM disabled
     const result = await createFragment('ct1', new Set(), '', true, false);
 
     // Should not include ContentReferenceItem fragments
@@ -57,6 +58,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     initContentTypeRegistry([ct1]);
 
+    // DAM enabled
     const result = await createFragment('ct1', new Set(), '', true, true);
 
     // Should include all ContentReferenceItem fragments
@@ -96,6 +98,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     initContentTypeRegistry([ct1]);
 
+    // DAM disabled
     const result = await createFragment('ct1', new Set(), '', true, false);
 
     expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(

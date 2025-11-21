@@ -31,7 +31,7 @@ export default function SmallFeature({ opti }: Props) {
       <h3 {...pa('heading')}>{opti.heading}</h3>
       {opti.image?.url?.default && (
         <div style={{ position: 'relative' }}>
-          <img src={src(opti.image.url.default)} alt="" {...pa('image')} />
+          <img src={src(opti.image)} alt="" {...pa('image')} />
         </div>
       )}
       <div
