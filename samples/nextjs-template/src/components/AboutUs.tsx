@@ -38,7 +38,7 @@ export default function AboutUs({ opti }: AboutUsProps) {
     <section className="about-us">
       {opti?.image?.url?.default && (
         <div className="about-us-image">
-          <Image src={src(opti.image.url.default)} alt="" fill={true}/>
+          <Image src={src(opti.image.url.default)} alt="" width={500} height={500}/>
         </div>
       )}
       <h2>{opti.heading}</h2>
