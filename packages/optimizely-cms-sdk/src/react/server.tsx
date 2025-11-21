@@ -12,7 +12,6 @@ import {
   ExperienceCompositionNode,
   InferredContentReference,
 } from '../infer.js';
-import { Renditions } from '../model/assets.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
