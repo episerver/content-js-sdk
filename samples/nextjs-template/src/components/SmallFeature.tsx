@@ -24,14 +24,14 @@ type Props = {
 };
 
 export default function SmallFeature({ opti }: Props) {
-  const { pa, src } = getPreviewUtils(opti);
+  const { pa, src, alt } = getPreviewUtils(opti);
 
   return (
     <div className="small-feature-grid">
       <h3 {...pa('heading')}>{opti.heading}</h3>
       {opti.image?.url?.default && (
         <div style={{ position: 'relative' }}>
-          <img src={src(opti.image)} alt="" {...pa('image')} />
+          <img src={src(opti.image)} alt={alt('image')} {...pa('image')} />
         </div>
       )}
       <div

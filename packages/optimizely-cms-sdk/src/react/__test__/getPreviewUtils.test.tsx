@@ -149,5 +149,55 @@ describe('getPreviewUtils', () => {
 
       expect(result).toBe('Custom alt text');
     });
+
+    it('should use fallback when AltText is empty', () => {
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+      const emptyAltAsset: InferredContentReference = {
+        ...mockImageAsset,
+        item: {
+          __typename: 'cmp_PublicImageAsset' as const,
+          Url: 'https://example.com/image.jpg',
+          Title: 'Test Image',
+          AltText: '',
+          Description: 'Test description',
+          Renditions: [],
+          FocalPoint: null,
+          Tags: [],
+        },
+      };
+
+      expect(utils.alt(emptyAltAsset, 'Fallback text')).toBe('Fallback text');
+    });
+
+    it('should use fallback when AltText is null', () => {
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+      const nullAltAsset: InferredContentReference = {
+        ...mockImageAsset,
+        item: {
+          __typename: 'cmp_PublicImageAsset' as const,
+          Url: 'https://example.com/image.jpg',
+          Title: 'Test Image',
+          AltText: null,
+          Description: 'Test description',
+          Renditions: [],
+          FocalPoint: null,
+          Tags: [],
+        },
+      };
+
+      expect(utils.alt(nullAltAsset, 'Fallback text')).toBe('Fallback text');
+    });
+
+    it('should use fallback when input is null', () => {
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+
+      expect(utils.alt(null, 'Fallback text')).toBe('Fallback text');
+    });
+
+    it('should return empty string when no fallback provided', () => {
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+
+      expect(utils.alt(null)).toBe('');
+    });
   });
 });

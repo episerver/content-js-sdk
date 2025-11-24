@@ -361,7 +361,7 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
           if (rendition?.Url) {
             url = rendition.Url;
           } else {
-            // Fallback to default URL if rendition not found
+            // Fallback to default URL if rendition not found or has no URL
             url = input.item?.Url ?? input.url?.default ?? '';
           }
         } else {
@@ -399,20 +399,24 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
       return srcsetEntries.join(', ');
     },
 
-    /** Gets the alt text from a ContentReference or returns the string as-is */
-    alt(input: string | InferredContentReference | null | undefined): string {
-      if (!input) return '';
+    // Gets the alt text from a ContentReference or returns the string
+    alt(
+      input: string | InferredContentReference | null | undefined,
+      fallback?: string
+    ): string {
+      if (!input) return fallback ?? '';
 
       if (typeof input === 'string') {
         return input;
       }
 
-      // Check if item has AltText property (PublicImageAsset or PublicVideoAsset)
+      // Check if item has AltText property
       if (input.item && 'AltText' in input.item) {
-        return input.item.AltText ?? '';
+        const altText = input.item.AltText ?? '';
+        return altText || (fallback ?? '');
       }
 
-      return '';
+      return fallback ?? '';
     },
   };
 }
