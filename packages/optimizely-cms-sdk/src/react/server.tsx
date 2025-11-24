@@ -84,7 +84,7 @@ type OptimizelyComponentProps = {
     /** Preview context */
     __context?: { edit: boolean; preview_token: string };
 
-    composition?: ExperienceCompositionNode;
+    __composition?: ExperienceCompositionNode;
   };
 
   displaySettings?: Record<string, string>;
@@ -98,7 +98,8 @@ export async function OptimizelyComponent({
   if (!componentRegistry) {
     throw new Error('You should call `initReactComponentRegistry` first');
   }
-  const dtKey = opti.composition?.displayTemplateKey ?? opti.displayTemplateKey;
+  const dtKey =
+    opti.__composition?.displayTemplateKey ?? opti.displayTemplateKey;
   const Component = await componentRegistry.getComponent(opti.__typename, {
     tag: opti.__tag ?? getDisplayTemplateTag(dtKey),
   });
@@ -260,7 +261,9 @@ export function OptimizelyGridSection({
       return (
         <OptimizelyComponent
           opti={{
+            // `node.component` contains user-defined properties
             ...node.component,
+            __composition: node,
             __tag: tag,
           }}
           key={node.key}
@@ -307,17 +310,19 @@ export function OptimizelyGridSection({
 export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
   return {
     /** Get the HTML data attributes required for a property */
-    pa(property: string | { key: string }) {
+    pa(property?: string | { key: string }) {
       if (opti.__context?.edit) {
         if (typeof property === 'string') {
           return {
             'data-epi-property-name': property,
           };
-        } else {
+        } else if (property) {
           return {
             'data-epi-block-id': property.key,
           };
         }
+
+        return {};
       } else {
         return {};
       }
