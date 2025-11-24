@@ -143,13 +143,6 @@ describe('getPreviewUtils', () => {
       expect(result).toBe('Harley-Davidson Touring Bike motorcycle');
     });
 
-    it('should return string as-is', () => {
-      const utils = getPreviewUtils({ __typename: 'TestPage' });
-      const result = utils.alt('Custom alt text');
-
-      expect(result).toBe('Custom alt text');
-    });
-
     it('should use fallback when AltText is empty', () => {
       const utils = getPreviewUtils({ __typename: 'TestPage' });
       const emptyAltAsset: InferredContentReference = {

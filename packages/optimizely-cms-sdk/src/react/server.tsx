@@ -338,7 +338,29 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
       }
     },
 
-    /** Appends the preview token to the provided image URL or ContentReference */
+    /**
+     * Gets the URL from a ContentReference or returns a string URL as-is.
+     * Automatically appends preview token when in preview mode.
+     *
+     * @param input - ContentReference from a DAM asset or a plain URL string
+     * @param options - Optional configuration
+     * @param options.renditionName - Name of the specific rendition to use (e.g., 'Thumbnail', 'Large')
+     * @returns The URL with preview token appended if in preview mode
+     *
+     * @example
+     * ```tsx
+     * const { src } = getPreviewUtils(opti);
+     *
+     * // Get default URL
+     * <img src={src(opti.image)} />
+     *
+     * // Get specific rendition
+     * <img src={src(opti.image, { renditionName: 'Thumbnail' })} />
+     *
+     * // Use with plain string
+     * <img src={src('https://example.com/image.jpg')} />
+     * ```
+     */
     src(
       input: string | InferredContentReference | null | undefined,
       options?: { renditionName?: string }
@@ -373,7 +395,25 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
       return appendPreviewToken(url);
     },
 
-    /** Generates srcset from ContentReference renditions */
+    /**
+     * Generates a responsive image srcset from ContentReference renditions.
+     * Automatically deduplicates renditions with the same width and appends preview tokens.
+     *
+     * @param input - ContentReference from a DAM asset with renditions
+     * @returns Comma-separated srcset string with width descriptors (e.g., "url1 100w, url2 500w")
+     *
+     * @example
+     * ```tsx
+     * const { src, srcset } = getPreviewUtils(opti);
+     *
+     * <img
+     *   src={src(opti.image)}
+     *   srcSet={srcset(opti.image)}
+     *   sizes="(max-width: 768px) 100vw, 50vw"
+     *   alt="Responsive image"
+     * />
+     * ```
+     */
     srcset(input: InferredContentReference | null | undefined): string {
       if (!input?.item || !('Renditions' in input.item)) return '';
 
@@ -399,18 +439,35 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
       return srcsetEntries.join(', ');
     },
 
-    // Gets the alt text from a ContentReference or returns the string
+    /**
+     * Extracts the alt text from a ContentReference DAM asset.
+     * Returns fallback text if AltText is empty, null, or not available.
+     *
+     * @param input - ContentReference from a DAM asset
+     * @param fallback - Optional fallback text to use when AltText is not available
+     * @returns The alt text or fallback, or empty string if neither is available
+     *
+     * @example
+     * ```tsx
+     * const { alt } = getPreviewUtils(opti);
+     *
+     * // Use AltText from asset
+     * <img src={src(opti.image)} alt={alt(opti.image)} />
+     *
+     * // With fallback
+     * <img src={src(opti.image)} alt={alt(opti.image, 'Default description')} />
+     *
+     * // Use Title as fallback
+     * <img src={src(opti.image)} alt={alt(opti.image, opti.image.item?.Title ?? '')} />
+     * ```
+     */
     alt(
-      input: string | InferredContentReference | null | undefined,
+      input: InferredContentReference | null | undefined,
       fallback?: string
     ): string {
       if (!input) return fallback ?? '';
 
-      if (typeof input === 'string') {
-        return input;
-      }
-
-      // Check if item has AltText property
+      // Check if item has AltText property (PublicImageAsset or PublicVideoAsset)
       if (input.item && 'AltText' in input.item) {
         const altText = input.item.AltText ?? '';
         return altText || (fallback ?? '');

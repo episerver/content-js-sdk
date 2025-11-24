@@ -37,6 +37,7 @@ export default function AboutUs({ opti }: AboutUsProps) {
     <section className="about-us">
       {opti.image && (
         <div className="about-us-image">
+          {/* Added as example for using src and alt utilities */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={src(opti.image)} alt={alt(opti.image)} />
         </div>
