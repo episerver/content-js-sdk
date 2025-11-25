@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { alt, contentType, Infer } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const SmallFeatureContentType = contentType({
@@ -24,7 +24,7 @@ type Props = {
 };
 
 export default function SmallFeature({ opti }: Props) {
-  const { pa, src, alt } = getPreviewUtils(opti);
+  const { pa, src } = getPreviewUtils(opti);
 
   return (
     <div className="small-feature-grid">

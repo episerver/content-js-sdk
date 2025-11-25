@@ -16,6 +16,7 @@ import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
+import { appendToken } from '../util/preview.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -309,15 +310,6 @@ export function OptimizelyGridSection({
 
 /** Get context-aware functions for preview */
 export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
-  /** Helper function to append preview token to URL */
-  const appendPreviewToken = (url: string): string => {
-    if (opti.__context?.preview_token) {
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}preview_token=${opti.__context.preview_token}`;
-    }
-    return url;
-  };
-
   return {
     /** Get the HTML data attributes required for a property */
     pa(property?: string | { key: string }) {
@@ -339,141 +331,35 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
     },
 
     /**
-     * Gets the URL from a ContentReference or returns a string URL as-is.
-     * Automatically appends preview token when in preview mode.
+     * Appends preview token to a ContentReference's Image assets.
+     * Adds the preview token to the main URL and all rendition URLs when in preview mode.
      *
-     * @param input - ContentReference from a DAM asset or a plain URL string
-     * @param options - Optional configuration
-     * @param options.renditionName - Name of the specific rendition to use (e.g., 'Thumbnail', 'Large')
-     * @returns The URL with preview token appended if in preview mode
+     * @param input - ContentReference from a DAM asset
+     * @returns ContentReference with preview tokens appended to all URLs, or the original if not in preview mode
      *
      * @example
      * ```tsx
      * const { src } = getPreviewUtils(opti);
      *
-     * // Get default URL
-     * <img src={src(opti.image)} />
-     *
-     * // Get specific rendition
-     * <img src={src(opti.image, { renditionName: 'Thumbnail' })} />
-     *
-     * // Use with plain string
-     * <img src={src('https://example.com/image.jpg')} />
-     * ```
-     */
-    src(
-      input: string | InferredContentReference | null | undefined,
-      options?: { renditionName?: string }
-    ): string {
-      if (!input) return '';
-
-      let url: string;
-      if (typeof input === 'string') {
-        url = input;
-      } else {
-        // If renditionName is specified, find the matching rendition
-        if (
-          options?.renditionName &&
-          input.item &&
-          'Renditions' in input.item
-        ) {
-          const rendition = input.item.Renditions?.find(
-            (r) => r.Name === options.renditionName
-          );
-          if (rendition?.Url) {
-            url = rendition.Url;
-          } else {
-            // Fallback to default URL if rendition not found or has no URL
-            url = input.item?.Url ?? input.url?.default ?? '';
-          }
-        } else {
-          // Prefer item.Url if available (DAM asset), otherwise use url.default
-          url = input.item?.Url ?? input.url?.default ?? '';
-        }
-      }
-
-      return appendPreviewToken(url);
-    },
-
-    /**
-     * Generates a responsive image srcset from ContentReference renditions.
-     * Automatically deduplicates renditions with the same width and appends preview tokens.
-     *
-     * @param input - ContentReference from a DAM asset with renditions
-     * @returns Comma-separated srcset string with width descriptors (e.g., "url1 100w, url2 500w")
-     *
-     * @example
-     * ```tsx
-     * const { src, srcset } = getPreviewUtils(opti);
-     *
      * <img
      *   src={src(opti.image)}
-     *   srcSet={srcset(opti.image)}
-     *   sizes="(max-width: 768px) 100vw, 50vw"
-     *   alt="Responsive image"
      * />
      * ```
      */
-    srcset(input: InferredContentReference | null | undefined): string {
-      if (!input?.item || !('Renditions' in input.item)) return '';
+    src(input: InferredContentReference | string | null | undefined): string {
+      const previewToken = opti.__context?.preview_token;
 
-      const renditions = input.item.Renditions;
-      if (!renditions || renditions.length === 0) return '';
-
-      // Track seen widths to avoid duplicate width descriptors
-      const seenWidths = new Set<number>();
-
-      const srcsetEntries = renditions
-        .filter((r) => {
-          if (!r.Url || !r.Width) return false;
-          // Skip if we've already seen this width
-          if (seenWidths.has(r.Width)) return false;
-          seenWidths.add(r.Width);
-          return true;
-        })
-        .map((r) => {
-          const url = appendPreviewToken(r.Url!);
-          return `${url} ${r.Width}w`;
-        });
-
-      return srcsetEntries.join(', ');
-    },
-
-    /**
-     * Extracts the alt text from a ContentReference DAM asset.
-     * Returns fallback text if AltText is empty, null, or not available.
-     *
-     * @param input - ContentReference from a DAM asset
-     * @param fallback - Optional fallback text to use when AltText is not available
-     * @returns The alt text or fallback, or empty string if neither is available
-     *
-     * @example
-     * ```tsx
-     * const { alt } = getPreviewUtils(opti);
-     *
-     * // Use AltText from asset
-     * <img src={src(opti.image)} alt={alt(opti.image)} />
-     *
-     * // With fallback
-     * <img src={src(opti.image)} alt={alt(opti.image, 'Default description')} />
-     *
-     * // Use Title as fallback
-     * <img src={src(opti.image)} alt={alt(opti.image, opti.image.item?.Title ?? '')} />
-     * ```
-     */
-    alt(
-      input: InferredContentReference | null | undefined,
-      fallback?: string
-    ): string {
-      if (!input) return fallback ?? '';
-
-      // Check if item has AltText property (PublicImageAsset or PublicVideoAsset)
-      if (input.item && 'AltText' in input.item) {
-        const altText = input.item.AltText ?? '';
-        return altText || (fallback ?? '');
+      // if input is a ContentReference
+      if (typeof input === 'object' && previewToken && input?.item?.Url) {
+        return appendToken(input?.item?.Url, previewToken);
       }
 
-      return fallback ?? '';
+      // if input is a string URL
+      if (typeof input === 'string' && previewToken) {
+        return appendToken(input, previewToken);
+      }
+
+      return '';
     },
   };
 }

@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, damAssets, Infer } from '@optimizely/cms-sdk';
 import { RichText, ElementProps } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -32,14 +32,20 @@ const customHeadingTwo = (props: ElementProps) => {
 };
 
 export default function AboutUs({ opti }: AboutUsProps) {
-  const { src, alt } = getPreviewUtils(opti);
+  const { src } = getPreviewUtils(opti);
+  const { getSrcset, getAlt } = damAssets(opti);
+
   return (
     <section className="about-us">
       {opti.image && (
         <div className="about-us-image">
-          {/* Added as example for using src and alt utilities */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src(opti.image)} alt={alt(opti.image)} />
+          <img
+            src={src(opti.image)}
+            srcSet={getSrcset(opti.image)}
+            sizes="(max-width: 768px) 100vw, 50vw"
+            alt={getAlt(opti.image, 'About us image')}
+          />
         </div>
       )}
       <h2>{opti.heading}</h2>
