@@ -1,4 +1,4 @@
-import { alt, contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, damAssets, Infer } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const SmallFeatureContentType = contentType({
@@ -25,6 +25,7 @@ type Props = {
 
 export default function SmallFeature({ opti }: Props) {
   const { pa, src } = getPreviewUtils(opti);
+  const { getAlt } = damAssets(opti);
 
   return (
     <div className="small-feature-grid">
@@ -33,7 +34,7 @@ export default function SmallFeature({ opti }: Props) {
         <div style={{ position: 'relative' }}>
           <img
             src={src(opti.image)}
-            alt={alt(opti.image, 'image')}
+            alt={getAlt(opti.image, 'image')}
             {...pa('image')}
           />
         </div>
