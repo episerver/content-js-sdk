@@ -25,12 +25,12 @@ describe('parseDisplaySettings', () => {
   it('should return an empty object for null input', () => {
     const input = null;
     const result = parseDisplaySettings(input ?? undefined);
-    expect(result).toEqual(undefined);
+    expect(result).toEqual({});
   });
 
   it('should return an empty object for undefined input', () => {
     const input = undefined;
     const result = parseDisplaySettings(input);
-    expect(result).toEqual(undefined);
+    expect(result).toEqual({});
   });
 });

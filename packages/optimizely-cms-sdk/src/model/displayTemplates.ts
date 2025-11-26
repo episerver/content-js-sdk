@@ -1,4 +1,4 @@
-import { DisplaySettingsType } from '../infer.js';
+import { DisplaySettingsType, Infer } from '../infer.js';
 import { BaseTypes } from './contentTypes.js';
 
 // section node types
@@ -62,20 +62,30 @@ export type DisplayTemplate<T = DisplayTemplateVariant> = T & {
   __type: 'displayTemplate';
 };
 
-export function parseDisplaySettings(
-  displaySettings?: DisplaySettingsType[] | null
-): Record<string, string> | undefined {
-  if (!displaySettings) {
-    return undefined; // Return undefined if displaySettings is not provided
-  }
+// export function parseDisplaySettings(
+//   displaySettings?: DisplaySettingsType[] | null
+// ): Record<string, string> | undefined {
+//   if (!displaySettings) {
+//     return undefined; // Return undefined if displaySettings is not provided
+//   }
 
-  const result: Record<string, string> = {}; // Initialize an empty object
+//   const result: Record<string, string> = {}; // Initialize an empty object
 
-  // Iterate over the input array
-  for (const item of displaySettings) {
-    // Assign the value to the key in the result object
-    result[item.key] = item.value;
-  }
+//   // Iterate over the input array
+//   for (const item of displaySettings) {
+//     // Assign the value to the key in the result object
+//     result[item.key] = item.value;
+//   }
 
+//   return result;
+// }
+
+export const parseDisplaySettings = <T extends DisplayTemplate>(
+  settings: DisplaySettingsType[] | null | undefined
+): Infer<DisplayTemplate> => {
+  const result = {} as Infer<T>;
+  settings?.forEach(s => {
+    result[s.key as keyof Infer<T>] = s.value as Infer<T>[keyof Infer<T>];
+  });
   return result;
-}
+};
