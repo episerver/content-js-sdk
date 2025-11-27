@@ -4,7 +4,6 @@ import { appendToken } from '../util/preview.js';
 /**
  * Appends a preview token to a ContentReference's rendition URLs.
  * Creates a new object with modified renditions to avoid mutation.
- * Internal function - not exported.
  *
  * @param input - ContentReference from a DAM asset
  * @param previewToken - The preview token to append to rendition URLs
@@ -39,11 +38,11 @@ function appendPreviewTokenToRenditions(
  * This handles all the messy details:
  * - Removes duplicate widths if you have multiple renditions at the same size
  * - Adds preview tokens automatically when in edit mode
- * - Returns an empty string if there's no image or no renditions
+ * - Returns undefined if there's no image or no renditions (attribute won't be rendered)
  *
  * @param opti - Your content object with __context for preview tokens
  * @param property - The image reference from your content (e.g., opti.image)
- * @returns A srcset string like "url1 100w, url2 500w" or empty string
+ * @returns A srcset string like "url1 100w, url2 500w" or undefined if no renditions
  *
  * @example
  * ```tsx
@@ -72,7 +71,7 @@ function appendPreviewTokenToRenditions(
 export function getSrcset<T extends Record<string, any>>(
   opti: T & { __context?: { preview_token?: string } },
   property: InferredContentReference | null | undefined
-): string {
+): string | undefined {
   const input = property;
   const previewToken = opti?.__context?.preview_token;
 
@@ -82,10 +81,10 @@ export function getSrcset<T extends Record<string, any>>(
     : input;
 
   if (!processedInput?.item || !('Renditions' in processedInput.item))
-    return '';
+    return undefined;
 
   const renditions = processedInput.item.Renditions;
-  if (!renditions || renditions.length === 0) return '';
+  if (!renditions || renditions.length === 0) return undefined;
 
   // Track seen widths to avoid duplicate width descriptors
   const seenWidths = new Set<number>();
@@ -100,19 +99,23 @@ export function getSrcset<T extends Record<string, any>>(
     })
     .map((r) => `${r.Url!} ${r.Width}w`);
 
-  return srcsetEntries.join(', ');
+  return srcsetEntries.length > 0 ? srcsetEntries.join(', ') : undefined;
 }
 
 /**
  * Gets the alt text for an image or video.
  *
- * It checks in this order:
+ * It checks:
  * 1. Uses the AltText from the asset if it exists
- * 2. Falls back to your custom text if AltText is empty
- * 3. Returns empty string if nothing is provided
+ * 2. Falls back to your custom text if AltText is null/undefined
+ * 3. Returns empty string if no alt text or fallback is available
+ *
+ * Note: By default, this returns an empty string when no alt text is available, which marks
+ * the image as decorative. To avoid accidentally creating inaccessible content, always provide
+ * a fallback or ensure your assets have AltText set in the CMS.
  *
  * @param input - Your image or video reference
- * @param fallback - Text to use if there's no AltText
+ * @param fallback - Text to use if there's no AltText (defaults to empty string)
  * @returns The alt text to use
  *
  * @example
@@ -123,25 +126,33 @@ export function getSrcset<T extends Record<string, any>>(
  * ```
  *
  * @example
- * Using the title as fallback:
+ * Using a custom fallback:
  * ```tsx
  * const { getAlt } = damAssets(opti);
  * <img alt={getAlt(opti.image, 'Hero Image')} />
  * ```
+ *
+ * @example
+ * Explicitly marking an image as decorative:
+ * ```tsx
+ * const { getAlt } = damAssets(opti);
+ * <img alt={getAlt(opti.icon)} /> // Will be alt="" if no AltText exists
+ * ```
  */
 export function getAlt(
   input: InferredContentReference | null | undefined,
-  fallback?: string
+  fallback: string = ''
 ): string {
-  if (!input) return fallback ?? '';
+  if (!input) return fallback;
 
-  // Check if item has AltText property (PublicImageAsset or PublicVideoAsset)
   if (input.item && 'AltText' in input.item) {
-    const altText = input.item.AltText ?? '';
-    return altText || (fallback ?? '');
+    const rawAlt = input.item.AltText;
+    // If rawAlt is "", returns "".
+    // If rawAlt is null, returns fallback (which defaults to "")
+    return rawAlt ?? fallback;
   }
 
-  return fallback ?? '';
+  return fallback;
 }
 
 /**
