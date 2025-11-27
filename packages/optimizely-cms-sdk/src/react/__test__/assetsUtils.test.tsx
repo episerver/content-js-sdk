@@ -110,8 +110,9 @@ describe('getPreviewUtils', () => {
       const opti = { __typename: 'TestPage', image: mockImageAsset };
       const result = getSrcset(opti, opti.image);
 
+      expect(result).toBeDefined();
       // Should have 4 unique widths: 100, 256, 512, 1920 (duplicate 512 removed)
-      const widthMatches = result.match(/\d+w/g);
+      const widthMatches = result!.match(/\d+w/g);
       expect(widthMatches).toHaveLength(4);
 
       expect(result).toContain('thumbnail_100x100_63.jpg 100w');
@@ -124,8 +125,9 @@ describe('getPreviewUtils', () => {
       const opti = { __typename: 'TestPage' };
       const result = getSrcset(opti, mockImageAsset);
 
+      expect(result).toBeDefined();
       // Should have 4 unique widths: 100, 256, 512, 1920 (duplicate 512 removed)
-      const widthMatches = result.match(/\d+w/g);
+      const widthMatches = result!.match(/\d+w/g);
       expect(widthMatches).toHaveLength(4);
 
       expect(result).toContain('thumbnail_100x100_63.jpg 100w');
@@ -141,7 +143,8 @@ describe('getPreviewUtils', () => {
       };
       const result = getSrcset(opti, mockImageAsset);
 
-      const entries = result.split(', ');
+      expect(result).toBeDefined();
+      const entries = result!.split(', ');
       expect(
         entries.every((entry: string) =>
           entry.includes('preview_token=test-token-456')
@@ -153,8 +156,9 @@ describe('getPreviewUtils', () => {
       const opti = { __typename: 'TestPage', image: mockImageAsset };
       const result = getSrcset(opti, opti.image);
 
+      expect(result).toBeDefined();
       // Width 512 appears twice in renditions but should only appear once in srcset
-      const width512Count = (result.match(/512w/g) || []).length;
+      const width512Count = (result!.match(/512w/g) || []).length;
       expect(width512Count).toBe(1);
     });
 
@@ -166,7 +170,8 @@ describe('getPreviewUtils', () => {
       };
       const result = getSrcset(opti, opti.image);
 
-      const entries = result.split(', ');
+      expect(result).toBeDefined();
+      const entries = result!.split(', ');
       expect(
         entries.every((entry: string) =>
           entry.includes('preview_token=test-token-123')
@@ -174,19 +179,19 @@ describe('getPreviewUtils', () => {
       ).toBe(true);
     });
 
-    it('should return empty string for null ContentReference', () => {
+    it('should return undefined for null ContentReference', () => {
       const opti = { __typename: 'TestPage' };
       const result = getSrcset(opti, null);
-      expect(result).toBe('');
+      expect(result).toBeUndefined();
     });
 
-    it('should return empty string for undefined ContentReference', () => {
+    it('should return undefined for undefined ContentReference', () => {
       const opti = { __typename: 'TestPage' };
       const result = getSrcset(opti, undefined);
-      expect(result).toBe('');
+      expect(result).toBeUndefined();
     });
 
-    it('should return empty string for ContentReference without renditions', () => {
+    it('should return undefined for ContentReference without renditions', () => {
       const noRenditionsAsset: InferredContentReference = {
         ...mockImageAsset,
         item: {
@@ -203,7 +208,7 @@ describe('getPreviewUtils', () => {
 
       const opti = { __typename: 'TestPage' };
       const result = getSrcset(opti, noRenditionsAsset);
-      expect(result).toBe('');
+      expect(result).toBeUndefined();
     });
   });
 
@@ -292,7 +297,8 @@ describe('getPreviewUtils', () => {
 
       const result = getSrcset(opti.image);
 
-      const entries = result.split(', ');
+      expect(result).toBeDefined();
+      const entries = result!.split(', ');
       expect(
         entries.every((entry: string) =>
           entry.includes('preview_token=test-token-123')
@@ -345,13 +351,13 @@ describe('getPreviewUtils', () => {
       expect(getAlt(emptyAltAsset, 'Custom fallback')).toBe('Custom fallback');
     });
 
-    it('should return empty string for missing properties', () => {
+    it('should return undefined for missing properties', () => {
       const opti = { __typename: 'TestPage', image: null };
       const { getSrcset } = damAssets(opti);
 
       const result = getSrcset(opti.image);
 
-      expect(result).toBe('');
+      expect(result).toBeUndefined();
     });
   });
 });

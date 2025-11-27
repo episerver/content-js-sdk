@@ -147,9 +147,8 @@ export function getAlt(
 
   if (input.item && 'AltText' in input.item) {
     const rawAlt = input.item.AltText;
-    // If rawAlt is "", returns "".
-    // If rawAlt is null, returns fallback (which defaults to "")
-    return rawAlt ?? fallback;
+    // Empty strings also trigger fallback
+    return rawAlt || fallback;
   }
 
   return fallback;
