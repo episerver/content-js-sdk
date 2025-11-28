@@ -20,20 +20,18 @@ export default async function Page({ params }: Props) {
   const path = `/${slug.join('/')}/`;
   const c = await client.getContentByPath(path);
 
-  const children = (await client.getItems(path)) ?? [];
-  const ancestors = (await client.getPath(path)) ?? [];
-
   if (c.length === 0) {
     notFound();
   }
 
   return (
     <>
-      <Header currentPath={{ children, ancestors }} />
+      {/** Passing down client and currentPath to Footer to fetch dynamic links */}
+      <Header client={client} currentPath={path} />
       <div className="container mx-auto p-10">
         <OptimizelyComponent opti={c[0]} />
       </div>
-      <Footer />
+      <Footer client={client} currentPath={path} />
     </>
   );
 }

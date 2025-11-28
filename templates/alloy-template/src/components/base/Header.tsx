@@ -1,31 +1,26 @@
 import Link from 'next/link';
-
-interface NavigationItem {
-  label: string;
-  href: string;
-}
+import { GraphClient } from '@optimizely/cms-sdk';
 
 interface HeaderProps {
-  currentPath: any;
-  navigationItems?: NavigationItem[];
+  client: GraphClient;
+  currentPath: string;
   logoText?: string;
 }
 
-const defaultNavigationItems: NavigationItem[] = [
-  { label: 'ALLOY PLAN', href: '/en/alloy-plan' },
-  { label: 'ALLOY TRACK', href: '/en/alloy-track' },
-  { label: 'ALLOY MEET', href: '/en/alloy-meet' },
-  { label: 'ABOUT US', href: '/en/about-us' },
-];
-
-async function Header({
-  currentPath,
-  navigationItems = defaultNavigationItems,
-}: HeaderProps) {
-  const ancestors = currentPath?.ancestors || [];
+async function Header({ client, currentPath }: HeaderProps) {
+  const ancestors = (await client.getPath(currentPath)) || [];
+  const navLinks = (await client.getItems('/en/')) ?? [];
 
   // Filter out the start page (first item) and create breadcrumbs
   const breadcrumbs = ancestors.slice(1).map((ancestor: any) => ({
+    key: ancestor._metadata.key,
+    label: ancestor._metadata.displayName,
+    href: ancestor._metadata.url.hierarchical,
+  }));
+
+  // Create navigation from navLinks of the /en/ page
+  const navigations = navLinks.map((ancestor: any) => ({
+    key: ancestor._metadata.key,
     label: ancestor._metadata.displayName,
     href: ancestor._metadata.url.hierarchical,
   }));
@@ -39,12 +34,12 @@ async function Header({
             <nav className="hidden md:flex md:items-center md:space-x-8">
               <div className="flex-shrink-0">
                 {/* Logo */}
-                <img src="/logo.png" alt="Logo" className="h-14 w-14" />
+                {/* <img src="/logo.png" alt="Logo" className="h-14 w-14" /> */}
               </div>
               <div className="flex items-center space-x-8">
-                {navigationItems.map((item, index) => (
+                {navigations.map((item) => (
                   <a
-                    key={index}
+                    key={item.key}
                     href={item.href}
                     className="text-gray-700 hover:text-teal-600 transition-colors duration-200 text-lg font-extrabold uppercase tracking-wide"
                   >
