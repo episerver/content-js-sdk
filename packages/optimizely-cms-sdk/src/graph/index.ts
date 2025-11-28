@@ -20,6 +20,7 @@ import {
 type GraphOptions = {
   /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
   graphUrl?: string;
+  damEnabled?: boolean;
 };
 
 export type PreviewParams = {
@@ -218,10 +219,12 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
 export class GraphClient {
   key: string;
   graphUrl: string;
+  damEnabled: boolean = false;
 
   constructor(key: string, options: GraphOptions = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
+    this.damEnabled = options.damEnabled ?? false;
   }
 
   /** Perform a GraphQL query with variables */
@@ -342,7 +345,7 @@ export class GraphClient {
       return [];
     }
 
-    const query = createMultipleContentQuery(contentTypeName);
+    const query = createMultipleContentQuery(contentTypeName, this.damEnabled);
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items.map(removeTypePrefix);
@@ -428,7 +431,7 @@ export class GraphClient {
         { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } }
       );
     }
-    const query = createSingleContentQuery(contentTypeName);
+    const query = createSingleContentQuery(contentTypeName, this.damEnabled);
     const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(

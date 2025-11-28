@@ -10,11 +10,13 @@ import {
   ExperienceComponentNode,
   DisplaySettingsType,
   ExperienceCompositionNode,
+  InferredContentReference,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
+import { appendToken } from '../util/preview.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -322,13 +324,36 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
       }
     },
 
-    /** Appends the preview token to the provided image URL */
-    src(url: string) {
-      if (opti.__context?.preview_token) {
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}preview_token=${opti.__context.preview_token}`;
+    /**
+     * Appends preview token to a ContentReference's Image assets.
+     * Adds the preview token to the main URL and all rendition URLs when in preview mode.
+     *
+     * @param input - ContentReference from a DAM asset
+     * @returns ContentReference with preview tokens appended to all URLs, or the original if not in preview mode
+     *
+     * @example
+     * ```tsx
+     * const { src } = getPreviewUtils(opti);
+     *
+     * <img
+     *   src={src(opti.image)}
+     * />
+     * ```
+     */
+    src(input: InferredContentReference | string | null | undefined): string {
+      const previewToken = opti.__context?.preview_token;
+
+      // if input is a ContentReference
+      if (typeof input === 'object' && previewToken && input?.item?.Url) {
+        return appendToken(input?.item?.Url, previewToken);
       }
-      return url;
+
+      // if input is a string URL
+      if (typeof input === 'string' && previewToken) {
+        return appendToken(input, previewToken);
+      }
+
+      return '';
     },
   };
 }
