@@ -105,12 +105,6 @@ export async function OptimizelyComponent({
   });
 
   if (!Component) {
-    console.log(
-      `[optimizely-cms-sdk] No component found for content type ${
-        opti.__typename
-      } ${opti.__tag ? `with tag "${opti.__tag}"` : ''}`
-    );
-
     return (
       <FallbackComponent>
         No component found for content type <b>{opti.__typename}</b>

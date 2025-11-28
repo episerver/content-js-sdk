@@ -13,6 +13,7 @@ type GraphRequest = {
 export class OptimizelyGraphError extends Error {
   constructor(message: string) {
     super(message);
+    this.name = 'OptimizelyGraphError';
   }
 }
 
@@ -29,6 +30,7 @@ export class GraphMissingContentTypeError extends OptimizelyGraphError {
     super(
       `Content type "${contentType}" not included in the registry. Ensure that you called "initContentTypeRegistry()" with it before fetching content.`
     );
+    this.name = 'GraphMissingContentTypeError';
     this.contentType = contentType;
   }
 }
@@ -39,6 +41,7 @@ export class GraphResponseError extends OptimizelyGraphError {
   constructor(message: string, options: { request: GraphRequest }) {
     super(message);
     this.request = options.request;
+    this.name = 'GraphResponseError';
   }
 }
 
@@ -52,6 +55,7 @@ export class GraphHttpResponseError extends GraphResponseError {
   ) {
     super(message, options);
     this.status = options.status;
+    this.name = 'GraphHttpResponseError';
   }
 }
 
@@ -81,5 +85,6 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     super(message, options);
 
     this.errors = errors;
+    this.name = 'GraphContentResponseError';
   }
 }
