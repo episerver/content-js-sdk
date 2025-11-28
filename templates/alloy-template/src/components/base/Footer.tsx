@@ -1,3 +1,5 @@
+import { GraphClient } from '@optimizely/cms-sdk';
+
 interface FooterLink {
   label: string;
   href: string;
@@ -9,8 +11,9 @@ interface FooterSection {
 }
 
 interface FooterProps {
+  client: GraphClient;
+  currentPath: string;
   sections?: FooterSection[];
-  currentPath?: string;
 }
 
 const defaultSections: FooterSection[] = [
@@ -48,7 +51,29 @@ const defaultSections: FooterSection[] = [
   },
 ];
 
-function Footer({ sections = defaultSections, currentPath }: FooterProps) {
+async function Footer({
+  client,
+  currentPath,
+  sections = defaultSections,
+}: FooterProps) {
+  const allLinks = await Promise.all([
+    client.getItems('/en/'),
+    client.getItems('/en/about-us'),
+  ]);
+
+  // Flatten the array of arrays and map to FooterLink format
+  const footerLinks = allLinks.flat().map((ancestor: any) => ({
+    key: ancestor._metadata?.key,
+    label: ancestor._metadata?.displayName,
+    href: ancestor._metadata?.url?.hierarchical,
+  }));
+
+  console.info(
+    'Footer footerLinks:',
+    currentPath,
+    JSON.stringify(footerLinks, null, 2)
+  );
+
   return (
     <footer className="bg-gray-800 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
