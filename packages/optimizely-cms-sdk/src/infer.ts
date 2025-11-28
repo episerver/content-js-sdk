@@ -206,8 +206,12 @@ type InferFromDisplayTemplate<T extends DisplayTemplate> =
   T extends { settings: infer S }
     ? {
         [K in keyof S]:
-          S[K] extends { choices: Record<string, any> }
-            ? keyof S[K]['choices']
+          S[K] extends { choices: Record<string, any>; editor: infer E }
+            ? E extends 'select'
+              ? keyof S[K]['choices']
+              : E extends 'checkbox'
+                ? 'true' | 'false'
+                : never
             : never;
       }
     : {};
