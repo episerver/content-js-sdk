@@ -58,7 +58,7 @@ function Standard({ opti }: StandardPageProps) {
             {/* Heading and Description */}
             <div className="space-y-4">
               <h1
-                {...pa('title')}
+                {...pa('heading')}
                 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl"
               >
                 {opti.heading}
