@@ -18,9 +18,9 @@ export default async function Page({ params }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
   });
   const path = `/${slug.join('/')}/`;
-  const c = await client.getContentByPath(path);
+  const pageContent = await client.getContentByPath(path);
 
-  if (c.length === 0) {
+  if (pageContent.length === 0) {
     notFound();
   }
 
@@ -29,9 +29,9 @@ export default async function Page({ params }: Props) {
       {/** Passing down client and currentPath to Footer to fetch dynamic links */}
       <Header client={client} currentPath={path} />
       <div className="container mx-auto p-10">
-        <OptimizelyComponent opti={c[0]} />
+        <OptimizelyComponent opti={pageContent[0]} />
       </div>
-      <Footer client={client} currentPath={path} />
+      <Footer client={client} />
     </>
   );
 }

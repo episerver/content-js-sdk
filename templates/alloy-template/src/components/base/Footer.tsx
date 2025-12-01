@@ -12,10 +12,9 @@ interface FooterSection {
 
 interface FooterProps {
   client: GraphClient;
-  currentPath: string;
 }
 
-async function Footer({ client, currentPath }: FooterProps) {
+async function Footer({ client }: FooterProps) {
   const allLinks = await Promise.all([
     client.getItems('/en/'),
     client.getItems('/en/about-us'),
