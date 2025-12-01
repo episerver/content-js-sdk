@@ -7,7 +7,7 @@
  * @returns The URL with the preview token appended as a query parameter.
  */
 export const appendToken = (url: string, previewToken?: string): string => {
-  if (!previewToken) return url;
+  if (!previewToken || previewToken.trim() === '') return url;
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}preview_token=${previewToken}`;
 };

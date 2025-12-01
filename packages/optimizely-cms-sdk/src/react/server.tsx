@@ -343,13 +343,17 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
     src(input: InferredContentReference | string | null | undefined): string {
       const previewToken = opti.__context?.preview_token;
 
-      // if input is a ContentReference
-      if (typeof input === 'object' && previewToken && input?.item?.Url) {
-        return appendToken(input?.item?.Url, previewToken);
+      // if input is an object with a URL
+      if (typeof input === 'object' && input) {
+        // if dam asset is selected the default URL is in input.url.default will be null
+        const url = input.url?.default ?? input.item?.Url;
+        if (url) {
+          return appendToken(url, previewToken);
+        }
       }
 
       // if input is a string URL
-      if (typeof input === 'string' && previewToken) {
+      if (typeof input === 'string') {
         return appendToken(input, previewToken);
       }
 
