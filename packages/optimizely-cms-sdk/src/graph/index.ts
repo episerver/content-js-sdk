@@ -52,7 +52,7 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
       }
     }
   }
-  # Check if "cmp asset" type exists which indicates that DAM is enabled
+  # Check if "cmp_Asset" type exists which indicates that DAM is enabled
   damAssetType: __type(name: "cmp_Asset") {
     __typename
   }
