@@ -20,7 +20,6 @@ import {
 type GraphOptions = {
   /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
   graphUrl?: string;
-  damEnabled?: boolean;
 };
 
 export type PreviewParams = {
@@ -52,6 +51,10 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
         variation
       }
     }
+  }
+  # Check if "cmp_Asset" type exists which indicates that DAM is enabled
+  damAssetType: __type(name: "cmp_Asset") {
+    __typename
   }
 }
 `;
@@ -219,12 +222,10 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
 export class GraphClient {
   key: string;
   graphUrl: string;
-  damEnabled: boolean = false;
 
   constructor(key: string, options: GraphOptions = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
-    this.damEnabled = options.damEnabled ?? false;
   }
 
   /** Perform a GraphQL query with variables */
@@ -289,20 +290,25 @@ export class GraphClient {
    * @param previewToken - Optional preview token for fetching preview content.
    * @returns A promise that resolves to the first content type metadata object
    */
-  private async getContentType(input: GraphVariables, previewToken?: string) {
+  private async getContentMetaData(
+    input: GraphVariables,
+    previewToken?: string
+  ) {
     const data = await this.request(
       GET_CONTENT_METADATA_QUERY,
       input,
       previewToken
     );
 
-    const type = data._Content?.item?._metadata?.types?.[0];
+    const contentTypeName = data._Content?.item?._metadata?.types?.[0];
+    // Determine if DAM is enabled based on the presence of cmp_Asset type
+    const damEnabled = data.damAssetType !== null;
 
-    if (!type) {
-      return null;
+    if (!contentTypeName) {
+      return { contentTypeName: null, damEnabled };
     }
 
-    if (typeof type !== 'string') {
+    if (typeof contentTypeName !== 'string') {
       throw new GraphResponseError(
         "Returned type is not 'string'. This might be a bug in the SDK. Try again later. If the error persists, contact Optimizely support",
         {
@@ -314,7 +320,7 @@ export class GraphClient {
       );
     }
 
-    return type;
+    return { contentTypeName, damEnabled };
   }
 
   /**
@@ -339,13 +345,15 @@ export class GraphClient {
       ...pathFilter(path, options?.host),
       variation: options?.variation,
     };
-    const contentTypeName = await this.getContentType(input);
+    const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      input
+    );
 
     if (!contentTypeName) {
       return [];
     }
 
-    const query = createMultipleContentQuery(contentTypeName, this.damEnabled);
+    const query = createMultipleContentQuery(contentTypeName, damEnabled);
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items.map(removeTypePrefix);
@@ -420,7 +428,7 @@ export class GraphClient {
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async getPreviewContent(params: PreviewParams) {
     const input = previewFilter(params);
-    const contentTypeName = await this.getContentType(
+    const { contentTypeName, damEnabled } = await this.getContentMetaData(
       input,
       params.preview_token
     );
@@ -431,7 +439,7 @@ export class GraphClient {
         { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } }
       );
     }
-    const query = createSingleContentQuery(contentTypeName, this.damEnabled);
+    const query = createSingleContentQuery(contentTypeName, damEnabled);
     const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(
