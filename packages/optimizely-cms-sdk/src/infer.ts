@@ -202,19 +202,22 @@ type InferFromContentType<T extends AnyContentType> = Prettify<
 >;
 
 /** Infers the TypeScript type for a display setting */
-type InferFromDisplayTemplate<T extends DisplayTemplate> =
-  T extends { settings: infer S }
-    ? {
-        [K in keyof S]:
-          S[K] extends { choices: Record<string, any>; editor: infer E }
-            ? E extends 'select'
-              ? keyof S[K]['choices']
-              : E extends 'checkbox'
-                ? 'true' | 'false'
-                : never
-            : never;
+type InferFromDisplayTemplate<T extends DisplayTemplate> = T extends {
+  settings: infer S;
+}
+  ? {
+      [K in keyof S]: S[K] extends {
+        choices: Record<string, any>;
+        editor: infer E;
       }
-    : {};
+        ? E extends 'select'
+          ? keyof S[K]['choices']
+          : E extends 'checkbox'
+          ? boolean
+          : never
+        : never;
+    }
+  : {};
 
 /** Infers the Graph response types of `T`. `T` can be a content type or a property */
 // prettier-ignore

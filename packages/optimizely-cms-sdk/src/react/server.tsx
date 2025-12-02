@@ -14,8 +14,8 @@ import {
   Infer,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
-import { DisplayTemplate, parseDisplaySettings } from '../model/displayTemplates.js';
-import { getDisplayTemplate, getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
+import { parseDisplaySettings } from '../model/displayTemplates.js';
+import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
 
@@ -73,7 +73,7 @@ export function initReactComponentRegistry(options: InitOptions) {
 }
 
 /** Props for the {@linkcode OptimizelyComponent} component */
-type OptimizelyComponentProps<T extends DisplayTemplate = DisplayTemplate> = {
+type OptimizelyComponentProps = {
   /** Data read from the CMS */
   opti: {
     /** Content type name */
@@ -90,7 +90,7 @@ type OptimizelyComponentProps<T extends DisplayTemplate = DisplayTemplate> = {
     __composition?: ExperienceCompositionNode;
   };
 
-  displaySettings?: Partial<Infer<T>>;
+  displaySettings?: Record<string, string | boolean>;
 };
 
 export async function OptimizelyComponent({
@@ -108,11 +108,6 @@ export async function OptimizelyComponent({
   });
 
   if (!Component) {
-    console.log(
-      `[optimizely-cms-sdk] No component found for content type ${opti.__typename
-      } ${opti.__tag ? `with tag "${opti.__tag}"` : ''}`
-    );
-
     return (
       <FallbackComponent>
         No component found for content type <b>{opti.__typename}</b>
@@ -129,16 +124,16 @@ export async function OptimizelyComponent({
   );
 }
 
-export type StructureContainerProps<T extends DisplayTemplate = DisplayTemplate> = {
+export type StructureContainerProps = {
   node: ExperienceStructureNode;
   children: React.ReactNode;
   index?: number;
-  displaySettings?: Partial<Infer<T>>;
+  displaySettings?: Record<string, string | boolean>;
 };
-export type ComponentContainerProps<T extends DisplayTemplate = DisplayTemplate> = {
+export type ComponentContainerProps = {
   node: ExperienceComponentNode;
   children: React.ReactNode;
-  displaySettings?: Partial<Infer<T>>;
+  displaySettings?: Record<string, string | boolean>;
 };
 export type StructureContainer = (
   props: StructureContainerProps
@@ -156,14 +151,7 @@ export function OptimizelyExperience({
 }) {
   return nodes.map((node) => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
-    const template = node.displayTemplateKey
-      ? getDisplayTemplate(node.displayTemplateKey)
-      : null;
-
-    const parsedDisplaySettings = template
-      ? parseDisplaySettings(node.displaySettings, template.settings)
-      : {};
-      console.error(parsedDisplaySettings);
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);    
 
     if (isComponentNode(node)) {
       const Wrapper = ComponentWrapper ?? React.Fragment;
@@ -264,13 +252,7 @@ export function OptimizelyGridSection({
 
   return nodes.map((node, i) => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
-    const template = node.displayTemplateKey
-      ? getDisplayTemplate(node.displayTemplateKey)
-      : null;
-
-    const parsedDisplaySettings = template
-      ? parseDisplaySettings(node.displaySettings, template.settings)
-      : {};
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
       return (
