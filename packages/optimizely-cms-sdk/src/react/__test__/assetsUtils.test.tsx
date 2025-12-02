@@ -65,14 +65,16 @@ describe('getPreviewUtils', () => {
   };
 
   describe('src()', () => {
-    it('should return empty string when not in preview mode', () => {
+    it('should return item.Url when not in preview mode', () => {
       const utils = getPreviewUtils({ __typename: 'TestPage' });
       const result = utils.src(mockImageAsset);
 
-      expect(result).toBe('');
+      expect(result).toBe(
+        'https://assets.local-cms.com/0a2f4b27-4f15-4bb9-ba14-d69b49ae5b85/cmp_73d48db0-2abe-4a33-91f5-94d0ac5e85e5.jpg'
+      );
     });
 
-    it('should append preview token to item URL', () => {
+    it('should append preview token to item.Url in preview mode', () => {
       const utils = getPreviewUtils({
         __typename: 'TestPage',
         __context: { edit: true, preview_token: 'test-token-123' },
@@ -85,7 +87,75 @@ describe('getPreviewUtils', () => {
       );
     });
 
-    it('should append preview token to string URL', () => {
+    it('should use url.default when item.Url is null', () => {
+      const assetWithDefaultUrl: InferredContentReference = {
+        url: {
+          type: null,
+          default: 'https://example.com/default-image.jpg',
+          hierarchical: null,
+          internal: null,
+          graph: null,
+          base: null,
+        },
+        item: {
+          __typename: 'cmp_PublicImageAsset' as const,
+          Url: null,
+          Title: 'Test Image',
+          AltText: 'Test alt text',
+          Description: 'Test description',
+          Renditions: [],
+          FocalPoint: null,
+          Tags: [],
+        },
+      };
+
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+      const result = utils.src(assetWithDefaultUrl);
+
+      expect(result).toBe('https://example.com/default-image.jpg');
+    });
+
+    it('should append preview token to url.default in preview mode', () => {
+      const assetWithDefaultUrl: InferredContentReference = {
+        url: {
+          type: null,
+          default: 'https://example.com/default-image.jpg',
+          hierarchical: null,
+          internal: null,
+          graph: null,
+          base: null,
+        },
+        item: {
+          __typename: 'cmp_PublicImageAsset' as const,
+          Url: null,
+          Title: 'Test Image',
+          AltText: 'Test alt text',
+          Description: 'Test description',
+          Renditions: [],
+          FocalPoint: null,
+          Tags: [],
+        },
+      };
+
+      const utils = getPreviewUtils({
+        __typename: 'TestPage',
+        __context: { edit: true, preview_token: 'test-token-456' },
+      });
+      const result = utils.src(assetWithDefaultUrl);
+
+      expect(result).toBe(
+        'https://example.com/default-image.jpg?preview_token=test-token-456'
+      );
+    });
+
+    it('should handle string URL input', () => {
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+      const result = utils.src('https://example.com/image.jpg');
+
+      expect(result).toBe('https://example.com/image.jpg');
+    });
+
+    it('should append preview token to string URL in preview mode', () => {
       const utils = getPreviewUtils({
         __typename: 'TestPage',
         __context: { edit: true, preview_token: 'test-token-123' },
@@ -97,11 +167,86 @@ describe('getPreviewUtils', () => {
       );
     });
 
-    it('should return empty string for string URL when not in preview mode', () => {
+    it('should return empty string for null input', () => {
       const utils = getPreviewUtils({ __typename: 'TestPage' });
-      const result = utils.src('https://example.com/image.jpg');
+      const result = utils.src(null);
 
       expect(result).toBe('');
+    });
+
+    it('should return empty string for undefined input', () => {
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+      const result = utils.src(undefined);
+
+      expect(result).toBe('');
+    });
+
+    it('should return empty string when asset has no URL', () => {
+      const assetWithoutUrl: InferredContentReference = {
+        url: {
+          type: null,
+          default: null,
+          hierarchical: null,
+          internal: null,
+          graph: null,
+          base: null,
+        },
+        item: {
+          __typename: 'cmp_PublicImageAsset' as const,
+          Url: null,
+          Title: 'Test Image',
+          AltText: 'Test alt text',
+          Description: 'Test description',
+          Renditions: [],
+          FocalPoint: null,
+          Tags: [],
+        },
+      };
+
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+      const result = utils.src(assetWithoutUrl);
+
+      expect(result).toBe('');
+    });
+
+    it('should handle URLs with existing query parameters', () => {
+      const utils = getPreviewUtils({
+        __typename: 'TestPage',
+        __context: { edit: true, preview_token: 'test-token-123' },
+      });
+      const result = utils.src('https://example.com/image.jpg?width=500');
+
+      expect(result).toBe(
+        'https://example.com/image.jpg?width=500&preview_token=test-token-123'
+      );
+    });
+
+    it('should prefer url.default over item.Url when both exist', () => {
+      const assetWithBothUrls: InferredContentReference = {
+        url: {
+          type: null,
+          default: 'https://example.com/default-url.jpg',
+          hierarchical: null,
+          internal: null,
+          graph: null,
+          base: null,
+        },
+        item: {
+          __typename: 'cmp_PublicImageAsset' as const,
+          Url: 'https://example.com/item-url.jpg',
+          Title: 'Test Image',
+          AltText: 'Test alt text',
+          Description: 'Test description',
+          Renditions: [],
+          FocalPoint: null,
+          Tags: [],
+        },
+      };
+
+      const utils = getPreviewUtils({ __typename: 'TestPage' });
+      const result = utils.src(assetWithBothUrls);
+
+      expect(result).toBe('https://example.com/default-url.jpg');
     });
   });
 
