@@ -53,7 +53,7 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
     }
   }
   # Check if "cmp asset" type exists which indicates that DAM is enabled
-  __type(name: "cmp_Asset") {
+  damAssetType: __type(name: "cmp_Asset") {
     __typename
   }
 }
@@ -302,7 +302,7 @@ export class GraphClient {
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
     // Determine if DAM is enabled based on the presence of cmp_Asset type
-    const damEnabled = data.__type?.__typename !== undefined;
+    const damEnabled = data.damAssetType !== null;
 
     if (!contentTypeName) {
       return { contentTypeName: null, damEnabled };
