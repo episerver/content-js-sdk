@@ -7,6 +7,7 @@ import {
   GraphContentResponseError,
   GraphHttpResponseError,
   GraphResponseError,
+  OptimizelyGraphError,
 } from './error.js';
 import {
   ContentInput as GraphVariables,
@@ -246,6 +247,15 @@ export class GraphClient {
         query,
         variables,
       }),
+    }).catch((err) => {
+      if (err instanceof TypeError) {
+        const optiErr = new OptimizelyGraphError(
+          'Error when calling `fetch`. Ensure the Graph URL is correct or try again later.'
+        );
+        optiErr.cause = err;
+        throw optiErr;
+      }
+      throw err;
     });
 
     if (!response.ok) {
