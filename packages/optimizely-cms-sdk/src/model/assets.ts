@@ -17,10 +17,13 @@ type BaseAsset = {
   Title: string | null;
   Description: string | null;
   Tags: Tags[] | null;
+  MimeType: string | null;
 };
 
 export type PublicImageAsset = BaseAsset & {
   __typename: 'cmp_PublicImageAsset';
+  Height: number | null;
+  Width: number | null;
   AltText: string | null;
   Renditions: Renditions[] | null;
   FocalPoint: { X: number | null; Y: number | null } | null;
