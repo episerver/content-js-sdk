@@ -1,8 +1,11 @@
 import type { NextConfig } from 'next';
 
+const CMS_DOMAIN =
+  process.env.OPTIMIZELY_CMS_URL?.replace('https://', '') || '';
+
 const nextConfig: NextConfig = {
   images: {
-    domains: ['app-opinjssdk1sob7t001.cms.optimizely.com'],
+    domains: [CMS_DOMAIN],
     remotePatterns: [
       {
         protocol: 'https',
