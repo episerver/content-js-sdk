@@ -34,14 +34,12 @@ export default function LandingExperienceComponent({ opti }: Props) {
     <main>
       {opti.hero && (
         <header className={['uni-hero', opti.hero.theme].join(' ')}>
-          {opti.hero.background?.url.default && (
-            <Image
-              src={src(opti.hero.background.url.default)}
-              alt=""
-              fill={true}
-              {...pa('hero.background')}
-            />
-          )}
+          <Image
+            src={src(opti.hero.background)}
+            alt=""
+            fill={true}
+            {...pa('hero.background')}
+          />
           <div className="heading" {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
             <p {...pa('hero.summary')}>{opti.hero.summary}</p>

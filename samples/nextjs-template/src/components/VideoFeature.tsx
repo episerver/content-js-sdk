@@ -1,4 +1,5 @@
 import { contentType, Infer } from '@optimizely/cms-sdk';
+import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const VideoFeatureContentType = contentType({
@@ -36,23 +37,19 @@ export default function VideoFeature({ opti }: Props) {
     <div className="video-feature">
       <div className="video">
         <a href={opti.video_link ?? '#'} {...pa('video_link')}>
-          {opti.thumbnail_image?.url.default && (
-            <img
-              src={src(opti.thumbnail_image.url.default)}
-              alt=""
-              {...pa('thumbnail_image')}
-            />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src(opti.thumbnail_image)}
+            alt=""
+            {...pa('thumbnail_image')}
+          />
           <span>▶︎</span>
           <p {...pa('thumbnail_caption')}>{opti.thumbnail_caption}</p>
         </a>
       </div>
       <div>
         <h3 {...pa('heading')}>{opti.heading}</h3>
-        <div
-          dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
-          {...pa('body')}
-        />
+        <RichText content={opti.body?.json} />
       </div>
     </div>
   );
