@@ -53,7 +53,8 @@ export class GraphHttpResponseError extends GraphResponseError {
     message: string,
     options: { status: number; request: GraphRequest }
   ) {
-    super(message, options);
+    const msg = `HTTP ${options.status}: ${message}`;
+    super(msg, options);
     this.status = options.status;
     this.name = 'GraphHttpResponseError';
   }
@@ -80,6 +81,7 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     } else if (message.startsWith('Syntax Error')) {
       message +=
         ' Try again later. If the error persists, contact Optimizely support';
+    } else {
     }
 
     super(message, options);
