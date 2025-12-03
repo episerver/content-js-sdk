@@ -17,6 +17,7 @@ import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
+import { OptimizelyReactError } from './error.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -98,7 +99,9 @@ export async function OptimizelyComponent({
   ...props
 }: OptimizelyComponentProps) {
   if (!componentRegistry) {
-    throw new Error('You should call `initReactComponentRegistry` first');
+    throw new OptimizelyReactError(
+      'You should call `initReactComponentRegistry` first'
+    );
   }
   const dtKey =
     opti.__composition?.displayTemplateKey ?? opti.displayTemplateKey;
