@@ -5,7 +5,7 @@ import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 initContentTypeRegistry([ArticleContentType]);
 initReactComponentRegistry({
   resolver: {
-    Article,
+    HelloWorld_Article: Article,
   },
 });
 
