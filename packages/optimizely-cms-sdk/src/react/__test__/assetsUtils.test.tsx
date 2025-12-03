@@ -61,6 +61,9 @@ describe('getPreviewUtils', () => {
       Renditions: mockRenditions,
       FocalPoint: { X: 0.5, Y: 0.5 },
       Tags: [],
+      Height: 1080,
+      Width: 1920,
+      MimeType: 'image/jpeg',
     },
   };
 
@@ -106,6 +109,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: 'image/jpeg',
         },
       };
 
@@ -134,6 +140,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: 'image/jpeg',
         },
       };
 
@@ -200,6 +209,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: null,
         },
       };
 
@@ -240,6 +252,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: 'image/jpeg',
         },
       };
 
@@ -348,6 +363,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: 'image/jpeg',
         },
       };
 
@@ -376,6 +394,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: 'image/jpeg',
         },
       };
 
@@ -394,6 +415,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: 'image/jpeg',
         },
       };
 
@@ -487,6 +511,9 @@ describe('getPreviewUtils', () => {
           Renditions: [],
           FocalPoint: null,
           Tags: [],
+          Height: null,
+          Width: null,
+          MimeType: 'image/jpeg',
         },
       };
 
