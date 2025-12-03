@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, Infer, damAssets } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   ComponentContainerProps,
@@ -48,7 +48,8 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 }
 
 function News({ opti }: NewsPageProps) {
-  const { pa } = getPreviewUtils(opti);
+  const { pa, src } = getPreviewUtils(opti);
+  const { getAlt, getSrcset } = damAssets(opti);
   return (
     <main className="min-h-screen bg-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -75,6 +76,13 @@ function News({ opti }: NewsPageProps) {
             <div className="space-y-6">
               <RichText {...pa('main_body')} content={opti.main_body?.json} />
             </div>
+
+            <img
+              {...pa('image')}
+              src={src(opti.image)}
+              alt={getAlt(opti.image, 'Teaser Image')}
+              className="w-full rounded-lg object-cover"
+            />
           </div>
 
           <OptimizelyExperience

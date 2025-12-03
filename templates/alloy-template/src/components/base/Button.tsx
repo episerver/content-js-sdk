@@ -11,6 +11,7 @@ export const ButtonContentType = contentType({
       type: 'url',
       displayName: 'Button Link',
       group: 'Information',
+      required: true,
     },
     text: {
       type: 'string',
