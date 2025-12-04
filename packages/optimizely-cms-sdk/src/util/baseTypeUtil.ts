@@ -50,9 +50,9 @@ export const CONTENT_URL_FRAGMENT =
   'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }';
 
 export const CONTENT_REFERENCE_ITEM_FRAGMENTS = [
-  'fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }',
-  'fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description Renditions { Id Name Url Width Height } Tags { Guid Name } }',
-  'fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description Tags { Guid Name } }',
+  'fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }',
+  'fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }',
+  'fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }',
   'fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }',
 ];
 
