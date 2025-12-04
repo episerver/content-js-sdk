@@ -33,11 +33,13 @@ export default function SmallFeature({ opti }: Props) {
       <h3 {...pa('heading')}>{opti.heading}</h3>
       <div style={{ position: 'relative' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src(opti.image)}
-          alt={getAlt(opti.image, 'image')}
-          {...pa('image')}
-        />
+        {(opti.image?.item?.Url ?? opti.image?.url.default) && (
+          <img
+            src={src(opti.image)}
+            alt={getAlt(opti.image, 'image')}
+            {...pa('image')}
+          />
+        )}
       </div>
       <RichText content={opti.body?.json} />
     </div>
