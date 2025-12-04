@@ -11,6 +11,7 @@ import {
   DisplaySettingsType,
   ExperienceCompositionNode,
   InferredContentReference,
+  Infer,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
@@ -90,7 +91,7 @@ type OptimizelyComponentProps = {
     __composition?: ExperienceCompositionNode;
   };
 
-  displaySettings?: Record<string, string>;
+  displaySettings?: Record<string, string | boolean>;
 };
 
 export async function OptimizelyComponent({
@@ -130,12 +131,12 @@ export type StructureContainerProps = {
   node: ExperienceStructureNode;
   children: React.ReactNode;
   index?: number;
-  displaySettings?: Record<string, string>;
+  displaySettings?: Record<string, string | boolean>;
 };
 export type ComponentContainerProps = {
   node: ExperienceComponentNode;
   children: React.ReactNode;
-  displaySettings?: Record<string, string>;
+  displaySettings?: Record<string, string | boolean>;
 };
 export type StructureContainer = (
   props: StructureContainerProps
@@ -153,7 +154,7 @@ export function OptimizelyExperience({
 }) {
   return nodes.map((node) => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
-    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);    
 
     if (isComponentNode(node)) {
       const Wrapper = ComponentWrapper ?? React.Fragment;

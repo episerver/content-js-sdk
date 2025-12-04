@@ -33,6 +33,7 @@ import {
   PublicRawFileAsset,
   PublicVideoAsset,
 } from './model/assets.js';
+import { DisplayTemplate } from './model/displayTemplates.js';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {
@@ -200,9 +201,28 @@ type InferFromContentType<T extends AnyContentType> = Prettify<
   InferredBase & InferProps<T> & InferExperience<T> & InferSection<T>
 >;
 
+/** Infers the TypeScript type for a display setting */
+type InferFromDisplayTemplate<T extends DisplayTemplate> = T extends {
+  settings: infer S;
+}
+  ? {
+      [K in keyof S]: S[K] extends {
+        choices: Record<string, any>;
+        editor: infer E;
+      }
+        ? E extends 'select'
+          ? keyof S[K]['choices']
+          : E extends 'checkbox'
+          ? boolean
+          : never
+        : never;
+    }
+  : {};
+
 /** Infers the Graph response types of `T`. `T` can be a content type or a property */
 // prettier-ignore
 export type Infer<T> =
-  T extends AnyContentType ? InferFromContentType<T>
-: T extends AnyProperty ? InferFromProperty<T>
-: unknown;
+  T extends DisplayTemplate ? InferFromDisplayTemplate<T>
+  : T extends AnyContentType ? InferFromContentType<T>
+  : T extends AnyProperty ? InferFromProperty<T>
+  : unknown;

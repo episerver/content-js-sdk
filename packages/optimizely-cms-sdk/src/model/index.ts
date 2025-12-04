@@ -12,7 +12,7 @@ export function contentType<T extends AnyContentType>(
 /** Defines a Optimizely CMS display template */
 export function displayTemplate<T extends DisplayTemplateVariant>(
   options: T
-): T & { __type: 'displayTemplate' } {
+): DisplayTemplate<T> {
   return { ...options, __type: 'displayTemplate' };
 }
 
