@@ -1,4 +1,5 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, damAssets, Infer } from '@optimizely/cms-sdk';
+import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const VideoFeatureContentType = contentType({
@@ -31,15 +32,18 @@ type Props = {
 
 export default function VideoFeature({ opti }: Props) {
   const { pa, src } = getPreviewUtils(opti);
+  const { getAlt } = damAssets(opti);
 
   return (
     <div className="video-feature">
       <div className="video">
         <a href={opti.video_link ?? '#'} {...pa('video_link')}>
-          {opti.thumbnail_image?.url.default && (
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {(opti.thumbnail_image?.item?.Url ??
+            opti.thumbnail_image?.url.default) && (
             <img
-              src={src(opti.thumbnail_image.url.default)}
-              alt=""
+              src={src(opti.thumbnail_image)}
+              alt={getAlt(opti.thumbnail_image, 'image')}
               {...pa('thumbnail_image')}
             />
           )}
@@ -49,10 +53,7 @@ export default function VideoFeature({ opti }: Props) {
       </div>
       <div>
         <h3 {...pa('heading')}>{opti.heading}</h3>
-        <div
-          dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
-          {...pa('body')}
-        />
+        <RichText content={opti.body?.json} />
       </div>
     </div>
   );
