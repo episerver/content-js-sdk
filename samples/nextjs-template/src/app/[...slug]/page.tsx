@@ -32,7 +32,7 @@ export async function generateStaticParams() {
     _Page(limit: 100) {
       items {
         _metadata {
-        	url {
+          url {
             base
             default
           }
