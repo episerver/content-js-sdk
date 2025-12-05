@@ -10,6 +10,12 @@ import React from 'react';
  */
 export const dynamicParams = true;
 
+function removeSlashes(str: string) {
+  const str2 = str.startsWith('/') ? str.slice(1) : str;
+
+  return str2.endsWith('/') ? str2.slice(0, -1) : str2;
+}
+
 /**
  * Generates static routes at build-time
  * See: https://nextjs.org/docs/app/api-reference/functions/generate-static-params
@@ -47,14 +53,8 @@ export async function generateStaticParams() {
       (item: any) => item._metadata.url.base === process.env.APPLICATION_HOST
     )
     .map((item: any) => item._metadata.url.default)
-    .map(
-      // Remove leading slash
-      (path: string) => (path.startsWith('/') ? path.slice(1) : path)
-    )
-    .map(
-      // Remove trailing slash
-      (path: string) => (path.endsWith('/') ? path.slice(0, -1) : path)
-    )
+    .filter((path?: string) => typeof path === 'string')
+    .map(removeSlashes)
     .filter((path: string) => path !== '')
     .map(
       // Format as required in Next.js
