@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:^0.1.0-alpha.5",
-    "next": "15.2.4",
+    "next": "15.2.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@optimizely/cms-cli": "workspace:*",
     "@eslint/eslintrc": "^3",
+    "@optimizely/cms-cli": "workspace:*",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

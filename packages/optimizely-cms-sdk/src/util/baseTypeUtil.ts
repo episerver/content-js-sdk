@@ -49,6 +49,13 @@ export function isBaseMediaType(key: string): key is MediaStringTypes {
 export const CONTENT_URL_FRAGMENT =
   'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }';
 
+export const CONTENT_REFERENCE_ITEM_FRAGMENTS = [
+  'fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }',
+  'fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }',
+  'fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }',
+  'fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }',
+];
+
 const COMMON_FRAGMENTS = [
   'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
   'fragment ItemMetadata on ItemMetadata { changeset displayOption }',
@@ -57,16 +64,24 @@ const COMMON_FRAGMENTS = [
   'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }',
   'fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }',
 ];
+
 const COMMON_FIELDS = '..._IContent';
 
 /**
  * Generates and adds fragments for base types
+ * @param damEnabled - Whether DAM features are enabled
  * @returns { fields, extraFragments }
  */
-export function buildBaseTypeFragments() {
+export function buildBaseTypeFragments(damEnabled: boolean = false) {
+  const extraFragments = [...COMMON_FRAGMENTS];
+
+  if (damEnabled) {
+    extraFragments.push(...CONTENT_REFERENCE_ITEM_FRAGMENTS);
+  }
+
   return {
     fields: [COMMON_FIELDS],
-    extraFragments: COMMON_FRAGMENTS,
+    extraFragments,
   };
 }
 

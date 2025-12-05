@@ -10,11 +10,15 @@ import {
   ExperienceComponentNode,
   DisplaySettingsType,
   ExperienceCompositionNode,
+  InferredContentReference,
+  Infer,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
+import { appendToken } from '../util/preview.js';
+import { OptimizelyReactError } from './error.js';
 
 type ComponentType = React.ComponentType<any>;
 
@@ -87,7 +91,7 @@ type OptimizelyComponentProps = {
     __composition?: ExperienceCompositionNode;
   };
 
-  displaySettings?: Record<string, string>;
+  displaySettings?: Record<string, string | boolean>;
 };
 
 export async function OptimizelyComponent({
@@ -96,7 +100,9 @@ export async function OptimizelyComponent({
   ...props
 }: OptimizelyComponentProps) {
   if (!componentRegistry) {
-    throw new Error('You should call `initReactComponentRegistry` first');
+    throw new OptimizelyReactError(
+      'You should call `initReactComponentRegistry` first'
+    );
   }
   const dtKey =
     opti.__composition?.displayTemplateKey ?? opti.displayTemplateKey;
@@ -105,12 +111,6 @@ export async function OptimizelyComponent({
   });
 
   if (!Component) {
-    console.log(
-      `[optimizely-cms-sdk] No component found for content type ${
-        opti.__typename
-      } ${opti.__tag ? `with tag "${opti.__tag}"` : ''}`
-    );
-
     return (
       <FallbackComponent>
         No component found for content type <b>{opti.__typename}</b>
@@ -131,12 +131,12 @@ export type StructureContainerProps = {
   node: ExperienceStructureNode;
   children: React.ReactNode;
   index?: number;
-  displaySettings?: Record<string, string>;
+  displaySettings?: Record<string, string | boolean>;
 };
 export type ComponentContainerProps = {
   node: ExperienceComponentNode;
   children: React.ReactNode;
-  displaySettings?: Record<string, string>;
+  displaySettings?: Record<string, string | boolean>;
 };
 export type StructureContainer = (
   props: StructureContainerProps
@@ -154,7 +154,7 @@ export function OptimizelyExperience({
 }) {
   return nodes.map((node) => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
-    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);    
 
     if (isComponentNode(node)) {
       const Wrapper = ComponentWrapper ?? React.Fragment;
@@ -328,13 +328,40 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
       }
     },
 
-    /** Appends the preview token to the provided image URL */
-    src(url: string) {
-      if (opti.__context?.preview_token) {
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}preview_token=${opti.__context.preview_token}`;
+    /**
+     * Appends preview token to a ContentReference's Image assets.
+     * Adds the preview token to the main URL and all rendition URLs when in preview mode.
+     *
+     * @param input - ContentReference from a DAM asset
+     * @returns ContentReference with preview tokens appended to all URLs, or the original if not in preview mode
+     *
+     * @example
+     * ```tsx
+     * const { src } = getPreviewUtils(opti);
+     *
+     * <img
+     *   src={src(opti.image)}
+     * />
+     * ```
+     */
+    src(input: InferredContentReference | string | null | undefined): string {
+      const previewToken = opti.__context?.preview_token;
+
+      // if input is an object with a URL
+      if (typeof input === 'object' && input) {
+        // if dam asset is selected the default URL is in input.url.default will be null
+        const url = input.url?.default ?? input.item?.Url;
+        if (url) {
+          return appendToken(url, previewToken);
+        }
       }
-      return url;
+
+      // if input is a string URL
+      if (typeof input === 'string') {
+        return appendToken(input, previewToken);
+      }
+
+      return '';
     },
   };
 }

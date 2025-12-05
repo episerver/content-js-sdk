@@ -13,6 +13,7 @@ type GraphRequest = {
 export class OptimizelyGraphError extends Error {
   constructor(message: string) {
     super(message);
+    this.name = 'OptimizelyGraphError';
   }
 }
 
@@ -29,6 +30,7 @@ export class GraphMissingContentTypeError extends OptimizelyGraphError {
     super(
       `Content type "${contentType}" not included in the registry. Ensure that you called "initContentTypeRegistry()" with it before fetching content.`
     );
+    this.name = 'GraphMissingContentTypeError';
     this.contentType = contentType;
   }
 }
@@ -39,6 +41,7 @@ export class GraphResponseError extends OptimizelyGraphError {
   constructor(message: string, options: { request: GraphRequest }) {
     super(message);
     this.request = options.request;
+    this.name = 'GraphResponseError';
   }
 }
 
@@ -50,8 +53,10 @@ export class GraphHttpResponseError extends GraphResponseError {
     message: string,
     options: { status: number; request: GraphRequest }
   ) {
-    super(message, options);
+    const msg = `HTTP ${options.status}: ${message}`;
+    super(msg, options);
     this.status = options.status;
+    this.name = 'GraphHttpResponseError';
   }
 }
 
@@ -76,10 +81,12 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     } else if (message.startsWith('Syntax Error')) {
       message +=
         ' Try again later. If the error persists, contact Optimizely support';
+    } else {
     }
 
     super(message, options);
 
     this.errors = errors;
+    this.name = 'GraphContentResponseError';
   }
 }

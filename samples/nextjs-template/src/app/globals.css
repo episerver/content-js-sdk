@@ -411,6 +411,15 @@ a:hover span.animate {
   background-image: linear-gradient(180deg, #10141d 55.03%, #191e28 100%);
 }
 
+.about-us .about-us-image {
+  position: relative;
+  width: 100%;
+}
+
+.about-us .about-us-image img {
+  object-fit: cover;
+}
+
 .blog-card {
   color: #333;
   cursor: pointer;

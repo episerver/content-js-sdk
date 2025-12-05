@@ -1,4 +1,4 @@
-import { DisplaySettingsType } from '../infer.js';
+import { DisplaySettingsType, Infer } from '../infer.js';
 import { BaseTypes } from './contentTypes.js';
 
 // section node types
@@ -64,17 +64,17 @@ export type DisplayTemplate<T = DisplayTemplateVariant> = T & {
 
 export function parseDisplaySettings(
   displaySettings?: DisplaySettingsType[] | null
-): Record<string, string> | undefined {
+): Record<string, string | boolean> | undefined {
   if (!displaySettings) {
     return undefined; // Return undefined if displaySettings is not provided
   }
 
-  const result: Record<string, string> = {}; // Initialize an empty object
+  const result: Record<string, string | boolean> = {}; // Initialize an empty object
 
   // Iterate over the input array
-  for (const item of displaySettings) {
+  for (const { key, value } of displaySettings) {
     // Assign the value to the key in the result object
-    result[item.key] = item.value;
+    result[key] = value === 'true' ? true : value === 'false' ? false : value;
   }
 
   return result;
