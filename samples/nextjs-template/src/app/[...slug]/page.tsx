@@ -50,9 +50,9 @@ export async function generateStaticParams() {
   return data._Page.items
     .filter(
       // Get only pages for current application
-      (item: any) => item._metadata.url.base === process.env.APPLICATION_HOST
+      (item: any) => item?._metadata?.url?.base === process.env.APPLICATION_HOST
     )
-    .map((item: any) => item._metadata.url.default)
+    .map((item: any) => item?._metadata?.url?.default)
     .filter((path?: string) => typeof path === 'string')
     .map(removeSlashes)
     .filter((path: string) => path !== '')
