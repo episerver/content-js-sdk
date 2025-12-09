@@ -2,6 +2,9 @@
 
 The `RichText` component is a React component for rendering Optimizely CMS rich text content. It transforms structured JSON content from the CMS into React elements with full customization support.
 
+> [!TIP]
+> Using the `<RichText/>` component is the recommended way to render rich text content. It's safer than `dangerouslySetInnerHTML` as it doesn't rely on HTML parsing, and allows you to customize how elements are rendered with your own React components.
+
 ## Import
 
 ```tsx
@@ -68,7 +71,6 @@ All element types listed below are supported by default and can be customized wi
 > [!NOTE] > **SVG elements are not supported by default.** SVG requires specialized child elements (`circle`, `path`, `rect`, etc.) and attributes that would require extensive additional support.
 >
 > **Alternatives:** Use custom element handlers, upload SVG as image assets, or create dedicated React components.
-
 
 #### Example: Custom Elements
 
