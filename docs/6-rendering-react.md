@@ -142,5 +142,5 @@ This is the end of the tutorial on how to create your first website using Optimi
 
 You can continue exploring these topics:
 
-- Add live preview _(under construction)_
-- Add Experiences _(under construction)_
+- [Add live preview](./7-live-preview.md)
+- [Add Experiences](./8-experiences.md)
