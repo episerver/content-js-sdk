@@ -142,5 +142,6 @@ This is the end of the tutorial on how to create your first website using Optimi
 
 You can continue exploring these topics:
 
-- [Add live preview](./7-live-preview.md)
-- [Add Experiences](./8-experiences.md)
+- **[Add Experiences](./9-experiences.md)** - Learn how to create personalized content experiences for different audiences
+- **[Add Live Preview](./10-live-preview.md)** - Enable real-time content editing and preview capabilities
+- **[Add Display Settings](./11-display-settings.md)** - Configure how your content is displayed across different contexts

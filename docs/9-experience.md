@@ -1,16 +1,6 @@
 # Working with Experiences
 
-Experiences are a powerful content type in Optimizely CMS that enable flexible, visual page building. Unlike traditional page types with fixed layouts, experiences support dynamic compositions made up of sections and elements that editors can arrange and customize through a visual interface.
-
-## What is an Experience?
-
-An experience (`_experience`) is a unique content type that:
-
-- Provides a specialized page type with enhanced visual editing capabilities
-- Supports dynamic layouts composed of nested sections and elements
-- Functions as an independent content instance and cannot be embedded as a property in other content types
-
-Experiences are flexible pages where editors drag and drop sections and elements in the Visual Builder to create dynamic layouts.
+Experiences are a powerful content type in Optimizely CMS that enable flexible, visual page building. Unlike traditional page (`_page`) types with fixed layouts, experiences (`_experience`) are routable entry points that support dynamic compositions made up of sections and elements that editors can arrange and customize through the Visual Builder interface.
 
 ## Creating an Experience Content Type
 
@@ -95,10 +85,10 @@ export default function AboutExperience({ opti }: Props) {
 **`opti.composition.nodes`**  
 Every experience has a `composition` property that contains the visual layout structure. The `nodes` array represents all the sections and elements that editors have added to the experience.
 
-**`OptimizelyExperience`**  
+**`<OptimizelyExperience/>`**  
 This component recursively renders the entire composition structure, handling both structural nodes (rows, columns) and component nodes (your custom components).
 
-**`ComponentWrapper`**  
+**`<ComponentWrapper/>`**  
 A wrapper function that wraps each component in the composition. This is where you add preview attributes using `pa(node)` to enable on-page editing in preview mode.
 
 ## Using the Built-in BlankExperience
@@ -136,9 +126,37 @@ export default function BlankExperience({ opti }: Props) {
 
 Since `BlankExperienceContentType` has no custom properties, the entire page layout is managed through the visual composition interface. This gives editors maximum flexibility.
 
+**Note:** The experience uses the outline layout type, meaning sections and section-enabled components are arranged as a flat, ordered list in the Visual Builder.
+
 ## Working with Sections
 
-Sections are structural containers within experiences, typically representing rows in a grid layout. Components can be marked as "section-enabled" to allow them to be used within the composition.
+Sections represent a vertical "chunk" of an experience and are extensions of blocks (components). A section has all the features of a block but also has access to the layout system through a composition.
+
+### Creating a Section Content Type
+
+To create a custom section, set the `baseType` to `'_section'`:
+
+```tsx
+import { contentType, Infer } from '@optimizely/cms-sdk';
+
+export const HeroSectionContentType = contentType({
+  key: 'HeroSection',
+  displayName: 'Hero Section',
+  baseType: '_section',
+  properties: {
+    backgroundImage: {
+      type: 'contentReference',
+      allowedTypes: ['_image'],
+    },
+    backgroundColor: {
+      type: 'string',
+      displayName: 'Background Color',
+    },
+  },
+});
+```
+
+Section content types can have properties and configuration, while their content (elements) is managed through the grid layout (rows/ columns).
 
 ### Using BlankSection
 
@@ -148,6 +166,7 @@ The SDK provides `BlankSectionContentType` for creating generic section containe
 import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
+  StructureContainerProps,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 
@@ -166,8 +185,64 @@ export default function BlankSection({ opti }: BlankSectionProps) {
 }
 ```
 
-**`OptimizelyGridSection`**  
+**`<OptimizelyGridSection/>`**  
 This component renders a grid-based layout for section contents. It handles the structural organization of components within the section, including rows and columns.
+
+### Customizing Row and Column Rendering
+
+You can customize how rows and columns are rendered by providing custom container components:
+
+```tsx
+import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
+import {
+  OptimizelyGridSection,
+  StructureContainerProps,
+  getPreviewUtils,
+} from '@optimizely/cms-sdk/react/server';
+
+type BlankSectionProps = {
+  opti: Infer<typeof BlankSectionContentType>;
+};
+
+function CustomRow({ children, node }: StructureContainerProps) {
+  const { pa } = getPreviewUtils(node);
+  return (
+    <div className="custom-row" {...pa(node)}>
+      {children}
+    </div>
+  );
+}
+
+function CustomColumn({ children, node }: StructureContainerProps) {
+  const { pa } = getPreviewUtils(node);
+  return (
+    <div className="custom-column" {...pa(node)}>
+      {children}
+    </div>
+  );
+}
+
+export default function BlankSection({ opti }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(opti);
+
+  return (
+    <section {...pa(opti)}>
+      <OptimizelyGridSection
+        nodes={opti.nodes}
+        row={CustomRow}
+        column={CustomColumn}
+      />
+    </section>
+  );
+}
+```
+
+The `row` and `column` props accept `StructureContainerProps`, which provides:
+
+- `children` - The nested content to render
+- `node` - The structure node with metadata like `key`, `displayTemplateKey`, and `displaySettings`
+
+This allows you to apply custom styling, add CSS classes, or implement responsive grid layouts based on your design system.
 
 ### Enabling Components for Sections
 
@@ -188,9 +263,33 @@ export const LandingSectionContentType = contentType({
 
 **Composition Behaviors:**
 
-- `'sectionEnabled'` - Allows the component to be used as a section container
-- `'elementEnabled'` - Allows the component to be used as an individual element
+- `'sectionEnabled'` - Allows the component to be used as a section container with grid layout capabilities
+- `'elementEnabled'` - Allows the component to be used as an element, the smallest building block with actual content data
 - You can specify both: `['sectionEnabled', 'elementEnabled']`
+
+## Understanding Elements
+
+Elements are the smallest building blocks in Visual Builder and contain the actual content data of an experience. Elements are also extensions of blocks (components) but with specific restrictions.
+
+### Creating an Element-Enabled Component
+
+To create a component that can be used as an element:
+
+```tsx
+export const CallToActionContentType = contentType({
+  key: 'CallToAction',
+  baseType: '_component',
+  displayName: 'Call to Action',
+  properties: {
+    heading: { type: 'string' },
+    buttonText: { type: 'string' },
+    buttonLink: { type: 'string' },
+  },
+  compositionBehaviors: ['elementEnabled'],
+});
+```
+
+This component can now be dragged into sections within an experience as a content element.
 
 ## Registering Experience Components
 
@@ -238,9 +337,9 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 This enables on-page editing in preview mode, allowing editors to click components and jump to the corresponding CMS field.
 
-### Combine Fixed and Dynamic Content
+### Mixing Static and Composed Content
 
-Experiences work well when you combine fixed header/footer areas with dynamic composition areas:
+Experiences can combine static properties (defined in your content type) with dynamic composition areas. This is useful when you need consistent elements like headers alongside flexible content:
 
 ```tsx
 export default function AboutExperience({ opti }: Props) {
@@ -248,33 +347,23 @@ export default function AboutExperience({ opti }: Props) {
 
   return (
     <main>
-      {/* Fixed header section */}
-      <header>
+      {/* Static content from experience properties */}
+      <header className="about-header">
         <h1 {...pa('title')}>{opti.title}</h1>
+        <p {...pa('subtitle')}>{opti.subtitle}</p>
       </header>
 
-      {/* Dynamic composition area */}
+      {/* Dynamic visual composition */}
       <OptimizelyExperience
         nodes={opti.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
-
-      {/* Fixed footer could go here */}
     </main>
   );
 }
 ```
 
-### Handle Empty Compositions Gracefully
-
-Always provide fallback for empty compositions:
-
-```tsx
-<OptimizelyExperience
-  nodes={opti.composition.nodes ?? []}
-  ComponentWrapper={ComponentWrapper}
-/>
-```
+The static properties (`title`, `subtitle`) provide structured fields editors fill in, while `OptimizelyExperience` renders the flexible sections and elements they arrange visually.
 
 > [!TIP]
-> The `?? []` ensures the component doesn't break when there are no nodes yet.
+> Use static properties for critical content that must always be present, and composition areas for flexible, reorderable content blocks.
