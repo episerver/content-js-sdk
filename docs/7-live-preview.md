@@ -1,4 +1,4 @@
-# Live Preview
+# Live Preview (with React)
 
 Live preview allows editors to see their content changes in real-time before publishing. When an editor makes changes in the Optimizely CMS, they can instantly preview how those changes will look on your site without leaving the editor interface. This guide walks you through setting up live preview for your Next.js application using the Optimizely CMS SDK.
 
@@ -86,9 +86,9 @@ Three key components work together here:
 
 1. **`<Script>`** - Loads the communication injector script from your CMS. This enables two-way communication between the preview window and the CMS editor interface. Note that this uses Next.js's `Script` component - if you're using a different framework, use standard `<script>` tags instead.
 
-2. **`<PreviewComponent />`** - A client component that handles the real-time preview updates. When an editor makes changes in the CMS, this component receives those updates and triggers a re-render.
+2. **`<PreviewComponent/>`** - A client component that handles the real-time preview updates. When an editor makes changes in the CMS, this component receives those updates and triggers a re-render.
 
-3. **`<OptimizelyComponent />`** - Renders the actual content using the component you've registered for that content type.
+3. **`<OptimizelyComponent/>`** - Renders the actual content using the component you've registered for that content type.
 
 ## Step 2. Configure Environment Variables
 
