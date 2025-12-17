@@ -6,8 +6,8 @@ Display templates allow developers to define visual variations that content edit
 
 Display templates can be associated with three different targets:
 
-- **Base type** - Apply to `_section`, or `_component`
-- **Content type** - Apply to specific content types (like `Tile`, `Hero`, etc.)
+- **Base type** - Apply to `_experience`, `_section`, or `_component`
+- **Content type** - Apply to specific content types derived from the base types `_experience`, `_section`, and `_component` (like `Tile`, `Hero`, etc.)
 - **Node type** - Apply to structural nodes: `row` or `column`
 
 ### Example: Component Display Template

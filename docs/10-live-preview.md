@@ -1,8 +1,6 @@
 # Live Preview
 
-Live preview allows editors to see their content changes in real-time before publishing. When an editor makes changes in the Optimizely CMS, they can instantly preview how those changes will look on your site without leaving the editor interface.
-
-This guide walks you through setting up live preview for your Next.js application using the Optimizely CMS SDK.
+Live preview allows editors to see their content changes in real-time before publishing. When an editor makes changes in the Optimizely CMS, they can instantly preview how those changes will look on your site without leaving the editor interface. This guide walks you through setting up live preview for your Next.js application using the Optimizely CMS SDK.
 
 ## Prerequisites
 
