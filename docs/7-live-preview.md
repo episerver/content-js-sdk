@@ -109,18 +109,32 @@ Replace the values with your actual:
 > [!IMPORTANT]
 > Never commit your `.env.local` file to version control. Add it to your `.gitignore` to keep your credentials secure.
 
-## Step 3. Configure Preview URL in Optimizely CMS
+## Step 3. Configure Hostname and Preview in CMS
 
-Now you need to tell the CMS where to send preview requests:
+Configure your application hostname and preview settings in the CMS:
 
-1. Log in to your Optimizely CMS admin interface
-2. Navigate to **Settings** → **Website Settings** → **Preview URLs**
-3. Add a new preview URL pointing to your preview route:
+### Add Hostname
+
+1. Open your application and go to the **Hostnames** tab
+2. Click **Add Hostname** and enter your application URL:
+   - For local development: `http://localhost:3000`
+   - For production: `https://yourdomain.com`
+3. Select **Use a secure connection (HTTPS)** if applicable
+4. Click **Add**
+
+### Configure Preview URL
+
+1. Go to the **Live Preview** tab
+2. Select **Use Preview Tokens**
+3. Click **Enabled** under **Preview URL format**
+4. A default format is added automatically - edit or add rows for specific content types
+5. Update the preview URL to point to your preview route:
    - For local development: `http://localhost:3000/preview`
    - For production: `https://yourdomain.com/preview`
+6. Click **Save**
 
 > [!TIP]
-> You can configure multiple preview URLs for different environments. This is useful if you want editors to preview content on staging before production.
+> You can configure different preview URLs for multiple environments (local, staging, production) to test content across different deployment stages.
 
 ### Using Preview in Other Frameworks
 
@@ -141,7 +155,9 @@ To enhance the preview experience further, consider exploring the **Using Previe
 
 ## Using Preview Utils in Components
 
-To enable on-page editing in preview mode, you'll need to add special attributes to your components. The `getPreviewUtils` utility provides functions that make your content editable and properly resolved in preview mode.
+To implement on-page editing functionality in your code, you need to add preview attributes to your HTML or JSX elements using the `getPreviewUtils` utility. These attributes enable the click-to-edit behavior that allows content editors to navigate directly from the preview to the corresponding field in the CMS editor.
+
+![Live Preview with preview utils](https://files.readme.io/23b3c20-image.png)
 
 ### Understanding Preview Attributes (`pa`)
 

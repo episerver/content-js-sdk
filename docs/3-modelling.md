@@ -4,25 +4,7 @@ In this page you will learn how to model content types for your CMS
 
 ## Step 1. Model content types
 
-- Create a directory `src/components`. Inside that directory you will place your content types definitions.
-- Create a file called `Article.tsx` inside the `src/components` directory
-- Create a file `optimizely.config.mjs` in the root of your project
-
-Your project structure will look like this:
-
-```
-.
-├── src/
-│   ├── app/
-│   └── components/
-│       └── Article.tsx
-├── public
-├── .env
-├── optimizely.config.mjs
-└── ...
-```
-
-Fill `Article.tsx` with the following content:
+Create a file called `Article.tsx` in the `src/components` directory to define your content type:
 
 ```ts
 import { contentType } from '@optimizely/cms-sdk';
@@ -46,79 +28,12 @@ export const ArticleContentType = contentType({
 });
 ```
 
-Fill `optimizely.config.mjs` with the following content
+The `ArticleContentType` demonstrates a basic page (`_page`) content type content type structure with two fundamental property types:
 
-```js
-import { buildConfig } from '@optimizely/cms-sdk';
+- **string**: Used for simple text fields like titles, names, or short descriptions
+- **richText**: Used for formatted content that supports rich text editing capabilities, such as article bodies or detailed descriptions
 
-export default buildConfig({
-  components: ['./src/components/**/*.tsx'],
-});
-```
-
-### Optional: Define Property Groups
-
-Property groups help organize your content type properties in the CMS editor. You can define custom property groups in your config file:
-
-```js
-import { buildConfig } from '@optimizely/cms-sdk';
-
-export default buildConfig({
-  components: ['./src/components/**/*.tsx'],
-  propertyGroups: [
-    {
-      key: 'seo',
-      displayName: 'SEO',
-      sortOrder: 1,
-    },
-    {
-      key: 'meta',
-      displayName: 'Metadata',
-      sortOrder: 2,
-    },
-  ],
-});
-```
-
-Each property group has:
-
-- `key` (required): A unique identifier for the group
-- `displayName` (optional): The name shown in the CMS editor. If not provided, it's auto-generated from the key
-- `sortOrder` (optional): Controls the display order. If not provided, it's auto-assigned based on array position
-
-You can then reference these groups in your content type properties using the `group` field.
-
-### Container Types with mayContainTypes
-
-`mayContainTypes` defines which content types can be created as children within a container. This property applies to `_page`, `_experience`, and `_folder` base types, enabling you to build structured content hierarchies and maintain organizational consistency.
-
-```ts
-const BlogPageContentType = contentType({
-  key: 'BlogPage',
-  baseType: '_page',
-  mayContainTypes: [
-    ArticleContentType,
-    '_page', // Allow all page types
-    '_self', // Allow same type (BlogPage)
-  ],
-  properties: {
-    // ... properties
-  },
-});
-
-const ComponentFolderContentType = contentType({
-  key: 'ComponentFolder',
-  baseType: '_folder',
-  mayContainTypes: ['_component', '_self'], // Only allow components and self
-});
-```
-
-**`mayContainTypes`** defines the allowed child content types:
-
-- Specific types: `[ArticleContentType]`
-- Base types: `['_page', '_component']`
-- Self-reference: `['_self']`
-- Wildcard: `['*']` to allow all types
+These basic property types are the building blocks for your content model. The following sections show more property types and patterns you can use to create complex content types.
 
 ## Property Configuration
 
@@ -317,6 +232,38 @@ const BlogPageContentType = contentType({
 - Self-reference: `['_self']` to allow the same content type
 
 **`restrictedTypes`** - Blacklist of content types that cannot be selected. Uses the same format as `allowedTypes`.
+
+## Container Types with mayContainTypes
+
+`mayContainTypes` defines which content types can be created as children within a container. This property applies to `_page`, `_experience`, and `_folder` base types, enabling you to build structured content hierarchies and maintain organizational consistency.
+
+```ts
+const BlogPageContentType = contentType({
+  key: 'BlogPage',
+  baseType: '_page',
+  mayContainTypes: [
+    ArticleContentType,
+    '_page', // Allow all page types
+    '_self', // Allow same type (BlogPage)
+  ],
+  properties: {
+    // ... properties
+  },
+});
+
+const ComponentFolderContentType = contentType({
+  key: 'ComponentFolder',
+  baseType: '_folder',
+  mayContainTypes: ['_component', '_self'], // Only allow components and self
+});
+```
+
+**`mayContainTypes`** defines the allowed child content types:
+
+- Specific types: `[ArticleContentType]`
+- Base types: `['_page', '_component']`
+- Self-reference: `['_self']`
+- Wildcard: `['*']` to allow all types
 
 ## Step 2. Sync content types to the CMS
 
