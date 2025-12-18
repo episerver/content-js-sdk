@@ -153,6 +153,57 @@ type GetLinksResponse = {
   };
 };
 
+type AnyObj = Record<string, any>;
+
+const T_IMAGE = 'cmp_PublicImageAsset';
+const T_VIDEO = 'cmp_PublicVideoAsset';
+const T_RAW = 'cmp_PublicRawFileAsset';
+
+function typenameFromMime(mime?: string | null): string | null {
+  if (!mime) return null;
+  if (mime.startsWith('image/')) return T_IMAGE;
+  if (mime.startsWith('video/')) return T_VIDEO;
+  return T_RAW;
+}
+
+function typenameFromShape(obj: AnyObj): string | null {
+  if (typeof obj.Width === 'number' && typeof obj.Height === 'number') {
+    return T_IMAGE;
+  }
+  if (
+    Array.isArray(obj.Renditions) &&
+    obj.Width == null &&
+    obj.Height == null
+  ) {
+    return T_VIDEO;
+  }
+  if (obj.Url) return T_RAW;
+  return null;
+}
+
+export function renderTypename(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map((e) => renderTypename(e));
+  }
+  if (obj && typeof obj === 'object') {
+    for (const k of Object.keys(obj)) {
+      obj[k] = renderTypename(obj[k]);
+    }
+
+    if (typeof obj.__typename === 'string' && obj.__typename.length > 0) {
+      return obj;
+    }
+
+    const byMime = typenameFromMime(obj.MimeType);
+    const inferred = byMime ?? typenameFromShape(obj);
+
+    if (inferred) {
+      obj.__typename = inferred;
+    }
+  }
+  return obj;
+}
+
 /**
  * Removes GraphQL alias prefixes from object keys in the response data.
  *
@@ -289,8 +340,8 @@ export class GraphClient {
     }
 
     const json = (await response.json()) as any;
-
-    return json.data;
+    const result = renderTypename(json.data);
+    return result;
   }
 
   /**
