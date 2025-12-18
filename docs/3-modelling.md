@@ -43,9 +43,20 @@ Each property in your content type can be configured with several options:
 
 The `type` field defines the data type and can be one of:
 
-- `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`
-- `'dateTime'`, `'url'`, `'link'`, `'binary'`, `'json'`
-- `'content'`, `'contentReference'`, `'array'`, `'component'`
+- **`'string'`** - Simple text fields
+- **`'richText'`** - Formatted content with rich text editing (slate js format)
+- **`'boolean'`** - True/false values
+- **`'integer'`** - Whole numbers
+- **`'float'`** - Decimal numbers
+- **`'dateTime'`** - Date and time values
+- **`'url'`** - Simple web addresses
+- **`'link'`** - Links with metadata (text, title, target)
+- **`'binary'`** - Binary data files
+- **`'json'`** - Structured JSON data
+- **`'content'`** - References to other content items
+- **`'contentReference'`** - References to content with additional constraints
+- **`'array'`** - Lists of values
+- **`'component'`** - Embedded component types
 
 #### URL Property
 
