@@ -180,14 +180,14 @@ describe('getPreviewUtils', () => {
       const utils = getPreviewUtils({ __typename: 'TestPage' });
       const result = utils.src(null);
 
-      expect(result).toBe('');
+      expect(result).toBe(undefined);
     });
 
     it('should return empty string for undefined input', () => {
       const utils = getPreviewUtils({ __typename: 'TestPage' });
       const result = utils.src(undefined);
 
-      expect(result).toBe('');
+      expect(result).toBe(undefined);
     });
 
     it('should return empty string when asset has no URL', () => {
@@ -218,7 +218,7 @@ describe('getPreviewUtils', () => {
       const utils = getPreviewUtils({ __typename: 'TestPage' });
       const result = utils.src(assetWithoutUrl);
 
-      expect(result).toBe('');
+      expect(result).toBe(undefined);
     });
 
     it('should handle URLs with existing query parameters', () => {

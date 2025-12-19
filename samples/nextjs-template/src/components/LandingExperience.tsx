@@ -30,19 +30,19 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 export default function LandingExperienceComponent({ opti }: Props) {
   const { pa, src } = getPreviewUtils(opti);
+  const bg = src(opti.hero?.background);
   return (
     <main>
       {opti.hero && (
         <header className={['uni-hero', opti.hero.theme].join(' ')}>
-          {(opti.hero.background?.item?.Url ??
-            opti.hero.background?.url.default) && (
+          {bg ? (
             <Image
-              src={src(opti.hero.background)}
+              src={bg}
               alt=""
               fill={true}
               {...pa('hero.background')}
             />
-          )}
+          ) : null}
           <div className="heading" {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
             <p {...pa('hero.summary')}>{opti.hero.summary}</p>

@@ -33,14 +33,14 @@ type Props = {
 
 export default function LandingComponent({ opti }: Props) {
   const { pa, src } = getPreviewUtils(opti);
+  const bg = src(opti.hero?.background);
   return (
     <main>
       {opti.hero && (
         <header className={['uni-hero', opti.hero.theme].join(' ')}>
-          {(opti.hero.background?.item?.Url ??
-            opti.hero.background?.url.default) && (
-            <Image src={src(opti.hero.background)} alt="" fill={true} />
-          )}
+          {bg ? (
+            <Image src={bg} alt="" fill />
+          ) : null}
           <div className="heading" {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
             <p {...pa('hero.summary')}>{opti.hero.summary}</p>
