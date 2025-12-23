@@ -36,13 +36,65 @@ Use the command to check that the connection is correct:
 npx @optimizely/cms-cli@latest login
 ```
 
-## Next steps
+## Step 4. Create configuration file
 
-Now you are ready to start [modelling your data](./3-modelling.md).
+Create a file `optimizely.config.mjs` in the root of your project. This configuration tells the CLI where to find your content type definitions.
 
----
+**Basic configuration:**
 
-## Advanced topics
+```js
+import { buildConfig } from '@optimizely/cms-sdk';
+
+export default buildConfig({
+  components: ['./src/components/**/*.tsx'],
+});
+```
+
+Your project structure should now look like this:
+
+```
+.
+├── src/
+│   ├── app/
+│   └── components/
+│       └── Article.tsx
+├── public
+├── .env
+├── optimizely.config.mjs
+└── ...
+```
+
+**Optional: Property Groups**
+
+Property groups help organize your content type properties in the CMS editor. Add them to your configuration if you want to group related fields together:
+
+```js
+import { buildConfig } from '@optimizely/cms-sdk';
+
+export default buildConfig({
+  components: ['./src/components/**/*.tsx'],
+  propertyGroups: [
+    {
+      key: 'seo',
+      displayName: 'SEO',
+      sortOrder: 1,
+    },
+    {
+      key: 'meta',
+      displayName: 'Metadata',
+      sortOrder: 2,
+    },
+  ],
+});
+```
+
+Property group configuration:
+
+- **`key`** (required) - Unique identifier for the group
+- **`displayName`** (optional) - Name shown in the CMS editor (auto-generated from key if omitted)
+- **`sortOrder`** (optional) - Display order (auto-assigned based on array position if omitted)
+
+Reference these groups in your content type properties using the `group` field.
 
 ### Non-production environment
 
@@ -53,3 +105,9 @@ OPTIMIZELY_CMS_API_URL=https://api.cmstest.optimizely.com
 ```
 
 [Read more about environment variables for the CLI](../packages/optimizely-cms-cli/docs/environmental-variables.md)
+
+## Next steps
+
+Now you are ready to start [modelling your data](./3-modelling.md).
+
+---

@@ -19,9 +19,10 @@ In this page, you will learn to create content in the CMS. Once you created it, 
 
 ## Step 2. Create an application
 
-1. Go to your CMS &rarr; Settings &rarr; Application
-2. Click "Create Application"
-3. Write `my-app` as Application Name and select "From Existing &rarr; Home" as Start Page
+1. Go to **Settings** → **Applications** → **Create Application**
+2. Enter an **Application Name** (e.g., `my-app`) - API ID is auto-generated
+3. Select a start page: **From Existing** → **Home**
+4. Click **Create Application**
 
    ![Create application dialog](./images/create-application.png)
 

@@ -24,7 +24,7 @@ export default function Article({ opti }: Props) {
 ```
 
 > [!NOTE]
-> For complete documentation on the RichText component including all props, advanced customization options, fallback handling, and TypeScript support, see the [RichText Component Reference](./7-richtext-component-react.md).
+> For complete documentation on the RichText component including all props, advanced customization options, fallback handling, and TypeScript support, see the [RichText Component Reference](./10-richtext-component-react.md).
 
 The entire file should look like this:
 
@@ -142,5 +142,6 @@ This is the end of the tutorial on how to create your first website using Optimi
 
 You can continue exploring these topics:
 
-- Add live preview _(under construction)_
-- Add Experiences _(under construction)_
+- **[Add Experiences](./8-experiences.md)** - Learn how to create personalized content experiences for different audiences
+- **[Add Live Preview](./7-live-preview.md)** - Enable real-time content editing and preview capabilities
+- **[Add Display Settings](./9-display-settings.md)** - Configure how your content is displayed across different contexts
