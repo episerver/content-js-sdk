@@ -98,7 +98,7 @@ export async function OptimizelyComponent({
   content,
   displaySettings,
   ...props
-}: OptimizelyComponentProps) {
+}: OptimizelyComponentProps): Promise<JSX.Element> {
   if (!componentRegistry) {
     throw new OptimizelyReactError(
       'You should call `initReactComponentRegistry` first'
