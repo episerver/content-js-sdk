@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const BlogCardContentType = contentType({
@@ -26,23 +26,23 @@ export const BlogCardContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof BlogCardContentType>;
+  content: ContentProps<typeof BlogCardContentType>;
 };
 
-export default function BlogCard({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function BlogCard({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <article className="blog-card">
-      <h2 {...pa('title')}>{opti.title}</h2>
+      <h2 {...pa('title')}>{content.title}</h2>
       <p className="subtitle" {...pa('subtitle')}>
-        {opti.subtitle}
+        {content.subtitle}
       </p>
       <div className="blog-meta">
         <span className="author" {...pa('author')}>
-          {opti.author}
+          {content.author}
         </span>
         <span className="date" {...pa('date')}>
-          {opti.date ? new Date(opti.date).toLocaleDateString() : 'N/A'}
+          {content.date ? new Date(content.date).toLocaleDateString() : 'N/A'}
         </span>
       </div>
     </article>

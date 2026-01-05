@@ -267,8 +267,8 @@ describe('getPreviewUtils', () => {
 
   describe('getSrcset()', () => {
     it('should generate srcset with unique widths from opti object', () => {
-      const opti = { __typename: 'TestPage', image: mockImageAsset };
-      const result = getSrcset(opti, opti.image);
+      const content = { __typename: 'TestPage', image: mockImageAsset };
+      const result = getSrcset(content, content.image);
 
       expect(result).toBeDefined();
       // Should have 4 unique widths: 100, 256, 512, 1920 (duplicate 512 removed)
@@ -282,8 +282,8 @@ describe('getPreviewUtils', () => {
     });
 
     it('should generate srcset directly from InferredContentReference', () => {
-      const opti = { __typename: 'TestPage' };
-      const result = getSrcset(opti, mockImageAsset);
+      const content = { __typename: 'TestPage' };
+      const result = getSrcset(content, mockImageAsset);
 
       expect(result).toBeDefined();
       // Should have 4 unique widths: 100, 256, 512, 1920 (duplicate 512 removed)
@@ -297,11 +297,11 @@ describe('getPreviewUtils', () => {
     });
 
     it('should append preview token when passed in opti context', () => {
-      const opti = {
+      const content = {
         __typename: 'TestPage',
         __context: { edit: true, preview_token: 'test-token-456' },
       };
-      const result = getSrcset(opti, mockImageAsset);
+      const result = getSrcset(content, mockImageAsset);
 
       expect(result).toBeDefined();
       const entries = result!.split(', ');
@@ -313,8 +313,8 @@ describe('getPreviewUtils', () => {
     });
 
     it('should deduplicate renditions with same width', () => {
-      const opti = { __typename: 'TestPage', image: mockImageAsset };
-      const result = getSrcset(opti, opti.image);
+      const content = { __typename: 'TestPage', image: mockImageAsset };
+      const result = getSrcset(content, content.image);
 
       expect(result).toBeDefined();
       // Width 512 appears twice in renditions but should only appear once in srcset
@@ -323,12 +323,12 @@ describe('getPreviewUtils', () => {
     });
 
     it('should append preview token to renditions in preview mode from opti', () => {
-      const opti = {
+      const content = {
         __typename: 'TestPage',
         image: mockImageAsset,
         __context: { edit: true, preview_token: 'test-token-123' },
       };
-      const result = getSrcset(opti, opti.image);
+      const result = getSrcset(content, content.image);
 
       expect(result).toBeDefined();
       const entries = result!.split(', ');
@@ -340,14 +340,14 @@ describe('getPreviewUtils', () => {
     });
 
     it('should return undefined for null ContentReference', () => {
-      const opti = { __typename: 'TestPage' };
-      const result = getSrcset(opti, null);
+      const content = { __typename: 'TestPage' };
+      const result = getSrcset(content, null);
       expect(result).toBeUndefined();
     });
 
     it('should return undefined for undefined ContentReference', () => {
-      const opti = { __typename: 'TestPage' };
-      const result = getSrcset(opti, undefined);
+      const content = { __typename: 'TestPage' };
+      const result = getSrcset(content, undefined);
       expect(result).toBeUndefined();
     });
 
@@ -369,8 +369,8 @@ describe('getPreviewUtils', () => {
         },
       };
 
-      const opti = { __typename: 'TestPage' };
-      const result = getSrcset(opti, noRenditionsAsset);
+      const content = { __typename: 'TestPage' };
+      const result = getSrcset(content, noRenditionsAsset);
       expect(result).toBeUndefined();
     });
   });
@@ -435,8 +435,8 @@ describe('getPreviewUtils', () => {
 
   describe('damAssets()', () => {
     it('should return scoped getSrcset and getAlt functions', () => {
-      const opti = { __typename: 'TestPage', image: mockImageAsset };
-      const assets = damAssets(opti);
+      const content = { __typename: 'TestPage', image: mockImageAsset };
+      const assets = damAssets(content);
 
       expect(assets).toHaveProperty('getSrcset');
       expect(assets).toHaveProperty('getAlt');
@@ -445,10 +445,10 @@ describe('getPreviewUtils', () => {
     });
 
     it('should generate srcset using scoped getSrcset', () => {
-      const opti = { __typename: 'TestPage', image: mockImageAsset };
-      const { getSrcset } = damAssets(opti);
+      const content = { __typename: 'TestPage', image: mockImageAsset };
+      const { getSrcset } = damAssets(content);
 
-      const result = getSrcset(opti.image);
+      const result = getSrcset(content.image);
 
       expect(result).toContain('thumbnail_100x100_63.jpg 100w');
       expect(result).toContain('small_256x256_63.jpg 256w');
@@ -457,14 +457,14 @@ describe('getPreviewUtils', () => {
     });
 
     it('should handle preview tokens with scoped getSrcset', () => {
-      const opti = {
+      const content = {
         __typename: 'TestPage',
         image: mockImageAsset,
         __context: { edit: true, preview_token: 'test-token-123' },
       };
-      const { getSrcset } = damAssets(opti);
+      const { getSrcset } = damAssets(content);
 
-      const result = getSrcset(opti.image);
+      const result = getSrcset(content.image);
 
       expect(result).toBeDefined();
       const entries = result!.split(', ');
@@ -476,8 +476,8 @@ describe('getPreviewUtils', () => {
     });
 
     it('should extract alt text using getAlt from damAssets', () => {
-      const opti = { __typename: 'TestPage', image: mockImageAsset };
-      const { getAlt } = damAssets(opti);
+      const content = { __typename: 'TestPage', image: mockImageAsset };
+      const { getAlt } = damAssets(content);
 
       const result = getAlt(mockImageAsset);
 
@@ -485,15 +485,15 @@ describe('getPreviewUtils', () => {
     });
 
     it('should handle multiple properties with scoped getSrcset', () => {
-      const opti = {
+      const content = {
         __typename: 'TestPage',
         heroImage: mockImageAsset,
         thumbnail: mockImageAsset,
       };
-      const { getSrcset } = damAssets(opti);
+      const { getSrcset } = damAssets(content);
 
-      const heroResult = getSrcset(opti.heroImage);
-      const thumbResult = getSrcset(opti.thumbnail);
+      const heroResult = getSrcset(content.heroImage);
+      const thumbResult = getSrcset(content.thumbnail);
 
       expect(heroResult).toContain('thumbnail_100x100_63.jpg 100w');
       expect(thumbResult).toContain('thumbnail_100x100_63.jpg 100w');
@@ -517,17 +517,17 @@ describe('getPreviewUtils', () => {
         },
       };
 
-      const opti = { __typename: 'TestPage', image: emptyAltAsset };
-      const { getAlt } = damAssets(opti);
+      const content = { __typename: 'TestPage', image: emptyAltAsset };
+      const { getAlt } = damAssets(content);
 
       expect(getAlt(emptyAltAsset, 'Custom fallback')).toBe('Custom fallback');
     });
 
     it('should return undefined for missing properties', () => {
-      const opti = { __typename: 'TestPage', image: null };
-      const { getSrcset } = damAssets(opti);
+      const content = { __typename: 'TestPage', image: null };
+      const { getSrcset } = damAssets(content);
 
-      const result = getSrcset(opti.image);
+      const result = getSrcset(content.image);
 
       expect(result).toBeUndefined();
     });

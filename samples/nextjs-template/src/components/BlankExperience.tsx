@@ -1,4 +1,4 @@
-import { BlankExperienceContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyExperience,
@@ -6,7 +6,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: Infer<typeof BlankExperienceContentType>;
+  content: ContentProps<typeof BlankExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -14,11 +14,11 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function BlankExperience({ opti }: Props) {
+export default function BlankExperience({ content }: Props) {
   return (
     <main className="blank-experience">
       <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>

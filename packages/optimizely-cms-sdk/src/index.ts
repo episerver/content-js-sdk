@@ -26,5 +26,5 @@ export * as ContentTypes from './model/contentTypes.js';
 export * as BuildConfig from './model/buildConfig.js';
 export * as DisplayTemplates from './model/displayTemplates.js';
 export * as Properties from './model/properties.js';
-export { Infer } from './infer.js';
+export { ContentProps } from './infer.js';
 export { damAssets } from './render/assets.js';

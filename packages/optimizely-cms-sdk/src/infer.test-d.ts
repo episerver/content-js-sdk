@@ -1,14 +1,14 @@
 import { test, expectTypeOf } from 'vitest';
-import type { Infer } from './infer.js';
+import type { ContentProps } from './infer.js';
 import { contentType } from './model/index.js';
 
-test('infer works for non-content type', () => {
-  expectTypeOf<Infer<number>>().toBeUnknown();
-  expectTypeOf<Infer<string>>().toBeUnknown();
-  expectTypeOf<Infer<boolean>>().toBeUnknown();
+test('ContentProps works for non-content type', () => {
+  expectTypeOf<ContentProps<number>>().toBeUnknown();
+  expectTypeOf<ContentProps<string>>().toBeUnknown();
+  expectTypeOf<ContentProps<boolean>>().toBeUnknown();
 });
 
-test('infer works for basic properties', () => {
+test('ContentProps works for basic properties', () => {
   type ExpectedType = {
     heading: string | null;
     subtitle: string | null;
@@ -31,10 +31,10 @@ test('infer works for basic properties', () => {
     },
   });
 
-  expectTypeOf<Infer<typeof Article>>().toExtend<ExpectedType>();
+  expectTypeOf<ContentProps<typeof Article>>().toExtend<ExpectedType>();
 });
 
-test('infer works for array properties', () => {
+test('ContentProps works for array properties', () => {
   type ExpectedType = {
     heading: string[] | null;
     subtitle: string[] | null;
@@ -57,10 +57,10 @@ test('infer works for array properties', () => {
     },
   });
 
-  expectTypeOf<Infer<typeof Article>>().toExtend<ExpectedType>();
+  expectTypeOf<ContentProps<typeof Article>>().toExtend<ExpectedType>();
 });
 
-test('infer works for component properties', () => {
+test('ContentProps works for component properties', () => {
   type ExpectedType = {
     hero: {
       image: { url: { default: string | null; type: string | null } } | null;
@@ -86,10 +86,10 @@ test('infer works for component properties', () => {
     },
   });
 
-  expectTypeOf<Infer<typeof Article>>().toExtend<ExpectedType>();
+  expectTypeOf<ContentProps<typeof Article>>().toExtend<ExpectedType>();
 });
 
-test('infer works for disabled keys', () => {
+test('ContentProps works for disabled keys', () => {
   type ExpectedType = {
     p2: string | null;
   };
@@ -103,7 +103,7 @@ test('infer works for disabled keys', () => {
     },
   });
 
-  type X = Infer<typeof c1>;
+  type X = ContentProps<typeof c1>;
 
-  expectTypeOf<Infer<typeof c1>>().toExtend<ExpectedType>();
+  expectTypeOf<ContentProps<typeof c1>>().toExtend<ExpectedType>();
 });

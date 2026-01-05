@@ -23,5 +23,5 @@ export default async function Page({ params }: Props) {
     host,
   });
 
-  return <OptimizelyComponent opti={content[0]} />;
+  return <OptimizelyComponent content={content[0]} />;
 }

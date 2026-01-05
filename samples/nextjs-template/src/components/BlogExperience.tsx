@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { BlogCardContentType } from './BlogCard';
 import {
   ComponentContainerProps,
@@ -32,7 +32,7 @@ export const BlogExperienceContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof BlogExperienceContentType>;
+  content: ContentProps<typeof BlogExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -40,21 +40,21 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function BlogExperience({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function BlogExperience({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <main className="blog-experience">
       <header className="blog-header">
-        <h1 {...pa('title')}>{opti.title}</h1>
-        <p {...pa('subtitle')}>{opti.subtitle}</p>
+        <h1 {...pa('title')}>{content.title}</h1>
+        <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
       <section className="blog-articles" {...pa('articles')}>
-        {opti?.articles?.map((article, index) => (
-          <OptimizelyComponent key={index} opti={article} />
+        {content?.articles?.map((article, index) => (
+          <OptimizelyComponent key={index} content={article} />
         ))}
       </section>
       <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>

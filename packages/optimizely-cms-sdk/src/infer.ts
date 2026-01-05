@@ -115,7 +115,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends ContentReferenceProperty ? InferredContentReference
   : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
   : T extends ContentProperty ? {__typename: string, __viewname: string}
-  : T extends ComponentProperty<infer E> ? Infer<E>
+  : T extends ComponentProperty<infer E> ? ContentProps<E>
   : unknown
 
 /** Attributes included in the response from Graph in every content type */
@@ -221,7 +221,7 @@ type InferFromDisplayTemplate<T extends DisplayTemplate> = T extends {
 
 /** Infers the Graph response types of `T`. `T` can be a content type or a property */
 // prettier-ignore
-export type Infer<T> =
+export type ContentProps<T> =
   T extends DisplayTemplate ? InferFromDisplayTemplate<T>
   : T extends AnyContentType ? InferFromContentType<T>
   : T extends AnyProperty ? InferFromProperty<T>

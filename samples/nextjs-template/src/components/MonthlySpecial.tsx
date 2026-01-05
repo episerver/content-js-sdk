@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { BlogCardContentType } from './BlogCard';
 import {
   getPreviewUtils,
@@ -25,23 +25,23 @@ export const MonthlySpecialContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof MonthlySpecialContentType>;
+  content: ContentProps<typeof MonthlySpecialContentType>;
 };
 
-export default function MonthlySpecial({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function MonthlySpecial({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="monthly-special">
       <div className="monthly-special__content">
         <h1 className="monthly-special__title" {...pa('title')}>
-          {opti.title}
+          {content.title}
         </h1>
         <p className="monthly-special__subtitle" {...pa('subtitle')}>
-          {opti.subtitle}
+          {content.subtitle}
         </p>
       </div>
       <div className="monthly-special__blog" {...pa('blog')}>
-        {opti.blog && <OptimizelyComponent opti={opti.blog} />}
+        {content.blog && <OptimizelyComponent content={content.blog} />}
       </div>
     </div>
   );

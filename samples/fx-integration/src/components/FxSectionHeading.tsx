@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import css from './components.module.css';
 
 export const FxSectionHeadingCT = contentType({
@@ -15,15 +15,15 @@ export const FxSectionHeadingCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxSectionHeadingCT>;
+  content: ContentProps<typeof FxSectionHeadingCT>;
 };
 
-export default function FxSectionHeading({ opti }: Props) {
+export default function FxSectionHeading({ content }: Props) {
   return (
     <div className={css.FxSectionHeading}>
-      {opti.pretitle && <h2 className={css.pretitle}>{opti.pretitle}</h2>}
-      {opti.title && <p className={css.title}>{opti.title}</p>}
-      {opti.subtitle && <p className={css.subtitle}>{opti.subtitle}</p>}
+      {content.pretitle && <h2 className={css.pretitle}>{content.pretitle}</h2>}
+      {content.title && <p className={css.title}>{content.title}</p>}
+      {content.subtitle && <p className={css.subtitle}>{content.subtitle}</p>}
     </div>
   );
 }
