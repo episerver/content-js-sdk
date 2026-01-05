@@ -348,7 +348,9 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
      * />
      * ```
      */
-    src(input: InferredContentReference | string | null | undefined): string {
+    src(
+      input: InferredContentReference | string | null | undefined
+    ): string | undefined {
       const previewToken = content.__context?.preview_token;
 
       // if input is an object with a URL

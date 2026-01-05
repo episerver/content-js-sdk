@@ -33,16 +33,16 @@ type Props = {
 export default function VideoFeature({ content }: Props) {
   const { pa, src } = getPreviewUtils(content);
   const { getAlt } = damAssets(content);
+  const imageUrl = src(content.thumbnail_image);
 
   return (
     <div className="video-feature">
       <div className="video">
         <a href={content.video_link ?? '#'} {...pa('video_link')}>
-          {(content.thumbnail_image?.item?.Url ??
-            content.thumbnail_image?.url.default) && (
+          {imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={src(content.thumbnail_image)}
+              src={imageUrl}
               alt={getAlt(content.thumbnail_image, 'image')}
               {...pa('thumbnail_image')}
             />
