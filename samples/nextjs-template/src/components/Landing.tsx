@@ -41,6 +41,7 @@ export default function LandingComponent({ content }: Props) {
             content.hero.background?.url.default) && (
             <Image src={src(content.hero.background)} alt="" fill={true} />
           )}
+
           <div className="heading" {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{content.hero.heading}</h1>
             <p {...pa('hero.summary')}>{content.hero.summary}</p>

@@ -42,7 +42,7 @@ export default function LandingExperienceComponent({ content }: Props) {
               fill={true}
               {...pa('hero.background')}
             />
-          )}
+          ) : null}
           <div className="heading" {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{content.hero.heading}</h1>
             <p {...pa('hero.summary')}>{content.hero.summary}</p>

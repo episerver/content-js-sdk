@@ -365,7 +365,7 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
         return appendToken(input, previewToken);
       }
 
-      return '';
+      return undefined;
     },
   };
 }
