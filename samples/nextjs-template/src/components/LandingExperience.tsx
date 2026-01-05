@@ -30,14 +30,14 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 export default function LandingExperienceComponent({ content }: Props) {
   const { pa, src } = getPreviewUtils(content);
+  const heroBackgroundUrl = src(content.hero?.background);
   return (
     <main>
       {content.hero && (
         <header className={['uni-hero', content.hero.theme].join(' ')}>
-          {(content.hero.background?.item?.Url ??
-            content.hero.background?.url.default) && (
+          {heroBackgroundUrl && (
             <Image
-              src={src(content.hero.background)}
+              src={heroBackgroundUrl}
               alt=""
               fill={true}
               {...pa('hero.background')}
