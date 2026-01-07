@@ -19,17 +19,17 @@ export const FxHeroContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxHeroContentType>;
+  content: Infer<typeof FxHeroContentType>;
 };
 
-export default function FxHero({ opti }: Props) {
+export default function FxHero({ content }: Props) {
   return (
     <div className={css.FxHero}>
-      <h1>{opti.title}</h1>
-      <p>{opti.subtitle}</p>
+      <h1>{content.title}</h1>
+      <p>{content.subtitle}</p>
 
       <div className={css.ctas}>
-        {opti.ctas?.map((cta, i) => (
+        {content.ctas?.map((cta, i) => (
           <OptimizelyComponent key={i} opti={cta} />
         ))}
       </div>

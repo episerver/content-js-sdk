@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   getPreviewUtils,
   OptimizelyComponent,
@@ -28,23 +28,23 @@ export const OfficeContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof OfficeContentType>;
+  content: ContentProps<typeof OfficeContentType>;
 };
 
-export default function OfficeLocations({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function OfficeLocations({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <section className="office-locations">
       <h1 className="office-locations__title" {...pa('title')}>
-        {opti.title}
+        {content.title}
       </h1>
       <p className="office-locations__subtitle" {...pa('subtitle')}>
-        {opti.subtitle}
+        {content.subtitle}
       </p>
       <div className="office-locations__list" {...pa('offices')}>
-        {(opti.offices ?? []).map((office, i) => (
-          <OptimizelyComponent opti={office} key={i} />
+        {(content.offices ?? []).map((office, i) => (
+          <OptimizelyComponent content={office} key={i} />
         ))}
       </div>
     </section>

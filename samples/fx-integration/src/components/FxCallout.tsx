@@ -17,7 +17,7 @@ export const FxCalloutCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxCalloutCT>;
+  content: Infer<typeof FxCalloutCT>;
 };
 
 export default function FxCallout({}: Props) {

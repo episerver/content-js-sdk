@@ -33,7 +33,7 @@ export default async function Page({ searchParams }: Props) {
         src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
       ></Script>
       <PreviewComponent />
-      <OptimizelyComponent opti={response} />
+      <OptimizelyComponent content={response} />
     </>
   );
 }

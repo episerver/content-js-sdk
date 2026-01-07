@@ -16,15 +16,15 @@ export const ArticleContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof ArticleContentType>;
+  content: Infer<typeof ArticleContentType>;
 };
 
 /** Component that renders an "Article" */
-export default function Article({ opti }: Props) {
+export default function Article({ content }: Props) {
   return (
     <main>
-      <h1>{opti.heading}</h1>
-      <div dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }} />
+      <h1>{content.heading}</h1>
+      <div dangerouslySetInnerHTML={{ __html: content.body?.html ?? '' }} />
     </main>
   );
 }

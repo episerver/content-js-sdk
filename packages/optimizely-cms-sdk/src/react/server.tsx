@@ -11,7 +11,7 @@ import {
   DisplaySettingsType,
   ExperienceCompositionNode,
   InferredContentReference,
-  Infer,
+  ContentProps,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
@@ -76,7 +76,7 @@ export function initReactComponentRegistry(options: InitOptions) {
 /** Props for the {@linkcode OptimizelyComponent} component */
 type OptimizelyComponentProps = {
   /** Data read from the CMS */
-  opti: {
+  content: {
     /** Content type name */
     __typename: string;
 
@@ -95,7 +95,7 @@ type OptimizelyComponentProps = {
 };
 
 export async function OptimizelyComponent({
-  opti,
+  content,
   displaySettings,
   ...props
 }: OptimizelyComponentProps) {
@@ -105,25 +105,29 @@ export async function OptimizelyComponent({
     );
   }
   const dtKey =
-    opti.__composition?.displayTemplateKey ?? opti.displayTemplateKey;
-  const Component = await componentRegistry.getComponent(opti.__typename, {
-    tag: opti.__tag ?? getDisplayTemplateTag(dtKey),
+    content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
+  const Component = await componentRegistry.getComponent(content.__typename, {
+    tag: content.__tag ?? getDisplayTemplateTag(dtKey),
   });
 
   if (!Component) {
     return (
       <FallbackComponent>
-        No component found for content type <b>{opti.__typename}</b>
+        No component found for content type <b>{content.__typename}</b>
       </FallbackComponent>
     );
   }
 
   const optiProps = {
-    ...opti,
+    ...content,
   };
 
   return (
-    <Component opti={optiProps} {...props} displaySettings={displaySettings} />
+    <Component
+      content={optiProps}
+      {...props}
+      displaySettings={displaySettings}
+    />
   );
 }
 
@@ -154,7 +158,7 @@ export function OptimizelyExperience({
 }) {
   return nodes.map((node) => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
-    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);    
+    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
       const Wrapper = ComponentWrapper ?? React.Fragment;
@@ -166,7 +170,7 @@ export function OptimizelyExperience({
           displaySettings={parsedDisplaySettings}
         >
           <OptimizelyComponent
-            opti={{
+            content={{
               ...node.component,
               __tag: tag,
             }}
@@ -185,7 +189,7 @@ export function OptimizelyExperience({
     return (
       <OptimizelyComponent
         key={node.key}
-        opti={{
+        content={{
           ...node,
           __typename: type,
           __tag: tag,
@@ -260,7 +264,7 @@ export function OptimizelyGridSection({
     if (isComponentNode(node)) {
       return (
         <OptimizelyComponent
-          opti={{
+          content={{
             // `node.component` contains user-defined properties
             ...node.component,
             __composition: node,
@@ -307,11 +311,11 @@ export function OptimizelyGridSection({
 }
 
 /** Get context-aware functions for preview */
-export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
+export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
   return {
     /** Get the HTML data attributes required for a property */
     pa(property?: string | { key: string }) {
-      if (opti.__context?.edit) {
+      if (content.__context?.edit) {
         if (typeof property === 'string') {
           return {
             'data-epi-property-name': property,
@@ -337,15 +341,17 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
      *
      * @example
      * ```tsx
-     * const { src } = getPreviewUtils(opti);
+     * const { src } = getPreviewUtils(content);
      *
      * <img
-     *   src={src(opti.image)}
+     *   src={src(content.image)}
      * />
      * ```
      */
-    src(input: InferredContentReference | string | null | undefined): string | undefined {
-      const previewToken = opti.__context?.preview_token;
+    src(
+      input: InferredContentReference | string | null | undefined
+    ): string | undefined {
+      const previewToken = content.__context?.preview_token;
 
       // if input is an object with a URL
       if (typeof input === 'object' && input) {

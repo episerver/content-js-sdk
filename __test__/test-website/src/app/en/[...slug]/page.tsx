@@ -43,7 +43,7 @@ export default async function Page({ params, searchParams }: Props) {
         variation: { include: 'SOME', value: [variation] },
       })
       .catch(handleGraphErrors);
-    return <OptimizelyComponent opti={list[0]} />;
+    return <OptimizelyComponent content={list[0]} />;
   }
 
   const items = await client
@@ -60,7 +60,7 @@ export default async function Page({ params, searchParams }: Props) {
     <>
       <p>Number of variations: {items.length}</p>
       <hr />
-      <OptimizelyComponent opti={content} />
+      <OptimizelyComponent content={content} />
     </>
   );
 }
