@@ -31,7 +31,7 @@ export default async function Page({ params }: Props) {
 
     const content = await client.getContentByPath(path).then(returnFirst);
 
-    return <OptimizelyComponent content={content} />;
+    return <OptimizelyComponent opti={content} />;
   }
 
   const content = await client
@@ -50,5 +50,5 @@ export default async function Page({ params }: Props) {
     })
     .then(returnFirst);
 
-  return <OptimizelyComponent content={content} />;
+  return <OptimizelyComponent opti={content} />;
 }

@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 import { FxCallToActionCT } from './FxCallToAction';
 
 export const FxCalloutCT = contentType({
@@ -17,7 +17,7 @@ export const FxCalloutCT = contentType({
 });
 
 type Props = {
-  content: ContentProps<typeof FxCalloutCT>;
+  content: Infer<typeof FxCalloutCT>;
 };
 
 export default function FxCallout({}: Props) {

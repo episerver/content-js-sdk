@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, Infer } from '@optimizely/cms-sdk';
 import { FxCallToActionCT } from './FxCallToAction';
 import css from './components.module.css';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
@@ -19,7 +19,7 @@ export const FxHeroContentType = contentType({
 });
 
 type Props = {
-  content: ContentProps<typeof FxHeroContentType>;
+  content: Infer<typeof FxHeroContentType>;
 };
 
 export default function FxHero({ content }: Props) {
@@ -30,7 +30,7 @@ export default function FxHero({ content }: Props) {
 
       <div className={css.ctas}>
         {content.ctas?.map((cta, i) => (
-          <OptimizelyComponent key={i} content={cta} />
+          <OptimizelyComponent key={i} opti={cta} />
         ))}
       </div>
     </div>

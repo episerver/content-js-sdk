@@ -1,4 +1,4 @@
-import { BlankExperienceContentType, ContentProps } from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyExperience,
@@ -7,7 +7,7 @@ import {
 import css from './components.module.css';
 
 type Props = {
-  content: ContentProps<typeof BlankExperienceContentType>;
+  content: Infer<typeof BlankExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
