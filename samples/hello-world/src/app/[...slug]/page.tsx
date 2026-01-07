@@ -21,5 +21,5 @@ export default async function Page({ params }: Props) {
     notFound();
   }
 
-  return <OptimizelyComponent content={content[0]} />;
+  return <OptimizelyComponent opti={content[0]} />;
 }
