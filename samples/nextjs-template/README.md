@@ -1,4 +1,15 @@
+# NextJS Sample site
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Features Demonstrated
+
+This template showcases the following Optimizely CMS SDK capabilities:
+
+- **Content Types**: Defining and working with custom content types
+- **Display Settings**: Creating and rendering components with display settings
+- **Page and Experience Rendering**: Rendering CMS pages and experiences (blank experiences and sections)
+- **Preview Mode**: Setting up and configuring live preview/edit mode
 
 ## Getting Started
 
