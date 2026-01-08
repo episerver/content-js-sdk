@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project showcasing the integration between [Optimizely Content Management System (CMS)](https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/overview-saas) and [Optimizely Feature Experimentation](https://docs.developers.optimizely.com/feature-experimentation/docs/introduction).
 
+## Features Demonstrated
+
+- Using Optimizely Feature Experimentation (FX) with the CMS
+- Rendering variations of pages and experiences using `@optimizely/optimizely-sdk`
+- Integration between CMS content variations and FX feature flags
+
 ## Getting Started
 
 You need a Optimizely CMS instance and Optimizely Feature Experimentation instance.
