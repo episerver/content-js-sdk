@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import css from './components.module.css';
 
 export const FxCallToActionCT = contentType({
@@ -19,17 +19,17 @@ export const FxCallToActionCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxCallToActionCT>;
+  content: ContentProps<typeof FxCallToActionCT>;
 };
 
-export default function FxCallToAction({ opti }: Props) {
+export default function FxCallToAction({ content }: Props) {
   const cls = [
     css.FxCallToAction,
-    opti.appearance && css[opti.appearance],
+    content.appearance && css[content.appearance],
   ].join(' ');
   return (
-    <a className={cls} href={opti.link?.url.default ?? '#'}>
-      {opti.text}
+    <a className={cls} href={content.link?.url.default ?? '#'}>
+      {content.text}
     </a>
   );
 }

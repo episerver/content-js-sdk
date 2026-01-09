@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { HeroContentType } from './Hero';
 import { BannerContentType } from './Banner';
 import {
@@ -29,7 +29,7 @@ export const AboutExperienceContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof AboutExperienceContentType>;
+  content: ContentProps<typeof AboutExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -37,21 +37,21 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function AboutExperience({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function AboutExperience({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <main className="about-experience">
       <header className="about-header">
-        <h1 {...pa('title')}>{opti.title}</h1>
-        <p {...pa('subtitle')}>{opti.title}</p>
+        <h1 {...pa('title')}>{content.title}</h1>
+        <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
-      {opti.section && (
+      {content.section && (
         <div className="about-section" {...pa('section')}>
-          <OptimizelyComponent opti={opti.section} />
+          <OptimizelyComponent content={content.section} />
         </div>
       )}
       <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>

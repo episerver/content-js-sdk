@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import css from './components.module.css';
 
 export const FxFeatureCT = contentType({
@@ -13,14 +13,14 @@ export const FxFeatureCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxFeatureCT>;
+  content: ContentProps<typeof FxFeatureCT>;
 };
 
-export default function FxFeature({ opti }: Props) {
+export default function FxFeature({ content }: Props) {
   return (
     <div className={css.FxFeature}>
-      <h3>{opti.title}</h3>
-      <p>{opti.text}</p>
+      <h3>{content.title}</h3>
+      <p>{content.text}</p>
     </div>
   );
 }

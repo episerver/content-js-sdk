@@ -12,7 +12,7 @@ export default async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
-  const response = await client.getPreviewContent(
+  const content = await client.getPreviewContent(
     (await searchParams) as PreviewParams
   );
 
@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: Props) {
         src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
       ></Script>
       <PreviewComponent />
-      <OptimizelyComponent opti={response} />
+      <OptimizelyComponent content={content} />
     </>
   );
 }

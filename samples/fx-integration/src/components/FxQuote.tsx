@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 
 export const FxQuoteCT = contentType({
   key: 'FxQuote',
@@ -14,13 +14,13 @@ export const FxQuoteCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxQuoteCT>;
+  content: ContentProps<typeof FxQuoteCT>;
 };
 
-export default function FxQuote({ opti }: Props) {
+export default function FxQuote({ content }: Props) {
   return (
     <div>
-      <div>{opti.quote}</div>
+      <div>{content.quote}</div>
     </div>
   );
 }
