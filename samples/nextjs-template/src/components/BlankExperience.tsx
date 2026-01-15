@@ -1,7 +1,7 @@
 import { BlankExperienceContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
-  OptimizelyExperience,
+  OptimizelyComposition,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 
@@ -17,7 +17,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 export default function BlankExperience({ content }: Props) {
   return (
     <main className="blank-experience">
-      <OptimizelyExperience
+      <OptimizelyComposition
         nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />

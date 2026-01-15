@@ -2,10 +2,10 @@ import {
   BlankSectionContentType,
   contentType,
   displayTemplate,
-  Infer,
+  ContentProps,
 } from '@optimizely/cms-sdk';
 import {
-  OptimizelyExperience,
+  OptimizelyComposition,
   OptimizelyGridSection,
   StructureContainerProps,
 } from '@optimizely/cms-sdk/react/server';
@@ -133,7 +133,7 @@ export function Component3({ content }: Props3) {
   return (
     <div>
       <h1>This is an experience (Component3)</h1>
-      <OptimizelyExperience nodes={content.composition.nodes ?? []} />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </div>
   );
 }
@@ -149,7 +149,7 @@ export function Component3C({ content }: Props3) {
   return (
     <div>
       <h1>This is an experience (Component3C)</h1>
-      <OptimizelyExperience nodes={content.composition.nodes ?? []} />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </div>
   );
 }

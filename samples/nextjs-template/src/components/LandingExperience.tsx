@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
-  OptimizelyExperience,
+  OptimizelyComposition,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 import { HeroContentType } from './Hero';
@@ -49,7 +49,7 @@ export default function LandingExperienceComponent({ content }: Props) {
           </div>
         </header>
       )}
-      <OptimizelyExperience
+      <OptimizelyComposition
         nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />

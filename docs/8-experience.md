@@ -36,14 +36,14 @@ The key difference from other content types is the `baseType: '_experience'`, wh
 
 ## Rendering an Experience
 
-To render an experience, you'll use the `OptimizelyExperience` component, which handles the dynamic composition structure:
+To render an experience, you'll use the `OptimizelyComposition` component, which handles the dynamic composition structure:
 
 ```tsx
 import {
   ComponentContainerProps,
   getPreviewUtils,
   OptimizelyComponent,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
@@ -71,7 +71,7 @@ export default function AboutExperience({ opti }: Props) {
         </div>
       )}
 
-      <OptimizelyExperience
+      <OptimizelyComposition
         nodes={opti.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
@@ -85,7 +85,7 @@ export default function AboutExperience({ opti }: Props) {
 **`opti.composition.nodes`**  
 Every experience has a `composition` property that contains the visual layout structure. The `nodes` array represents all the sections and elements that editors have added to the experience.
 
-**`<OptimizelyExperience/>`**  
+**`<OptimizelyComposition/>`**  
 This component recursively renders the entire composition structure, handling both structural nodes (rows, columns) and component nodes (your custom components).
 
 **`<ComponentWrapper/>`**  
@@ -99,7 +99,7 @@ The SDK provides `BlankExperienceContentType`, a ready-to-use experience type wi
 import { BlankExperienceContentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
-  OptimizelyExperience,
+  OptimizelyComposition,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 
@@ -115,7 +115,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 export default function BlankExperience({ opti }: Props) {
   return (
     <main className="blank-experience">
-      <OptimizelyExperience
+      <OptimizelyComposition
         nodes={opti.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
@@ -354,7 +354,7 @@ export default function AboutExperience({ opti }: Props) {
       </header>
 
       {/* Dynamic visual composition */}
-      <OptimizelyExperience
+      <OptimizelyComposition
         nodes={opti.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
@@ -363,7 +363,7 @@ export default function AboutExperience({ opti }: Props) {
 }
 ```
 
-The static properties (`title`, `subtitle`) provide structured fields editors fill in, while `OptimizelyExperience` renders the flexible sections and elements they arrange visually.
+The static properties (`title`, `subtitle`) provide structured fields editors fill in, while `OptimizelyComposition` renders the flexible sections and elements they arrange visually.
 
 > [!TIP]
 > Use static properties for critical content that must always be present, and composition areas for flexible, reorderable content blocks.

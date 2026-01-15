@@ -4,7 +4,7 @@ import {
   ComponentContainerProps,
   getPreviewUtils,
   OptimizelyComponent,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 
 export const BlogExperienceContentType = contentType({
@@ -53,7 +53,7 @@ export default function BlogExperience({ content }: Props) {
           <OptimizelyComponent key={index} content={article} />
         ))}
       </section>
-      <OptimizelyExperience
+      <OptimizelyComposition
         nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
