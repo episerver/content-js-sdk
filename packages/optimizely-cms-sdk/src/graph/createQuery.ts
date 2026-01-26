@@ -301,7 +301,7 @@ export function createFragment(
   const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
 
   // Add DAM asset fragments if contentReference was used and we're at the root call
-  if (damEnabled && hasContentReference && visited.size === 1) {
+  if (damEnabled && hasContentReference) {
     extraFragments.unshift(...DAM_ASSET_FRAGMENTS);
   }
 

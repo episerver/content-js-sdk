@@ -197,6 +197,10 @@ describe('createFragment() with damEnabled for contentReference properties', () 
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
+        "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
+        "fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }",
+        "fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }",
+        "fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }",
         "fragment ctBlockProperty on ctBlockProperty { __typename image { key url { ...ContentUrl } ...ContentReferenceItem } }",
         "fragment ct1 on ct1 { __typename ct1__block:block { ...ctBlockProperty } ..._IContent }",
       ]
@@ -233,6 +237,10 @@ describe('createFragment() with damEnabled for contentReference properties', () 
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
+        "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
+        "fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }",
+        "fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }",
+        "fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }",
         "fragment ctRef on ctRef { __typename image { key url { ...ContentUrl } ...ContentReferenceItem } ..._IContent }",
         "fragment ct1 on ct1 { __typename ct1__content:content { __typename ...ctRef } ..._IContent }",
       ]
