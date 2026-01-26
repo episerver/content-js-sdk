@@ -319,7 +319,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
 });
 
 describe('createSingleContentQuery() with damEnabled', () => {
-  test('damEnabled = false should not include DAM fragments', async () => {
+  test('createSingleContentQuery: damEnabled = false should not include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',
@@ -336,7 +336,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
     expect(query).toContain('image { key url { ...ContentUrl } }');
   });
 
-  test('damEnabled = true should include DAM fragments', async () => {
+  test('createSingleContentQuery: damEnabled = true should include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',
@@ -359,7 +359,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
 });
 
 describe('createMultipleContentQuery() with damEnabled', () => {
-  test('damEnabled = false should not include DAM fragments', async () => {
+  test('createMultipleContentQuery: damEnabled = false should not include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',
@@ -375,7 +375,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
     expect(query.includes('ContentReferenceItem')).toBe(false);
   });
 
-  test('damEnabled = true should include DAM fragments', async () => {
+  test('createMultipleContentQuery: damEnabled = true should include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',
