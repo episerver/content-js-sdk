@@ -1,20 +1,24 @@
 # Optimizely CMS JavaScript tools
 
-> [!WARNING]
-> We are excited for the beta release of our SaaS CMS Javascript SDK. This will be a growing library of tools to model, fetch, and render your content in SaaS CMS. This repository is still in beta and should not be used in production environments. We would appreciate any and all feedback as we work towards general availability.
+[![npm version - SDK](https://img.shields.io/npm/v/@optimizely/cms-sdk)](https://www.npmjs.com/package/@optimizely/cms-sdk)
+[![npm version - CLI](https://img.shields.io/npm/v/@optimizely/cms-cli)](https://www.npmjs.com/package/@optimizely/cms-cli)
 
-JavaScript library and CLI app for Optimizely CMS
+The official JavaScript SDK and CLI from the Optimizely CMS team. Build headless applications with Optimizely CMS the right way—with full TypeScript support, intelligent code completion, and end-to-end type safety so you can ship faster with confidence.
 
-<!--
-## Getting started
+**What's included:**
 
-### From sample site
+- **SDK** - A comprehensive JavaScript/TypeScript library for fetching, rendering, and managing content from Optimizely CMS in your applications
+- **CLI** - A command-line tool that syncs your TypeScript content type definitions to Optimizely CMS
 
-(TODO)
+## Prerequisites
 
+Before you begin, ensure you have the following installed:
 
-The easiest way to get started is using the sample site based on Next.js, which showcases both the SDK and CLI
--->
+- **Node.js** 22 or higher
+- **Git**
+- **Package manager**: npm (comes with Node.js), pnpm, or yarn
+
+> **Note:** While the SDK is designed to be framework-agnostic, this version currently includes first-class support for React and Next.js. Support for additional frameworks is coming soon.
 
 ## Getting started from scratch
 
@@ -32,3 +36,10 @@ If you want to start from scratch, you can follow this guide:
 10. [RichText Component (React)](./docs/10-richtext-component-react.md)
 11. [DAM Assets](./docs/11-dam-assets.md)
 12. [Client Utils](./docs/12-client-utils.md)
+
+## Support
+
+If you have questions or need help:
+
+- Join the [Optimizely Community Slack](https://optimizely-community.slack.com/archives/C0952JAST5J)
+- Open an issue on [GitHub](https://github.com/episerver/content-js-sdk/issues)
