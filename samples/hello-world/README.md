@@ -2,6 +2,11 @@
 
 This is the "Hello world" sample site for the headless Optimizely CMS SaaS, based on Next.js
 
+## Features Demonstrated
+
+- Basic content type definition and rendering
+- Error handling patterns
+
 ## Pre-requirements
 
 - An Optimizely CMS instance (like `https://<something>.cms.optimizely.com/`)

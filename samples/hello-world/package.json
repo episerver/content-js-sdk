@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@optimizely/cms-sdk": "0.1.0-alpha.10",
-    "next": "15.4.8",
+    "next": "15.4.10",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

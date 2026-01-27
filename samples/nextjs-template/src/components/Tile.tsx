@@ -97,13 +97,22 @@ export const SquareDisplayTemplate = displayTemplate({
         },
       },
     },
+    orientation: {
+      editor: 'select',
+      displayName: 'Orientation',
+      sortOrder: 0,
+      choices: {
+        vertical: { displayName: 'Vertical', sortOrder: 1 },
+        horizontal: { displayName: 'Horizontal', sortOrder: 2 },
+      },
+    },
   },
   tag: 'Square',
 });
 
 type Props = {
   opti: Infer<typeof TileContentType>;
-  displaySettings?: Record<string, string>;
+  displaySettings?: Infer<typeof SquareDisplayTemplate>;
 };
 
 export default function Tile({ opti }: Props) {
@@ -119,10 +128,11 @@ export default function Tile({ opti }: Props) {
 // This is a specific tile component that uses the SquareDisplayTemplate
 export function SquareTile({ opti, displaySettings }: Props) {
   const { pa } = getPreviewUtils(opti);
+
   return (
     <div className="squarTile">
       <h4 {...pa('title')}>{opti.title}</h4>
-      <p style={{ color: displaySettings?.color }} {...pa('description')}>
+      <p style={{ color: displaySettings?.color, flexDirection: displaySettings?.orientation === 'horizontal' ? 'row' : 'column' }} {...pa('description')}>
         {opti.description}
       </p>
     </div>

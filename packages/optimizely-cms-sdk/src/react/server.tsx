@@ -344,7 +344,7 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
      * />
      * ```
      */
-    src(input: InferredContentReference | string | null | undefined): string {
+    src(input: InferredContentReference | string | null | undefined): string | undefined {
       const previewToken = opti.__context?.preview_token;
 
       // if input is an object with a URL
@@ -361,7 +361,7 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
         return appendToken(input, previewToken);
       }
 
-      return '';
+      return undefined;
     },
   };
 }
