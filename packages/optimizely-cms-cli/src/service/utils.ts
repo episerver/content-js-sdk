@@ -135,29 +135,22 @@ export async function findMetaData(
     .filter((p) => p.trim().startsWith('!'))
     .map((p) => p.trim().substring(1)); // Remove '!' prefix
 
-  // Retrieve sets of files via glob for inclusion patterns
+  // Retrieve sets of files via glob for inclusion patterns, using ignore for exclusions
   const allFilesWithDuplicates = (
     await Promise.all(
       includePatterns.map((path) =>
-        glob(path, { cwd, dotRelative: true, posix: true }),
+        glob(path, {
+          cwd,
+          dotRelative: true,
+          posix: true,
+          ignore: excludePatterns,
+        }),
       ),
     )
   ).flat();
 
-  // Filter out excluded files
-  const allFiles = allFilesWithDuplicates
-    .filter((file) => {
-      // Check if file matches any exclude pattern
-      return !excludePatterns.some((excludePattern) => {
-        // Use glob matching to check if file matches the exclude pattern
-        const pattern = excludePattern
-          .replace(/\*\*/g, '.*')
-          .replace(/\*/g, '[^/]*');
-        const regex = new RegExp(`^${pattern}$`);
-        return regex.test(file);
-      });
-    })
-    .sort();
+  // Remove duplicates and sort
+  const allFiles = [...new Set(allFilesWithDuplicates)].sort();
 
   // Process each file
   const result2 = {
@@ -206,7 +199,7 @@ export async function readFromPath(configPath: string, section: string) {
  * - Validates that each property group has a non-empty key
  * - Auto-generates displayName from key (capitalized) if missing
  * - Auto-assigns sortOrder based on array position (index + 1) if missing
- * - Deduplicates property groups by key, keeping the last occurrence
+ * - Deduplicates property groups by key, keeping the first occurrence
  * @param propertyGroups - The property groups array from the config
  * @returns Validated and normalized property groups array
  * @throws Error if validation fails (empty or missing key)
@@ -249,15 +242,18 @@ export function normalizePropertyGroups(
     };
   });
 
-  // Deduplicate by key, keeping the last occurrence
-  const groupMap = new Map<string, PropertyGroupType>();
+  // Deduplicate by key, keeping the first occurrence
+  const seenKeys = new Set<string>();
   const duplicates = new Set<string>();
+  const deduplicatedGroups: PropertyGroupType[] = [];
 
   for (const group of normalizedGroups) {
-    if (groupMap.has(group.key)) {
+    if (seenKeys.has(group.key)) {
       duplicates.add(group.key);
+    } else {
+      seenKeys.add(group.key);
+      deduplicatedGroups.push(group);
     }
-    groupMap.set(group.key, group);
   }
 
   // Warn about duplicates
@@ -266,12 +262,10 @@ export function normalizePropertyGroups(
       chalk.yellow(
         `Warning: Duplicate property group keys found: ${Array.from(
           duplicates,
-        ).join(', ')}. Keeping the last occurrence of each.`,
+        ).join(', ')}. Keeping the first occurrence of each.`,
       ),
     );
   }
-
-  const deduplicatedGroups = Array.from(groupMap.values());
 
   // Log found property groups
   if (deduplicatedGroups.length > 0) {
@@ -279,7 +273,7 @@ export function normalizePropertyGroups(
     console.log('Property Groups found: %s', chalk.bold.cyan(`[${groupKeys}]`));
   }
 
-  // Return deduplicated array in the order they were last seen
+  // Return deduplicated array in the order they were first seen
   return deduplicatedGroups;
 }
 
