@@ -117,7 +117,7 @@ async function compileAndImport(
   }
 }
 
-/** Finds metadata (contentTypes, displayTemplates, propertyGroups) in the given paths */
+/** Finds metadata (contentTypes, displayTemplates) in the given paths */
 export async function findMetaData(
   componentPaths: string[],
   cwd: string,
@@ -137,6 +137,13 @@ export async function findMetaData(
   const excludePatterns = cleanedPaths
     .filter((p) => p.startsWith('!'))
     .map((p) => p.substring(1)); // Remove '!' prefix
+
+  // Validate patterns
+  if (includePatterns.length == 0 && excludePatterns.length > 0) {
+    throw new Error(
+      `Invalid component paths: cannot have only exclusion patterns`,
+    );
+  }
 
   // Retrieve sets of files via glob for inclusion patterns, using ignore for exclusions
   const allFilesWithDuplicates = (
