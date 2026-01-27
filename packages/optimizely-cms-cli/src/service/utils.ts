@@ -141,7 +141,7 @@ export async function findMetaData(
   // Validate patterns
   if (includePatterns.length === 0 && excludePatterns.length > 0) {
     throw new Error(
-      `Invalid component paths: cannot have only exclusion patterns`,
+      `❌ [optimizely-cms-cli] Invalid component paths: cannot have only exclusion patterns`,
     );
   }
 
