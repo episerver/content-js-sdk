@@ -127,13 +127,16 @@ export async function findMetaData(
 }> {
   const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
 
+  // Normalize and clean component paths (trim and remove empty patterns)
+  const cleanedPaths = componentPaths
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+
   // Separate inclusion and exclusion patterns
-  const includePatterns = componentPaths.filter(
-    (p) => !p.trim().startsWith('!'),
-  );
-  const excludePatterns = componentPaths
-    .filter((p) => p.trim().startsWith('!'))
-    .map((p) => p.trim().substring(1)); // Remove '!' prefix
+  const includePatterns = cleanedPaths.filter((p) => !p.startsWith('!'));
+  const excludePatterns = cleanedPaths
+    .filter((p) => p.startsWith('!'))
+    .map((p) => p.substring(1)); // Remove '!' prefix
 
   // Retrieve sets of files via glob for inclusion patterns, using ignore for exclusions
   const allFilesWithDuplicates = (
