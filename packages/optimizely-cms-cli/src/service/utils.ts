@@ -139,7 +139,7 @@ export async function findMetaData(
     .map((p) => p.substring(1)); // Remove '!' prefix
 
   // Validate patterns
-  if (includePatterns.length == 0 && excludePatterns.length > 0) {
+  if (includePatterns.length === 0 && excludePatterns.length > 0) {
     throw new Error(
       `Invalid component paths: cannot have only exclusion patterns`,
     );
