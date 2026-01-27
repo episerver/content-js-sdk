@@ -88,7 +88,7 @@ export function extractMetaData(obj: unknown): {
 async function compileAndImport(
   inputName: string,
   cwdUrl: string,
-  outDir: string
+  outDir: string,
 ) {
   // Note: we must pass paths as "Node.js paths" to `esbuild.build()`
   const cwdPath = fileURLToPath(cwdUrl);
@@ -112,7 +112,7 @@ async function compileAndImport(
     throw new Error(
       `Error when importing the file at path "${outPath}": ${
         (err as any).message
-      }`
+      }`,
     );
   }
 }
@@ -120,22 +120,43 @@ async function compileAndImport(
 /** Finds metadata (contentTypes, displayTemplates, propertyGroups) in the given paths */
 export async function findMetaData(
   componentPaths: string[],
-  cwd: string
+  cwd: string,
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
 }> {
   const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
 
-  // Retrieve sets of files via glob
-  const allFiles = (
+  // Separate inclusion and exclusion patterns
+  const includePatterns = componentPaths.filter(
+    (p) => !p.trim().startsWith('!'),
+  );
+  const excludePatterns = componentPaths
+    .filter((p) => p.trim().startsWith('!'))
+    .map((p) => p.trim().substring(1)); // Remove '!' prefix
+
+  // Retrieve sets of files via glob for inclusion patterns
+  const allFilesWithDuplicates = (
     await Promise.all(
-      componentPaths.map((path) =>
-        glob(path, { cwd, dotRelative: true, posix: true })
-      )
+      includePatterns.map((path) =>
+        glob(path, { cwd, dotRelative: true, posix: true }),
+      ),
     )
-  )
-    .flat()
+  ).flat();
+
+  // Filter out excluded files
+  const allFiles = allFilesWithDuplicates
+    .filter((file) => {
+      // Check if file matches any exclude pattern
+      return !excludePatterns.some((excludePattern) => {
+        // Use glob matching to check if file matches the exclude pattern
+        const pattern = excludePattern
+          .replace(/\*\*/g, '.*')
+          .replace(/\*/g, '[^/]*');
+        const regex = new RegExp(`^${pattern}$`);
+        return regex.test(file);
+      });
+    })
     .sort();
 
   // Process each file
@@ -165,13 +186,13 @@ export async function findMetaData(
 function printFilesContnets(
   type: string,
   path: string,
-  metaData: AnyContentType | DisplayTemplate | PropertyGroupType
+  metaData: AnyContentType | DisplayTemplate | PropertyGroupType,
 ) {
   console.log(
     '%s %s found in %s',
     type,
     chalk.bold(metaData.key),
-    chalk.yellow.italic.underline(path)
+    chalk.yellow.italic.underline(path),
   );
 }
 
@@ -191,7 +212,7 @@ export async function readFromPath(configPath: string, section: string) {
  * @throws Error if validation fails (empty or missing key)
  */
 export function normalizePropertyGroups(
-  propertyGroups: any[]
+  propertyGroups: any[],
 ): PropertyGroupType[] {
   if (!Array.isArray(propertyGroups)) {
     throw new Error('propertyGroups must be an array');
@@ -205,7 +226,7 @@ export function normalizePropertyGroups(
       group.key.trim() === ''
     ) {
       throw new Error(
-        `Error in property groups: Property group at index ${index} has an empty or missing "key" field`
+        `Error in property groups: Property group at index ${index} has an empty or missing "key" field`,
       );
     }
 
@@ -244,9 +265,9 @@ export function normalizePropertyGroups(
     console.warn(
       chalk.yellow(
         `Warning: Duplicate property group keys found: ${Array.from(
-          duplicates
-        ).join(', ')}. Keeping the last occurrence of each.`
-      )
+          duplicates,
+        ).join(', ')}. Keeping the last occurrence of each.`,
+      ),
     );
   }
 
@@ -271,7 +292,7 @@ export function normalizePropertyGroups(
  */
 export function extractKeyName(
   input: PermittedTypes,
-  parentKey: string
+  parentKey: string,
 ): string {
   return typeof input === 'string'
     ? input === '_self'
