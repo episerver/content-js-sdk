@@ -74,7 +74,7 @@ function convertProperty(
 ): {
   fields: string[];
   extraFragments: string[];
-  hasContentReference: boolean;
+  includesDamAssetsFragments: boolean;
 } {
   const result = convertPropertyField(
     name,
@@ -113,12 +113,12 @@ function convertPropertyField(
 ): {
   fields: string[];
   extraFragments: string[];
-  hasContentReference: boolean;
+  includesDamAssetsFragments: boolean;
 } {
   const fields: string[] = [];
   const subfields: string[] = [];
   const extraFragments: string[] = [];
-  let hasContentReference = false;
+  let includesDamAssetsFragments = false;
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
 
   if (property.type === 'component') {
@@ -160,10 +160,8 @@ function convertPropertyField(
     extraFragments.push(CONTENT_URL_FRAGMENT);
     const itemFragment = damEnabled ? ' ...ContentReferenceItem' : '';
     fields.push(`${name} { key url { ...ContentUrl }${itemFragment} }`);
-    if (damEnabled) {
-      // Mark that contentReference type is used, triggering DAM fragments to be included at root level
-      hasContentReference = true;
-    }
+    // Mark that contentReference type is used and based on damEnabled value, trigger DAM fragments to be included at root level
+    includesDamAssetsFragments = damEnabled;
   } else if (property.type === 'array') {
     const f = convertProperty(
       name,
@@ -175,7 +173,7 @@ function convertPropertyField(
     );
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
-    hasContentReference = hasContentReference || f.hasContentReference;
+    includesDamAssetsFragments = includesDamAssetsFragments || f.includesDamAssetsFragments;
   } else {
     fields.push(nameInFragment);
   }
@@ -183,7 +181,7 @@ function convertPropertyField(
   return {
     fields,
     extraFragments: [...new Set(extraFragments)],
-    hasContentReference,
+    includesDamAssetsFragments,
   };
 }
 
@@ -246,7 +244,7 @@ export function createFragment(
 
   const fields: string[] = ['__typename'];
   const extraFragments: string[] = [];
-  let hasContentReference = false;
+  let includesDamAssetsFragments = false;
 
   // Built‑in CMS baseTypes
   if (isBaseType(contentTypeName)) {
@@ -269,7 +267,7 @@ export function createFragment(
       const {
         fields: f,
         extraFragments: e,
-        hasContentReference: propHasRef,
+        includesDamAssetsFragments: propHasRef,
       } = convertProperty(
         propKey,
         prop,
@@ -280,7 +278,7 @@ export function createFragment(
       );
       fields.push(...f);
       extraFragments.push(...e);
-      hasContentReference = hasContentReference || propHasRef;
+      includesDamAssetsFragments = includesDamAssetsFragments || propHasRef;
     }
 
     // Add fragments for the base type of the user-defined content type
@@ -300,8 +298,8 @@ export function createFragment(
   // eg: "_image" -> "_Image"
   const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
 
-  // Add DAM asset fragments if contentReference was used and we're at the root call
-  if (damEnabled && hasContentReference) {
+  // Add DAM asset fragments if contentReference with DAM was used
+  if (includesDamAssetsFragments) {
     extraFragments.unshift(...DAM_ASSET_FRAGMENTS);
   }
 
