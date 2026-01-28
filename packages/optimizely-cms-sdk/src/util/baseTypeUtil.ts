@@ -49,7 +49,7 @@ export function isBaseMediaType(key: string): key is MediaStringTypes {
 export const CONTENT_URL_FRAGMENT =
   'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }';
 
-export const CONTENT_REFERENCE_ITEM_FRAGMENTS = [
+export const DAM_ASSET_FRAGMENTS = [
   'fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }',
   'fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }',
   'fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }',
@@ -69,24 +69,17 @@ const COMMON_FIELDS = '..._IContent';
 
 /**
  * Generates and adds fragments for base types
- * @param damEnabled - Whether DAM features are enabled
  * @returns { fields, extraFragments }
  */
-export function buildBaseTypeFragments(damEnabled: boolean = false) {
-  const extraFragments = [...COMMON_FRAGMENTS];
-
-  if (damEnabled) {
-    extraFragments.push(...CONTENT_REFERENCE_ITEM_FRAGMENTS);
-  }
-
+export function buildBaseTypeFragments() {
   return {
     fields: [COMMON_FIELDS],
-    extraFragments,
+    extraFragments: [...COMMON_FRAGMENTS],
   };
 }
 
 export function isComponentNode(
-  node: ExperienceNode
+  node: ExperienceNode,
 ): node is ExperienceComponentNode {
   return node.__typename === 'CompositionComponentNode';
 }

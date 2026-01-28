@@ -22,19 +22,19 @@ describe('createFragment() with damEnabled for contentReference properties', () 
 
     // Should not include ContentReferenceItem fragments
     expect(result.some((line) => line.includes('PublicImageAsset'))).toBe(
-      false
+      false,
     );
     expect(result.some((line) => line.includes('PublicVideoAsset'))).toBe(
-      false
+      false,
     );
     expect(result.some((line) => line.includes('PublicRawFileAsset'))).toBe(
-      false
+      false,
     );
     expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(
-      false
+      false,
     );
 
-    // Should only include key and url
+    // Should only include key and url (no ...ContentReferenceItem)
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -65,24 +65,24 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     expect(result.some((line) => line.includes('PublicImageAsset'))).toBe(true);
     expect(result.some((line) => line.includes('PublicVideoAsset'))).toBe(true);
     expect(result.some((line) => line.includes('PublicRawFileAsset'))).toBe(
-      true
+      true,
     );
     expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(
-      true
+      true,
     );
 
     expect(result).toMatchInlineSnapshot(`
       [
+        "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
+        "fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }",
+        "fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }",
+        "fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }",
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
         "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
-        "fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }",
-        "fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }",
-        "fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }",
         "fragment ct1 on ct1 { __typename image { key url { ...ContentUrl } ...ContentReferenceItem } ..._IContent }",
       ]
     `);
@@ -102,7 +102,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     const result = await createFragment('ct1', new Set(), '', true, false);
 
     expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(
-      false
+      false,
     );
     expect(result).toMatchInlineSnapshot(`
       [
@@ -130,20 +130,20 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     const result = await createFragment('ct1', new Set(), '', true, true);
 
     expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(
-      true
+      true,
     );
     expect(result).toMatchInlineSnapshot(`
       [
+        "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
+        "fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }",
+        "fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }",
+        "fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }",
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
         "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
-        "fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }",
-        "fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }",
-        "fragment ContentReferenceItem on ContentReference { item { ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }",
         "fragment ct1 on ct1 { __typename images { key url { ...ContentUrl } ...ContentReferenceItem } ..._IContent }",
       ]
     `);
@@ -172,10 +172,10 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       new Set(),
       '',
       true,
-      false
+      false,
     );
     expect(
-      resultDisabled.some((line) => line.includes('ContentReferenceItem'))
+      resultDisabled.some((line) => line.includes('ContentReferenceItem')),
     ).toBe(false);
 
     // Test with damEnabled = true
@@ -184,10 +184,10 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       new Set(),
       '',
       true,
-      true
+      true,
     );
     expect(
-      resultEnabled.some((line) => line.includes('ContentReferenceItem'))
+      resultEnabled.some((line) => line.includes('ContentReferenceItem')),
     ).toBe(true);
     expect(resultEnabled).toMatchInlineSnapshot(`
       [
@@ -227,7 +227,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     // Test with damEnabled = true
     const result = await createFragment('ct1', new Set(), '', true, true);
     expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(
-      true
+      true,
     );
     expect(result).toMatchInlineSnapshot(`
       [
@@ -246,10 +246,80 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       ]
     `);
   });
+
+  test('damEnabled = true but NO contentReference properties should NOT include DAM fragments', async () => {
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        title: { type: 'string' },
+        description: { type: 'richText' },
+        link: { type: 'url' },
+      },
+    });
+    initContentTypeRegistry([ct1]);
+
+    // DAM enabled but no contentReference properties
+    const result = await createFragment('ct1', new Set(), '', true, true);
+
+    // Should NOT include DAM fragments
+    expect(result.some((line) => line.includes('PublicImageAsset'))).toBe(
+      false,
+    );
+    expect(result.some((line) => line.includes('PublicVideoAsset'))).toBe(
+      false,
+    );
+    expect(result.some((line) => line.includes('PublicRawFileAsset'))).toBe(
+      false,
+    );
+    expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(
+      false,
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
+        "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
+        "fragment ct1 on ct1 { __typename ct1__title:title ct1__description:description { html, json } ct1__link:link { ...ContentUrl } ..._IContent }",
+      ]
+    `);
+  });
+
+  test('damEnabled = true with nested content without contentReference should NOT include DAM fragments', async () => {
+    const ctBlock = contentType({
+      key: 'ctBlock',
+      baseType: '_component',
+      properties: {
+        text: { type: 'string' },
+      },
+    });
+    const ct1 = contentType({
+      key: 'ct1',
+      baseType: '_page',
+      properties: {
+        block: { type: 'component', contentType: ctBlock },
+      },
+    });
+    initContentTypeRegistry([ct1, ctBlock]);
+
+    const result = await createFragment('ct1', new Set(), '', true, true);
+
+    // Should NOT include DAM fragments since no contentReference anywhere
+    expect(result.some((line) => line.includes('ContentReferenceItem'))).toBe(
+      false,
+    );
+    expect(result.some((line) => line.includes('PublicImageAsset'))).toBe(
+      false,
+    );
+  });
 });
 
 describe('createSingleContentQuery() with damEnabled', () => {
-  test('damEnabled = false should not include DAM fragments', async () => {
+  test('createSingleContentQuery: damEnabled = false should not include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',
@@ -266,7 +336,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
     expect(query).toContain('image { key url { ...ContentUrl } }');
   });
 
-  test('damEnabled = true should include DAM fragments', async () => {
+  test('createSingleContentQuery: damEnabled = true should include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',
@@ -283,13 +353,13 @@ describe('createSingleContentQuery() with damEnabled', () => {
     expect(query.includes('PublicRawFileAsset')).toBe(true);
     expect(query.includes('ContentReferenceItem')).toBe(true);
     expect(query).toContain(
-      'image { key url { ...ContentUrl } ...ContentReferenceItem }'
+      'image { key url { ...ContentUrl } ...ContentReferenceItem }',
     );
   });
 });
 
 describe('createMultipleContentQuery() with damEnabled', () => {
-  test('damEnabled = false should not include DAM fragments', async () => {
+  test('createMultipleContentQuery: damEnabled = false should not include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',
@@ -305,7 +375,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
     expect(query.includes('ContentReferenceItem')).toBe(false);
   });
 
-  test('damEnabled = true should include DAM fragments', async () => {
+  test('createMultipleContentQuery: damEnabled = true should include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
       baseType: '_page',

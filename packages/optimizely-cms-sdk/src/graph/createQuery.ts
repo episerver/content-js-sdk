@@ -15,6 +15,7 @@ import {
   isBaseType,
   toBaseTypeFragmentKey,
   CONTENT_URL_FRAGMENT,
+  DAM_ASSET_FRAGMENTS,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError } from './error.js';
@@ -69,15 +70,19 @@ function convertProperty(
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  damEnabled: boolean = false
-): { fields: string[]; extraFragments: string[] } {
+  damEnabled: boolean = false,
+): {
+  fields: string[];
+  extraFragments: string[];
+  hasContentReference: boolean;
+} {
   const result = convertPropertyField(
     name,
     property,
     rootName,
     suffix,
     visited,
-    damEnabled
+    damEnabled,
   );
 
   // logs warnings if the fragment generation causes potential issues
@@ -104,24 +109,29 @@ function convertPropertyField(
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  damEnabled: boolean = false
-): { fields: string[]; extraFragments: string[] } {
+  damEnabled: boolean = false,
+): {
+  fields: string[];
+  extraFragments: string[];
+  hasContentReference: boolean;
+} {
   const fields: string[] = [];
   const subfields: string[] = [];
   const extraFragments: string[] = [];
+  let hasContentReference = false;
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
 
   if (property.type === 'component') {
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
     extraFragments.push(
-      ...createFragment(key, visited, 'Property', false, damEnabled)
+      ...createFragment(key, visited, 'Property', false, damEnabled),
     );
     fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(
       property.allowedTypes,
-      property.restrictedTypes
+      property.restrictedTypes,
     );
 
     for (const t of allowed) {
@@ -131,7 +141,7 @@ function convertPropertyField(
         key = rootName;
       }
       extraFragments.push(
-        ...createFragment(key, visited, '', true, damEnabled)
+        ...createFragment(key, visited, '', true, damEnabled),
       );
       subfields.push(`...${key}`);
     }
@@ -150,6 +160,10 @@ function convertPropertyField(
     extraFragments.push(CONTENT_URL_FRAGMENT);
     const itemFragment = damEnabled ? ' ...ContentReferenceItem' : '';
     fields.push(`${name} { key url { ...ContentUrl }${itemFragment} }`);
+    if (damEnabled) {
+      // Mark that contentReference type is used, triggering DAM fragments to be included at root level
+      hasContentReference = true;
+    }
   } else if (property.type === 'array') {
     const f = convertProperty(
       name,
@@ -157,10 +171,11 @@ function convertPropertyField(
       rootName,
       suffix,
       visited,
-      damEnabled
+      damEnabled,
     );
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
+    hasContentReference = hasContentReference || f.hasContentReference;
   } else {
     fields.push(nameInFragment);
   }
@@ -168,6 +183,7 @@ function convertPropertyField(
   return {
     fields,
     extraFragments: [...new Set(extraFragments)],
+    hasContentReference,
   };
 }
 
@@ -178,7 +194,7 @@ function convertPropertyField(
  */
 function createExperienceFragments(
   visited: Set<string>,
-  damEnabled: boolean = false
+  damEnabled: boolean = false,
 ): string[] {
   // Fixed fragments for all experiences
   const fixedFragments = [
@@ -220,7 +236,7 @@ export function createFragment(
   visited: Set<string> = new Set(), // shared across recursion
   suffix: string = '',
   includeBaseFragments: boolean = true,
-  damEnabled: boolean = false
+  damEnabled: boolean = false,
 ): string[] {
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return []; // cyclic ref guard
@@ -230,10 +246,11 @@ export function createFragment(
 
   const fields: string[] = ['__typename'];
   const extraFragments: string[] = [];
+  let hasContentReference = false;
 
   // Built‑in CMS baseTypes
   if (isBaseType(contentTypeName)) {
-    const { fields: f, extraFragments: e } = buildBaseTypeFragments(damEnabled);
+    const { fields: f, extraFragments: e } = buildBaseTypeFragments();
     fields.push(...f);
     extraFragments.push(...e);
   } else {
@@ -249,21 +266,26 @@ export function createFragment(
       if (prop.indexingType === 'disabled') {
         continue;
       }
-      const { fields: f, extraFragments: e } = convertProperty(
+      const {
+        fields: f,
+        extraFragments: e,
+        hasContentReference: propHasRef,
+      } = convertProperty(
         propKey,
         prop,
         contentTypeName,
         suffix,
         visited,
-        damEnabled
+        damEnabled,
       );
       fields.push(...f);
       extraFragments.push(...e);
+      hasContentReference = hasContentReference || propHasRef;
     }
 
     // Add fragments for the base type of the user-defined content type
     if (includeBaseFragments) {
-      const baseFragments = buildBaseTypeFragments(damEnabled);
+      const baseFragments = buildBaseTypeFragments();
       extraFragments.unshift(...baseFragments.extraFragments); // maintain order
       fields.push(...baseFragments.fields);
     }
@@ -277,6 +299,11 @@ export function createFragment(
   // Convert base type key to GraphQL fragment format
   // eg: "_image" -> "_Image"
   const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
+
+  // Add DAM asset fragments if contentReference was used and we're at the root call
+  if (damEnabled && hasContentReference) {
+    extraFragments.unshift(...DAM_ASSET_FRAGMENTS);
+  }
 
   // Compose unique fragment
   const uniqueFields = [...new Set(fields)].join(' ');
@@ -294,7 +321,7 @@ export function createFragment(
  */
 export function createSingleContentQuery(
   contentType: string,
-  damEnabled: boolean = false
+  damEnabled: boolean = false,
 ) {
   const fragment = createFragment(contentType, new Set(), '', true, damEnabled);
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
@@ -324,7 +351,7 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
  */
 export function createMultipleContentQuery(
   contentType: string,
-  damEnabled: boolean = false
+  damEnabled: boolean = false,
 ) {
   const fragment = createFragment(contentType, new Set(), '', true, damEnabled);
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
@@ -364,7 +391,7 @@ export type ItemsResponse<T> = {
  */
 function resolveAllowedTypes(
   allowed: PermittedTypes[] | undefined,
-  restricted: PermittedTypes[] | undefined
+  restricted: PermittedTypes[] | undefined,
 ): (PermittedTypes | AnyContentType)[] {
   const skip = new Set<string>();
   const seen = new Set<string>();
