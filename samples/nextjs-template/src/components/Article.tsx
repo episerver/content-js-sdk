@@ -7,15 +7,15 @@ export const ArticleContentType = contentType({
   baseType: '_page',
   properties: {
     heading: {
-      displayName: 'The Headline 😊',
+      displayName: 'The Headline',
       type: 'string',
     },
     subtitle: {
       type: 'string',
-      displayName: 'SUBTITLE!!!!!!',
+      displayName: 'Subtitle',
     },
     body: {
-      displayName: 'body 🐈',
+      displayName: 'Body',
       type: 'richText',
     },
   },
@@ -39,4 +39,3 @@ export default function Article({ opti }: Props) {
     </main>
   );
 }
-

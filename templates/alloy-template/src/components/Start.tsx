@@ -2,13 +2,12 @@ import { contentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   getPreviewUtils,
-  OptimizelyComponent,
   OptimizelyExperience,
 } from '@optimizely/cms-sdk/react/server';
 import { ProductContentType } from './Product';
 import { StandardContentType } from './Standard';
 import { SEOContentType } from './base/SEO';
-import { ButtonContentType } from './base/Button';
+import Button, { ButtonContentType } from './base/Button';
 
 export const StartContentType = contentType({
   key: 'Start',
@@ -151,7 +150,7 @@ function Start({ opti }: StartProps) {
               </p>
             )}
             {/* Button */}
-            <OptimizelyComponent opti={opti} />
+            {opti.button && <Button opti={opti.button} />}
           </div>
         </div>
       </div>

@@ -99,6 +99,12 @@ export async function OptimizelyComponent({
   displaySettings,
   ...props
 }: OptimizelyComponentProps) {
+  if (!opti) {
+    throw new OptimizelyReactError(
+      'OptimizelyComponent requires a valid opti prop. Received null or undefined.'
+    );
+  }
+
   if (!componentRegistry) {
     throw new OptimizelyReactError(
       'You should call `initReactComponentRegistry` first'
