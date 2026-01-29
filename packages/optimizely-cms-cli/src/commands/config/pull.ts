@@ -11,7 +11,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   };
   static override description =
     'Download the config manifesto from CMS in JSON format';
-  static override examples = ['<%= config.bin %> <%= command.id %>'];
+  static override examples = [
+    '<%= config.bin %> <%= command.id %> --output ./out.json',
+  ];
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPull);
