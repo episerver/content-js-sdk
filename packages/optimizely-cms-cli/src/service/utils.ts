@@ -173,12 +173,12 @@ export async function findMetaData(
     const { contentTypeData, displayTemplateData } = extractMetaData(loaded);
 
     for (const c of contentTypeData) {
-      printFilesContnets('Content Type', file, c);
+      printFilesContents('Content Type', file, c);
       result2.contentTypes.push(c);
     }
 
     for (const d of displayTemplateData) {
-      printFilesContnets('Display Template', file, d);
+      printFilesContents('Display Template', file, d);
       result2.displayTemplates.push(d);
     }
   }
@@ -186,7 +186,7 @@ export async function findMetaData(
   return result2;
 }
 
-function printFilesContnets(
+function printFilesContents(
   type: string,
   path: string,
   metaData: AnyContentType | DisplayTemplate | PropertyGroupType,
