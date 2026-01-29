@@ -78,14 +78,70 @@ Run the CLI to push your definitions to Optimizely CMS:
 pnpm exec optimizely-cms-cli config push ./optimizely.config.mjs
 ```
 
-## Common Commands
+## Commands
+
+### Configuration Management
+
+Sync your TypeScript content type definitions with Optimizely CMS:
 
 ```bash
-# Sync content type definitions to CMS
-npx @optimizely-cms-cli config push ./optimizely.config.mjs
+# Push content types to CMS (uses ./optimizely.config.mjs by default)
+optimizely-cms-cli config push
 
-# Show help and available commands
-npx @optimizely/cms-cli --help
+# Push with custom config file
+optimizely-cms-cli config push ./custom-config.mjs
+
+# Force update (may result in data loss)
+optimizely-cms-cli config push --force
+
+# Pull current CMS configuration to JSON
+optimizely-cms-cli config pull --output ./config.json
+```
+
+### Authentication
+
+Verify your CMS credentials are correctly configured:
+
+```bash
+# Test your credentials from environment variables
+optimizely-cms-cli login
+
+# Show detailed authentication output
+optimizely-cms-cli login --verbose
+```
+
+### Content Type Operations
+
+Manage individual content types:
+
+```bash
+# Delete a specific content type
+optimizely-cms-cli content delete ArticlePage
+
+# Delete with custom host
+optimizely-cms-cli content delete ProductPage --host https://example.com
+```
+
+### Dangerous Operations
+
+⚠️ **Use with extreme caution - these commands are destructive:**
+
+```bash
+# Delete ALL user-defined content types (interactive confirmation required)
+optimizely-cms-cli danger delete-all-content-types
+```
+
+### Get Help
+
+```bash
+# Show all available commands
+optimizely-cms-cli --help
+
+# Show help for a specific command
+optimizely-cms-cli config push --help
+
+# Show help for a topic
+optimizely-cms-cli config --help
 ```
 
 ## Documentation

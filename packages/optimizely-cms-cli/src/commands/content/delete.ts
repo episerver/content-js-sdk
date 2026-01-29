@@ -4,10 +4,16 @@ import { createApiClient } from '../../service/cmsRestClient.js';
 
 export default class ContentDelete extends BaseCommand<typeof ContentDelete> {
   static override args = {
-    key: Args.string({ description: 'Content key', required: true }),
+    key: Args.string({
+      description: 'Unique content type key to delete',
+      required: true,
+    }),
   };
-  static override description = 'describe the command here';
-  static override examples = ['<%= config.bin %> <%= command.id %>'];
+  static override description = 'Delete a content type definition from the CMS';
+  static override examples = [
+    '<%= config.bin %> <%= command.id %> Article',
+    '<%= config.bin %> <%= command.id %> ProductPage --host https://example.com',
+  ];
   static override flags = {};
 
   public async run(): Promise<void> {

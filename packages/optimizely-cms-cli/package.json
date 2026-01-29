@@ -13,8 +13,16 @@
   "files": [
     "dist"
   ],
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "optimizely",
+    "cms",
+    "content-management",
+    "cli",
+    "content-types",
+    "headless-cms",
+    "code-first"
+  ],
+  "author": "Optimizely",
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.7.0",
   "type": "module",
@@ -45,6 +53,20 @@
     "bin": "optimizely-cms-cli",
     "commands": "./dist/commands",
     "dirname": "optimizely-cms-cli",
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "hooks": {
+      "init": "./dist/hooks/init/logo"
+    },
+    "topics": {
+      "config": {
+        "description": "Manage content type definitions and sync with CMS"
+      },
+      "content": {
+        "description": "Content type operations"
+      },
+      "danger": {
+        "description": "⚠️  Destructive operations - use with caution"
+      }
+    }
   }
 }

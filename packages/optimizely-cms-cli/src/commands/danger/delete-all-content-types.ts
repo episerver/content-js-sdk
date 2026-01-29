@@ -7,8 +7,12 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<
   typeof DangerDeleteAllContentTypes
 > {
   static override args = {};
-  static override description = 'Deletes all content types';
-  static override examples = ['<%= config.bin %> <%= command.id %>'];
+  static override description =
+    '⚠️  [DANGER] Delete ALL user-defined content types from the CMS (excludes system types)';
+  static override examples = [
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> --host https://example.com',
+  ];
   static override flags = {};
 
   public async run(): Promise<void> {
