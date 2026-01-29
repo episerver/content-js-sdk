@@ -22,6 +22,17 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Importing Content Data
+
+To populate your CMS with the Alloy template content:
+
+1. Log in to your Optimizely CMS admin interface
+2. Navigate to **Settings** → **Import Data**
+3. Upload the `alloy_site_content.episerverdata` file from this template directory
+4. Follow the import wizard to complete the process
+
+This will import all the pre-configured pages, components, and content structure needed for the Alloy template.
+
 ## Learn More
 
 To learn more about Optimizely CMS and this template:
