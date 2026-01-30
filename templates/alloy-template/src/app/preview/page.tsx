@@ -11,13 +11,13 @@ type Props = {
 
 export default async function Page({ searchParams }: Props) {
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_URL,
+    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
   const response = await client
     .getPreviewContent(
       // TODO: check types in runtime properly
-      (await searchParams) as PreviewParams
+      (await searchParams) as PreviewParams,
     )
     .catch((err) => {
       console.log(err.errors);
