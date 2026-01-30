@@ -19,15 +19,11 @@ export default async function Page({ params }: Props) {
   });
   const path = `/${slug.join('/')}/`;
 
-  console.log('app path', path);
-
   const pageContent = await client.getContentByPath(path);
 
   if (pageContent.length === 0) {
     notFound();
   }
-
-  console.log('app pageContent', pageContent[0]);
 
   return (
     <>
