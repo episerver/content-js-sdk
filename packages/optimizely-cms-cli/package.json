@@ -1,6 +1,6 @@
 {
   "name": "@optimizely/cms-cli",
-  "version": "0.1.0-alpha.9",
+  "version": "0.1.0-alpha.11",
   "description": "CLI application for integration with Optimizely CMS",
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git"
