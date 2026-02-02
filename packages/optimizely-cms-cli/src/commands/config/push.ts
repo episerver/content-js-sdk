@@ -41,15 +41,14 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPush);
-    const configPath = pathToFileURL(
-      path.resolve(process.cwd(), args.file)
-    ).href;
+    const configFilePath = path.resolve(process.cwd(), args.file);
+    const configPath = pathToFileURL(configFilePath).href;
 
     const componentPaths = await readFromPath(configPath, 'components');
     const propertyGroups = await readFromPath(configPath, 'propertyGroups');
 
     //the pattern is relative to the config file
-    const configPathDirectory = path.dirname(configPath);
+    const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
 
     // extracts metadata(contentTypes, displayTemplates) from the component paths
     const { contentTypes, displayTemplates } = await findMetaData(
