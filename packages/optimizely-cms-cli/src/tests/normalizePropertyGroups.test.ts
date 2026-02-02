@@ -12,7 +12,7 @@ describe('normalizePropertyGroups', () => {
     consoleWarnSpy.mockRestore();
   });
 
-  it('should handle duplicate keys by keeping the last occurrence', () => {
+  it('should handle duplicate keys by keeping the first occurrence', () => {
     const input = [
       {
         key: 'seo',
@@ -36,8 +36,8 @@ describe('normalizePropertyGroups', () => {
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({
       key: 'seo',
-      displayName: 'SEO Updated',
-      sortOrder: 5,
+      displayName: 'SEO',
+      sortOrder: 1,
     });
     expect(result[1]).toEqual({
       key: 'meta',
@@ -45,7 +45,7 @@ describe('normalizePropertyGroups', () => {
       sortOrder: 2,
     });
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Duplicate property group keys found: seo')
+      expect.stringContaining('Duplicate property group keys found: seo'),
     );
   });
 
@@ -83,11 +83,11 @@ describe('normalizePropertyGroups', () => {
     expect(result).toHaveLength(3);
     expect(result.find((g) => g.key === 'seo')).toEqual({
       key: 'seo',
-      displayName: 'SEO Final',
-      sortOrder: 5,
+      displayName: 'SEO 1',
+      sortOrder: 1,
     });
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Duplicate property group keys found: seo')
+      expect.stringContaining('Duplicate property group keys found: seo'),
     );
   });
 
@@ -141,7 +141,7 @@ describe('normalizePropertyGroups', () => {
     ];
 
     expect(() => normalizePropertyGroups(input)).toThrow(
-      'Error in property groups: Property group at index 0 has an empty or missing "key" field'
+      'Error in property groups: Property group at index 0 has an empty or missing "key" field',
     );
   });
 
@@ -154,13 +154,13 @@ describe('normalizePropertyGroups', () => {
     ];
 
     expect(() => normalizePropertyGroups(input)).toThrow(
-      'Error in property groups: Property group at index 0 has an empty or missing "key" field'
+      'Error in property groups: Property group at index 0 has an empty or missing "key" field',
     );
   });
 
   it('should throw error if propertyGroups is not an array', () => {
     expect(() => normalizePropertyGroups({} as any)).toThrow(
-      'propertyGroups must be an array'
+      'propertyGroups must be an array',
     );
   });
 

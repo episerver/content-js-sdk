@@ -23,51 +23,8 @@ export default function Article({ opti }: Props) {
 }
 ```
 
-> [!TIP]
-> Using the `<RichText/>` component is the recommended way to render rich text content. It's safer than `dangerouslySetInnerHTML` as it doesn't rely on HTML parsing, and allows you to customize how elements are rendered with your own React components.
-
-### Customizing Rich Text Elements
-
-You can customize how specific elements are rendered by providing custom components:
-
-```tsx
-import { RichText, type ElementProps } from '@episerver/cms-sdk/react/richText';
-
-// Custom heading renderer
-const CustomHeading = (props: ElementProps) => (
-  <h2 style={{ color: 'blue', fontSize: '1.8rem' }}>{props.children}</h2>
-);
-
-// Custom link renderer
-const CustomLink = (props: ElementProps) => (
-  <a
-    href={props.element.url}
-    style={{ color: 'purple', textDecoration: 'underline' }}
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    {props.children}
-  </a>
-);
-
-export default function Article({ opti }: Props) {
-  return (
-    <main>
-      <h1>{opti.heading}</h1>
-      <RichText
-        content={opti.body?.json}
-        elements={{
-          'heading-two': CustomHeading,
-          link: CustomLink,
-        }}
-      />
-    </main>
-  );
-}
-```
-
 > [!NOTE]
-> For complete documentation on the RichText component including all props, advanced customization options, fallback handling, and TypeScript support, see the [RichText Component Reference](./6.1-richtext-component-react.md).
+> For complete documentation on the RichText component including all props, advanced customization options, fallback handling, and TypeScript support, see the [RichText Component Reference](./10-richtext-component-react.md).
 
 The entire file should look like this:
 
@@ -185,5 +142,6 @@ This is the end of the tutorial on how to create your first website using Optimi
 
 You can continue exploring these topics:
 
-- Add live preview _(under construction)_
-- Add Experiences _(under construction)_
+- **[Add Experiences](./8-experiences.md)** - Learn how to create personalized content experiences for different audiences
+- **[Add Live Preview](./7-live-preview.md)** - Enable real-time content editing and preview capabilities
+- **[Add Display Settings](./9-display-settings.md)** - Configure how your content is displayed across different contexts

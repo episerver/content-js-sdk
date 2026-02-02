@@ -99,6 +99,12 @@ export async function OptimizelyComponent({
   displaySettings,
   ...props
 }: OptimizelyComponentProps) {
+  if (!opti) {
+    throw new OptimizelyReactError(
+      'OptimizelyComponent requires a valid opti prop. Received null or undefined.'
+    );
+  }
+
   if (!componentRegistry) {
     throw new OptimizelyReactError(
       'You should call `initReactComponentRegistry` first'
@@ -344,7 +350,7 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
      * />
      * ```
      */
-    src(input: InferredContentReference | string | null | undefined): string {
+    src(input: InferredContentReference | string | null | undefined): string | undefined {
       const previewToken = opti.__context?.preview_token;
 
       // if input is an object with a URL
@@ -361,7 +367,7 @@ export function getPreviewUtils(opti: OptimizelyComponentProps['opti']) {
         return appendToken(input, previewToken);
       }
 
-      return '';
+      return undefined;
     },
   };
 }

@@ -4,10 +4,16 @@ import { readEnvCredentials } from '../service/config.js';
 import { getToken } from '../service/cmsRestClient.js';
 
 export default class Login extends Command {
-  static override description = 'login to SaaS CMS';
-  static override examples = ['<%= config.bin %> <%= command.id %>'];
+  static override description =
+    'Verify your Optimizely CMS credentials configured in environment variables';
+  static override examples = [
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> --verbose',
+  ];
   static override flags = {
-    verbose: Flags.boolean(),
+    verbose: Flags.boolean({
+      description: 'Show detailed output during authentication',
+    }),
   };
 
   public async run(): Promise<void> {

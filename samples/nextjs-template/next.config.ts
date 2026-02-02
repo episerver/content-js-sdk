@@ -5,11 +5,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.cms.optimizely.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.cmstest.optimizely.com',
+        hostname: '**.optimizely.com', // or add cms.optimizely.com, cmp.optimizely.com, *.cmstest.optimizely.com
+        port: '',
+        pathname: '/**',
       },
     ],
   },

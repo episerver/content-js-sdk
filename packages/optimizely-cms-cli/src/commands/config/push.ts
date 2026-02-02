@@ -15,7 +15,10 @@ import chalk from 'chalk';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
-    file: Args.string({ description: 'configuration file', required: true }),
+    file: Args.string({
+      description: 'configuration file',
+      default: './optimizely.config.mjs',
+    }),
   };
   static override flags = {
     host: Flags.string({ description: 'CMS instance URL' }),
@@ -28,20 +31,24 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
         'Force updates the content type even though the changes might result in data loss.',
     }),
   };
-  static override description = 'describe the command here';
-  static override examples = ['<%= config.bin %> <%= command.id %>'];
+  static override description =
+    'Push content type definitions to the CMS from a configuration file';
+  static override examples = [
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> ./custom-config.mjs',
+    '<%= config.bin %> <%= command.id %> --force',
+  ];
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPush);
-    const configPath = pathToFileURL(
-      path.resolve(process.cwd(), args.file)
-    ).href;
+    const configFilePath = path.resolve(process.cwd(), args.file);
+    const configPath = pathToFileURL(configFilePath).href;
 
     const componentPaths = await readFromPath(configPath, 'components');
     const propertyGroups = await readFromPath(configPath, 'propertyGroups');
 
     //the pattern is relative to the config file
-    const configPathDirectory = path.dirname(configPath);
+    const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
 
     // extracts metadata(contentTypes, displayTemplates) from the component paths
     const { contentTypes, displayTemplates } = await findMetaData(

@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project that shows how to use Optimizely Graph Webhooks with Next.js cache invalidation.
 
+## Features Demonstrated
+
+- Using webhooks with Optimizely CMS hooks
+- Graph webhook integration
+- Next.js cache invalidation
+
 ## Setup
 
 ### 1. Deploy or use a tunnel

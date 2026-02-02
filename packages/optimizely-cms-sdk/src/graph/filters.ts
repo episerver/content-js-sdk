@@ -29,7 +29,7 @@ function normalizePath(path: string) {
  */
 export function pathFilter(path: string, host?: string): ContentInput {
   const { pathWithTrailingSlash, pathWithoutTrailingSlash } =
-    normalizePath(path);
+    normalizePath(path || process.env.APPLICATION_HOST!);
 
   return {
     where: {
