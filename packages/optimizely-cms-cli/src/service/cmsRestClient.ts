@@ -40,13 +40,13 @@ export async function getToken(clientId: string, clientSecret: string) {
         // Generic error message:
 
         throw new Error(
-          'Something went wrong when trying to fetch token. Please try again'
+          'Something went wrong when trying to fetch token. Please try again',
         );
       }
 
       if (!data) {
         throw new Error(
-          'The endpoint `/oauth/token` did not respond with data'
+          'The endpoint `/oauth/token` did not respond with data',
         );
       }
       return data.access_token;
@@ -60,7 +60,7 @@ export async function createRestApiClient({
   clientId: string;
   clientSecret: string;
 }) {
-  const baseUrl = rootUrl() + '/preview3';
+  const baseUrl = rootUrl() + '/v1';
   const accessToken = await getToken(clientId, clientSecret);
 
   return createClient<paths>({

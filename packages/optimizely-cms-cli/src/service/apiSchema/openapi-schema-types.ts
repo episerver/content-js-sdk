@@ -505,7 +505,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/experimental/packages': {
+  '/experimental/manifest': {
     parameters: {
       query?: never;
       header?: never;

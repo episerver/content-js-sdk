@@ -23,7 +23,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     const spinner = ora('Downloading configuration file').start();
     const response = await restClient
-      .GET('/experimental/packages')
+      .GET('/experimental/manifest', {})
       .then((r) => r.data);
 
     if (!response) {
