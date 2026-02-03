@@ -48,12 +48,14 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const propertyGroups = await readFromPath(configPath, 'propertyGroups');
 
     //the pattern is relative to the config file
-    const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
+    const configPathDirectory = pathToFileURL(
+      path.dirname(configFilePath),
+    ).href;
 
     // extracts metadata(contentTypes, displayTemplates) from the component paths
     const { contentTypes, displayTemplates } = await findMetaData(
       componentPaths,
-      configPathDirectory
+      configPathDirectory,
     );
 
     // Validate and normalize property groups
@@ -81,17 +83,17 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     if (flags.force) {
       console.warn(
         `${chalk.yellowBright.bold(
-          '--force'
-        )} is used!. This forces content type updates, which may result in data loss`
+          '--force',
+        )} is used!. This forces content type updates, which may result in data loss`,
       );
     }
 
     const spinner = ora('Uploading configuration file').start();
 
-    const response = await restClient.POST('/experimental/packages', {
+    const response = await restClient.POST('/experimental/manifest', {
       headers: {
         accept: 'application/json',
-        'content-type': 'application/vnd.optimizely.cms.v1.manifest+json',
+        'content-type': 'application/json',
       },
       body: metaData as any,
       params: {
@@ -102,22 +104,14 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     });
 
     if (response.error) {
-      if (response.error.status === 404) {
-        spinner.fail('Feature Not Active');
-        console.error(
-          'The requested feature "preview3_packages_enabled" is not enabled in your environment. ' +
-            'Please contact your system administrator or support team to request that this feature be enabled.'
-        );
-      } else {
-        spinner.fail('Error');
-        console.error(
-          'Error %s %s (%s)',
-          response.error.status,
-          response.error.title,
-          response.error.code
-        );
-        console.error(response.error.detail);
-      }
+      spinner.fail('Error');
+      console.error(
+        'Error %s %s (%s)',
+        response.error.status,
+        response.error.title,
+        response.error.code,
+      );
+      console.error(response.error.detail);
 
       return;
     }
