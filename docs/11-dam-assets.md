@@ -18,16 +18,16 @@ Use `damAssets()` to get pre-configured helper functions. The main benefit is au
 ```tsx
 import { damAssets } from '@optimizely/cms-sdk';
 
-export default function HeroComponent({ opti }) {
-  const { src } = getPreviewUtils(opti);
-  const { getSrcset, getAlt } = damAssets(opti);
+export default function HeroComponent({ content }) {
+  const { src } = getPreviewUtils(content);
+  const { getSrcset, getAlt } = damAssets(content);
 
   return (
     <img
-      src={src(opti.heroImage)}
-      srcSet={getSrcset(opti.heroImage)}
+      src={src(content.heroImage)}
+      srcSet={getSrcset(content.heroImage)}
       sizes="(max-width: 768px) 100vw, 50vw"
-      alt={getAlt(opti.heroImage, 'Hero image')}
+      alt={getAlt(content.heroImage, 'Hero image')}
     />
   );
 }
@@ -44,14 +44,14 @@ Generates a `srcset` attribute from the renditions in your DAM asset. The functi
 ```tsx
 import { damAssets } from '@optimizely/cms-sdk';
 
-export default function ProductImage({ opti }) {
-  const { src } = getPreviewUtils(opti);
-  const { getSrcset } = damAssets(opti);
+export default function ProductImage({ content }) {
+  const { src } = getPreviewUtils(content);
+  const { getSrcset } = damAssets(content);
 
   return (
     <img
-      src={src(opti.productImage)}
-      srcSet={getSrcset(opti.productImage)}
+      src={src(content.productImage)}
+      srcSet={getSrcset(content.productImage)}
       sizes="(max-width: 600px) 100vw, (max-width: 1200px) 50vw, 33vw"
       alt="Product image"
     />
@@ -76,11 +76,11 @@ Retrieves alt text with a simple priority system:
 ```tsx
 import { damAssets } from '@optimizely/cms-sdk';
 
-export default function ImageComponent({ opti }) {
-  const { src } = getPreviewUtils(opti);
-  const { getAlt } = damAssets(opti);
+export default function ImageComponent({ content }) {
+  const { src } = getPreviewUtils(content);
+  const { getAlt } = damAssets(content);
 
-  return <img src={src(opti.image)} alt={getAlt(opti.image)} />;
+  return <img src={src(content.image)} alt={getAlt(content.image)} />;
 }
 ```
 
@@ -89,14 +89,14 @@ export default function ImageComponent({ opti }) {
 ```tsx
 import { damAssets } from '@optimizely/cms-sdk';
 
-export default function BannerComponent({ opti }) {
-  const { src } = getPreviewUtils(opti);
-  const { getAlt } = damAssets(opti);
+export default function BannerComponent({ content }) {
+  const { src } = getPreviewUtils(content);
+  const { getAlt } = damAssets(content);
 
   return (
     <img
-      src={src(opti.bannerImage)}
-      alt={getAlt(opti.bannerImage, 'Marketing banner')}
+      src={src(content.bannerImage)}
+      alt={getAlt(content.bannerImage, 'Marketing banner')}
     />
   );
 }
@@ -105,11 +105,11 @@ export default function BannerComponent({ opti }) {
 **For decorative images:**
 
 ```tsx
-const { src } = getPreviewUtils(opti);
-const { getAlt } = damAssets(opti);
+const { src } = getPreviewUtils(content);
+const { getAlt } = damAssets(content);
 
 // Will render alt="" if no AltText exists in the asset
-<img src={src(opti.decorativeIcon)} alt={getAlt(opti.decorativeIcon)} />;
+<img src={src(content.decorativeIcon)} alt={getAlt(content.decorativeIcon)} />;
 ```
 
 > [!TIP]
@@ -150,17 +150,17 @@ Then use the Next.js `Image` component normally:
 import Image from 'next/image';
 import { damAssets } from '@optimizely/cms-sdk';
 
-export default function OptimizedImage({ opti }) {
-  const { src } = getPreviewUtils(opti);
-  const { getSrcset, getAlt } = damAssets(opti);
+export default function OptimizedImage({ content }) {
+  const { src } = getPreviewUtils(content);
+  const { getSrcset, getAlt } = damAssets(content);
 
   return (
     <Image
-      src={src(opti.image)}
-      alt={getAlt(opti.image, 'Default alt text')}
+      src={src(content.image)}
+      alt={getAlt(content.image, 'Default alt text')}
       width={800}
       height={600}
-      srcSet={getSrcset(opti.image)}
+      srcSet={getSrcset(content.image)}
       sizes="(max-width: 768px) 100vw, 50vw"
     />
   );
@@ -174,25 +174,25 @@ import { damAssets } from '@optimizely/cms-sdk';
 import Image from 'next/image';
 
 type Props = {
-  opti: Infer<typeof ArticleContentType>;
+  content: ContentProps<typeof ArticleContentType>;
 };
 
-export default function ArticleHero({ opti }: Props) {
-  const { src } = getPreviewUtils(opti);
-  const { getSrcset, getAlt } = damAssets(opti);
+export default function ArticleHero({ content }: Props) {
+  const { src } = getPreviewUtils(content);
+  const { getSrcset, getAlt } = damAssets(content);
 
   return (
     <article>
       <header>
-        <h1>{opti.title}</h1>
+        <h1>{content.title}</h1>
 
         {/* Primary hero image with responsive srcset */}
         <Image
-          src={src(opti.heroImage)}
-          alt={getAlt(opti.heroImage, 'Article hero image')}
+          src={src(content.heroImage)}
+          alt={getAlt(content.heroImage, 'Article hero image')}
           width={1200}
           height={600}
-          srcSet={getSrcset(opti.heroImage)}
+          srcSet={getSrcset(content.heroImage)}
           sizes="100vw"
           priority
         />
@@ -201,13 +201,13 @@ export default function ArticleHero({ opti }: Props) {
       <div>
         {/* Thumbnail image */}
         <img
-          src={src(opti.thumbnail)}
-          srcSet={getSrcset(opti.thumbnail)}
+          src={src(content.thumbnail)}
+          srcSet={getSrcset(content.thumbnail)}
           sizes="(max-width: 768px) 100px, 200px"
-          alt={getAlt(opti.thumbnail)}
+          alt={getAlt(content.thumbnail)}
         />
 
-        <div>{opti.summary}</div>
+        <div>{content.summary}</div>
       </div>
     </article>
   );

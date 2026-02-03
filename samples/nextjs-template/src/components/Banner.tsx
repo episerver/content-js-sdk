@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const BannerContentType = contentType({
@@ -20,24 +20,24 @@ export const BannerContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof BannerContentType>;
+  content: ContentProps<typeof BannerContentType>;
 };
 
-export default function Banner({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function Banner({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="banner">
       <div className="banner-content">
         <h1 className="banner-title" {...pa('title')}>
-          {opti.title}
+          {content.title}
         </h1>
         <p className="banner-subtitle" {...pa('subtitle')}>
-          {opti.subtitle}
+          {content.subtitle}
         </p>
-        {opti.submit && (
+        {content.submit && (
           <a
             {...pa('submit')}
-            href={opti.submit.url.default ?? ''}
+            href={content.submit.url.default ?? ''}
             className="banner-btn"
           >
             Submit

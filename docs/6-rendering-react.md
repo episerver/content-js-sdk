@@ -10,14 +10,14 @@ Open the `src/app/components/Article.tsx` file and add the following
 import { RichText } from '@episerver/cms-sdk/react/richText';
 
 type Props = {
-  opti: Infer<typeof ArticleContentType>;
+  content: ContentProps<typeof ArticleContentType>;
 };
 
-export default function Article({ opti }: Props) {
+export default function Article({ content }: Props) {
   return (
     <main>
-      <h1>{opti.heading}</h1>
-      <RichText content={opti.body?.json} />
+      <h1>{content.heading}</h1>
+      <RichText content={content.body?.json} />
     </main>
   );
 }
@@ -29,7 +29,7 @@ export default function Article({ opti }: Props) {
 The entire file should look like this:
 
 ```tsx
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 
 export const ArticleContentType = contentType({
@@ -46,14 +46,14 @@ export const ArticleContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof ArticleContentType>;
+  content: ContentProps<typeof ArticleContentType>;
 };
 
-export default function Article({ opti }: Props) {
+export default function Article({ content }: Props) {
   return (
     <main>
-      <h1>{opti.heading}</h1>
-      <RichText content={opti.body?.json} />
+      <h1>{content.heading}</h1>
+      <RichText content={content.body?.json} />
     </main>
   );
 }
@@ -104,7 +104,7 @@ Open `src/app/[...slug]/page.tsx` file and replace the last line inside the `Pag
 
 ```diff
 - return <pre>{JSON.stringify(content[0], null, 2)}</pre>
-+ return <OptimizelyComponent opti={content[0]} />;
++ return <OptimizelyComponent content={content[0]} />;
 ```
 
 Your entire file should look like this:
@@ -128,7 +128,7 @@ export default async function Page({ params }: Props) {
   });
   const content = await client.getContentByPath(`/${slug.join('/')}/`);
 
-  return <OptimizelyComponent opti={content[0]} />;
+  return <OptimizelyComponent content={content[0]} />;
 }
 ```
 

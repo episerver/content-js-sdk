@@ -13,14 +13,14 @@ export const FxFeatureCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxFeatureCT>;
+  content: Infer<typeof FxFeatureCT>;
 };
 
-export default function FxFeature({ opti }: Props) {
+export default function FxFeature({ content }: Props) {
   return (
     <div className={css.FxFeature}>
-      <h3>{opti.title}</h3>
-      <p>{opti.text}</p>
+      <h3>{content.title}</h3>
+      <p>{content.text}</p>
     </div>
   );
 }

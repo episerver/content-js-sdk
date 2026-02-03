@@ -19,17 +19,17 @@ export const FxCallToActionCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxCallToActionCT>;
+  content: Infer<typeof FxCallToActionCT>;
 };
 
-export default function FxCallToAction({ opti }: Props) {
+export default function FxCallToAction({ content }: Props) {
   const cls = [
     css.FxCallToAction,
-    opti.appearance && css[opti.appearance],
+    content.appearance && css[content.appearance],
   ].join(' ');
   return (
-    <a className={cls} href={opti.link?.url.default ?? '#'}>
-      {opti.text}
+    <a className={cls} href={content.link?.url.default ?? '#'}>
+      {content.text}
     </a>
   );
 }
