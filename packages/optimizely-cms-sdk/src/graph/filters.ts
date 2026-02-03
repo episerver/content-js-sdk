@@ -29,7 +29,7 @@ function normalizePath(path: string) {
  */
 export function pathFilter(path: string, host?: string): ContentInput {
   const { pathWithTrailingSlash, pathWithoutTrailingSlash } =
-    normalizePath(path || process.env.APPLICATION_HOST!);
+    normalizePath(path);
 
   return {
     where: {
@@ -38,7 +38,7 @@ export function pathFilter(path: string, host?: string): ContentInput {
           _metadata: {
             url: {
               default: { eq: pathWithTrailingSlash },
-              base: host ? { eq: host } : undefined,
+              base: host ? { eq: host } : { eq: process.env.APPLICATION_HOST },
             },
           },
         },
@@ -46,7 +46,7 @@ export function pathFilter(path: string, host?: string): ContentInput {
           _metadata: {
             url: {
               default: { eq: pathWithoutTrailingSlash },
-              base: host ? { eq: host } : undefined,
+              base: host ? { eq: host } : { eq: process.env.APPLICATION_HOST },
             },
           },
         },
