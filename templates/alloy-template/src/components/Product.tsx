@@ -79,9 +79,11 @@ function Product({ opti }: ProductProps) {
             </div>
 
             {/* Main Body Content */}
-            <div {...pa('main_body')} className="space-y-4 sm:space-y-6">
-              <RichText content={opti.main_body?.json} />
-            </div>
+            <RichText
+              {...pa('main_body')}
+              content={opti.main_body?.json}
+              className="space-y-4 sm:space-y-6"
+            />
           </div>
 
           {/* Sidebar */}

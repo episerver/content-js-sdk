@@ -21,11 +21,7 @@ type EditorialProps = {
 
 function Editorial({ opti }: EditorialProps) {
   const { pa } = getPreviewUtils(opti);
-  return (
-    <div {...pa('main_body')}>
-      <RichText content={opti.main_body?.json} />
-    </div>
-  );
+  return <RichText {...pa('main_body')} content={opti.main_body?.json} />;
 }
 
 export default Editorial;

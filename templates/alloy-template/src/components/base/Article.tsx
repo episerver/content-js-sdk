@@ -33,9 +33,7 @@ function Article({ opti }: ArticlePageProps) {
     <div>
       <h1 {...pa('title')}>{opti.title}</h1>
       <p {...pa('description')}>{opti.description}</p>
-      <div {...pa('body')}>
-        <RichText content={opti.body?.json} />
-      </div>
+      <RichText {...pa('body')} content={opti.body?.json} />
     </div>
   );
 }
