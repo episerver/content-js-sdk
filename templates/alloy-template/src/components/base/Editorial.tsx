@@ -1,5 +1,6 @@
 import { contentType, Infer } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
+import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const EditorialContentType = contentType({
   key: 'Editorial',
@@ -19,10 +20,11 @@ type EditorialProps = {
 };
 
 function Editorial({ opti }: EditorialProps) {
+  const { pa } = getPreviewUtils(opti);
   return (
-    <>
+    <div {...pa('main_body')}>
       <RichText content={opti.main_body?.json} />
-    </>
+    </div>
   );
 }
 
