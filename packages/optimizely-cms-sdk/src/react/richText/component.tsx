@@ -27,6 +27,7 @@ export const RichText: React.FC<RichTextProps> = ({
   elements: customElements = {},
   leafs: customLeafs = {},
   decodeHtmlEntities = true,
+  ...htmlAttributes
 }) => {
   const nodes = Array.isArray(content?.children) ? content.children : [];
 
@@ -51,6 +52,11 @@ export const RichText: React.FC<RichTextProps> = ({
   // Create renderer instance and render content
   const renderer = createReactRenderer(renderConfig);
   const renderedElements = renderer.render(nodes);
+
+  // If HTML attributes are provided (e.g., from pa()), wrap in div
+  if (Object.keys(htmlAttributes).length > 0) {
+    return <div {...htmlAttributes}>{renderedElements}</div>;
+  }
 
   return <>{renderedElements}</>;
 };
