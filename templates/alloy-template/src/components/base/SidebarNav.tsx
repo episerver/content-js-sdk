@@ -22,14 +22,20 @@ export function SidebarNav({ navigationTree, currentPath }: SidebarNavProps) {
   return (
     <nav className="space-y-0">
       {navigationTree.map((item, index) => {
-        const isActive = item._metadata?.url?.hierarchical === currentPath;
+        const parentPath = item._metadata?.url?.hierarchical;
         const hasChildren = item.children && item.children.length > 0;
 
-        // Auto-expand if current path matches parent or any child
-        const parentPath = item._metadata?.url?.hierarchical;
-        const isParentActive = parentPath === currentPath;
+        // Check if current path is this item or a descendant (starts with the item's path)
+        const isActive = parentPath === currentPath;
+        const isDescendant = currentPath.startsWith(parentPath);
+
+        // Auto-expand if current path is under this parent or any of its children
+        const isParentActive = isDescendant;
         const hasActiveChild = hasChildren && item.children!.some(
-          (child) => child._metadata?.url?.hierarchical === currentPath
+          (child) => {
+            const childPath = child._metadata?.url?.hierarchical;
+            return currentPath === childPath || currentPath.startsWith(childPath);
+          }
         );
         const isExpanded = isParentActive || hasActiveChild;
 
@@ -52,7 +58,9 @@ export function SidebarNav({ navigationTree, currentPath }: SidebarNavProps) {
             {hasChildren && isExpanded && (
               <div className="border-t border-gray-100">
                 {item.children!.map((child, childIndex) => {
-                  const isChildActive = child._metadata?.url?.hierarchical === currentPath;
+                  const childPath = child._metadata?.url?.hierarchical;
+                  // Highlight if current path is this child or a descendant
+                  const isChildActive = currentPath === childPath || currentPath.startsWith(childPath);
                   const showChildBorder = childIndex < item.children!.length - 1;
 
                   return (
