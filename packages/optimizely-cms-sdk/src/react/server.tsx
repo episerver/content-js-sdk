@@ -99,15 +99,15 @@ export async function OptimizelyComponent({
   displaySettings,
   ...props
 }: OptimizelyComponentProps) {
-  if (!opti) {
+  if (!content) {
     throw new OptimizelyReactError(
-      'OptimizelyComponent requires a valid opti prop. Received null or undefined.'
+      'OptimizelyComponent requires a valid opti prop. Received null or undefined.',
     );
   }
 
   if (!componentRegistry) {
     throw new OptimizelyReactError(
-      'You should call `initReactComponentRegistry` first'
+      'You should call `initReactComponentRegistry` first',
     );
   }
   const dtKey =
@@ -149,10 +149,10 @@ export type ComponentContainerProps = {
   displaySettings?: Record<string, string | boolean>;
 };
 export type StructureContainer = (
-  props: StructureContainerProps
+  props: StructureContainerProps,
 ) => JSX.Element;
 export type ComponentContainer = (
-  props: ComponentContainerProps
+  props: ComponentContainerProps,
 ) => JSX.Element;
 
 export function OptimizelyExperience({
@@ -355,7 +355,7 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
      * ```
      */
     src(
-      input: InferredContentReference | string | null | undefined
+      input: InferredContentReference | string | null | undefined,
     ): string | undefined {
       const previewToken = content.__context?.preview_token;
 
