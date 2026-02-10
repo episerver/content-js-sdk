@@ -15,16 +15,16 @@ export const FxFigureCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxFigureCT>;
+  content: Infer<typeof FxFigureCT>;
 };
 
-export default function FxFigure({ opti }: Props) {
+export default function FxFigure({ content }: Props) {
   return (
     <div className={css.FxFigure}>
       <div>
-        {opti.highlightText}
+        {content.highlightText}
 
-        <span className={css.muted}>{opti.normalText}</span>
+        <span className={css.muted}>{content.normalText}</span>
       </div>
     </div>
   );

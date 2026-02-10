@@ -20,5 +20,5 @@ export default async function Page({ params }: Props) {
   const content = await client.getContentByPath(`/${slug.join('/')}/`);
   // .catch(handleGraphErrors);
 
-  return <OptimizelyComponent opti={content[0]} />;
+  return <OptimizelyComponent content={content[0]} />;
 }

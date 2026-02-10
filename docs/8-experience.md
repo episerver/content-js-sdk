@@ -7,7 +7,7 @@ Experiences are a powerful content type in Optimizely CMS that enable flexible, 
 To create an experience, set the `baseType` to `'_experience'`:
 
 ```tsx
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { HeroContentType } from './Hero';
 import { BannerContentType } from './Banner';
 
@@ -36,18 +36,18 @@ The key difference from other content types is the `baseType: '_experience'`, wh
 
 ## Rendering an Experience
 
-To render an experience, you'll use the `OptimizelyExperience` component, which handles the dynamic composition structure:
+To render an experience, you'll use the `OptimizelyComposition` component, which handles the dynamic composition structure:
 
 ```tsx
 import {
   ComponentContainerProps,
   getPreviewUtils,
   OptimizelyComponent,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: Infer<typeof AboutExperienceContentType>;
+  content: ContentProps<typeof AboutExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -55,24 +55,24 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function AboutExperience({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function AboutExperience({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <main className="about-experience">
       <header className="about-header">
-        <h1 {...pa('title')}>{opti.title}</h1>
-        <p {...pa('subtitle')}>{opti.subtitle}</p>
+        <h1 {...pa('title')}>{content.title}</h1>
+        <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
 
-      {opti.section && (
+      {content.section && (
         <div className="about-section" {...pa('section')}>
-          <OptimizelyComponent opti={opti.section} />
+          <OptimizelyComponent content={content.section} />
         </div>
       )}
 
-      <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+      <OptimizelyComposition
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>
@@ -82,10 +82,10 @@ export default function AboutExperience({ opti }: Props) {
 
 ### Understanding the Key Parts
 
-**`opti.composition.nodes`**  
+**`content.composition.nodes`**  
 Every experience has a `composition` property that contains the visual layout structure. The `nodes` array represents all the sections and elements that editors have added to the experience.
 
-**`<OptimizelyExperience/>`**  
+**`<OptimizelyComposition/>`**  
 This component recursively renders the entire composition structure, handling both structural nodes (rows, columns) and component nodes (your custom components).
 
 **`<ComponentWrapper/>`**  
@@ -96,15 +96,15 @@ A wrapper function that wraps each component in the composition. This is where y
 The SDK provides `BlankExperienceContentType`, a ready-to-use experience type with no predefined properties. It's perfect for creating flexible pages where the entire layout is built visually:
 
 ```tsx
-import { BlankExperienceContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
-  OptimizelyExperience,
+  OptimizelyComposition,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: Infer<typeof BlankExperienceContentType>;
+  content: ContentProps<typeof BlankExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -112,11 +112,11 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function BlankExperience({ opti }: Props) {
+export default function BlankExperience({ content }: Props) {
   return (
     <main className="blank-experience">
-      <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+      <OptimizelyComposition
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>
@@ -137,7 +137,7 @@ Sections represent a vertical "chunk" of an experience and are extensions of blo
 To create a custom section, set the `baseType` to `'_section'`:
 
 ```tsx
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 
 export const HeroSectionContentType = contentType({
   key: 'HeroSection',
@@ -163,7 +163,7 @@ Section content types can have properties and configuration, while their content
 The SDK provides `BlankSectionContentType` for creating generic section containers. Here's how to render a section with the `OptimizelyGridSection` component:
 
 ```tsx
-import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
@@ -171,15 +171,15 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
-  opti: Infer<typeof BlankSectionContentType>;
+  content: ContentProps<typeof BlankSectionContentType>;
 };
 
-export default function BlankSection({ opti }: BlankSectionProps) {
-  const { pa } = getPreviewUtils(opti);
+export default function BlankSection({ content }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(content);
 
   return (
-    <section {...pa(opti)}>
-      <OptimizelyGridSection nodes={opti.nodes} />
+    <section {...pa(content)}>
+      <OptimizelyGridSection nodes={content.nodes} />
     </section>
   );
 }
@@ -193,7 +193,7 @@ This component renders a grid-based layout for section contents. It handles the 
 You can customize how rows and columns are rendered by providing custom container components:
 
 ```tsx
-import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
@@ -201,7 +201,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
-  opti: Infer<typeof BlankSectionContentType>;
+  content: ContentProps<typeof BlankSectionContentType>;
 };
 
 function CustomRow({ children, node }: StructureContainerProps) {
@@ -222,13 +222,13 @@ function CustomColumn({ children, node }: StructureContainerProps) {
   );
 }
 
-export default function BlankSection({ opti }: BlankSectionProps) {
-  const { pa } = getPreviewUtils(opti);
+export default function BlankSection({ content }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(content);
 
   return (
-    <section {...pa(opti)}>
+    <section {...pa(content)}>
       <OptimizelyGridSection
-        nodes={opti.nodes}
+        nodes={content.nodes}
         row={CustomRow}
         column={CustomColumn}
       />
@@ -342,20 +342,20 @@ This enables on-page editing in preview mode, allowing editors to click componen
 Experiences can combine static properties (defined in your content type) with dynamic composition areas. This is useful when you need consistent elements like headers alongside flexible content:
 
 ```tsx
-export default function AboutExperience({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function AboutExperience({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <main>
       {/* Static content from experience properties */}
       <header className="about-header">
-        <h1 {...pa('title')}>{opti.title}</h1>
-        <p {...pa('subtitle')}>{opti.subtitle}</p>
+        <h1 {...pa('title')}>{content.title}</h1>
+        <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
 
       {/* Dynamic visual composition */}
-      <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+      <OptimizelyComposition
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>
@@ -363,7 +363,7 @@ export default function AboutExperience({ opti }: Props) {
 }
 ```
 
-The static properties (`title`, `subtitle`) provide structured fields editors fill in, while `OptimizelyExperience` renders the flexible sections and elements they arrange visually.
+The static properties (`title`, `subtitle`) provide structured fields editors fill in, while `OptimizelyComposition` renders the flexible sections and elements they arrange visually.
 
 > [!TIP]
 > Use static properties for critical content that must always be present, and composition areas for flexible, reorderable content blocks.

@@ -11,7 +11,7 @@ import { appendToken } from '../util/preview.js';
  */
 function appendPreviewTokenToRenditions(
   input: InferredContentReference | null | undefined,
-  previewToken: string | undefined
+  previewToken: string | undefined,
 ): InferredContentReference | null | undefined {
   if (!input || !previewToken) return input;
 
@@ -40,21 +40,21 @@ function appendPreviewTokenToRenditions(
  * - Adds preview tokens automatically when in edit mode
  * - Returns undefined if there's no image or no renditions (attribute won't be rendered)
  *
- * @param opti - Your content object with __context for preview tokens
- * @param property - The image reference from your content (e.g., opti.image)
+ * @param content - Your content object with __context for preview tokens
+ * @param property - The image reference from your content (e.g., content.image)
  * @returns A srcset string like "url1 100w, url2 500w" or undefined if no renditions
  *
  * @example
  * ```tsx
  * import { damAssets } from '@optimizely/cms-sdk';
  *
- * export default function MyComponent({ opti }) {
- *   const { getSrcset } = damAssets(opti);
+ * export default function MyComponent({ content }) {
+ *   const { getSrcset } = damAssets(content);
  *
  *   return (
  *     <img
- *       src={opti.image?.item?.Url}
- *       srcSet={getSrcset(opti.image)}
+ *       src={content.image?.item?.Url}
+ *       srcSet={getSrcset(content.image)}
  *       sizes="(max-width: 768px) 100vw, 50vw"
  *     />
  *   );
@@ -64,16 +64,16 @@ function appendPreviewTokenToRenditions(
  * @example
  * Works with any image property:
  * ```tsx
- * const { getSrcset, getAlt } = damAssets(opti);
- * <img srcSet={getSrcset(opti.heroImage)} alt="Hero" />
+ * const { getSrcset, getAlt } = damAssets(content);
+ * <img srcSet={getSrcset(content.heroImage)} alt="Hero" />
  * ```
  */
 export function getSrcset<T extends Record<string, any>>(
-  opti: T & { __context?: { preview_token?: string } },
-  property: InferredContentReference | null | undefined
+  content: T & { __context?: { preview_token?: string } },
+  property: InferredContentReference | null | undefined,
 ): string | undefined {
   const input = property;
-  const previewToken = opti?.__context?.preview_token;
+  const previewToken = content?.__context?.preview_token;
 
   // Apply preview token to renditions if provided
   const processedInput = previewToken
@@ -121,27 +121,27 @@ export function getSrcset<T extends Record<string, any>>(
  * @example
  * With a AltText present in the asset:
  * ```tsx
- * const { getAlt } = damAssets(opti);
- * <img alt={getAlt(opti.image)} />
+ * const { getAlt } = damAssets(content);
+ * <img alt={getAlt(content.image)} />
  * ```
  *
  * @example
  * Using a custom fallback:
  * ```tsx
- * const { getAlt } = damAssets(opti);
- * <img alt={getAlt(opti.image, 'Hero Image')} />
+ * const { getAlt } = damAssets(content);
+ * <img alt={getAlt(content.image, 'Hero Image')} />
  * ```
  *
  * @example
  * Explicitly marking an image as decorative:
  * ```tsx
- * const { getAlt } = damAssets(opti);
- * <img alt={getAlt(opti.icon)} /> // Will be alt="" if no AltText exists
+ * const { getAlt } = damAssets(content);
+ * <img alt={getAlt(content.icon)} /> // Will be alt="" if no AltText exists
  * ```
  */
 export function getAlt(
   input: InferredContentReference | null | undefined,
-  fallback: string = ''
+  fallback: string = '',
 ): string {
   if (!input) return fallback;
 
@@ -157,25 +157,25 @@ export function getAlt(
 /**
  * A helper that gives you pre-configured getSrcset and getAlt functions.
  *
- * Use this when you want to avoid passing opti around everywhere.
+ * Use this when you want to avoid passing content around everywhere.
  * The returned getSrcset already knows about your preview tokens.
  *
- * @param opti - Your content object
+ * @param content - Your content object
  * @returns Helper functions for working with your images
  *
  * @example
  * ```tsx
  * import { damAssets } from '@optimizely/cms-sdk';
  *
- * export default function MyComponent({ opti }) {
- *   const { getSrcset, getAlt } = damAssets(opti);
+ * export default function MyComponent({ content }) {
+ *   const { getSrcset, getAlt } = damAssets(content);
  *
  *   return (
  *     <img
- *       src={opti.image?.item?.Url}
- *       srcSet={getSrcset(opti.image)}
+ *       src={content.image?.item?.Url}
+ *       srcSet={getSrcset(content.image)}
  *       sizes="(max-width: 768px) 100vw, 50vw"
- *       alt={getAlt(opti.image, 'Hero image')}
+ *       alt={getAlt(content.image, 'Hero image')}
  *     />
  *   );
  * }
@@ -184,18 +184,18 @@ export function getAlt(
  * @example
  * Works great with multiple images:
  * ```tsx
- * const { getSrcset, getAlt } = damAssets(opti);
+ * const { getSrcset, getAlt } = damAssets(content);
  *
- * <img srcSet={getSrcset(opti.heroImage)} alt={getAlt(opti.heroImage)} />
- * <img srcSet={getSrcset(opti.thumbnail)} alt={getAlt(opti.thumbnail, 'Thumbnail')} />
+ * <img srcSet={getSrcset(content.heroImage)} alt={getAlt(content.heroImage)} />
+ * <img srcSet={getSrcset(content.thumbnail)} alt={getAlt(content.thumbnail, 'Thumbnail')} />
  * ```
  */
 export function damAssets<T extends Record<string, any>>(
-  opti: T & { __context?: { preview_token?: string } }
+  content: T & { __context?: { preview_token?: string } },
 ) {
   return {
     getSrcset: (property: InferredContentReference | null | undefined) =>
-      getSrcset(opti, property),
+      getSrcset(content, property),
     getAlt,
   };
 }

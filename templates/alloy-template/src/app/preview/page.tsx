@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
-  const response = await client
+  const content = await client
     .getPreviewContent(
       // TODO: check types in runtime properly
       (await searchParams) as PreviewParams,
@@ -27,7 +27,7 @@ export default async function Page({ searchParams }: Props) {
     });
 
   // Get the path from the response metadata
-  const path = response._metadata?.url?.hierarchical || '/';
+  const path = content._metadata?.url?.hierarchical || '/';
 
   // Check if URL contains "about-us" to show sidebar navigation
   const showSidebar = path.includes('about-us');
@@ -42,12 +42,14 @@ export default async function Page({ searchParams }: Props) {
     navigationTree = await Promise.all(
       siblings.map(async (sibling: any) => {
         const siblingPath = sibling._metadata?.url?.hierarchical;
-        const children = siblingPath ? (await client.getItems(siblingPath)) ?? [] : [];
+        const children = siblingPath
+          ? ((await client.getItems(siblingPath)) ?? [])
+          : [];
         return {
           ...sibling,
           children,
         };
-      })
+      }),
     );
   }
 
@@ -69,13 +71,13 @@ export default async function Page({ searchParams }: Props) {
 
             {/* Main Content */}
             <main className="flex-1 min-w-0">
-              <OptimizelyComponent opti={response} />
+              <OptimizelyComponent content={content} />
             </main>
           </div>
         </div>
       ) : (
         <div className="container mx-auto p-10">
-          <OptimizelyComponent opti={response} />
+          <OptimizelyComponent content={content} />
         </div>
       )}
 

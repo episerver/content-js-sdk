@@ -1,8 +1,8 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   getPreviewUtils,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { ProductContentType } from './Product';
 import { StandardContentType } from './Standard';
@@ -117,7 +117,7 @@ export const StartContentType = contentType({
 });
 
 type StartProps = {
-  opti: Infer<typeof StartContentType>;
+  content: ContentProps<typeof StartContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -125,14 +125,14 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-function Start({ opti }: StartProps) {
-  const { pa } = getPreviewUtils(opti);
+function Start({ content }: StartProps) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <>
       <div
         {...pa('image')}
-        style={{ backgroundImage: `url(${opti.image?.url.default})` }}
+        style={{ backgroundImage: `url(${content.image?.url.default})` }}
         className="relative min-h-96 sm:min-h-112 md:min-h-128 lg:min-h-144 w-full flex items-center bg-cover bg-center rounded-sm"
       >
         {/* Dark overlay for better text readability */}
@@ -146,30 +146,30 @@ function Start({ opti }: StartProps) {
               {...pa('title')}
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight tracking-tight"
             >
-              {opti.title}
+              {content.title}
             </h1>
 
             {/* Description */}
-            {opti.description && (
+            {content.description && (
               <p
                 {...pa('description')}
                 className="text-base sm:text-lg md:text-xl text-white mb-6 sm:mb-7 md:mb-8 leading-relaxed max-w-2xl font-light"
               >
-                {opti.description}
+                {content.description}
               </p>
             )}
             {/* Button */}
-            {opti.button && (
+            {content.button && (
               <div {...pa('button')}>
-                <Button opti={opti.button} />
+                <Button content={content.button} />
               </div>
             )}
           </div>
         </div>
       </div>
       <div className="my-4 sm:my-5 md:my-6 lg:my-8">
-        <OptimizelyExperience
-          nodes={opti.composition.nodes ?? []}
+        <OptimizelyComposition
+          nodes={content.composition.nodes ?? []}
           ComponentWrapper={ComponentWrapper}
         />
       </div>

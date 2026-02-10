@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -16,12 +16,12 @@ export const EditorialContentType = contentType({
 });
 
 type EditorialProps = {
-  opti: Infer<typeof EditorialContentType>;
+  content: ContentProps<typeof EditorialContentType>;
 };
 
-function Editorial({ opti }: EditorialProps) {
-  const { pa } = getPreviewUtils(opti);
-  return <RichText {...pa('main_body')} content={opti.main_body?.json} />;
+function Editorial({ content }: EditorialProps) {
+  const { pa } = getPreviewUtils(content);
+  return <RichText {...pa('main_body')} content={content.main_body?.json} />;
 }
 
 export default Editorial;

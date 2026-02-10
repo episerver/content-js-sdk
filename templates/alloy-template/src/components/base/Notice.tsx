@@ -1,4 +1,8 @@
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { cn } from '../../util/merge';
 
@@ -48,21 +52,21 @@ export const NoticeDisplayTemplate = displayTemplate({
 });
 
 type NoticeProps = {
-  opti: Infer<typeof NoticeContentType>;
+  content: ContentProps<typeof NoticeContentType>;
   displaySettings?: Record<string, string>;
 };
 
-function Notice({ opti, displaySettings }: NoticeProps) {
-  const { pa } = getPreviewUtils(opti);
+function Notice({ content, displaySettings }: NoticeProps) {
+  const { pa } = getPreviewUtils(content);
   const bgColor =
     displaySettings?.color === 'green' ? 'bg-[#1cb898]' : 'bg-[#ff944f]';
   return (
     <div className={cn('rounded-lg bg-teal-500 p-6 text-white', bgColor)}>
       <h3 className="mb-4 text-xl font-bold" {...pa('title')}>
-        {opti.title}
+        {content.title}
       </h3>
       <ul className="space-y-2" {...pa('points')}>
-        {opti.points?.map((item, itemIndex) => (
+        {content.points?.map((item, itemIndex) => (
           <li key={itemIndex} className="text-sm leading-relaxed">
             {item}
           </li>

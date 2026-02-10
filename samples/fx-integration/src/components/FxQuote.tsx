@@ -14,13 +14,13 @@ export const FxQuoteCT = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof FxQuoteCT>;
+  content: Infer<typeof FxQuoteCT>;
 };
 
-export default function FxQuote({ opti }: Props) {
+export default function FxQuote({ content }: Props) {
   return (
     <div>
-      <div>{opti.quote}</div>
+      <div>{content.quote}</div>
     </div>
   );
 }

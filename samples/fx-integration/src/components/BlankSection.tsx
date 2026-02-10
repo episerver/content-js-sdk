@@ -7,7 +7,7 @@ import {
 import css from './components.module.css';
 
 type BlankSectionProps = {
-  opti: Infer<typeof BlankSectionContentType>;
+  content: Infer<typeof BlankSectionContentType>;
 };
 
 function Row({ children }: StructureContainerProps) {
@@ -19,11 +19,11 @@ function Column({ children }: StructureContainerProps) {
 }
 
 /** Defines a component to render a blank section */
-export default function BlankSection({ opti }: BlankSectionProps) {
-  const { pa } = getPreviewUtils(opti);
+export default function BlankSection({ content }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(content);
   return (
-    <section {...pa(opti)} className={css.BlankSection}>
-      <OptimizelyGridSection nodes={opti.nodes} row={Row} column={Column} />
+    <section {...pa(content)} className={css.BlankSection}>
+      <OptimizelyGridSection nodes={content.nodes} row={Row} column={Column} />
     </section>
   );
 }

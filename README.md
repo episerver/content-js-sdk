@@ -4,6 +4,7 @@
 
 ### The official JavaScript SDK for building headless applications with Optimizely CMS
 
+[![Status](https://img.shields.io/badge/status-alpha-orange.svg)]()
 [![npm version - SDK](https://img.shields.io/npm/v/@optimizely/cms-sdk)](https://www.npmjs.com/package/@optimizely/cms-sdk)
 [![npm version - CLI](https://img.shields.io/npm/v/@optimizely/cms-cli)](https://www.npmjs.com/package/@optimizely/cms-cli)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -16,7 +17,7 @@
 
 ## Overview
 
-The official JavaScript SDK and CLI from the Optimizely CMS team. Build headless applications with Optimizely CMS the right way—with full TypeScript support, intelligent code completion, and end-to-end type safety so you can ship faster with confidence.
+The official JavaScript SDK and CLI from Optimizely CMS. Build headless applications with a code-first approach, full TypeScript support, intelligent code completion, and an intuitive developer experience.
 
 ## What's Included
 

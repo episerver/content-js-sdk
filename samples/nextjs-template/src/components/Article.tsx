@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const ArticleContentType = contentType({
@@ -22,19 +22,19 @@ export const ArticleContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof ArticleContentType>;
+  content: ContentProps<typeof ArticleContentType>;
 };
 
-export default function Article({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function Article({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <main>
-      <h1 {...pa('heading')}>{opti.heading}</h1>
-      <p {...pa('subtitle')}>{opti.subtitle}</p>
+      <h1 {...pa('heading')}>{content.heading}</h1>
+      <p {...pa('subtitle')}>{content.subtitle}</p>
       <div
         {...pa('body')}
-        dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
+        dangerouslySetInnerHTML={{ __html: content.body?.html ?? '' }}
       />
     </main>
   );
