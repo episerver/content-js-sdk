@@ -37,16 +37,17 @@ export type ContactProps = {
 };
 
 function Contact({ content }: ContactProps) {
-  const { pa } = getPreviewUtils(content);
+  const { pa, src } = getPreviewUtils(content);
+  const image = src(content.image);
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-md">
       {content.image?.url.default && (
         <div className="mb-4" {...pa('image')}>
-          <img
-            src={content.image?.url.default}
+          {image ? (<img
+            src={image}
             alt={`${content.name}'s Image`}
             className="w-full h-64 object-cover rounded-lg"
-          />
+          />):null}
         </div>
       )}
       <div className="space-y-3">
