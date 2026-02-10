@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { GraphClient } from '@optimizely/cms-sdk';
+import { MobileMenu } from './MobileMenu';
 
 interface HeaderProps {
   client: GraphClient;
@@ -19,11 +20,18 @@ async function Header({ client, currentPath }: HeaderProps) {
   }));
 
   // Create navigation from navLinks of the /en/ page
-  const navigations = navLinks.map((ancestor: any) => ({
-    key: ancestor._metadata.key,
-    label: ancestor._metadata.displayName,
-    href: ancestor._metadata.url.hierarchical,
-  }));
+  const navigations = navLinks
+    .map((ancestor: any) => ({
+      key: ancestor._metadata.key,
+      label: ancestor._metadata.displayName,
+      href: ancestor._metadata.url.hierarchical,
+    }))
+    .sort((a, b) => {
+      // Move "About Us" to the end
+      if (a.label === 'About Us') return 1;
+      if (b.label === 'About Us') return -1;
+      return 0;
+    });
 
   return (
     <>
@@ -31,12 +39,14 @@ async function Header({ client, currentPath }: HeaderProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-28">
             {/* Navigation */}
-            <nav className="hidden md:flex md:items-center md:space-x-8">
-              <div className="flex-shrink-0">
-                {/* Logo */}
-                {/* <img src="/logo.png" alt="Logo" className="h-14 w-14" /> */}
-              </div>
-              <div className="flex items-center space-x-8">
+            <nav className="flex items-center space-x-8">
+              {/* Logo */}
+              <Link href="/en" className="shrink-0">
+                <img src="/logo.png" alt="Logo" className="h-14 w-auto" />
+              </Link>
+
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex md:items-center md:space-x-8">
                 {navigations.map((item) => (
                   <a
                     key={item.key}
@@ -49,28 +59,8 @@ async function Header({ client, currentPath }: HeaderProps) {
               </div>
             </nav>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button
-                type="button"
-                className="text-gray-700 hover:text-teal-600 focus:outline-none focus:text-teal-600"
-                aria-label="Open menu"
-              >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-            </div>
+            {/* Mobile menu */}
+            <MobileMenu navigations={navigations} />
           </div>
         </div>
       </header>
@@ -107,7 +97,7 @@ async function Header({ client, currentPath }: HeaderProps) {
                     </Link>
                   )}
                 </li>
-              )
+              ),
             )}
           </ol>
         </nav>
