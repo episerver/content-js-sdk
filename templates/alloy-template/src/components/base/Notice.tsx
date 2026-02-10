@@ -1,4 +1,8 @@
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { cn } from '../../util/merge';
 
@@ -48,7 +52,7 @@ export const NoticeDisplayTemplate = displayTemplate({
 });
 
 type NoticeProps = {
-  opti: Infer<typeof NoticeContentType>;
+  opti: ContentProps<typeof NoticeContentType>;
   displaySettings?: Record<string, string>;
 };
 

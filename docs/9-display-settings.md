@@ -15,7 +15,11 @@ Display templates can be associated with three different targets:
 Here's how to create a display template for a component:
 
 ```tsx
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 
 export const TileContentType = contentType({
   key: 'Tile',
@@ -188,15 +192,15 @@ settings: {
 
 ## Using Display Settings in Components
 
-To use display settings in your component, add a `displaySettings` prop typed with `Infer<typeof YourDisplayTemplate>`:
+To use display settings in your component, add a `displaySettings` prop typed with `ContentProps<typeof YourDisplayTemplate>`:
 
 ```tsx
-import { Infer } from '@optimizely/cms-sdk';
+import { ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: Infer<typeof TileContentType>;
-  displaySettings?: Infer<typeof SquareDisplayTemplate>;
+  opti: ContentProps<typeof TileContentType>;
+  displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
 };
 
 export function SquareTile({ opti, displaySettings }: Props) {
@@ -362,7 +366,11 @@ The tag name in the display template matches either the key in the `tags` object
 Here's a complete example bringing everything together:
 
 ```tsx
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 // Content Type
@@ -409,8 +417,8 @@ export const SquareDisplayTemplate = displayTemplate({
 
 // Component Types
 type Props = {
-  opti: Infer<typeof TileContentType>;
-  displaySettings?: Infer<typeof SquareDisplayTemplate>;
+  opti: ContentProps<typeof TileContentType>;
+  displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
 };
 
 // Default Component

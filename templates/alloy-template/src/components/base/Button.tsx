@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const ButtonContentType = contentType({
@@ -24,7 +24,7 @@ export const ButtonContentType = contentType({
 });
 
 type ButtonProps = {
-  opti: Infer<typeof ButtonContentType>;
+  opti: ContentProps<typeof ButtonContentType>;
 };
 
 function Button({ opti }: ButtonProps) {

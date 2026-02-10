@@ -1,4 +1,8 @@
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import Link from 'next/link';
 
@@ -54,7 +58,7 @@ export const TeaserDisplayTemplate = displayTemplate({
 });
 
 type TeaserProps = {
-  opti: Infer<typeof TeaserContentType>;
+  opti: ContentProps<typeof TeaserContentType>;
   displaySettings?: Record<string, string>;
 };
 
@@ -65,7 +69,11 @@ function Teaser({ opti, displaySettings }: TeaserProps) {
   const wrapWithLink = (content: React.ReactNode) => {
     if (opti.link?.default) {
       return (
-        <Link {...pa('link')} href={opti.link.default} className="cursor-pointer">
+        <Link
+          {...pa('link')}
+          href={opti.link.default}
+          className="cursor-pointer"
+        >
           {content}
         </Link>
       );
@@ -79,7 +87,10 @@ function Teaser({ opti, displaySettings }: TeaserProps) {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">
           {opti.image?.url.default && (
-            <div className="md:w-1/2 h-64 md:h-auto overflow-hidden" {...pa('image')}>
+            <div
+              className="md:w-1/2 h-64 md:h-auto overflow-hidden"
+              {...pa('image')}
+            >
               <img
                 src={opti.image?.url.default}
                 alt="teaser_image"

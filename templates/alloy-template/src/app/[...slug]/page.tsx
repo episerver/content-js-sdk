@@ -65,13 +65,13 @@ export default async function Page({ params }: Props) {
 
             {/* Main Content */}
             <main className="flex-1 min-w-0">
-              <OptimizelyComponent opti={pageContent[0]} />
+              <OptimizelyComponent content={pageContent[0]} />
             </main>
           </div>
         </div>
       ) : (
         <div className="container mx-auto p-10">
-          <OptimizelyComponent opti={pageContent[0]} />
+          <OptimizelyComponent content={pageContent[0]} />
         </div>
       )}
 

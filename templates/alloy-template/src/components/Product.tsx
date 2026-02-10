@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   ComponentContainerProps,
@@ -45,7 +45,7 @@ export const ProductContentType = contentType({
 });
 
 type ProductProps = {
-  opti: Infer<typeof ProductContentType>;
+  opti: ContentProps<typeof ProductContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {

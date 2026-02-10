@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   getPreviewUtils,
@@ -117,7 +117,7 @@ export const StartContentType = contentType({
 });
 
 type StartProps = {
-  opti: Infer<typeof StartContentType>;
+  opti: ContentProps<typeof StartContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const ContactContentType = contentType({
@@ -33,7 +33,7 @@ export const ContactContentType = contentType({
 });
 
 export type ContactProps = {
-  opti: Infer<typeof ContactContentType>;
+  opti: ContentProps<typeof ContactContentType>;
 };
 
 function Contact({ opti }: ContactProps) {
@@ -56,7 +56,10 @@ function Contact({ opti }: ContactProps) {
         >
           {opti.name}
         </h3>
-        <p {...pa('description')} className="text-gray-700 text-base leading-relaxed">
+        <p
+          {...pa('description')}
+          className="text-gray-700 text-base leading-relaxed"
+        >
           {opti.description}
         </p>
         <div className="space-y-2 pt-2">

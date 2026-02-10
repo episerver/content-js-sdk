@@ -1,4 +1,4 @@
-import { contentType, Infer, damAssets } from '@optimizely/cms-sdk';
+import { contentType, ContentProps, damAssets } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   ComponentContainerProps,
@@ -39,7 +39,7 @@ export const NewsContentType = contentType({
 });
 
 type NewsPageProps = {
-  opti: Infer<typeof NewsContentType>;
+  opti: ContentProps<typeof NewsContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {

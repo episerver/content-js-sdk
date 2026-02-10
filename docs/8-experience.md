@@ -7,7 +7,7 @@ Experiences are a powerful content type in Optimizely CMS that enable flexible, 
 To create an experience, set the `baseType` to `'_experience'`:
 
 ```tsx
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { HeroContentType } from './Hero';
 import { BannerContentType } from './Banner';
 
@@ -47,7 +47,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: Infer<typeof AboutExperienceContentType>;
+  opti: ContentProps<typeof AboutExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -67,7 +67,7 @@ export default function AboutExperience({ opti }: Props) {
 
       {opti.section && (
         <div className="about-section" {...pa('section')}>
-          <OptimizelyComponent opti={opti.section} />
+          <OptimizelyComponent content={opti.section} />
         </div>
       )}
 
@@ -96,7 +96,7 @@ A wrapper function that wraps each component in the composition. This is where y
 The SDK provides `BlankExperienceContentType`, a ready-to-use experience type with no predefined properties. It's perfect for creating flexible pages where the entire layout is built visually:
 
 ```tsx
-import { BlankExperienceContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyComposition,
@@ -104,7 +104,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: Infer<typeof BlankExperienceContentType>;
+  opti: ContentProps<typeof BlankExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -137,7 +137,7 @@ Sections represent a vertical "chunk" of an experience and are extensions of blo
 To create a custom section, set the `baseType` to `'_section'`:
 
 ```tsx
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 
 export const HeroSectionContentType = contentType({
   key: 'HeroSection',
@@ -163,7 +163,7 @@ Section content types can have properties and configuration, while their content
 The SDK provides `BlankSectionContentType` for creating generic section containers. Here's how to render a section with the `OptimizelyGridSection` component:
 
 ```tsx
-import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
@@ -171,7 +171,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
-  opti: Infer<typeof BlankSectionContentType>;
+  opti: ContentProps<typeof BlankSectionContentType>;
 };
 
 export default function BlankSection({ opti }: BlankSectionProps) {
@@ -193,7 +193,7 @@ This component renders a grid-based layout for section contents. It handles the 
 You can customize how rows and columns are rendered by providing custom container components:
 
 ```tsx
-import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
@@ -201,7 +201,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
-  opti: Infer<typeof BlankSectionContentType>;
+  opti: ContentProps<typeof BlankSectionContentType>;
 };
 
 function CustomRow({ children, node }: StructureContainerProps) {
