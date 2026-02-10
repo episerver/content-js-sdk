@@ -73,7 +73,7 @@ describe('getPreviewUtils', () => {
       const result = utils.src(mockImageAsset);
 
       expect(result).toBe(
-        'https://assets.local-cms.com/0a2f4b27-4f15-4bb9-ba14-d69b49ae5b85/cmp_73d48db0-2abe-4a33-91f5-94d0ac5e85e5.jpg'
+        'https://assets.local-cms.com/0a2f4b27-4f15-4bb9-ba14-d69b49ae5b85/cmp_73d48db0-2abe-4a33-91f5-94d0ac5e85e5.jpg',
       );
     });
 
@@ -86,7 +86,7 @@ describe('getPreviewUtils', () => {
 
       // Should return the item.Url with preview token appended
       expect(result).toBe(
-        'https://assets.local-cms.com/0a2f4b27-4f15-4bb9-ba14-d69b49ae5b85/cmp_73d48db0-2abe-4a33-91f5-94d0ac5e85e5.jpg?preview_token=test-token-123'
+        'https://assets.local-cms.com/0a2f4b27-4f15-4bb9-ba14-d69b49ae5b85/cmp_73d48db0-2abe-4a33-91f5-94d0ac5e85e5.jpg?preview_token=test-token-123',
       );
     });
 
@@ -153,7 +153,7 @@ describe('getPreviewUtils', () => {
       const result = utils.src(assetWithDefaultUrl);
 
       expect(result).toBe(
-        'https://example.com/default-image.jpg?preview_token=test-token-456'
+        'https://example.com/default-image.jpg?preview_token=test-token-456',
       );
     });
 
@@ -172,7 +172,7 @@ describe('getPreviewUtils', () => {
       const result = utils.src('https://example.com/image.jpg');
 
       expect(result).toBe(
-        'https://example.com/image.jpg?preview_token=test-token-123'
+        'https://example.com/image.jpg?preview_token=test-token-123',
       );
     });
 
@@ -229,7 +229,7 @@ describe('getPreviewUtils', () => {
       const result = utils.src('https://example.com/image.jpg?width=500');
 
       expect(result).toBe(
-        'https://example.com/image.jpg?width=500&preview_token=test-token-123'
+        'https://example.com/image.jpg?width=500&preview_token=test-token-123',
       );
     });
 
@@ -266,7 +266,7 @@ describe('getPreviewUtils', () => {
   });
 
   describe('getSrcset()', () => {
-    it('should generate srcset with unique widths from opti object', () => {
+    it('should generate srcset with unique widths from content object', () => {
       const content = { __typename: 'TestPage', image: mockImageAsset };
       const result = getSrcset(content, content.image);
 
@@ -296,7 +296,7 @@ describe('getPreviewUtils', () => {
       expect(result).toContain('large_1920x1920_63.jpg 1920w');
     });
 
-    it('should append preview token when passed in opti context', () => {
+    it('should append preview token when passed in content context', () => {
       const content = {
         __typename: 'TestPage',
         __context: { edit: true, preview_token: 'test-token-456' },
@@ -307,8 +307,8 @@ describe('getPreviewUtils', () => {
       const entries = result!.split(', ');
       expect(
         entries.every((entry: string) =>
-          entry.includes('preview_token=test-token-456')
-        )
+          entry.includes('preview_token=test-token-456'),
+        ),
       ).toBe(true);
     });
 
@@ -322,7 +322,7 @@ describe('getPreviewUtils', () => {
       expect(width512Count).toBe(1);
     });
 
-    it('should append preview token to renditions in preview mode from opti', () => {
+    it('should append preview token to renditions in preview mode from content', () => {
       const content = {
         __typename: 'TestPage',
         image: mockImageAsset,
@@ -334,8 +334,8 @@ describe('getPreviewUtils', () => {
       const entries = result!.split(', ');
       expect(
         entries.every((entry: string) =>
-          entry.includes('preview_token=test-token-123')
-        )
+          entry.includes('preview_token=test-token-123'),
+        ),
       ).toBe(true);
     });
 
@@ -470,8 +470,8 @@ describe('getPreviewUtils', () => {
       const entries = result!.split(', ');
       expect(
         entries.every((entry: string) =>
-          entry.includes('preview_token=test-token-123')
-        )
+          entry.includes('preview_token=test-token-123'),
+        ),
       ).toBe(true);
     });
 

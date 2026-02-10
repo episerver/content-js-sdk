@@ -199,16 +199,16 @@ import { ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: ContentProps<typeof TileContentType>;
+  content: ContentProps<typeof TileContentType>;
   displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
 };
 
-export function SquareTile({ opti, displaySettings }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export function SquareTile({ content, displaySettings }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <div className="square-tile">
-      <h4 {...pa('title')}>{opti.title}</h4>
+      <h4 {...pa('title')}>{content.title}</h4>
       <p
         style={{
           color: displaySettings?.color,
@@ -217,7 +217,7 @@ export function SquareTile({ opti, displaySettings }: Props) {
         }}
         {...pa('description')}
       >
-        {opti.description}
+        {content.description}
       </p>
     </div>
   );
@@ -237,22 +237,22 @@ You can have a default component and variants that use different display templat
 
 ```tsx
 // Default component without display settings
-export default function Tile({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function Tile({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="tile">
-      <h1 {...pa('title')}>{opti.title}</h1>
-      <p {...pa('description')}>{opti.description}</p>
+      <h1 {...pa('title')}>{content.title}</h1>
+      <p {...pa('description')}>{content.description}</p>
     </div>
   );
 }
 
 // Variant component with display settings
-export function SquareTile({ opti, displaySettings }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export function SquareTile({ content, displaySettings }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="square-tile">
-      <h4 {...pa('title')}>{opti.title}</h4>
+      <h4 {...pa('title')}>{content.title}</h4>
       <p
         style={{
           color: displaySettings?.color,
@@ -261,7 +261,7 @@ export function SquareTile({ opti, displaySettings }: Props) {
         }}
         {...pa('description')}
       >
-        {opti.description}
+        {content.description}
       </p>
     </div>
   );
@@ -417,28 +417,28 @@ export const SquareDisplayTemplate = displayTemplate({
 
 // Component Types
 type Props = {
-  opti: ContentProps<typeof TileContentType>;
+  content: ContentProps<typeof TileContentType>;
   displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
 };
 
 // Default Component
-export default function Tile({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function Tile({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="tile">
-      <h1 {...pa('title')}>{opti.title}</h1>
-      <p {...pa('description')}>{opti.description}</p>
+      <h1 {...pa('title')}>{content.title}</h1>
+      <p {...pa('description')}>{content.description}</p>
     </div>
   );
 }
 
 // Variant Component with Display Settings
-export function SquareTile({ opti, displaySettings }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export function SquareTile({ content, displaySettings }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <div className="square-tile">
-      <h4 {...pa('title')}>{opti.title}</h4>
+      <h4 {...pa('title')}>{content.title}</h4>
       <p
         style={{
           color: displaySettings?.color,
@@ -447,7 +447,7 @@ export function SquareTile({ opti, displaySettings }: Props) {
         }}
         {...pa('description')}
       >
-        {opti.description}
+        {content.description}
       </p>
     </div>
   );

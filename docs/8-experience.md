@@ -47,7 +47,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: ContentProps<typeof AboutExperienceContentType>;
+  content: ContentProps<typeof AboutExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -55,24 +55,24 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function AboutExperience({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function AboutExperience({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <main className="about-experience">
       <header className="about-header">
-        <h1 {...pa('title')}>{opti.title}</h1>
-        <p {...pa('subtitle')}>{opti.subtitle}</p>
+        <h1 {...pa('title')}>{content.title}</h1>
+        <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
 
-      {opti.section && (
+      {content.section && (
         <div className="about-section" {...pa('section')}>
-          <OptimizelyComponent content={opti.section} />
+          <OptimizelyComponent content={content.section} />
         </div>
       )}
 
       <OptimizelyComposition
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>
@@ -82,7 +82,7 @@ export default function AboutExperience({ opti }: Props) {
 
 ### Understanding the Key Parts
 
-**`opti.composition.nodes`**  
+**`content.composition.nodes`**  
 Every experience has a `composition` property that contains the visual layout structure. The `nodes` array represents all the sections and elements that editors have added to the experience.
 
 **`<OptimizelyComposition/>`**  
@@ -104,7 +104,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: ContentProps<typeof BlankExperienceContentType>;
+  content: ContentProps<typeof BlankExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -112,11 +112,11 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function BlankExperience({ opti }: Props) {
+export default function BlankExperience({ content }: Props) {
   return (
     <main className="blank-experience">
       <OptimizelyComposition
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>
@@ -171,15 +171,15 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
-  opti: ContentProps<typeof BlankSectionContentType>;
+  content: ContentProps<typeof BlankSectionContentType>;
 };
 
-export default function BlankSection({ opti }: BlankSectionProps) {
-  const { pa } = getPreviewUtils(opti);
+export default function BlankSection({ content }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(content);
 
   return (
-    <section {...pa(opti)}>
-      <OptimizelyGridSection nodes={opti.nodes} />
+    <section {...pa(content)}>
+      <OptimizelyGridSection nodes={content.nodes} />
     </section>
   );
 }
@@ -201,7 +201,7 @@ import {
 } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
-  opti: ContentProps<typeof BlankSectionContentType>;
+  content: ContentProps<typeof BlankSectionContentType>;
 };
 
 function CustomRow({ children, node }: StructureContainerProps) {
@@ -222,13 +222,13 @@ function CustomColumn({ children, node }: StructureContainerProps) {
   );
 }
 
-export default function BlankSection({ opti }: BlankSectionProps) {
-  const { pa } = getPreviewUtils(opti);
+export default function BlankSection({ content }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(content);
 
   return (
-    <section {...pa(opti)}>
+    <section {...pa(content)}>
       <OptimizelyGridSection
-        nodes={opti.nodes}
+        nodes={content.nodes}
         row={CustomRow}
         column={CustomColumn}
       />
@@ -342,20 +342,20 @@ This enables on-page editing in preview mode, allowing editors to click componen
 Experiences can combine static properties (defined in your content type) with dynamic composition areas. This is useful when you need consistent elements like headers alongside flexible content:
 
 ```tsx
-export default function AboutExperience({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function AboutExperience({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <main>
       {/* Static content from experience properties */}
       <header className="about-header">
-        <h1 {...pa('title')}>{opti.title}</h1>
-        <p {...pa('subtitle')}>{opti.subtitle}</p>
+        <h1 {...pa('title')}>{content.title}</h1>
+        <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
 
       {/* Dynamic visual composition */}
       <OptimizelyComposition
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>

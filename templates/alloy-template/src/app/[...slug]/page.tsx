@@ -20,9 +20,9 @@ export default async function Page({ params }: Props) {
   });
   const path = `/${slug.join('/')}/`;
 
-  const pageContent = await client.getContentByPath(path);
+  const content = await client.getContentByPath(path);
 
-  if (pageContent.length === 0) {
+  if (content.length === 0) {
     notFound();
   }
 
@@ -65,13 +65,13 @@ export default async function Page({ params }: Props) {
 
             {/* Main Content */}
             <main className="flex-1 min-w-0">
-              <OptimizelyComponent content={pageContent[0]} />
+              <OptimizelyComponent content={content[0]} />
             </main>
           </div>
         </div>
       ) : (
         <div className="container mx-auto p-10">
-          <OptimizelyComponent content={pageContent[0]} />
+          <OptimizelyComponent content={content[0]} />
         </div>
       )}
 

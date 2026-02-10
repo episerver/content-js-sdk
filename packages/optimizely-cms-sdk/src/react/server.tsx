@@ -101,7 +101,7 @@ export async function OptimizelyComponent({
 }: OptimizelyComponentProps) {
   if (!content) {
     throw new OptimizelyReactError(
-      'OptimizelyComponent requires a valid opti prop. Received null or undefined.',
+      'OptimizelyComponent requires a valid content prop. Received null or undefined.',
     );
   }
 

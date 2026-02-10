@@ -58,41 +58,41 @@ export const TeaserDisplayTemplate = displayTemplate({
 });
 
 type TeaserProps = {
-  opti: ContentProps<typeof TeaserContentType>;
+  content: ContentProps<typeof TeaserContentType>;
   displaySettings?: Record<string, string>;
 };
 
-function Teaser({ opti, displaySettings }: TeaserProps) {
-  const { pa } = getPreviewUtils(opti);
+function Teaser({ content, displaySettings }: TeaserProps) {
+  const { pa } = getPreviewUtils(content);
 
   // Helper function to wrap content with link if available
-  const wrapWithLink = (content: React.ReactNode) => {
-    if (opti.link?.default) {
+  const wrapWithLink = (children: React.ReactNode) => {
+    if (content.link?.default) {
       return (
         <Link
           {...pa('link')}
-          href={opti.link.default}
+          href={content.link.default}
           className="cursor-pointer"
         >
-          {content}
+          {children}
         </Link>
       );
     }
-    return content;
+    return children;
   };
 
   // Horizontal layout
   if (displaySettings?.orientation === 'horizontal') {
-    const content = (
+    const horizontalContent = (
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">
-          {opti.image?.url.default && (
+          {content.image?.url.default && (
             <div
               className="md:w-1/2 h-64 md:h-auto overflow-hidden"
               {...pa('image')}
             >
               <img
-                src={opti.image?.url.default}
+                src={content.image?.url.default}
                 alt="teaser_image"
                 className="w-full h-full object-cover"
               />
@@ -103,29 +103,29 @@ function Teaser({ opti, displaySettings }: TeaserProps) {
               {...pa('heading')}
               className="text-2xl font-bold text-gray-900 mb-4 uppercase tracking-wide"
             >
-              {opti.heading}
+              {content.heading}
             </h2>
             <blockquote
               {...pa('text')}
               className="text-gray-700 text-base leading-relaxed mb-4 italic"
             >
-              "{opti.text}"
+              "{content.text}"
             </blockquote>
           </div>
         </div>
       </div>
     );
 
-    return wrapWithLink(content);
+    return wrapWithLink(horizontalContent);
   }
 
   // Vertical layout (default)
   const verticalContent = (
     <div className="max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
-      {opti.image?.url.default && (
+      {content.image?.url.default && (
         <div className="h-48 w-full overflow-hidden" {...pa('image')}>
           <img
-            src={opti.image?.url.default}
+            src={content.image?.url.default}
             alt="teaser_image"
             className="w-full h-full object-cover"
           />
@@ -136,10 +136,10 @@ function Teaser({ opti, displaySettings }: TeaserProps) {
           {...pa('heading')}
           className="text-xl font-bold text-gray-900 mb-3 uppercase tracking-wide"
         >
-          {opti.heading}
+          {content.heading}
         </h2>
         <p {...pa('text')} className="text-gray-600 text-sm leading-relaxed">
-          {opti.text}
+          {content.text}
         </p>
       </div>
     </div>

@@ -24,18 +24,18 @@ export const ButtonContentType = contentType({
 });
 
 type ButtonProps = {
-  opti: ContentProps<typeof ButtonContentType>;
+  content: ContentProps<typeof ButtonContentType>;
 };
 
-function Button({ opti }: ButtonProps) {
-  const { pa } = getPreviewUtils(opti);
+function Button({ content }: ButtonProps) {
+  const { pa } = getPreviewUtils(content);
   return (
     <a
       {...pa('link')}
-      href={opti?.link?.default ?? undefined}
+      href={content?.link?.default ?? undefined}
       className="inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-8 rounded-md transition-colors duration-200 text-base"
     >
-      <span {...pa('text')}>{opti.text}</span>
+      <span {...pa('text')}>{content.text}</span>
     </a>
   );
 }

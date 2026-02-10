@@ -24,16 +24,16 @@ export const ArticleContentType = contentType({
 });
 
 type ArticlePageProps = {
-  opti: ContentProps<typeof ArticleContentType>;
+  content: ContentProps<typeof ArticleContentType>;
 };
 
-function Article({ opti }: ArticlePageProps) {
-  const { pa } = getPreviewUtils(opti);
+function Article({ content }: ArticlePageProps) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div>
-      <h1 {...pa('title')}>{opti.title}</h1>
-      <p {...pa('description')}>{opti.description}</p>
-      <RichText {...pa('body')} content={opti.body?.json} />
+      <h1 {...pa('title')}>{content.title}</h1>
+      <p {...pa('description')}>{content.description}</p>
+      <RichText {...pa('body')} content={content.body?.json} />
     </div>
   );
 }

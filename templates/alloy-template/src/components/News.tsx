@@ -39,7 +39,7 @@ export const NewsContentType = contentType({
 });
 
 type NewsPageProps = {
-  opti: ContentProps<typeof NewsContentType>;
+  content: ContentProps<typeof NewsContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -47,9 +47,9 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-function News({ opti }: NewsPageProps) {
-  const { pa, src } = getPreviewUtils(opti);
-  const { getAlt, getSrcset } = damAssets(opti);
+function News({ content }: NewsPageProps) {
+  const { pa, src } = getPreviewUtils(content);
+  const { getAlt, getSrcset } = damAssets(content);
   return (
     <main className="bg-white">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12">
@@ -62,33 +62,33 @@ function News({ opti }: NewsPageProps) {
                 {...pa('title')}
                 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-5xl"
               >
-                {opti.title}
+                {content.title}
               </h1>
               <p
                 {...pa('description')}
                 className="text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl"
               >
-                {opti.description}
+                {content.description}
               </p>
             </div>
 
             {/* Main Body Content */}
             <RichText
               {...pa('main_body')}
-              content={opti.main_body?.json}
+              content={content.main_body?.json}
               className="space-y-4 sm:space-y-6"
             />
 
             <img
               {...pa('image')}
-              src={src(opti.image)}
-              alt={getAlt(opti.image, 'Teaser Image')}
+              src={src(content.image)}
+              alt={getAlt(content.image, 'Teaser Image')}
               className="h-auto w-full rounded-lg object-cover sm:max-h-100 md:max-h-125 lg:max-h-150"
             />
           </div>
 
           <OptimizelyComposition
-            nodes={opti.composition.nodes ?? []}
+            nodes={content.composition.nodes ?? []}
             ComponentWrapper={ComponentWrapper}
           />
         </div>

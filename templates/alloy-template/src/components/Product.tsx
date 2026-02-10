@@ -45,7 +45,7 @@ export const ProductContentType = contentType({
 });
 
 type ProductProps = {
-  opti: ContentProps<typeof ProductContentType>;
+  content: ContentProps<typeof ProductContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -53,8 +53,8 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-function Product({ opti }: ProductProps) {
-  const { pa } = getPreviewUtils(opti);
+function Product({ content }: ProductProps) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <main className="bg-white">
@@ -68,32 +68,32 @@ function Product({ opti }: ProductProps) {
                 {...pa('heading')}
                 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-5xl"
               >
-                {opti.heading}
+                {content.heading}
               </h1>
               <p
                 {...pa('description')}
                 className="text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl"
               >
-                {opti.description}
+                {content.description}
               </p>
             </div>
 
             {/* Main Body Content */}
             <RichText
               {...pa('main_body')}
-              content={opti.main_body?.json}
+              content={content.main_body?.json}
               className="space-y-4 sm:space-y-6"
             />
           </div>
 
           {/* Sidebar */}
           <div {...pa('content_area')} className="space-y-6 sm:space-y-8">
-            {opti.content_area?.map((contentItem, index) => {
+            {content.content_area?.map((contentItem, index) => {
               return <OptimizelyComponent key={index} content={contentItem} />;
             })}
           </div>
           <OptimizelyComposition
-            nodes={opti.composition.nodes ?? []}
+            nodes={content.composition.nodes ?? []}
             ComponentWrapper={ComponentWrapper}
           />
         </div>

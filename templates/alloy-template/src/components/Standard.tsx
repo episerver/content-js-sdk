@@ -39,7 +39,7 @@ export const StandardContentType = contentType({
 });
 
 type StandardPageProps = {
-  opti: ContentProps<typeof StandardContentType>;
+  content: ContentProps<typeof StandardContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -47,8 +47,8 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-function Standard({ opti }: StandardPageProps) {
-  const { pa } = getPreviewUtils(opti);
+function Standard({ content }: StandardPageProps) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Heading and Description */}
@@ -57,26 +57,26 @@ function Standard({ opti }: StandardPageProps) {
           {...pa('heading')}
           className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-5xl"
         >
-          {opti.heading}
+          {content.heading}
         </h1>
         <p
           {...pa('description')}
           className="text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl"
         >
-          {opti.description}
+          {content.description}
         </p>
       </div>
 
       {/* Main Body Content */}
       <RichText
         {...pa('main_body')}
-        content={opti.main_body?.json}
+        content={content.main_body?.json}
         className="space-y-4 sm:space-y-6"
       />
 
       {/* section Area */}
       <OptimizelyComposition
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </div>

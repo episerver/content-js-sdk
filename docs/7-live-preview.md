@@ -186,29 +186,29 @@ export const AboutUsContentType = contentType({
 });
 
 type AboutUsProps = {
-  opti: ContentProps<typeof AboutUsContentType>;
+  content: ContentProps<typeof AboutUsContentType>;
 };
 
-export default function AboutUs({ opti }: AboutUsProps) {
-  const { pa, src } = getPreviewUtils(opti);
-  const { getSrcset, getAlt } = damAssets(opti);
+export default function AboutUs({ content }: AboutUsProps) {
+  const { pa, src } = getPreviewUtils(content);
+  const { getSrcset, getAlt } = damAssets(content);
 
   return (
     <section className="about-us">
-      {opti.image && (
+      {content.image && (
         <div className="about-us-image">
           <img
             {...pa('image')}
-            src={src(opti.image)}
-            srcSet={getSrcset(opti.image)}
+            src={src(content.image)}
+            srcSet={getSrcset(content.image)}
             sizes="(max-width: 768px) 100vw, 50vw"
-            alt={getAlt(opti.image, 'About us image')}
+            alt={getAlt(content.image, 'About us image')}
           />
         </div>
       )}
-      <h2 {...pa('heading')}>{opti.heading}</h2>
+      <h2 {...pa('heading')}>{content.heading}</h2>
       <div {...pa('body')} className="about-us-content">
-        <RichText content={opti.body?.json} />
+        <RichText content={content.body?.json} />
       </div>
     </section>
   );
