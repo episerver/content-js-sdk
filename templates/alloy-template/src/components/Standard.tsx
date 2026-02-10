@@ -3,7 +3,7 @@ import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   ComponentContainerProps,
   getPreviewUtils,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { SEOContentType } from './base/SEO';
 
@@ -75,7 +75,7 @@ function Standard({ opti }: StandardPageProps) {
       />
 
       {/* section Area */}
-      <OptimizelyExperience
+      <OptimizelyComposition
         nodes={opti.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />

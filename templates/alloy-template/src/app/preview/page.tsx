@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
-  const response = await client
+  const content = await client
     .getPreviewContent(
       // TODO: check types in runtime properly
       (await searchParams) as PreviewParams,
@@ -42,12 +42,14 @@ export default async function Page({ searchParams }: Props) {
     navigationTree = await Promise.all(
       siblings.map(async (sibling: any) => {
         const siblingPath = sibling._metadata?.url?.hierarchical;
-        const children = siblingPath ? (await client.getItems(siblingPath)) ?? [] : [];
+        const children = siblingPath
+          ? ((await client.getItems(siblingPath)) ?? [])
+          : [];
         return {
           ...sibling,
           children,
         };
-      })
+      }),
     );
   }
 

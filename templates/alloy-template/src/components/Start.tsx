@@ -2,7 +2,7 @@ import { contentType, Infer } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   getPreviewUtils,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { ProductContentType } from './Product';
 import { StandardContentType } from './Standard';
@@ -168,7 +168,7 @@ function Start({ opti }: StartProps) {
         </div>
       </div>
       <div className="my-4 sm:my-5 md:my-6 lg:my-8">
-        <OptimizelyExperience
+        <OptimizelyComposition
           nodes={opti.composition.nodes ?? []}
           ComponentWrapper={ComponentWrapper}
         />

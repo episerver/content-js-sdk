@@ -31,7 +31,7 @@ export default async function Page({ searchParams }: Props) {
   });
 
   const response = await client.getPreviewContent(
-    (await searchParams) as PreviewParams
+    (await searchParams) as PreviewParams,
   );
 
   return (
@@ -40,7 +40,7 @@ export default async function Page({ searchParams }: Props) {
         src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
       ></Script>
       <PreviewComponent />
-      <OptimizelyComponent opti={response} />
+      <OptimizelyComponent content={response} />
     </>
   );
 }
@@ -62,7 +62,7 @@ Initialize the GraphClient with your credentials. These should be stored in your
 
 ```tsx
 const response = await client.getPreviewContent(
-  (await searchParams) as PreviewParams
+  (await searchParams) as PreviewParams,
 );
 ```
 
@@ -77,7 +77,7 @@ return (
       src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
     ></Script>
     <PreviewComponent />
-    <OptimizelyComponent opti={response} />
+    <OptimizelyComponent content={response} />
   </>
 );
 ```

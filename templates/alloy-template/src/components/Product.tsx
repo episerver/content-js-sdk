@@ -4,7 +4,7 @@ import {
   ComponentContainerProps,
   getPreviewUtils,
   OptimizelyComponent,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { SEOContentType } from './base/SEO';
 
@@ -89,10 +89,10 @@ function Product({ opti }: ProductProps) {
           {/* Sidebar */}
           <div {...pa('content_area')} className="space-y-6 sm:space-y-8">
             {opti.content_area?.map((contentItem, index) => {
-              return <OptimizelyComponent key={index} opti={contentItem} />;
+              return <OptimizelyComponent key={index} content={contentItem} />;
             })}
           </div>
-          <OptimizelyExperience
+          <OptimizelyComposition
             nodes={opti.composition.nodes ?? []}
             ComponentWrapper={ComponentWrapper}
           />

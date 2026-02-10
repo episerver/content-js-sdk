@@ -3,7 +3,7 @@ import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   ComponentContainerProps,
   getPreviewUtils,
-  OptimizelyExperience,
+  OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { StandardContentType } from './Standard';
 import { SEOContentType } from './base/SEO';
@@ -87,7 +87,7 @@ function News({ opti }: NewsPageProps) {
             />
           </div>
 
-          <OptimizelyExperience
+          <OptimizelyComposition
             nodes={opti.composition.nodes ?? []}
             ComponentWrapper={ComponentWrapper}
           />
