@@ -1,13 +1,11 @@
-import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
+import { BlankSectionContentType, ComponentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 
-type BlankSectionProps = {
-  content: ContentProps<typeof BlankSectionContentType>;
-};
+type BlankSectionProps = ComponentProps<typeof BlankSectionContentType>;
 
 function Row({ children }: StructureContainerProps) {
   return <div className="flex flex-wrap my-4">{children}</div>;

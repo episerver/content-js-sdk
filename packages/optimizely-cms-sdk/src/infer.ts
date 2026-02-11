@@ -213,8 +213,8 @@ type InferFromDisplayTemplate<T extends DisplayTemplate> = T extends {
         ? E extends 'select'
           ? keyof S[K]['choices']
           : E extends 'checkbox'
-          ? boolean
-          : never
+            ? boolean
+            : never
         : never;
     }
   : {};
@@ -226,3 +226,29 @@ export type ContentProps<T> =
   : T extends AnyContentType ? InferFromContentType<T>
   : T extends AnyProperty ? InferFromProperty<T>
   : unknown;
+
+/**
+ * Utility type for React component props that combines content and optional display settings.
+ *
+ * @template TContent - The content type (use `typeof YourContentType`)
+ * @template TDisplay - Optional display template type (use `typeof YourDisplayTemplate`)
+ *
+ * @example
+ * // Component with display settings
+ * type Props = ComponentProps<typeof TileContentType, typeof SquareDisplayTemplate>;
+ *
+ * @example
+ * // Component without display settings
+ * type Props = ComponentProps<typeof SmallFeatureContentType>;
+ */
+export type ComponentProps<
+  TContent extends AnyContentType,
+  TDisplay extends DisplayTemplate = never
+> = [TDisplay] extends [never]
+  ? {
+      content: ContentProps<TContent>;
+    }
+  : {
+      content: ContentProps<TContent>;
+      displaySettings?: ContentProps<TDisplay>;
+    };

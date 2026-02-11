@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import {
   getPreviewUtils,
   OptimizelyComponent,
@@ -27,9 +27,7 @@ export const LandingPageContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof LandingPageContentType>;
-};
+type Props = ComponentProps<typeof LandingPageContentType>;
 
 export default function LandingComponent({ content }: Props) {
   const { pa, src } = getPreviewUtils(content);

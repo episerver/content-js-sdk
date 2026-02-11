@@ -1,7 +1,7 @@
 import {
   contentType,
   displayTemplate,
-  ContentProps,
+  ComponentProps,
 } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import Link from 'next/link';
@@ -57,10 +57,7 @@ export const TeaserDisplayTemplate = displayTemplate({
   },
 });
 
-type TeaserProps = {
-  content: ContentProps<typeof TeaserContentType>;
-  displaySettings?: Record<string, string>;
-};
+type TeaserProps = ComponentProps<typeof TeaserContentType, typeof TeaserDisplayTemplate>;
 
 function Teaser({ content, displaySettings }: TeaserProps) {
   const { pa, src } = getPreviewUtils(content);

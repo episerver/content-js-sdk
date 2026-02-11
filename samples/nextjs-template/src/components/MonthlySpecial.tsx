@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { BlogCardContentType } from './BlogCard';
 import {
   getPreviewUtils,
@@ -24,9 +24,7 @@ export const MonthlySpecialContentType = contentType({
   compositionBehaviors: ['sectionEnabled'],
 });
 
-type Props = {
-  content: ContentProps<typeof MonthlySpecialContentType>;
-};
+type Props = ComponentProps<typeof MonthlySpecialContentType>;
 
 export default function MonthlySpecial({ content }: Props) {
   const { pa } = getPreviewUtils(content);

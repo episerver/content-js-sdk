@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyComposition,
@@ -19,9 +19,7 @@ export const LandingExperienceContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof LandingExperienceContentType>;
-};
+type Props = ComponentProps<typeof LandingExperienceContentType>;
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);

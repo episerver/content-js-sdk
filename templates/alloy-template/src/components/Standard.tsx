@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   ComponentContainerProps,
@@ -38,9 +38,7 @@ export const StandardContentType = contentType({
   },
 });
 
-type StandardPageProps = {
-  content: ContentProps<typeof StandardContentType>;
-};
+type StandardPageProps = ComponentProps<typeof StandardContentType>;
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);

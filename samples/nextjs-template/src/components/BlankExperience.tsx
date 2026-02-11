@@ -1,13 +1,11 @@
-import { BlankExperienceContentType, ContentProps } from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, ComponentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   OptimizelyComposition,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 
-type Props = {
-  content: ContentProps<typeof BlankExperienceContentType>;
-};
+type Props = ComponentProps<typeof BlankExperienceContentType>;
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);

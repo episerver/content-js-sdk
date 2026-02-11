@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 export const CallToActionContentType = contentType({
   key: 'CallToAction',
@@ -15,9 +15,7 @@ export const CallToActionContentType = contentType({
   compositionBehaviors: ['elementEnabled'],
 });
 
-type Props = {
-  content: ContentProps<typeof CallToActionContentType>;
-};
+type Props = ComponentProps<typeof CallToActionContentType>;
 
 export default function CallToAction({ content }: Props) {
   const { pa } = getPreviewUtils(content);

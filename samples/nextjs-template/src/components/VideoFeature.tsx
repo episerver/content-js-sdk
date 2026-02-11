@@ -1,4 +1,4 @@
-import { contentType, damAssets, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, damAssets, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -26,9 +26,7 @@ export const VideoFeatureContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof VideoFeatureContentType>;
-};
+type Props = ComponentProps<typeof VideoFeatureContentType>;
 
 export default function VideoFeature({ content }: Props) {
   const { pa, src } = getPreviewUtils(content);

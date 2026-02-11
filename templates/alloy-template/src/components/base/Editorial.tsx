@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -15,9 +15,7 @@ export const EditorialContentType = contentType({
   compositionBehaviors: ['elementEnabled'],
 });
 
-type EditorialProps = {
-  content: ContentProps<typeof EditorialContentType>;
-};
+type EditorialProps = ComponentProps<typeof EditorialContentType>;
 
 function Editorial({ content }: EditorialProps) {
   const { pa } = getPreviewUtils(content);
