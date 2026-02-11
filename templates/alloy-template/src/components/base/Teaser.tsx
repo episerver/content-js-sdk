@@ -63,8 +63,8 @@ type TeaserProps = {
 };
 
 function Teaser({ content, displaySettings }: TeaserProps) {
-  const { pa } = getPreviewUtils(content);
-
+  const { pa, src } = getPreviewUtils(content);
+  const image = src(content.image);
   // Helper function to wrap content with link if available
   const wrapWithLink = (children: React.ReactNode) => {
     if (content.link?.default) {
@@ -87,15 +87,12 @@ function Teaser({ content, displaySettings }: TeaserProps) {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">
           {content.image?.url.default && (
-            <div
-              className="md:w-1/2 h-64 md:h-auto overflow-hidden"
-              {...pa('image')}
-            >
-              <img
-                src={content.image?.url.default}
+            <div className="md:w-1/2 h-64 md:h-auto overflow-hidden" {...pa('image')}>
+              {image ? (<img
+                src={image}
                 alt="teaser_image"
                 className="w-full h-full object-cover"
-              />
+              />) : null}
             </div>
           )}
           <div className="md:w-1/2 p-8 flex flex-col justify-center">

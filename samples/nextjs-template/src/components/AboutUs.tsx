@@ -34,18 +34,13 @@ const customHeadingTwo = (props: ElementProps) => {
 export default function AboutUs({ content }: AboutUsProps) {
   const { src } = getPreviewUtils(content);
   const { getSrcset, getAlt } = damAssets(content);
-
+  const image = src(content.image);
   return (
     <section className="about-us">
       {content.image && (
         <div className="about-us-image">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src(content.image)}
-            srcSet={getSrcset(content.image)}
-            sizes="(max-width: 768px) 100vw, 50vw"
-            alt={getAlt(content.image, 'About us image')}
-          />
+          {image ? (<img src={image} srcSet={getSrcset(content.image)} sizes="(max-width: 768px) 100vw, 50vw" alt={getAlt(content.image, 'About us image')}/>) : null}
         </div>
       )}
       <h2>{content.heading}</h2>
