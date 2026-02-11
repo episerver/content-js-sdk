@@ -11,13 +11,13 @@ export const ButtonContentType = contentType({
     link: {
       type: 'url',
       displayName: 'Button Link',
-      group: 'Information',
+      group: 'Content',
       required: true,
     },
     text: {
       type: 'string',
       displayName: 'Button Text',
-      group: 'Information',
+      group: 'Content',
     },
   },
   compositionBehaviors: ['elementEnabled'],

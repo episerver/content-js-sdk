@@ -3314,6 +3314,8 @@ export interface operations {
       query?: {
         /** @description Indicates if read-only resources should be included in the export data. */
         includeReadOnly?: boolean;
+        /** @description Comma-separated list of sections to export (e.g., contentTypes,propertyGroups,displayTemplates). */
+        sections?: string;
       };
       header?: never;
       path?: never;

@@ -27,7 +27,7 @@ export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 /** A "Base" content type that includes all common attributes for all content types */
 type BaseContentType = {
   key: string;
-  displayName?: string;
+  displayName: string;
   properties?: Record<string, AnyProperty>;
 };
 

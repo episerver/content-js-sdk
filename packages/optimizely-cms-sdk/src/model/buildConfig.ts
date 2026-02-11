@@ -11,9 +11,9 @@ export type BuildConfig = {
 
 // Built-in/default property groups that all users get
 export type BuiltInPropertyGroups =
-  | 'Information'
+  | 'Content'
   | 'Scheduling'
-  | 'Advanced'
+  | 'Settings'
   | 'Shortcut'
   | 'Categories'
   | 'DynamicBlocks';

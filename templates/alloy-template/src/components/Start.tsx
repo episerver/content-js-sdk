@@ -22,35 +22,35 @@ export const StartContentType = contentType({
       type: 'contentReference',
       allowedTypes: ['_image'],
       displayName: 'Teaser Image',
-      group: 'Information',
+      group: 'Content',
     },
     title: {
       type: 'string',
       displayName: 'Teaser Title',
-      group: 'Information',
+      group: 'Content',
     },
     description: {
       type: 'string',
       displayName: 'Description',
-      group: 'Information',
+      group: 'Content',
     },
     button: {
       type: 'component',
       contentType: ButtonContentType,
       displayName: 'Button',
-      group: 'Information',
+      group: 'Content',
     },
 
     // Settings group
     hide_site_header: {
       type: 'boolean',
       displayName: 'Hide Site Header',
-      group: 'Advanced',
+      group: 'Settings',
     },
     hide_site_footer: {
       type: 'boolean',
       displayName: 'Hide Site Footer',
-      group: 'Advanced',
+      group: 'Settings',
     },
     // siteSettings group
     contact_pages: {
