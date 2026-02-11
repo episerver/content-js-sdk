@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const ButtonContentType = contentType({
@@ -23,9 +23,7 @@ export const ButtonContentType = contentType({
   compositionBehaviors: ['elementEnabled'],
 });
 
-type ButtonProps = {
-  content: ContentProps<typeof ButtonContentType>;
-};
+type ButtonProps = ComponentProps<typeof ButtonContentType>;
 
 function Button({ content }: ButtonProps) {
   const { pa } = getPreviewUtils(content);

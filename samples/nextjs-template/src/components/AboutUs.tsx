@@ -1,4 +1,4 @@
-import { contentType, damAssets, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, damAssets, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText, ElementProps } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -22,9 +22,7 @@ export const AboutUsContentType = contentType({
   compositionBehaviors: ['sectionEnabled'],
 });
 
-export type AboutUsProps = {
-  content: ContentProps<typeof AboutUsContentType>;
-};
+export type AboutUsProps = ComponentProps<typeof AboutUsContentType>;
 
 // Custom renderer for 'heading-two' elements to apply specific styles
 const customHeadingTwo = (props: ElementProps) => {

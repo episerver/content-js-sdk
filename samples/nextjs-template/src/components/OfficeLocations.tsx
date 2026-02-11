@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import {
   getPreviewUtils,
   OptimizelyComponent,
@@ -27,9 +27,7 @@ export const OfficeContentType = contentType({
   compositionBehaviors: ['sectionEnabled'],
 });
 
-type Props = {
-  content: ContentProps<typeof OfficeContentType>;
-};
+type Props = ComponentProps<typeof OfficeContentType>;
 
 export default function OfficeLocations({ content }: Props) {
   const { pa } = getPreviewUtils(content);

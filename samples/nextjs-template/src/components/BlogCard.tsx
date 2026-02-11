@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const BlogCardContentType = contentType({
@@ -25,9 +25,7 @@ export const BlogCardContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof BlogCardContentType>;
-};
+type Props = ComponentProps<typeof BlogCardContentType>;
 
 export default function BlogCard({ content }: Props) {
   const { pa } = getPreviewUtils(content);

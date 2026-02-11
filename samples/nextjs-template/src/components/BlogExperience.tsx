@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { BlogCardContentType } from './BlogCard';
 import {
   ComponentContainerProps,
@@ -31,9 +31,7 @@ export const BlogExperienceContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof BlogExperienceContentType>;
-};
+type Props = ComponentProps<typeof BlogExperienceContentType>;
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);

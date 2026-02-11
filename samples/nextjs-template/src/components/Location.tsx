@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import Image from 'next/image';
 
@@ -22,9 +22,7 @@ export const LocationContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof LocationContentType>;
-};
+type Props = ComponentProps<typeof LocationContentType>;
 
 export default function Location({ content }: Props) {
   const { pa } = getPreviewUtils(content);

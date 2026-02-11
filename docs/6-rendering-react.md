@@ -7,11 +7,10 @@ In this page you will learn how to create a React component for your content typ
 Open the `src/app/components/Article.tsx` file and add the following
 
 ```tsx
+import { ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@episerver/cms-sdk/react/richText';
 
-type Props = {
-  content: ContentProps<typeof ArticleContentType>;
-};
+type Props = ComponentProps<typeof ArticleContentType>;
 
 export default function Article({ content }: Props) {
   return (
@@ -29,7 +28,7 @@ export default function Article({ content }: Props) {
 The entire file should look like this:
 
 ```tsx
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 
 export const ArticleContentType = contentType({
@@ -45,9 +44,7 @@ export const ArticleContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof ArticleContentType>;
-};
+type Props = ComponentProps<typeof ArticleContentType>;
 
 export default function Article({ content }: Props) {
   return (
@@ -58,6 +55,84 @@ export default function Article({ content }: Props) {
   );
 }
 ```
+
+## Understanding Type Utilities
+
+The SDK provides two type utilities for defining component props:
+
+### ComponentProps (Recommended)
+
+`ComponentProps` is the primary utility for defining React component props. It automatically creates the correct prop structure with a `content` prop (and optional `displaySettings` when using display templates).
+
+```tsx
+import { ComponentProps } from '@optimizely/cms-sdk';
+
+type Props = ComponentProps<typeof ArticleContentType>;
+// Generates: { content: { heading: string; body: { json: any }; ... } }
+
+export default function Article({ content }: Props) {
+  return (
+    <main>
+      <h1>{content.heading}</h1>
+      <RichText content={content.body?.json} />
+    </main>
+  );
+}
+```
+
+**Use `ComponentProps` for:**
+
+- Defining props for your React components (99% of cases)
+- Working with display settings
+- Following the standard component pattern
+
+### Adding Custom Props
+
+You can extend `ComponentProps` with additional custom props using TypeScript intersection types (`&`):
+
+```tsx
+import { ComponentProps } from '@optimizely/cms-sdk';
+
+type Props = ComponentProps<typeof ArticleContentType> & {
+  metadata: { author: string; date: string };
+};
+
+export default function ArticleWithMetadata({ content, metadata }: Props) {
+  return (
+    <main>
+      <h1>{content.heading}</h1>
+      <p>
+        By {metadata.author} on {metadata.date}
+      </p>
+      <RichText content={content.body?.json} />
+    </main>
+  );
+}
+```
+
+This approach maintains the standard component pattern while adding your custom props.
+
+### ContentProps (Advanced)
+
+`ContentProps` is a low-level utility that directly infers the type from a content type, display template, or property definition. It extracts just the inferred type without wrapping it in a component props structure.
+
+```tsx
+import { ContentProps } from '@optimizely/cms-sdk';
+
+type ArticleContent = ContentProps<typeof ArticleContentType>;
+// Returns: { heading: string; body: { json: any }; ... }
+
+type DisplaySettings = ContentProps<typeof ArticleDisplayTemplate>;
+// Returns: { theme: 'light' | 'dark'; ... }
+```
+
+**Use `ContentProps` for:**
+
+- Extracting inferred types for type composition
+- Advanced type manipulation
+- Type utilities and helper functions
+
+**Recommendation:** Use `ComponentProps` (with intersection types for custom props) for React components. Only use `ContentProps` when you need the raw inferred type for advanced scenarios.
 
 ## Step 2. Register the component
 
@@ -142,6 +217,6 @@ This is the end of the tutorial on how to create your first website using Optimi
 
 You can continue exploring these topics:
 
-- **[Add Experiences](./8-experiences.md)** - Learn how to create personalized content experiences for different audiences
+- **[Add Experiences](./8-experience.md)** - Learn how to create personalized content experiences for different audiences
 - **[Add Live Preview](./7-live-preview.md)** - Enable real-time content editing and preview capabilities
 - **[Add Display Settings](./9-display-settings.md)** - Configure how your content is displayed across different contexts

@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { SmallFeatureContentType } from './SmallFeature';
 import {
   getPreviewUtils,
@@ -20,9 +20,7 @@ export const SmallFeatureGridContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof SmallFeatureGridContentType>;
-};
+type Props = ComponentProps<typeof SmallFeatureGridContentType>;
 
 export default function SmallFeatureGrid({ content }: Props) {
   const { pa } = getPreviewUtils(content);

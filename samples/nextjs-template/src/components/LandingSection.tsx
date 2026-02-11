@@ -1,7 +1,7 @@
 import {
   contentType,
   displayTemplate,
-  ContentProps,
+  ComponentProps,
 } from '@optimizely/cms-sdk';
 import { SmallFeatureGridContentType } from './SmallFeatureGrid';
 import { VideoFeatureContentType } from './VideoFeature';
@@ -56,9 +56,7 @@ export const LandingSectionDisplayTemplate = displayTemplate({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof LandingSectionContentType>;
-};
+type Props = ComponentProps<typeof LandingSectionContentType>;
 
 export default function LandingSection({ content }: Props) {
   const { pa } = getPreviewUtils(content);

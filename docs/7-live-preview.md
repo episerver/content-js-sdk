@@ -168,7 +168,7 @@ The `pa` function (short for "preview attributes") enables visual editing in the
 Here's a complete component that demonstrates both `pa` for preview attributes and `src` for resolving content references:
 
 ```tsx
-import { contentType, damAssets, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, damAssets, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -185,9 +185,7 @@ export const AboutUsContentType = contentType({
   },
 });
 
-type AboutUsProps = {
-  content: ContentProps<typeof AboutUsContentType>;
-};
+type AboutUsProps = ComponentProps<typeof AboutUsContentType>;
 
 export default function AboutUs({ content }: AboutUsProps) {
   const { pa, src } = getPreviewUtils(content);

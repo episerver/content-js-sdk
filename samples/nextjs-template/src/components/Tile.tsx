@@ -1,7 +1,7 @@
 import {
   contentType,
   displayTemplate,
-  ContentProps,
+  ComponentProps,
 } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -114,10 +114,7 @@ export const SquareDisplayTemplate = displayTemplate({
   tag: 'Square',
 });
 
-type Props = {
-  content: ContentProps<typeof TileContentType>;
-  displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
-};
+type Props = ComponentProps<typeof TileContentType, typeof SquareDisplayTemplate>;
 
 export default function Tile({ content }: Props) {
   const { pa } = getPreviewUtils(content);

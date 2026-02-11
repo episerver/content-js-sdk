@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const ArticleContentType = contentType({
@@ -21,9 +21,7 @@ export const ArticleContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof ArticleContentType>;
-};
+type Props = ComponentProps<typeof ArticleContentType>;
 
 export default function Article({ content }: Props) {
   const { pa } = getPreviewUtils(content);

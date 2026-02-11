@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -23,9 +23,7 @@ export const ArticleContentType = contentType({
   compositionBehaviors: ['elementEnabled'],
 });
 
-type ArticlePageProps = {
-  content: ContentProps<typeof ArticleContentType>;
-};
+type ArticlePageProps = ComponentProps<typeof ArticleContentType>;
 
 function Article({ content }: ArticlePageProps) {
   const { pa } = getPreviewUtils(content);

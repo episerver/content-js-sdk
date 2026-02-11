@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const BannerContentType = contentType({
@@ -19,9 +19,7 @@ export const BannerContentType = contentType({
   compositionBehaviors: ['sectionEnabled'],
 });
 
-type Props = {
-  content: ContentProps<typeof BannerContentType>;
-};
+type Props = ComponentProps<typeof BannerContentType>;
 
 export default function Banner({ content }: Props) {
   const { pa } = getPreviewUtils(content);

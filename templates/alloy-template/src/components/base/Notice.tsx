@@ -1,7 +1,7 @@
 import {
   contentType,
   displayTemplate,
-  ContentProps,
+  ComponentProps,
 } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { cn } from '../../util/merge';
@@ -51,10 +51,7 @@ export const NoticeDisplayTemplate = displayTemplate({
   },
 });
 
-type NoticeProps = {
-  content: ContentProps<typeof NoticeContentType>;
-  displaySettings?: Record<string, string>;
-};
+type NoticeProps = ComponentProps<typeof NoticeContentType, typeof NoticeDisplayTemplate>;
 
 function Notice({ content, displaySettings }: NoticeProps) {
   const { pa } = getPreviewUtils(content);

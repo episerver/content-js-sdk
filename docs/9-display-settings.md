@@ -18,7 +18,7 @@ Here's how to create a display template for a component:
 import {
   contentType,
   displayTemplate,
-  ContentProps,
+  ComponentProps,
 } from '@optimizely/cms-sdk';
 
 export const TileContentType = contentType({
@@ -190,18 +190,55 @@ settings: {
 - Returns `true` or `false`
 - Choices define the display labels but the value is always boolean
 
+## Type Utilities: ComponentProps vs ContentProps
+
+The SDK provides two type utilities for working with content types:
+
+### ComponentProps
+
+`ComponentProps` is the primary utility for defining React component props. It automatically generates the correct prop structure for your component, including the `content` and optional `displaySettings` props.
+
+**Usage without display settings:**
+```tsx
+type Props = ComponentProps<typeof TileContentType>;
+// Generates: { content: { title: string; description: string; ... } }
+```
+
+**Usage with display settings:**
+```tsx
+type Props = ComponentProps<typeof TileContentType, typeof SquareDisplayTemplate>;
+// Generates: {
+//   content: { title: string; description: string; ... };
+//   displaySettings?: { color: 'yellow' | 'green' | 'orange'; orientation: 'vertical' | 'horizontal' }
+// }
+```
+
+### ContentProps
+
+`ContentProps` is a low-level utility for inferring types from content types, display templates, or individual properties. You typically only need this for advanced use cases.
+
+**Usage:**
+```tsx
+type TileContent = ContentProps<typeof TileContentType>;
+// Returns: { title: string; description: string; ... }
+
+type DisplaySettings = ContentProps<typeof SquareDisplayTemplate>;
+// Returns: { color: 'yellow' | 'green' | 'orange'; orientation: 'vertical' | 'horizontal' }
+```
+
+**When to use each:**
+- **Use `ComponentProps`** for defining component props (99% of cases)
+- **Use `ContentProps`** only when you need to extract the inferred type directly for advanced type manipulation
+
 ## Using Display Settings in Components
 
-To use display settings in your component, add a `displaySettings` prop typed with `ContentProps<typeof YourDisplayTemplate>`:
+To use display settings in your component, use the `ComponentProps` utility type with both your content type and display template:
 
 ```tsx
-import { ContentProps } from '@optimizely/cms-sdk';
+import { ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
-type Props = {
-  content: ContentProps<typeof TileContentType>;
-  displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
-};
+type Props = ComponentProps<typeof TileContentType, typeof SquareDisplayTemplate>;
 
 export function SquareTile({ content, displaySettings }: Props) {
   const { pa } = getPreviewUtils(content);
@@ -369,7 +406,7 @@ Here's a complete example bringing everything together:
 import {
   contentType,
   displayTemplate,
-  ContentProps,
+  ComponentProps,
 } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -416,10 +453,7 @@ export const SquareDisplayTemplate = displayTemplate({
 });
 
 // Component Types
-type Props = {
-  content: ContentProps<typeof TileContentType>;
-  displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
-};
+type Props = ComponentProps<typeof TileContentType, typeof SquareDisplayTemplate>;
 
 // Default Component
 export default function Tile({ content }: Props) {

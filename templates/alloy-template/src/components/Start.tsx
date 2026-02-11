@@ -1,4 +1,4 @@
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
   getPreviewUtils,
@@ -116,9 +116,7 @@ export const StartContentType = contentType({
   },
 });
 
-type StartProps = {
-  content: ContentProps<typeof StartContentType>;
-};
+type StartProps = ComponentProps<typeof StartContentType>;
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);

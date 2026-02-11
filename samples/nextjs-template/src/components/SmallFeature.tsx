@@ -1,4 +1,4 @@
-import { contentType, damAssets, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, damAssets, ComponentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -20,9 +20,7 @@ export const SmallFeatureContentType = contentType({
   },
 });
 
-type Props = {
-  content: ContentProps<typeof SmallFeatureContentType>;
-};
+type Props = ComponentProps<typeof SmallFeatureContentType>;
 
 export default function SmallFeature({ content }: Props) {
   const { pa, src } = getPreviewUtils(content);

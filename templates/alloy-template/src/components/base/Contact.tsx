@@ -1,5 +1,5 @@
 import React from 'react';
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { contentType, ComponentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const ContactContentType = contentType({
@@ -32,9 +32,7 @@ export const ContactContentType = contentType({
   compositionBehaviors: ['elementEnabled'],
 });
 
-export type ContactProps = {
-  content: ContentProps<typeof ContactContentType>;
-};
+export type ContactProps = ComponentProps<typeof ContactContentType>;
 
 function Contact({ content }: ContactProps) {
   const { pa, src } = getPreviewUtils(content);

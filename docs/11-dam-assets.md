@@ -170,12 +170,10 @@ export default function OptimizedImage({ content }) {
 ## Putting It Together
 
 ```tsx
-import { damAssets } from '@optimizely/cms-sdk';
+import { damAssets, ComponentProps } from '@optimizely/cms-sdk';
 import Image from 'next/image';
 
-type Props = {
-  content: ContentProps<typeof ArticleContentType>;
-};
+type Props = ComponentProps<typeof ArticleContentType>;
 
 export default function ArticleHero({ content }: Props) {
   const { src } = getPreviewUtils(content);
