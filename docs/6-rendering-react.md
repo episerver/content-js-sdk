@@ -64,6 +64,8 @@ The SDK provides two type utilities for defining component props:
 
 `ComponentProps` is the primary utility for defining React component props. It automatically creates the correct prop structure with a `content` prop (and optional `displaySettings` when using display templates).
 
+**Key Feature:** Parameters can be provided in any order - the type system automatically detects which is the `contentType` and which is the `displayTemplate`.
+
 ```tsx
 import { ComponentProps } from '@optimizely/cms-sdk';
 

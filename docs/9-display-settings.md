@@ -192,14 +192,20 @@ settings: {
 
 ## Type Utilities
 
-For working with display settings, you'll use the `ComponentProps` utility type with your display template as the second parameter. For a complete explanation of type utilities including `ComponentProps` and `ContentProps`, see [Understanding Type Utilities](./6-rendering-react.md#understanding-type-utilities) in the Rendering guide.
+For working with display settings, you'll use the `ComponentProps` utility type. Parameters can be provided in any order - the type system automatically detects which is the content type and which is the display template. For a complete explanation of type utilities including `ComponentProps` and `ContentProps`, see [Understanding Type Utilities](./6-rendering-react.md#understanding-type-utilities) in the Rendering guide.
 
 **Quick reference for display settings:**
 
 ```tsx
+// Parameters can be in any order
 type Props = ComponentProps<
   typeof TileContentType,
-  typeof SquareDisplayTemplate // Display template as 2nd parameter
+  typeof SquareDisplayTemplate
+>;
+// Or reversed - works the same way:
+type Props = ComponentProps<
+  typeof SquareDisplayTemplate,
+  typeof TileContentType
 >;
 // Props: {
 //   content: { title: string; description: string; ... };
