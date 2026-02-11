@@ -9,7 +9,7 @@ export const AboutUsContentType = contentType({
   properties: {
     heading: {
       type: 'string',
-      group: 'Information',
+      group: 'Content',
     },
     body: {
       type: 'richText',
@@ -40,7 +40,14 @@ export default function AboutUs({ content }: AboutUsProps) {
       {content.image && (
         <div className="about-us-image">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {image ? (<img src={image} srcSet={getSrcset(content.image)} sizes="(max-width: 768px) 100vw, 50vw" alt={getAlt(content.image, 'About us image')}/>) : null}
+          {image ? (
+            <img
+              src={image}
+              srcSet={getSrcset(content.image)}
+              sizes="(max-width: 768px) 100vw, 50vw"
+              alt={getAlt(content.image, 'About us image')}
+            />
+          ) : null}
         </div>
       )}
       <h2>{content.heading}</h2>
