@@ -86,6 +86,30 @@ export default function Article({ content }: Props) {
 - Working with display settings
 - Following the standard component pattern
 
+### Parameter Ordering
+
+`ComponentProps` accepts parameters in any order. The type system automatically identifies which is the content type and which is the display template:
+
+```tsx
+// Standard order: content type, then display template
+type Props = ComponentProps<
+  typeof TileContentType,
+  typeof SquareDisplayTemplate
+>;
+
+// Reversed order: display template, then content type (same result)
+type Props = ComponentProps<
+  typeof SquareDisplayTemplate,
+  typeof TileContentType
+>;
+
+// Both produce:
+// Props: {
+//   content: { title: string; description: string; ... };
+//   displaySettings?: { color: 'yellow' | 'green' | 'orange'; ... }
+// }
+```
+
 ### Adding Custom Props
 
 You can extend `ComponentProps` with additional custom props using TypeScript intersection types (`&`):

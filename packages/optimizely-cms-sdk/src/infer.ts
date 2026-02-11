@@ -227,28 +227,59 @@ export type ContentProps<T> =
   : T extends AnyProperty ? InferFromProperty<T>
   : unknown;
 
+// Extract content type from either parameter (excludes display templates)
+type GetContent<T1, T2> = T1 extends { __type: 'displayTemplate' }
+  ? T2 extends AnyContentType
+    ? T2
+    : never
+  : T1 extends AnyContentType
+    ? T1
+    : T2 extends AnyContentType
+      ? T2
+      : never;
+
+// Extract display template from either parameter (excludes content types)
+type GetDisplay<T1, T2> = T1 extends { __type: 'contentType' }
+  ? T2 extends DisplayTemplate
+    ? T2
+    : never
+  : T1 extends DisplayTemplate
+    ? T1
+    : T2 extends DisplayTemplate
+      ? T2
+      : never;
+
 /**
- * Utility type for React component props that combines content and optional display settings.
+ * Utility type for component props that combines content and optional display settings.
  *
- * @template TContent - The content type (use `typeof YourContentType`)
- * @template TDisplay - Optional display template type (use `typeof YourDisplayTemplate`)
+ * Parameters can be provided in any order; the type system automatically identifies
+ * which parameter is the content type and which is the display template.
+ *
+ * @template T1 - Content type or display template
+ * @template T2 - Display template or content type (optional)
  *
  * @example
- * // Component with display settings
+ * // Content only
+ * type Props = ComponentProps<typeof ArticleContentType>;
+ *
+ * @example
+ * // Content and display (any order)
  * type Props = ComponentProps<typeof TileContentType, typeof SquareDisplayTemplate>;
+ * type Props = ComponentProps<typeof SquareDisplayTemplate, typeof TileContentType>; // same result
  *
  * @example
- * // Component without display settings
- * type Props = ComponentProps<typeof SmallFeatureContentType>;
+ * // Display settings only
+ * type Props = ComponentProps<typeof SquareDisplayTemplate>;
  */
-export type ComponentProps<
-  TContent extends AnyContentType,
-  TDisplay extends DisplayTemplate = never
-> = [TDisplay] extends [never]
-  ? {
-      content: ContentProps<TContent>;
-    }
-  : {
-      content: ContentProps<TContent>;
-      displaySettings?: ContentProps<TDisplay>;
-    };
+export type ComponentProps<T1 = never, T2 = never> =
+  GetContent<T1, T2> extends infer C
+    ? GetDisplay<T1, T2> extends infer D
+      ? [C] extends [never]
+        ? [D] extends [never]
+          ? never
+          : { displaySettings?: ContentProps<D> }
+        : [D] extends [never]
+          ? { content: ContentProps<C> }
+          : { content: ContentProps<C>; displaySettings?: ContentProps<D> }
+      : never
+    : never;

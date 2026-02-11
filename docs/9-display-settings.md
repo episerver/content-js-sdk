@@ -192,20 +192,7 @@ settings: {
 
 ## Type Utilities
 
-For working with display settings, you'll use the `ComponentProps` utility type with your display template as the second parameter. For a complete explanation of type utilities including `ComponentProps` and `ContentProps`, see [Understanding Type Utilities](./6-rendering-react.md#understanding-type-utilities) in the Rendering guide.
-
-**Quick reference for display settings:**
-
-```tsx
-type Props = ComponentProps<
-  typeof TileContentType,
-  typeof SquareDisplayTemplate // Display template as 2nd parameter
->;
-// Props: {
-//   content: { title: string; description: string; ... };
-//   displaySettings?: { color: 'yellow' | 'green' | 'orange'; orientation: 'vertical' | 'horizontal' }
-// }
-```
+The `ComponentProps` utility type is used to define component props with display settings. See [Understanding Type Utilities](./6-rendering-react.md#understanding-type-utilities) in the Rendering guide for complete documentation on `ComponentProps` and `ContentProps`.
 
 ## Using Display Settings in Components
 
