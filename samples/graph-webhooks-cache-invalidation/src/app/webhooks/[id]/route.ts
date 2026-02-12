@@ -18,14 +18,17 @@ const WEBHOOK_ID = process.env.WEBHOOK_ID!;
 async function revalidateDocId(docId: string) {
   // The field `docId` has the format <UUID>_<language>_status,
   // but to search in Graph, we need only the UUID without separation dashes `-`
-  const id = docId.split('_')[0].replaceAll('-', '');
+  const parts = docId.split('_');
+  const id = parts[0].replaceAll('-', '');
+  const locale = parts[1]; // e.g., "en"
+    
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
   const getPathQuery = `
-query GetPath($id:String) {
-  _Content(ids: [$id]) {
+query GetPath($id:String, $locale: Locales) {
+  _Content(ids: [$id], locale: [$locale]) {
     item {
       _id 
       _metadata { url { default } }
@@ -33,7 +36,7 @@ query GetPath($id:String) {
   }
 }`;
 
-  const response = await client.request(getPathQuery, { id });
+  const response = await client.request(getPathQuery, { id, locale });
   const raw = response._Content.item._metadata.url.default;
   const path = raw.endsWith('/') ? raw.slice(0, -1) : raw;
   revalidatePath(path);
