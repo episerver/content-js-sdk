@@ -11,7 +11,7 @@ export const StandardContentType = contentType({
   key: 'Standard',
   displayName: 'Standard Page',
   baseType: '_experience',
-  mayContainTypes: ['_self', 'News'], // Passed 'News' as a string to avoid circular dependency
+  mayContainTypes: ['*'],
   properties: {
     image: {
       type: 'contentReference',
