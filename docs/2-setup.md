@@ -64,6 +64,47 @@ Your project structure should now look like this:
 └── ...
 ```
 
+### Components Configuration
+
+The `components` field accepts an array of glob patterns to locate your component files. You can use multiple patterns and negation to exclude specific files or directories.
+
+**Multiple patterns:**
+
+```js
+export default buildConfig({
+  components: ['./src/components/*.tsx', './src/components/**/*.tsx'],
+});
+```
+
+**Excluding specific content types:**
+
+Use the `!` prefix to exclude specific content types from being synced to the CMS. This is useful when you have components that define content types but shouldn't be pushed to the CMS (Like test content types).
+
+```js
+export default buildConfig({
+  components: [
+    './src/components/**/*.tsx',
+    '!./src/components/layouts/**', // Exclude layout components
+    '!./src/components/shared/**', // Exclude shared utility components
+  ],
+});
+```
+
+**Common exclusion patterns:**
+
+```js
+export default buildConfig({
+  components: [
+    './src/components/**/*.tsx',
+    '!./src/components/internal/**', // Exclude internal-only components
+    '!./src/components/deprecated/**', // Exclude deprecated components
+    '!./src/components/Header.tsx', // Exclude specific files
+  ],
+});
+```
+
+Negation patterns are processed in order, so place them after the inclusion patterns. The CLI uses these patterns to scan for content type definitions and display templates, then syncs only the matched files to your CMS instance.
+
 **Optional: Property Groups**
 
 Property groups help organize your content type properties in the CMS editor. Add them to your configuration if you want to group related fields together:
