@@ -72,20 +72,20 @@ function Teaser({ content, displaySettings }: TeaserProps) {
         <Link
           {...pa('link')}
           href={content.link.default}
-          className="cursor-pointer"
+          className="block h-[calc(100%-1rem)] cursor-pointer mb-4"
         >
           {children}
         </Link>
       );
     }
-    return children;
+    return <div className="h-[calc(100%-1rem)] mb-4">{children}</div>;
   };
 
   // Horizontal layout
   if (displaySettings?.orientation === 'horizontal') {
     const horizontalContent = (
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="flex flex-col md:flex-row">
+      <div className="h-full max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="flex flex-col md:flex-row flex-1">
           {content.image?.url.default && (
             <div
               className="md:w-1/2 h-64 md:h-auto overflow-hidden"
@@ -121,7 +121,7 @@ function Teaser({ content, displaySettings }: TeaserProps) {
 
   // Vertical layout (default)
   const verticalContent = (
-    <div className="max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="h-full max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden flex flex-col">
       {content.image?.url.default && (
         <div className="h-48 w-full overflow-hidden" {...pa('image')}>
           <img
