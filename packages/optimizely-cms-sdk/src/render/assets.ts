@@ -285,13 +285,13 @@ export function isRawFileAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function MediaComponent({ content }) {
- *   const { isDamAsset, getAssetType } = damAssets(content);
+ *   const { isDamAsset, getDamAssetType } = damAssets(content);
  *
  *   if (!isDamAsset(content.media)) {
  *     return <div>No media uploaded</div>;
  *   }
  *
- *   const assetType = getAssetType(content.media);
+ *   const assetType = getDamAssetType(content.media);
  *   return <div>Valid {assetType} asset detected</div>;
  * }
  * ```
@@ -319,8 +319,8 @@ export function isDamAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function AssetRenderer({ content }) {
- *   const { getSrcset, getAlt, getAssetType } = damAssets(content);
- *   const assetType = getAssetType(content.media);
+ *   const { getSrcset, getAlt, getDamAssetType } = damAssets(content);
+ *   const assetType = getDamAssetType(content.media);
  *
  *   switch (assetType) {
  *     case 'image':
@@ -351,13 +351,13 @@ export function isDamAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function AssetInfo({ content }) {
- *   const { getAssetType } = damAssets(content);
- *   const type = getAssetType(content.media);
+ *   const { getDamAssetType } = damAssets(content);
+ *   const type = getDamAssetType(content.media);
  *   return <span>Asset type: {type}</span>;
  * }
  * ```
  */
-export function getAssetType(
+export function getDamAssetType(
   property: InferredContentReference | null | undefined,
 ): 'image' | 'video' | 'file' | 'unknown' {
   if (isImageAsset(property)) return 'image';
@@ -373,7 +373,7 @@ export function getAssetType(
  * returned automatically includes preview tokens from the content's __context when in edit mode.
  *
  * @param content - Content object with optional __context for preview tokens
- * @returns Object containing utility functions: getSrcset, getAlt, isImageAsset, isVideoAsset, isRawFileAsset, isDamAsset, getAssetType
+ * @returns Object containing utility functions: getSrcset, getAlt, isImageAsset, isVideoAsset, isRawFileAsset, isDamAsset, getDamAssetType
  *
  * @example
  * ```tsx
@@ -402,7 +402,7 @@ export function damAssets<T extends Record<string, any>>(
     getSrcset: (property: InferredContentReference | null | undefined) =>
       getSrcset(content, property),
     getAlt,
-    getAssetType,
+    getDamAssetType,
     isImageAsset,
     isVideoAsset,
     isRawFileAsset,
