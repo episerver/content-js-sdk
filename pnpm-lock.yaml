@@ -83,7 +83,7 @@ importers:
         specifier: ^4.2.10
         version: 4.2.10
       '@optimizely/cms-sdk':
-        specifier: workspace:^0.1.0-alpha.9
+        specifier: workspace:^1.0.0
         version: link:../optimizely-cms-sdk
       chalk:
         specifier: ^5.4.1
@@ -157,8 +157,8 @@ importers:
   samples/fx-integration:
     dependencies:
       '@optimizely/cms-sdk':
-        specifier: 0.1.0-alpha.10
-        version: 0.1.0-alpha.10(react@19.1.0)
+        specifier: workspace:^1.0.0
+        version: link:../../packages/optimizely-cms-sdk
       '@optimizely/optimizely-sdk':
         specifier: ^6.1.0
         version: 6.1.0
@@ -203,8 +203,8 @@ importers:
         specifier: ^0.11.0
         version: 0.11.0
       '@optimizely/cms-sdk':
-        specifier: 0.1.0-alpha.10
-        version: 0.1.0-alpha.10(react@19.1.0)
+        specifier: workspace:^1.0.0
+        version: link:../../packages/optimizely-cms-sdk
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
@@ -243,8 +243,8 @@ importers:
   samples/hello-world:
     dependencies:
       '@optimizely/cms-sdk':
-        specifier: 0.1.0-alpha.10
-        version: 0.1.0-alpha.10(react@19.1.0)
+        specifier: workspace:^1.0.0
+        version: link:../../packages/optimizely-cms-sdk
       next:
         specifier: 15.4.10
         version: 15.4.10(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -280,7 +280,7 @@ importers:
   samples/nextjs-template:
     dependencies:
       '@optimizely/cms-sdk':
-        specifier: workspace:^0.1.0-alpha.5
+        specifier: workspace:^1.0.0
         version: link:../../packages/optimizely-cms-sdk
       next:
         specifier: 15.2.8
@@ -1545,14 +1545,6 @@ packages:
 
   '@octokit/types@13.10.0':
     resolution: {integrity: sha512-ifLaO34EbbPj0Xgro4G5lP5asESjwHracYJvVaPIyXMuiuXLlhic3S47cBdTb+jfODkTE5YtGCLt3Ay3+J97sA==}
-
-  '@optimizely/cms-sdk@0.1.0-alpha.10':
-    resolution: {integrity: sha512-HJZWlSv2DLM9wPXgsS7J35dVeI5tdG9poSa3iTmTIuZFcKtkQJR9CAw/AsFDd0q8bLmnDArPY2ZuCqknkFH2kQ==}
-    peerDependencies:
-      react: ^19.0.0
-    peerDependenciesMeta:
-      react:
-        optional: true
 
   '@optimizely/optimizely-sdk@6.1.0':
     resolution: {integrity: sha512-p678Osy8QUiue7kdHiujeuKHHwNL82BPH2ubXeaFX8oJ4PASnSHzcVhpaCBI7GjuRPz3ZYVlZqL/Kylc3AO70Q==}
@@ -6554,10 +6546,6 @@ snapshots:
   '@octokit/types@13.10.0':
     dependencies:
       '@octokit/openapi-types': 24.2.0
-
-  '@optimizely/cms-sdk@0.1.0-alpha.10(react@19.1.0)':
-    optionalDependencies:
-      react: 19.1.0
 
   '@optimizely/optimizely-sdk@6.1.0':
     dependencies:
