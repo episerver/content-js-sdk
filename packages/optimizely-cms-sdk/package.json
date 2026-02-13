@@ -1,6 +1,6 @@
 {
   "name": "@optimizely/cms-sdk",
-  "version": "0.1.0-alpha.17",
+  "version": "1.0.0",
   "description": "JavaScript tools for integration with Optimizely CMS",
   "type": "module",
   "main": "./dist/index.js",
