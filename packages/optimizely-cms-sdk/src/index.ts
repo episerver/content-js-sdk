@@ -6,6 +6,7 @@ export {
   isContentType,
   isDisplayTemplate,
   initContentTypeRegistry,
+  getContentTypeByBaseType,
   initDisplayTemplateRegistry,
   PropertyGroupType,
 } from './model/index.js';
