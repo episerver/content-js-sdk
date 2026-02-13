@@ -49,8 +49,9 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 function News({ content }: NewsPageProps) {
   const { pa, src } = getPreviewUtils(content);
-  const { getAlt } = damAssets(content);
-  const image = src(content.image);
+  const { getAlt, getSrcset, isImageAsset, isVideoAsset, isRawFileAsset } =
+    damAssets(content);
+
   return (
     <main className="bg-white">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12">
@@ -80,7 +81,16 @@ function News({ content }: NewsPageProps) {
               className="space-y-4 sm:space-y-6"
             />
 
-            {image ? <img {...pa('image')} src={image} alt={getAlt(content.image, 'Teaser Image')} className="h-auto w-full rounded-lg object-cover sm:max-h-100 md:max-h-125 lg:max-h-150"/> : null}
+            {/* Media Asset - handles images, videos, and files */}
+            {isImageAsset(content.image) && (
+              <img
+                {...pa('image')}
+                src={src(content.image)}
+                srcSet={getSrcset(content.image)}
+                alt={getAlt(content.image, 'Teaser Image')}
+                className="h-auto w-full rounded-lg object-cover sm:max-h-100 md:max-h-125 lg:max-h-150"
+              />
+            )}
           </div>
 
           <OptimizelyComposition
