@@ -49,8 +49,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
 function News({ content }: NewsPageProps) {
   const { pa, src } = getPreviewUtils(content);
-  const { getAlt, getSrcset, isImageAsset, isVideoAsset, isRawFileAsset } =
-    damAssets(content);
+  const { getAlt, getSrcset, isDamImageAsset } = damAssets(content);
 
   return (
     <main className="bg-white">
@@ -82,7 +81,7 @@ function News({ content }: NewsPageProps) {
             />
 
             {/* Media Asset - handles images, videos, and files */}
-            {isImageAsset(content.image) && (
+            {isDamImageAsset(content.image) && (
               <img
                 {...pa('image')}
                 src={src(content.image)}
