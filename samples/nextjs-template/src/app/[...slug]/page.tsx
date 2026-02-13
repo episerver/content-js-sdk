@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GraphClient } from '@optimizely/cms-sdk';
+import { GraphClient, getContentTypeByBaseType } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { notFound } from 'next/navigation';
 import React from 'react';
@@ -25,12 +25,18 @@ export async function generateStaticParams() {
     return [];
   }
 
+  // Get all registered page types (baseType: '_page') from the content type registry
+  const registeredPageTypes = getContentTypeByBaseType('_page').map(
+    (contentType) => contentType.key
+  );
+
   // Note: in this sample site, we do not use pagination for querying pages.
   // If a website has more than 100 pages, only 100 will be statically generated
   const query = `
   query GetPosts {
     _Page(limit: 100) {
       items {
+        __typename
         _metadata {
           url {
             base
@@ -51,6 +57,10 @@ export async function generateStaticParams() {
     .filter(
       // Get only pages for current application
       (item: any) => item?._metadata?.url?.base === process.env.APPLICATION_HOST
+    )
+    .filter(
+      // Only include pages with registered components
+      (item: any) => registeredPageTypes.includes(item?.__typename)
     )
     .map((item: any) => item?._metadata?.url?.default)
     .filter((path?: string) => typeof path === 'string')
