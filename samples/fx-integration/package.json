@@ -1,6 +1,6 @@
 {
   "name": "fx-integration",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --experimental-https",
@@ -11,7 +11,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@optimizely/cms-sdk": "0.1.0-alpha.10",
+    "@optimizely/cms-sdk": "1.0.0",
     "@optimizely/optimizely-sdk": "^6.1.0",
     "nanoid": "^5.1.5",
     "next": "15.5.9",
