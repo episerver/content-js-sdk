@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import Image from 'next/image';
 
@@ -23,11 +23,11 @@ export const LocationContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof LocationContentType>;
+  content: ContentProps<typeof LocationContentType>;
 };
 
-export default function Location({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function Location({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <section className="location">
@@ -39,16 +39,16 @@ export default function Location({ opti }: Props) {
         height={20}
       />
       <h1 className="location__name" {...pa('name')}>
-        {opti.name}
+        {content.name}
       </h1>
       <p className="location__city" {...pa('city')}>
-        {opti.city}
+        {content.city}
       </p>
       <p className="location__address" {...pa('address')}>
-        {opti.address}
+        {content.address}
       </p>
       <p className="location__phone" {...pa('phone')}>
-        {opti.phone}
+        {content.phone}
       </p>
     </section>
   );

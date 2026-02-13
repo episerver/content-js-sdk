@@ -1,4 +1,4 @@
-import { DisplaySettingsType, Infer } from '../infer.js';
+import { DisplaySettingsType, ContentProps } from '../infer.js';
 import { BaseTypes } from './contentTypes.js';
 
 // section node types

@@ -1,4 +1,4 @@
-import { contentType, damAssets, Infer } from '@optimizely/cms-sdk';
+import { contentType, damAssets, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -21,27 +21,28 @@ export const SmallFeatureContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof SmallFeatureContentType>;
+  content: ContentProps<typeof SmallFeatureContentType>;
 };
 
-export default function SmallFeature({ opti }: Props) {
-  const { pa, src } = getPreviewUtils(opti);
-  const { getAlt } = damAssets(opti);
+export default function SmallFeature({ content }: Props) {
+  const { pa, src } = getPreviewUtils(content);
+  const { getAlt } = damAssets(content);
+  const imageUrl = src(content.image);
 
   return (
     <div className="small-feature-grid">
-      <h3 {...pa('heading')}>{opti.heading}</h3>
+      <h3 {...pa('heading')}>{content.heading}</h3>
       <div style={{ position: 'relative' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {(opti.image?.item?.Url ?? opti.image?.url.default) && (
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={src(opti.image)}
-            alt={getAlt(opti.image, 'image')}
+            src={imageUrl}
+            alt={getAlt(content.image, 'image')}
             {...pa('image')}
           />
-        )}
+        ) : null}
       </div>
-      <RichText content={opti.body?.json} />
+      <RichText content={content.body?.json} />
     </div>
   );
 }

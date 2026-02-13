@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 export const CallToActionContentType = contentType({
   key: 'CallToAction',
@@ -16,15 +16,15 @@ export const CallToActionContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof CallToActionContentType>;
+  content: ContentProps<typeof CallToActionContentType>;
 };
 
-export default function CallToAction({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function CallToAction({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
-    <a href={opti.link ?? '#'} {...pa('label')}>
-      {opti.label}
+    <a href={content.link ?? '#'} {...pa('label')}>
+      {content.label}
     </a>
   );
 }

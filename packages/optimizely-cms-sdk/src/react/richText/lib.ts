@@ -120,7 +120,8 @@ export type LeafMap = BaseLeafMap<LeafRenderer>;
  * React-specific RichText props
  */
 export interface RichTextProps
-  extends RichTextPropsBase<ElementRenderer, LeafRenderer> {}
+  extends RichTextPropsBase<ElementRenderer, LeafRenderer>,
+    Omit<React.HTMLAttributes<HTMLDivElement>, 'content'> {}
 
 /**
  * Maps HTML attribute names to React JSX attribute names

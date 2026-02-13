@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -24,18 +24,16 @@ export const ArticleContentType = contentType({
 });
 
 type ArticlePageProps = {
-  opti: Infer<typeof ArticleContentType>;
+  content: ContentProps<typeof ArticleContentType>;
 };
 
-function Article({ opti }: ArticlePageProps) {
-  const { pa } = getPreviewUtils(opti);
+function Article({ content }: ArticlePageProps) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div>
-      <h1 {...pa('title')}>{opti.title}</h1>
-      <p {...pa('description')}>{opti.description}</p>
-      <div>
-        <RichText {...pa('body')} content={opti.body?.json} />
-      </div>
+      <h1 {...pa('title')}>{content.title}</h1>
+      <p {...pa('description')}>{content.description}</p>
+      <RichText {...pa('body')} content={content.body?.json} />
     </div>
   );
 }

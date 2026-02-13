@@ -1,4 +1,9 @@
 import type { InferredContentReference } from '../infer.js';
+import type {
+  PublicImageAsset,
+  PublicVideoAsset,
+  PublicRawFileAsset,
+} from '../model/assets.js';
 import { appendToken } from '../util/preview.js';
 
 /**
@@ -11,7 +16,7 @@ import { appendToken } from '../util/preview.js';
  */
 function appendPreviewTokenToRenditions(
   input: InferredContentReference | null | undefined,
-  previewToken: string | undefined
+  previewToken: string | undefined,
 ): InferredContentReference | null | undefined {
   if (!input || !previewToken) return input;
 
@@ -40,21 +45,21 @@ function appendPreviewTokenToRenditions(
  * - Adds preview tokens automatically when in edit mode
  * - Returns undefined if there's no image or no renditions (attribute won't be rendered)
  *
- * @param opti - Your content object with __context for preview tokens
- * @param property - The image reference from your content (e.g., opti.image)
+ * @param content - Your content object with __context for preview tokens
+ * @param property - The image reference from your content (e.g., content.image)
  * @returns A srcset string like "url1 100w, url2 500w" or undefined if no renditions
  *
  * @example
  * ```tsx
  * import { damAssets } from '@optimizely/cms-sdk';
  *
- * export default function MyComponent({ opti }) {
- *   const { getSrcset } = damAssets(opti);
+ * export default function MyComponent({ content }) {
+ *   const { getSrcset } = damAssets(content);
  *
  *   return (
  *     <img
- *       src={opti.image?.item?.Url}
- *       srcSet={getSrcset(opti.image)}
+ *       src={content.image?.item?.Url}
+ *       srcSet={getSrcset(content.image)}
  *       sizes="(max-width: 768px) 100vw, 50vw"
  *     />
  *   );
@@ -64,16 +69,16 @@ function appendPreviewTokenToRenditions(
  * @example
  * Works with any image property:
  * ```tsx
- * const { getSrcset, getAlt } = damAssets(opti);
- * <img srcSet={getSrcset(opti.heroImage)} alt="Hero" />
+ * const { getSrcset, getAlt } = damAssets(content);
+ * <img srcSet={getSrcset(content.heroImage)} alt="Hero" />
  * ```
  */
 export function getSrcset<T extends Record<string, any>>(
-  opti: T & { __context?: { preview_token?: string } },
-  property: InferredContentReference | null | undefined
+  content: T & { __context?: { preview_token?: string } },
+  property: InferredContentReference | null | undefined,
 ): string | undefined {
   const input = property;
-  const previewToken = opti?.__context?.preview_token;
+  const previewToken = content?.__context?.preview_token;
 
   // Apply preview token to renditions if provided
   const processedInput = previewToken
@@ -121,27 +126,27 @@ export function getSrcset<T extends Record<string, any>>(
  * @example
  * With a AltText present in the asset:
  * ```tsx
- * const { getAlt } = damAssets(opti);
- * <img alt={getAlt(opti.image)} />
+ * const { getAlt } = damAssets(content);
+ * <img alt={getAlt(content.image)} />
  * ```
  *
  * @example
  * Using a custom fallback:
  * ```tsx
- * const { getAlt } = damAssets(opti);
- * <img alt={getAlt(opti.image, 'Hero Image')} />
+ * const { getAlt } = damAssets(content);
+ * <img alt={getAlt(content.image, 'Hero Image')} />
  * ```
  *
  * @example
  * Explicitly marking an image as decorative:
  * ```tsx
- * const { getAlt } = damAssets(opti);
- * <img alt={getAlt(opti.icon)} /> // Will be alt="" if no AltText exists
+ * const { getAlt } = damAssets(content);
+ * <img alt={getAlt(content.icon)} /> // Will be alt="" if no AltText exists
  * ```
  */
 export function getAlt(
   input: InferredContentReference | null | undefined,
-  fallback: string = ''
+  fallback: string = '',
 ): string {
   if (!input) return fallback;
 
@@ -155,47 +160,254 @@ export function getAlt(
 }
 
 /**
- * A helper that gives you pre-configured getSrcset and getAlt functions.
+ * Type guard that checks if a content reference is an image asset (cmp_PublicImageAsset).
  *
- * Use this when you want to avoid passing opti around everywhere.
- * The returned getSrcset already knows about your preview tokens.
+ * This function provides TypeScript type narrowing, allowing safe access to image-specific
+ * properties such as Renditions, AltText, Width, Height, and FocalPoint after the check.
  *
- * @param opti - Your content object
- * @returns Helper functions for working with your images
+ * @param property - Content reference to check
+ * @returns True if the property is an image asset, with TypeScript type narrowing applied
  *
  * @example
  * ```tsx
  * import { damAssets } from '@optimizely/cms-sdk';
  *
- * export default function MyComponent({ opti }) {
- *   const { getSrcset, getAlt } = damAssets(opti);
+ * export default function MediaComponent({ content }) {
+ *   const { isDamImageAsset } = damAssets(content);
  *
- *   return (
- *     <img
- *       src={opti.image?.item?.Url}
- *       srcSet={getSrcset(opti.image)}
- *       sizes="(max-width: 768px) 100vw, 50vw"
- *       alt={getAlt(opti.image, 'Hero image')}
- *     />
- *   );
+ *   if (isDamImageAsset(content.media)) {
+ *     // TypeScript knows content.media.item is PublicImageAsset
+ *     const renditions = content.media.item.Renditions;
+ *     const altText = content.media.item.AltText;
+ *     const width = content.media.item.Width;
+ *
+ *     return <img src={content.media.item.Url} alt={altText} />;
+ *   }
+ *   return null;
+ * }
+ * ```
+ */
+export function isDamImageAsset(
+  property: InferredContentReference | null | undefined,
+): property is InferredContentReference & { item: PublicImageAsset } {
+  return property?.item?.__typename === 'cmp_PublicImageAsset';
+}
+
+/**
+ * Type guard that checks if a content reference is a video asset (cmp_PublicVideoAsset).
+ *
+ * This function provides TypeScript type narrowing, allowing safe access to video-specific
+ * properties such as Renditions and AltText after the check.
+ *
+ * @param property - Content reference to check
+ * @returns True if the property is a video asset, with TypeScript type narrowing applied
+ *
+ * @example
+ * ```tsx
+ * import { damAssets } from '@optimizely/cms-sdk';
+ *
+ * export default function MediaComponent({ content }) {
+ *   const { isDamVideoAsset } = damAssets(content);
+ *
+ *   if (isDamVideoAsset(content.media)) {
+ *     // TypeScript knows content.media.item is PublicVideoAsset
+ *     const videoUrl = content.media.item.Url;
+ *     const altText = content.media.item.AltText;
+ *     const renditions = content.media.item.Renditions;
+ *
+ *     return (
+ *       <video src={videoUrl} controls>
+ *         {altText && <track kind="captions" label={altText} />}
+ *       </video>
+ *     );
+ *   }
+ *   return null;
+ * }
+ * ```
+ */
+export function isDamVideoAsset(
+  property: InferredContentReference | null | undefined,
+): property is InferredContentReference & { item: PublicVideoAsset } {
+  return property?.item?.__typename === 'cmp_PublicVideoAsset';
+}
+
+/**
+ * Type guard that checks if a content reference is a raw file asset (cmp_PublicRawFileAsset).
+ *
+ * This function provides TypeScript type narrowing, allowing safe access to file-specific
+ * properties such as Url, Title, Description, and MimeType after the check. Raw file assets
+ * represent general files like PDFs, documents, or other downloadable content.
+ *
+ * @param property - Content reference to check
+ * @returns True if the property is a raw file asset, with TypeScript type narrowing applied
+ *
+ * @example
+ * ```tsx
+ * import { damAssets } from '@optimizely/cms-sdk';
+ *
+ * export default function MediaComponent({ content }) {
+ *   const { isDamRawFileAsset } = damAssets(content);
+ *
+ *   if (isDamRawFileAsset(content.media)) {
+ *     // TypeScript knows content.media.item is PublicRawFileAsset
+ *     const fileUrl = content.media.item.Url;
+ *     const title = content.media.item.Title;
+ *     const mimeType = content.media.item.MimeType;
+ *
+ *     return (
+ *       <a href={fileUrl} download>
+ *         {title || 'Download File'} ({mimeType})
+ *       </a>
+ *     );
+ *   }
+ *   return null;
+ * }
+ * ```
+ */
+export function isDamRawFileAsset(
+  property: InferredContentReference | null | undefined,
+): property is InferredContentReference & { item: PublicRawFileAsset } {
+  return property?.item?.__typename === 'cmp_PublicRawFileAsset';
+}
+
+/**
+ * Checks if a content reference is any type of DAM asset (image, video, or file).
+ *
+ * This is useful for validating that a content reference contains a valid DAM asset
+ * before attempting to render or process it. Returns false for null, undefined, or
+ * content references without a valid asset item.
+ *
+ * @param property - Content reference to check
+ * @returns True if the property is any type of DAM asset (image, video, or file)
+ *
+ * @example
+ * ```tsx
+ * import { damAssets } from '@optimizely/cms-sdk';
+ *
+ * export default function MediaComponent({ content }) {
+ *   const { isDamAsset, getDamAssetType } = damAssets(content);
+ *
+ *   if (!isDamAsset(content.media)) {
+ *     return <div>No media uploaded</div>;
+ *   }
+ *
+ *   const assetType = getDamAssetType(content.media);
+ *   return <div>Valid {assetType} asset detected</div>;
+ * }
+ * ```
+ */
+export function isDamAsset(
+  property: InferredContentReference | null | undefined,
+): boolean {
+  return (
+    isDamImageAsset(property) ||
+    isDamVideoAsset(property) ||
+    isDamRawFileAsset(property)
+  );
+}
+
+/**
+ * Returns the type of a DAM asset as a string literal.
+ *
+ * This function is useful for implementing switch-case logic or displaying the asset type
+ * to users. Returns 'unknown' for null, undefined, or unrecognized asset types.
+ *
+ * @param property - Content reference to check
+ * @returns Asset type: 'image', 'video', 'file', or 'unknown'
+ *
+ * @example
+ * Switch-case pattern for rendering different asset types:
+ * ```tsx
+ * import { damAssets } from '@optimizely/cms-sdk';
+ *
+ * export default function AssetRenderer({ content }) {
+ *   const { getSrcset, getAlt, getDamAssetType } = damAssets(content);
+ *   const assetType = getDamAssetType(content.media);
+ *
+ *   switch (assetType) {
+ *     case 'image':
+ *       return (
+ *         <img
+ *           src={content.media.item.Url}
+ *           srcSet={getSrcset(content.media)}
+ *           alt={getAlt(content.media, 'Image')}
+ *         />
+ *       );
+ *     case 'video':
+ *       return <video src={content.media.item.Url} controls />;
+ *     case 'file':
+ *       return (
+ *         <a href={content.media.item.Url} download>
+ *           {content.media.item.Title || 'Download'}
+ *         </a>
+ *       );
+ *     default:
+ *       return <p>No media available</p>;
+ *   }
  * }
  * ```
  *
  * @example
- * Works great with multiple images:
+ * Display asset type information:
  * ```tsx
- * const { getSrcset, getAlt } = damAssets(opti);
+ * import { damAssets } from '@optimizely/cms-sdk';
  *
- * <img srcSet={getSrcset(opti.heroImage)} alt={getAlt(opti.heroImage)} />
- * <img srcSet={getSrcset(opti.thumbnail)} alt={getAlt(opti.thumbnail, 'Thumbnail')} />
+ * export default function AssetInfo({ content }) {
+ *   const { getDamAssetType } = damAssets(content);
+ *   const type = getDamAssetType(content.media);
+ *   return <span>Asset type: {type}</span>;
+ * }
+ * ```
+ */
+export function getDamAssetType(
+  property: InferredContentReference | null | undefined,
+): 'image' | 'video' | 'file' | 'unknown' {
+  if (isDamImageAsset(property)) return 'image';
+  if (isDamVideoAsset(property)) return 'video';
+  if (isDamRawFileAsset(property)) return 'file';
+  return 'unknown';
+}
+
+/**
+ * Creates a helper object with utility functions for working with Digital Asset Management (DAM) assets.
+ *
+ * Returns helper functions for asset manipulation and type checking. The `getSrcset` function
+ * returned automatically includes preview tokens from the content's __context when in edit mode.
+ *
+ * @param content - Content object with optional __context for preview tokens
+ * @returns Object containing utility functions: getSrcset, getAlt, isDamImageAsset, isDamVideoAsset, isDamRawFileAsset, isDamAsset, getDamAssetType
+ *
+ * @example
+ * ```tsx
+ * import { damAssets } from '@optimizely/cms-sdk';
+ *
+ * export default function MyComponent({ content }) {
+ *   const { getSrcset, getAlt, isDamImageAsset } = damAssets(content);
+ *
+ *   if (isDamImageAsset(content.image)) {
+ *     return (
+ *       <img
+ *         src={content.image.item.Url}
+ *         srcSet={getSrcset(content.image)}
+ *         alt={getAlt(content.image, 'Hero image')}
+ *       />
+ *     );
+ *   }
+ *   return null;
+ * }
  * ```
  */
 export function damAssets<T extends Record<string, any>>(
-  opti: T & { __context?: { preview_token?: string } }
+  content: T & { __context?: { preview_token?: string } },
 ) {
   return {
     getSrcset: (property: InferredContentReference | null | undefined) =>
-      getSrcset(opti, property),
+      getSrcset(content, property),
     getAlt,
+    getDamAssetType,
+    isDamImageAsset,
+    isDamVideoAsset,
+    isDamRawFileAsset,
+    isDamAsset,
   };
 }

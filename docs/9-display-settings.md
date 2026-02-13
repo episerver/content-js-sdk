@@ -15,7 +15,11 @@ Display templates can be associated with three different targets:
 Here's how to create a display template for a component:
 
 ```tsx
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 
 export const TileContentType = contentType({
   key: 'Tile',
@@ -188,23 +192,23 @@ settings: {
 
 ## Using Display Settings in Components
 
-To use display settings in your component, add a `displaySettings` prop typed with `Infer<typeof YourDisplayTemplate>`:
+To use display settings in your component, add a `displaySettings` prop typed with `ContentProps<typeof YourDisplayTemplate>`:
 
 ```tsx
-import { Infer } from '@optimizely/cms-sdk';
+import { ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 type Props = {
-  opti: Infer<typeof TileContentType>;
-  displaySettings?: Infer<typeof SquareDisplayTemplate>;
+  content: ContentProps<typeof TileContentType>;
+  displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
 };
 
-export function SquareTile({ opti, displaySettings }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export function SquareTile({ content, displaySettings }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <div className="square-tile">
-      <h4 {...pa('title')}>{opti.title}</h4>
+      <h4 {...pa('title')}>{content.title}</h4>
       <p
         style={{
           color: displaySettings?.color,
@@ -213,7 +217,7 @@ export function SquareTile({ opti, displaySettings }: Props) {
         }}
         {...pa('description')}
       >
-        {opti.description}
+        {content.description}
       </p>
     </div>
   );
@@ -233,22 +237,22 @@ You can have a default component and variants that use different display templat
 
 ```tsx
 // Default component without display settings
-export default function Tile({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function Tile({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="tile">
-      <h1 {...pa('title')}>{opti.title}</h1>
-      <p {...pa('description')}>{opti.description}</p>
+      <h1 {...pa('title')}>{content.title}</h1>
+      <p {...pa('description')}>{content.description}</p>
     </div>
   );
 }
 
 // Variant component with display settings
-export function SquareTile({ opti, displaySettings }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export function SquareTile({ content, displaySettings }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="square-tile">
-      <h4 {...pa('title')}>{opti.title}</h4>
+      <h4 {...pa('title')}>{content.title}</h4>
       <p
         style={{
           color: displaySettings?.color,
@@ -257,7 +261,7 @@ export function SquareTile({ opti, displaySettings }: Props) {
         }}
         {...pa('description')}
       >
-        {opti.description}
+        {content.description}
       </p>
     </div>
   );
@@ -362,7 +366,11 @@ The tag name in the display template matches either the key in the `tags` object
 Here's a complete example bringing everything together:
 
 ```tsx
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 // Content Type
@@ -409,28 +417,28 @@ export const SquareDisplayTemplate = displayTemplate({
 
 // Component Types
 type Props = {
-  opti: Infer<typeof TileContentType>;
-  displaySettings?: Infer<typeof SquareDisplayTemplate>;
+  content: ContentProps<typeof TileContentType>;
+  displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
 };
 
 // Default Component
-export default function Tile({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function Tile({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className="tile">
-      <h1 {...pa('title')}>{opti.title}</h1>
-      <p {...pa('description')}>{opti.description}</p>
+      <h1 {...pa('title')}>{content.title}</h1>
+      <p {...pa('description')}>{content.description}</p>
     </div>
   );
 }
 
 // Variant Component with Display Settings
-export function SquareTile({ opti, displaySettings }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export function SquareTile({ content, displaySettings }: Props) {
+  const { pa } = getPreviewUtils(content);
 
   return (
     <div className="square-tile">
-      <h4 {...pa('title')}>{opti.title}</h4>
+      <h4 {...pa('title')}>{content.title}</h4>
       <p
         style={{
           color: displaySettings?.color,
@@ -439,7 +447,7 @@ export function SquareTile({ opti, displaySettings }: Props) {
         }}
         {...pa('description')}
       >
-        {opti.description}
+        {content.description}
       </p>
     </div>
   );

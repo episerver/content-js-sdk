@@ -1,5 +1,6 @@
 import React from 'react';
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
+import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const ContactContentType = contentType({
   key: 'Contact',
@@ -32,43 +33,53 @@ export const ContactContentType = contentType({
 });
 
 export type ContactProps = {
-  opti: Infer<typeof ContactContentType>;
+  content: ContentProps<typeof ContactContentType>;
 };
 
-function Contact({ opti }: ContactProps) {
+function Contact({ content }: ContactProps) {
+  const { pa, src } = getPreviewUtils(content);
+  const image = src(content.image);
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 max-w-md">
-      {opti.image?.url.default && (
-        <div className="mb-4">
-          <img
-            src={opti.image?.url.default}
-            alt={`${opti.name}'s Image`}
+      {content.image?.url.default && (
+        <div className="mb-4" {...pa('image')}>
+          {image ? (<img
+            src={image}
+            alt={`${content.name}'s Image`}
             className="w-full h-64 object-cover rounded-lg"
-          />
+          />):null}
         </div>
       )}
       <div className="space-y-3">
-        <h3 className="text-2xl font-bold text-gray-900 uppercase tracking-wide">
-          {opti.name}
+        <h3
+          {...pa('name')}
+          className="text-2xl font-bold text-gray-900 uppercase tracking-wide"
+        >
+          {content.name}
         </h3>
-        <p className="text-gray-700 text-base leading-relaxed">
-          {opti.description}
+        <p
+          {...pa('description')}
+          className="text-gray-700 text-base leading-relaxed"
+        >
+          {content.description}
         </p>
         <div className="space-y-2 pt-2">
-          {opti.email && (
+          {content.email && (
             <a
-              href={`mailto:${opti.email}`}
+              {...pa('email')}
+              href={`mailto:${content.email}`}
               className="text-teal-600 hover:text-teal-700 font-medium block transition-colors"
             >
-              {opti.email}
+              {content.email}
             </a>
           )}
-          {opti.phone && (
+          {content.phone && (
             <a
-              href={`tel:${opti.phone}`}
+              {...pa('phone')}
+              href={`tel:${content.phone}`}
               className="text-teal-600 hover:text-teal-700 font-medium block transition-colors"
             >
-              {opti.phone}
+              {content.phone}
             </a>
           )}
         </div>

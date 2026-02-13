@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { ArticleContentType } from './Article';
 
@@ -18,19 +18,19 @@ export const FAQContentType = contentType({
 });
 
 export type FAQProps = {
-  opti: Infer<typeof FAQContentType>;
+  content: ContentProps<typeof FAQContentType>;
 };
 
-export default function FAQ({ opti }: FAQProps) {
-  const { pa } = getPreviewUtils(opti);
+export default function FAQ({ content }: FAQProps) {
+  const { pa } = getPreviewUtils(content);
   return (
     <section className="about-us">
-      <h2>{opti.heading}</h2>
+      <h2>{content.heading}</h2>
       <div className="about-us-content">
         <div className="about-us-text">
           <div
             {...pa('body')}
-            dangerouslySetInnerHTML={{ __html: opti.body?.html ?? '' }}
+            dangerouslySetInnerHTML={{ __html: content.body?.html ?? '' }}
           />
         </div>
       </div>

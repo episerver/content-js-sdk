@@ -1,4 +1,8 @@
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
 import { SmallFeatureGridContentType } from './SmallFeatureGrid';
 import { VideoFeatureContentType } from './VideoFeature';
 import {
@@ -53,20 +57,20 @@ export const LandingSectionDisplayTemplate = displayTemplate({
 });
 
 type Props = {
-  opti: Infer<typeof LandingSectionContentType>;
+  content: ContentProps<typeof LandingSectionContentType>;
 };
 
-export default function LandingSection({ opti }: Props) {
-  const { pa } = getPreviewUtils(opti);
+export default function LandingSection({ content }: Props) {
+  const { pa } = getPreviewUtils(content);
   return (
     <section>
       <header className="landing-header">
-        <h2 {...pa('heading')}>{opti.heading}</h2>
-        <p {...pa('subtitle')}>{opti.subtitle}</p>
+        <h2 {...pa('heading')}>{content.heading}</h2>
+        <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
       <div {...pa('sections')}>
-        {(opti.sections ?? []).map((section, i) => (
-          <OptimizelyComponent opti={section} key={i} />
+        {(content.sections ?? []).map((section, i) => (
+          <OptimizelyComponent content={section} key={i} />
         ))}
       </div>
     </section>

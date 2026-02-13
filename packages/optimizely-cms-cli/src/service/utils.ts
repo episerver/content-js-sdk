@@ -54,6 +54,13 @@ function cleanType(obj: any) {
   if (obj !== null && '__type' in obj) delete obj.__type;
 }
 
+function cleanDisplayTemplate(obj: any) {
+  if (obj !== null) {
+    if ('__type' in obj) delete obj.__type;
+    if ('tag' in obj) delete obj.tag;
+  }
+}
+
 /**
  * Extract all `ContentType` and `DisplayTemplate` present in any property in `obj`
  *
@@ -72,7 +79,7 @@ export function extractMetaData(obj: unknown): {
         cleanType(value);
         contentTypeData.push(value);
       } else if (isDisplayTemplate(value)) {
-        cleanType(value);
+        cleanDisplayTemplate(value);
         displayTemplateData.push(value);
       }
     }

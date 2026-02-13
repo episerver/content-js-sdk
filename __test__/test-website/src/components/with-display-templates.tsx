@@ -2,10 +2,10 @@ import {
   BlankSectionContentType,
   contentType,
   displayTemplate,
-  Infer,
+  ContentProps,
 } from '@optimizely/cms-sdk';
 import {
-  OptimizelyExperience,
+  OptimizelyComposition,
   OptimizelyGridSection,
   StructureContainerProps,
 } from '@optimizely/cms-sdk/react/server';
@@ -99,41 +99,41 @@ export const dt6 = displayTemplate({
   tag: 'tagA',
 });
 
-type Props1 = { opti: Infer<typeof ct1> };
-type Props2 = { opti: Infer<typeof ct2> };
-type Props3 = { opti: Infer<typeof ct3> };
-type Props6 = { opti: Infer<typeof ct6> };
-type Props7 = { opti: Infer<typeof ct7> };
+type Props1 = { content: ContentProps<typeof ct1> };
+type Props2 = { content: ContentProps<typeof ct2> };
+type Props3 = { content: ContentProps<typeof ct3> };
+type Props6 = { content: ContentProps<typeof ct6> };
+type Props7 = { content: ContentProps<typeof ct7> };
 
 type BlankSectionProps = {
-  opti: Infer<typeof BlankSectionContentType>;
+  content: ContentProps<typeof BlankSectionContentType>;
 };
 
-export function Component1({ opti }: Props1) {
-  return <div>This is Component1. p1: {opti.p1}</div>;
+export function Component1({ content }: Props1) {
+  return <div>This is Component1. p1: {content.p1}</div>;
 }
 
-export function Component1A({ opti }: Props1) {
-  return <div>This is Component1A. p1: {opti.p1}</div>;
+export function Component1A({ content }: Props1) {
+  return <div>This is Component1A. p1: {content.p1}</div>;
 }
 
-export function Component1B({ opti }: Props1) {
-  return <div>This is Component1B. p1: {opti.p1}</div>;
+export function Component1B({ content }: Props1) {
+  return <div>This is Component1B. p1: {content.p1}</div>;
 }
 
-export function Component2({ opti }: Props2) {
-  return <div>This is Component2. p2: {opti.p2}</div>;
+export function Component2({ content }: Props2) {
+  return <div>This is Component2. p2: {content.p2}</div>;
 }
 
-export function Component2A({ opti }: Props2) {
-  return <div>This is Component2A. p2: {opti.p2}</div>;
+export function Component2A({ content }: Props2) {
+  return <div>This is Component2A. p2: {content.p2}</div>;
 }
 
-export function Component3({ opti }: Props3) {
+export function Component3({ content }: Props3) {
   return (
     <div>
       <h1>This is an experience (Component3)</h1>
-      <OptimizelyExperience nodes={opti.composition.nodes ?? []} />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </div>
   );
 }
@@ -145,11 +145,11 @@ export function Component6({}: Props6) {
 export function Component7({}: Props7) {
   return <div>This is Component7</div>;
 }
-export function Component3C({ opti }: Props3) {
+export function Component3C({ content }: Props3) {
   return (
     <div>
       <h1>This is an experience (Component3C)</h1>
-      <OptimizelyExperience nodes={opti.composition.nodes ?? []} />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </div>
   );
 }
@@ -208,20 +208,24 @@ export function ColumnA({ children, node }: StructureContainerProps) {
   );
 }
 
-export function BlankSection({ opti }: BlankSectionProps) {
+export function BlankSection({ content }: BlankSectionProps) {
   return (
     <>
-      <h2>This is BlankSection {opti.key}</h2>
-      <OptimizelyGridSection nodes={opti.nodes} />
+      <h2>This is BlankSection {content.key}</h2>
+      <OptimizelyGridSection nodes={content.nodes} />
     </>
   );
 }
 
-export function BlankSection2({ opti }: BlankSectionProps) {
+export function BlankSection2({ content }: BlankSectionProps) {
   return (
     <>
-      <h2>This is BlankSection2 {opti.key}</h2>
-      <OptimizelyGridSection nodes={opti.nodes} row={Row2} column={Column2} />
+      <h2>This is BlankSection2 {content.key}</h2>
+      <OptimizelyGridSection
+        nodes={content.nodes}
+        row={Row2}
+        column={Column2}
+      />
     </>
   );
 }

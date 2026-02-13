@@ -1,4 +1,4 @@
-import { contentType, damAssets, Infer } from '@optimizely/cms-sdk';
+import { contentType, damAssets, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -27,33 +27,33 @@ export const VideoFeatureContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof VideoFeatureContentType>;
+  content: ContentProps<typeof VideoFeatureContentType>;
 };
 
-export default function VideoFeature({ opti }: Props) {
-  const { pa, src } = getPreviewUtils(opti);
-  const { getAlt } = damAssets(opti);
+export default function VideoFeature({ content }: Props) {
+  const { pa, src } = getPreviewUtils(content);
+  const { getAlt } = damAssets(content);
+  const imageUrl = src(content.thumbnail_image);
 
   return (
     <div className="video-feature">
       <div className="video">
-        <a href={opti.video_link ?? '#'} {...pa('video_link')}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {(opti.thumbnail_image?.item?.Url ??
-            opti.thumbnail_image?.url.default) && (
+        <a href={content.video_link ?? '#'} {...pa('video_link')}>
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={src(opti.thumbnail_image)}
-              alt={getAlt(opti.thumbnail_image, 'image')}
+              src={imageUrl}
+              alt={getAlt(content.thumbnail_image, 'image')}
               {...pa('thumbnail_image')}
             />
-          )}
+          ) : null}
           <span>▶︎</span>
-          <p {...pa('thumbnail_caption')}>{opti.thumbnail_caption}</p>
+          <p {...pa('thumbnail_caption')}>{content.thumbnail_caption}</p>
         </a>
       </div>
       <div>
-        <h3 {...pa('heading')}>{opti.heading}</h3>
-        <RichText content={opti.body?.json} />
+        <h3 {...pa('heading')}>{content.heading}</h3>
+        <RichText content={content.body?.json} />
       </div>
     </div>
   );

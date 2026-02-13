@@ -1,8 +1,8 @@
 import Image from 'next/image';
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   ComponentContainerProps,
-  OptimizelyExperience,
+  OptimizelyComposition,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
 import { HeroContentType } from './Hero';
@@ -20,7 +20,7 @@ export const LandingExperienceContentType = contentType({
 });
 
 type Props = {
-  opti: Infer<typeof LandingExperienceContentType>;
+  content: ContentProps<typeof LandingExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -28,29 +28,29 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <div {...pa(node)}>{children}</div>;
 }
 
-export default function LandingExperienceComponent({ opti }: Props) {
-  const { pa, src } = getPreviewUtils(opti);
-  const bg = src(opti.hero?.background);
+export default function LandingExperienceComponent({ content }: Props) {
+  const { pa, src } = getPreviewUtils(content);
+  const heroBackgroundUrl = src(content.hero?.background);
   return (
     <main>
-      {opti.hero && (
-        <header className={['uni-hero', opti.hero.theme].join(' ')}>
-          {bg ? (
+      {content.hero && (
+        <header className={['uni-hero', content.hero.theme].join(' ')}>
+          {heroBackgroundUrl && (
             <Image
-              src={bg}
+              src={heroBackgroundUrl}
               alt=""
               fill={true}
               {...pa('hero.background')}
             />
-          ) : null}
+          )}
           <div className="heading" {...pa('hero')}>
-            <h1 {...pa('hero.heading')}>{opti.hero.heading}</h1>
-            <p {...pa('hero.summary')}>{opti.hero.summary}</p>
+            <h1 {...pa('hero.heading')}>{content.hero.heading}</h1>
+            <p {...pa('hero.summary')}>{content.hero.summary}</p>
           </div>
         </header>
       )}
-      <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+      <OptimizelyComposition
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>

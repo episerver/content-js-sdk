@@ -31,7 +31,7 @@ export default async function Page({ searchParams }: Props) {
   });
 
   const response = await client.getPreviewContent(
-    (await searchParams) as PreviewParams
+    (await searchParams) as PreviewParams,
   );
 
   return (
@@ -40,7 +40,7 @@ export default async function Page({ searchParams }: Props) {
         src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
       ></Script>
       <PreviewComponent />
-      <OptimizelyComponent opti={response} />
+      <OptimizelyComponent content={response} />
     </>
   );
 }
@@ -62,7 +62,7 @@ Initialize the GraphClient with your credentials. These should be stored in your
 
 ```tsx
 const response = await client.getPreviewContent(
-  (await searchParams) as PreviewParams
+  (await searchParams) as PreviewParams,
 );
 ```
 
@@ -77,7 +77,7 @@ return (
       src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
     ></Script>
     <PreviewComponent />
-    <OptimizelyComponent opti={response} />
+    <OptimizelyComponent content={response} />
   </>
 );
 ```
@@ -168,7 +168,7 @@ The `pa` function (short for "preview attributes") enables visual editing in the
 Here's a complete component that demonstrates both `pa` for preview attributes and `src` for resolving content references:
 
 ```tsx
-import { contentType, damAssets, Infer } from '@optimizely/cms-sdk';
+import { contentType, damAssets, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
@@ -186,29 +186,29 @@ export const AboutUsContentType = contentType({
 });
 
 type AboutUsProps = {
-  opti: Infer<typeof AboutUsContentType>;
+  content: ContentProps<typeof AboutUsContentType>;
 };
 
-export default function AboutUs({ opti }: AboutUsProps) {
-  const { pa, src } = getPreviewUtils(opti);
-  const { getSrcset, getAlt } = damAssets(opti);
+export default function AboutUs({ content }: AboutUsProps) {
+  const { pa, src } = getPreviewUtils(content);
+  const { getSrcset, getAlt } = damAssets(content);
 
   return (
     <section className="about-us">
-      {opti.image && (
+      {content.image && (
         <div className="about-us-image">
           <img
             {...pa('image')}
-            src={src(opti.image)}
-            srcSet={getSrcset(opti.image)}
+            src={src(content.image)}
+            srcSet={getSrcset(content.image)}
             sizes="(max-width: 768px) 100vw, 50vw"
-            alt={getAlt(opti.image, 'About us image')}
+            alt={getAlt(content.image, 'About us image')}
           />
         </div>
       )}
-      <h2 {...pa('heading')}>{opti.heading}</h2>
+      <h2 {...pa('heading')}>{content.heading}</h2>
       <div {...pa('body')} className="about-us-content">
-        <RichText content={opti.body?.json} />
+        <RichText content={content.body?.json} />
       </div>
     </section>
   );

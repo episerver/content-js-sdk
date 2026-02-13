@@ -7,7 +7,7 @@ import {
 import css from './components.module.css';
 
 type Props = {
-  opti: Infer<typeof BlankExperienceContentType>;
+  content: Infer<typeof BlankExperienceContentType>;
 };
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
@@ -19,11 +19,11 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   );
 }
 
-export default function BlankExperience({ opti }: Props) {
+export default function BlankExperience({ content }: Props) {
   return (
     <main className={css.BlankExperience}>
       <OptimizelyExperience
-        nodes={opti.composition.nodes ?? []}
+        nodes={content.composition.nodes ?? []}
         ComponentWrapper={ComponentWrapper}
       />
     </main>

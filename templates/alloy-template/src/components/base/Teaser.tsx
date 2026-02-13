@@ -1,4 +1,9 @@
-import { contentType, displayTemplate, Infer } from '@optimizely/cms-sdk';
+import {
+  contentType,
+  displayTemplate,
+  ContentProps,
+} from '@optimizely/cms-sdk';
+import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import Link from 'next/link';
 
 export const TeaserContentType = contentType({
@@ -53,69 +58,86 @@ export const TeaserDisplayTemplate = displayTemplate({
 });
 
 type TeaserProps = {
-  opti: Infer<typeof TeaserContentType>;
+  content: ContentProps<typeof TeaserContentType>;
   displaySettings?: Record<string, string>;
 };
 
-function Teaser({ opti, displaySettings }: TeaserProps) {
+function Teaser({ content, displaySettings }: TeaserProps) {
+  const { pa, src } = getPreviewUtils(content);
+  const image = src(content.image);
   // Helper function to wrap content with link if available
-  const wrapWithLink = (content: React.ReactNode) => {
-    if (opti.link?.default) {
+  const wrapWithLink = (children: React.ReactNode) => {
+    if (content.link?.default) {
       return (
-        <Link href={opti.link.default} className="cursor-pointer">
-          {content}
+        <Link
+          {...pa('link')}
+          href={content.link.default}
+          className="block h-[calc(100%-1rem)] cursor-pointer mb-4"
+        >
+          {children}
         </Link>
       );
     }
-    return content;
+    return <div className="h-[calc(100%-1rem)] mb-4">{children}</div>;
   };
 
   // Horizontal layout
   if (displaySettings?.orientation === 'horizontal') {
-    const content = (
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="flex flex-col md:flex-row">
-          {opti.image?.url.default && (
-            <div className="md:w-1/2 h-64 md:h-auto overflow-hidden">
-              <img
-                src={opti.image?.url.default}
+    const horizontalContent = (
+      <div className="h-full max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div className="flex flex-col md:flex-row flex-1">
+          {content.image?.url.default && (
+            <div className="md:w-1/2 h-64 md:h-auto overflow-hidden" {...pa('image')}>
+              {image ? (<img
+                src={image}
                 alt="teaser_image"
                 className="w-full h-full object-cover"
-              />
+              />) : null}
             </div>
           )}
           <div className="md:w-1/2 p-8 flex flex-col justify-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 uppercase tracking-wide">
-              {opti.heading}
+            <h2
+              {...pa('heading')}
+              className="text-2xl font-bold text-gray-900 mb-4 uppercase tracking-wide"
+            >
+              {content.heading}
             </h2>
-            <blockquote className="text-gray-700 text-base leading-relaxed mb-4 italic">
-              "{opti.text}"
+            <blockquote
+              {...pa('text')}
+              className="text-gray-700 text-base leading-relaxed mb-4 italic"
+            >
+              "{content.text}"
             </blockquote>
           </div>
         </div>
       </div>
     );
 
-    return wrapWithLink(content);
+    return wrapWithLink(horizontalContent);
   }
 
   // Vertical layout (default)
   const verticalContent = (
-    <div className="max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
-      {opti.image?.url.default && (
-        <div className="h-48 w-full overflow-hidden">
+    <div className="h-full max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden flex flex-col">
+      {content.image?.url.default && (
+        <div className="h-48 w-full overflow-hidden" {...pa('image')}>
           <img
-            src={opti.image?.url.default}
+            src={content.image?.url.default}
             alt="teaser_image"
             className="w-full h-full object-cover"
           />
         </div>
       )}
       <div className="p-6 text-center">
-        <h2 className="text-xl font-bold text-gray-900 mb-3 uppercase tracking-wide">
-          {opti.heading}
+        <h2
+          {...pa('heading')}
+          className="text-xl font-bold text-gray-900 mb-3 uppercase tracking-wide"
+        >
+          {content.heading}
         </h2>
-        <p className="text-gray-600 text-sm leading-relaxed">{opti.text}</p>
+        <p {...pa('text')} className="text-gray-600 text-sm leading-relaxed">
+          {content.text}
+        </p>
       </div>
     </div>
   );
