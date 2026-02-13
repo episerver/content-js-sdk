@@ -173,9 +173,9 @@ export function getAlt(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function MediaComponent({ content }) {
- *   const { isImageAsset } = damAssets(content);
+ *   const { isDamImageAsset } = damAssets(content);
  *
- *   if (isImageAsset(content.media)) {
+ *   if (isDamImageAsset(content.media)) {
  *     // TypeScript knows content.media.item is PublicImageAsset
  *     const renditions = content.media.item.Renditions;
  *     const altText = content.media.item.AltText;
@@ -187,7 +187,7 @@ export function getAlt(
  * }
  * ```
  */
-export function isImageAsset(
+export function isDamImageAsset(
   property: InferredContentReference | null | undefined,
 ): property is InferredContentReference & { item: PublicImageAsset } {
   return property?.item?.__typename === 'cmp_PublicImageAsset';
@@ -207,9 +207,9 @@ export function isImageAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function MediaComponent({ content }) {
- *   const { isVideoAsset } = damAssets(content);
+ *   const { isDamVideoAsset } = damAssets(content);
  *
- *   if (isVideoAsset(content.media)) {
+ *   if (isDamVideoAsset(content.media)) {
  *     // TypeScript knows content.media.item is PublicVideoAsset
  *     const videoUrl = content.media.item.Url;
  *     const altText = content.media.item.AltText;
@@ -225,7 +225,7 @@ export function isImageAsset(
  * }
  * ```
  */
-export function isVideoAsset(
+export function isDamVideoAsset(
   property: InferredContentReference | null | undefined,
 ): property is InferredContentReference & { item: PublicVideoAsset } {
   return property?.item?.__typename === 'cmp_PublicVideoAsset';
@@ -246,9 +246,9 @@ export function isVideoAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function MediaComponent({ content }) {
- *   const { isRawFileAsset } = damAssets(content);
+ *   const { isDamRawFileAsset } = damAssets(content);
  *
- *   if (isRawFileAsset(content.media)) {
+ *   if (isDamRawFileAsset(content.media)) {
  *     // TypeScript knows content.media.item is PublicRawFileAsset
  *     const fileUrl = content.media.item.Url;
  *     const title = content.media.item.Title;
@@ -264,7 +264,7 @@ export function isVideoAsset(
  * }
  * ```
  */
-export function isRawFileAsset(
+export function isDamRawFileAsset(
   property: InferredContentReference | null | undefined,
 ): property is InferredContentReference & { item: PublicRawFileAsset } {
   return property?.item?.__typename === 'cmp_PublicRawFileAsset';
@@ -285,13 +285,13 @@ export function isRawFileAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function MediaComponent({ content }) {
- *   const { isDamAsset, getAssetType } = damAssets(content);
+ *   const { isDamAsset, getDamAssetType } = damAssets(content);
  *
  *   if (!isDamAsset(content.media)) {
  *     return <div>No media uploaded</div>;
  *   }
  *
- *   const assetType = getAssetType(content.media);
+ *   const assetType = getDamAssetType(content.media);
  *   return <div>Valid {assetType} asset detected</div>;
  * }
  * ```
@@ -300,7 +300,9 @@ export function isDamAsset(
   property: InferredContentReference | null | undefined,
 ): boolean {
   return (
-    isImageAsset(property) || isVideoAsset(property) || isRawFileAsset(property)
+    isDamImageAsset(property) ||
+    isDamVideoAsset(property) ||
+    isDamRawFileAsset(property)
   );
 }
 
@@ -319,8 +321,8 @@ export function isDamAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function AssetRenderer({ content }) {
- *   const { getSrcset, getAlt, getAssetType } = damAssets(content);
- *   const assetType = getAssetType(content.media);
+ *   const { getSrcset, getAlt, getDamAssetType } = damAssets(content);
+ *   const assetType = getDamAssetType(content.media);
  *
  *   switch (assetType) {
  *     case 'image':
@@ -351,18 +353,18 @@ export function isDamAsset(
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function AssetInfo({ content }) {
- *   const { getAssetType } = damAssets(content);
- *   const type = getAssetType(content.media);
+ *   const { getDamAssetType } = damAssets(content);
+ *   const type = getDamAssetType(content.media);
  *   return <span>Asset type: {type}</span>;
  * }
  * ```
  */
-export function getAssetType(
+export function getDamAssetType(
   property: InferredContentReference | null | undefined,
 ): 'image' | 'video' | 'file' | 'unknown' {
-  if (isImageAsset(property)) return 'image';
-  if (isVideoAsset(property)) return 'video';
-  if (isRawFileAsset(property)) return 'file';
+  if (isDamImageAsset(property)) return 'image';
+  if (isDamVideoAsset(property)) return 'video';
+  if (isDamRawFileAsset(property)) return 'file';
   return 'unknown';
 }
 
@@ -373,16 +375,16 @@ export function getAssetType(
  * returned automatically includes preview tokens from the content's __context when in edit mode.
  *
  * @param content - Content object with optional __context for preview tokens
- * @returns Object containing utility functions: getSrcset, getAlt, isImageAsset, isVideoAsset, isRawFileAsset, isDamAsset, getAssetType
+ * @returns Object containing utility functions: getSrcset, getAlt, isDamImageAsset, isDamVideoAsset, isDamRawFileAsset, isDamAsset, getDamAssetType
  *
  * @example
  * ```tsx
  * import { damAssets } from '@optimizely/cms-sdk';
  *
  * export default function MyComponent({ content }) {
- *   const { getSrcset, getAlt, isImageAsset } = damAssets(content);
+ *   const { getSrcset, getAlt, isDamImageAsset } = damAssets(content);
  *
- *   if (isImageAsset(content.image)) {
+ *   if (isDamImageAsset(content.image)) {
  *     return (
  *       <img
  *         src={content.image.item.Url}
@@ -402,10 +404,10 @@ export function damAssets<T extends Record<string, any>>(
     getSrcset: (property: InferredContentReference | null | undefined) =>
       getSrcset(content, property),
     getAlt,
-    getAssetType,
-    isImageAsset,
-    isVideoAsset,
-    isRawFileAsset,
+    getDamAssetType,
+    isDamImageAsset,
+    isDamVideoAsset,
+    isDamRawFileAsset,
     isDamAsset,
   };
 }

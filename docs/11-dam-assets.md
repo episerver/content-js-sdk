@@ -20,10 +20,10 @@ The `damAssets()` function returns:
 
 - `getSrcset()` - Generates responsive srcset strings
 - `getAlt()` - Retrieves alt text with fallback support
-- `isImageAsset()` - Type guard for image assets
-- `isVideoAsset()` - Type guard for video assets
-- `isRawFileAsset()` - Type guard for file assets
-- `getAssetType()` - Returns asset type as a string
+- `isDamImageAsset()` - Type guard for image assets
+- `isDamVideoAsset()` - Type guard for video assets
+- `isDamRawFileAsset()` - Type guard for file assets
+- `getDamAssetType()` - Returns asset type as a string
 - `isDamAsset()` - Validates any DAM asset
 
 ```tsx
@@ -141,16 +141,16 @@ The SDK provides type checking utilities through `damAssets()` that handle this 
 
 ### Available Type Checkers
 
-- **`isImageAsset()`** - Checks for image assets (`cmp_PublicImageAsset`)
+- **`isDamImageAsset()`** - Checks for image assets (`cmp_PublicImageAsset`)
   Unlocks access to: `Renditions`, `AltText`, `Width`, `Height`, `FocalPoint`
 
-- **`isVideoAsset()`** - Checks for video assets (`cmp_PublicVideoAsset`)
+- **`isDamVideoAsset()`** - Checks for video assets (`cmp_PublicVideoAsset`)
   Unlocks access to: `Renditions`, `AltText`
 
-- **`isRawFileAsset()`** - Checks for file assets (`cmp_PublicRawFileAsset`)
+- **`isDamRawFileAsset()`** - Checks for file assets (`cmp_PublicRawFileAsset`)
   Unlocks access to: `Url`, `Title`, `Description`, `MimeType`
 
-- **`getAssetType()`** - Returns the asset type as a string: `'image' | 'video' | 'file' | 'unknown'`
+- **`getDamAssetType()`** - Returns the asset type as a string: `'image' | 'video' | 'file' | 'unknown'`
   Useful for switch-case logic or displaying asset type information
 
 - **`isDamAsset()`** - Validates that a content reference is any type of DAM asset
@@ -164,10 +164,15 @@ Use type guards when you need different rendering logic for each asset type. Typ
 import { damAssets } from '@optimizely/cms-sdk';
 
 export default function MediaComponent({ content }) {
-  const { isImageAsset, isVideoAsset, isRawFileAsset, getSrcset, getAlt } =
-    damAssets(content);
+  const {
+    isDamImageAsset,
+    isDamVideoAsset,
+    isDamRawFileAsset,
+    getSrcset,
+    getAlt,
+  } = damAssets(content);
 
-  if (isImageAsset(content.media)) {
+  if (isDamImageAsset(content.media)) {
     // TypeScript knows content.media.item is PublicImageAsset
     return (
       <img
@@ -178,7 +183,7 @@ export default function MediaComponent({ content }) {
     );
   }
 
-  if (isVideoAsset(content.media)) {
+  if (isDamVideoAsset(content.media)) {
     // TypeScript knows content.media.item is PublicVideoAsset
     return (
       <video src={content.media.item.Url} controls>
@@ -189,7 +194,7 @@ export default function MediaComponent({ content }) {
     );
   }
 
-  if (isRawFileAsset(content.media)) {
+  if (isDamRawFileAsset(content.media)) {
     // TypeScript knows content.media.item is PublicRawFileAsset
     return (
       <a href={content.media.item.Url} download>
@@ -202,16 +207,16 @@ export default function MediaComponent({ content }) {
 }
 ```
 
-### Switch-Case Pattern with getAssetType()
+### Switch-Case Pattern with getDamAssetType()
 
-For more declarative code or when you need the asset type as a value, use `getAssetType()`. This works well when the asset type needs to be passed to other functions or displayed to users:
+For more declarative code or when you need the asset type as a value, use `getDamAssetType()`. This works well when the asset type needs to be passed to other functions or displayed to users:
 
 ```tsx
 import { damAssets } from '@optimizely/cms-sdk';
 
 export default function AssetRenderer({ content }) {
-  const { getSrcset, getAlt, getAssetType } = damAssets(content);
-  const assetType = getAssetType(content.media);
+  const { getSrcset, getAlt, getDamAssetType } = damAssets(content);
+  const assetType = getDamAssetType(content.media);
 
   switch (assetType) {
     case 'image':
@@ -244,13 +249,13 @@ Use `isDamAsset()` when you don't care about the specific asset type but need to
 import { damAssets } from '@optimizely/cms-sdk';
 
 export default function OptionalMedia({ content }) {
-  const { isDamAsset, getAssetType } = damAssets(content);
+  const { isDamAsset, getDamAssetType } = damAssets(content);
 
   if (!isDamAsset(content.media)) {
     return <div>No media uploaded</div>;
   }
 
-  const assetType = getAssetType(content.media);
+  const assetType = getDamAssetType(content.media);
   return <div>Valid {assetType} asset detected</div>;
 }
 ```
