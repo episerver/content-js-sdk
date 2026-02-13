@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: Props) {
   const content = await client
     .getPreviewContent(
       // TODO: check types in runtime properly
-      (await searchParams) as PreviewParams
+      (await searchParams) as PreviewParams,
     )
     .catch((err) => {
       console.log(err.errors);
@@ -29,7 +29,7 @@ export default async function Page({ searchParams }: Props) {
         src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
       ></Script>
       <PreviewComponent />
-      <OptimizelyComponent opti={content} />
+      <OptimizelyComponent content={content} />
     </>
   );
 }
