@@ -68,9 +68,6 @@ To reproduce it:
 
    In this example, create the variations `k_drama`, `action` and `sports`
 
-> [!NOTE]
-> You can use the file `fx-content.episerverdata` to import a sample page with variations to the CMS
-
 ## Test your site
 
 1. Run `npm run dev` to start the app
