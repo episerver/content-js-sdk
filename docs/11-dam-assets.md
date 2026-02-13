@@ -10,10 +10,21 @@ The SDK gives you:
 - `damAssets()` - Returns pre-configured helpers for the content property
 - `getSrcset()` - Builds responsive srcset strings from renditions
 - `getAlt()` - Pulls alt text from assets (with fallback support)
+- Type checking utilities - Determine asset types with TypeScript type narrowing
 
 ## damAssets()
 
-Use `damAssets()` to get pre-configured helper functions. The main benefit is automatic preview token handling—you don't need to worry about passing tokens around when editors are previewing content.
+Use `damAssets()` to get pre-configured helper functions for working with DAM assets. The main benefit is automatic preview token handling—you don't need to worry about passing tokens around when editors are previewing content.
+
+The `damAssets()` function returns:
+
+- `getSrcset()` - Generates responsive srcset strings
+- `getAlt()` - Retrieves alt text with fallback support
+- `isImageAsset()` - Type guard for image assets
+- `isVideoAsset()` - Type guard for video assets
+- `isRawFileAsset()` - Type guard for file assets
+- `getAssetType()` - Returns asset type as a string
+- `isDamAsset()` - Validates any DAM asset
 
 ```tsx
 import { damAssets } from '@optimizely/cms-sdk';
@@ -114,6 +125,138 @@ const { getAlt } = damAssets(content);
 
 > [!TIP]
 > Don't skip the fallback parameter. Empty alt text marks images as decorative, which isn't always what you want.
+
+## Working with Multiple Asset Types
+
+Content references in your CMS can accept different types of media like images, videos, or files. Without type checking, you'd need to manually check the `__typename` property and cast types yourself:
+
+```tsx
+// Without type utilities (verbose and error-prone)
+if (content.media?.item?.__typename === 'cmp_PublicImageAsset') {
+  const renditions = (content.media.item as PublicImageAsset).Renditions;
+}
+```
+
+The SDK provides type checking utilities through `damAssets()` that handle this automatically with proper TypeScript type narrowing.
+
+### Available Type Checkers
+
+- **`isImageAsset()`** - Checks for image assets (`cmp_PublicImageAsset`)
+  Unlocks access to: `Renditions`, `AltText`, `Width`, `Height`, `FocalPoint`
+
+- **`isVideoAsset()`** - Checks for video assets (`cmp_PublicVideoAsset`)
+  Unlocks access to: `Renditions`, `AltText`
+
+- **`isRawFileAsset()`** - Checks for file assets (`cmp_PublicRawFileAsset`)
+  Unlocks access to: `Url`, `Title`, `Description`, `MimeType`
+
+- **`getAssetType()`** - Returns the asset type as a string: `'image' | 'video' | 'file' | 'unknown'`
+  Useful for switch-case logic or displaying asset type information
+
+- **`isDamAsset()`** - Validates that a content reference is any type of DAM asset
+  Returns `true` if the reference contains a valid image, video, or file asset
+
+### Type-Safe Conditional Rendering
+
+Use type guards when you need different rendering logic for each asset type. TypeScript automatically narrows the type inside each conditional block, giving you full autocomplete and type safety:
+
+```tsx
+import { damAssets } from '@optimizely/cms-sdk';
+
+export default function MediaComponent({ content }) {
+  const { isImageAsset, isVideoAsset, isRawFileAsset, getSrcset, getAlt } =
+    damAssets(content);
+
+  if (isImageAsset(content.media)) {
+    // TypeScript knows content.media.item is PublicImageAsset
+    return (
+      <img
+        src={content.media.item.Url}
+        srcSet={getSrcset(content.media)}
+        alt={getAlt(content.media, 'Media asset')}
+      />
+    );
+  }
+
+  if (isVideoAsset(content.media)) {
+    // TypeScript knows content.media.item is PublicVideoAsset
+    return (
+      <video src={content.media.item.Url} controls>
+        {content.media.item.AltText && (
+          <track kind="captions" label={content.media.item.AltText} />
+        )}
+      </video>
+    );
+  }
+
+  if (isRawFileAsset(content.media)) {
+    // TypeScript knows content.media.item is PublicRawFileAsset
+    return (
+      <a href={content.media.item.Url} download>
+        {content.media.item.Title || 'Download File'}
+      </a>
+    );
+  }
+
+  return null;
+}
+```
+
+### Switch-Case Pattern with getAssetType()
+
+For more declarative code or when you need the asset type as a value, use `getAssetType()`. This works well when the asset type needs to be passed to other functions or displayed to users:
+
+```tsx
+import { damAssets } from '@optimizely/cms-sdk';
+
+export default function AssetRenderer({ content }) {
+  const { getSrcset, getAlt, getAssetType } = damAssets(content);
+  const assetType = getAssetType(content.media);
+
+  switch (assetType) {
+    case 'image':
+      return (
+        <img
+          src={content.media.item.Url}
+          srcSet={getSrcset(content.media)}
+          alt={getAlt(content.media, 'Image')}
+        />
+      );
+    case 'video':
+      return <video src={content.media.item.Url} controls />;
+    case 'file':
+      return (
+        <a href={content.media.item.Url} download>
+          {content.media.item.Title || 'Download'}
+        </a>
+      );
+    default:
+      return <p>No media available</p>;
+  }
+}
+```
+
+### Validating Asset Existence
+
+Use `isDamAsset()` when you don't care about the specific asset type but need to verify that a valid DAM asset exists. This is useful for optional fields or when providing fallback content:
+
+```tsx
+import { damAssets } from '@optimizely/cms-sdk';
+
+export default function OptionalMedia({ content }) {
+  const { isDamAsset, getAssetType } = damAssets(content);
+
+  if (!isDamAsset(content.media)) {
+    return <div>No media uploaded</div>;
+  }
+
+  const assetType = getAssetType(content.media);
+  return <div>Valid {assetType} asset detected</div>;
+}
+```
+
+> [!NOTE]
+> Type guards check the asset's `__typename` property. They return `false` for `null`, `undefined`, or content references without a valid asset item.
 
 ## Next.js Image Optimization
 
