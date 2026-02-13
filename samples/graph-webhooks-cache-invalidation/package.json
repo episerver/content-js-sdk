@@ -1,6 +1,6 @@
 {
   "name": "graph-webhooks-cache-invalidation",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
-    "@optimizely/cms-sdk": "0.1.0-alpha.10",
+    "@optimizely/cms-sdk": "1.0.0",
     "dotenv": "^16.5.0",
     "next": "15.5.9",
     "react": "19.1.0",

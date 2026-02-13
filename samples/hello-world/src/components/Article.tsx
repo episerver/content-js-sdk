@@ -1,4 +1,4 @@
-import { contentType, Infer } from '@optimizely/cms-sdk';
+import { contentType, ContentProps } from '@optimizely/cms-sdk';
 
 // An "Article" content type
 export const ArticleContentType = contentType({
@@ -16,7 +16,7 @@ export const ArticleContentType = contentType({
 });
 
 type Props = {
-  content: Infer<typeof ArticleContentType>;
+  content: ContentProps<typeof ArticleContentType>;
 };
 
 /** Component that renders an "Article" */

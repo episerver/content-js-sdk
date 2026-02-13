@@ -1,4 +1,4 @@
-import { BlankSectionContentType, Infer } from '@optimizely/cms-sdk';
+import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   StructureContainerProps,
@@ -7,7 +7,7 @@ import {
 import css from './components.module.css';
 
 type BlankSectionProps = {
-  content: Infer<typeof BlankSectionContentType>;
+  content: ContentProps<typeof BlankSectionContentType>;
 };
 
 function Row({ children }: StructureContainerProps) {

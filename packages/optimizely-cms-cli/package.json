@@ -1,6 +1,6 @@
 {
   "name": "@optimizely/cms-cli",
-  "version": "0.1.0-alpha.11",
+  "version": "1.0.0",
   "description": "CLI application for integration with Optimizely CMS",
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git"
@@ -28,7 +28,7 @@
   "type": "module",
   "dependencies": {
     "@babel/plugin-transform-react-jsx": "^7.25.9",
-    "@optimizely/cms-sdk": "workspace:^0.1.0-alpha.9",
+    "@optimizely/cms-sdk": "workspace:*",
     "@inquirer/prompts": "^7.4.0",
     "@oclif/core": "^4.2.10",
     "chalk": "^5.4.1",
