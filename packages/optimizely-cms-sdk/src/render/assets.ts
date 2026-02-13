@@ -194,8 +194,40 @@ export function damAssets<T extends Record<string, any>>(
   content: T & { __context?: { preview_token?: string } },
 ) {
   return {
-    getSrcset: (property: InferredContentReference | null | undefined) =>
-      getSrcset(content, property),
+    getSrcset: (property: InferredContentReference | null | undefined) => getSrcset(content, property),
     getAlt,
+    isImageAsset,
+    isVideoAsset,
+    isRawFileAsset,
+    isDamAsset,
+    getAssetType,
   };
+}
+
+/** Check if content is a DAM Image Asset */
+export function isImageAsset(content: any): content is { __typename: 'cmp_PublicImageAsset'; Renditions?: Array<{ Url?: string; Width?: number; Height?: number }> } {
+  return content?.__typename === 'cmp_PublicImageAsset';
+}
+
+/** Check if content is a DAM Video Asset */
+export function isVideoAsset(content: any): content is { __typename: 'cmp_PublicVideoAsset'; Renditions?: Array<{ Url?: string }> } {
+  return content?.__typename === 'cmp_PublicVideoAsset';
+}
+
+/** Check if content is a DAM Raw File Asset */
+export function isRawFileAsset(content: any): content is { __typename: 'cmp_PublicRawAsset'; Url?: string } {
+  return content?.__typename === 'cmp_PublicRawAsset';
+}
+
+/** Check if content is any DAM Asset (Image, Video, or Raw File) */
+export function isDamAsset(content: any): boolean {
+  return isImageAsset(content) || isVideoAsset(content) || isRawFileAsset(content);
+}
+
+/** Get asset type as a readable string */
+export function getAssetType(content: any): 'image' | 'video' | 'file' | 'unknown' {
+  if (isImageAsset(content)) return 'image';
+  if (isVideoAsset(content)) return 'video';
+  if (isRawFileAsset(content)) return 'file';
+  return 'unknown';
 }
