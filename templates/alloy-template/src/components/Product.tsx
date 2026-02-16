@@ -50,7 +50,11 @@ type ProductProps = {
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
+  return (
+    <div {...pa(node)} className="w-full block">
+      {children}
+    </div>
+  );
 }
 
 function Product({ content }: ProductProps) {
@@ -59,7 +63,7 @@ function Product({ content }: ProductProps) {
   return (
     <main className="bg-white">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12">
-        <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-1 lg:grid-cols-[1fr_320px]">
+        <div className="grid grid-cols-1 gap-6 sm:gap-8 md:gap-10 lg:grid-cols-[1fr_320px]">
           {/* Main Content */}
           <div className="space-y-6 sm:space-y-8">
             {/* Heading and Description */}
@@ -92,10 +96,12 @@ function Product({ content }: ProductProps) {
               return <OptimizelyComponent key={index} content={contentItem} />;
             })}
           </div>
-          <OptimizelyComposition
-            nodes={content.composition.nodes ?? []}
-            ComponentWrapper={ComponentWrapper}
-          />
+          <div className="flex flex-col space-y-6 sm:space-y-8">
+            <OptimizelyComposition
+              nodes={content.composition.nodes ?? []}
+              ComponentWrapper={ComponentWrapper}
+            />
+          </div>
         </div>
       </div>
     </main>
