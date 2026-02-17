@@ -20,6 +20,19 @@ export {
   BlankSectionContentType,
   BlankExperienceContentType,
 } from './model/internalContentTypes.js';
+export {
+  OptiFormsContainerDataContentType,
+  OptiFormsTextboxElementContentType,
+  OptiFormsTextareaElementContentType,
+  OptiFormsNumberElementContentType,
+  OptiFormsRangeElementContentType,
+  OptiFormsUrlElementContentType,
+  OptiFormsChoiceElementContentType,
+  OptiFormsSelectionElementContentType,
+  OptiFormsSubmitElementContentType,
+  OptiFormsResetElementContentType,
+  FormContentTypes,
+} from './model/formContentTypes.js';
 
 export * as GraphErrors from './graph/error.js';
 export * as ContentTypes from './model/contentTypes.js';
