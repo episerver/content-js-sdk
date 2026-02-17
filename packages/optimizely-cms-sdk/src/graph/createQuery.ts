@@ -71,6 +71,7 @@ function convertProperty(
   suffix: string,
   visited: Set<string>,
   damEnabled: boolean = false,
+  formsEnabled: boolean = false,
 ): {
   fields: string[];
   extraFragments: string[];
@@ -83,6 +84,7 @@ function convertProperty(
     suffix,
     visited,
     damEnabled,
+    formsEnabled,
   );
 
   // logs warnings if the fragment generation causes potential issues
@@ -110,6 +112,7 @@ function convertPropertyField(
   suffix: string,
   visited: Set<string>,
   damEnabled: boolean = false,
+  formsEnabled: boolean = false,
 ): {
   fields: string[];
   extraFragments: string[];
@@ -125,7 +128,7 @@ function convertPropertyField(
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
     extraFragments.push(
-      ...createFragment(key, visited, 'Property', false, damEnabled),
+      ...createFragment(key, visited, 'Property', false, damEnabled, formsEnabled),
     );
     fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
@@ -141,7 +144,7 @@ function convertPropertyField(
         key = rootName;
       }
       extraFragments.push(
-        ...createFragment(key, visited, '', true, damEnabled),
+        ...createFragment(key, visited, '', true, damEnabled, formsEnabled),
       );
       subfields.push(`...${key}`);
     }
@@ -170,6 +173,7 @@ function convertPropertyField(
       suffix,
       visited,
       damEnabled,
+      formsEnabled,
     );
     fields.push(...f.fields);
     extraFragments.push(...f.extraFragments);
@@ -193,6 +197,7 @@ function convertPropertyField(
 function createExperienceFragments(
   visited: Set<string>,
   damEnabled: boolean = false,
+  formsEnabled: boolean = false,
 ): string[] {
   // Fixed fragments for all experiences
   const fixedFragments = [
@@ -203,6 +208,10 @@ function createExperienceFragments(
   const experienceNodes = getCachedContentTypes()
     .filter((c) => {
       if (c.baseType === '_component') {
+        // Skip form types when forms are not enabled on the CMS instance
+        if (!formsEnabled && c.key.startsWith('OptiForms')) {
+          return false;
+        }
         return (
           'compositionBehaviors' in c &&
           (c.compositionBehaviors?.length ?? 0) > 0
@@ -215,7 +224,7 @@ function createExperienceFragments(
   // Get the required fragments
   const extraFragments = experienceNodes
     .filter((n) => !visited.has(n))
-    .flatMap((n) => createFragment(n, visited, '', true, damEnabled));
+    .flatMap((n) => createFragment(n, visited, '', true, damEnabled, formsEnabled));
 
   const nodeNames = experienceNodes.map((n) => `...${n}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
@@ -235,6 +244,7 @@ export function createFragment(
   suffix: string = '',
   includeBaseFragments: boolean = true,
   damEnabled: boolean = false,
+  formsEnabled: boolean = false,
 ): string[] {
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return []; // cyclic ref guard
@@ -275,6 +285,7 @@ export function createFragment(
         suffix,
         visited,
         damEnabled,
+        formsEnabled,
       );
       fields.push(...f);
       extraFragments.push(...e);
@@ -290,7 +301,7 @@ export function createFragment(
 
     if (ct.baseType === '_experience') {
       fields.push('..._IExperience');
-      extraFragments.push(...createExperienceFragments(visited, damEnabled));
+      extraFragments.push(...createExperienceFragments(visited, damEnabled, formsEnabled));
     }
   }
 
@@ -320,8 +331,9 @@ export function createFragment(
 export function createSingleContentQuery(
   contentType: string,
   damEnabled: boolean = false,
+  formsEnabled: boolean = false,
 ) {
-  const fragment = createFragment(contentType, new Set(), '', true, damEnabled);
+  const fragment = createFragment(contentType, new Set(), '', true, damEnabled, formsEnabled);
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
   return `
@@ -350,8 +362,9 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
 export function createMultipleContentQuery(
   contentType: string,
   damEnabled: boolean = false,
+  formsEnabled: boolean = false,
 ) {
-  const fragment = createFragment(contentType, new Set(), '', true, damEnabled);
+  const fragment = createFragment(contentType, new Set(), '', true, damEnabled, formsEnabled);
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
   return `

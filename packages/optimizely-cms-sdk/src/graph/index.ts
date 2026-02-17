@@ -57,6 +57,10 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   damAssetType: __type(name: "cmp_Asset") {
     __typename
   }
+  # Check if "OptiFormsContainerData" type exists which indicates that Forms is enabled
+  formsType: __type(name: "OptiFormsContainerData") {
+    __typename
+  }
 }
 `;
 
@@ -312,9 +316,11 @@ export class GraphClient {
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
     // Determine if DAM is enabled based on the presence of cmp_Asset type
     const damEnabled = data.damAssetType !== null;
+    // Determine if Forms is enabled based on the presence of OptiFormsContainerData type
+    const formsEnabled = data.formsType !== null;
 
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled };
+      return { contentTypeName: null, damEnabled, formsEnabled };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -329,7 +335,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled };
+    return { contentTypeName, damEnabled, formsEnabled };
   }
 
   /**
@@ -354,14 +360,14 @@ export class GraphClient {
       ...pathFilter(path, options?.host),
       variation: options?.variation,
     };
-    const { contentTypeName, damEnabled } =
+    const { contentTypeName, damEnabled, formsEnabled } =
       await this.getContentMetaData(input);
 
     if (!contentTypeName) {
       return [];
     }
 
-    const query = createMultipleContentQuery(contentTypeName, damEnabled);
+    const query = createMultipleContentQuery(contentTypeName, damEnabled, formsEnabled);
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items.map(removeTypePrefix);
@@ -436,7 +442,7 @@ export class GraphClient {
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async getPreviewContent(params: PreviewParams) {
     const input = previewFilter(params);
-    const { contentTypeName, damEnabled } = await this.getContentMetaData(
+    const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
       input,
       params.preview_token,
     );
@@ -447,7 +453,7 @@ export class GraphClient {
         { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
       );
     }
-    const query = createSingleContentQuery(contentTypeName, damEnabled);
+    const query = createSingleContentQuery(contentTypeName, damEnabled, formsEnabled);
     const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(
