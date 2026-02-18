@@ -44,7 +44,7 @@ type NewsPageProps = {
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
+  return <div {...pa(node)} className="w-full block">{children}</div>;
 }
 
 function News({ content }: NewsPageProps) {
@@ -82,20 +82,24 @@ function News({ content }: NewsPageProps) {
 
             {/* Media Asset - handles images, videos, and files */}
             {isDamImageAsset(content.image) && (
-              <img
-                {...pa('image')}
-                src={src(content.image)}
-                srcSet={getSrcset(content.image)}
-                alt={getAlt(content.image, 'Teaser Image')}
-                className="h-auto w-full rounded-lg object-cover sm:max-h-100 md:max-h-125 lg:max-h-150"
-              />
+              <div className="overflow-hidden rounded-lg">
+                <img
+                  {...pa('image')}
+                  src={src(content.image)}
+                  srcSet={getSrcset(content.image)}
+                  alt={getAlt(content.image, 'Teaser Image')}
+                  className="h-auto w-full object-cover aspect-video sm:aspect-auto sm:max-h-100 md:max-h-125 lg:max-h-150"
+                />
+              </div>
             )}
           </div>
 
-          <OptimizelyComposition
-            nodes={content.composition.nodes ?? []}
-            ComponentWrapper={ComponentWrapper}
-          />
+          <div className="flex flex-col space-y-6 sm:space-y-8">
+            <OptimizelyComposition
+              nodes={content.composition.nodes ?? []}
+              ComponentWrapper={ComponentWrapper}
+            />
+          </div>
         </div>
       </div>
     </main>

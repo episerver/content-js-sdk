@@ -33,7 +33,7 @@ function Button({ content }: ButtonProps) {
     <a
       {...pa('link')}
       href={content?.link?.default ?? undefined}
-      className="inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-8 rounded-md transition-colors duration-200 text-base"
+      className="inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium py-2.5 px-6 sm:py-3 sm:px-8 rounded-md transition-colors duration-200 text-sm sm:text-base"
     >
       <span {...pa('text')}>{content.text}</span>
     </a>
