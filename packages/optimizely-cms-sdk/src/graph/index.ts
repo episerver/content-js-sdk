@@ -23,6 +23,8 @@ type GraphOptions = {
   graphUrl?: string;
   /** Default maximum fragment threshold for GraphQL queries (default: 100) */
   maxFragmentThreshold?: number;
+  /** Default application host for path filtering */
+  host?: string;
 };
 
 export type PreviewParams = {
@@ -226,11 +228,13 @@ export class GraphClient {
   key: string;
   graphUrl: string;
   maxFragmentThreshold: number;
+  host?: string;
 
   constructor(key: string, options: GraphOptions = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
+    this.host = options.host;
   }
 
   /** Perform a GraphQL query with variables */
@@ -355,7 +359,7 @@ export class GraphClient {
     options?: GraphGetContentOptions,
   ) {
     const input: GraphVariables = {
-      ...pathFilter(path, options?.host),
+      ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
       variation: options?.variation,
     };
     const { contentTypeName, damEnabled } =
@@ -384,7 +388,7 @@ export class GraphClient {
    */
   async getPath(path: string, options?: GraphGetLinksOptions) {
     const data = (await this.request(GET_PATH_QUERY, {
-      ...pathFilter(path, options?.host),
+      ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
       ...localeFilter(options?.locales),
     })) as GetLinksResponse;
 
@@ -404,7 +408,7 @@ export class GraphClient {
           request: {
             query: GET_PATH_QUERY,
             variables: {
-              ...pathFilter(path, options?.host),
+              ...pathFilter(path, options?.host ?? this.host),
               ...localeFilter(options?.locales),
             },
           },
@@ -427,7 +431,7 @@ export class GraphClient {
    */
   async getItems(path: string, options?: GraphGetLinksOptions) {
     const data = (await this.request(GET_ITEMS_QUERY, {
-      ...pathFilter(path, options?.host),
+      ...pathFilter(path, options?.host ?? this.host),
       ...localeFilter(options?.locales),
     })) as GetLinksResponse;
 
