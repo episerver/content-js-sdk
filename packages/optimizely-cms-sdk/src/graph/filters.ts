@@ -38,7 +38,7 @@ export function pathFilter(path: string, host?: string): ContentInput {
           _metadata: {
             url: {
               default: { eq: pathWithTrailingSlash },
-              base: host ? { eq: host } : { eq: process.env.APPLICATION_HOST },
+              base: host ? { eq: host } : undefined,
             },
           },
         },
@@ -46,7 +46,7 @@ export function pathFilter(path: string, host?: string): ContentInput {
           _metadata: {
             url: {
               default: { eq: pathWithoutTrailingSlash },
-              base: host ? { eq: host } : { eq: process.env.APPLICATION_HOST },
+              base: host ? { eq: host } : undefined,
             },
           },
         },

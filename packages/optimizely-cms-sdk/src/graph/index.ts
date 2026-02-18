@@ -21,6 +21,8 @@ import {
 type GraphOptions = {
   /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
   graphUrl?: string;
+  /** Default maximum fragment threshold for GraphQL queries (default: 100) */
+  maxFragmentThreshold?: number;
 };
 
 export type PreviewParams = {
@@ -223,10 +225,12 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
 export class GraphClient {
   key: string;
   graphUrl: string;
+  maxFragmentThreshold: number;
 
   constructor(key: string, options: GraphOptions = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
+    this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
   }
 
   /** Perform a GraphQL query with variables */
@@ -361,7 +365,11 @@ export class GraphClient {
       return [];
     }
 
-    const query = createMultipleContentQuery(contentTypeName, damEnabled);
+    const query = createMultipleContentQuery(
+      contentTypeName,
+      damEnabled,
+      this.maxFragmentThreshold,
+    );
     const response = (await this.request(query, input)) as ItemsResponse<T>;
 
     return response?._Content?.items.map(removeTypePrefix);
@@ -447,7 +455,11 @@ export class GraphClient {
         { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
       );
     }
-    const query = createSingleContentQuery(contentTypeName, damEnabled);
+    const query = createSingleContentQuery(
+      contentTypeName,
+      damEnabled,
+      this.maxFragmentThreshold,
+    );
     const response = await this.request(query, input, params.preview_token);
 
     return decorateWithContext(
