@@ -98,7 +98,18 @@ Now you are ready to [render the content](./6-rendering-react.md) that you just 
 
 ## Advanced topics
 
-### Using non-production Graph
+### GraphClient Options
+
+The `GraphClient` constructor accepts the following options:
+
+#### `graphUrl`
+
+The Content Graph endpoint URL.
+
+- **Default**: `https://cg.optimizely.com/content/v2`
+- **Example**: `https://cg.staging.optimizely.com/content/v2`
+
+#### Using non-production Graph
 
 The Graph Client uses the production Content Graph endpoint by default (https://cg.optimizely.com/content/v2). If you want to use a different URL, configure it by passing the `graphUrl` as option. For example:
 
@@ -106,4 +117,48 @@ The Graph Client uses the production Content Graph endpoint by default (https://
 const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
   graphUrl: 'https://cg.staging.optimizely.com/content/v2',
 });
+```
+
+#### `host`
+
+Default application host for path filtering. Useful when multiple sites share the same CMS instance - ensures content is retrieved only from the specified domain.
+
+- **Default**: `undefined`
+- **Example**: `https://example.com`
+- **Can be overridden**: Yes, per-request via `getContentByPath`, `getPath`, and `getItems` options
+
+```ts
+const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+  host: 'https://example.com',
+});
+
+// Uses default host from client
+await client.getContentByPath('/about');
+
+// Override for specific request
+await client.getContentByPath('/contact', {
+  host: 'https://other-site.com',
+});
+```
+
+#### `maxFragmentThreshold`
+
+Maximum number of GraphQL fragments before logging performance warnings. Prevents overly complex queries from unrestricted content types that could breach GraphQL limits or degrade performance.
+
+- **Default**: `100`
+- **Example**: `200`
+
+```ts
+const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+  maxFragmentThreshold: 200,
+});
+```
+
+When this threshold is exceeded, you'll see a warning like:
+
+```
+⚠️ [optimizely-cms-sdk] Fragment "MyContentType" generated 150 inner fragments (limit: 100).
+→ Consider narrowing it using allowedTypes and restrictedTypes or reviewing schema references to reduce complexity.
 ```

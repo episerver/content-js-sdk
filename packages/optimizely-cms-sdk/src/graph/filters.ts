@@ -25,6 +25,8 @@ function normalizePath(path: string) {
  * Creates a {@linkcode ContentInput} object that filters results by a specific URL path.
  *
  * @param path - The URL path to filter by.
+ * @param host - Optional base URL/domain to filter by. Useful when multiple sites share the same CMS instance,
+ *   ensuring content is retrieved only from the specified domain (e.g., "https://example.com").
  * @returns A `GraphQueryArguments` object with a `where` clause that matches the given path.
  */
 export function pathFilter(path: string, host?: string): ContentInput {
