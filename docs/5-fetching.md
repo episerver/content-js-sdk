@@ -147,18 +147,18 @@ await client.getContentByPath('/contact', {
 Maximum number of GraphQL fragments before logging performance warnings. Prevents overly complex queries from unrestricted content types that could breach GraphQL limits or degrade performance.
 
 - **Default**: `100`
-- **Example**: `200`
+- **Example**: `150`
 
 ```ts
 const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  maxFragmentThreshold: 200,
+  maxFragmentThreshold: 150,
 });
 ```
 
 When this threshold is exceeded, you'll see a warning like:
 
 ```
-⚠️ [optimizely-cms-sdk] Fragment "MyContentType" generated 150 inner fragments (limit: 100).
+⚠️ [optimizely-cms-sdk] Fragment "MyContentType" generated 200 inner fragments (limit: 150).
 → Consider narrowing it using allowedTypes and restrictedTypes or reviewing schema references to reduce complexity.
 ```
