@@ -1,13 +1,13 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DisplayTemplate } from '../service/apiSchema/manifest.js';
+import { DisplayTemplate } from './manifest.js';
 
 /**
  * Generates TypeScript display template definition files from a manifest
  */
 export async function generateDisplayTemplateFiles(
   displayTemplates: DisplayTemplate[],
-  outputDir: string
+  outputDir: string,
 ): Promise<string[]> {
   const generatedFiles: string[] = [];
 
@@ -39,28 +39,34 @@ function generateDisplayTemplateCode(displayTemplate: DisplayTemplate): string {
   const exportName = generateExportName(displayTemplate.key);
 
   if (!displayTemplate.contentType) {
-    throw new Error(`Display template ${displayTemplate.key} is missing contentType`);
+    throw new Error(
+      `Display template ${displayTemplate.key} is missing contentType`,
+    );
   }
 
   // Build optional fields
   const optionalFields: string[] = [];
 
   if (displayTemplate.displayName) {
-    optionalFields.push(`displayName: '${escapeSingleQuote(displayTemplate.displayName)}'`);
+    optionalFields.push(
+      `displayName: '${escapeSingleQuote(displayTemplate.displayName)}'`,
+    );
   }
 
   if (displayTemplate.isDefault !== undefined) {
     optionalFields.push(`isDefault: ${displayTemplate.isDefault}`);
   }
 
-  if (displayTemplate.settings && Object.keys(displayTemplate.settings).length > 0) {
+  if (
+    displayTemplate.settings &&
+    Object.keys(displayTemplate.settings).length > 0
+  ) {
     const settingsCode = generateSettingsCode(displayTemplate.settings, 2);
     optionalFields.push(`settings: ${settingsCode}`);
   }
 
-  const optionalFieldsStr = optionalFields.length > 0
-    ? ',\n  ' + optionalFields.join(',\n  ')
-    : '';
+  const optionalFieldsStr =
+    optionalFields.length > 0 ? ',\n  ' + optionalFields.join(',\n  ') : '';
 
   const code = `import { displayTemplate } from '@optimizely/cms-sdk';
 
@@ -88,12 +94,17 @@ function generateExportName(key: string): string {
 /**
  * Generates TypeScript code for settings object
  */
-function generateSettingsCode(settings: Record<string, any>, indentLevel: number = 0): string {
+function generateSettingsCode(
+  settings: Record<string, any>,
+  indentLevel: number = 0,
+): string {
   const indent = '  '.repeat(indentLevel);
   const innerIndent = '  '.repeat(indentLevel + 1);
 
   const entries = Object.entries(settings).map(([key, value]) => {
-    const safeKey = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? key : `'${escapeSingleQuote(key)}'`;
+    const safeKey = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)
+      ? key
+      : `'${escapeSingleQuote(key)}'`;
     const valueCode = generateValueCode(value, indentLevel + 1);
     return `${innerIndent}${safeKey}: ${valueCode}`;
   });
@@ -131,7 +142,9 @@ function generateValueCode(value: any, indentLevel: number): string {
     }
     const indent = '  '.repeat(indentLevel);
     const innerIndent = '  '.repeat(indentLevel + 1);
-    const items = value.map(item => `${innerIndent}${generateValueCode(item, indentLevel + 1)}`);
+    const items = value.map(
+      (item) => `${innerIndent}${generateValueCode(item, indentLevel + 1)}`,
+    );
     return `[\n${items.join(',\n')},\n${indent}]`;
   }
 

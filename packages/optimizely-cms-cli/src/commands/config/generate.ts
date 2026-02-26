@@ -7,7 +7,7 @@ import { mkdir } from 'node:fs/promises';
 import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
 import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import { ContentType } from '../../service/apiSchema/manifest.js';
+import { ContentType } from '../../generators/manifest.js';
 
 export default class ConfigGenerate extends BaseCommand<typeof ConfigGenerate> {
   static override flags = {
@@ -142,17 +142,19 @@ export default class ConfigGenerate extends BaseCommand<typeof ConfigGenerate> {
         // Generate display template files if available
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
           // Infer contentType from key (e.g., "NoticeDisplayTemplate" -> "Notice")
-          const processedDisplayTemplates = manifest.displayTemplates.map((dt: any) => {
-            // Try to extract content type from key by removing common suffixes
-            let contentType = dt.key
-              .replace(/DisplayTemplate$/i, '')
-              .replace(/Template$/i, '');
+          const processedDisplayTemplates = manifest.displayTemplates.map(
+            (dt: any) => {
+              // Try to extract content type from key by removing common suffixes
+              let contentType = dt.key
+                .replace(/DisplayTemplate$/i, '')
+                .replace(/Template$/i, '');
 
-            return {
-              ...dt,
-              contentType: contentType || dt.key,
-            };
-          });
+              return {
+                ...dt,
+                contentType: contentType || dt.key,
+              };
+            },
+          );
 
           spinner.start('Generating display template files');
 
@@ -160,21 +162,22 @@ export default class ConfigGenerate extends BaseCommand<typeof ConfigGenerate> {
             const displayTemplatesDir = join(outputDir, '../display-templates');
             await mkdir(displayTemplatesDir, { recursive: true });
 
-            const generatedDisplayTemplateFiles = await generateDisplayTemplateFiles(
-              processedDisplayTemplates,
-              displayTemplatesDir,
+            const generatedDisplayTemplateFiles =
+              await generateDisplayTemplateFiles(
+                processedDisplayTemplates,
+                displayTemplatesDir,
+              );
+
+            spinner.succeed(
+              `Generated ${generatedDisplayTemplateFiles.length} display template file(s) in ${displayTemplatesDir}`,
             );
 
-          spinner.succeed(
-            `Generated ${generatedDisplayTemplateFiles.length} display template file(s) in ${displayTemplatesDir}`,
-          );
-
-          // List generated display template files
-          console.log('\nGenerated display template files:');
-          for (const file of generatedDisplayTemplateFiles) {
-            console.log(`  - ${file}`);
+            // List generated display template files
+            console.log('\nGenerated display template files:');
+            for (const file of generatedDisplayTemplateFiles) {
+              console.log(`  - ${file}`);
+            }
           }
-        }
         }
       }
     } catch (error) {

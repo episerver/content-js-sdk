@@ -1,13 +1,13 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ContentType, ContentTypeProperties } from '../service/apiSchema/manifest.js';
+import { ContentType, ContentTypeProperties } from './manifest.js';
 
 /**
  * Generates TypeScript content type definition files from a manifest
  */
 export async function generateContentTypeFiles(
   contentTypes: ContentType[],
-  outputDir: string
+  outputDir: string,
 ): Promise<string[]> {
   const generatedFiles: string[] = [];
 
@@ -42,11 +42,15 @@ function generateContentTypeCode(contentType: ContentType): string {
   // Collect component imports
   const componentImports = new Set<string>();
   const properties = contentType.properties
-    ? generatePropertiesCode(contentType.properties, contentType.key, componentImports)
+    ? generatePropertiesCode(
+        contentType.properties,
+        contentType.key,
+        componentImports,
+      )
     : '{}';
 
   // Generate import statements
-  const imports = ['import { contentType } from \'@optimizely/cms-sdk\';'];
+  const imports = ["import { contentType } from '@optimizely/cms-sdk';"];
   if (componentImports.size > 0) {
     const importStatements = Array.from(componentImports).map((key) => {
       const fileName = generateFileName(key);
@@ -57,14 +61,17 @@ function generateContentTypeCode(contentType: ContentType): string {
   }
 
   // Generate compositionBehaviors if present
-  const compositionBehaviors = contentType.compositionBehaviors && contentType.compositionBehaviors.length > 0
-    ? `\n  compositionBehaviors: [${contentType.compositionBehaviors.map(b => `'${b}'`).join(', ')}],`
-    : '';
+  const compositionBehaviors =
+    contentType.compositionBehaviors &&
+    contentType.compositionBehaviors.length > 0
+      ? `\n  compositionBehaviors: [${contentType.compositionBehaviors.map((b) => `'${b}'`).join(', ')}],`
+      : '';
 
   // Generate mayContainTypes if present
-  const mayContainTypes = contentType.mayContainTypes && contentType.mayContainTypes.length > 0
-    ? `\n  mayContainTypes: [${contentType.mayContainTypes.map(t => `'${t}'`).join(', ')}],`
-    : '';
+  const mayContainTypes =
+    contentType.mayContainTypes && contentType.mayContainTypes.length > 0
+      ? `\n  mayContainTypes: [${contentType.mayContainTypes.map((t) => `'${t}'`).join(', ')}],`
+      : '';
 
   const code = `${imports.join('\n')}
 
@@ -97,10 +104,14 @@ function generateExportName(key: string): string {
 function generatePropertiesCode(
   properties: Record<string, ContentTypeProperties.All>,
   contentTypeKey: string,
-  componentImports: Set<string>
+  componentImports: Set<string>,
 ): string {
   const propertyEntries = Object.entries(properties).map(([name, prop]) => {
-    const propertyDef = generatePropertyDefinition(prop, contentTypeKey, componentImports);
+    const propertyDef = generatePropertyDefinition(
+      prop,
+      contentTypeKey,
+      componentImports,
+    );
     return `    ${name}: ${propertyDef}`;
   });
 
@@ -117,11 +128,15 @@ function generatePropertiesCode(
 function generatePropertyDefinition(
   property: ContentTypeProperties.All,
   contentTypeKey: string,
-  componentImports: Set<string>
+  componentImports: Set<string>,
 ): string {
   if ('items' in property && property.type === 'array') {
     // Array type
-    const itemDef = generatePropertyDefinition(property.items, contentTypeKey, componentImports);
+    const itemDef = generatePropertyDefinition(
+      property.items,
+      contentTypeKey,
+      componentImports,
+    );
     return `{\n      type: 'array',\n      items: ${itemDef},\n    }`;
   }
 
@@ -182,7 +197,7 @@ function generatePropertyDefinition(
       const enumValues = property.enum.values
         .map(
           (v) =>
-            `\n        { value: '${escapeSingleQuote(v.value)}', displayName: '${escapeSingleQuote(v.displayName)}' }`
+            `\n        { value: '${escapeSingleQuote(v.value)}', displayName: '${escapeSingleQuote(v.displayName)}' }`,
         )
         .join(',');
       parts.push(`enum: [${enumValues},\n      ]`);
@@ -203,7 +218,7 @@ function generatePropertyDefinition(
       const enumValues = property.enum.values
         .map(
           (v) =>
-            `\n        { value: ${v.value}, displayName: '${escapeSingleQuote(v.displayName)}' }`
+            `\n        { value: ${v.value}, displayName: '${escapeSingleQuote(v.displayName)}' }`,
         )
         .join(',');
       parts.push(`enum: [${enumValues},\n      ]`);
@@ -223,7 +238,11 @@ function generatePropertyDefinition(
 
   // Content/ContentReference-specific properties
   if (property.type === 'content' || property.type === 'contentReference') {
-    if ('allowedTypes' in property && property.allowedTypes && property.allowedTypes.length > 0) {
+    if (
+      'allowedTypes' in property &&
+      property.allowedTypes &&
+      property.allowedTypes.length > 0
+    ) {
       const types = property.allowedTypes
         .map((t) => (t === '_self' ? contentTypeKey : t))
         .map((t) => `'${t}'`)
@@ -231,7 +250,11 @@ function generatePropertyDefinition(
       parts.push(`allowedTypes: [${types}]`);
     }
 
-    if ('restrictedTypes' in property && property.restrictedTypes && property.restrictedTypes.length > 0) {
+    if (
+      'restrictedTypes' in property &&
+      property.restrictedTypes &&
+      property.restrictedTypes.length > 0
+    ) {
       const types = property.restrictedTypes
         .map((t) => (t === '_self' ? contentTypeKey : t))
         .map((t) => `'${t}'`)
