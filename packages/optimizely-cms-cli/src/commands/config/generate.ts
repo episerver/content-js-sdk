@@ -5,6 +5,7 @@ import { input, confirm } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
 import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
+import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import { ContentType } from '../../service/apiSchema/manifest.js';
 
@@ -71,11 +72,14 @@ export default class ConfigGenerate extends BaseCommand<typeof ConfigGenerate> {
       }
 
       // Filter out _image, _video, _media content types as they are not relevant for code generation
+      // Also filter out BlankExperience and BlankSection as they are internally provided by the SDK
       manifest.contentTypes = manifest.contentTypes.filter(
-        (ct: any) => !['_image', '_video', '_media'].includes(ct.baseType),
+        (ct: any) =>
+          !['_image', '_video', '_media'].includes(ct.baseType) &&
+          !['BlankExperience', 'BlankSection'].includes(ct.key),
       );
 
-      spinner.text = 'Generating content type files';
+      spinner.text = 'Generating files';
 
       // Ensure output directory exists
       await mkdir(outputDir, { recursive: true });
@@ -119,20 +123,58 @@ export default class ConfigGenerate extends BaseCommand<typeof ConfigGenerate> {
           }
         }
       } else {
-        // Generate files
-        const generatedFiles = await generateContentTypeFiles(
+        // Generate content type files
+        const generatedContentTypeFiles = await generateContentTypeFiles(
           manifest.contentTypes as unknown as ContentType[],
           outputDir,
         );
 
         spinner.succeed(
-          `Generated ${generatedFiles.length} content type file(s) in ${outputDir}`,
+          `Generated ${generatedContentTypeFiles.length} content type file(s) in ${outputDir}`,
         );
 
         // List generated files
-        console.log('\nGenerated files:');
-        for (const file of generatedFiles) {
+        console.log('\nGenerated content type files:');
+        for (const file of generatedContentTypeFiles) {
           console.log(`  - ${file}`);
+        }
+
+        // Generate display template files if available
+        if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
+          // Infer contentType from key (e.g., "NoticeDisplayTemplate" -> "Notice")
+          const processedDisplayTemplates = manifest.displayTemplates.map((dt: any) => {
+            // Try to extract content type from key by removing common suffixes
+            let contentType = dt.key
+              .replace(/DisplayTemplate$/i, '')
+              .replace(/Template$/i, '');
+
+            return {
+              ...dt,
+              contentType: contentType || dt.key,
+            };
+          });
+
+          spinner.start('Generating display template files');
+
+          if (processedDisplayTemplates.length > 0) {
+            const displayTemplatesDir = join(outputDir, '../display-templates');
+            await mkdir(displayTemplatesDir, { recursive: true });
+
+            const generatedDisplayTemplateFiles = await generateDisplayTemplateFiles(
+              processedDisplayTemplates,
+              displayTemplatesDir,
+            );
+
+          spinner.succeed(
+            `Generated ${generatedDisplayTemplateFiles.length} display template file(s) in ${displayTemplatesDir}`,
+          );
+
+          // List generated display template files
+          console.log('\nGenerated display template files:');
+          for (const file of generatedDisplayTemplateFiles) {
+            console.log(`  - ${file}`);
+          }
+        }
         }
       }
     } catch (error) {

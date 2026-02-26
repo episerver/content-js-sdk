@@ -1,7 +1,18 @@
 /** Re-Definition of the "Manifest", the JSON accepted in the endpoint POST /packages */
 export type Manifest = {
   contentTypes?: ContentType[];
+  displayTemplates?: DisplayTemplate[];
 };
+
+/** Display Template */
+export interface DisplayTemplate {
+  key: string;
+  displayName?: string;
+  contentType?: string | null;
+  baseType?: string;
+  isDefault?: boolean;
+  settings?: Record<string, any>;
+}
 
 /** Content Type */
 export interface ContentType {
