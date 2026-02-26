@@ -94,8 +94,17 @@ optimizely-cms-cli config push ./custom-config.mjs
 # Force update (may result in data loss)
 optimizely-cms-cli config push --force
 
-# Pull current CMS configuration to JSON
-optimizely-cms-cli config pull --output ./config.json
+# Pull content types from CMS and generate TypeScript files (prompts for options)
+optimizely-cms-cli config pull
+
+# With output directory specified
+optimizely-cms-cli config pull --output ./src/content-types
+
+# Generate TypeScript files and optionally save raw JSON manifest
+optimizely-cms-cli config pull --output ./src/types --json ./manifest.json
+
+# Group generated files by content type base type
+optimizely-cms-cli config pull --output ./src/types --group
 ```
 
 ### Authentication
