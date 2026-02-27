@@ -10,6 +10,9 @@ import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGe
 import { ContentType } from '../../generators/manifest.js';
 
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
+  // Disable the automatic --json flag from oclif
+  static override enableJsonFlag = false;
+
   static override flags = {
     output: Flags.string({
       description: 'Output directory for generated files',
@@ -18,8 +21,13 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       description: 'Group files by base type (page/, block/, etc.) and co-locate display templates with their content types',
       default: false,
     }),
-    json: Flags.string({
-      description: 'Optionally save the raw manifest JSON to a file',
+    json: Flags.boolean({
+      description: 'Save only the raw manifest JSON without generating TypeScript files',
+      default: false,
+    }),
+    path: Flags.string({
+      description: 'Path for the JSON manifest file (use with --json flag)',
+      dependsOn: ['json'],
     }),
   };
   static override description =
@@ -29,12 +37,47 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     '<%= config.bin %> <%= command.id %> --output ./src/types',
     '<%= config.bin %> <%= command.id %> --group',
     '<%= config.bin %> <%= command.id %> --output ./src/types --group',
-    '<%= config.bin %> <%= command.id %> --json ./manifest.json',
-    '<%= config.bin %> <%= command.id %> --output ./src/types --group --json ./manifest.json',
+    '<%= config.bin %> <%= command.id %> --json',
+    '<%= config.bin %> <%= command.id %> --json --path ./manifest.json',
   ];
 
   public async run(): Promise<void> {
     const { flags } = await this.parse(ConfigPull);
+
+    // If --json flag is present, only save JSON manifest and skip TypeScript generation
+    if (flags.json) {
+      const jsonPath =
+        flags.path ||
+        (await input({
+          message: 'Where should the JSON manifest be saved?',
+          default: './manifest.json',
+        }));
+
+      const jsonFilePath = resolve(process.cwd(), jsonPath);
+      const spinner = ora('Downloading configuration from CMS').start();
+
+      try {
+        const restClient = await createApiClient(flags.host);
+        const response = await restClient
+          .GET('/experimental/packages')
+          .then((r) => r.data);
+
+        if (!response) {
+          spinner.fail('The server did not respond with any content');
+          return;
+        }
+
+        await writeFile(jsonFilePath, JSON.stringify(response, null, 2));
+        spinner.succeed(`Saved raw manifest to ${jsonFilePath}`);
+      } catch (error) {
+        spinner.fail('Error downloading manifest');
+        if (error instanceof Error) {
+          console.error(error.message);
+        }
+        throw error;
+      }
+      return;
+    }
 
     // Prompt for output directory if not provided
     const outputPath =
@@ -70,15 +113,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
       const manifest = response;
 
-      // Save raw JSON manifest if --json flag is provided
-      if (flags.json) {
-        const jsonPath = resolve(process.cwd(), flags.json);
-        await writeFile(jsonPath, JSON.stringify(manifest, null, 2));
-        spinner.succeed(`Saved raw manifest to ${jsonPath}`);
-        spinner.start('Validating manifest');
-      } else {
-        spinner.text = 'Validating manifest';
-      }
+      spinner.text = 'Validating manifest';
 
       if (!manifest.contentTypes || !Array.isArray(manifest.contentTypes)) {
         spinner.fail('Invalid manifest: contentTypes array not found');

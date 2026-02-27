@@ -28,7 +28,10 @@ pnpm add -D @optimizely/cms-cli
 
 # yarn
 yarn add -D @optimizely/cms-cli
+
 ```
+
+> **Tip:** You can also use `npx @optimizely/cms-cli` to run commands without installing the package.
 
 ## Quick Start
 
@@ -75,21 +78,28 @@ export const ArticlePage = contentType({
 Run the CLI to push your definitions to Optimizely CMS:
 
 ```bash
+# If installed as a dependency
 pnpm exec optimizely-cms-cli config push ./optimizely.config.mjs
+
+# Or using npx without installation
+npx @optimizely/cms-cli config push ./optimizely.config.mjs
 ```
 
 ## Commands
+
+All commands can be run using either the installed CLI or via `npx @optimizely/cms-cli`.
 
 ### Configuration Management
 
 Sync your TypeScript content type definitions with Optimizely CMS:
 
 ```bash
-# Push content types to CMS (uses ./optimizely.config.mjs by default)
+# Push content types to CMS (reads ./optimizely.config.mjs from project root by default)
 optimizely-cms-cli config push
+# or: npx @optimizely/cms-cli config push
 
-# Push with custom config file
-optimizely-cms-cli config push ./custom-config.mjs
+# Push with custom config file path
+optimizely-cms-cli config push ./path/to/custom-config.mjs
 
 # Force update (may result in data loss)
 optimizely-cms-cli config push --force
@@ -100,14 +110,22 @@ optimizely-cms-cli config pull
 # With output directory specified
 optimizely-cms-cli config pull --output ./src/content-types
 
-# Generate TypeScript files and optionally save raw JSON manifest
-optimizely-cms-cli config pull --output ./src/types --json ./manifest.json
-
 # Group generated files by content type base type (page/, block/, component/, etc.)
-# When using --group, display templates are co-located with their content types
-# Orphaned display templates (no matching content type) go to displayTemplates/ directory
 optimizely-cms-cli config pull --output ./src/types --group
+
+# Save only the raw JSON manifest without generating TypeScript files (prompts for path, default: ./manifest.json)
+optimizely-cms-cli config pull --json
+
+# Save JSON manifest to a specific path
+optimizely-cms-cli config pull --json --path ./custom-manifest.json
 ```
+
+> **Note:** When using `--group`:
+>
+> - Display templates are co-located with their content types in the same file
+> - Orphaned display templates (without a matching content type) are placed in the `displayTemplates/` directory
+>
+> See [File Organization](#file-organization) below for detailed examples.
 
 ### Authentication
 
@@ -162,6 +180,7 @@ optimizely-cms-cli config --help
 When pulling content types from CMS, the CLI generates TypeScript files with different organization strategies:
 
 #### Without `--group` flag (default)
+
 ```
 src/content-types/
 ├── ArticlePage.ts
@@ -173,6 +192,7 @@ src/content-types/
 ```
 
 #### With `--group` flag
+
 Organizes files by content type base type (`_page`, `_block`, `_component`, etc.) and **co-locates display templates with their content types**:
 
 ```
@@ -189,6 +209,7 @@ src/types/
 ```
 
 **Example co-located file** ([page/ArticlePage.ts]()):
+
 ```typescript
 import { contentType, displayTemplate } from '@optimizely/cms-sdk';
 
@@ -198,7 +219,9 @@ import { contentType, displayTemplate } from '@optimizely/cms-sdk';
 export const ArticlePageCT = contentType({
   key: 'ArticlePage',
   baseType: '_page',
-  properties: { /* ... */ },
+  properties: {
+    /* ... */
+  },
 });
 
 /**
@@ -212,6 +235,7 @@ export const ArticleDisplayTemplateDT = displayTemplate({
 ```
 
 **Benefits of grouping:**
+
 - Better organization by content type category
 - Related display templates are co-located with their content types
 - Fewer files to manage
