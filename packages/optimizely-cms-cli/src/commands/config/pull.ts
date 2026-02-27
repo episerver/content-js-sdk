@@ -15,7 +15,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       description: 'Output directory for generated files',
     }),
     group: Flags.boolean({
-      description: 'Whether to group generated files into subdirectories',
+      description: 'Group files by base type (page/, block/, etc.) and co-locate display templates with their content types',
       default: false,
     }),
     json: Flags.string({
@@ -28,8 +28,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --output ./src/types',
     '<%= config.bin %> <%= command.id %> --group',
+    '<%= config.bin %> <%= command.id %> --output ./src/types --group',
     '<%= config.bin %> <%= command.id %> --json ./manifest.json',
-    '<%= config.bin %> <%= command.id %> --output ./src/types --json ./manifest.json',
+    '<%= config.bin %> <%= command.id %> --output ./src/types --group --json ./manifest.json',
   ];
 
   public async run(): Promise<void> {

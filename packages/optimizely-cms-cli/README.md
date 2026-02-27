@@ -103,7 +103,9 @@ optimizely-cms-cli config pull --output ./src/content-types
 # Generate TypeScript files and optionally save raw JSON manifest
 optimizely-cms-cli config pull --output ./src/types --json ./manifest.json
 
-# Group generated files by content type base type
+# Group generated files by content type base type (page/, block/, component/, etc.)
+# When using --group, display templates are co-located with their content types
+# Orphaned display templates (no matching content type) go to displayTemplates/ directory
 optimizely-cms-cli config pull --output ./src/types --group
 ```
 
@@ -152,6 +154,68 @@ optimizely-cms-cli config push --help
 # Show help for a topic
 optimizely-cms-cli config --help
 ```
+
+## File Organization
+
+### Pull Command Output Structure
+
+When pulling content types from CMS, the CLI generates TypeScript files with different organization strategies:
+
+#### Without `--group` flag (default)
+```
+src/content-types/
+├── ArticlePage.ts
+├── ProductPage.ts
+├── HeroBlock.ts
+└── display-templates/
+    ├── ArticleDisplayTemplate.ts
+    └── HeroDisplayTemplate.ts
+```
+
+#### With `--group` flag
+Organizes files by content type base type (`_page`, `_block`, `_component`, etc.) and **co-locates display templates with their content types**:
+
+```
+src/types/
+├── page/
+│   ├── ArticlePage.ts      # Contains ArticlePageCT + ArticleDisplayTemplateDT
+│   └── ProductPage.ts       # Contains ProductPageCT + ProductDisplayTemplateDT
+├── block/
+│   └── HeroBlock.ts         # Contains HeroBlockCT + HeroDisplayTemplateDT
+├── component/
+│   └── Teaser.ts            # Contains TeaserCT + TeaserDisplayTemplateDT
+└── displayTemplates/        # Only created if orphaned templates exist
+    └── LegacyTemplate.ts    # Display templates with no matching content type
+```
+
+**Example co-located file** ([page/ArticlePage.ts]()):
+```typescript
+import { contentType, displayTemplate } from '@optimizely/cms-sdk';
+
+/**
+ * Article Page
+ */
+export const ArticlePageCT = contentType({
+  key: 'ArticlePage',
+  baseType: '_page',
+  properties: { /* ... */ },
+});
+
+/**
+ * Article Display Template
+ */
+export const ArticleDisplayTemplateDT = displayTemplate({
+  key: 'ArticleDisplayTemplate',
+  contentType: 'ArticlePage',
+  isDefault: true,
+});
+```
+
+**Benefits of grouping:**
+- Better organization by content type category
+- Related display templates are co-located with their content types
+- Fewer files to manage
+- Clear visibility of orphaned templates that may need attention
 
 ## Documentation
 

@@ -32,7 +32,11 @@ export async function generateContentTypeFiles(
 
       fileContent += '\n'; // Add spacing
       for (const template of relatedTemplates) {
-        fileContent += '\n' + generateDisplayTemplateCode(template);
+        const templateCode = generateDisplayTemplateCode(template);
+        // Remove the import statement since we already have it at the top of the file
+        const codeWithoutImport = templateCode
+          .replace(/^import \{ displayTemplate \} from '@optimizely\/cms-sdk';\n\n/, '');
+        fileContent += '\n' + codeWithoutImport;
       }
     }
 
