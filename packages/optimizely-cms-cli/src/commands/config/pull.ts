@@ -99,6 +99,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
       if (isGroupBy) {
         const groups: Record<string, ContentType[]> = {};
+        const displayTemplatesByContentType = new Map<string, any[]>();
+        const orphanedDisplayTemplates: any[] = [];
+
         spinner.text = 'Grouping content types by base type';
 
         for (const contentType of manifest.contentTypes) {
@@ -113,6 +116,39 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           groups[group].push(contentType as unknown as ContentType);
         }
 
+        // Process and match display templates to content types
+        if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
+          const processedTemplates = manifest.displayTemplates.map(
+            (dt: any) => ({
+              ...dt,
+              contentType:
+                dt.contentType ||
+                dt.key
+                  .replace(/DisplayTemplate$/i, '')
+                  .replace(/Template$/i, ''),
+            }),
+          );
+
+          // Build a set of all content type keys for quick lookup
+          const allContentTypeKeys = new Set(
+            manifest.contentTypes.map((ct: any) => ct.key),
+          );
+
+          for (const template of processedTemplates) {
+            // Check if this template's content type exists in our manifest
+            if (allContentTypeKeys.has(template.contentType)) {
+              // Match found - group with content type
+              const existing =
+                displayTemplatesByContentType.get(template.contentType) || [];
+              existing.push(template);
+              displayTemplatesByContentType.set(template.contentType, existing);
+            } else {
+              // No match - orphaned template
+              orphanedDisplayTemplates.push(template);
+            }
+          }
+        }
+
         // inside the outputDir create subdirectories for each group if grouping is enabled
         for (const group in groups) {
           const parsedGroupName = group.replace(/^_/, ''); // Remove leading underscore for cleaner directory names
@@ -122,6 +158,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           // Generate files for each group
           const generatedFiles = await generateContentTypeFiles(
             groups[group],
+            displayTemplatesByContentType,
             groupDir,
           );
 
@@ -135,10 +172,33 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             console.log(`  - ${file}`);
           }
         }
+
+        // Handle orphaned display templates
+        if (orphanedDisplayTemplates.length > 0) {
+          spinner.start('Generating orphaned display templates');
+
+          const displayTemplatesDir = join(outputDir, 'displayTemplates');
+          await mkdir(displayTemplatesDir, { recursive: true });
+
+          const orphanedFiles = await generateDisplayTemplateFiles(
+            orphanedDisplayTemplates,
+            displayTemplatesDir,
+          );
+
+          spinner.succeed(
+            `Generated ${orphanedFiles.length} orphaned display template(s) in ${displayTemplatesDir}`,
+          );
+
+          console.log('\nOrphaned display templates (no matching content type):');
+          for (const file of orphanedFiles) {
+            console.log(`  - ${file}`);
+          }
+        }
       } else {
-        // Generate content type files
+        // Generate content type files (without grouping by baseType)
         const generatedContentTypeFiles = await generateContentTypeFiles(
           manifest.contentTypes as unknown as ContentType[],
+          new Map(), // No display template grouping in non-grouped mode
           outputDir,
         );
 

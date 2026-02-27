@@ -35,7 +35,7 @@ function generateFileName(key: string): string {
 /**
  * Generates the TypeScript code for a display template definition
  */
-function generateDisplayTemplateCode(displayTemplate: DisplayTemplate): string {
+export function generateDisplayTemplateCode(displayTemplate: DisplayTemplate): string {
   const exportName = generateExportName(displayTemplate.key);
 
   if (!displayTemplate.contentType) {

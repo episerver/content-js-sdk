@@ -1,12 +1,15 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ContentType, ContentTypeProperties } from './manifest.js';
+import { ContentType, ContentTypeProperties, DisplayTemplate } from './manifest.js';
+import { generateDisplayTemplateCode } from './displayTemplateGenerator.js';
 
 /**
  * Generates TypeScript content type definition files from a manifest
+ * Optionally includes related display templates in the same file
  */
 export async function generateContentTypeFiles(
   contentTypes: ContentType[],
+  displayTemplatesByContentType: Map<string, DisplayTemplate[]>,
   outputDir: string,
 ): Promise<string[]> {
   const generatedFiles: string[] = [];
@@ -14,7 +17,24 @@ export async function generateContentTypeFiles(
   for (const contentType of contentTypes) {
     const fileName = generateFileName(contentType.key);
     const filePath = join(outputDir, fileName);
-    const fileContent = generateContentTypeCode(contentType);
+
+    // Generate content type code
+    let fileContent = generateContentTypeCode(contentType);
+
+    // Append display templates for this specific content type
+    const relatedTemplates = displayTemplatesByContentType.get(contentType.key) || [];
+    if (relatedTemplates.length > 0) {
+      // Update import to include displayTemplate
+      fileContent = fileContent.replace(
+        "import { contentType } from '@optimizely/cms-sdk';",
+        "import { contentType, displayTemplate } from '@optimizely/cms-sdk';"
+      );
+
+      fileContent += '\n'; // Add spacing
+      for (const template of relatedTemplates) {
+        fileContent += '\n' + generateDisplayTemplateCode(template);
+      }
+    }
 
     await writeFile(filePath, fileContent, 'utf-8');
     generatedFiles.push(fileName);
