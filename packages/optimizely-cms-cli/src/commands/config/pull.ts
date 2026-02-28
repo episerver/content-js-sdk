@@ -1,6 +1,7 @@
 import { Flags } from '@oclif/core';
 import { resolve, join } from 'node:path';
 import ora from 'ora';
+import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { writeFile, mkdir } from 'node:fs/promises';
@@ -10,19 +11,18 @@ import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGe
 import { ContentType } from '../../generators/manifest.js';
 
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
-  // Disable the automatic --json flag from oclif
-  static override enableJsonFlag = false;
-
   static override flags = {
     output: Flags.string({
       description: 'Output directory for generated files',
     }),
     group: Flags.boolean({
-      description: 'Group files by base type (page/, block/, etc.) and co-locate display templates with their content types',
+      description:
+        'Group files by base type (page/, component/, section/, etc.) and co-locate display templates with their content types',
       default: false,
     }),
     json: Flags.boolean({
-      description: 'Save only the raw manifest JSON without generating TypeScript files',
+      description:
+        'Save only the raw manifest JSON without generating TypeScript files',
       default: false,
     }),
     path: Flags.string({
@@ -155,14 +155,23 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         // Process and match display templates to content types
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
           const processedTemplates = manifest.displayTemplates.map(
-            (dt: any) => ({
-              ...dt,
-              contentType:
-                dt.contentType ||
-                dt.key
-                  .replace(/DisplayTemplate$/i, '')
-                  .replace(/Template$/i, ''),
-            }),
+            (dt: any) => {
+              // Display templates can have one of three mutually exclusive fields:
+              // contentType, baseType, or nodeType. Only infer contentType if none exist.
+              if (dt.contentType || dt.baseType || dt.nodeType) {
+                return dt;
+              }
+
+              // Infer contentType from key by removing common suffixes
+              const inferredContentType = dt.key
+                .replace(/DisplayTemplate$/i, '')
+                .replace(/Template$/i, '');
+
+              return {
+                ...dt,
+                contentType: inferredContentType || dt.key,
+              };
+            },
           );
 
           // Build a set of all content type keys for quick lookup
@@ -171,15 +180,19 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           );
 
           for (const template of processedTemplates) {
-            // Check if this template's content type exists in our manifest
-            if (allContentTypeKeys.has(template.contentType)) {
+            // Templates with baseType or nodeType cannot be matched to a specific content type
+            // Only templates with contentType field can be matched
+            if (
+              template.contentType &&
+              allContentTypeKeys.has(template.contentType)
+            ) {
               // Match found - group with content type
               const existing =
                 displayTemplatesByContentType.get(template.contentType) || [];
               existing.push(template);
               displayTemplatesByContentType.set(template.contentType, existing);
             } else {
-              // No match - orphaned template
+              // No match - orphaned template (includes baseType/nodeType templates)
               orphanedDisplayTemplates.push(template);
             }
           }
@@ -203,9 +216,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           );
 
           // List generated files for the group
-          console.log(`\nGenerated files for group "${parsedGroupName}":`);
+          console.log(chalk.cyan.bold(`\nGenerated files for group "${parsedGroupName}":`));
           for (const file of generatedFiles) {
-            console.log(`  - ${file}`);
+            console.log(chalk.dim('  -'), chalk.green(file));
           }
         }
 
@@ -225,9 +238,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             `Generated ${orphanedFiles.length} orphaned display template(s) in ${displayTemplatesDir}`,
           );
 
-          console.log('\nOrphaned display templates (no matching content type):');
+          console.log(
+            chalk.yellow.bold('\nOrphaned display templates (no matching content type):'),
+          );
           for (const file of orphanedFiles) {
-            console.log(`  - ${file}`);
+            console.log(chalk.dim('  -'), chalk.yellow(file));
           }
         }
       } else {
@@ -243,24 +258,29 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         );
 
         // List generated files
-        console.log('\nGenerated content type files:');
+        console.log(chalk.cyan.bold('\nGenerated content type files:'));
         for (const file of generatedContentTypeFiles) {
-          console.log(`  - ${file}`);
+          console.log(chalk.dim('  -'), chalk.green(file));
         }
 
         // Generate display template files if available
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
-          // Infer contentType from key (e.g., "NoticeDisplayTemplate" -> "Notice")
           const processedDisplayTemplates = manifest.displayTemplates.map(
             (dt: any) => {
-              // Try to extract content type from key by removing common suffixes
-              let contentType = dt.key
+              // Display templates can have one of three mutually exclusive fields:
+              // contentType, baseType, or nodeType. Only infer contentType if none exist.
+              if (dt.contentType || dt.baseType || dt.nodeType) {
+                return dt;
+              }
+
+              // Infer contentType from key by removing common suffixes
+              const inferredContentType = dt.key
                 .replace(/DisplayTemplate$/i, '')
                 .replace(/Template$/i, '');
 
               return {
                 ...dt,
-                contentType: contentType || dt.key,
+                contentType: inferredContentType || dt.key,
               };
             },
           );
@@ -282,9 +302,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             );
 
             // List generated display template files
-            console.log('\nGenerated display template files:');
+            console.log(chalk.cyan.bold('\nGenerated display template files:'));
             for (const file of generatedDisplayTemplateFiles) {
-              console.log(`  - ${file}`);
+              console.log(chalk.dim('  -'), chalk.green(file));
             }
           }
         }

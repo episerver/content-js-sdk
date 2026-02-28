@@ -110,7 +110,7 @@ optimizely-cms-cli config pull
 # With output directory specified
 optimizely-cms-cli config pull --output ./src/content-types
 
-# Group generated files by content type base type (page/, block/, component/, etc.)
+# Group generated files by content type base type (page/, component/, section/, etc.)
 optimizely-cms-cli config pull --output ./src/types --group
 
 # Save only the raw JSON manifest without generating TypeScript files (prompts for path, default: ./manifest.json)
@@ -185,7 +185,7 @@ When pulling content types from CMS, the CLI generates TypeScript files with dif
 src/content-types/
 ├── ArticlePage.ts
 ├── ProductPage.ts
-├── HeroBlock.ts
+├── HeroComponent.ts
 └── display-templates/
     ├── ArticleDisplayTemplate.ts
     └── HeroDisplayTemplate.ts
@@ -193,17 +193,18 @@ src/content-types/
 
 #### With `--group` flag
 
-Organizes files by content type base type (`_page`, `_block`, `_component`, etc.) and **co-locates display templates with their content types**:
+Organizes files by content type base type (`_page`, `_component`, `_section`, etc.) and **co-locates display templates with their content types**:
 
 ```
 src/types/
 ├── page/
 │   ├── ArticlePage.ts      # Contains ArticlePageCT + ArticleDisplayTemplateDT
 │   └── ProductPage.ts       # Contains ProductPageCT + ProductDisplayTemplateDT
-├── block/
-│   └── HeroBlock.ts         # Contains HeroBlockCT + HeroDisplayTemplateDT
 ├── component/
+│   ├── HeroComponent.ts     # Contains HeroComponentCT + HeroDisplayTemplateDT
 │   └── Teaser.ts            # Contains TeaserCT + TeaserDisplayTemplateDT
+├── section/
+│   └── ContentSection.ts    # Contains ContentSectionCT + ContentSectionDisplayTemplateDT
 └── displayTemplates/        # Only created if orphaned templates exist
     └── LegacyTemplate.ts    # Display templates with no matching content type
 ```

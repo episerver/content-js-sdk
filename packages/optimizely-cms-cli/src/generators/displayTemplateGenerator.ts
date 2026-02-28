@@ -38,9 +38,18 @@ function generateFileName(key: string): string {
 export function generateDisplayTemplateCode(displayTemplate: DisplayTemplate): string {
   const exportName = generateExportName(displayTemplate.key);
 
-  if (!displayTemplate.contentType) {
+  // Display templates must have exactly one of: contentType, baseType, or nodeType
+  const discriminator = displayTemplate.contentType
+    ? { field: 'contentType', value: displayTemplate.contentType }
+    : displayTemplate.baseType
+      ? { field: 'baseType', value: displayTemplate.baseType }
+      : displayTemplate.nodeType
+        ? { field: 'nodeType', value: displayTemplate.nodeType }
+        : null;
+
+  if (!discriminator) {
     throw new Error(
-      `Display template ${displayTemplate.key} is missing contentType`,
+      `Display template ${displayTemplate.key} is missing contentType, baseType, or nodeType`,
     );
   }
 
@@ -75,7 +84,7 @@ export function generateDisplayTemplateCode(displayTemplate: DisplayTemplate): s
  */
 export const ${exportName} = displayTemplate({
   key: '${displayTemplate.key}',
-  contentType: '${displayTemplate.contentType}'${optionalFieldsStr},
+  ${discriminator.field}: '${discriminator.value}'${optionalFieldsStr},
 });
 `;
 
