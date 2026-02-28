@@ -1,5 +1,6 @@
 import { Command, Flags } from '@oclif/core';
 import ora from 'ora';
+import chalk from 'chalk';
 import { readEnvCredentials } from '../service/config.js';
 import { getToken } from '../service/cmsRestClient.js';
 
@@ -17,27 +18,40 @@ export default class Login extends Command {
   };
 
   public async run(): Promise<void> {
+    const { flags } = await this.parse(Login);
+
+    // readEnvCredentials() will throw an error if credentials are missing
     const credentials = readEnvCredentials();
 
-    if (credentials) {
-      const spinner = ora('Checking your credentials...').start();
-      try {
-        const token = await getToken(
-          credentials.clientId,
-          credentials.clientSecret
-        );
+    const spinner = ora('Checking your credentials...').start();
 
-        if (token) {
-          spinner.succeed('Your credentials are correct');
-        } else {
-          spinner.fail('The API did not return a token');
+    try {
+      const token = await getToken(
+        credentials.clientId,
+        credentials.clientSecret,
+      );
+
+      if (token) {
+        spinner.succeed(chalk.green('Your credentials are correct'));
+        if (flags.verbose) {
+          console.log(chalk.dim('Client ID:'), chalk.cyan(credentials.clientId));
+          console.log(chalk.dim('Token received successfully'));
         }
-      } catch (err) {
-        spinner.clear();
-        throw err;
+      } else {
+        spinner.fail(chalk.red('The API did not return a token'));
+        console.error(
+          chalk.red('Authentication failed: No token received from the API'),
+        );
+        process.exit(1);
+      }
+    } catch (err) {
+      spinner.fail(chalk.red('Authentication failed'));
+
+      if (flags.verbose && err instanceof Error) {
+        console.error(chalk.dim('Error details:'), err.message);
       }
 
-      return;
+      throw err;
     }
   }
 }

@@ -9,6 +9,7 @@ import { createApiClient } from '../../service/cmsRestClient.js';
 import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
 import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
 import { ContentType } from '../../generators/manifest.js';
+import { processDisplayTemplates } from '../../utils/mapping.js';
 
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   static override flags = {
@@ -57,7 +58,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       const spinner = ora('Downloading configuration from CMS').start();
 
       try {
-        const restClient = await createApiClient(flags.host);
+        const restClient = await createApiClient();
         const response = await restClient
           .GET('/experimental/packages')
           .then((r) => r.data);
@@ -101,7 +102,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     try {
       // Pull from CMS
-      const restClient = await createApiClient(flags.host);
+      const restClient = await createApiClient();
       const response = await restClient
         .GET('/experimental/packages')
         .then((r) => r.data);
@@ -154,24 +155,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
         // Process and match display templates to content types
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
-          const processedTemplates = manifest.displayTemplates.map(
-            (dt: any) => {
-              // Display templates can have one of three mutually exclusive fields:
-              // contentType, baseType, or nodeType. Only infer contentType if none exist.
-              if (dt.contentType || dt.baseType || dt.nodeType) {
-                return dt;
-              }
-
-              // Infer contentType from key by removing common suffixes
-              const inferredContentType = dt.key
-                .replace(/DisplayTemplate$/i, '')
-                .replace(/Template$/i, '');
-
-              return {
-                ...dt,
-                contentType: inferredContentType || dt.key,
-              };
-            },
+          const processedTemplates = processDisplayTemplates(
+            manifest.displayTemplates,
           );
 
           // Build a set of all content type keys for quick lookup
@@ -216,7 +201,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           );
 
           // List generated files for the group
-          console.log(chalk.cyan.bold(`\nGenerated files for group "${parsedGroupName}":`));
+          console.log(
+            chalk.cyan.bold(
+              `\nGenerated files for group "${parsedGroupName}":`,
+            ),
+          );
           for (const file of generatedFiles) {
             console.log(chalk.dim('  -'), chalk.green(file));
           }
@@ -235,14 +224,14 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           );
 
           spinner.succeed(
-            `Generated ${orphanedFiles.length} orphaned display template(s) in ${displayTemplatesDir}`,
+            `Generated ${orphanedFiles.length} display template(s) in ${displayTemplatesDir}`,
           );
 
           console.log(
-            chalk.yellow.bold('\nOrphaned display templates (no matching content type):'),
+            chalk.cyan.bold('\nDisplay templates (no matching content type):'),
           );
           for (const file of orphanedFiles) {
-            console.log(chalk.dim('  -'), chalk.yellow(file));
+            console.log(chalk.dim('  -'), chalk.green(file));
           }
         }
       } else {
@@ -265,24 +254,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
         // Generate display template files if available
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
-          const processedDisplayTemplates = manifest.displayTemplates.map(
-            (dt: any) => {
-              // Display templates can have one of three mutually exclusive fields:
-              // contentType, baseType, or nodeType. Only infer contentType if none exist.
-              if (dt.contentType || dt.baseType || dt.nodeType) {
-                return dt;
-              }
-
-              // Infer contentType from key by removing common suffixes
-              const inferredContentType = dt.key
-                .replace(/DisplayTemplate$/i, '')
-                .replace(/Template$/i, '');
-
-              return {
-                ...dt,
-                contentType: inferredContentType || dt.key,
-              };
-            },
+          const processedDisplayTemplates = processDisplayTemplates(
+            manifest.displayTemplates,
           );
 
           spinner.start('Generating display template files');

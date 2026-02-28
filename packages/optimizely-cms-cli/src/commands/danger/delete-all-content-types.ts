@@ -1,4 +1,5 @@
 import { confirm } from '@inquirer/prompts';
+import chalk from 'chalk';
 import { BaseCommand } from '../../baseCommand.js';
 import ora from 'ora';
 import { createApiClient } from '../../service/cmsRestClient.js';
@@ -16,59 +17,99 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<
   static override flags = {};
 
   public async run(): Promise<void> {
-    const { args, flags } = await this.parse(DangerDeleteAllContentTypes);
-    const client = await createApiClient(flags.host);
+    const spinner = ora('Fetching content types from CMS...').start();
 
+    let client;
+    try {
+      client = await createApiClient();
+    } catch (error) {
+      spinner.fail(chalk.red('Failed to connect to CMS'));
+      throw error;
+    }
+
+    let contentTypes;
+    try {
+      const response = await client.GET('/contenttypes');
+      contentTypes = response.data?.items;
+      spinner.stop();
+    } catch (error) {
+      spinner.fail(chalk.red('Failed to fetch content types'));
+      throw error;
+    }
+
+    if (!contentTypes) {
+      console.error(chalk.red('Failed to fetch content types from the CMS'));
+      process.exit(1);
+    }
+
+    const deletedTypes = contentTypes.filter(
+      (t) => t.source !== 'system' && t.source !== 'serverModel',
+    );
+
+    if (deletedTypes.length === 0) {
+      console.log(chalk.yellow('There are no user-defined content types in the CMS'));
+      return;
+    }
+
+    // First confirmation
     const answer = await confirm({
-      message: 'This will delete all your content types. Are you sure?',
+      message: chalk.red.bold(
+        `⚠️  This will delete ALL ${deletedTypes.length} user-defined content types. Are you sure?`,
+      ),
+      default: false,
     });
 
     if (!answer) {
+      console.log(chalk.dim('Operation cancelled.'));
       return;
     }
 
-    const contentTypes = await client
-      .GET('/contenttypes')
-      .then((r) => r.data?.items);
-
-    const deletedTypes = contentTypes?.filter(
-      (t) => t.source !== 'system' && t.source !== 'serverModel'
-    );
-
-    if (!deletedTypes) {
-      return;
-    }
-
-    if (deletedTypes.length === 0) {
-      console.log('There are no content types in the CMS');
-      return;
-    }
-
-    console.log();
-    console.log('You will delete all these content types');
+    // Show what will be deleted
+    console.log(chalk.yellow.bold('\nContent types that will be deleted:'));
     for (const type of deletedTypes) {
-      console.log(`- ${type.displayName} (${type.key})`);
+      console.log(chalk.dim('  -'), chalk.yellow(`${type.displayName} (${type.key})`));
     }
 
+    // Second confirmation
     const answer2 = await confirm({
-      message: 'Are you sure?',
+      message: chalk.red.bold('\n⚠️  This action cannot be undone. Proceed with deletion?'),
+      default: false,
     });
 
     if (!answer2) {
+      console.log(chalk.dim('Operation cancelled.'));
       return;
     }
 
+    console.log(); // Empty line before deletion starts
+
+    let successCount = 0;
+    let failureCount = 0;
+
     for (const type of deletedTypes) {
-      const spinner = ora(`Deleting ${type.key}...`);
+      const deleteSpinner = ora(`Deleting ${type.key}...`).start();
       const r = await client.DELETE('/contenttypes/{key}', {
         params: { path: { key: type.key } },
       });
 
       if (!r.response.ok) {
-        spinner.fail(`'${type.key}' cannot be deleted`);
+        deleteSpinner.fail(chalk.red(`'${type.key}' cannot be deleted`));
+        if (r.error) {
+          console.error(chalk.dim(`  Error: ${r.error.title || 'Unknown error'}`));
+        }
+        failureCount++;
       } else {
-        spinner.succeed(`'${type.key}' deleted`);
+        deleteSpinner.succeed(chalk.green(`'${type.key}' deleted`));
+        successCount++;
       }
+    }
+
+    // Summary
+    console.log();
+    console.log(chalk.cyan.bold('Summary:'));
+    console.log(chalk.green(`  ✓ Successfully deleted: ${successCount}`));
+    if (failureCount > 0) {
+      console.log(chalk.red(`  ✗ Failed to delete: ${failureCount}`));
     }
   }
 }

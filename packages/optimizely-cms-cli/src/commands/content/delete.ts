@@ -1,4 +1,7 @@
 import { Args } from '@oclif/core';
+import { confirm } from '@inquirer/prompts';
+import ora from 'ora';
+import chalk from 'chalk';
 import { BaseCommand } from '../../baseCommand.js';
 import { createApiClient } from '../../service/cmsRestClient.js';
 
@@ -12,26 +15,64 @@ export default class ContentDelete extends BaseCommand<typeof ContentDelete> {
   static override description = 'Delete a content type definition from the CMS';
   static override examples = [
     '<%= config.bin %> <%= command.id %> Article',
-    '<%= config.bin %> <%= command.id %> ProductPage --host https://example.com',
+    '<%= config.bin %> <%= command.id %> ProductPage',
   ];
   static override flags = {};
 
   public async run(): Promise<void> {
-    const { args, flags } = await this.parse(ContentDelete);
+    const { args } = await this.parse(ContentDelete);
 
-    const client = await createApiClient(flags.host);
-    const r = await client.DELETE('/content/{key}', {
-      params: {
-        path: {
-          key: args.key,
-        },
-      },
+    // Confirm before deletion
+    const confirmed = await confirm({
+      message: `Are you sure you want to delete the content type "${chalk.yellow(args.key)}"? This action cannot be undone.`,
+      default: false,
     });
 
-    if (r.response.ok) {
-      console.log('Success!');
-    } else {
-      console.log(r.error);
+    if (!confirmed) {
+      console.log(chalk.dim('Deletion cancelled.'));
+      return;
+    }
+
+    const spinner = ora(`Deleting content type "${args.key}"...`).start();
+
+    try {
+      const client = await createApiClient();
+      const r = await client.DELETE('/content/{key}', {
+        params: {
+          path: {
+            key: args.key,
+          },
+        },
+      });
+
+      if (r.response.ok) {
+        spinner.succeed(chalk.green(`Content type "${args.key}" deleted successfully`));
+      } else {
+        spinner.fail(chalk.red(`Failed to delete content type "${args.key}"`));
+
+        if (r.error) {
+          if (r.error.status === 404) {
+            console.error(chalk.red(`Content type "${args.key}" not found`));
+          } else if (r.error.status === 409) {
+            console.error(chalk.red('Cannot delete: Content type is in use'));
+          } else {
+            console.error(chalk.red(`Error ${r.error.status}: ${r.error.title || 'Unknown error'}`));
+            if (r.error.detail) {
+              console.error(chalk.dim(r.error.detail));
+            }
+          }
+        } else {
+          console.error(chalk.red('An unexpected error occurred'));
+        }
+
+        process.exit(1);
+      }
+    } catch (error) {
+      spinner.fail(chalk.red('Failed to delete content type'));
+      if (error instanceof Error) {
+        console.error(chalk.red(error.message));
+      }
+      throw error;
     }
   }
 }
