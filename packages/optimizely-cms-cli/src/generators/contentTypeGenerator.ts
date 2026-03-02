@@ -60,7 +60,7 @@ function generateFileName(key: string): string {
 /**
  * Generates the TypeScript code for a content type definition
  */
-function generateContentTypeCode(contentType: ContentType): string {
+export function generateContentTypeCode(contentType: ContentType): string {
   const exportName = generateExportName(contentType.key);
 
   // Collect component imports

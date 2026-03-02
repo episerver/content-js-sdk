@@ -30,17 +30,26 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     '<%= config.bin %> <%= command.id %> --group',
     '<%= config.bin %> <%= command.id %> --output ./src/types --group',
     '<%= config.bin %> <%= command.id %> > manifest.json',
-    '<%= config.bin %> <%= command.id %> | jq \'.contentTypes | length\'',
+    "<%= config.bin %> <%= command.id %> | jq '.contentTypes | length'",
   ];
 
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
 
     // Detect if output is being redirected or piped
-    const isOutputRedirected = !process.stdout.isTTY;
+    // isTTY is true only when connected to a terminal
+    // It's undefined when redirected (> file) or piped (| command)
+    const isOutputRedirected = process.stdout.isTTY !== true;
 
     // If output is redirected, output JSON to stdout
     if (isOutputRedirected) {
+      // Warn if flags meant for interactive mode are provided
+      if (flags.output || flags.group) {
+        this.warn(
+          'Flags --output and --group are ignored when output is redirected. Use interactive mode to generate TypeScript files.',
+        );
+      }
+
       // Use stderr for spinner when outputting to stdout
       const spinner = ora({
         stream: process.stderr,
@@ -55,19 +64,33 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
         if (!response) {
           spinner.fail('The server did not respond with any content');
+          process.exitCode = 1; // Set error exit code
           return;
         }
 
-        spinner.succeed('Downloaded configuration from CMS');
+        // Show count in success message
+        const contentTypeCount = response.contentTypes?.length || 0;
+        spinner.succeed(
+          `Downloaded configuration from CMS (${contentTypeCount} content type${contentTypeCount !== 1 ? 's' : ''})`,
+        );
 
-        // Output JSON to stdout (this.log writes to stdout)
-        this.log(JSON.stringify(response, null, 2));
+        // Safely serialize JSON with error handling
+        try {
+          this.log(JSON.stringify(response, null, 2));
+        } catch (serializeError) {
+          spinner.fail('Failed to serialize response to JSON');
+          process.exitCode = 1;
+          throw new Error(
+            'Response contains unserializable data (circular references or BigInt values)',
+          );
+        }
         return;
       } catch (error) {
-        spinner.fail('Error downloading manifest');
-        if (error instanceof Error) {
-          console.error(error.message);
-        }
+        // Improve error message clarity
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        spinner.fail(`Error downloading manifest: ${errorMessage}`);
+        process.exitCode = 1; // Set error exit code
         throw error;
       }
     }
@@ -101,6 +124,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
       if (!response) {
         spinner.fail('The server did not respond with any content');
+        process.exitCode = 1; // Set error exit code
         return;
       }
 
@@ -110,6 +134,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
       if (!manifest.contentTypes || !Array.isArray(manifest.contentTypes)) {
         spinner.fail('Invalid manifest: contentTypes array not found');
+        process.exitCode = 1; // Set error exit code
         return;
       }
 
@@ -121,7 +146,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           !['BlankExperience', 'BlankSection'].includes(ct.key),
       );
 
-      spinner.text = 'Generating files';
+      // Show count in spinner text
+      const contentTypeCount = manifest.contentTypes.length;
+      spinner.text = `Generating files for ${contentTypeCount} content type${contentTypeCount !== 1 ? 's' : ''}`;
 
       // Ensure output directory exists
       await mkdir(outputDir, { recursive: true });
@@ -275,10 +302,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         }
       }
     } catch (error) {
-      spinner.fail('Error generating files');
-      if (error instanceof Error) {
-        console.error(error.message);
-      }
+      // Improve error message clarity
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      spinner.fail(`Error generating files: ${errorMessage}`);
+      process.exitCode = 1; // Set error exit code
       throw error;
     }
   }
