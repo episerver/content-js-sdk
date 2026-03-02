@@ -30,8 +30,19 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     '<%= config.bin %> <%= command.id %> --group',
     '<%= config.bin %> <%= command.id %> --output ./src/types --group',
     '<%= config.bin %> <%= command.id %> > manifest.json',
-    "<%= config.bin %> <%= command.id %> | jq '.contentTypes | length'",
+    '<%= config.bin %> <%= command.id %> | grep contentType',
   ];
+
+  /**
+   * Fetches the manifest from CMS
+   */
+  private async fetchManifest() {
+    const restClient = await createApiClient();
+    const response = await restClient
+      .GET('/experimental/packages')
+      .then((r) => r.data);
+    return response;
+  }
 
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
@@ -57,10 +68,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       }).start();
 
       try {
-        const restClient = await createApiClient();
-        const response = await restClient
-          .GET('/experimental/packages')
-          .then((r) => r.data);
+        const response = await this.fetchManifest();
 
         if (!response) {
           spinner.fail('The server did not respond with any content');
@@ -117,10 +125,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     try {
       // Pull from CMS
-      const restClient = await createApiClient();
-      const response = await restClient
-        .GET('/experimental/packages')
-        .then((r) => r.data);
+      const response = await this.fetchManifest();
 
       if (!response) {
         spinner.fail('The server did not respond with any content');

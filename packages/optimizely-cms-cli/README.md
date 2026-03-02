@@ -113,12 +113,15 @@ optimizely-cms-cli config pull --output ./src/content-types
 # Group generated files by content type base type (page/, component/, section/, etc.)
 optimizely-cms-cli config pull --output ./src/types --group
 
-# Save only the raw JSON manifest without generating TypeScript files (prompts for path, default: ./manifest.json)
-optimizely-cms-cli config pull --json
+# Save raw JSON manifest without generating TypeScript files (using output redirection)
+optimizely-cms-cli config pull > manifest.json
 
-# Save JSON manifest to a specific path
-optimizely-cms-cli config pull --json --path ./custom-manifest.json
+# Pipe output to other commands for processing (Unix-style)
+optimizely-cms-cli config pull | grep contentType
+optimizely-cms-cli config pull | head -n 50
 ```
+
+> **Note:** The `config pull` command automatically detects when its output is piped or redirected and outputs raw JSON instead of running interactive prompts. This allows you to use Unix-style pipes (`|`) and redirections (`>`) to process or save the manifest data.
 
 > **Note:** When using `--group`:
 >
