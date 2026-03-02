@@ -4,7 +4,7 @@ import ora from 'ora';
 import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
 import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
@@ -21,41 +21,31 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         'Group files by base type (page/, component/, section/, etc.) and co-locate display templates with their content types',
       default: false,
     }),
-    json: Flags.boolean({
-      description:
-        'Save only the raw manifest JSON without generating TypeScript files',
-      default: false,
-    }),
-    path: Flags.string({
-      description: 'Path for the JSON manifest file (use with --json flag)',
-      dependsOn: ['json'],
-    }),
   };
   static override description =
-    'Pull content types from CMS and generate TypeScript files';
+    'Pull content types from CMS. Generates TypeScript files interactively or outputs JSON when piped/redirected';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --output ./src/types',
     '<%= config.bin %> <%= command.id %> --group',
     '<%= config.bin %> <%= command.id %> --output ./src/types --group',
-    '<%= config.bin %> <%= command.id %> --json',
-    '<%= config.bin %> <%= command.id %> --json --path ./manifest.json',
+    '<%= config.bin %> <%= command.id %> > manifest.json',
+    '<%= config.bin %> <%= command.id %> | jq \'.contentTypes | length\'',
   ];
 
-  public async run(): Promise<void> {
+  public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
 
-    // If --json flag is present, only save JSON manifest and skip TypeScript generation
-    if (flags.json) {
-      const jsonPath =
-        flags.path ||
-        (await input({
-          message: 'Where should the JSON manifest be saved?',
-          default: './manifest.json',
-        }));
+    // Detect if output is being redirected or piped
+    const isOutputRedirected = !process.stdout.isTTY;
 
-      const jsonFilePath = resolve(process.cwd(), jsonPath);
-      const spinner = ora('Downloading configuration from CMS').start();
+    // If output is redirected, output JSON to stdout
+    if (isOutputRedirected) {
+      // Use stderr for spinner when outputting to stdout
+      const spinner = ora({
+        stream: process.stderr,
+        text: 'Downloading configuration from CMS',
+      }).start();
 
       try {
         const restClient = await createApiClient();
@@ -68,8 +58,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           return;
         }
 
-        await writeFile(jsonFilePath, JSON.stringify(response, null, 2));
-        spinner.succeed(`Saved raw manifest to ${jsonFilePath}`);
+        spinner.succeed('Downloaded configuration from CMS');
+
+        // Output JSON to stdout (this.log writes to stdout)
+        this.log(JSON.stringify(response, null, 2));
+        return;
       } catch (error) {
         spinner.fail('Error downloading manifest');
         if (error instanceof Error) {
@@ -77,7 +70,6 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         }
         throw error;
       }
-      return;
     }
 
     // Prompt for output directory if not provided
