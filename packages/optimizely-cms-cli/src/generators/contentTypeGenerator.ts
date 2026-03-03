@@ -49,11 +49,19 @@ export async function generateContentTypeFiles(
 
 /**
  * Generates a valid file name from a content type key
+ * @throws Error if the key contains no alphanumeric characters
  */
 function generateFileName(key: string): string {
   // Convert key to PascalCase and add .ts extension
   // e.g., "HelloWorld_Article" -> "HelloWorldArticle.ts"
   const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
+
+  if (!cleanKey) {
+    throw new Error(
+      `Invalid content type key "${key}": must contain at least one alphanumeric character`
+    );
+  }
+
   return `${cleanKey}.ts`;
 }
 
@@ -114,11 +122,19 @@ export const ${exportName} = contentType({
 
 /**
  * Generates a valid export name from a content type key
+ * @throws Error if the key contains no alphanumeric characters
  */
 function generateExportName(key: string): string {
   // Convert to PascalCase and add CT suffix
   // e.g., "HelloWorld_Article" -> "HelloWorldArticleCT"
   const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
+
+  if (!cleanKey) {
+    throw new Error(
+      `Invalid content type key "${key}": must contain at least one alphanumeric character`
+    );
+  }
+
   return `${cleanKey}CT`;
 }
 

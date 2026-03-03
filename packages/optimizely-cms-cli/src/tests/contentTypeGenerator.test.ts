@@ -42,6 +42,27 @@ describe('generateContentTypeFiles', () => {
     expect(content).toContain('contentType');
     expect(content).toContain('TestType');
   });
+
+  it('should throw error for content type key with no alphanumeric characters', async () => {
+    const invalidContentTypes: ContentType[] = [
+      {
+        key: '***',
+        baseType: '_component',
+        displayName: 'Invalid Type',
+        properties: {},
+      },
+    ];
+
+    await expect(
+      generateContentTypeFiles(
+        invalidContentTypes,
+        displayTemplatesByContentType,
+        outputDir,
+      ),
+    ).rejects.toThrow(
+      'Invalid content type key "***": must contain at least one alphanumeric character',
+    );
+  });
 });
 
 describe('generateContentTypeCode', () => {
@@ -79,5 +100,18 @@ describe('generateContentTypeCode', () => {
     expect(code).toContain("displayName: 'Title with \\'single quotes\\''");
     expect(code).toContain("description: 'Description with\\nnewline and \\'quotes\\''");
     expect(code).toContain("mayContainTypes: ['Type\\'With\\'Quotes']");
+  });
+
+  it('should throw error for content type key with no alphanumeric characters', () => {
+    const contentType: ContentType = {
+      key: '---',
+      baseType: '_component',
+      displayName: 'Invalid Type',
+      properties: {},
+    };
+
+    expect(() => generateContentTypeCode(contentType)).toThrow(
+      'Invalid content type key "---": must contain at least one alphanumeric character',
+    );
   });
 });

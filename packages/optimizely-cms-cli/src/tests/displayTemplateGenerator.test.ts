@@ -39,6 +39,22 @@ describe('generateDisplayTemplateFiles', () => {
     expect(content).toContain('displayTemplate');
     expect(content).toContain('TestTemplate');
   });
+
+  it('should throw error for display template key with no alphanumeric characters', async () => {
+    const invalidDisplayTemplates: DisplayTemplate[] = [
+      {
+        key: '@@@',
+        displayName: 'Invalid Template',
+        contentType: 'TestType',
+      },
+    ];
+
+    await expect(
+      generateDisplayTemplateFiles(invalidDisplayTemplates, outputDir),
+    ).rejects.toThrow(
+      'Invalid display template key "@@@": must contain at least one alphanumeric character',
+    );
+  });
 });
 
 describe('generateDisplayTemplateCode', () => {
@@ -65,5 +81,17 @@ describe('generateDisplayTemplateCode', () => {
     expect(code).toContain("key: 'Template\\'Key'");
     expect(code).toContain("displayName: 'Template with \\'quotes\\' and \\\\backslash'");
     expect(code).toContain("contentType: 'Type\\'With\\'Quotes'");
+  });
+
+  it('should throw error for display template key with no alphanumeric characters', () => {
+    const displayTemplate: DisplayTemplate = {
+      key: '___',
+      displayName: 'Invalid Template',
+      baseType: '_page',
+    };
+
+    expect(() => generateDisplayTemplateCode(displayTemplate)).toThrow(
+      'Invalid display template key "___": must contain at least one alphanumeric character',
+    );
   });
 });

@@ -21,47 +21,78 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         'Group files by base type (page/, component/, section/, etc.) and co-locate display templates with their content types',
       default: false,
     }),
+    json: Flags.boolean({
+      description: 'Output manifest as JSON to stdout (useful for piping)',
+      default: false,
+    }),
   };
   static override description =
-    'Pull content types from CMS. Generates TypeScript files interactively or outputs JSON when piped/redirected';
+    'Pull content types from CMS. Generates TypeScript files interactively or outputs JSON with --json flag';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --output ./src/types',
     '<%= config.bin %> <%= command.id %> --group',
     '<%= config.bin %> <%= command.id %> --output ./src/types --group',
-    '<%= config.bin %> <%= command.id %> > manifest.json',
-    '<%= config.bin %> <%= command.id %> | grep contentType',
+    '<%= config.bin %> <%= command.id %> --json > manifest.json',
+    '<%= config.bin %> <%= command.id %> --json | jq .contentTypes',
   ];
 
   /**
    * Fetches the manifest from CMS
+   * @throws Error with descriptive message if fetch fails
    */
   private async fetchManifest(host?: string) {
     const restClient = await createApiClient(host);
-    const response = await restClient
-      .GET('/experimental/packages')
-      .then((r) => r.data);
-    return response;
+    const { data, error, response } = await restClient.GET(
+      '/experimental/packages',
+    );
+    // With openapi-fetch, non-2xx responses resolve with { data: undefined, error, response }.
+    // Surface a descriptive error instead of returning undefined.
+    if (error || (response && !response.ok)) {
+      const status = (error as any)?.status ?? response?.status;
+      const title =
+        (error as any)?.title ??
+        (error as any)?.message ??
+        response?.statusText;
+      const detail = (error as any)?.detail;
+
+      // Build formatted error message
+      let message = 'Failed to fetch manifest from CMS';
+      if (status) {
+        message += chalk.dim(` (status ${status})`);
+      }
+      if (title) {
+        message += `: ${chalk.yellow(title)}`;
+      }
+      if (detail) {
+        message += chalk.dim(` - ${detail}`);
+      }
+
+      throw new Error(message);
+    }
+    return data;
   }
 
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
 
-    // Detect if output is being redirected or piped
-    // isTTY is true only when connected to a terminal
-    // It's undefined when redirected (> file) or piped (| command)
-    const isOutputRedirected = process.stdout.isTTY !== true;
+    // Determine output mode:
+    // 1. --json flag explicitly requests JSON output
+    // 2. --output flag explicitly requests file generation (even in non-TTY environments like CI)
+    // 3. Fallback to TTY detection for backward compatibility (redirected/piped output → JSON)
+    const shouldOutputJson =
+      flags.json || (!flags.output && process.stdout.isTTY !== true);
 
-    // If output is redirected, output JSON to stdout
-    if (isOutputRedirected) {
-      // Warn if flags meant for interactive mode are provided
-      if (flags.output || flags.group) {
+    // If JSON output mode, output manifest to stdout
+    if (shouldOutputJson) {
+      // Warn if flags meant for file generation mode are provided with --json
+      if (flags.json && (flags.output || flags.group)) {
         this.warn(
-          'Flags --output and --group are ignored when output is redirected. Use interactive mode to generate TypeScript files.',
+          'Flags --output and --group are ignored when --json is used. Remove --json to generate TypeScript files.',
         );
       }
 
-      // Use stderr for spinner when outputting to stdout
+      // Use stderr for spinner when outputting JSON to stdout
       const spinner = ora({
         stream: process.stderr,
         text: 'Downloading configuration from CMS',
@@ -94,11 +125,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         }
         return;
       } catch (error) {
-        // Improve error message clarity
         const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        spinner.fail(`Error downloading manifest: ${errorMessage}`);
-        process.exitCode = 1; // Set error exit code
+          error instanceof Error ? error.message : String(error);
+        spinner.fail(errorMessage);
+        process.exitCode = 1;
         throw error;
       }
     }
@@ -125,7 +155,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     try {
       // Pull from CMS
-      const response = await this.fetchManifest();
+      const response = await this.fetchManifest(flags.host);
 
       if (!response) {
         spinner.fail('The server did not respond with any content');
@@ -307,11 +337,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         }
       }
     } catch (error) {
-      // Improve error message clarity
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      spinner.fail(`Error generating files: ${errorMessage}`);
-      process.exitCode = 1; // Set error exit code
+        error instanceof Error ? error.message : String(error);
+      spinner.fail(errorMessage);
+      process.exitCode = 1;
       throw error;
     }
   }

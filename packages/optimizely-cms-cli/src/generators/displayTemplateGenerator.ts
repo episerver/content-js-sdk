@@ -25,10 +25,18 @@ export async function generateDisplayTemplateFiles(
 
 /**
  * Generates a valid file name from a display template key
+ * @throws Error if the key contains no alphanumeric characters
  */
 function generateFileName(key: string): string {
   // Convert key to PascalCase and add .ts extension
   const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
+
+  if (!cleanKey) {
+    throw new Error(
+      `Invalid display template key "${key}": must contain at least one alphanumeric character`
+    );
+  }
+
   return `${cleanKey}.ts`;
 }
 
@@ -93,10 +101,18 @@ export const ${exportName} = displayTemplate({
 
 /**
  * Generates a valid export name from a display template key
+ * @throws Error if the key contains no alphanumeric characters
  */
 function generateExportName(key: string): string {
   // Convert to PascalCase and add DT suffix
   const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
+
+  if (!cleanKey) {
+    throw new Error(
+      `Invalid display template key "${key}": must contain at least one alphanumeric character`
+    );
+  }
+
   return `${cleanKey}DT`;
 }
 
