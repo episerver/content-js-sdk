@@ -19,7 +19,6 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     group: Flags.boolean({
       description:
         'Group files by base type (page/, component/, section/, etc.) and co-locate display templates with their content types',
-      default: false,
     }),
     json: Flags.boolean({
       description: 'Output manifest as JSON to stdout (useful for piping)',
@@ -46,8 +45,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     const { data, error, response } = await restClient.GET(
       '/experimental/packages',
     );
-    // With openapi-fetch, non-2xx responses resolve with { data: undefined, error, response }.
-    // Surface a descriptive error instead of returning undefined.
+    // Non-2xx responses have undefined data; check error/response instead
     if (error || (response && !response.ok)) {
       const status = (error as any)?.status ?? response?.status;
       const title =
@@ -74,14 +72,16 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   }
 
   public async run(): Promise<void | any> {
+    let isGroupBy: boolean;
     const { flags } = await this.parse(ConfigPull);
+
+    const isInteractive = process.stdin.isTTY === true;
 
     // The output mode based on flags and environment
     // 1. --json flag explicitly requests JSON output
     // 2. --output flag explicitly requests file generation (even in non-TTY environments like CI)
-    // 3. Fallback to TTY detection for backward compatibility (redirected/piped output → JSON)
-    const shouldOutputJson =
-      flags.json || (!flags.output && process.stdout.isTTY !== true);
+    // 3. Fallback to TTY detection for backward compatibility (non-interactive → JSON)
+    const shouldOutputJson = flags.json || (!flags.output && !isInteractive);
 
     // If JSON output mode, output manifest to stdout
     if (shouldOutputJson) {
@@ -136,20 +136,24 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }
 
     // Prompt for output directory if not provided
-    const outputPath =
-      flags.output ||
-      (await input({
-        message: 'Where should the generated files be saved?',
-        default: './src/content-types',
-      }));
+    const outputPath = flags.output
+      ? flags.output
+      : isInteractive
+        ? await input({
+            message: 'Where should the generated files be saved?',
+            default: './src/content-types',
+          })
+        : './src/content-types'; // Default for non-interactive environments
 
     // Prompt for grouping if not provided
-    const isGroupBy =
-      flags.group ||
-      (await confirm({
-        message: 'Should the generated files be grouped?',
-        default: false,
-      }));
+    isGroupBy =
+      flags.group ??
+      (isInteractive
+        ? await confirm({
+            message: 'Should the generated files be grouped?',
+            default: false,
+          })
+        : false); // Default to non-grouped in non-interactive environments
 
     const outputDir = resolve(process.cwd(), outputPath);
 
