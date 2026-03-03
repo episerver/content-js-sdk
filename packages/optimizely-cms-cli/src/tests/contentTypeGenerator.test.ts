@@ -267,4 +267,84 @@ describe('generateContentTypeCode', () => {
       expect(code).toContain("{ value: 3.5, displayName: 'High' }");
     });
   });
+
+  describe('grouped imports', () => {
+    it('should generate correct relative import path for cross-group component references', () => {
+      // Setup: Product (experience) referencing SEO (component)
+      const contentTypeToGroupMap = new Map<string, string>([
+        ['Product', 'experience'],
+        ['SEO', 'component'],
+      ]);
+
+      const productContentType: ContentType = {
+        key: 'Product',
+        baseType: '_experience',
+        displayName: 'Product Page',
+        properties: {
+          seo_properties: {
+            type: 'component',
+            contentType: 'SEO',
+          },
+        },
+      };
+
+      const code = generateContentTypeCode(
+        productContentType,
+        contentTypeToGroupMap,
+        'experience',
+      );
+
+      // Should import from ../component/SEO.js, not ./SEO.js
+      expect(code).toContain("import { SEOCT } from '../component/SEO.js';");
+      expect(code).not.toContain("import { SEOCT } from './SEO.js';");
+    });
+
+    it('should generate same-directory import path for same-group component references', () => {
+      // Setup: Hero (component) referencing Button (component)
+      const contentTypeToGroupMap = new Map<string, string>([
+        ['Hero', 'component'],
+        ['Button', 'component'],
+      ]);
+
+      const heroContentType: ContentType = {
+        key: 'Hero',
+        baseType: '_component',
+        displayName: 'Hero Component',
+        properties: {
+          button: {
+            type: 'component',
+            contentType: 'Button',
+          },
+        },
+      };
+
+      const code = generateContentTypeCode(
+        heroContentType,
+        contentTypeToGroupMap,
+        'component',
+      );
+
+      // Should import from ./Button.js for same group
+      expect(code).toContain("import { ButtonCT } from './Button.js';");
+    });
+
+    it('should generate same-directory import when no grouping is used', () => {
+      // No contentTypeToGroupMap or currentGroup provided
+      const contentType: ContentType = {
+        key: 'Product',
+        baseType: '_experience',
+        properties: {
+          seo_properties: {
+            type: 'component',
+            contentType: 'SEO',
+          },
+        },
+      };
+
+      const code = generateContentTypeCode(contentType);
+
+      // Should use default same-directory import
+      expect(code).toContain("import { SEOCT } from './SEO.js';");
+    });
+  });
 });

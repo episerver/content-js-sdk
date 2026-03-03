@@ -1,6 +1,10 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ContentType, ContentTypeProperties, DisplayTemplate } from './manifest.js';
+import {
+  ContentType,
+  ContentTypeProperties,
+  DisplayTemplate,
+} from './manifest.js';
 import { generateDisplayTemplateCode } from './displayTemplateGenerator.js';
 
 /**
@@ -11,6 +15,8 @@ export async function generateContentTypeFiles(
   contentTypes: ContentType[],
   displayTemplatesByContentType: Map<string, DisplayTemplate[]>,
   outputDir: string,
+  contentTypeToGroupMap?: Map<string, string>,
+  currentGroup?: string,
 ): Promise<string[]> {
   const generatedFiles: string[] = [];
 
@@ -19,23 +25,30 @@ export async function generateContentTypeFiles(
     const filePath = join(outputDir, fileName);
 
     // Generate content type code
-    let fileContent = generateContentTypeCode(contentType);
+    let fileContent = generateContentTypeCode(
+      contentType,
+      contentTypeToGroupMap,
+      currentGroup,
+    );
 
     // Append display templates for this specific content type
-    const relatedTemplates = displayTemplatesByContentType.get(contentType.key) || [];
+    const relatedTemplates =
+      displayTemplatesByContentType.get(contentType.key) || [];
     if (relatedTemplates.length > 0) {
       // Update import to include displayTemplate
       fileContent = fileContent.replace(
         "import { contentType } from '@optimizely/cms-sdk';",
-        "import { contentType, displayTemplate } from '@optimizely/cms-sdk';"
+        "import { contentType, displayTemplate } from '@optimizely/cms-sdk';",
       );
 
       fileContent += '\n'; // Add spacing
       for (const template of relatedTemplates) {
         const templateCode = generateDisplayTemplateCode(template);
         // Remove the import statement since we already have it at the top of the file
-        const codeWithoutImport = templateCode
-          .replace(/^import \{ displayTemplate \} from '@optimizely\/cms-sdk';\n\n/, '');
+        const codeWithoutImport = templateCode.replace(
+          /^import \{ displayTemplate \} from '@optimizely\/cms-sdk';\n\n/,
+          '',
+        );
         fileContent += '\n' + codeWithoutImport;
       }
     }
@@ -58,7 +71,7 @@ function generateFileName(key: string): string {
 
   if (!cleanKey) {
     throw new Error(
-      `Invalid content type key "${key}": must contain at least one alphanumeric character`
+      `Invalid content type key "${key}": must contain at least one alphanumeric character`,
     );
   }
 
@@ -68,7 +81,11 @@ function generateFileName(key: string): string {
 /**
  * Generates the TypeScript code for a content type definition
  */
-export function generateContentTypeCode(contentType: ContentType): string {
+export function generateContentTypeCode(
+  contentType: ContentType,
+  contentTypeToGroupMap?: Map<string, string>,
+  currentGroup?: string,
+): string {
   const exportName = generateExportName(contentType.key);
 
   // Collect component imports
@@ -87,7 +104,18 @@ export function generateContentTypeCode(contentType: ContentType): string {
     const importStatements = Array.from(componentImports).map((key) => {
       const fileName = generateFileName(key);
       const exportName = generateExportName(key);
-      return `import { ${exportName} } from './${fileName.replace('.ts', '.js')}';`;
+
+      // Calculate relative import path when grouping is enabled
+      let importPath = `./${fileName.replace('.ts', '.js')}`;
+      if (contentTypeToGroupMap && currentGroup) {
+        const targetGroup = contentTypeToGroupMap.get(key);
+        if (targetGroup && targetGroup !== currentGroup) {
+          // Different group - use relative path
+          importPath = `../${targetGroup}/${fileName.replace('.ts', '.js')}`;
+        }
+      }
+
+      return `import { ${exportName} } from '${importPath}';`;
     });
     imports.push(...importStatements);
   }
@@ -131,7 +159,7 @@ function generateExportName(key: string): string {
 
   if (!cleanKey) {
     throw new Error(
-      `Invalid content type key "${key}": must contain at least one alphanumeric character`
+      `Invalid content type key "${key}": must contain at least one alphanumeric character`,
     );
   }
 
@@ -147,12 +175,15 @@ function generatePropertiesCode(
   componentImports: Set<string>,
 ): string {
   const propertyEntries = Object.entries(properties).map(([name, prop]) => {
+    const safeKey = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)
+      ? name
+      : `'${escapeSingleQuote(name)}'`;
     const propertyDef = generatePropertyDefinition(
       prop,
       contentTypeKey,
       componentImports,
     );
-    return `    ${name}: ${propertyDef}`;
+    return `    ${safeKey}: ${propertyDef}`;
   });
 
   if (propertyEntries.length === 0) {
@@ -331,7 +362,7 @@ function generatePropertyDefinition(
  */
 function normalizeEnumValues<T extends string | number>(
   enumDef: any,
-  valueType: 'string' | 'number'
+  valueType: 'string' | 'number',
 ): Array<{ value: T; displayName: string }> {
   // Format 1: Direct array - SDK format
   if (Array.isArray(enumDef)) {

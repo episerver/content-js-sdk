@@ -109,8 +109,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
         // Show count in success message
         const contentTypeCount = response.contentTypes?.length || 0;
+        const propertyGroupCount = response.propertyGroups?.length || 0;
+        const displayTemplateCount = response.displayTemplates?.length || 0;
         spinner.succeed(
-          `Downloaded configuration from CMS (${contentTypeCount} content type${contentTypeCount !== 1 ? 's' : ''})`,
+          `Downloaded configuration from CMS (${contentTypeCount} content type${contentTypeCount !== 1 ? 's' : ''}, ${propertyGroupCount} property group${propertyGroupCount !== 1 ? 's' : ''}, ${displayTemplateCount} display template${displayTemplateCount !== 1 ? 's' : ''})`,
         );
 
         // Safely serialize JSON with error handling
@@ -192,6 +194,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         const groups: Record<string, ContentType[]> = {};
         const displayTemplatesByContentType = new Map<string, any[]>();
         const orphanedDisplayTemplates: any[] = [];
+        const contentTypeToGroupMap = new Map<string, string>();
 
         spinner.text = 'Grouping content types by base type';
 
@@ -205,6 +208,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             groups[group] = [];
           }
           groups[group].push(contentType as unknown as ContentType);
+
+          // Map content type key to its parsed group name (without leading underscore)
+          const parsedGroupName = group.replace(/^_/, '');
+          contentTypeToGroupMap.set(contentType.key, parsedGroupName);
         }
 
         // Process and match display templates to content types
@@ -248,6 +255,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             groups[group],
             displayTemplatesByContentType,
             groupDir,
+            contentTypeToGroupMap,
+            parsedGroupName,
           );
 
           spinner.succeed(
