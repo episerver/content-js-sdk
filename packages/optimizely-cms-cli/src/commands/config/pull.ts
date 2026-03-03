@@ -36,8 +36,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   /**
    * Fetches the manifest from CMS
    */
-  private async fetchManifest() {
-    const restClient = await createApiClient();
+  private async fetchManifest(host?: string) {
+    const restClient = await createApiClient(host);
     const response = await restClient
       .GET('/experimental/packages')
       .then((r) => r.data);
@@ -68,7 +68,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       }).start();
 
       try {
-        const response = await this.fetchManifest();
+        const response = await this.fetchManifest(flags.host);
 
         if (!response) {
           spinner.fail('The server did not respond with any content');
@@ -285,7 +285,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           spinner.start('Generating display template files');
 
           if (processedDisplayTemplates.length > 0) {
-            const displayTemplatesDir = join(outputDir, '../display-templates');
+            const displayTemplatesDir = join(outputDir, 'display-templates');
             await mkdir(displayTemplatesDir, { recursive: true });
 
             const generatedDisplayTemplateFiles =

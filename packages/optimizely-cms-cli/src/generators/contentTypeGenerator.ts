@@ -88,23 +88,23 @@ export function generateContentTypeCode(contentType: ContentType): string {
   const compositionBehaviors =
     contentType.compositionBehaviors &&
     contentType.compositionBehaviors.length > 0
-      ? `\n  compositionBehaviors: [${contentType.compositionBehaviors.map((b) => `'${b}'`).join(', ')}],`
+      ? `\n  compositionBehaviors: [${contentType.compositionBehaviors.map((b) => `'${escapeSingleQuote(b)}'`).join(', ')}],`
       : '';
 
   // Generate mayContainTypes if present
   const mayContainTypes =
     contentType.mayContainTypes && contentType.mayContainTypes.length > 0
-      ? `\n  mayContainTypes: [${contentType.mayContainTypes.map((t) => `'${t}'`).join(', ')}],`
+      ? `\n  mayContainTypes: [${contentType.mayContainTypes.map((t) => `'${escapeSingleQuote(t)}'`).join(', ')}],`
       : '';
 
   const code = `${imports.join('\n')}
 
 /**
- * ${contentType.displayName || contentType.key}
+ * ${(contentType.displayName || contentType.key).replace(/\*\//g, '*\\/')}
  */
 export const ${exportName} = contentType({
-  key: '${contentType.key}',${contentType.displayName ? `\n  displayName: '${contentType.displayName}',` : ''}
-  baseType: '${contentType.baseType}',${compositionBehaviors}${mayContainTypes}
+  key: '${escapeSingleQuote(contentType.key)}',${contentType.displayName ? `\n  displayName: '${escapeSingleQuote(contentType.displayName)}',` : ''}
+  baseType: '${escapeSingleQuote(contentType.baseType)}',${compositionBehaviors}${mayContainTypes}
   properties: ${properties},
 });
 `;
@@ -269,7 +269,7 @@ function generatePropertyDefinition(
     ) {
       const types = property.allowedTypes
         .map((t) => (t === '_self' ? contentTypeKey : t))
-        .map((t) => `'${t}'`)
+        .map((t) => `'${escapeSingleQuote(t)}'`)
         .join(', ');
       parts.push(`allowedTypes: [${types}]`);
     }
@@ -281,7 +281,7 @@ function generatePropertyDefinition(
     ) {
       const types = property.restrictedTypes
         .map((t) => (t === '_self' ? contentTypeKey : t))
-        .map((t) => `'${t}'`)
+        .map((t) => `'${escapeSingleQuote(t)}'`)
         .join(', ');
       parts.push(`restrictedTypes: [${types}]`);
     }
@@ -302,8 +302,15 @@ function generatePropertyDefinition(
 }
 
 /**
- * Escapes single quotes in strings for code generation
+ * Escapes a string for use in a single-quoted JavaScript/TypeScript string literal
+ * Uses JSON.stringify for proper escaping of all special characters
  */
 function escapeSingleQuote(str: string): string {
-  return str.replace(/'/g, "\\'");
+  // Use JSON.stringify to properly escape all special characters (quotes, backslashes, newlines, etc.)
+  // Then convert from double-quoted to single-quoted format
+  const jsonEscaped = JSON.stringify(str);
+  // Remove outer double quotes and unescape inner double quotes
+  const withoutOuterQuotes = jsonEscaped.slice(1, -1).replace(/\\"/g, '"');
+  // Escape single quotes for single-quoted string literals
+  return withoutOuterQuotes.replace(/'/g, "\\'");
 }

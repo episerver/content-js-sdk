@@ -15,6 +15,10 @@ export default class Login extends Command {
     verbose: Flags.boolean({
       description: 'Show detailed output during authentication',
     }),
+    host: Flags.string({
+      description:
+        'CMS instance URL. For example: `my-instance.cms.optimizely.com`',
+    }),
   };
 
   public async run(): Promise<void> {
@@ -29,6 +33,7 @@ export default class Login extends Command {
       const token = await getToken(
         credentials.clientId,
         credentials.clientSecret,
+        flags.host,
       );
 
       if (token) {

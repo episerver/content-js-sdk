@@ -6,6 +6,9 @@ import {
 import { ContentType } from '../generators/manifest.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('generateContentTypeFiles', () => {
   const outputDir = path.join(__dirname, 'tmp');
@@ -52,5 +55,29 @@ describe('generateContentTypeCode', () => {
     const code = generateContentTypeCode(contentType);
     expect(code).toContain('contentType');
     expect(code).toContain('SampleType');
+  });
+
+  it('should properly escape special characters in strings', () => {
+    const contentType: ContentType = {
+      key: "Test'Type",
+      baseType: '_component',
+      displayName: "Type with 'quotes' and \\backslash",
+      properties: {
+        title: {
+          type: 'string',
+          displayName: "Title with 'single quotes'",
+          description: "Description with\nnewline and 'quotes'",
+        },
+      },
+      mayContainTypes: ["Type'With'Quotes"],
+    };
+    const code = generateContentTypeCode(contentType);
+
+    // Generated code should be valid TypeScript (no unescaped quotes breaking the syntax)
+    expect(code).toContain("key: 'Test\\'Type'");
+    expect(code).toContain("displayName: 'Type with \\'quotes\\' and \\\\backslash'");
+    expect(code).toContain("displayName: 'Title with \\'single quotes\\''");
+    expect(code).toContain("description: 'Description with\\nnewline and \\'quotes\\''");
+    expect(code).toContain("mayContainTypes: ['Type\\'With\\'Quotes']");
   });
 });

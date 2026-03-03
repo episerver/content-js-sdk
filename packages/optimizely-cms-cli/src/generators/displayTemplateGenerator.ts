@@ -80,11 +80,11 @@ export function generateDisplayTemplateCode(displayTemplate: DisplayTemplate): s
   const code = `import { displayTemplate } from '@optimizely/cms-sdk';
 
 /**
- * ${displayTemplate.displayName || displayTemplate.key}
+ * ${(displayTemplate.displayName || displayTemplate.key).replace(/\*\//g, '*\\/')}
  */
 export const ${exportName} = displayTemplate({
-  key: '${displayTemplate.key}',
-  ${discriminator.field}: '${discriminator.value}'${optionalFieldsStr},
+  key: '${escapeSingleQuote(displayTemplate.key)}',
+  ${discriminator.field}: '${escapeSingleQuote(discriminator.value)}'${optionalFieldsStr},
 });
 `;
 
@@ -165,8 +165,15 @@ function generateValueCode(value: any, indentLevel: number): string {
 }
 
 /**
- * Escapes single quotes in strings for code generation
+ * Escapes a string for use in a single-quoted JavaScript/TypeScript string literal
+ * Uses JSON.stringify for proper escaping of all special characters
  */
 function escapeSingleQuote(str: string): string {
-  return str.replace(/'/g, "\\'");
+  // Use JSON.stringify to properly escape all special characters (quotes, backslashes, newlines, etc.)
+  // Then convert from double-quoted to single-quoted format
+  const jsonEscaped = JSON.stringify(str);
+  // Remove outer double quotes and unescape inner double quotes
+  const withoutOuterQuotes = jsonEscaped.slice(1, -1).replace(/\\"/g, '"');
+  // Escape single quotes for single-quoted string literals
+  return withoutOuterQuotes.replace(/'/g, "\\'");
 }

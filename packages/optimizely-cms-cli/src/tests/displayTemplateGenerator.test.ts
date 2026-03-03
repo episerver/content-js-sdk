@@ -6,6 +6,9 @@ import {
 import { DisplayTemplate } from '../generators/manifest.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('generateDisplayTemplateFiles', () => {
   const outputDir = path.join(__dirname, 'tmp');
@@ -48,5 +51,19 @@ describe('generateDisplayTemplateCode', () => {
     const code = generateDisplayTemplateCode(displayTemplate);
     expect(code).toContain('displayTemplate');
     expect(code).toContain('SampleTemplate');
+  });
+
+  it('should properly escape special characters in strings', () => {
+    const displayTemplate: DisplayTemplate = {
+      key: "Template'Key",
+      displayName: "Template with 'quotes' and \\backslash",
+      contentType: "Type'With'Quotes",
+    };
+    const code = generateDisplayTemplateCode(displayTemplate);
+
+    // Generated code should be valid TypeScript (no unescaped quotes breaking the syntax)
+    expect(code).toContain("key: 'Template\\'Key'");
+    expect(code).toContain("displayName: 'Template with \\'quotes\\' and \\\\backslash'");
+    expect(code).toContain("contentType: 'Type\\'With\\'Quotes'");
   });
 });

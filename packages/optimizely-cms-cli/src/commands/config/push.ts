@@ -22,7 +22,6 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }),
   };
   static override flags = {
-    host: Flags.string({ description: 'CMS instance URL' }),
     output: Flags.string({ description: 'if passed, write the manifest JSON' }),
     dryRun: Flags.boolean({
       description: 'do not send anything to the server',
@@ -97,7 +96,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       propertyGroups: normalizedPropertyGroups,
     };
 
-    const restClient = await createApiClient();
+    const restClient = await createApiClient(flags.host);
 
     if (flags.output) {
       try {

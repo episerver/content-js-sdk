@@ -14,14 +14,14 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --host https://example.com',
   ];
-  static override flags = {};
 
   public async run(): Promise<void> {
+    const { flags } = await this.parse(DangerDeleteAllContentTypes);
     const spinner = ora('Fetching content types from CMS...').start();
 
     let client;
     try {
-      client = await createApiClient();
+      client = await createApiClient(flags.host);
     } catch (error) {
       spinner.fail(chalk.red('Failed to connect to CMS'));
       throw error;
