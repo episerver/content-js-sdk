@@ -114,4 +114,157 @@ describe('generateContentTypeCode', () => {
       'Invalid content type key "---": must contain at least one alphanumeric character',
     );
   });
+
+  describe('enum normalization', () => {
+    it('should handle SDK format (direct array) for string enums', () => {
+      const contentType: ContentType = {
+        key: 'EnumTest',
+        baseType: '_component',
+        properties: {
+          theme: {
+            type: 'string',
+            enum: [
+              { value: 'light', displayName: 'Light Theme' },
+              { value: 'dark', displayName: 'Dark Theme' },
+            ],
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("{ value: 'light', displayName: 'Light Theme' }");
+      expect(code).toContain("{ value: 'dark', displayName: 'Dark Theme' }");
+    });
+
+    it('should handle manifest format (wrapped array) for string enums', () => {
+      const contentType: ContentType = {
+        key: 'EnumTest',
+        baseType: '_component',
+        properties: {
+          theme: {
+            type: 'string',
+            enum: {
+              values: [
+                { value: 'light', displayName: 'Light Theme' },
+                { value: 'dark', displayName: 'Dark Theme' },
+              ],
+            },
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("{ value: 'light', displayName: 'Light Theme' }");
+      expect(code).toContain("{ value: 'dark', displayName: 'Dark Theme' }");
+    });
+
+    it('should handle OpenAPI format (object map) for string enums', () => {
+      const contentType: ContentType = {
+        key: 'EnumTest',
+        baseType: '_component',
+        properties: {
+          theme: {
+            type: 'string',
+            enum: {
+              values: {
+                light: 'Light Theme',
+                dark: 'Dark Theme',
+              },
+            },
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("{ value: 'light', displayName: 'Light Theme' }");
+      expect(code).toContain("{ value: 'dark', displayName: 'Dark Theme' }");
+    });
+
+    it('should handle SDK format (direct array) for integer enums', () => {
+      const contentType: ContentType = {
+        key: 'EnumTest',
+        baseType: '_component',
+        properties: {
+          priority: {
+            type: 'integer',
+            enum: [
+              { value: 1, displayName: 'Low' },
+              { value: 2, displayName: 'Medium' },
+              { value: 3, displayName: 'High' },
+            ],
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("{ value: 1, displayName: 'Low' }");
+      expect(code).toContain("{ value: 2, displayName: 'Medium' }");
+      expect(code).toContain("{ value: 3, displayName: 'High' }");
+    });
+
+    it('should handle manifest format (wrapped array) for integer enums', () => {
+      const contentType: ContentType = {
+        key: 'EnumTest',
+        baseType: '_component',
+        properties: {
+          priority: {
+            type: 'integer',
+            enum: {
+              values: [
+                { value: 1, displayName: 'Low' },
+                { value: 2, displayName: 'Medium' },
+                { value: 3, displayName: 'High' },
+              ],
+            },
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("{ value: 1, displayName: 'Low' }");
+      expect(code).toContain("{ value: 2, displayName: 'Medium' }");
+      expect(code).toContain("{ value: 3, displayName: 'High' }");
+    });
+
+    it('should handle OpenAPI format (object map) for integer enums', () => {
+      const contentType: ContentType = {
+        key: 'EnumTest',
+        baseType: '_component',
+        properties: {
+          priority: {
+            type: 'integer',
+            enum: {
+              values: {
+                '1': 'Low',
+                '2': 'Medium',
+                '3': 'High',
+              },
+            },
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("{ value: 1, displayName: 'Low' }");
+      expect(code).toContain("{ value: 2, displayName: 'Medium' }");
+      expect(code).toContain("{ value: 3, displayName: 'High' }");
+    });
+
+    it('should handle float enums with OpenAPI format', () => {
+      const contentType: ContentType = {
+        key: 'EnumTest',
+        baseType: '_component',
+        properties: {
+          rating: {
+            type: 'float',
+            enum: {
+              values: {
+                '1.5': 'Low',
+                '2.5': 'Medium',
+                '3.5': 'High',
+              },
+            },
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("{ value: 1.5, displayName: 'Low' }");
+      expect(code).toContain("{ value: 2.5, displayName: 'Medium' }");
+      expect(code).toContain("{ value: 3.5, displayName: 'High' }");
+    });
+  });
 });

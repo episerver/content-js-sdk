@@ -76,7 +76,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
 
-    // Determine output mode:
+    // The output mode based on flags and environment
     // 1. --json flag explicitly requests JSON output
     // 2. --output flag explicitly requests file generation (even in non-TTY environments like CI)
     // 3. Fallback to TTY detection for backward compatibility (redirected/piped output → JSON)

@@ -234,10 +234,11 @@ function generatePropertyDefinition(
     }
 
     if ('enum' in property && property.enum) {
-      const enumValues = property.enum.values
+      const normalized = normalizeEnumValues(property.enum, 'string');
+      const enumValues = normalized
         .map(
           (v) =>
-            `\n        { value: '${escapeSingleQuote(v.value)}', displayName: '${escapeSingleQuote(v.displayName)}' }`,
+            `\n        { value: '${escapeSingleQuote(String(v.value))}', displayName: '${escapeSingleQuote(v.displayName)}' }`,
         )
         .join(',');
       parts.push(`enum: [${enumValues},\n      ]`);
@@ -255,7 +256,8 @@ function generatePropertyDefinition(
     }
 
     if ('enum' in property && property.enum) {
-      const enumValues = property.enum.values
+      const normalized = normalizeEnumValues(property.enum, 'number');
+      const enumValues = normalized
         .map(
           (v) =>
             `\n        { value: ${v.value}, displayName: '${escapeSingleQuote(v.displayName)}' }`,
@@ -315,6 +317,51 @@ function generatePropertyDefinition(
   }
 
   return `{ ${parts.join(', ')} }`;
+}
+
+/**
+ * Normalizes enum values from different formats to a standard array format.
+ * Supports three input formats:
+ * 1. SDK format (direct array): [{ value, displayName }, ...]
+ * 2. Manifest format (wrapped array): { values: [{ value, displayName }, ...] }
+ * 3. OpenAPI format (object map): { values: { "key": "display name", ... } }
+ *
+ * @param enumDef - The enum definition in any supported format
+ * @param valueType - The type of values ('string' or 'number') for proper type conversion
+ */
+function normalizeEnumValues<T extends string | number>(
+  enumDef: any,
+  valueType: 'string' | 'number'
+): Array<{ value: T; displayName: string }> {
+  // Format 1: Direct array - SDK format
+  if (Array.isArray(enumDef)) {
+    return enumDef;
+  }
+
+  // Format 2 & 3: Object with 'values' property
+  if (enumDef && typeof enumDef === 'object' && 'values' in enumDef) {
+    const { values } = enumDef;
+
+    // Format 2: values is an array
+    if (Array.isArray(values)) {
+      return values;
+    }
+
+    // Format 3: values is an object map { "key": "display name" }
+    if (values && typeof values === 'object') {
+      return Object.entries(values).map(([key, displayName]) => {
+        const value = valueType === 'number' ? Number(key) : key;
+        return {
+          value: value as T,
+          displayName: String(displayName),
+        };
+      });
+    }
+  }
+
+  // Fallback: return empty array if format is unrecognized
+  console.warn('Unrecognized enum format:', enumDef);
+  return [];
 }
 
 /**

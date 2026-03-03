@@ -64,10 +64,14 @@ export namespace ContentTypeProperties {
     indexingType?: string;
   };
 
-  // Enum wrapper type to match generator expectations
-  type EnumWrapper<T> = {
-    values: { value: T; displayName: string }[];
-  };
+  // Enum wrapper type supporting multiple formats:
+  // 1. SDK format (direct array): [{ value, displayName }, ...]
+  // 2. Manifest format (wrapped array): { values: [{ value, displayName }, ...] }
+  // 3. OpenAPI format (object map): { values: { "key": "display name", ... } }
+  type EnumWrapper<T> =
+    | { value: T; displayName: string }[]
+    | { values: { value: T; displayName: string }[] }
+    | { values: { [key: string]: string } };
 
   // String property with wrapped enum
   export type String = Omit<Properties.StringProperty, 'enum'> & {
