@@ -40,7 +40,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   static baseFlags = {
     host: Flags.string({
       description:
-        'CMS instance URL. For example: `my-instance.cms.optimizely.com`',
+        'CMS instance URL including scheme. For example: `https://my-instance.cms.optimizely.com`',
     }),
   };
 

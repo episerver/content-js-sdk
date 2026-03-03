@@ -17,7 +17,7 @@ export default class Login extends Command {
     }),
     host: Flags.string({
       description:
-        'CMS instance URL. For example: `my-instance.cms.optimizely.com`',
+        'CMS instance URL including scheme. For example: `https://my-instance.cms.optimizely.com`',
     }),
   };
 
@@ -39,7 +39,10 @@ export default class Login extends Command {
       if (token) {
         spinner.succeed(chalk.green('Your credentials are correct'));
         if (flags.verbose) {
-          console.log(chalk.dim('Client ID:'), chalk.cyan(credentials.clientId));
+          console.log(
+            chalk.dim('Client ID:'),
+            chalk.cyan(credentials.clientId),
+          );
           console.log(chalk.dim('Token received successfully'));
         }
       } else {
