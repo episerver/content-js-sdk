@@ -259,10 +259,6 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             parsedGroupName,
           );
 
-          spinner.succeed(
-            `Generated ${generatedFiles.length} content type file(s) in ${groupDir}`,
-          );
-
           // List generated files for the group
           console.log(
             chalk.cyan.bold(
@@ -272,10 +268,16 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           for (const file of generatedFiles) {
             console.log(chalk.dim('  -'), chalk.green(file));
           }
+
+          console.log(); // Add extra spacing between groups
+          spinner.succeed(
+            `Generated ${generatedFiles.length} content type file(s) in ${groupDir}`,
+          );
         }
 
         // Handle orphaned display templates
         if (orphanedDisplayTemplates.length > 0) {
+          console.log(); // Add extra spacing between groups
           spinner.start('Generating orphaned display templates');
 
           const displayTemplatesDir = join(outputDir, 'displayTemplates');
@@ -286,16 +288,18 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             displayTemplatesDir,
           );
 
-          spinner.succeed(
-            `Generated ${orphanedFiles.length} display template(s) in ${displayTemplatesDir}`,
-          );
-
           console.log(
             chalk.cyan.bold('\nDisplay templates (no matching content type):'),
           );
           for (const file of orphanedFiles) {
             console.log(chalk.dim('  -'), chalk.green(file));
           }
+
+          console.log(); // Add extra spacing between groups
+          spinner.succeed(
+            `Generated ${orphanedFiles.length} display template(s) in ${displayTemplatesDir}`,
+          );
+          console.log(); // Add extra spacing between groups
         }
       } else {
         // Generate content type files (without grouping by baseType)
@@ -305,15 +309,16 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           outputDir,
         );
 
-        spinner.succeed(
-          `Generated ${generatedContentTypeFiles.length} content type file(s) in ${outputDir}`,
-        );
-
         // List generated files
         console.log(chalk.cyan.bold('\nGenerated content type files:'));
         for (const file of generatedContentTypeFiles) {
           console.log(chalk.dim('  -'), chalk.green(file));
         }
+
+        console.log(); // Add extra spacing between groups
+        spinner.succeed(
+          `Generated ${generatedContentTypeFiles.length} content type file(s) in ${outputDir}`,
+        );
 
         // Generate display template files if available
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
@@ -321,6 +326,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             manifest.displayTemplates,
           );
 
+          console.log(); // Add extra spacing between groups
           spinner.start('Generating display template files');
 
           if (processedDisplayTemplates.length > 0) {
@@ -333,15 +339,17 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
                 displayTemplatesDir,
               );
 
-            spinner.succeed(
-              `Generated ${generatedDisplayTemplateFiles.length} display template file(s) in ${displayTemplatesDir}`,
-            );
-
             // List generated display template files
             console.log(chalk.cyan.bold('\nGenerated display template files:'));
+
             for (const file of generatedDisplayTemplateFiles) {
               console.log(chalk.dim('  -'), chalk.green(file));
             }
+
+            console.log(); // Add extra spacing between groups
+            spinner.succeed(
+              `Generated ${generatedDisplayTemplateFiles.length} display template file(s) in ${displayTemplatesDir}`,
+            );
           }
         }
       }
