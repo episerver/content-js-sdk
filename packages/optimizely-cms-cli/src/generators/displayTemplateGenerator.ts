@@ -47,19 +47,32 @@ export function generateDisplayTemplateCode(displayTemplate: DisplayTemplate): s
   const exportName = generateExportName(displayTemplate.key);
 
   // Display templates must have exactly one of: contentType, baseType, or nodeType
-  const discriminator = displayTemplate.contentType
-    ? { field: 'contentType', value: displayTemplate.contentType }
-    : displayTemplate.baseType
-      ? { field: 'baseType', value: displayTemplate.baseType }
-      : displayTemplate.nodeType
-        ? { field: 'nodeType', value: displayTemplate.nodeType }
-        : null;
+  const presentDiscriminators: Array<{ field: string; value: string }> = [];
 
-  if (!discriminator) {
+  if (displayTemplate.contentType) {
+    presentDiscriminators.push({ field: 'contentType', value: displayTemplate.contentType });
+  }
+  if (displayTemplate.baseType) {
+    presentDiscriminators.push({ field: 'baseType', value: displayTemplate.baseType });
+  }
+  if (displayTemplate.nodeType) {
+    presentDiscriminators.push({ field: 'nodeType', value: displayTemplate.nodeType });
+  }
+
+  if (presentDiscriminators.length === 0) {
     throw new Error(
-      `Display template ${displayTemplate.key} is missing contentType, baseType, or nodeType`,
+      `Display template "${displayTemplate.key}" is missing a type field. Must have exactly one of: contentType, baseType, or nodeType.`,
     );
   }
+
+  if (presentDiscriminators.length > 1) {
+    const fields = presentDiscriminators.map(d => d.field).join(', ');
+    throw new Error(
+      `Display template "${displayTemplate.key}" has multiple type fields: ${fields}. Only one of contentType, baseType, or nodeType is allowed.`,
+    );
+  }
+
+  const discriminator = presentDiscriminators[0];
 
   // Build optional fields
   const optionalFields: string[] = [];
