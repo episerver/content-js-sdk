@@ -254,7 +254,6 @@ const BlogPageContentType = contentType({
   baseType: '_page',
   mayContainTypes: [
     ArticleContentType,
-    '_page', // Allow all page types
     '_self', // Allow same type (BlogPage)
   ],
   properties: {
@@ -265,14 +264,13 @@ const BlogPageContentType = contentType({
 const ComponentFolderContentType = contentType({
   key: 'ComponentFolder',
   baseType: '_folder',
-  mayContainTypes: ['_component', '_self'], // Only allow components and self
+  mayContainTypes: ['_self'], // Only allow components and self
 });
 ```
 
 **`mayContainTypes`** defines the allowed child content types:
 
-- Specific types: `[ArticleContentType]`
-- Base types: `['_page', '_component']`
+- Specific types: `[ArticleContentType]` or `['ArticleContentType']` (`key` of an contentType)
 - Self-reference: `['_self']`
 - Wildcard: `['*']` to allow all types
 
