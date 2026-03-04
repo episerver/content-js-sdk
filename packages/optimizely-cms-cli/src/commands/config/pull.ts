@@ -75,7 +75,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     let isGroupBy: boolean;
     const { flags } = await this.parse(ConfigPull);
 
-    const isInteractive = process.stdin.isTTY === true;
+    // Detect interactive mode using stdout.isTTY (not stdin.isTTY)
+    // to avoid prompting when output is redirected or piped
+    const isInteractive = process.stdout.isTTY === true;
 
     // The output mode based on flags and environment
     // 1. --json flag explicitly requests JSON output
