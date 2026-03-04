@@ -97,6 +97,7 @@ export type ContentReferenceItem =
 export type InferredContentReference = {
   url: InferredUrl;
   item: ContentReferenceItem | null;
+  key: string;
 };
 
 /** Infers the Typescript type for each content type property */
@@ -213,8 +214,8 @@ type InferFromDisplayTemplate<T extends DisplayTemplate> = T extends {
         ? E extends 'select'
           ? keyof S[K]['choices']
           : E extends 'checkbox'
-          ? boolean
-          : never
+            ? boolean
+            : never
         : never;
     }
   : {};
