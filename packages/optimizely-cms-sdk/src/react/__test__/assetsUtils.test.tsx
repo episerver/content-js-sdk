@@ -43,6 +43,7 @@ describe('getPreviewUtils', () => {
   ];
 
   const mockImageAsset: InferredContentReference = {
+    key: 'test-asset-0',
     url: {
       type: null,
       default:
@@ -92,6 +93,7 @@ describe('getPreviewUtils', () => {
 
     it('should use url.default when item.Url is null', () => {
       const assetWithDefaultUrl: InferredContentReference = {
+        key: 'test-asset-1',
         url: {
           type: null,
           default: 'https://example.com/default-image.jpg',
@@ -123,6 +125,7 @@ describe('getPreviewUtils', () => {
 
     it('should append preview token to url.default in preview mode', () => {
       const assetWithDefaultUrl: InferredContentReference = {
+        key: 'test-asset-2',
         url: {
           type: null,
           default: 'https://example.com/default-image.jpg',
@@ -192,6 +195,7 @@ describe('getPreviewUtils', () => {
 
     it('should return empty string when asset has no URL', () => {
       const assetWithoutUrl: InferredContentReference = {
+        key: 'test-asset-3',
         url: {
           type: null,
           default: null,
@@ -235,6 +239,7 @@ describe('getPreviewUtils', () => {
 
     it('should prefer url.default over item.Url when both exist', () => {
       const assetWithBothUrls: InferredContentReference = {
+        key: 'test-asset-4',
         url: {
           type: null,
           default: 'https://example.com/default-url.jpg',
