@@ -102,6 +102,31 @@ export function localeFilter(locale?: string[]): ContentInput {
 }
 
 /**
+ * Creates a {@linkcode ContentInput} object that filters results by a content key and optional locale.
+ *
+ * @param key - The unique content key to filter by.
+ * @param locale - Optional locale code(s) to filter by (e.g., 'en', 'nl', 'de').
+ * @param version - Optional version string to filter by a specific version.
+ * @returns A `ContentInput` object with a `where` clause that matches the given key and locale.
+ */
+export function keyFilter(
+  key: string,
+  locale?: string | string[],
+  version?: string,
+): ContentInput {
+  return {
+    where: {
+      _metadata: {
+        key: { eq: key },
+        ...(locale ? { locale: { eq: Array.isArray(locale) ? locale[0] : locale } } : {}),
+        ...(version ? { version: { eq: version } } : {}),
+      },
+    },
+    locale: locale ? (Array.isArray(locale) ? locale : [locale]) : undefined,
+  };
+}
+
+/**
  * Arguments for querying content via the Graph API.
  */
 export type ContentInput = {

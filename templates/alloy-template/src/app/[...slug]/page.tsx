@@ -20,7 +20,7 @@ export default async function Page({ params }: Props) {
   });
   const path = `/${slug.join('/')}/`;
 
-  const content = await client.getContentByPath(path);
+  const content = await client.getContent({ path });
 
   if (content.length === 0) {
     notFound();
