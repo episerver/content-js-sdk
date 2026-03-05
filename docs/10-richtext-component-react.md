@@ -19,7 +19,7 @@ import { RichText } from '@optimizely/cms-sdk/react/richText';
 function Article({ content }) {
   return (
     <div>
-      <RichText content={content.body?.json} />
+      <RichText content={content.body?.json} context={content.__context} />
     </div>
   );
 }
@@ -47,6 +47,34 @@ The rich text content from Optimizely CMS. This is typically accessed from a con
 
 ```tsx
 <RichText content={article.body?.json} />
+```
+
+### `context` (Optional)
+
+**Type:** `{ edit?: boolean; preview_token?: string } | undefined`  
+**Default:** `undefined`
+
+**When to use:**
+
+- In Optimizely CMS preview/edit mode
+- When rendering content that contains images
+- To ensure draft images (un published) are accessible during content editing
+
+#### Example: Preview Mode Support
+
+```tsx
+import { RichText } from '@optimizely/cms-sdk/react/richText';
+
+export default function Article({ content }) {
+  return (
+    <article>
+      <h1>{content.heading}</h1>
+
+      {/* Pass context to enable preview mode for images */}
+      <RichText content={content.body?.json} context={content.__context} />
+    </article>
+  );
+}
 ```
 
 ### `elements`
@@ -202,6 +230,7 @@ const CodeExample = ({ content }) => (
   <div className="code-display">
     <RichText
       content={content}
+      context={content.__context}
       decodeHtmlEntities={false}
       elements={{
         paragraph: ({ children }) => <pre>{children}</pre>,
@@ -274,6 +303,7 @@ export default function Article({ content }) {
           code: CustomCode,
         }}
         decodeHtmlEntities={true}
+        context={content.__context}
       />
     </article>
   );
@@ -366,6 +396,7 @@ function Article({ content }) {
   return (
     <RichText
       content={content.body?.json}
+      context={content.__context}
       elements={{
         'unknown-element': UnknownElement, // Handle specific unknown element type
         'custom-element': CustomElement, // Your custom CMS element
@@ -412,6 +443,7 @@ function Article({ content }) {
   return (
     <RichText
       content={content.body?.json}
+      context={content.__context}
       elements={{
         'video-embed': VideoElement,
         'callout-box': CalloutElement,
@@ -792,6 +824,7 @@ This attribute and CSS property processing ensures that rich text content from O
 ```tsx
 <RichText
   content={page.content?.json}
+  context={content.__context}
   elements={{
     link: ({ children, element }) => (
       <TrackableLink url={element.url} eventName="content-click">
@@ -800,4 +833,37 @@ This attribute and CSS property processing ensures that rich text content from O
     ),
   }}
 />
+```
+
+### Preview/Edit Mode
+
+When rendering content in Optimizely's preview or edit mode, pass the `context` prop to ensure images display correctly with preview tokens:
+
+```tsx
+import { RichText } from '@optimizely/cms-sdk/react/richText';
+import { getPreviewUtils } from '@optimizely/cms-sdk/react';
+
+export default function BlogPost({ content }) {
+  const { pa } = getPreviewUtils(content);
+
+  return (
+    <article>
+      {/* Standard image with preview support */}
+      {content.heroImage && (
+        <img
+          src={getPreviewUtils(content).src(content.heroImage)}
+          alt={content.heroImage.alt}
+          {...pa('heroImage')}
+        />
+      )}
+
+      {/* Rich text with automatic preview token support for embedded images */}
+      <RichText
+        content={content.bodyText?.json}
+        context={content.__context}
+        {...pa('bodyText')}
+      />
+    </article>
+  );
+}
 ```

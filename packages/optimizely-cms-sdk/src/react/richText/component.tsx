@@ -27,13 +27,14 @@ export const RichText: React.FC<RichTextProps> = ({
   elements: customElements = {},
   leafs: customLeafs = {},
   decodeHtmlEntities = true,
+  context,
   ...htmlAttributes
 }) => {
   const nodes = Array.isArray(content?.children) ? content.children : [];
 
   // Merge default components with user overrides
   const elements = {
-    ...generateDefaultElements(),
+    ...generateDefaultElements(context?.preview_token),
     ...customElements,
   };
 

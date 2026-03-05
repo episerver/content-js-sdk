@@ -14,6 +14,7 @@ import {
   type TableElement,
   type TableCellElement,
 } from '../../components/richText/renderer.js';
+import { appendToken } from '../../util/preview.js';
 
 /**
  * React-specific element renderer props (extends shared props with React children)
@@ -573,7 +574,8 @@ export function createLinkComponent<T extends keyof JSX.IntrinsicElements>(
  */
 export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T = 'img' as T,
-  config: HtmlComponentConfig = {}
+  config: HtmlComponentConfig = {},
+  previewToken?: string
 ): ImageElementRenderer {
   const Component: ImageElementRenderer = ({
     children,
@@ -585,7 +587,7 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
 
     // Type-safe access to image properties
     const imageProps = {
-      src: element.url,
+      src: element.url ? appendToken(element.url, previewToken) : element.url,
       alt: element.alt,
       title: element.title,
       width: element.width,
@@ -698,7 +700,7 @@ export function createLeafComponent<T extends keyof JSX.IntrinsicElements>(
 /**
  * Generate complete element map from core defaults with type-safe specialized components
  */
-export function generateDefaultElements(): ElementMap {
+export function generateDefaultElements(previewToken?: string): ElementMap {
   const elementMap: ElementMap = {};
 
   Object.entries(defaultElementTypeMap).forEach(([type, config]) => {
@@ -713,7 +715,8 @@ export function generateDefaultElements(): ElementMap {
       case 'image':
         elementMap[type] = createImageComponent(
           'img',
-          config.config
+          config.config,
+          previewToken
         ) as ElementRenderer;
         break;
       case 'table':

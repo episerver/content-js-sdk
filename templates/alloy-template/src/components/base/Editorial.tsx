@@ -21,7 +21,13 @@ type EditorialProps = {
 
 function Editorial({ content }: EditorialProps) {
   const { pa } = getPreviewUtils(content);
-  return <RichText {...pa('main_body')} content={content.main_body?.json} />;
+  return (
+    <RichText
+      {...pa('main_body')}
+      content={content.main_body?.json}
+      context={content.__context}
+    />
+  );
 }
 
 export default Editorial;

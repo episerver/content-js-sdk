@@ -173,6 +173,14 @@ export interface RichTextPropsBase<
    * Whether to decode HTML entities in text content
    */
   decodeHtmlEntities?: boolean;
+
+  /**
+   * Content context for preview mode
+   */
+  context?: {
+    edit?: boolean;
+    preview_token?: string;
+  };
 }
 
 /**
