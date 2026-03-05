@@ -95,6 +95,7 @@ export type ContentReferenceItem =
   | PublicRawFileAsset;
 
 export type InferredContentReference = {
+  key: string;
   url: InferredUrl;
   item: ContentReferenceItem | null;
 };
