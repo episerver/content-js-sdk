@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   generateContentTypeFiles,
   generateContentTypeCode,
+  cleanKey,
 } from '../generators/contentTypeGenerator.js';
 import { ContentType } from '../generators/manifest.js';
 import fs from 'fs/promises';
@@ -62,6 +63,49 @@ describe('generateContentTypeFiles', () => {
     ).rejects.toThrow(
       'Invalid content type key "***": must contain at least one alphanumeric character',
     );
+  });
+});
+
+describe('cleanKey', () => {
+  it('should remove hyphens from keys', () => {
+    expect(cleanKey('Hero-Component')).toBe('HeroComponent');
+  });
+
+  it('should preserve underscores in keys', () => {
+    expect(cleanKey('Hero_Component')).toBe('Hero_Component');
+  });
+
+  it('should remove hyphens but preserve underscores', () => {
+    expect(cleanKey('Hero-Component_Block')).toBe('HeroComponent_Block');
+  });
+
+  it('should preserve alphanumeric characters', () => {
+    expect(cleanKey('Hero123Component')).toBe('Hero123Component');
+  });
+
+  it('should distinguish between Hero-Component and Hero_Component', () => {
+    // These should generate different identifiers to avoid collision
+    expect(cleanKey('Hero-Component')).toBe('HeroComponent');
+    expect(cleanKey('Hero_Component')).toBe('Hero_Component');
+    expect(cleanKey('Hero-Component')).not.toBe(cleanKey('Hero_Component'));
+  });
+
+  it('should throw error for keys with no alphanumeric characters', () => {
+    expect(() => cleanKey('***')).toThrow(
+      'Invalid key "***": must contain at least one alphanumeric character'
+    );
+  });
+
+  it('should throw error for keys with only special characters (no alphanumeric)', () => {
+    expect(() => cleanKey('---___')).toThrow(
+      'Invalid key "---___": must contain at least one alphanumeric character'
+    );
+  });
+
+  it('should preserve case sensitivity', () => {
+    expect(cleanKey('Hero_component')).toBe('Hero_component');
+    expect(cleanKey('Hero_Component')).toBe('Hero_Component');
+    expect(cleanKey('Hero_component')).not.toBe(cleanKey('Hero_Component'));
   });
 });
 

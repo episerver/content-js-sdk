@@ -1,6 +1,11 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { DisplayTemplate } from './manifest.js';
+import {
+  cleanKey,
+  escapeSingleQuote,
+  generateFileName,
+} from './contentTypeGenerator.js';
 
 /**
  * Generates TypeScript display template definition files from a manifest
@@ -21,23 +26,6 @@ export async function generateDisplayTemplateFiles(
   }
 
   return generatedFiles;
-}
-
-/**
- * Generates a valid file name from a display template key
- * @throws Error if the key contains no alphanumeric characters
- */
-function generateFileName(key: string): string {
-  // Convert key to PascalCase and add .ts extension
-  const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
-
-  if (!cleanKey) {
-    throw new Error(
-      `Invalid display template key "${key}": must contain at least one alphanumeric character`
-    );
-  }
-
-  return `${cleanKey}.ts`;
 }
 
 /**
@@ -117,16 +105,7 @@ export const ${exportName} = displayTemplate({
  * @throws Error if the key contains no alphanumeric characters
  */
 function generateExportName(key: string): string {
-  // Convert to PascalCase and add DT suffix
-  const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
-
-  if (!cleanKey) {
-    throw new Error(
-      `Invalid display template key "${key}": must contain at least one alphanumeric character`
-    );
-  }
-
-  return `${cleanKey}DT`;
+  return `${cleanKey(key)}DT`;
 }
 
 /**
@@ -193,16 +172,3 @@ function generateValueCode(value: any, indentLevel: number): string {
   return String(value);
 }
 
-/**
- * Escapes a string for use in a single-quoted JavaScript/TypeScript string literal
- * Uses JSON.stringify for proper escaping of all special characters
- */
-function escapeSingleQuote(str: string): string {
-  // Use JSON.stringify to properly escape all special characters (quotes, backslashes, newlines, etc.)
-  // Then convert from double-quoted to single-quoted format
-  const jsonEscaped = JSON.stringify(str);
-  // Remove outer double quotes and unescape inner double quotes
-  const withoutOuterQuotes = jsonEscaped.slice(1, -1).replace(/\\"/g, '"');
-  // Escape single quotes for single-quoted string literals
-  return withoutOuterQuotes.replace(/'/g, "\\'");
-}

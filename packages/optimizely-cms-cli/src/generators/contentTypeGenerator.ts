@@ -61,15 +61,20 @@ export async function generateContentTypeFiles(
 }
 
 /**
- * Cleans a content type key by removing non-alphanumeric characters
+ * Cleans a key to create a valid TypeScript identifier
+ * - Keeps underscores (valid in TS), letters, and numbers
+ * - Removes hyphens and other special characters
+ * - Preserves case to maintain distinction between similar keys
+ * This ensures "Hero-Component" and "Hero_Component" generate different identifiers
  * @throws Error if the key contains no alphanumeric characters
  */
-function cleanContentTypeKey(key: string): string {
-  const cleanKey = key.replace(/[^a-zA-Z0-9]/g, '');
+export function cleanKey(key: string): string {
+  // Keep letters, numbers, and underscores; remove everything else
+  const cleanKey = key.replace(/[^a-zA-Z0-9_]/g, '');
 
-  if (!cleanKey) {
+  if (!cleanKey || !/[a-zA-Z0-9]/.test(cleanKey)) {
     throw new Error(
-      `Invalid content type key "${key}": must contain at least one alphanumeric character`,
+      `Invalid key "${key}": must contain at least one alphanumeric character`,
     );
   }
 
@@ -77,13 +82,12 @@ function cleanContentTypeKey(key: string): string {
 }
 
 /**
- * Generates a valid file name from a content type key
+ * Generates a valid file name from a key
  * @throws Error if the key contains no alphanumeric characters
  */
-function generateFileName(key: string): string {
-  // Convert key to PascalCase and add .ts extension
-  // e.g., "HelloWorld_Article" -> "HelloWorldArticle.ts"
-  return `${cleanContentTypeKey(key)}.ts`;
+export function generateFileName(key: string): string {
+  // e.g., "HelloWorld_Article" -> "HelloWorld_Article.ts"
+  return `${cleanKey(key)}.ts`;
 }
 
 /**
@@ -163,7 +167,7 @@ export const ${exportName} = contentType({
 function generateExportName(key: string): string {
   // Convert to PascalCase and add CT suffix
   // e.g., "HelloWorld_Article" -> "HelloWorldArticleCT"
-  return `${cleanContentTypeKey(key)}CT`;
+  return `${cleanKey(key)}CT`;
 }
 
 /**
@@ -399,7 +403,7 @@ function normalizeEnumValues<T extends string | number>(
  * Escapes a string for use in a single-quoted JavaScript/TypeScript string literal
  * Uses JSON.stringify for proper escaping of all special characters
  */
-function escapeSingleQuote(str: string): string {
+export function escapeSingleQuote(str: string): string {
   // Use JSON.stringify to properly escape all special characters (quotes, backslashes, newlines, etc.)
   // Then convert from double-quoted to single-quoted format
   const jsonEscaped = JSON.stringify(str);
