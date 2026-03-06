@@ -33,7 +33,11 @@ function Article({ content }: ArticlePageProps) {
     <div>
       <h1 {...pa('title')}>{content.title}</h1>
       <p {...pa('description')}>{content.description}</p>
-      <RichText {...pa('body')} content={content.body?.json} />
+      <RichText
+        {...pa('body')}
+        content={content.body?.json}
+        context={content.__context}
+      />
     </div>
   );
 }

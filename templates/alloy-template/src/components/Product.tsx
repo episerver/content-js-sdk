@@ -85,6 +85,7 @@ function Product({ content }: ProductProps) {
             {/* Main Body Content */}
             <RichText
               {...pa('main_body')}
+              context={content.__context}
               content={content.main_body?.json}
               className="space-y-4 sm:space-y-6"
             />

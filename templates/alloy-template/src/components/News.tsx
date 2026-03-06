@@ -44,7 +44,11 @@ type NewsPageProps = {
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)} className="w-full block">{children}</div>;
+  return (
+    <div {...pa(node)} className="w-full block">
+      {children}
+    </div>
+  );
 }
 
 function News({ content }: NewsPageProps) {
@@ -76,6 +80,7 @@ function News({ content }: NewsPageProps) {
             {/* Main Body Content */}
             <RichText
               {...pa('main_body')}
+              context={content.__context}
               content={content.main_body?.json}
               className="space-y-4 sm:space-y-6"
             />

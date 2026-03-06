@@ -20,15 +20,13 @@ import { appendToken } from '../../util/preview.js';
  * React-specific element renderer props (extends shared props with React children)
  */
 export interface ElementRendererProps
-  extends BaseElementRendererProps,
-    PropsWithChildren {}
+  extends BaseElementRendererProps, PropsWithChildren {}
 
 /**
  * React-specific props for link elements with type safety
  */
 export interface LinkElementProps
-  extends Omit<BaseElementRendererProps, 'element'>,
-    PropsWithChildren {
+  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: LinkElement;
 }
 
@@ -36,8 +34,7 @@ export interface LinkElementProps
  * React-specific props for image elements with type safety
  */
 export interface ImageElementProps
-  extends Omit<BaseElementRendererProps, 'element'>,
-    PropsWithChildren {
+  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: ImageElement;
 }
 
@@ -45,8 +42,7 @@ export interface ImageElementProps
  * React-specific props for table elements with type safety
  */
 export interface TableElementProps
-  extends Omit<BaseElementRendererProps, 'element'>,
-    PropsWithChildren {
+  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: TableElement;
 }
 
@@ -54,8 +50,7 @@ export interface TableElementProps
  * React-specific props for table cell elements with type safety
  */
 export interface TableCellElementRendererProps
-  extends Omit<BaseElementRendererProps, 'element'>,
-    PropsWithChildren {
+  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: TableCellElement;
 }
 
@@ -68,8 +63,7 @@ export type ElementProps = ElementRendererProps;
  * React-specific leaf renderer props (extends shared props with React children)
  */
 export interface LeafRendererProps
-  extends BaseLeafRendererProps,
-    PropsWithChildren {}
+  extends BaseLeafRendererProps, PropsWithChildren {}
 
 /**
  * Prop type used for custom Leaf components
@@ -121,7 +115,8 @@ export type LeafMap = BaseLeafMap<LeafRenderer>;
  * React-specific RichText props
  */
 export interface RichTextProps
-  extends RichTextPropsBase<ElementRenderer, LeafRenderer>,
+  extends
+    RichTextPropsBase<ElementRenderer, LeafRenderer>,
     Omit<React.HTMLAttributes<HTMLDivElement>, 'content'> {}
 
 /**
@@ -416,7 +411,7 @@ const HTML_ATTRIBUTE_ELEMENTS = new Set(['table', 'img', 'input', 'canvas']);
  */
 export function toReactProps(
   attributes: Record<string, unknown>,
-  elementType?: string
+  elementType?: string,
 ): Record<string, unknown> {
   const reactProps: Record<string, unknown> = {};
   const styleProps: Record<string, string> = {};
@@ -505,7 +500,7 @@ function parseStyleString(styleString: string): Record<string, string> {
  */
 export function createHtmlComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T,
-  config: HtmlComponentConfig = {}
+  config: HtmlComponentConfig = {},
 ): ElementRenderer {
   const Component: ElementRenderer = ({ children, attributes, element }) => {
     // Convert to React props and merge with config, passing element type for context
@@ -535,7 +530,7 @@ export function createHtmlComponent<T extends keyof JSX.IntrinsicElements>(
  */
 export function createLinkComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T = 'a' as T,
-  config: HtmlComponentConfig = {}
+  config: HtmlComponentConfig = {},
 ): LinkElementRenderer {
   const Component: LinkElementRenderer = ({
     children,
@@ -575,7 +570,7 @@ export function createLinkComponent<T extends keyof JSX.IntrinsicElements>(
 export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T = 'img' as T,
   config: HtmlComponentConfig = {},
-  previewToken?: string
+  previewToken?: string,
 ): ImageElementRenderer {
   const Component: ImageElementRenderer = ({
     children,
@@ -585,9 +580,14 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
     // Convert to React props and merge with config
     const reactProps = toReactProps(attributes || {}, tag as string);
 
+    // Append preview token to image URL if provided
+    const src = previewToken
+      ? appendToken(element.url, previewToken)
+      : element.url;
+
     // Type-safe access to image properties
     const imageProps = {
-      src: element.url ? appendToken(element.url, previewToken) : element.url,
+      src: src,
       alt: element.alt,
       title: element.title,
       width: element.width,
@@ -617,7 +617,7 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
  */
 export function createTableComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T = 'table' as T,
-  config: HtmlComponentConfig = {}
+  config: HtmlComponentConfig = {},
 ): TableElementRenderer {
   const Component: TableElementRenderer = ({
     children,
@@ -647,7 +647,7 @@ export function createTableComponent<T extends keyof JSX.IntrinsicElements>(
  */
 export function createTableCellComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T,
-  config: HtmlComponentConfig = {}
+  config: HtmlComponentConfig = {},
 ): TableCellElementRenderer {
   const Component: TableCellElementRenderer = ({
     children,
@@ -677,7 +677,7 @@ export function createTableCellComponent<T extends keyof JSX.IntrinsicElements>(
  */
 export function createLeafComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T,
-  config: HtmlComponentConfig = {}
+  config: HtmlComponentConfig = {},
 ): LeafRenderer {
   const Component: LeafRenderer = ({ children, attributes }) => {
     // Convert to React props and merge with config
@@ -709,38 +709,38 @@ export function generateDefaultElements(previewToken?: string): ElementMap {
       case 'link':
         elementMap[type] = createLinkComponent(
           'a',
-          config.config
+          config.config,
         ) as ElementRenderer;
         break;
       case 'image':
         elementMap[type] = createImageComponent(
           'img',
           config.config,
-          previewToken
+          previewToken,
         ) as ElementRenderer;
         break;
       case 'table':
         elementMap[type] = createTableComponent(
           'table',
-          config.config
+          config.config,
         ) as ElementRenderer;
         break;
       case 'td':
         elementMap[type] = createTableCellComponent(
           'td',
-          config.config
+          config.config,
         ) as ElementRenderer;
         break;
       case 'th':
         elementMap[type] = createTableCellComponent(
           'th',
-          config.config
+          config.config,
         ) as ElementRenderer;
         break;
       default:
         elementMap[type] = createHtmlComponent(
           config.tag as keyof JSX.IntrinsicElements,
-          config.config
+          config.config,
         );
         break;
     }
