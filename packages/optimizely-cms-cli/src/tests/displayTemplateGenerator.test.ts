@@ -52,7 +52,7 @@ describe('generateDisplayTemplateFiles', () => {
     await expect(
       generateDisplayTemplateFiles(invalidDisplayTemplates, outputDir),
     ).rejects.toThrow(
-      'Invalid display template key "@@@": must contain at least one alphanumeric character',
+      'Invalid key "@@@": must contain at least one alphanumeric character',
     );
   });
 });
@@ -91,7 +91,7 @@ describe('generateDisplayTemplateCode', () => {
     };
 
     expect(() => generateDisplayTemplateCode(displayTemplate)).toThrow(
-      'Invalid display template key "___": must contain at least one alphanumeric character',
+      'Invalid key "___": must contain at least one alphanumeric character',
     );
   });
 });

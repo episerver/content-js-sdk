@@ -61,7 +61,7 @@ describe('generateContentTypeFiles', () => {
         outputDir,
       ),
     ).rejects.toThrow(
-      'Invalid content type key "***": must contain at least one alphanumeric character',
+      'Invalid key "***": must contain at least one alphanumeric character',
     );
   });
 });
@@ -155,7 +155,7 @@ describe('generateContentTypeCode', () => {
     };
 
     expect(() => generateContentTypeCode(contentType)).toThrow(
-      'Invalid content type key "---": must contain at least one alphanumeric character',
+      'Invalid key "---": must contain at least one alphanumeric character',
     );
   });
 
