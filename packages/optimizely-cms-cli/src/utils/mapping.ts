@@ -2,6 +2,33 @@ import { extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
 
 /**
+ * Process display templates and infer contentType from key if missing.
+ * Display templates can have one of three mutually exclusive fields:
+ * contentType, baseType, or nodeType. Only infer contentType if none exist.
+ *
+ * @param displayTemplates - Array of display template objects to process
+ * @returns Processed array with inferred contentType where applicable
+ */
+export function processDisplayTemplates(displayTemplates: any[]): any[] {
+  return displayTemplates.map((dt: any) => {
+    // If any discriminator field exists, return as-is
+    if (dt.contentType || dt.baseType || dt.nodeType) {
+      return dt;
+    }
+
+    // Infer contentType from key by removing common suffixes
+    const inferredContentType = dt.key
+      .replace(/DisplayTemplate$/i, '')
+      .replace(/Template$/i, '');
+
+    return {
+      ...dt,
+      contentType: inferredContentType || dt.key,
+    };
+  });
+}
+
+/**
  * Normalizes the `mayContainTypes` field of a content type object.
  * - Converts each entry to a key name (string).
  * - For self-referential entries (e.g., '_self'), it uses the parent key.

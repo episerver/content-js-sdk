@@ -8,4 +8,5 @@ export const BlankSectionContentType: SectionContentType = {
 export const BlankExperienceContentType: ExperienceContentType = {
   baseType: '_experience',
   key: 'BlankExperience',
+  mayContainTypes: ['*'],
 };

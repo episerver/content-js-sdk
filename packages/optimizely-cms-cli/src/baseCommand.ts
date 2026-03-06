@@ -36,14 +36,11 @@ function handleFlagsError(err: any) {
 
 /** Base class with flags and common error handling for all commands */
 export abstract class BaseCommand<T extends typeof Command> extends Command {
-  // add the --json flag
-  static enableJsonFlag = true;
-
   // define flags that can be inherited by any command that extends BaseCommand
   static baseFlags = {
     host: Flags.string({
       description:
-        'CMS instance URL. For example: `my-instance.cms.optimizely.com`',
+        'CMS instance URL including scheme. For example: `https://my-instance.cms.optimizely.com`',
     }),
   };
 

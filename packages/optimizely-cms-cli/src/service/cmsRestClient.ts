@@ -3,9 +3,9 @@ import { paths } from './apiSchema/openapi-schema-types.js';
 import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
 
-function rootUrl() {
+function rootUrl(host?: string) {
   const rootUrl =
-    process.env.OPTIMIZELY_CMS_API_URL || 'https://api.cms.optimizely.com';
+    host || process.env.OPTIMIZELY_CMS_API_URL || 'https://api.cms.optimizely.com';
 
   if (rootUrl.endsWith('/')) {
     return rootUrl.slice(0, -1);
@@ -14,8 +14,8 @@ function rootUrl() {
   return rootUrl;
 }
 
-export async function getToken(clientId: string, clientSecret: string) {
-  const client = createClient<paths>({ baseUrl: rootUrl() });
+export async function getToken(clientId: string, clientSecret: string, host?: string) {
+  const client = createClient<paths>({ baseUrl: rootUrl(host) });
 
   return client
     .POST('/oauth/token', {
@@ -40,13 +40,13 @@ export async function getToken(clientId: string, clientSecret: string) {
         // Generic error message:
 
         throw new Error(
-          'Something went wrong when trying to fetch token. Please try again'
+          'Something went wrong when trying to fetch token. Please try again',
         );
       }
 
       if (!data) {
         throw new Error(
-          'The endpoint `/oauth/token` did not respond with data'
+          'The endpoint `/oauth/token` did not respond with data',
         );
       }
       return data.access_token;
@@ -56,12 +56,14 @@ export async function getToken(clientId: string, clientSecret: string) {
 export async function createRestApiClient({
   clientId,
   clientSecret,
+  host,
 }: {
   clientId: string;
   clientSecret: string;
+  host?: string;
 }) {
-  const baseUrl = rootUrl() + '/preview3';
-  const accessToken = await getToken(clientId, clientSecret);
+  const baseUrl = rootUrl(host) + '/preview3';
+  const accessToken = await getToken(clientId, clientSecret, host);
 
   return createClient<paths>({
     baseUrl,
@@ -73,6 +75,6 @@ export async function createRestApiClient({
 
 export async function createApiClient(host?: string) {
   const cred = readEnvCredentials();
-  const client = await createRestApiClient(cred);
+  const client = await createRestApiClient({ ...cred, host });
   return client;
 }

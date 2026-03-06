@@ -12,7 +12,7 @@ export const MAIN_BASE_TYPES = [
 export const MEDIA_BASE_TYPES = ['_image', '_media', '_video'] as const;
 
 // Other base types
-export const OTHER_BASE_TYPES = ['_folder', '_element'] as const;
+export const OTHER_BASE_TYPES = ['_folder'] as const;
 
 // All base types including media and other types
 export const ALL_BASE_TYPES = [
@@ -69,11 +69,6 @@ export type SectionContentType = BaseContentType & {
   baseType: '_section';
 };
 
-/** Represents element content type */
-export type ElementContentType = BaseContentType & {
-  baseType: '_element';
-};
-
 /** Represents a "Media" content type (Image, Media, Video) */
 export type MediaContentType = BaseContentType & {
   baseType: MediaStringTypes;
@@ -86,7 +81,6 @@ export type AnyContentType =
   | PageContentType
   | FolderContentType
   | SectionContentType
-  | ElementContentType
   | MediaContentType;
 
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
