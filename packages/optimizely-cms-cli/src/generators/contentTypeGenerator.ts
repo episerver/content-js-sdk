@@ -18,44 +18,44 @@ export async function generateContentTypeFiles(
   contentTypeToGroupMap?: Map<string, string>,
   currentGroup?: string,
 ): Promise<string[]> {
-  const generatedFiles: string[] = [];
+  const generatedFiles = await Promise.all(
+    contentTypes.map(async (contentType) => {
+      const fileName = generateFileName(contentType.key);
+      const filePath = join(outputDir, fileName);
 
-  for (const contentType of contentTypes) {
-    const fileName = generateFileName(contentType.key);
-    const filePath = join(outputDir, fileName);
-
-    // Generate content type code
-    let fileContent = generateContentTypeCode(
-      contentType,
-      contentTypeToGroupMap,
-      currentGroup,
-    );
-
-    // Append display templates for this specific content type
-    const relatedTemplates =
-      displayTemplatesByContentType.get(contentType.key) || [];
-    if (relatedTemplates.length > 0) {
-      // Update import to include displayTemplate
-      fileContent = fileContent.replace(
-        "import { contentType } from '@optimizely/cms-sdk';",
-        "import { contentType, displayTemplate } from '@optimizely/cms-sdk';",
+      // Generate content type code
+      let fileContent = generateContentTypeCode(
+        contentType,
+        contentTypeToGroupMap,
+        currentGroup,
       );
 
-      fileContent += '\n'; // Add spacing
-      for (const template of relatedTemplates) {
-        const templateCode = generateDisplayTemplateCode(template);
-        // Remove the import statement since we already have it at the top of the file
-        const codeWithoutImport = templateCode.replace(
-          /^import \{ displayTemplate \} from '@optimizely\/cms-sdk';\n\n/,
-          '',
+      // Append display templates for this specific content type
+      const relatedTemplates =
+        displayTemplatesByContentType.get(contentType.key) || [];
+      if (relatedTemplates.length > 0) {
+        // Update import to include displayTemplate
+        fileContent = fileContent.replace(
+          "import { contentType } from '@optimizely/cms-sdk';",
+          "import { contentType, displayTemplate } from '@optimizely/cms-sdk';",
         );
-        fileContent += '\n' + codeWithoutImport;
-      }
-    }
 
-    await writeFile(filePath, fileContent, 'utf-8');
-    generatedFiles.push(fileName);
-  }
+        fileContent += '\n'; // Add spacing
+        for (const template of relatedTemplates) {
+          const templateCode = generateDisplayTemplateCode(template);
+          // Remove the import statement since we already have it at the top of the file
+          const codeWithoutImport = templateCode.replace(
+            /^import \{ displayTemplate \} from '@optimizely\/cms-sdk';\n\n/,
+            '',
+          );
+          fileContent += '\n' + codeWithoutImport;
+        }
+      }
+
+      await writeFile(filePath, fileContent, 'utf-8');
+      return fileName;
+    }),
+  );
 
   return generatedFiles;
 }

@@ -14,16 +14,16 @@ export async function generateDisplayTemplateFiles(
   displayTemplates: DisplayTemplate[],
   outputDir: string,
 ): Promise<string[]> {
-  const generatedFiles: string[] = [];
+  const generatedFiles = await Promise.all(
+    displayTemplates.map(async (displayTemplate) => {
+      const fileName = generateFileName(displayTemplate.key);
+      const filePath = join(outputDir, fileName);
+      const fileContent = generateDisplayTemplateCode(displayTemplate);
 
-  for (const displayTemplate of displayTemplates) {
-    const fileName = generateFileName(displayTemplate.key);
-    const filePath = join(outputDir, fileName);
-    const fileContent = generateDisplayTemplateCode(displayTemplate);
-
-    await writeFile(filePath, fileContent, 'utf-8');
-    generatedFiles.push(fileName);
-  }
+      await writeFile(filePath, fileContent, 'utf-8');
+      return fileName;
+    }),
+  );
 
   return generatedFiles;
 }
