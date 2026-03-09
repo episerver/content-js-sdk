@@ -76,8 +76,11 @@ export default async function Page({ params }: Props) {
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
-  const content = await client.getContentByPath(`/${slug.join('/')}/`);
-
+  const content = await client.getContent({ path: `/${slug.join('/')}/` });
+  console.error("slug:" + slug);
+  
+  console.error("content:" + content);
+  
   if (content.length === 0) {
     notFound();
   }

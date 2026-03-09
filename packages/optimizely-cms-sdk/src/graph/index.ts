@@ -15,6 +15,7 @@ import {
   previewFilter,
   GraphVariationInput,
   localeFilter,
+  keyFilter,
 } from './filters.js';
 
 /** Options for Graph */
@@ -36,8 +37,12 @@ export type PreviewParams = {
 };
 
 export type GraphGetContentOptions = {
-  variation?: GraphVariationInput;
+  key?: string;
+  path?: string;
+  locale?: string | string[];
+  version?: string;
   host?: string;
+  variation?: GraphVariationInput;
 };
 
 export type GraphGetLinksOptions = {
@@ -341,42 +346,117 @@ export class GraphClient {
   }
 
   /**
-   * Fetches content from the CMS based on the provided path or options.
+   * Fetches content from the CMS based on either a content key or path.
    *
-   * If a string is provided, it is treated as a content path. If an object is provided,
-   * it may include both a path and a variation to filter the content.
+   * Provide either `key` or `path` in the options (not both).
+   * - When using `key`: returns a single content item or null
+   * - When using `path`: returns an array of content items
    *
-   * @param path - A string representing the content path
-   * @param options - Options to include or exclude variations
+   * @param options - Options for fetching content
+   * @param options.key - Unique content key (returns single item)
+   * @param options.path - Content path (returns array)
+   * @param options.locale - Locale(s) to fetch
+   * @param options.version - Content version (only for key-based queries)
+   * @param options.host - Host for multi-site
+   * @param options.variation - Variation settings
    *
-   * @param contentType - A string representing the content type. If omitted, the method
-   *   will try to get the content type name from the CMS.
+   * @returns Single content item (when using key), array of items (when using path), or null
    *
-   * @returns An array of all items matching the path and options. Returns an empty array if no content is found.
+   * @example
+   * ```typescript
+   * // Fetch by key
+   * const content = await client.getContent({
+   *   key: 'abc123...',
+   *   locale: 'nl'
+   * });
+   *
+   * // Fetch by path
+   * const articles = await client.getContent({
+   *   path: '/articles/my-article',
+   *   locale: 'nl'
+   * });
+   *
+   * // Fetch referenced content in different locale
+   * const settings = await client.getContent({ path: '/en/settings' });
+   * const referencedPageNL = await client.getContent({
+   *   key: settings[0].featuredPage.key,
+   *   locale: 'nl'
+   * });
+   * ```
    */
-  async getContentByPath<T = any>(
-    path: string,
-    options?: GraphGetContentOptions,
-  ) {
-    const input: GraphVariables = {
-      ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
-      variation: options?.variation,
-    };
-    const { contentTypeName, damEnabled } =
-      await this.getContentMetaData(input);
-
-    if (!contentTypeName) {
-      return [];
+  async getContent<T = any>(
+    options: GraphGetContentOptions,
+  ): Promise<T | T[] | null> {
+    // Validate: must provide either key or path, but not both
+    if (options.key && options.path) {
+      throw new OptimizelyGraphError(
+        'Cannot provide both "key" and "path" options. Use either one.',
+      );
     }
 
-    const query = createMultipleContentQuery(
-      contentTypeName,
-      damEnabled,
-      this.maxFragmentThreshold,
-    );
-    const response = (await this.request(query, input)) as ItemsResponse<T>;
+    if (!options.key && !options.path) {
+      throw new OptimizelyGraphError(
+        'Must provide either "key" or "path" option.',
+      );
+    }
 
-    return response?._Content?.items.map(removeTypePrefix);
+    // Fetch by key
+    if (options.key) {
+      const input: GraphVariables = {
+        ...keyFilter(options.key, options.locale, options.version),
+        variation: options.variation,
+      };
+
+      const { contentTypeName, damEnabled } =
+        await this.getContentMetaData(input);
+
+      if (!contentTypeName) {
+        return null;
+      }
+
+      const query = createSingleContentQuery(
+        contentTypeName,
+        damEnabled,
+        this.maxFragmentThreshold,
+      );
+      const response = await this.request(query, input);
+
+      return response?._Content?.item
+        ? removeTypePrefix(response._Content.item)
+        : null;
+    }
+
+    // Fetch by path
+    if (options.path) {
+      const input: GraphVariables = {
+        ...pathFilter(options.path, options.host ?? this.host),
+        variation: options.variation,
+        locale: options.locale
+          ? Array.isArray(options.locale)
+            ? options.locale
+            : [options.locale]
+          : undefined,
+      };
+
+      const { contentTypeName, damEnabled } =
+        await this.getContentMetaData(input);
+
+      if (!contentTypeName) {
+        return [];
+      }
+
+      const query = createMultipleContentQuery(
+        contentTypeName,
+        damEnabled,
+        this.maxFragmentThreshold,
+      );
+      const response = (await this.request(query, input)) as ItemsResponse<T>;
+
+      return response?._Content?.items.map(removeTypePrefix);
+    }
+
+    // Should never reach here due to validation above
+    return null;
   }
 
   /**

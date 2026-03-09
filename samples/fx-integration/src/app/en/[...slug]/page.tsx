@@ -29,20 +29,21 @@ export default async function Page({ params }: Props) {
   if (!variation) {
     console.log('Showing original');
 
-    const content = await client.getContentByPath(path).then(returnFirst);
+    const content = await client.getContent({ path }).then(returnFirst);
 
     return <OptimizelyComponent content={content} />;
   }
 
   const content = await client
-    .getContentByPath(path, {
+    .getContent({
+      path,
       variation: { include: 'SOME', value: [variation] },
     })
     .then((content) => {
       // If no variations are found, try to fetch the original
       if (content.length === 0) {
         console.log('Variation not found. Fetching original');
-        return client.getContentByPath(path);
+        return client.getContent({ path });
       }
 
       console.log('Showing variation', variation);
