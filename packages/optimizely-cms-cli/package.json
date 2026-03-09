@@ -66,6 +66,9 @@
       },
       "danger": {
         "description": "⚠️  Destructive operations - use with caution"
+      },
+      "manifest": {
+        "description": "Generate and upload manifest files"
       }
     }
   }

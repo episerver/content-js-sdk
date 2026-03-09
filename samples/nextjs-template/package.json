@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
+    "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs",
+    "opti-generate": "pnpm exec optimizely-cms-cli manifest generate > manifest.json",
+    "opti-generate-upload": "pnpm exec optimizely-cms-cli manifest generate | pnpm exec optimizely-cms-cli manifest push",
+    "opti-upload": "cat manifest.json | pnpm exec optimizely-cms-cli manifest push",
+    "opti-upload-force": "pnpm exec optimizely-cms-cli manifest generate | pnpm exec optimizely-cms-cli manifest push --force"
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:^0.1.0-alpha.5",

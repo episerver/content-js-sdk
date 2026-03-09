@@ -198,7 +198,8 @@ function printFilesContents(
   path: string,
   metaData: AnyContentType | DisplayTemplate | PropertyGroupType,
 ) {
-  console.log(
+  // Use console.error to output to stderr so it doesn't interfere with stdout (used for JSON output in manifest generate)
+  console.error(
     '%s %s found in %s',
     type,
     chalk.bold(metaData.key),
@@ -284,10 +285,10 @@ export function normalizePropertyGroups(
     );
   }
 
-  // Log found property groups
+  // Log found property groups (to stderr so it doesn't interfere with stdout in manifest generate)
   if (deduplicatedGroups.length > 0) {
     const groupKeys = deduplicatedGroups.map((g) => g.displayName).join(', ');
-    console.log('Property Groups found: %s', chalk.bold.cyan(`[${groupKeys}]`));
+    console.error('Property Groups found: %s', chalk.bold.cyan(`[${groupKeys}]`));
   }
 
   // Return deduplicated array in the order they were first seen

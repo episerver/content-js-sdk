@@ -79,3 +79,79 @@ pnpm dev
 ### Step 7. Test preview/edit mode
 
 In the CMS, go to the content you created in step 4 and edit. You should see the preview in the right hand side
+
+## Available Scripts
+
+This project includes several npm scripts for working with Optimizely CMS:
+
+### Content Type Management
+
+```bash
+# Push content types to CMS (legacy - all-in-one)
+pnpm opti-push
+```
+
+This command generates a manifest from your content types and uploads it to CMS in one step.
+
+### Manifest Commands (New)
+
+These commands allow you to separate manifest generation from uploading:
+
+```bash
+# Generate manifest and save to file
+pnpm opti-generate
+```
+
+Generates `manifest.json` from your content types. Useful for:
+- Inspecting the manifest before uploading
+- Version control / code review
+- CI/CD pipelines
+
+```bash
+# Generate and upload in one pipeline
+pnpm opti-generate-upload
+```
+
+Combines generation and upload using Unix pipes. Equivalent to:
+```bash
+optimizely-cms-cli manifest generate | optimizely-cms-cli manifest push
+```
+
+```bash
+# Upload existing manifest file
+pnpm opti-upload
+```
+
+Uploads a previously generated `manifest.json` file to CMS.
+
+```bash
+# Generate and upload with force flag
+pnpm opti-upload-force
+```
+
+Forces content type updates even if they might result in data loss. Use with caution!
+
+### Use Cases
+
+**Development workflow:**
+```bash
+# Make changes to content types in code
+# Generate manifest to review
+pnpm opti-generate
+
+# Review manifest.json
+# Upload when ready
+pnpm opti-upload
+```
+
+**CI/CD workflow:**
+```bash
+# Generate and upload in one step
+pnpm opti-generate-upload
+```
+
+**Emergency updates:**
+```bash
+# Force update (bypasses data loss warnings)
+pnpm opti-upload-force
+```
