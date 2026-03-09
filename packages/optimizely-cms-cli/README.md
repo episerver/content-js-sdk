@@ -28,7 +28,10 @@ pnpm add -D @optimizely/cms-cli
 
 # yarn
 yarn add -D @optimizely/cms-cli
+
 ```
+
+> **Tip:** You can also use `npx @optimizely/cms-cli` to run commands without installing the package.
 
 ## Quick Start
 
@@ -75,28 +78,63 @@ export const ArticlePage = contentType({
 Run the CLI to push your definitions to Optimizely CMS:
 
 ```bash
+# If installed as a dependency
 pnpm exec optimizely-cms-cli config push ./optimizely.config.mjs
+
+# Or using npx without installation
+npx @optimizely/cms-cli config push ./optimizely.config.mjs
 ```
 
 ## Commands
+
+All commands can be run using either the installed CLI or via `npx @optimizely/cms-cli`.
 
 ### Configuration Management
 
 Sync your TypeScript content type definitions with Optimizely CMS:
 
 ```bash
-# Push content types to CMS (uses ./optimizely.config.mjs by default)
+# Push content types to CMS (reads ./optimizely.config.mjs from project root by default)
 optimizely-cms-cli config push
+# or: npx @optimizely/cms-cli config push
 
-# Push with custom config file
-optimizely-cms-cli config push ./custom-config.mjs
+# Push with custom config file path
+optimizely-cms-cli config push ./path/to/custom-config.mjs
 
 # Force update (may result in data loss)
 optimizely-cms-cli config push --force
 
-# Pull current CMS configuration to JSON
-optimizely-cms-cli config pull --output ./config.json
+# Pull content types from CMS and generate TypeScript files (prompts for options)
+optimizely-cms-cli config pull
+
+# With output directory specified
+optimizely-cms-cli config pull --output ./src/content-types
+
+# Group generated files by content type base type (page/, component/, section/, etc.)
+optimizely-cms-cli config pull --output ./src/types --group
+
+# Output raw JSON manifest (useful for piping/processing)
+optimizely-cms-cli config pull --json
+
+# Save raw JSON manifest to file (automatically detects redirection)
+optimizely-cms-cli config pull > manifest.json
+
+# Or explicitly specify JSON output
+optimizely-cms-cli config pull --json > manifest.json
+
+# Pipe JSON output to other commands (automatically detects piping)
+optimizely-cms-cli config pull | jq .contentTypes
+optimizely-cms-cli config pull | grep -i "Article"
 ```
+
+> **Note:** The command automatically detects when output is piped or redirected and outputs JSON without prompting. You can also explicitly use `--json` to force JSON output. The `--output` flag works in all environments, including CI/non-TTY contexts.
+
+> **Note:** When using `--group`:
+>
+> - Display templates are co-located with their content types in the same file
+> - Orphaned display templates (without a matching content type) are placed in the `displayTemplates/` directory
+>
+> See [File Organization](#file-organization) below for detailed examples.
 
 ### Authentication
 
@@ -143,6 +181,75 @@ optimizely-cms-cli config push --help
 # Show help for a topic
 optimizely-cms-cli config --help
 ```
+
+## File Organization
+
+### Pull Command Output Structure
+
+When pulling content types from CMS, the CLI generates TypeScript files with different organization strategies:
+
+#### Without `--group` flag (default)
+
+```
+src/content-types/
+├── ArticlePage.ts
+├── ProductPage.ts
+├── HeroComponent.ts
+└── display-templates/
+    ├── ArticleDisplayTemplate.ts
+    └── HeroDisplayTemplate.ts
+```
+
+#### With `--group` flag
+
+Organizes files by content type base type (`_page`, `_component`, `_section`, etc.) and **co-locates display templates with their content types**:
+
+```
+src/types/
+├── page/
+│   ├── ArticlePage.ts      # Contains ArticlePageCT + ArticleDisplayTemplateDT
+│   └── ProductPage.ts       # Contains ProductPageCT + ProductDisplayTemplateDT
+├── component/
+│   ├── HeroComponent.ts     # Contains HeroComponentCT + HeroDisplayTemplateDT
+│   └── Teaser.ts            # Contains TeaserCT + TeaserDisplayTemplateDT
+├── section/
+│   └── ContentSection.ts    # Contains ContentSectionCT + ContentSectionDisplayTemplateDT
+└── displayTemplates/        # Only created if orphaned templates exist
+    └── LegacyTemplate.ts    # Display templates with no matching content type
+```
+
+**Example co-located file** ([page/ArticlePage.ts]()):
+
+```typescript
+import { contentType, displayTemplate } from '@optimizely/cms-sdk';
+
+/**
+ * Article Page
+ */
+export const ArticlePageCT = contentType({
+  key: 'ArticlePage',
+  baseType: '_page',
+  properties: {
+    /* ... */
+  },
+});
+
+/**
+ * Article Display Template
+ */
+export const ArticleDisplayTemplateDT = displayTemplate({
+  key: 'ArticleDisplayTemplate',
+  contentType: 'ArticlePage',
+  isDefault: true,
+});
+```
+
+**Benefits of grouping:**
+
+- Better organization by content type category
+- Related display templates are co-located with their content types
+- Fewer files to manage
+- Clear visibility of orphaned templates that may need attention
 
 ## Documentation
 
