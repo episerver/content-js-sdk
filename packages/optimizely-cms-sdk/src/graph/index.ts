@@ -7,6 +7,7 @@ import {
   GraphContentResponseError,
   GraphHttpResponseError,
   GraphResponseError,
+  GraphMissingContentTypeError,
   OptimizelyGraphError,
 } from './error.js';
 import {
@@ -18,7 +19,7 @@ import {
 } from './filters.js';
 
 /** Options for Graph */
-type GraphOptions = {
+export type GraphOptions = {
   /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
   graphUrl?: string;
   /** Default maximum fragment threshold for GraphQL queries (default: 100) */
@@ -362,6 +363,7 @@ export class GraphClient {
       ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
       variation: options?.variation,
     };
+
     const { contentTypeName, damEnabled } =
       await this.getContentMetaData(input);
 
@@ -369,14 +371,22 @@ export class GraphClient {
       return [];
     }
 
-    const query = createMultipleContentQuery(
-      contentTypeName,
-      damEnabled,
-      this.maxFragmentThreshold,
-    );
-    const response = (await this.request(query, input)) as ItemsResponse<T>;
+    try {
+      const query = createMultipleContentQuery(
+        contentTypeName,
+        damEnabled,
+        this.maxFragmentThreshold,
+      );
+      const response = (await this.request(query, input)) as ItemsResponse<T>;
 
-    return response?._Content?.items.map(removeTypePrefix);
+      return response?._Content?.items.map(removeTypePrefix);
+    } catch (error) {
+      // If content type is not registered, return empty array instead of throwing
+      if (error instanceof GraphMissingContentTypeError) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   /**
