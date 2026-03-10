@@ -243,6 +243,8 @@ export class GraphClient {
 
     if (!previewToken) {
       url.searchParams.append('auth', this.key);
+    } else {
+      url.searchParams.append('cache', false.toString());
     }
 
     const response = await fetch(url, {
