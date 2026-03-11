@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import {
   createSingleContentQuery,
   ItemsResponse,
@@ -238,14 +239,20 @@ export class GraphClient {
   }
 
   /** Perform a GraphQL query with variables */
-  async request(query: string, variables: any, previewToken?: string) {
+  async request(
+    query: string,
+    variables: any,
+    previewToken?: string,
+    cache: boolean = true,
+  ): Promise<any> {
     const url = new URL(this.graphUrl);
 
     if (!previewToken) {
       url.searchParams.append('auth', this.key);
-    } else {
-      url.searchParams.append('cache', false.toString());
     }
+
+    // Append cache parameter to control caching behavior
+    url.searchParams.append('cache', cache.toString());
 
     const response = await fetch(url, {
       method: 'POST',
@@ -466,7 +473,13 @@ export class GraphClient {
       damEnabled,
       this.maxFragmentThreshold,
     );
-    const response = await this.request(query, input, params.preview_token);
+
+    const response = await this.request(
+      query,
+      input,
+      params.preview_token,
+      false, // Don't cache preview content
+    );
 
     return decorateWithContext(
       removeTypePrefix(response?._Content?.item),
