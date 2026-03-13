@@ -6,13 +6,15 @@
 import { GraphClient } from '@optimizely/cms-sdk';
 import { revalidatePath } from 'next/cache';
 import { notFound } from 'next/navigation';
+import { getGraphConfig } from '@optimizely/cms-sdk/config';
+import { getWebhookId } from '@/lib/config';
 
 // Security. The hook URL must be unique. Anyone with the URL would be able to
 // revoke a cache, so treat it with the same security as you would with any token
 // or password
 //
 // Ensure that `WEBHOOK_ID` is a valid URL. Be careful with non-ASCII characters
-const WEBHOOK_ID = process.env.WEBHOOK_ID!;
+const WEBHOOK_ID = getWebhookId();
 
 /** Given a `docId`, revalidate the path of that item */
 async function revalidateDocId(docId: string) {
@@ -21,9 +23,9 @@ async function revalidateDocId(docId: string) {
   const parts = docId.split('_');
   const id = parts[0].replaceAll('-', '');
   const locale = parts[1]; // e.g., "en"
-    
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+
+  const client = new GraphClient(getGraphConfig().singleKey, {
+    graphUrl: getGraphConfig().graphUrl,
   });
 
   const getPathQuery = `

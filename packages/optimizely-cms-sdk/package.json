@@ -6,24 +6,34 @@
   "main": "./dist/index.js",
   "exports": {
     ".": {
+      "types": "./dist/cjs/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
     "./react/server": {
+      "types": "./dist/cjs/react/server.d.ts",
       "import": "./dist/esm/react/server.js",
       "require": "./dist/cjs/react/server.js"
     },
     "./react/client": {
+      "types": "./dist/cjs/react/client.d.ts",
       "import": "./dist/esm/react/client.js",
       "require": "./dist/cjs/react/client.js"
     },
     "./react/richText": {
+      "types": "./dist/cjs/react/richText/index.d.ts",
       "import": "./dist/esm/react/richText/index.js",
       "require": "./dist/cjs/react/richText/index.js"
     },
     "./buildConfig": {
+      "types": "./dist/cjs/model/buildConfig.d.ts",
       "import": "./dist/esm/model/buildConfig.js",
-      "types": "./dist/cjs/model/buildConfig.d.ts"
+      "require": "./dist/cjs/model/buildConfig.js"
+    },
+    "./config": {
+      "types": "./dist/cjs/config/index.d.ts",
+      "import": "./dist/esm/config/index.js",
+      "require": "./dist/cjs/config/index.js"
     }
   },
   "repository": {

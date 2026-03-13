@@ -5,6 +5,7 @@ export {
   displayTemplate,
   isContentType,
   isDisplayTemplate,
+  isContentTypeRegistered,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
   PropertyGroupType,
