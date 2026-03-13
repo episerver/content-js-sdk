@@ -7,9 +7,10 @@ import {
   createPollingProjectConfigManager,
 } from '@optimizely/optimizely-sdk';
 import { cookies } from 'next/headers';
+import { getFxSdkKey, getFxAccessToken } from './config';
 
-const SDK_KEY = process.env.OPTIMIZELY_FX_SDK_KEY!;
-const ACCESS_TOKEN = process.env.OPTIMIZELY_FX_ACCESS_TOKEN;
+const SDK_KEY = getFxSdkKey();
+const ACCESS_TOKEN = getFxAccessToken();
 
 const pollingConfigManager = createPollingProjectConfigManager({
   sdkKey: SDK_KEY,
