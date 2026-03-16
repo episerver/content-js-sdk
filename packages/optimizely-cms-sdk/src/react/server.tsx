@@ -11,7 +11,6 @@ import {
   DisplaySettingsType,
   ExperienceCompositionNode,
   InferredContentReference,
-  ContentProps,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
@@ -19,6 +18,10 @@ import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
+export { withAppContext } from './context/contextWrapper.js';
+export { getContextData, configureAdapter } from '../context/config.js';
+export { ReactContextAdapter } from '../context/reactContextAdapter.js';
+export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
 type ComponentType = React.ComponentType<any>;
 
