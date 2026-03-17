@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GraphClient } from '@optimizely/cms-sdk';
+import { GraphClient, isContentTypeRegistered } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { notFound } from 'next/navigation';
 import React from 'react';
@@ -32,6 +32,7 @@ export async function generateStaticParams() {
     _Page(limit: 100) {
       items {
         _metadata {
+          types
           url {
             base
             default
@@ -46,12 +47,21 @@ export async function generateStaticParams() {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
   const data = await client.request(query, {});
-
+  
   return data._Page.items
-    .filter(
-      // Get only pages for current application
-      (item: any) => item?._metadata?.url?.base === process.env.APPLICATION_HOST
-    )
+    .filter((item: any) => {
+      if (item?._metadata?.url?.base !== process.env.APPLICATION_HOST) {
+        return false;
+      }
+
+      const contentType = item?._metadata?.types?.[0];
+      if (!contentType) {
+        return false;
+      }
+
+      const isRegistered = isContentTypeRegistered(contentType);
+      return isRegistered;
+    })
     .map((item: any) => item?._metadata?.url?.default)
     .filter((path?: string) => typeof path === 'string')
     .map(removeSlashes)
