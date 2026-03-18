@@ -19,7 +19,11 @@ import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
 export { withAppContext } from './context/contextWrapper.js';
-export { getContextData, configureAdapter } from '../context/config.js';
+export {
+  getContextData,
+  configureAdapter,
+  getAdapter,
+} from '../context/config.js';
 export { ReactContextAdapter } from '../context/reactContextAdapter.js';
 export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 

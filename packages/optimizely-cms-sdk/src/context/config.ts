@@ -30,16 +30,25 @@ export function configureAdapter(adapter: ContextAdapter): void {
  * Get the current storage adapter.
  * Use this to access context data in your components.
  *
+ * @throws {Error} If the adapter has not been configured
+ *
  * @example
  * ```ts
- * import { getAdapter } from '@optimizely/cms-sdk';
+ * import { getAdapter } from '@optimizely/cms-sdk/react/server';
  *
  * const adapter = getAdapter();
- * const previewToken = adapter.getPreviewToken();
- * const locale = adapter.getLocale();
+ * const previewToken = adapter.getData()?.preview_token;
+ * const locale = adapter.getData()?.locale;
  * ```
  */
 export function getAdapter(): ContextAdapter {
+  if (!storageAdapter) {
+    throw new Error(
+      'Context adapter not configured. ' +
+        'For React: import from "@optimizely/cms-sdk/react/server" to auto-configure the React adapter. ' +
+        'For other frameworks: call configureAdapter() with your custom adapter before using context features.',
+    );
+  }
   return storageAdapter;
 }
 
