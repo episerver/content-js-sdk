@@ -37,6 +37,19 @@ export type PreviewParams = {
   loc: string;
 };
 
+export type GraphReference = {
+  /** Content key/GUID (required) */
+  key: string;
+  /** Content locale/language (optional) */
+  locale?: string;
+  /** Content version for preview mode (optional) */
+  version?: string;
+  /** Content type name (optional) */
+  type?: string;
+  /** Source identifier - unused for now (optional) */
+  source?: string;
+};
+
 export type GraphGetContentOptions = {
   variation?: GraphVariationInput;
   host?: string;
