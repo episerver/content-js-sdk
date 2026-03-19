@@ -6,7 +6,6 @@ import {
 import {
   type RenderNode,
   type Node,
-  type Element,
   createElementData,
 } from '../../components/richText/renderer.js';
 import {
@@ -46,7 +45,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
           Object.entries(config.elements).map(([key, value]) => [
             key.toLowerCase(),
             value,
-          ])
+          ]),
         )
       : {};
 
@@ -61,7 +60,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
           Object.entries(config.leafs).map(([key, value]) => [
             key.toLowerCase(),
             value,
-          ])
+          ]),
         )
       : {};
 
@@ -85,7 +84,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
   protected createElement(
     node: RenderNode,
     children: ReactNode[],
-    index: number
+    index: number,
   ): ReactNode {
     // Normalize element type to lowercase for consistent lookup
     const normalizedElementType = node.elementType!.toLowerCase();
@@ -96,7 +95,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
 
     const elementData = createElementData(
       normalizedElementType,
-      node.attributes
+      node.attributes,
     );
 
     // Extract text content from render nodes
@@ -113,7 +112,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
         text: textContent,
         key: `element-${normalizedElementType}-${index}`, // Unique key for each element
       },
-      ...children
+      ...children,
     );
   }
 
@@ -153,7 +152,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
           text: decodedText,
           key: `leaf-${normalizedMark}-${index}-${markIndex}`, // Use normalized mark for key
         },
-        element
+        element,
       );
     }
 
@@ -202,7 +201,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
  * Factory function to create a React renderer
  */
 export function createReactRenderer(
-  config?: Partial<ReactRendererConfig>
+  config?: Partial<ReactRendererConfig>,
 ): ReactRichTextRenderer {
   return new ReactRichTextRenderer(config);
 }

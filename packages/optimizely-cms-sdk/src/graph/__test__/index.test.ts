@@ -186,6 +186,7 @@ describe('GraphClient - Context Integration', () => {
         locale: 'en-US',
         key: 'page-key',
         version: '1.0',
+        type: 'TestPage',
         ctx: 'edit',
       });
     });
@@ -250,10 +251,9 @@ describe('GraphClient - Context Integration', () => {
       };
 
       // Should throw when trying to populate context with broken adapter
-      await expect(
-        testClient.getPreviewContent(previewParams),
-      ).rejects.toThrow('Adapter error');
+      await expect(testClient.getPreviewContent(previewParams)).rejects.toThrow(
+        'Adapter error',
+      );
     });
   });
-
 });
