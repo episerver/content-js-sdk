@@ -111,16 +111,20 @@ Your entire file should look like this:
 
 ```tsx
 import { GraphClient } from '@optimizely/cms-sdk';
-import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import {
+  OptimizelyComponent,
+  withAppContext,
+} from '@optimizely/cms-sdk/react/server';
 import React from 'react';
 
 type Props = {
   params: Promise<{
     slug: string[];
   }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function Page({ params }: Props) {
+export async function Page({ params }: Props) {
   const { slug } = await params;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
@@ -130,9 +134,58 @@ export default async function Page({ params }: Props) {
 
   return <OptimizelyComponent content={content[0]} />;
 }
+
+export default withAppContext(Page);
 ```
 
-Go again to http://localhost:3000/en. You should see your page
+Go again to <http://localhost:3000/en>. You should see your page
+
+### Understanding `withAppContext`
+
+The `withAppContext` HOC wraps your page component to provide request-scoped context:
+
+```tsx
+export async function Page({ params }: Props) {
+  // ... component logic
+}
+
+export default withAppContext(Page);
+```
+
+**What it does:**
+
+1. **Initializes context storage** - Sets up isolated storage for each request (prevents data leakage between requests)
+2. **Extracts URL parameters** - Automatically extracts and stores preview tokens, locale, and other parameters from `searchParams`
+3. **Enables context access** - Allows any child component to access this data using `getContextData()`
+
+**Why use it:**
+
+- **Preview mode support** - Makes preview tokens available to components like `RichText` for resolving preview URLs
+- **No prop drilling** - Access locale, preview tokens, and other request data anywhere in your component tree
+- **Request isolation** - Each request gets its own context (important for server components)
+
+### Accessing Context in Components
+
+Any component can access the context data without props:
+
+```tsx
+import { getContextData } from '@optimizely/cms-sdk/react/server';
+
+export function MyComponent() {
+  const context = getContextData();
+
+  // Access preview token, locale, etc.
+  const locale = context?.locale ?? 'en-US';
+  const isPreview = !!context?.preview_token;
+
+  return <div>Locale: {locale}</div>;
+}
+```
+
+This is particularly useful for:
+
+- Displaying locale-specific formatting
+- Getting content version and key for manual queries and rendering
 
 ## Next steps
 
