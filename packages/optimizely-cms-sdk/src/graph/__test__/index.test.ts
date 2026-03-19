@@ -190,7 +190,7 @@ describe('GraphClient - Context Integration', () => {
       });
     });
 
-    test('should not crash if adapter not configured', async () => {
+    test('should throw error if adapter is broken', async () => {
       // Configure with a broken adapter that throws
       const brokenAdapter: ContextAdapter = {
         initializeContext: () => {
@@ -249,10 +249,10 @@ describe('GraphClient - Context Integration', () => {
         loc: 'en-US',
       };
 
-      // Should not throw, despite broken adapter
+      // Should throw when trying to populate context with broken adapter
       await expect(
         testClient.getPreviewContent(previewParams),
-      ).resolves.toBeDefined();
+      ).rejects.toThrow('Adapter error');
     });
   });
 

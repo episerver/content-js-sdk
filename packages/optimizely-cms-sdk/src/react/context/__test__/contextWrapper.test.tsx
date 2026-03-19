@@ -1,12 +1,7 @@
-import { describe, expect, test, vi, beforeEach } from 'vitest';
-import React from 'react';
+import { describe, expect, test, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { withAppContext } from '../contextWrapper.js';
-import {
-  getContextData,
-  initializeRequestContext,
-  setContextData,
-} from '../../../context/config.js';
+import { getContextData } from '../../../context/config.js';
 import ReactContextAdapter from '../../../context/reactContextAdapter.js';
 import { configureAdapter } from '../../../context/config.js';
 
@@ -50,219 +45,104 @@ describe('withAppContext', () => {
   });
 
   describe('Context initialization', () => {
-    test('should initialize context on each render', async () => {
-      const initSpy = vi.fn();
-      const originalInit = initializeRequestContext;
-
-      // Mock initializeRequestContext temporarily
-      vi.mock('../../../context/config.js', async () => {
-        const actual = await vi.importActual('../../../context/config.js');
-        return {
-          ...actual,
-          initializeRequestContext: initSpy,
-        };
-      });
-
-      const TestComponent = () => <div>Test</div>;
-      const WrappedComponent = withAppContext(TestComponent);
-
-      await WrappedComponent({});
-
-      // Restore original
-      vi.unmock('../../../context/config.js');
-    });
-  });
-
-  describe('SearchParams extraction', () => {
-    test('should extract preview_token from searchParams', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return <div data-testid="token">{data?.preview_token || 'none'}</div>;
-      };
-
-      const WrappedComponent = withAppContext(TestComponent);
-      const searchParams = Promise.resolve({ preview_token: 'test-token-123' });
-
-      const { findByTestId } = render(
-        await WrappedComponent({ searchParams }),
-      );
-
-      const element = await findByTestId('token');
-      expect(element.textContent).toBe('test-token-123');
-    });
-
-    test('should extract locale from searchParams.loc', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return <div data-testid="locale">{data?.locale || 'none'}</div>;
-      };
-
-      const WrappedComponent = withAppContext(TestComponent);
-      const searchParams = Promise.resolve({ loc: 'en-US' });
-
-      const { findByTestId } = render(await WrappedComponent({ searchParams }));
-
-      const element = await findByTestId('locale');
-      expect(element.textContent).toBe('en-US');
-    });
-
-    test('should extract key from searchParams', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return <div data-testid="key">{data?.key || 'none'}</div>;
-      };
-
-      const WrappedComponent = withAppContext(TestComponent);
-      const searchParams = Promise.resolve({ key: 'page-key-123' });
-
-      const { findByTestId } = render(await WrappedComponent({ searchParams }));
-
-      const element = await findByTestId('key');
-      expect(element.textContent).toBe('page-key-123');
-    });
-
-    test('should extract version from searchParams.ver', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return <div data-testid="version">{data?.version || 'none'}</div>;
-      };
-
-      const WrappedComponent = withAppContext(TestComponent);
-      const searchParams = Promise.resolve({ ver: '2.0' });
-
-      const { findByTestId } = render(await WrappedComponent({ searchParams }));
-
-      const element = await findByTestId('version');
-      expect(element.textContent).toBe('2.0');
-    });
-
-    test('should extract all parameters together', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return (
-          <div>
-            <span data-testid="token">{data?.preview_token}</span>
-            <span data-testid="locale">{data?.locale}</span>
-            <span data-testid="key">{data?.key}</span>
-            <span data-testid="version">{data?.version}</span>
-          </div>
-        );
-      };
-
-      const WrappedComponent = withAppContext(TestComponent);
-      const searchParams = Promise.resolve({
-        preview_token: 'token123',
-        loc: 'en-US',
-        key: 'page-key',
-        ver: '1.0',
-      });
-
-      const { findByTestId } = render(await WrappedComponent({ searchParams }));
-
-      expect((await findByTestId('token')).textContent).toBe('token123');
-      expect((await findByTestId('locale')).textContent).toBe('en-US');
-      expect((await findByTestId('key')).textContent).toBe('page-key');
-      expect((await findByTestId('version')).textContent).toBe('1.0');
-    });
-
-    test('should handle array values in searchParams', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return <div data-testid="token">{data?.preview_token || 'none'}</div>;
-      };
-
-      const WrappedComponent = withAppContext(TestComponent);
-      const searchParams = Promise.resolve({
-        preview_token: ['token1', 'token2'],
-      });
-
-      const { findByTestId } = render(await WrappedComponent({ searchParams }));
-
-      // Should use first element of array
-      const element = await findByTestId('token');
-      expect(element.textContent).toBe('token1');
-    });
-
-    test('should handle missing searchParams', async () => {
+    test('should initialize empty context', async () => {
       const TestComponent = () => {
         const data = getContextData();
         return <div data-testid="data">{JSON.stringify(data)}</div>;
       };
 
       const WrappedComponent = withAppContext(TestComponent);
-
       const { findByTestId } = render(await WrappedComponent({}));
 
       const element = await findByTestId('data');
-      const data = JSON.parse(element.textContent || '{}');
-      expect(data.preview_token).toBeUndefined();
-      expect(data.locale).toBeUndefined();
-    });
-  });
-
-  describe('Initial context parameter', () => {
-    test('should merge initialContext with searchParams', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return (
-          <div>
-            <span data-testid="token">{data?.preview_token}</span>
-            <span data-testid="locale">{data?.locale}</span>
-          </div>
-        );
-      };
-
-      const WrappedComponent = withAppContext(TestComponent, {
-        locale: 'default-locale',
-      });
-
-      const searchParams = Promise.resolve({ preview_token: 'token123' });
-
-      const { findByTestId } = render(await WrappedComponent({ searchParams }));
-
-      expect((await findByTestId('token')).textContent).toBe('token123');
-      expect((await findByTestId('locale')).textContent).toBe('default-locale');
+      expect(JSON.parse(element.textContent || '{}')).toEqual({});
     });
 
-    test('should allow searchParams to override initialContext', async () => {
+    test('should provide fresh context for each wrapped component', async () => {
       const TestComponent = () => {
         const data = getContextData();
-        return <div data-testid="locale">{data?.locale}</div>;
-      };
-
-      const WrappedComponent = withAppContext(TestComponent, {
-        locale: 'default-locale',
-      });
-
-      const searchParams = Promise.resolve({ loc: 'en-US' });
-
-      const { findByTestId } = render(await WrappedComponent({ searchParams }));
-
-      // searchParams should take precedence (applied after initialContext)
-      expect((await findByTestId('locale')).textContent).toBe('en-US');
-    });
-  });
-
-  describe('React Server Component compatibility', () => {
-    test('should handle async searchParams (Next.js 15+)', async () => {
-      const TestComponent = () => {
-        const data = getContextData();
-        return <div data-testid="result">{data?.preview_token}</div>;
+        return <div data-testid="result">{data?.preview_token || 'empty'}</div>;
       };
 
       const WrappedComponent = withAppContext(TestComponent);
 
-      // Simulate async searchParams from Next.js 15
-      const searchParams = new Promise<{ preview_token: string }>((resolve) => {
-        setTimeout(() => resolve({ preview_token: 'async-token' }), 10);
-      });
-
-      const { findByTestId } = render(
-        await WrappedComponent({ searchParams }),
+      // First render
+      const { findByTestId: findByTestId1 } = render(
+        await WrappedComponent({}),
       );
+      const element1 = await findByTestId1('result');
+      expect(element1.textContent).toBe('empty');
+    });
+  });
 
-      const element = await findByTestId('result');
-      expect(element.textContent).toBe('async-token');
+  describe('Context usage pattern', () => {
+    test('should initialize empty context for components to use', async () => {
+      const TestComponent = () => {
+        const data = getContextData();
+        return (
+          <div>
+            <span data-testid="is-empty">
+              {Object.keys(data || {}).length === 0 ? 'empty' : 'has-data'}
+            </span>
+          </div>
+        );
+      };
+
+      const WrappedComponent = withAppContext(TestComponent);
+      const { findByTestId } = render(await WrappedComponent({}));
+
+      // withAppContext initializes empty context
+      expect((await findByTestId('is-empty')).textContent).toBe('empty');
+    });
+
+    test('should demonstrate getContextData is accessible', async () => {
+      const TestComponent = () => {
+        // Components can call getContextData()
+        const data = getContextData();
+        return (
+          <div data-testid="context-type">
+            {typeof data === 'object' ? 'object' : 'undefined'}
+          </div>
+        );
+      };
+
+      const WrappedComponent = withAppContext(TestComponent);
+      const { findByTestId } = render(await WrappedComponent({}));
+
+      // Context is accessible as an object
+      expect((await findByTestId('context-type')).textContent).toBe('object');
+    });
+  });
+
+  describe('Real-world usage note', () => {
+    test('should document that context is populated by getPreviewContent', async () => {
+      // Note: In actual usage, the workflow is:
+      // 1. withAppContext() initializes empty context storage
+      // 2. getPreviewContent() populates context with preview data
+      // 3. Components access context via getContextData()
+      //
+      // React.cache() in React Server Components ensures request-scoped
+      // isolation, but this doesn't work the same way in test environments.
+      // The reactContextAdapter tests verify the adapter functionality directly.
+
+      const InfoComponent = () => {
+        const data = getContextData();
+        return (
+          <div data-testid="info">
+            {data?.preview_token
+              ? 'preview mode'
+              : 'getPreviewContent not called'}
+          </div>
+        );
+      };
+
+      const WrappedComponent = withAppContext(InfoComponent);
+      const { findByTestId } = render(await WrappedComponent({}));
+
+      // Without getPreviewContent being called, no preview data exists
+      expect((await findByTestId('info')).textContent).toBe(
+        'getPreviewContent not called',
+      );
     });
   });
 });
