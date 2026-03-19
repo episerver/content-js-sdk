@@ -1,5 +1,4 @@
 import React from 'react';
-import { ContextData } from '../../context/baseContext.js';
 import {
   configureAdapter,
   initializeRequestContext,

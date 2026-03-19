@@ -4,6 +4,7 @@
  */
 export interface ContextData {
   version?: string;
+  type?: string;
   currentContent?: unknown;
   preview_token?: string;
   ctx?: unknown;

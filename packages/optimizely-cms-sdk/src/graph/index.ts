@@ -473,9 +473,10 @@ export class GraphClient {
     // Auto-populate context with preview parameters
     setContextData({
       preview_token: params.preview_token,
-      locale: params.loc,
-      key: params.key,
       version: params.ver,
+      locale: params.loc,
+      type: contentTypeName,
+      key: params.key,
       ctx: params.ctx,
     });
 
