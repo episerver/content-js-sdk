@@ -53,13 +53,21 @@ export default withAppContext(Page);
 
 Let's break down what's happening here:
 
-### Wrapping with `withAppContext`
+### Wrapping with `withAppContext` (Optional)
 
 ```tsx
 export default withAppContext(Page);
 ```
 
-The `withAppContext` HOC initializes request-scoped context and extracts preview parameters from `searchParams` (like `preview_token` and `locale`). This makes preview data accessible throughout your component tree. See [Rendering (with React)](./6-rendering-react.md#understanding-withappcontext) for details.
+The `withAppContext` HOC initializes request-scoped context storage and is useful in both preview and regular mode:
+
+**In Preview Mode:**
+
+- Makes preview data (`preview_token`, `key`, `locale`, `version`) available throughout your component tree via the SDK
+- Enables access to these values for custom querying or rendering scenarios
+- Allows any nested component to retrieve preview context using `getContextData()`
+
+See [Rendering (with React)](./6-rendering-react.md#understanding-withappcontext) for details.
 
 ### GraphClient Setup
 
@@ -80,6 +88,8 @@ const response = await client.getPreviewContent(
 ```
 
 The `getPreviewContent` method handles all the complexity of fetching the right content version based on the preview parameters sent from the CMS. These parameters are automatically included in the URL when an editor clicks "Preview" in the CMS.
+
+**Automatic Context Population**: The `getPreviewContent` method automatically populates the global context with preview parameters (`preview_token`, `locale`, `key`, `version`, `ctx`). This means any component in your tree can access preview data via `getContextData()` without manual extraction. The `withAppContext` HOC is optional when using `getPreviewContent` - context is automatically set by the method itself.
 
 ### Rendering Preview Content
 
@@ -279,9 +289,7 @@ export function DateDisplay({ date }: { date: Date }) {
   const context = getContextData();
   const locale = context?.locale ?? 'en-US';
 
-  return (
-    <time>{date.toLocaleDateString(locale)}</time>
-  );
+  return <time>{date.toLocaleDateString(locale)}</time>;
 }
 ```
 

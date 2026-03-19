@@ -154,15 +154,21 @@ export default withAppContext(Page);
 
 **What it does:**
 
-1. **Initializes context storage** - Sets up isolated storage for each request (prevents data leakage between requests)
-2. **Extracts URL parameters** - Automatically extracts and stores preview tokens, locale, and other parameters from `searchParams`
-3. **Enables context access** - Allows any child component to access this data using `getContextData()`
+**Initializes context storage** - Sets up isolated, request-scoped storage for context data. This is required when using the context system in React Server Components.
 
-**Why use it:**
+**When do you need it:**
 
-- **Preview mode support** - Makes preview tokens available to components like `RichText` for resolving preview URLs
-- **No prop drilling** - Access locale, preview tokens, and other request data anywhere in your component tree
-- **Request isolation** - Each request gets its own context (important for server components)
+Since `getPreviewContent` automatically populates context with preview data, `withAppContext` is **optional for preview pages**. Use it when:
+
+- You need context initialized before fetching content (e.g., for manual `setContextData` calls)
+- You're using context for non-preview data
+- You want to ensure context is available throughout the component tree
+
+**Benefits:**
+
+- **Request isolation** - Each request gets its own context storage (critical for server components)
+- **No prop drilling** - Access context data anywhere in your component tree
+- **Framework-agnostic** - Works with any React Server Components framework
 
 ### Accessing Context in Components
 
@@ -181,6 +187,13 @@ export function MyComponent() {
   return <div>Locale: {locale}</div>;
 }
 ```
+
+**How context is populated:**
+
+Context data can be populated in two ways:
+
+1. **Automatically by `getPreviewContent`** - This method automatically sets preview_token, locale, key, version, and ctx in the context
+2. **Manually via `setContextData()`** - You can explicitly set context data when needed
 
 This is particularly useful for:
 

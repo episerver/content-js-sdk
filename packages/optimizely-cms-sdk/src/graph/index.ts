@@ -17,6 +17,7 @@ import {
   GraphVariationInput,
   localeFilter,
 } from './filters.js';
+import { setContextData } from '../context/config.js';
 
 /** Options for Graph */
 type GraphOptions = {
@@ -468,6 +469,16 @@ export class GraphClient {
         { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
       );
     }
+
+    // Auto-populate context with preview parameters
+    setContextData({
+      preview_token: params.preview_token,
+      locale: params.loc,
+      key: params.key,
+      version: params.ver,
+      ctx: params.ctx,
+    });
+
     const query = createSingleContentQuery(
       contentTypeName,
       damEnabled,
