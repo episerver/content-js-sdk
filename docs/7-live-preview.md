@@ -266,7 +266,7 @@ export function PreviewBanner() {
 
   return (
     <div className="preview-banner">
-      <p>Preview Mode - Locale: {context.locale ?? 'default'}</p>
+      <p>Preview Mode - Locale: {locale ?? 'default'}</p>
     </div>
   );
 }

@@ -13,14 +13,12 @@ let storageAdapter: ContextAdapter = null as unknown as ContextAdapter;
  *
  * @example
  * ```ts
- * // Using React (default)
- * import { configureAdapter, ReactContextAdapter } from '@optimizely/cms-sdk';
+ * import { configureAdapter, ReactContextAdapter } from '@optimizely/cms-sdk/react/server';
  * configureAdapter(new ReactContextAdapter());
  *
- * // Future: Using Vue
- * import { configureAdapter, VueContextAdapter } from '@optimizely/cms-sdk';
+ * // Future: Using Vue (hypothetical)
+ * import { configureAdapter, VueContextAdapter } from '@optimizely/cms-sdk/vue';
  * configureAdapter(new VueContextAdapter());
- * ```
  */
 export function configureAdapter(adapter: ContextAdapter): void {
   storageAdapter = adapter;
@@ -64,8 +62,9 @@ export function hasAdapter(): boolean {
 
 /**
  * Initialize the request context using the configured adapter.
+ * Clears any existing context data to start fresh for a new request.
  * Typically called by the withContext HOC in React applications.
- * @returns The generated request ID
+ *
  * @internal
  */
 export const initializeRequestContext = (): void => {

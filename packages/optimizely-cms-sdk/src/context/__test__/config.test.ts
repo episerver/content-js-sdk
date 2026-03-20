@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, vi } from 'vitest';
+import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';
 import {
   configureAdapter,
   getAdapter,
@@ -63,16 +63,9 @@ describe('Context Configuration', () => {
   });
 
   describe('getAdapter()', () => {
-    test('should throw error when adapter not configured', () => {
-      // Reset by configuring with null (for testing purposes)
-      // In real scenarios, this would be the initial state
-      expect(() => {
-        // We need to test the unconfigured state
-        // This is tricky since the module might already be configured
-        // For now, test that it returns the configured adapter
-        configureAdapter(mockAdapter);
-        getAdapter();
-      }).not.toThrow();
+    afterEach(() => {
+      // Restore valid adapter after tests that set it to null
+      configureAdapter(mockAdapter);
     });
 
     test('should return configured adapter', () => {
@@ -81,11 +74,20 @@ describe('Context Configuration', () => {
       expect(adapter).toBe(mockAdapter);
     });
 
+    test('should throw error when adapter not configured', () => {
+      // Reset adapter to simulate unconfigured state
+      configureAdapter(null as unknown as MockAdapter);
+
+      expect(() => getAdapter()).toThrow(
+        'Context adapter not configured',
+      );
+    });
+
     test('error message should provide helpful guidance', () => {
-      // Create a fresh module state by importing dynamically
-      // This is a limitation of the current test setup
-      configureAdapter(mockAdapter);
-      expect(getAdapter()).toBeDefined();
+      configureAdapter(null as unknown as MockAdapter);
+
+      expect(() => getAdapter()).toThrow(/For React.*import from/);
+      expect(() => getAdapter()).toThrow(/For other frameworks.*call configureAdapter/);
     });
   });
 
@@ -120,7 +122,7 @@ describe('Context Configuration', () => {
       expect(data).toEqual({ preview_token: 'test-token' });
     });
 
-    test('should return undefined when no context exists', () => {
+    test('should return empty object when context is initialized but empty', () => {
       configureAdapter(mockAdapter);
       mockAdapter.initializeContext();
 

@@ -15,7 +15,7 @@ import {
   type TableCellElement,
 } from '../../components/richText/renderer.js';
 import { appendToken } from '../../util/preview.js';
-import { getContext, getContextData } from '../../context/config.js';
+import { getContextData } from '../../context/config.js';
 
 /**
  * React-specific element renderer props (extends shared props with React children)
