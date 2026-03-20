@@ -22,6 +22,20 @@ export class ReactContextAdapter implements ContextAdapter {
   }
 
   /**
+   * Set a specific piece of context data by key
+   */
+  set<K extends keyof ContextData>(key: K, value: ContextData[K]): void {
+    getContextData()[key] = value;
+  }
+
+  /**
+   * Get a specific piece of context data by key
+   */
+  get(key: keyof ContextData): ContextData[keyof ContextData] | undefined {
+    return getContextData()[key];
+  }
+
+  /**
    * Get all context data
    */
   getData(): ContextData | undefined {

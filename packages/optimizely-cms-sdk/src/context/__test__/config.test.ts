@@ -25,6 +25,14 @@ describe('Context Configuration', () => {
       Object.assign(this.data, value);
     }
 
+    set<K extends keyof ContextData>(key: K, value: ContextData[K]): void {
+      this.data[key] = value;
+    }
+
+    get(key: keyof ContextData): ContextData[keyof ContextData] | undefined {
+      return this.data[key];
+    }
+
     clear(): void {
       this.data = {};
     }

@@ -101,6 +101,14 @@ describe('GraphClient - Context Integration', () => {
       Object.assign(this.data, value);
     }
 
+    set<K extends keyof ContextData>(key: K, value: ContextData[K]): void {
+      this.data[key] = value;
+    }
+
+    get(key: keyof ContextData): ContextData[keyof ContextData] | undefined {
+      return this.data[key];
+    }
+
     clear(): void {
       this.data = {};
     }
@@ -201,6 +209,12 @@ describe('GraphClient - Context Integration', () => {
           throw new Error('Adapter error');
         },
         setData: () => {
+          throw new Error('Adapter error');
+        },
+        set: () => {
+          throw new Error('Adapter error');
+        },
+        get: () => {
           throw new Error('Adapter error');
         },
         clear: () => {

@@ -46,6 +46,22 @@ export interface ContextAdapter {
   setData(value: Partial<ContextData>): void;
 
   /**
+   * Set a specific piece of context data by key.
+   *
+   * @param key - The key to set in the context
+   * @param value - The value to set for the specified key
+   */
+  set<K extends keyof ContextData>(key: K, value: ContextData[K]): void;
+
+  /**
+   * Get a specific piece of context data by key.
+   *
+   * @param key - The key to retrieve from the context
+   * @returns The value for the specified key, or undefined if not found
+   */
+  get(key: keyof ContextData): ContextData[keyof ContextData] | undefined;
+
+  /**
    * Clear context data for the current request.
    * Optional method for explicit cleanup.
    */
