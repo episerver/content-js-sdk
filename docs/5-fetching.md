@@ -96,6 +96,157 @@ Now you are ready to [render the content](./6-rendering-react.md) that you just 
 
 ---
 
+## API Reference
+
+### Fetching Methods
+
+The GraphClient provides multiple methods for fetching content from Optimizely CMS.
+
+#### `getContentByPath(path, options?)`
+
+Fetches content based on URL path. Returns an array of all items matching the path and options.
+
+```typescript
+// Fetch content by path
+const content = await client.getContentByPath('/blog/my-article');
+
+// With variation options
+const content = await client.getContentByPath('/blog/my-article', {
+  variation: { include: 'SOME', value: ['variation-id'] },
+  host: 'https://example.com'
+});
+```
+
+**Parameters:**
+- `path` (string): URL path to the content
+- `options` (optional):
+  - `variation`: Filter by experience variations
+  - `host`: Override default host for multi-site scenarios
+
+**Returns:** Array of content items (empty array if not found)
+
+---
+
+#### `getContent(reference, previewToken?)`
+
+**New in this version!** Unified content fetching method using GraphReference. Provides flexible content retrieval with support for key-based queries, locale filtering, and version selection.
+
+```typescript
+// Fetch by key only (latest published)
+const content = await client.getContent({ key: 'abc123' });
+
+// Fetch latest draft in specific locale
+const content = await client.getContent({
+  key: 'abc123',
+  locale: 'en'
+});
+
+// Fetch specific version (version has priority)
+const content = await client.getContent({
+  key: 'abc123',
+  version: '1.0'
+});
+
+// Using string format
+const content = await client.getContent('graph://cms/Page/abc123?loc=en&ver=1.0');
+
+// With preview token
+const content = await client.getContent(
+  { key: 'abc123', version: '1.0' },
+  'preview-token'
+);
+```
+
+**Parameters:**
+- `reference` (GraphReference | string): Content reference (object or graph:// string)
+- `previewToken` (optional): Preview token for draft content
+
+**GraphReference format:**
+- `key` (required): Content GUID/key
+- `locale` (optional): Content locale (e.g., 'en', 'sv')
+- `version` (optional): Specific version (takes priority over locale)
+- `type` (optional): Content type name
+- `source` (optional): Source identifier (unused for now)
+
+**String format:** `graph://[source]/[type]/key?loc=locale&ver=version`
+
+**Priority rules:**
+- If `version` is specified, it takes priority (ignores locale-based filtering)
+- If only `locale` is specified, fetches latest draft in that locale
+- If neither specified, fetches latest published version
+
+**Returns:** Content item or null if not found
+
+---
+
+#### `getPath(input, options?)`
+
+Fetches the breadcrumb path (ancestor pages) for a given page. Now supports both URL paths and GraphReference.
+
+```typescript
+// Using URL path
+const path = await client.getPath('/blog/my-article');
+
+// Using GraphReference object
+const path = await client.getPath({
+  key: 'abc123',
+  locale: 'en'
+});
+
+// Using graph:// string format
+const path = await client.getPath('graph://Page/abc123?loc=en');
+
+// With locales filter
+const path = await client.getPath(
+  { key: 'abc123' },
+  { locales: ['en', 'sv'] }
+);
+```
+
+**Parameters:**
+- `input` (string | GraphReference): URL path or GraphReference
+- `options` (optional):
+  - `host`: Override default host (only for path strings)
+  - `locales`: Array of locales to filter
+
+**Returns:** Array of ancestor page metadata (sorted from top to current) or null if page doesn't exist
+
+---
+
+#### `getItems(input, options?)`
+
+Fetches child pages for a given parent page. Now supports both URL paths and GraphReference.
+
+```typescript
+// Using URL path
+const items = await client.getItems('/blog');
+
+// Using GraphReference object
+const items = await client.getItems({
+  key: 'abc123',
+  locale: 'en'
+});
+
+// Using graph:// string format
+const items = await client.getItems('graph://Page/abc123?loc=en');
+
+// With locales filter
+const items = await client.getItems(
+  { key: 'abc123' },
+  { locales: ['en', 'sv'] }
+);
+```
+
+**Parameters:**
+- `input` (string | GraphReference): URL path or GraphReference
+- `options` (optional):
+  - `host`: Override default host (only for path strings)
+  - `locales`: Array of locales to filter
+
+**Returns:** Array of child page metadata or null if parent doesn't exist
+
+---
+
 ## Advanced topics
 
 ### GraphClient Options
