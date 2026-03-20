@@ -17,6 +17,7 @@ import {
   previewFilter,
   GraphVariationInput,
   localeFilter,
+  referenceFilter,
 } from './filters.js';
 
 /** Options for Graph */
@@ -412,17 +413,56 @@ export class GraphClient {
   }
 
   /**
-   * Given the path of a page, return its "path" (i.e. a list of ancestor pages).
+   * Given the path or reference of a page, return its "path" (i.e. a list of ancestor pages).
    *
-   * @param path The URL of the current page
-   * @returns A list with the metadata information of all ancestors sorted
-   * from the top-most to the current
+   * Supports both URL path (string) and GraphReference formats:
+   * - String: URL path like `/blog/post-1`
+   * - GraphReference: Object like `{ key: 'abc123', locale: 'en' }`
+   * - String format: `graph://cms/Page/abc123?loc=en`
+   *
+   * @param input - URL path string or GraphReference object/string
+   * @param options - Optional host and locales filters
+   * @returns A list with the metadata information of all ancestors sorted from top-most to current
+   *
+   * @example
+   * ```typescript
+   * // Using path
+   * const path = await client.getPath('/blog/post-1');
+   *
+   * // Using GraphReference
+   * const path = await client.getPath({ key: 'abc123', locale: 'en' });
+   *
+   * // Using string format
+   * const path = await client.getPath('graph://Page/abc123?loc=en');
+   * ```
    */
-  async getPath(path: string, options?: GraphGetLinksOptions) {
-    const data = (await this.request(GET_PATH_QUERY, {
-      ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
-      ...localeFilter(options?.locales),
-    })) as GetLinksResponse;
+  async getPath(
+    input: string | GraphReference,
+    options?: GraphGetLinksOptions,
+  ) {
+    let filter: GraphVariables;
+    if (typeof input === 'string' && input.startsWith('graph://')) {
+      const ref = this.parseGraphReference(input);
+      filter = {
+        ...referenceFilter(ref),
+        ...localeFilter(options?.locales),
+      };
+    } else if (typeof input === 'string') {
+      filter = {
+        ...pathFilter(input, options?.host ?? this.host),
+        ...localeFilter(options?.locales),
+      };
+    } else {
+      filter = {
+        ...referenceFilter(input),
+        ...localeFilter(options?.locales),
+      };
+    }
+
+    const data = (await this.request(
+      GET_PATH_QUERY,
+      filter,
+    )) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
@@ -439,10 +479,7 @@ export class GraphClient {
         {
           request: {
             query: GET_PATH_QUERY,
-            variables: {
-              ...pathFilter(path, options?.host ?? this.host),
-              ...localeFilter(options?.locales),
-            },
+            variables: filter,
           },
         },
       );
@@ -456,16 +493,56 @@ export class GraphClient {
   }
 
   /**
-   * Given the path of a page, get its "items" (i.e. the children pages)
+   * Given the path or reference of a page, get its "items" (i.e. the children pages)
    *
-   * @param path The URL of the current page
+   * Supports both URL path (string) and GraphReference formats:
+   * - String: URL path like `/blog`
+   * - GraphReference: Object like `{ key: 'abc123', locale: 'en' }`
+   * - String format: `graph://Page/abc123?loc=en`
+   *
+   * @param input - URL path string or GraphReference object/string
+   * @param options - Optional host and locales filters
    * @returns A list with the metadata information of all child/descendant pages
+   *
+   * @example
+   * ```typescript
+   * // Using path
+   * const items = await client.getItems('/blog');
+   *
+   * // Using GraphReference
+   * const items = await client.getItems({ key: 'abc123', locale: 'en' });
+   *
+   * // Using string format
+   * const items = await client.getItems('graph://Page/abc123?loc=en');
+   * ```
    */
-  async getItems(path: string, options?: GraphGetLinksOptions) {
-    const data = (await this.request(GET_ITEMS_QUERY, {
-      ...pathFilter(path, options?.host ?? this.host),
-      ...localeFilter(options?.locales),
-    })) as GetLinksResponse;
+  async getItems(
+    input: string | GraphReference,
+    options?: GraphGetLinksOptions,
+  ) {
+    let filter: GraphVariables;
+    if (typeof input === 'string' && input.startsWith('graph://')) {
+      const ref = this.parseGraphReference(input);
+      filter = {
+        ...referenceFilter(ref),
+        ...localeFilter(options?.locales),
+      };
+    } else if (typeof input === 'string') {
+      filter = {
+        ...pathFilter(input, options?.host ?? this.host),
+        ...localeFilter(options?.locales),
+      };
+    } else {
+      filter = {
+        ...referenceFilter(input),
+        ...localeFilter(options?.locales),
+      };
+    }
+
+    const data = (await this.request(
+      GET_ITEMS_QUERY,
+      filter,
+    )) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
@@ -508,5 +585,160 @@ export class GraphClient {
       removeTypePrefix(response?._Content?.item),
       params,
     );
+  }
+
+  /**
+   * Parse GraphReference from string format.
+   * Supports format: `graph://source/type/key?loc=locale&ver=version`
+   *
+   * @param referenceString - String in graph:// format
+   * @returns Parsed GraphReference object
+   *
+   * @example
+   * ```typescript
+   * parseGraphReference('graph://cms/Page/abc123?loc=en&ver=1.0')
+   * // Returns: { source: 'cms', type: 'Page', key: 'abc123', locale: 'en', version: '1.0' }
+   * ```
+   */
+  private parseGraphReference(referenceString: string): GraphReference {
+    const graphProtocol = 'graph://';
+
+    if (!referenceString.startsWith(graphProtocol)) {
+      throw new Error(
+        `Invalid graph reference format. Expected to start with "${graphProtocol}", got: "${referenceString}"`,
+      );
+    }
+
+    const withoutProtocol = referenceString.slice(graphProtocol.length);
+    const [pathPart, queryPart] = withoutProtocol.split('?');
+    const pathSegments = pathPart.split('/').filter((s) => s.length > 0);
+
+    if (pathSegments.length < 1) {
+      throw new Error(
+        `Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`,
+      );
+    }
+
+    let source: string | undefined;
+    let type: string | undefined;
+    let key: string;
+
+    if (pathSegments.length === 3) {
+      [source, type, key] = pathSegments;
+    } else if (pathSegments.length === 2) {
+      [type, key] = pathSegments;
+    } else {
+      key = pathSegments[0];
+    }
+
+    let locale: string | undefined;
+    let version: string | undefined;
+
+    if (queryPart) {
+      const params = new URLSearchParams(queryPart);
+      locale = params.get('loc') || undefined;
+      version = params.get('ver') || undefined;
+    }
+
+    return {
+      key,
+      ...(locale && { locale }),
+      ...(version && { version }),
+      ...(type && { type }),
+      ...(source && { source }),
+    };
+  }
+
+  /**
+   * Unified content fetching method using GraphReference.
+   * Fetches content by key with optional locale and version parameters.
+   *
+   * Supports both object and string formats:
+   * - Object: `{ key: 'abc123', locale: 'en', version: '1.0' }`
+   * - String: `graph://source/type/key?loc=en&ver=1.0`
+   *
+   * **Priority rules:**
+   * - If `version` is specified, it takes priority (ignores locale-based filtering)
+   * - If only `locale` is specified, fetches latest draft in that locale
+   * - If neither specified, fetches latest published version
+   *
+   * @param reference - GraphReference object or string in graph:// format
+   * @param previewToken - Optional preview token for preview mode
+   * @returns The requested content item, or null if not found
+   *
+   * @example
+   * ```typescript
+   * // Fetch latest published content by key
+   * const content = await client.getContent({ key: 'abc123' });
+   *
+   * // Fetch latest draft in specific locale
+   * const content = await client.getContent({ key: 'abc123', locale: 'en' });
+   *
+   * // Fetch specific version (version has priority over locale)
+   * const content = await client.getContent({
+   *   key: 'abc123',
+   *   version: '1.0',
+   *   locale: 'en' // This will be ignored when version is specified
+   * });
+   *
+   * // Using string format
+   * const content = await client.getContent('graph://cms/Page/abc123?loc=en&ver=1.0');
+   *
+   * // With preview token
+   * const content = await client.getContent({ key: 'abc123', version: '1.0' }, 'preview-token');
+   * ```
+   */
+  async getContent(
+    reference: GraphReference | string,
+    previewToken?: string,
+  ) {
+    const ref =
+      typeof reference === 'string'
+        ? this.parseGraphReference(reference)
+        : reference;
+
+    const input: GraphVariables = {
+      where: {
+        _metadata: {
+          key: { eq: ref.key },
+          ...(ref.version
+            ? { version: { eq: ref.version } }
+            : ref.locale
+              ? { locale: { eq: ref.locale } }
+              : {}),
+        },
+      },
+    };
+
+    const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      input,
+      previewToken,
+    );
+
+    if (!contentTypeName) {
+      return null;
+    }
+
+    try {
+      const query = createSingleContentQuery(
+        contentTypeName,
+        damEnabled,
+        this.maxFragmentThreshold,
+      );
+
+      const response = await this.request(
+        query,
+        input,
+        previewToken,
+        !previewToken,
+      );
+
+      return removeTypePrefix(response?._Content?.item);
+    } catch (error) {
+      if (error instanceof GraphMissingContentTypeError) {
+        return null;
+      }
+      throw error;
+    }
   }
 }
