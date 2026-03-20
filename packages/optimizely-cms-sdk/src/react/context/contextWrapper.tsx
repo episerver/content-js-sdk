@@ -22,20 +22,20 @@ configureAdapter(new ReactContextAdapter());
  * - Ensuring context is available throughout the component tree
  * - Using context for non-preview data
  *
- * Components can access context data using `getContextData()`:
+ * Components can access context data using `getContext()`:
  *
  * @param Component - The React component to wrap
  *
  * @example
  * ```tsx
- * import { getContextData, setContextData } from '@optimizely/cms-sdk/react/server';
+ * import { getContext, setContext } from '@optimizely/cms-sdk/react/server';
  *
  * async function MyPage({ params }) {
  *   // Context is initialized by withAppContext
  *   // You can manually set data if needed
- *   setContextData({ locale: 'en-US' });
+ *   setContext({ locale: 'en-US' });
  *
- *   const context = getContextData();
+ *   const context = getContext();
  *   return <div>Locale: {context?.locale}</div>;
  * }
  *

@@ -2,8 +2,8 @@ import { describe, expect, test, beforeEach, vi } from 'vitest';
 import {
   configureAdapter,
   getAdapter,
-  getContextData,
-  setContextData,
+  getContext,
+  setContext,
   initializeRequestContext,
 } from '../config.js';
 import type { ContextAdapter, ContextData } from '../baseContext.js';
@@ -29,7 +29,7 @@ describe('Context Configuration', () => {
       this.data[key] = value;
     }
 
-    get(key: keyof ContextData): ContextData[keyof ContextData] | undefined {
+    get<K extends keyof ContextData>(key: K): ContextData[K] | undefined {
       return this.data[key];
     }
 
@@ -110,12 +110,12 @@ describe('Context Configuration', () => {
     });
   });
 
-  describe('getContextData()', () => {
+  describe('getContext()', () => {
     test('should return data from adapter', () => {
       configureAdapter(mockAdapter);
       mockAdapter.setData({ preview_token: 'test-token' });
 
-      const data = getContextData();
+      const data = getContext();
 
       expect(data).toEqual({ preview_token: 'test-token' });
     });
@@ -124,17 +124,17 @@ describe('Context Configuration', () => {
       configureAdapter(mockAdapter);
       mockAdapter.initializeContext();
 
-      const data = getContextData();
+      const data = getContext();
 
       expect(data).toEqual({});
     });
   });
 
-  describe('setContextData()', () => {
+  describe('setContext()', () => {
     test('should set context data through adapter', () => {
       configureAdapter(mockAdapter);
 
-      setContextData({ preview_token: 'test-token' });
+      setContext({ preview_token: 'test-token' });
 
       expect(mockAdapter.getData()).toEqual({ preview_token: 'test-token' });
     });
@@ -143,7 +143,7 @@ describe('Context Configuration', () => {
       configureAdapter(mockAdapter);
       mockAdapter.setData({ preview_token: 'token1' });
 
-      setContextData({ locale: 'en' });
+      setContext({ locale: 'en' });
 
       expect(mockAdapter.getData()).toEqual({
         preview_token: 'token1',
@@ -155,7 +155,7 @@ describe('Context Configuration', () => {
       configureAdapter(mockAdapter);
       mockAdapter.setData({ preview_token: 'old-token' });
 
-      setContextData({ preview_token: 'new-token' });
+      setContext({ preview_token: 'new-token' });
 
       expect(mockAdapter.getData()).toEqual({ preview_token: 'new-token' });
     });
@@ -167,12 +167,12 @@ describe('Context Configuration', () => {
         version: '1.0',
         currentContent: { id: '123' },
         preview_token: 'token',
-        ctx: { mode: 'edit' },
+        ctx: 'edit',
         locale: 'en-US',
         key: 'content-key',
       };
 
-      setContextData(fullContext);
+      setContext(fullContext);
 
       expect(mockAdapter.getData()).toEqual(fullContext);
     });
@@ -184,18 +184,18 @@ describe('Context Configuration', () => {
 
       // Initialize request
       initializeRequestContext();
-      expect(getContextData()).toEqual({});
+      expect(getContext()).toEqual({});
 
       // Set initial data
-      setContextData({ preview_token: 'token123', locale: 'en' });
-      expect(getContextData()).toEqual({
+      setContext({ preview_token: 'token123', locale: 'en' });
+      expect(getContext()).toEqual({
         preview_token: 'token123',
         locale: 'en',
       });
 
       // Add more data
-      setContextData({ key: 'page-key' });
-      expect(getContextData()).toEqual({
+      setContext({ key: 'page-key' });
+      expect(getContext()).toEqual({
         preview_token: 'token123',
         locale: 'en',
         key: 'page-key',
@@ -203,7 +203,7 @@ describe('Context Configuration', () => {
 
       // Initialize new request (clears data)
       initializeRequestContext();
-      expect(getContextData()).toEqual({});
+      expect(getContext()).toEqual({});
     });
   });
 });

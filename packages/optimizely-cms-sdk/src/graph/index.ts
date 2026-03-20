@@ -16,7 +16,7 @@ import {
   GraphVariationInput,
   localeFilter,
 } from './filters.js';
-import { setContextData } from '../context/config.js';
+import { setContext } from '../context/config.js';
 
 /** Options for Graph */
 type GraphOptions = {
@@ -470,7 +470,7 @@ export class GraphClient {
     }
 
     // Auto-populate context with preview parameters
-    setContextData({
+    setContext({
       preview_token: params.preview_token,
       version: params.ver,
       locale: params.loc,

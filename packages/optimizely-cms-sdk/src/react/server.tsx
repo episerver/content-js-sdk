@@ -20,7 +20,10 @@ import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
+  getContext,
+  setContext,
   getContextData,
+  setContextData,
   configureAdapter,
   getAdapter,
 } from '../context/config.js';

@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { withAppContext } from '../contextWrapper.js';
-import { getContextData } from '../../../context/config.js';
+import { getContext } from '../../../context/config.js';
 import ReactContextAdapter from '../../../context/reactContextAdapter.js';
 import { configureAdapter } from '../../../context/config.js';
 
@@ -47,7 +47,7 @@ describe('withAppContext', () => {
   describe('Context initialization', () => {
     test('should initialize empty context', async () => {
       const TestComponent = () => {
-        const data = getContextData();
+        const data = getContext();
         return <div data-testid="data">{JSON.stringify(data)}</div>;
       };
 
@@ -60,7 +60,7 @@ describe('withAppContext', () => {
 
     test('should provide fresh context for each wrapped component', async () => {
       const TestComponent = () => {
-        const data = getContextData();
+        const data = getContext();
         return <div data-testid="result">{data?.preview_token || 'empty'}</div>;
       };
 
@@ -78,7 +78,7 @@ describe('withAppContext', () => {
   describe('Context usage pattern', () => {
     test('should initialize empty context for components to use', async () => {
       const TestComponent = () => {
-        const data = getContextData();
+        const data = getContext();
         return (
           <div>
             <span data-testid="is-empty">
@@ -95,10 +95,10 @@ describe('withAppContext', () => {
       expect((await findByTestId('is-empty')).textContent).toBe('empty');
     });
 
-    test('should demonstrate getContextData is accessible', async () => {
+    test('should demonstrate getContext is accessible', async () => {
       const TestComponent = () => {
-        // Components can call getContextData()
-        const data = getContextData();
+        // Components can call getContext()
+        const data = getContext();
         return (
           <div data-testid="context-type">
             {typeof data === 'object' ? 'object' : 'undefined'}
@@ -119,14 +119,14 @@ describe('withAppContext', () => {
       // Note: In actual usage, the workflow is:
       // 1. withAppContext() initializes empty context storage
       // 2. getPreviewContent() populates context with preview data
-      // 3. Components access context via getContextData()
+      // 3. Components access context via getContext()
       //
       // React.cache() in React Server Components ensures request-scoped
       // isolation, but this doesn't work the same way in test environments.
       // The reactContextAdapter tests verify the adapter functionality directly.
 
       const InfoComponent = () => {
-        const data = getContextData();
+        const data = getContext();
         return (
           <div data-testid="info">
             {data?.preview_token

@@ -68,7 +68,7 @@ export const initializeRequestContext = (): void => {
  * @returns Context data for the current request, or undefined if no context exists
  * @internal
  */
-export const getContextData = () => {
+export const getContext = (): ContextData | undefined => {
   return getAdapter().getData();
 };
 
@@ -78,6 +78,33 @@ export const getContextData = () => {
  * @param value - Partial context data to merge into the current context
  * @internal
  */
-export const setContextData = (value: Partial<ContextData>): void => {
+export const setContext = (value: Partial<ContextData>): void => {
   return getAdapter().setData(value);
+};
+
+/**
+ * Set a specific piece of context data by key.
+ *
+ * @param key - The key to set in the context
+ * @param value - The value to set for the specified key
+ * @internal
+ */
+export const setContextData = <K extends keyof ContextData>(
+  key: K,
+  value: ContextData[K],
+): void => {
+  return getAdapter().set(key, value);
+};
+
+/**
+ * Get a specific piece of context data by key.
+ *
+ * @param key - The key to retrieve from the context
+ * @returns The value for the specified key, or undefined if not found
+ * @internal
+ */
+export const getContextData = <K extends keyof ContextData>(
+  key: K,
+): ContextData[K] | undefined => {
+  return getAdapter().get(key);
 };

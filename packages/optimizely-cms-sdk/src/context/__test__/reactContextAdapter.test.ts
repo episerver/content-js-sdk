@@ -70,7 +70,7 @@ describe('ReactContextAdapter', () => {
     test('should be used via global context configuration', () => {
       // In actual usage:
       // 1. ReactContextAdapter is configured automatically in contextWrapper.tsx
-      // 2. Components use getContextData() and setContextData() from config.ts
+      // 2. Components use getContext() and setContext() from config.ts
       // 3. Those functions delegate to the configured adapter
       // 4. In RSC, React.cache() ensures request-scoped isolation
       //

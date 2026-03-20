@@ -7,7 +7,7 @@ export interface ContextData {
   type?: string;
   currentContent?: unknown;
   preview_token?: string;
-  ctx?: unknown;
+  ctx?: string;
   locale?: string;
   key?: string;
 }
@@ -59,7 +59,7 @@ export interface ContextAdapter {
    * @param key - The key to retrieve from the context
    * @returns The value for the specified key, or undefined if not found
    */
-  get(key: keyof ContextData): ContextData[keyof ContextData] | undefined;
+  get<K extends keyof ContextData>(key: K): ContextData[K] | undefined;
 
   /**
    * Clear context data for the current request.

@@ -15,7 +15,7 @@ import {
   type TableCellElement,
 } from '../../components/richText/renderer.js';
 import { appendToken } from '../../util/preview.js';
-import { getContextData } from '../../context/config.js';
+import { getContext, getContextData } from '../../context/config.js';
 
 /**
  * React-specific element renderer props (extends shared props with React children)
@@ -581,7 +581,7 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
     const reactProps = toReactProps(attributes || {}, tag as string);
 
     // Get preview token from context (React.cache ensures same data per request)
-    const previewToken = getContextData()?.preview_token;
+    const previewToken = getContextData('preview_token');
 
     const imageSource = appendToken(element.url, previewToken);
 

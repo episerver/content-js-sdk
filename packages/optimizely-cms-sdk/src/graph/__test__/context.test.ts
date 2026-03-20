@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, vi, afterEach } from 'vitest';
 import { removeTypePrefix, GraphClient } from '../index.js';
 import {
   configureAdapter,
-  getContextData,
+  getContext,
   initializeRequestContext,
 } from '../../context/config.js';
 import type { ContextAdapter, ContextData } from '../../context/baseContext.js';
@@ -105,7 +105,7 @@ describe('GraphClient - Context Integration', () => {
       this.data[key] = value;
     }
 
-    get(key: keyof ContextData): ContextData[keyof ContextData] | undefined {
+    get<K extends keyof ContextData>(key: K): ContextData[K] | undefined {
       return this.data[key];
     }
 
@@ -188,7 +188,7 @@ describe('GraphClient - Context Integration', () => {
 
       await client.getPreviewContent(previewParams);
 
-      const contextData = getContextData();
+      const contextData = getContext();
       expect(contextData).toEqual({
         preview_token: 'token-123',
         locale: 'en-US',
