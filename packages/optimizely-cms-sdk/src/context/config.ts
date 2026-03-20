@@ -53,8 +53,18 @@ export function getAdapter(): ContextAdapter {
 }
 
 /**
- * Initialize request context (called by withContext HOC).
+ * Check if a context adapter is currently configured.
  *
+ * @returns true if an adapter has been configured, false otherwise
+ * @internal
+ */
+export function hasAdapter(): boolean {
+  return !!storageAdapter;
+}
+
+/**
+ * Initialize the request context using the configured adapter.
+ * Typically called by the withContext HOC in React applications.
  * @returns The generated request ID
  * @internal
  */

@@ -1,12 +1,16 @@
 import React from 'react';
 import {
   configureAdapter,
+  hasAdapter,
   initializeRequestContext,
 } from '../../context/config.js';
 import ReactContextAdapter from '../../context/reactContextAdapter.js';
 
-// Configure the context system to use the React adapter by default
-configureAdapter(new ReactContextAdapter());
+// Configure the React adapter only if no custom adapter has been set
+// This allows users to configure their own adapter before importing from react/server
+if (!hasAdapter()) {
+  configureAdapter(new ReactContextAdapter());
+}
 
 /**
  * Higher-Order Component that initializes context storage.

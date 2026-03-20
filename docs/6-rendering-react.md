@@ -175,10 +175,10 @@ Since `getPreviewContent` automatically populates context with preview data, `wi
 Any component can access the context data without props:
 
 ```tsx
-import { getContextData } from '@optimizely/cms-sdk/react/server';
+import { getContext } from '@optimizely/cms-sdk/react/server';
 
 export function MyComponent() {
-  const context = getContextData();
+  const context = getContext();
 
   // Access preview token, locale, etc.
   const locale = context?.locale ?? 'en-US';

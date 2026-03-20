@@ -581,7 +581,14 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
     const reactProps = toReactProps(attributes || {}, tag as string);
 
     // Get preview token from context (React.cache ensures same data per request)
-    const previewToken = getContextData('preview_token');
+    let previewToken: string | undefined;
+
+    try {
+      previewToken = getContextData('preview_token');
+    } catch {
+      // If no context adapter is configured, render without a preview token
+      previewToken = undefined;
+    }
 
     const imageSource = appendToken(element.url, previewToken);
 

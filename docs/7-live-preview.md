@@ -248,7 +248,7 @@ export default function AboutUs({ content }: AboutUsProps) {
 
 ## Accessing Context Data in Components
 
-When you use `withAppContext`, preview parameters are automatically extracted from the URL and stored in request-scoped context. Any component in your tree can access this data using `getContextData()`.
+When you wrap your preview route with `withAppContext`, it initializes request-scoped context for the incoming request. The `GraphClient.getPreviewContent()` call then extracts preview parameters from the URL and populates this context (via `setContext()`). Any component in your tree can access this data using `getContextData()`.
 
 ### Example: Custom Preview Banner
 
@@ -256,10 +256,11 @@ When you use `withAppContext`, preview parameters are automatically extracted fr
 import { getContextData } from '@optimizely/cms-sdk/react/server';
 
 export function PreviewBanner() {
-  const context = getContextData();
+  const preview_token = getContextData('preview_token');
+  const locale = getContextData('locale');
 
   // Check if we're in preview mode
-  if (!context?.preview_token) {
+  if (!preview_token) {
     return null;
   }
 
@@ -286,8 +287,7 @@ The context automatically includes:
 import { getContextData } from '@optimizely/cms-sdk/react/server';
 
 export function DateDisplay({ date }: { date: Date }) {
-  const context = getContextData();
-  const locale = context?.locale ?? 'en-US';
+  const locale = getContextData('locale') ?? 'en';
 
   return <time>{date.toLocaleDateString(locale)}</time>;
 }

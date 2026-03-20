@@ -24,9 +24,8 @@ export interface ContextData {
 export interface ContextAdapter {
   /**
    * Initialize a new request context.
-   * Should generate a unique identifier for this request.
-   *
-   * @returns The generated request/context ID
+   * Should generate and store a unique identifier for this request internally,
+   * if the adapter implementation uses one.
    */
   initializeContext(): void;
 
