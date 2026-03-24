@@ -3,19 +3,39 @@ import { paths } from './apiSchema/openapi-schema-types.js';
 import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
 
-function rootUrl(host?: string) {
-  const rootUrl =
-    host || process.env.OPTIMIZELY_CMS_API_URL || 'https://api.cms.optimizely.com';
+/**
+ * Constructs the root URL for the CMS API, optionally omitting the version segment.
+ * @param host - An optional host URL to use as the base for the API.
+ * @param omitVersion - A boolean flag indicating whether to omit the version segment from the URL.
+ * @returns The constructed root URL for the CMS API.
+ */
+function rootUrl(host?: string, omitVersion = false): string {
+  const API_VERSION = 'preview3';
+  const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
+  // Remove trailing slash if present for consistency
+  const baseUrl = (
+    host ||
+    process.env.OPTIMIZELY_CMS_API_URL ||
+    DEFAULT_GATEWAY_URL
+  ).replace(/\/$/, '');
 
-  if (rootUrl.endsWith('/')) {
-    return rootUrl.slice(0, -1);
-  }
+  if (omitVersion) return baseUrl;
 
-  return rootUrl;
+  // Check if URL is an Optimizely API gateway (e.g., https://api.*.optimizely.com)
+  const isOptimizelyGateway =
+    baseUrl.startsWith('https://api.') && baseUrl.endsWith('.optimizely.com');
+  // The prefix _cms is needed for CMS PaaS (local or non-gateway URLs)
+  const pathPrefix = isOptimizelyGateway ? '' : '/_cms';
+
+  return `${baseUrl}${pathPrefix}/${API_VERSION}`;
 }
 
-export async function getToken(clientId: string, clientSecret: string, host?: string) {
-  const client = createClient<paths>({ baseUrl: rootUrl(host) });
+export async function getToken(
+  clientId: string,
+  clientSecret: string,
+  host?: string,
+) {
+  const client = createClient<paths>({ baseUrl: rootUrl(host, true) });
 
   return client
     .POST('/oauth/token', {
@@ -62,7 +82,7 @@ export async function createRestApiClient({
   clientSecret: string;
   host?: string;
 }) {
-  const baseUrl = rootUrl(host) + '/preview3';
+  const baseUrl = rootUrl(host);
   const accessToken = await getToken(clientId, clientSecret, host);
 
   return createClient<paths>({
