@@ -5,13 +5,17 @@ import { credentialErrors } from './error.js';
 
 /**
  * Constructs the root URL for the CMS API, optionally omitting the version segment.
- * @param host - An optional host URL to use as the base for the API.
- * @param omitVersion - A boolean flag indicating whether to omit the version segment from the URL.
- * @returns The constructed root URL for the CMS API.
+ * @param options - Configuration options for constructing the URL
+ * @param options.host - An optional host URL to use as the base for the API
+ * @param options.omitVersion - A boolean flag indicating whether to omit the version segment from the URL
+ * @returns The constructed root URL for the CMS API
  */
-function rootUrl(host?: string, omitVersion = false): string {
+function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
   const API_VERSION = 'preview3';
   const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
+  const host = options?.host;
+  const omitVersion = options?.omitVersion ?? false;
+
   // Remove trailing slash if present for consistency
   const baseUrl = (
     host ||
@@ -35,7 +39,7 @@ export async function getToken(
   clientSecret: string,
   host?: string,
 ) {
-  const client = createClient<paths>({ baseUrl: rootUrl(host, true) });
+  const client = createClient<paths>({ baseUrl: rootUrl({ host, omitVersion: true }) });
 
   return client
     .POST('/oauth/token', {
@@ -82,7 +86,7 @@ export async function createRestApiClient({
   clientSecret: string;
   host?: string;
 }) {
-  const baseUrl = rootUrl(host);
+  const baseUrl = rootUrl({ host });
   const accessToken = await getToken(clientId, clientSecret, host);
 
   return createClient<paths>({
