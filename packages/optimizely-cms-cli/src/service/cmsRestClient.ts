@@ -4,6 +4,16 @@ import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
 
 /**
+ * Determines if the provided URL matches the pattern of a SaaS API gateway.
+ * @param url - The URL to check
+ * @returns True if the URL is a SaaS API gateway, false otherwise
+ */
+function isSaasApiGateway(url: string): boolean {
+  // Matches: api.cms.optimizely.com, api.cmstest.optimizely.com, api-<tenant>.cms*.optimizely.com
+  return /^https:\/\/api(-[^.]+)?\.cms[^.]*\.optimizely\.com$/.test(url);
+}
+
+/**
  * Constructs the root URL for the CMS API, optionally omitting the version segment.
  * @param options - Configuration options for constructing the URL
  * @param options.host - An optional host URL to use as the base for the API
@@ -23,13 +33,11 @@ function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
     DEFAULT_GATEWAY_URL
   ).replace(/\/$/, '');
 
-  if (omitVersion) return baseUrl;
+  // The prefix '/_cms' is only needed for PaaS instances (and local instances).
+  const pathPrefix = isSaasApiGateway(baseUrl) ? '' : '/_cms';
 
-  // Check if URL is an Optimizely API gateway (e.g., https://api.*.optimizely.com)
-  const isOptimizelyGateway =
-    baseUrl.startsWith('https://api.') && baseUrl.endsWith('.optimizely.com');
-  // The prefix _cms is needed for CMS PaaS (local or non-gateway URLs)
-  const pathPrefix = isOptimizelyGateway ? '' : '/_cms';
+  // omitVersion is 'true' when used for the token endpoint
+  if (omitVersion) return `${baseUrl}${pathPrefix}`;
 
   return `${baseUrl}${pathPrefix}/${API_VERSION}`;
 }
@@ -39,7 +47,9 @@ export async function getToken(
   clientSecret: string,
   host?: string,
 ) {
-  const client = createClient<paths>({ baseUrl: rootUrl({ host, omitVersion: true }) });
+  const client = createClient<paths>({
+    baseUrl: rootUrl({ host, omitVersion: true }),
+  });
 
   return client
     .POST('/oauth/token', {
