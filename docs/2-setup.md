@@ -141,9 +141,12 @@ Reference these groups in your content type properties using the `group` field.
 
 The CLI uses the production API endpoints by default (https://api.cms.optimizely.com). If you want to use a different domain (for example https://api.cmstest.optimizely.com), configure it using the environment variable `OPTIMIZELY_CMS_API_URL`:
 
-```ini
+```bash
 OPTIMIZELY_CMS_API_URL=https://api.cmstest.optimizely.com
 ```
+
+> [!NOTE]
+> When connecting to a local CMS instance with self-signed certificates, add `NODE_TLS_REJECT_UNAUTHORIZED="0"` to your `.env` file to allow the CLI to establish a connection.
 
 [Read more about environment variables for the CLI](../packages/optimizely-cms-cli/docs/environmental-variables.md)
 
