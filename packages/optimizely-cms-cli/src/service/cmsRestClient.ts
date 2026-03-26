@@ -33,13 +33,15 @@ function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
     DEFAULT_GATEWAY_URL
   ).replace(/\/$/, '');
 
-  // The prefix '/_cms' is only needed for PaaS instances (and local instances).
-  const pathPrefix = isSaasApiGateway(baseUrl) ? '' : '/_cms';
+  // PaaS instances always require /_cms prefix and version
+  if (!isSaasApiGateway(baseUrl)) {
+    return `${baseUrl}/_cms/${API_VERSION}`;
+  }
 
-  // omitVersion is 'true' when used for the token endpoint
-  if (omitVersion) return `${baseUrl}${pathPrefix}`;
+  // SaaS gateways: omitVersion is 'true' when used for the token endpoint
+  if (omitVersion) return baseUrl;
 
-  return `${baseUrl}${pathPrefix}/${API_VERSION}`;
+  return `${baseUrl}/${API_VERSION}`;
 }
 
 export async function getToken(
