@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { NextRequest, NextResponse } from 'next/server';
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const userId = request.cookies.get('user_id');
 
   if (userId) {
