@@ -21,7 +21,7 @@ function isSaasApiGateway(url: string): boolean {
  * @returns The constructed root URL for the CMS API
  */
 function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
-  const API_VERSION = 'preview3';
+  const API_VERSION = 'v1';
   const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
   const host = options?.host;
   const omitVersion = options?.omitVersion ?? false;
@@ -44,12 +44,54 @@ function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
   return `${baseUrl}/${API_VERSION}`;
 }
 
+// OAuth token response type (not part of Content API schema)
+interface OAuthTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+interface OAuthError {
+  code?: string;
+  error?: string;
+  error_description?: string;
+}
+
+// OAuth paths (separate from Content API)
+interface OAuthPaths {
+  '/oauth/token': {
+    post: {
+      requestBody: {
+        content: {
+          'application/json': {
+            grant_type: string;
+            client_id: string;
+            client_secret: string;
+          };
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            'application/json': OAuthTokenResponse;
+          };
+        };
+        400: {
+          content: {
+            'application/json': OAuthError;
+          };
+        };
+      };
+    };
+  };
+}
+
 export async function getToken(
   clientId: string,
   clientSecret: string,
   host?: string,
 ) {
-  const client = createClient<paths>({
+  const client = createClient<OAuthPaths>({
     baseUrl: rootUrl({ host, omitVersion: true }),
   });
 
