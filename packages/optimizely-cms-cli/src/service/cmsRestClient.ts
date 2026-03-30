@@ -1,7 +1,8 @@
 import createClient from 'openapi-fetch';
-import { paths } from './apiSchema/openapi-schema-types.js';
 import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
+import { OAuthPaths } from './apiSchema/gateway-auth-types.js';
+import { paths } from './apiSchema/openapi-schema-types.js';
 
 /**
  * Determines if the provided URL matches the pattern of a SaaS API gateway.
@@ -42,48 +43,6 @@ function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
   if (omitVersion) return baseUrl;
 
   return `${baseUrl}/${API_VERSION}`;
-}
-
-// OAuth token response type (not part of Content API schema)
-interface OAuthTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
-
-interface OAuthError {
-  code?: string;
-  error?: string;
-  error_description?: string;
-}
-
-// OAuth paths (separate from Content API)
-interface OAuthPaths {
-  '/oauth/token': {
-    post: {
-      requestBody: {
-        content: {
-          'application/json': {
-            grant_type: string;
-            client_id: string;
-            client_secret: string;
-          };
-        };
-      };
-      responses: {
-        200: {
-          content: {
-            'application/json': OAuthTokenResponse;
-          };
-        };
-        400: {
-          content: {
-            'application/json': OAuthError;
-          };
-        };
-      };
-    };
-  };
 }
 
 export async function getToken(

@@ -9,7 +9,6 @@
   "private": "true",
   "scripts": {
     "build": "pnpm --filter \"./packages/**\" build",
-    "install": "pnpm --filter \"./packages/**\" install",
     "install:all": "pnpm --filter \"./packages/**\" install && pnpm --filter \"./packages/**\" build && pnpm --filter \"./samples/**\" --filter \"./templates/**\" install",
     "build:samples": "pnpm --filter \"./samples/**\" build",
     "clean:all": "pnpm -r clean",
