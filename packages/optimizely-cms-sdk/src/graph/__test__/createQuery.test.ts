@@ -6,6 +6,7 @@ describe('createFragment() simple cases', () => {
   test('works for scalar properties', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         str: { type: 'string' },
@@ -35,6 +36,7 @@ describe('createFragment() simple cases', () => {
   test('works for arrays of scalar properties', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         str: { type: 'array', items: { type: 'string' } },
@@ -64,6 +66,7 @@ describe('createFragment() simple cases', () => {
   test('works for compound properties', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         lin: { type: 'link' },
@@ -89,7 +92,7 @@ describe('createFragment() simple cases', () => {
   });
 
   test('correct syntax with content types without properties', async () => {
-    const ct1 = contentType({ key: 'ct1', baseType: '_page' });
+    const ct1 = contentType({ key: 'ct1', displayName: 'CT1', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
     const result = await createFragment('ct1');
@@ -109,9 +112,10 @@ describe('createFragment() simple cases', () => {
 
 describe('createFragment() with `content` properties. Explicit reference via `allowedTypes`', () => {
   test('one level', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: { p1: { type: 'content', allowedTypes: [r1] } },
     });
@@ -132,14 +136,16 @@ describe('createFragment() with `content` properties. Explicit reference via `al
   });
 
   test('two levels', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({
       key: 'r2',
+      displayName: 'R2',
       baseType: '_component',
       properties: { p1: { type: 'content', allowedTypes: [r1] } },
     });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: { p1: { type: 'content', allowedTypes: [r2] } },
     });
@@ -161,14 +167,16 @@ describe('createFragment() with `content` properties. Explicit reference via `al
   });
 
   test('repeated reference', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const ct1 = contentType({
       key: 'r2',
+      displayName: 'R2',
       baseType: '_component',
       properties: { p1: { type: 'content', allowedTypes: [r1] } },
     });
     const ct2 = contentType({
       key: 'ct2',
+      displayName: 'CT2',
       baseType: '_page',
       properties: {
         p1: { type: 'content', allowedTypes: [r1] },
@@ -195,9 +203,10 @@ describe('createFragment() with `content` properties. Explicit reference via `al
 
 describe('createFragment() with `content` properties. Base types', () => {
   test('one level', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
     });
@@ -218,14 +227,16 @@ describe('createFragment() with `content` properties. Base types', () => {
   });
 
   test('two levels', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({
       key: 'r2',
+      displayName: 'R2',
       baseType: '_component',
       properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
     });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
     });
@@ -247,11 +258,12 @@ describe('createFragment() with `content` properties. Base types', () => {
   });
 
   test('resolve correctly when `allowedTypes` is a base type', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
-    const r2 = contentType({ key: 'r2', baseType: '_component' });
-    const r3 = contentType({ key: 'r3', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
+    const r3 = contentType({ key: 'r3', displayName: 'R3', baseType: '_component' });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         p1: {
@@ -280,14 +292,16 @@ describe('createFragment() with `content` properties. Base types', () => {
   });
 
   test('repeated reference', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({
       key: 'r2',
+      displayName: 'R2',
       baseType: '_component',
       properties: { p1: { type: 'content', allowedTypes: [r1] } },
     });
     const ct2 = contentType({
       key: 'ct2',
+      displayName: 'CT2',
       baseType: '_page',
       properties: {
         p1: { type: 'content', allowedTypes: [r1] },
@@ -314,11 +328,12 @@ describe('createFragment() with `content` properties. Base types', () => {
 
 describe('createFragment() with `content` properties. Allowed and restricted types', () => {
   test('only restricted', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
-    const r2 = contentType({ key: 'r2', baseType: '_component' });
-    const r3 = contentType({ key: 'r3', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
+    const r3 = contentType({ key: 'r3', displayName: 'R3', baseType: '_component' });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         p1: {
@@ -346,11 +361,12 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
   });
 
   test('allowed and restricted', async () => {
-    const r1 = contentType({ key: 'r1', baseType: '_component' });
-    const r2 = contentType({ key: 'r2', baseType: '_component' });
-    const r3 = contentType({ key: 'r3', baseType: '_component' });
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
+    const r3 = contentType({ key: 'r3', displayName: 'R3', baseType: '_component' });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         p1: {
@@ -383,6 +399,7 @@ describe('createFragment() with self references', () => {
   test('explicit self-reference', async () => {
     const r1 = contentType({
       key: 'r1',
+      displayName: 'R1',
       baseType: '_component',
       properties: { p1: { type: 'content', allowedTypes: ['_self'] } },
     });
@@ -405,6 +422,7 @@ describe('createFragment() with self references', () => {
   test('without any limitations', async () => {
     const r1 = contentType({
       key: 'r1',
+      displayName: 'R1',
       baseType: '_component',
       properties: { p1: { type: 'content' } },
     });
@@ -427,6 +445,7 @@ describe('createFragment() with self references', () => {
   test('with allowed (its own base type)', async () => {
     const r1 = contentType({
       key: 'r1',
+      displayName: 'R1',
       baseType: '_component',
       properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
     });
@@ -447,9 +466,10 @@ describe('createFragment() with self references', () => {
   });
 
   test('with allowed (its own base type)', async () => {
-    const r2 = contentType({ key: 'r2', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
     const r1 = contentType({
       key: 'r1',
+      displayName: 'R1',
       baseType: '_component',
       properties: {
         p1: {
@@ -480,6 +500,7 @@ describe('createFragment() empty objects', () => {
   test('properties with indexType', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         p1: { type: 'string', indexingType: 'disabled' },
@@ -505,6 +526,7 @@ describe('createFragment() empty objects', () => {
   test('only with disabled indexType', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         p1: { type: 'string', indexingType: 'disabled' },
@@ -531,6 +553,7 @@ describe('createFragment() empty objects', () => {
     // But there is no content type with base type '_component'.
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         p1: { type: 'content', allowedTypes: ['_component'] },
@@ -558,6 +581,7 @@ describe('createFragment() with component properties', () => {
   test('simple case', async () => {
     const ctBlock = contentType({
       key: 'ctBlock',
+      displayName: 'CTBlock',
       baseType: '_component',
       properties: {
         p1: { type: 'string' },
@@ -565,6 +589,7 @@ describe('createFragment() with component properties', () => {
     });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         p1: { type: 'component', contentType: ctBlock },

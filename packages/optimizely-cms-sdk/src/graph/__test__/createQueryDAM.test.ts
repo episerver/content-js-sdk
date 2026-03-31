@@ -10,6 +10,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled = false should not include ContentReferenceItem fragment', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         image: { type: 'contentReference' },
@@ -54,6 +55,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled = true should include ContentReferenceItem fragment', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         image: { type: 'contentReference' },
@@ -97,6 +99,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled = false with array of contentReference', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         images: { type: 'array', items: { type: 'contentReference' } },
@@ -129,6 +132,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled = true with array of contentReference', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         images: { type: 'array', items: { type: 'contentReference' } },
@@ -164,6 +168,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled with nested component containing contentReference', async () => {
     const ctBlock = contentType({
       key: 'ctBlock',
+      displayName: 'CTBlock',
       baseType: '_component',
       properties: {
         image: { type: 'contentReference' },
@@ -171,6 +176,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         block: { type: 'component', contentType: ctBlock },
@@ -216,6 +222,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled with content property containing contentReference', async () => {
     const ctRef = contentType({
       key: 'ctRef',
+      displayName: 'CTRef',
       baseType: '_component',
       properties: {
         image: { type: 'contentReference' },
@@ -223,6 +230,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         content: { type: 'content', allowedTypes: [ctRef] },
@@ -259,6 +267,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled = true but NO contentReference properties should NOT include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         title: { type: 'string' },
@@ -304,6 +313,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
   test('damEnabled = true with nested content without contentReference should NOT include DAM fragments', async () => {
     const ctBlock = contentType({
       key: 'ctBlock',
+      displayName: 'CTBlock',
       baseType: '_component',
       properties: {
         text: { type: 'string' },
@@ -311,6 +321,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         block: { type: 'component', contentType: ctBlock },
@@ -337,6 +348,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
   test('createSingleContentQuery: damEnabled = false should not include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         image: { type: 'contentReference' },
@@ -354,6 +366,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
   test('createSingleContentQuery: damEnabled = true should include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         image: { type: 'contentReference' },
@@ -377,6 +390,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
   test('createMultipleContentQuery: damEnabled = false should not include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         image: { type: 'contentReference' },
@@ -393,6 +407,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
   test('createMultipleContentQuery: damEnabled = true should include DAM fragments', async () => {
     const ct1 = contentType({
       key: 'ct1',
+      displayName: 'CT1',
       baseType: '_page',
       properties: {
         image: { type: 'contentReference' },

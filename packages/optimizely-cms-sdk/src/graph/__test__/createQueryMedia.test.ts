@@ -5,16 +5,19 @@ import { createFragment } from '../createQuery.js';
 describe('createFragment() creates types for base types', () => {
   const ctImage = contentType({
     key: 'ctImage',
+    displayName: 'CT Image',
     baseType: '_image',
     properties: { p1: { type: 'string' } },
   });
   const ctVideo = contentType({
     key: 'ctVideo',
+    displayName: 'CT Video',
     baseType: '_video',
     properties: { p1: { type: 'boolean' } },
   });
   const ctMedia = contentType({
     key: 'ctMedia',
+    displayName: 'CT Media',
     baseType: '_media',
     properties: { p1: { type: 'float' } },
   });
@@ -22,6 +25,7 @@ describe('createFragment() creates types for base types', () => {
   test('should not create extra fragments when referred explicitly', async () => {
     const ctPage = contentType({
       key: 'ctPage',
+      displayName: 'CT Page',
       baseType: '_page',
       properties: {
         p1: { type: 'content', allowedTypes: [ctImage, ctVideo, ctMedia] },
@@ -50,6 +54,7 @@ describe('createFragment() creates types for base types', () => {
   test('should create base types when referred by base type', async () => {
     const ctPage = contentType({
       key: 'ctPage',
+      displayName: 'CT Page',
       baseType: '_page',
       properties: {
         p1: { type: 'content', allowedTypes: ['_image', '_video', '_media'] },
