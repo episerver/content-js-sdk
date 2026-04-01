@@ -1,7 +1,11 @@
 import Footer from '@/components/base/Footer';
 import Header from '@/components/base/Header';
 import { GraphClient } from '@optimizely/cms-sdk';
-import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import {
+  OptimizelyComponent,
+  setContext,
+  withAppContext,
+} from '@optimizely/cms-sdk/react/server';
 import { notFound } from 'next/navigation';
 import React from 'react';
 import { SidebarNav } from '@/components/base/SidebarNav';
@@ -12,7 +16,7 @@ type Props = {
   }>;
 };
 
-export default async function Page({ params }: Props) {
+export async function Page({ params }: Props) {
   const { slug } = await params;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
@@ -25,6 +29,14 @@ export default async function Page({ params }: Props) {
   if (content.length === 0) {
     notFound();
   }
+
+  // Set initial context for this request (will be used in components or other server functions)
+  setContext({
+    currentContent: content[0],
+    locale: content[0]?._metadata?.locale,
+    type: content[0]?.__typename,
+    key: content[0]?._metadata?.key,
+  });
 
   // Check if URL contains "about-us" to show sidebar navigation
   const showSidebar = path.includes('about-us');
@@ -79,3 +91,5 @@ export default async function Page({ params }: Props) {
     </>
   );
 }
+
+export default withAppContext(Page);

@@ -17,7 +17,10 @@ First, create a dedicated route for handling preview requests. In Next.js, creat
 
 ```tsx
 import { GraphClient, type PreviewParams } from '@optimizely/cms-sdk';
-import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import {
+  OptimizelyComponent,
+  withAppContext,
+} from '@optimizely/cms-sdk/react/server';
 import { PreviewComponent } from '@optimizely/cms-sdk/react/client';
 import Script from 'next/script';
 
@@ -25,7 +28,7 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function Page({ searchParams }: Props) {
+export async function Page({ searchParams }: Props) {
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
@@ -44,9 +47,28 @@ export default async function Page({ searchParams }: Props) {
     </>
   );
 }
+
+export default withAppContext(Page);
 ```
 
 Let's break down what's happening here:
+
+### Wrapping with `withAppContext`
+
+```tsx
+export default withAppContext(Page);
+```
+
+The `withAppContext` HOC is required for preview mode. It initializes request-scoped context storage for the current routed content. Context lives only for the duration of the request.
+
+**In Preview Mode:**
+
+- Initializes the context that `getPreviewContent` will populate with preview data
+- Makes preview data (`preview_token`, `key`, `locale`, `version`, `mode`) available throughout your component tree
+- Enables access to these values for custom querying or rendering scenarios
+- Allows any nested component to retrieve preview context using `getContext()`
+
+See [Rendering (with React)](./6-rendering-react.md#understanding-withappcontext) for details.
 
 ### GraphClient Setup
 
@@ -67,6 +89,8 @@ const response = await client.getPreviewContent(
 ```
 
 The `getPreviewContent` method handles all the complexity of fetching the right content version based on the preview parameters sent from the CMS. These parameters are automatically included in the URL when an editor clicks "Preview" in the CMS.
+
+**Context data is automatically populated**: The `getPreviewContent` method automatically populates the request-scoped context with preview parameters (`preview_token`, `locale`, `key`, `version`, `mode`). This means any component in your tree can access preview data via `getContext()` without manual extraction. The `withAppContext` HOC is required to initialize the context - once initialized, `getPreviewContent` automatically populates it with preview data.
 
 ### Rendering Preview Content
 
@@ -222,3 +246,54 @@ export default function AboutUs({ content }: AboutUsProps) {
 
 > [!NOTE]
 > Apply `pa()` to all content properties to enable the full on-page editing experience. This allows editors to click elements in the preview and jump directly to the corresponding field in the CMS.
+
+## Accessing Context Data in Components
+
+When you wrap your preview route with `withAppContext`, it initializes request-scoped context for the current routed content. The `GraphClient.getPreviewContent()` call then extracts preview parameters from the URL and populates this context (via `setContext()`). Any component in your tree can access this data using `getContextData()`.
+
+### Example: Custom Preview Banner
+
+```tsx
+import { getContextData } from '@optimizely/cms-sdk/react/server';
+
+export function PreviewBanner() {
+  const preview_token = getContextData('preview_token');
+  const locale = getContextData('locale');
+
+  // Check if we're in preview mode
+  if (!preview_token) {
+    return null;
+  }
+
+  return (
+    <div className="preview-banner">
+      <p>Preview Mode - Locale: {locale ?? 'default'}</p>
+    </div>
+  );
+}
+```
+
+### Available Context Properties
+
+The context automatically includes:
+
+- `previewToken` - Preview/edit mode authentication token
+- `locale` - Content locale from `loc` parameter
+- `key` - Content key identifier
+- `version` - Content version from `ver` parameter
+- `mode` - Content version from `ctx` parameter
+
+### Example: Locale-Aware Component
+
+```tsx
+import { getContextData } from '@optimizely/cms-sdk/react/server';
+
+export function DateDisplay({ date }: { date: Date }) {
+  const locale = getContextData('locale') ?? 'en';
+
+  return <time>{date.toLocaleDateString(locale)}</time>;
+}
+```
+
+> [!TIP]
+> The `RichText` component automatically uses `preview_token` from context to append preview tokens to image URLs, so you don't need to manually handle this.

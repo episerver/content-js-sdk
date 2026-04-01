@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import {
   createSingleContentQuery,
   ItemsResponse,
@@ -18,6 +17,7 @@ import {
   GraphVariationInput,
   localeFilter,
 } from './filters.js';
+import { setContext } from '../context/config.js';
 
 /** Options for Graph */
 export type GraphOptions = {
@@ -478,6 +478,17 @@ export class GraphClient {
         { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
       );
     }
+
+    // Auto-populate context with preview parameters
+    setContext({
+      previewToken: params.preview_token,
+      version: params.ver,
+      locale: params.loc,
+      type: contentTypeName,
+      key: params.key,
+      mode: params.ctx,
+    });
+
     const query = createSingleContentQuery(
       contentTypeName,
       damEnabled,

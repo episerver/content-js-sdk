@@ -111,16 +111,20 @@ Your entire file should look like this:
 
 ```tsx
 import { GraphClient } from '@optimizely/cms-sdk';
-import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import {
+  OptimizelyComponent,
+  withAppContext,
+} from '@optimizely/cms-sdk/react/server';
 import React from 'react';
 
 type Props = {
   params: Promise<{
     slug: string[];
   }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function Page({ params }: Props) {
+export async function Page({ params }: Props) {
   const { slug } = await params;
 
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
@@ -130,9 +134,77 @@ export default async function Page({ params }: Props) {
 
   return <OptimizelyComponent content={content[0]} />;
 }
+
+export default withAppContext(Page);
 ```
 
-Go again to http://localhost:3000/en. You should see your page
+Go again to <http://localhost:3000/en>. You should see your page
+
+### Understanding `withAppContext`
+
+The `withAppContext` HOC wraps your page component to provide request-scoped context:
+
+```tsx
+export async function Page({ params }: Props) {
+  // ... component logic
+}
+
+export default withAppContext(Page);
+```
+
+**What it does:**
+
+**Initializes context storage** - Sets up isolated, request-scoped storage for context data. This is required when using the context system in React Server Components. The context created is for the current routed content and lives only for the duration of the current request.
+
+**When do you need it:**
+
+Use `withAppContext` when you need request-scoped context storage:
+
+- To manually set context data via `setContext()` for the current request
+- To ensure context is available throughout the component tree
+- When you need to pass content metadata or request-specific data to nested components
+
+**Benefits:**
+
+- **Request isolation** - Each request gets its own context storage for the routed content (critical for server components). Context data is scoped per request and automatically cleaned up when the request completes.
+- **No prop drilling** - Access context data anywhere in your component tree
+- **Framework-agnostic** - Works with any React Server Components framework
+
+### Accessing Context in Components
+
+Any component can access the context data without props:
+
+```tsx
+import { getContext } from '@optimizely/cms-sdk/react/server';
+
+export function MyComponent() {
+  const context = getContext();
+
+  // Access preview token, locale, etc.
+  const locale = context?.locale ?? 'en-US';
+  const isPreview = !!context?.preview_token;
+
+  return <div>Locale: {locale}</div>;
+}
+```
+
+**How context is populated:**
+
+Use `setContext()` to populate context data with information from your content:
+
+```tsx
+setContext({
+  currentContent: content[0],
+  locale: content[0]?._metadata?.locale,
+  type: content[0]?.__typename,
+  key: content[0]?._metadata?.key,
+});
+```
+
+This is particularly useful for:
+
+- Displaying locale-specific formatting
+- Accessing content metadata in nested components without prop drilling
 
 ## Next steps
 
