@@ -277,10 +277,11 @@ export function PreviewBanner() {
 
 The context automatically includes:
 
-- `preview_token` - Preview/edit mode authentication token
+- `previewToken` - Preview/edit mode authentication token
 - `locale` - Content locale from `loc` parameter
 - `key` - Content key identifier
 - `version` - Content version from `ver` parameter
+- `mode` - Content version from `ctx` parameter
 
 ### Example: Locale-Aware Component
 
