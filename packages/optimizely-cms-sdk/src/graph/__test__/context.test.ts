@@ -190,12 +190,12 @@ describe('GraphClient - Context Integration', () => {
 
       const contextData = getContext();
       expect(contextData).toEqual({
-        preview_token: 'token-123',
+        previewToken: 'token-123',
         locale: 'en-US',
         key: 'page-key',
         version: '1.0',
         type: 'TestPage',
-        ctx: 'edit',
+        mode: 'edit',
       });
     });
 

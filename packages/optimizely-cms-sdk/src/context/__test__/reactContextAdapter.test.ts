@@ -35,7 +35,7 @@ describe('ReactContextAdapter', () => {
 
       expect(() => adapter.initializeContext()).not.toThrow();
       expect(() => adapter.getData()).not.toThrow();
-      expect(() => adapter.setData({ preview_token: 'test' })).not.toThrow();
+      expect(() => adapter.setData({ previewToken: 'test' })).not.toThrow();
       expect(() => adapter.clear()).not.toThrow();
     });
 

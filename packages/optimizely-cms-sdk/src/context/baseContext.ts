@@ -6,8 +6,8 @@ export interface ContextData {
   version?: string;
   type?: string;
   currentContent?: unknown;
-  preview_token?: string;
-  ctx?: string;
+  previewToken?: string;
+  mode?: string;
   locale?: string;
   key?: string;
 }

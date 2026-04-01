@@ -154,19 +154,19 @@ export default withAppContext(Page);
 
 **What it does:**
 
-**Initializes context storage** - Sets up isolated, request-scoped storage for context data. This is required when using the context system in React Server Components.
+**Initializes context storage** - Sets up isolated, request-scoped storage for context data. This is required when using the context system in React Server Components. The context created is for the current routed content and lives only for the duration of the current request.
 
 **When do you need it:**
 
-Since `getPreviewContent` automatically populates context with preview data, `withAppContext` is **optional for preview pages**. Use it when:
+Use `withAppContext` when you need request-scoped context storage:
 
-- You need context initialized before fetching content (e.g., for manual `setContextData` calls)
-- You're using context for non-preview data
-- You want to ensure context is available throughout the component tree
+- To manually set context data via `setContext()` for the current request
+- To ensure context is available throughout the component tree
+- When you need to pass content metadata or request-specific data to nested components
 
 **Benefits:**
 
-- **Request isolation** - Each request gets its own context storage (critical for server components)
+- **Request isolation** - Each request gets its own context storage for the routed content (critical for server components). Context data is scoped per request and automatically cleaned up when the request completes.
 - **No prop drilling** - Access context data anywhere in your component tree
 - **Framework-agnostic** - Works with any React Server Components framework
 
@@ -190,15 +190,21 @@ export function MyComponent() {
 
 **How context is populated:**
 
-Context data can be populated in two ways:
+Use `setContext()` to populate context data with information from your content:
 
-1. **Automatically by `getPreviewContent`** - This method automatically sets preview_token, locale, key, version, and ctx in the context
-2. **Manually via `setContextData()`** - You can explicitly set context data when needed
+```tsx
+setContext({
+  currentContent: content[0],
+  locale: content[0]?._metadata?.locale,
+  type: content[0]?.__typename,
+  key: content[0]?._metadata?.key,
+});
+```
 
 This is particularly useful for:
 
 - Displaying locale-specific formatting
-- Getting content version and key for manual queries and rendering
+- Accessing content metadata in nested components without prop drilling
 
 ## Next steps
 

@@ -584,7 +584,7 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
     let previewToken: string | undefined;
 
     try {
-      previewToken = getContextData('preview_token');
+      previewToken = getContextData('previewToken');
     } catch {
       // If no context adapter is configured, render without a preview token
       previewToken = undefined;

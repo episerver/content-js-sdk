@@ -471,12 +471,12 @@ export class GraphClient {
 
     // Auto-populate context with preview parameters
     setContext({
-      preview_token: params.preview_token,
+      previewToken: params.preview_token,
       version: params.ver,
       locale: params.loc,
       type: contentTypeName,
       key: params.key,
-      ctx: params.ctx,
+      mode: params.ctx,
     });
 
     const query = createSingleContentQuery(

@@ -53,19 +53,20 @@ export default withAppContext(Page);
 
 Let's break down what's happening here:
 
-### Wrapping with `withAppContext` (Optional)
+### Wrapping with `withAppContext`
 
 ```tsx
 export default withAppContext(Page);
 ```
 
-The `withAppContext` HOC initializes request-scoped context storage and is useful in both preview and regular mode:
+The `withAppContext` HOC is required for preview mode. It initializes request-scoped context storage for the current routed content. Context lives only for the duration of the request.
 
 **In Preview Mode:**
 
-- Makes preview data (`preview_token`, `key`, `locale`, `version`) available throughout your component tree via the SDK
+- Initializes the context that `getPreviewContent` will populate with preview data
+- Makes preview data (`preview_token`, `key`, `locale`, `version`, `mode`) available throughout your component tree
 - Enables access to these values for custom querying or rendering scenarios
-- Allows any nested component to retrieve preview context using `getContextData()`
+- Allows any nested component to retrieve preview context using `getContext()`
 
 See [Rendering (with React)](./6-rendering-react.md#understanding-withappcontext) for details.
 
@@ -89,7 +90,7 @@ const response = await client.getPreviewContent(
 
 The `getPreviewContent` method handles all the complexity of fetching the right content version based on the preview parameters sent from the CMS. These parameters are automatically included in the URL when an editor clicks "Preview" in the CMS.
 
-**Automatic Context Population**: The `getPreviewContent` method automatically populates the global context with preview parameters (`preview_token`, `locale`, `key`, `version`, `ctx`). This means any component in your tree can access preview data via `getContextData()` without manual extraction. The `withAppContext` HOC is optional when using `getPreviewContent` - context is automatically set by the method itself.
+**Context data is automatically populated**: The `getPreviewContent` method automatically populates the request-scoped context with preview parameters (`preview_token`, `locale`, `key`, `version`, `mode`). This means any component in your tree can access preview data via `getContext()` without manual extraction. The `withAppContext` HOC is required to initialize the context - once initialized, `getPreviewContent` automatically populates it with preview data.
 
 ### Rendering Preview Content
 
@@ -248,7 +249,7 @@ export default function AboutUs({ content }: AboutUsProps) {
 
 ## Accessing Context Data in Components
 
-When you wrap your preview route with `withAppContext`, it initializes request-scoped context for the incoming request. The `GraphClient.getPreviewContent()` call then extracts preview parameters from the URL and populates this context (via `setContext()`). Any component in your tree can access this data using `getContextData()`.
+When you wrap your preview route with `withAppContext`, it initializes request-scoped context for the current routed content. The `GraphClient.getPreviewContent()` call then extracts preview parameters from the URL and populates this context (via `setContext()`). Any component in your tree can access this data using `getContextData()`.
 
 ### Example: Custom Preview Banner
 

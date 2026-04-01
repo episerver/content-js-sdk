@@ -61,7 +61,7 @@ describe('withAppContext', () => {
     test('should provide fresh context for each wrapped component', async () => {
       const TestComponent = () => {
         const data = getContext();
-        return <div data-testid="result">{data?.preview_token || 'empty'}</div>;
+        return <div data-testid="result">{data?.previewToken || 'empty'}</div>;
       };
 
       const WrappedComponent = withAppContext(TestComponent);
@@ -129,7 +129,7 @@ describe('withAppContext', () => {
         const data = getContext();
         return (
           <div data-testid="info">
-            {data?.preview_token
+            {data?.previewToken
               ? 'preview mode'
               : 'getPreviewContent not called'}
           </div>
