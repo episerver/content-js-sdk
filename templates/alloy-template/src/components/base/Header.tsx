@@ -1,14 +1,14 @@
 import Link from 'next/link';
-import { GraphClient } from '@optimizely/cms-sdk';
+import { getClient } from '@optimizely/cms-sdk';
 import { MobileMenu } from './MobileMenu';
 
 interface HeaderProps {
-  client: GraphClient;
   currentPath: string;
   logoText?: string;
 }
 
-async function Header({ client, currentPath }: HeaderProps) {
+async function Header({ currentPath }: HeaderProps) {
+  const client = getClient();
   const ancestors = (await client.getPath(currentPath)) || [];
   const navLinks = (await client.getItems('/en/')) ?? [];
 
