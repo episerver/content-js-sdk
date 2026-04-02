@@ -281,7 +281,7 @@ The context automatically includes:
 - `locale` - Content locale from `loc` parameter
 - `key` - Content key identifier
 - `version` - Content version from `ver` parameter
-- `mode` - The modes 'default' | 'edit' | 'preview' from `ctx` parameter
+- `mode` - The modes ('default' | 'edit' | 'preview') from `ctx` parameter
 
 ### Example: Locale-Aware Component
 
