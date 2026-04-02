@@ -28,6 +28,26 @@ export type GraphOptions = {
   maxFragmentThreshold?: number;
   /** Default application host for path filtering */
   host?: string;
+  /**
+   * Enable or disable server-side caching for all queries.
+   * Can be overridden per request.
+   * @default true
+   */
+  cache?: boolean;
+  /**
+   * Enable or disable stored (persisted) queries for all requests.
+   * Can be overridden per request.
+   * @default true
+   */
+  stored?: boolean;
+  /**
+   * Select which Graph engine version to query against for all requests.
+   * Used during smooth rebuilds to test the new index before switching.
+   * - `'Current'`: Query the active index (default)
+   * - `'New'`: Query the new index being rebuilt
+   * Can be overridden per request.
+   */
+  slot?: GraphSlot;
 };
 
 export type PreviewParams = {
@@ -51,12 +71,39 @@ export type GraphReference = {
   source?: string;
 };
 
-export type GraphGetContentOptions = {
+/** Slot values for selecting the Graph engine version */
+export type GraphSlot = 'Current' | 'New';
+
+/** Query options shared by all query methods */
+export type GraphQueryOptions = {
+  /**
+   * Enable or disable server-side caching for this request.
+   * Overrides the global `cache` setting in `GraphOptions`.
+   */
+  cache?: boolean;
+  /**
+   * Enable or disable stored (persisted) queries.
+   * When true, Graph stores the query so subsequent requests can use a hash instead of the full query.
+   * Overrides the global `stored` setting in `GraphOptions`.
+   * @default true
+   */
+  stored?: boolean;
+  /**
+   * Select which Graph engine version to query against.
+   * Used during smooth rebuilds to test the new index before switching.
+   * - `'Current'`: Query the active index (default)
+   * - `'New'`: Query the new index being rebuilt
+   * Overrides the global `slot` setting in `GraphOptions`.
+   */
+  slot?: GraphSlot;
+};
+
+export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
   host?: string;
 };
 
-export type GraphGetLinksOptions = {
+export type GraphGetLinksOptions = GraphQueryOptions & {
   host?: string;
   locales?: string[];
 };
@@ -245,12 +292,18 @@ export class GraphClient {
   graphUrl: string;
   maxFragmentThreshold: number;
   host?: string;
+  cache: boolean;
+  stored: boolean;
+  slot?: GraphSlot;
 
   constructor(key: string, options: GraphOptions = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
     this.host = options.host;
+    this.cache = options.cache ?? true;
+    this.stored = options.stored ?? true;
+    this.slot = options.slot;
   }
 
   /** Perform a GraphQL query with variables */
@@ -259,6 +312,8 @@ export class GraphClient {
     variables: any,
     previewToken?: string,
     cache: boolean = true,
+    stored: boolean = true,
+    slot?: GraphSlot,
   ): Promise<any> {
     const url = new URL(this.graphUrl);
 
@@ -269,12 +324,24 @@ export class GraphClient {
     // Append cache parameter to control caching behavior
     url.searchParams.append('cache', cache.toString());
 
+    // Append stored parameter for persisted queries
+    if (!stored) {
+      url.searchParams.append('stored', 'false');
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Authorization: previewToken ? `Bearer ${previewToken}` : '',
+    };
+
+    // Set slot header for smooth rebuild support
+    if (slot === 'New') {
+      headers['cg-query-new'] = 'true';
+    }
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: previewToken ? `Bearer ${previewToken}` : '',
-      },
+      headers,
       body: JSON.stringify({
         query,
         variables,
@@ -334,11 +401,17 @@ export class GraphClient {
   private async getContentMetaData(
     input: GraphVariables,
     previewToken?: string,
+    cache?: boolean,
+    stored?: boolean,
+    slot?: GraphSlot,
   ) {
     const data = await this.request(
       GET_CONTENT_METADATA_QUERY,
       input,
       previewToken,
+      cache ?? this.cache,
+      stored ?? this.stored,
+      slot ?? this.slot,
     );
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
@@ -387,8 +460,12 @@ export class GraphClient {
       variation: options?.variation,
     };
 
+    const useCache = options?.cache ?? this.cache;
+    const useStored = options?.stored ?? this.stored;
+    const useSlot = options?.slot ?? this.slot;
+
     const { contentTypeName, damEnabled } =
-      await this.getContentMetaData(input);
+      await this.getContentMetaData(input, undefined, useCache, useStored, useSlot);
 
     if (!contentTypeName) {
       return [];
@@ -400,7 +477,7 @@ export class GraphClient {
         damEnabled,
         this.maxFragmentThreshold,
       );
-      const response = (await this.request(query, input)) as ItemsResponse<T>;
+      const response = (await this.request(query, input, undefined, useCache, useStored, useSlot)) as ItemsResponse<T>;
 
       return response?._Content?.items.map(removeTypePrefix);
     } catch (error) {
@@ -459,9 +536,17 @@ export class GraphClient {
       };
     }
 
+    const useCache = options?.cache ?? this.cache;
+    const useStored = options?.stored ?? this.stored;
+    const useSlot = options?.slot ?? this.slot;
+
     const data = (await this.request(
       GET_PATH_QUERY,
       filter,
+      undefined,
+      useCache,
+      useStored,
+      useSlot,
     )) as GetLinksResponse;
 
     // Check if the page itself exist.
@@ -539,9 +624,17 @@ export class GraphClient {
       };
     }
 
+    const useCache = options?.cache ?? this.cache;
+    const useStored = options?.stored ?? this.stored;
+    const useSlot = options?.slot ?? this.slot;
+
     const data = (await this.request(
       GET_ITEMS_QUERY,
       filter,
+      undefined,
+      useCache,
+      useStored,
+      useSlot,
     )) as GetLinksResponse;
 
     // Check if the page itself exist.
@@ -560,6 +653,9 @@ export class GraphClient {
     const { contentTypeName, damEnabled } = await this.getContentMetaData(
       input,
       params.preview_token,
+      false, // Don't cache preview metadata
+      this.stored,
+      this.slot,
     );
 
     if (!contentTypeName) {
@@ -579,6 +675,8 @@ export class GraphClient {
       input,
       params.preview_token,
       false, // Don't cache preview content
+      this.stored,
+      this.slot,
     );
 
     return decorateWithContext(
@@ -691,11 +789,17 @@ export class GraphClient {
   async getContent(
     reference: GraphReference | string,
     previewToken?: string,
+    options?: GraphQueryOptions,
   ) {
     const ref =
       typeof reference === 'string'
         ? this.parseGraphReference(reference)
         : reference;
+
+    // When preview token is provided, default to no cache
+    const useCache = options?.cache ?? (previewToken ? false : this.cache);
+    const useStored = options?.stored ?? this.stored;
+    const useSlot = options?.slot ?? this.slot;
 
     const input: GraphVariables = {
       where: {
@@ -713,6 +817,9 @@ export class GraphClient {
     const { contentTypeName, damEnabled } = await this.getContentMetaData(
       input,
       previewToken,
+      useCache,
+      useStored,
+      useSlot,
     );
 
     if (!contentTypeName) {
@@ -730,7 +837,9 @@ export class GraphClient {
         query,
         input,
         previewToken,
-        !previewToken,
+        useCache,
+        useStored,
+        useSlot,
       );
 
       return removeTypePrefix(response?._Content?.item);

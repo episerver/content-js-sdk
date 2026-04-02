@@ -16,7 +16,7 @@ export {
   GraphGetLinksOptions,
   GraphVariationInput,
 } from './graph/index.js';
-export type { PreviewParams, GraphReference } from './graph/index.js';
+export type { PreviewParams, GraphReference, GraphQueryOptions, GraphSlot } from './graph/index.js';
 export {
   BlankSectionContentType,
   BlankExperienceContentType,
