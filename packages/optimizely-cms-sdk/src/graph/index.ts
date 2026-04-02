@@ -61,6 +61,10 @@ export type GraphGetLinksOptions = {
   locales?: string[];
 };
 
+export type GraphGetItemOptions = {
+  previewToken?: string;
+};
+
 export { GraphVariationInput };
 
 const GET_CONTENT_METADATA_QUERY = `
@@ -445,7 +449,7 @@ export class GraphClient {
       const ref = this.parseGraphReference(input);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(options?.locales),
+        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
       };
     } else if (typeof input === 'string') {
       filter = {
@@ -455,7 +459,7 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(input),
-        ...localeFilter(options?.locales),
+        ...localeFilter(options?.locales ?? (input.locale ? [input.locale] : undefined)),
       };
     }
 
@@ -525,7 +529,7 @@ export class GraphClient {
       const ref = this.parseGraphReference(input);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(options?.locales),
+        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
       };
     } else if (typeof input === 'string') {
       filter = {
@@ -535,7 +539,7 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(input),
-        ...localeFilter(options?.locales),
+        ...localeFilter(options?.locales ?? (input.locale ? [input.locale] : undefined)),
       };
     }
 
@@ -685,17 +689,19 @@ export class GraphClient {
    * const content = await client.getContent('graph://cms/Page/abc123?loc=en&ver=1.0');
    *
    * // With preview token
-   * const content = await client.getContent({ key: 'abc123', version: '1.0' }, 'preview-token');
+   * const content = await client.getContent({ key: 'abc123', version: '1.0' }, { previewToken: 'token' });
    * ```
    */
   async getContent(
     reference: GraphReference | string,
-    previewToken?: string,
+    options?: GraphGetItemOptions,
   ) {
     const ref =
       typeof reference === 'string'
         ? this.parseGraphReference(reference)
         : reference;
+
+    const previewToken = options?.previewToken;
 
     const input: GraphVariables = {
       where: {

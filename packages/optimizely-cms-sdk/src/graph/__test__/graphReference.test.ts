@@ -407,7 +407,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123', version: '1.0' }, previewToken);
+    await client.getContent({ key: 'abc123', version: '1.0' }, { previewToken });
 
     // Both requests should include preview token
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -533,7 +533,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123' }, 'preview-token');
+    await client.getContent({ key: 'abc123' }, { previewToken: 'preview-token' });
 
     // Second call should have cache = false (4th parameter)
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -587,6 +587,7 @@ describe('GraphClient.getPath() with GraphReference', () => {
             locale: { eq: 'en' },
           },
         },
+        locale: ['en'],
       },
     );
     expect(result).toHaveLength(3);
@@ -620,6 +621,7 @@ describe('GraphClient.getPath() with GraphReference', () => {
             locale: { eq: 'en' },
           },
         },
+        locale: ['en'],
       },
     );
   });
@@ -734,6 +736,7 @@ describe('GraphClient.getItems() with GraphReference', () => {
             locale: { eq: 'en' },
           },
         },
+        locale: ['en'],
       },
     );
     expect(result).toHaveLength(2);
@@ -764,6 +767,7 @@ describe('GraphClient.getItems() with GraphReference', () => {
             locale: { eq: 'en' },
           },
         },
+        locale: ['en'],
       },
     );
   });
