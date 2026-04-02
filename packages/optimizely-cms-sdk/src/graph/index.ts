@@ -819,6 +819,7 @@ export function configureGraph(config: GraphConfig) {
  *
  * The graph configuration must be set first using configureGraph().
  *
+ * @param overrideOptions - Optional GraphOptions to override the global configuration
  * @returns A configured GraphClient instance
  * @throws Error if graph configuration is not set
  *
@@ -838,9 +839,12 @@ export function configureGraph(config: GraphConfig) {
  *
  * const client = getClient();
  * const content = await client.getContentByPath('/my-page/');
+ *
+ * // Or override config for specific use cases
+ * const customClient = getClient({ host: 'custom.example.com' });
  * ```
  */
-export function getClient(): GraphClient {
+export function getClient(overrideOptions?: GraphOptions): GraphClient {
   if (!globalGraphConfig) {
     throw new Error(
       'Graph configuration is not set. Call configureGraph() in your root layout first.',
@@ -851,6 +855,7 @@ export function getClient(): GraphClient {
     graphUrl: globalGraphConfig.graphUrl,
     host: globalGraphConfig.host,
     maxFragmentThreshold: globalGraphConfig.maxFragmentThreshold,
+    ...overrideOptions,
   };
 
   return new GraphClient(globalGraphConfig.key, options);
