@@ -102,6 +102,31 @@ export function localeFilter(locale?: string[]): ContentInput {
 }
 
 /**
+ * Creates a {@linkcode ContentInput} object that filters by GraphReference (key, locale, version).
+ *
+ * @param reference - GraphReference object containing key and optional parameters
+ * @returns A `ContentInput` object with a `where` clause filtering by the reference
+ */
+export function referenceFilter(reference: {
+  key: string;
+  locale?: string;
+  version?: string;
+}): ContentInput {
+  return {
+    where: {
+      _metadata: {
+        key: { eq: reference.key },
+        ...(reference.version
+          ? { version: { eq: reference.version } }
+          : reference.locale
+            ? { locale: { eq: reference.locale } }
+            : {}),
+      },
+    },
+  };
+}
+
+/**
  * Arguments for querying content via the Graph API.
  */
 export type ContentInput = {
