@@ -259,12 +259,6 @@ export class GraphClient {
   host?: string;
 
   constructor(key: string, options: GraphOptions = {}) {
-    if (!key || typeof key !== 'string' || key.trim().length === 0) {
-      throw new OptimizelyGraphError(
-        'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
-          'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
-      );
-    }
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
@@ -463,7 +457,9 @@ export class GraphClient {
       const ref = this.parseGraphReference(input);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (ref.locale ? [ref.locale] : undefined),
+        ),
       };
     } else if (typeof input === 'string') {
       filter = {
@@ -473,7 +469,9 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(input),
-        ...localeFilter(options?.locales ?? (input.locale ? [input.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (input.locale ? [input.locale] : undefined),
+        ),
       };
     }
 
@@ -543,7 +541,9 @@ export class GraphClient {
       const ref = this.parseGraphReference(input);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (ref.locale ? [ref.locale] : undefined),
+        ),
       };
     } else if (typeof input === 'string') {
       filter = {
@@ -553,7 +553,9 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(input),
-        ...localeFilter(options?.locales ?? (input.locale ? [input.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (input.locale ? [input.locale] : undefined),
+        ),
       };
     }
 
@@ -822,7 +824,7 @@ export function configureGraph(config: GraphConfig) {
     typeof config.key !== 'string' ||
     config.key.trim().length === 0
   ) {
-    throw new Error(
+    throw new OptimizelyGraphError(
       'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
         'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
     );
@@ -862,7 +864,7 @@ export function configureGraph(config: GraphConfig) {
  */
 export function getClient(overrideOptions?: GraphOptions): GraphClient {
   if (!globalGraphConfig) {
-    throw new Error(
+    throw new OptimizelyGraphError(
       'Graph configuration is not set. Call configureGraph() in your root layout first.',
     );
   }

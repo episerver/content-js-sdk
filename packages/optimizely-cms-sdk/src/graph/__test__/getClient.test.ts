@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from 'vitest';
+import { describe, expect, test, beforeEach, vi } from 'vitest';
 import {
   configureGraph,
   getClient,
@@ -32,11 +32,21 @@ describe('getClient - Critical Edge Cases', () => {
     });
   });
 
-  describe('CRITICAL: configureGraph not defined', () => {
-    test('should have error handling when config is not set', () => {
-      // Verify the error message exists in the implementation
-      expect(getClient.toString()).toContain('Graph configuration is not set');
-      expect(getClient.toString()).toContain('configureGraph()');
+  describe('CRITICAL: getClient called without configureGraph', () => {
+    test('should throw error when getClient() is called without configureGraph()', async () => {
+      // Reset module state to clear globalGraphConfig
+      vi.resetModules();
+
+      // Dynamically import to get fresh module state
+      const { getClient: freshGetClient } = await import('../index.js');
+
+      expect(() => {
+        freshGetClient();
+      }).toThrow('Graph configuration is not set');
+
+      expect(() => {
+        freshGetClient();
+      }).toThrow('Call configureGraph() in your root layout first');
     });
   });
 
