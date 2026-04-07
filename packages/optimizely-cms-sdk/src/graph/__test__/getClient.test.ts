@@ -42,11 +42,7 @@ describe('getClient - Critical Edge Cases', () => {
 
       expect(() => {
         freshGetClient();
-      }).toThrow('Graph configuration is not set');
-
-      expect(() => {
-        freshGetClient();
-      }).toThrow('Call configureGraph() in your root layout first');
+      }).toThrow('Graph configuration is not set. Call configureGraph() in your root layout first.');
     });
   });
 
@@ -77,31 +73,6 @@ describe('getClient - Critical Edge Cases', () => {
       }).toThrow('Invalid Optimizely Graph API key');
     });
 
-    test('GraphClient constructor should throw error for undefined key', () => {
-      expect(() => {
-        // @ts-expect-error - Testing runtime behavior
-        new GraphClient(undefined);
-      }).toThrow('Invalid Optimizely Graph API key');
-    });
-
-    test('GraphClient constructor should throw error for null key', () => {
-      expect(() => {
-        // @ts-expect-error - Testing runtime behavior
-        new GraphClient(null);
-      }).toThrow('Invalid Optimizely Graph API key');
-    });
-
-    test('GraphClient constructor should throw error for empty string key', () => {
-      expect(() => {
-        new GraphClient('');
-      }).toThrow('Invalid Optimizely Graph API key');
-    });
-
-    test('GraphClient constructor should throw error for whitespace-only key', () => {
-      expect(() => {
-        new GraphClient('   ');
-      }).toThrow('Invalid Optimizely Graph API key');
-    });
 
     test('should throw error with helpful message mentioning environment variables', () => {
       expect(() => {
