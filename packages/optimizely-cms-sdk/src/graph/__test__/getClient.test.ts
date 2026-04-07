@@ -40,42 +40,64 @@ describe('getClient - Critical Edge Cases', () => {
     });
   });
 
-  describe('CRITICAL: undefined/null key', () => {
-    test('should accept empty string as key', () => {
-      configureGraph({ key: '' });
-      const client = getClient();
-
-      expect(client.key).toBe('');
+  describe('CRITICAL: undefined/null key validation', () => {
+    test('should throw error for empty string key in configureGraph', () => {
+      expect(() => {
+        configureGraph({ key: '' });
+      }).toThrow('Invalid Optimizely Graph API key');
     });
 
-    test('should handle undefined key (runtime behavior)', () => {
-      // @ts-expect-error - Testing runtime behavior
-      configureGraph({ key: undefined });
-      const client = getClient();
-
-      expect(client.key).toBeUndefined();
+    test('should throw error for whitespace-only key in configureGraph', () => {
+      expect(() => {
+        configureGraph({ key: '   ' });
+      }).toThrow('Invalid Optimizely Graph API key');
     });
 
-    test('should handle null key (runtime behavior)', () => {
-      // @ts-expect-error - Testing runtime behavior
-      configureGraph({ key: null });
-      const client = getClient();
-
-      expect(client.key).toBeNull();
+    test('should throw error for undefined key in configureGraph (runtime behavior)', () => {
+      expect(() => {
+        // @ts-expect-error - Testing runtime behavior
+        configureGraph({ key: undefined });
+      }).toThrow('Invalid Optimizely Graph API key');
     });
 
-    test('GraphClient constructor should accept undefined key', () => {
-      // @ts-expect-error - Testing runtime behavior
-      const client = new GraphClient(undefined);
-
-      expect(client.key).toBeUndefined();
+    test('should throw error for null key in configureGraph (runtime behavior)', () => {
+      expect(() => {
+        // @ts-expect-error - Testing runtime behavior
+        configureGraph({ key: null });
+      }).toThrow('Invalid Optimizely Graph API key');
     });
 
-    test('GraphClient constructor should accept null key', () => {
-      // @ts-expect-error - Testing runtime behavior
-      const client = new GraphClient(null);
+    test('GraphClient constructor should throw error for undefined key', () => {
+      expect(() => {
+        // @ts-expect-error - Testing runtime behavior
+        new GraphClient(undefined);
+      }).toThrow('Invalid Optimizely Graph API key');
+    });
 
-      expect(client.key).toBeNull();
+    test('GraphClient constructor should throw error for null key', () => {
+      expect(() => {
+        // @ts-expect-error - Testing runtime behavior
+        new GraphClient(null);
+      }).toThrow('Invalid Optimizely Graph API key');
+    });
+
+    test('GraphClient constructor should throw error for empty string key', () => {
+      expect(() => {
+        new GraphClient('');
+      }).toThrow('Invalid Optimizely Graph API key');
+    });
+
+    test('GraphClient constructor should throw error for whitespace-only key', () => {
+      expect(() => {
+        new GraphClient('   ');
+      }).toThrow('Invalid Optimizely Graph API key');
+    });
+
+    test('should throw error with helpful message mentioning environment variables', () => {
+      expect(() => {
+        // @ts-expect-error - Testing runtime behavior
+        configureGraph({ key: undefined });
+      }).toThrow('process.env.OPTIMIZELY_GRAPH_SINGLE_KEY');
     });
   });
 

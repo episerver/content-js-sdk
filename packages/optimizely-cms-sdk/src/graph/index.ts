@@ -259,6 +259,12 @@ export class GraphClient {
   host?: string;
 
   constructor(key: string, options: GraphOptions = {}) {
+    if (!key || typeof key !== 'string' || key.trim().length === 0) {
+      throw new OptimizelyGraphError(
+        'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
+          'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
+      );
+    }
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
@@ -811,6 +817,16 @@ export function getGraphConfig(): GraphConfig | null {
  * ```
  */
 export function configureGraph(config: GraphConfig) {
+  if (
+    !config.key ||
+    typeof config.key !== 'string' ||
+    config.key.trim().length === 0
+  ) {
+    throw new Error(
+      'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
+        'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
+    );
+  }
   setGraphConfig(config);
 }
 
