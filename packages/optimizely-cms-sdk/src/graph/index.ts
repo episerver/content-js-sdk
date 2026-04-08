@@ -336,9 +336,7 @@ export class GraphClient {
     // Append cache parameter to control caching behavior
     url.searchParams.append('cache', cache.toString());
 
-    if (!stored) {
-      url.searchParams.append('stored', 'false');
-    }
+    url.searchParams.append('stored', stored.toString());
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
