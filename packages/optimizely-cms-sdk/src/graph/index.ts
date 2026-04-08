@@ -873,7 +873,7 @@ export function getClient(overrideOptions?: GraphOptions): GraphClient {
     graphUrl: globalGraphConfig.graphUrl,
     host: globalGraphConfig.host,
     maxFragmentThreshold: globalGraphConfig.maxFragmentThreshold,
-    ...overrideOptions,
+    ...(overrideOptions ?? {}),
   };
 
   return new GraphClient(globalGraphConfig.key, options);
