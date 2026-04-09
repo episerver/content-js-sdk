@@ -22,6 +22,8 @@ export type {
   PreviewParams,
   GraphReference,
   GraphGetItemOptions,
+  GraphQueryOptions,
+  GraphSlot,
 } from './graph/index.js';
 export {
   BlankSectionContentType,
