@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import {
   BlankExperienceContentType,
   initContentTypeRegistry,
-  configureGraph,
+  config,
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 // Configure Optimizely Graph client
-configureGraph({
+config({
   key: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
 });

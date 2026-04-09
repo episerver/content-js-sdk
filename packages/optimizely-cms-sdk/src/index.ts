@@ -16,7 +16,7 @@ export {
   GraphGetLinksOptions,
   GraphVariationInput,
   getClient,
-  configureGraph,
+  config,
 } from './graph/index.js';
 export type {
   PreviewParams,
