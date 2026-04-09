@@ -20,15 +20,21 @@ import {
 } from './filters.js';
 import { setContext } from '../context/config.js';
 
-/** Options for Graph */
+/** Configuration for initializing the Optimizely Graph Client */
 export type GraphOptions = {
-  /** Graph instance URL. `https://cg.optimizely.com/content/v2` */
+  /** Your Optimizely Graph API key */
+  key: string;
+  /** Optional custom Graph URL (defaults to production: https://cg.optimizely.com/content/v2) */
   graphUrl?: string;
+  /** Optional default host for path filtering */
+  host?: string;
   /** Default maximum fragment threshold for GraphQL queries (default: 100) */
   maxFragmentThreshold?: number;
-  /** Default application host for path filtering */
-  host?: string;
 };
+
+
+// Global configuration for client factory
+let globalGraphConfig: GraphOptions | null = null;
 
 export type PreviewParams = {
   preview_token: string;
@@ -250,7 +256,8 @@ export class GraphClient {
   maxFragmentThreshold: number;
   host?: string;
 
-  constructor(key: string, options: GraphOptions = {}) {
+  // The key is required, other options have defaults or can be set globally
+  constructor(key: string, options: Omit<GraphOptions, 'key'> = {}) {
     this.key = key;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
@@ -449,7 +456,9 @@ export class GraphClient {
       const ref = this.parseGraphReference(input);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (ref.locale ? [ref.locale] : undefined),
+        ),
       };
     } else if (typeof input === 'string') {
       filter = {
@@ -459,7 +468,9 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(input),
-        ...localeFilter(options?.locales ?? (input.locale ? [input.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (input.locale ? [input.locale] : undefined),
+        ),
       };
     }
 
@@ -529,7 +540,9 @@ export class GraphClient {
       const ref = this.parseGraphReference(input);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (ref.locale ? [ref.locale] : undefined),
+        ),
       };
     } else if (typeof input === 'string') {
       filter = {
@@ -539,7 +552,9 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(input),
-        ...localeFilter(options?.locales ?? (input.locale ? [input.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (input.locale ? [input.locale] : undefined),
+        ),
       };
     }
 
@@ -758,4 +773,105 @@ export class GraphClient {
       throw error;
     }
   }
+}
+
+/**
+ * Sets the global graph configuration to be used by getClient()
+ * @internal This is called automatically when config is called
+ */
+function setGraphConfig(config: GraphOptions | undefined) {
+  if (config) {
+    globalGraphConfig = config;
+  }
+}
+
+/**
+ * Gets the global graph configuration
+ * @internal
+ */
+export function getGraphConfig(): GraphOptions | null {
+  return globalGraphConfig;
+}
+
+/**
+ * Configure the Optimizely Graph client with your settings.
+ *
+ * Call this function once at the start of your application.
+ * After configuration, you can use getClient() anywhere in your app.
+ *
+ * @param config - The graph configuration object with your API key and optional settings
+ *
+ * @example
+ * ```tsx
+ * // In your root layout or app entry point
+ * import { config } from '@optimizely/cms-sdk';
+ *
+ * config({
+ *   key: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+ *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
+ *   host: 'example.com', // optional
+ * });
+ *
+ * export default function RootLayout({ children }) {
+ *   return <html><body>{children}</body></html>;
+ * }
+ * ```
+ */
+export function config(options: GraphOptions) {
+  if (
+    !options.key ||
+    typeof options.key !== 'string' ||
+    options.key.trim().length === 0
+  ) {
+    throw new OptimizelyGraphError(
+      'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
+        'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
+    );
+  }
+  setGraphConfig(options);
+}
+
+/**
+ * Creates and returns a GraphClient instance using the global configuration.
+ *
+ * The graph configuration must be set first using config().
+ *
+ * @param overrideOptions - Optional GraphOptions to override the global configuration
+ * @returns A configured GraphClient instance
+ * @throws Error if graph configuration is not set
+ *
+ * @example
+ * ```ts
+ * // In your root layout (e.g., layout.tsx)
+ * import { config } from '@optimizely/cms-sdk';
+ *
+ * config({
+ *   key: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+ *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
+ *   host: 'example.com', // optional
+ * });
+ *
+ * // In your components
+ * import { getClient } from '@optimizely/cms-sdk';
+ *
+ * const client = getClient();
+ * const content = await client.getContentByPath('/my-page/');
+ *
+ * // Or override config for specific use cases
+ * const customClient = getClient({ host: 'custom.example.com' });
+ * ```
+ */
+export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient {
+  if (!globalGraphConfig) {
+    throw new OptimizelyGraphError(
+      'Graph configuration is not set. Call config() in your root layout first.',
+    );
+  }
+
+  const options: GraphOptions = {
+    ...globalGraphConfig,
+    ...(overrideOptions ?? {}),
+  };
+
+  return new GraphClient(options.key, options);
 }

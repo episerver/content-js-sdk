@@ -1,4 +1,4 @@
-import { GraphClient } from '@optimizely/cms-sdk';
+import { getClient } from '@optimizely/cms-sdk';
 
 interface FooterLink {
   label: string;
@@ -10,17 +10,14 @@ interface FooterSection {
   links: FooterLink[];
 }
 
-interface FooterProps {
-  client: GraphClient;
-}
-
 const mapToLinks = (items: any[] | null) =>
   items?.map((item: any) => ({
     label: item._metadata?.displayName,
     href: item._metadata?.url?.hierarchical,
   })) ?? [];
 
-async function Footer({ client }: FooterProps) {
+async function Footer() {
+  const client = getClient();
   const [products, company, newsEvents] = await Promise.all([
     client.getItems('/en/'),
     client.getItems('/en/about-us'),

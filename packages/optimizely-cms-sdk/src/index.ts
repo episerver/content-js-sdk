@@ -15,8 +15,14 @@ export {
   GraphGetContentOptions,
   GraphGetLinksOptions,
   GraphVariationInput,
+  getClient,
+  config,
 } from './graph/index.js';
-export type { PreviewParams, GraphReference, GraphGetItemOptions } from './graph/index.js';
+export type {
+  PreviewParams,
+  GraphReference,
+  GraphGetItemOptions,
+} from './graph/index.js';
 export {
   BlankSectionContentType,
   BlankExperienceContentType,
