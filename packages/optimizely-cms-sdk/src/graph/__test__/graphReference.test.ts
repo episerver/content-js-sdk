@@ -225,7 +225,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
   });
@@ -266,7 +265,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
   });
@@ -306,7 +304,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       },
       undefined,
-      true,
       true,
       undefined,
     );
@@ -353,7 +350,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
 
@@ -398,7 +394,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
   });
@@ -435,7 +430,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(Object),
       previewToken,
       false,
-      true,
       undefined,
     );
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -444,7 +438,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(Object),
       previewToken,
       false, // Don't cache preview content
-      true,
       undefined,
     );
   });
@@ -533,7 +526,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(Object),
       undefined,
       true, // Cache enabled for non-preview
-      true,
       undefined,
     );
   });
@@ -568,113 +560,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(Object),
       'preview-token',
       false, // Cache disabled for preview
-      true,
-      undefined,
-    );
-  });
-
-  test('stored parameter defaults to true', async () => {
-    mockRequest
-      .mockResolvedValueOnce({
-        _Content: {
-          item: {
-            _metadata: {
-              types: ['Page'],
-            },
-          },
-        },
-        damAssetType: null,
-      })
-      .mockResolvedValueOnce({
-        _Content: {
-          item: {
-            __typename: 'Page',
-            Page__title: 'Test Page',
-          },
-        },
-      });
-
-    await client.getContent({ key: 'abc123' });
-
-    // stored (5th parameter) should default to true
-    expect(mockRequest).toHaveBeenNthCalledWith(
-      2,
-      expect.any(String),
-      expect.any(Object),
-      undefined,
-      true,
-      true, // stored defaults to true
-      undefined,
-    );
-  });
-
-  test('stored parameter can be overridden per request', async () => {
-    mockRequest
-      .mockResolvedValueOnce({
-        _Content: {
-          item: {
-            _metadata: {
-              types: ['Page'],
-            },
-          },
-        },
-        damAssetType: null,
-      })
-      .mockResolvedValueOnce({
-        _Content: {
-          item: {
-            __typename: 'Page',
-            Page__title: 'Test Page',
-          },
-        },
-      });
-
-    await client.getContent({ key: 'abc123' }, { stored: false });
-
-    expect(mockRequest).toHaveBeenNthCalledWith(
-      2,
-      expect.any(String),
-      expect.any(Object),
-      undefined,
-      true,
-      false, // stored overridden to false
-      undefined,
-    );
-  });
-
-  test('stored parameter inherits from global config', async () => {
-    const customClient = new GraphClient('test-key', { stored: false });
-    const customMockRequest = vi.spyOn(customClient, 'request');
-
-    customMockRequest
-      .mockResolvedValueOnce({
-        _Content: {
-          item: {
-            _metadata: {
-              types: ['Page'],
-            },
-          },
-        },
-        damAssetType: null,
-      })
-      .mockResolvedValueOnce({
-        _Content: {
-          item: {
-            __typename: 'Page',
-            Page__title: 'Test Page',
-          },
-        },
-      });
-
-    await customClient.getContent({ key: 'abc123' });
-
-    expect(customMockRequest).toHaveBeenNthCalledWith(
-      2,
-      expect.any(String),
-      expect.any(Object),
-      undefined,
-      true,
-      false, // inherited from global config
       undefined,
     );
   });
@@ -709,7 +594,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(Object),
       undefined,
       true,
-      true,
       undefined, // no slot = Current (default)
     );
   });
@@ -743,7 +627,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(String),
       expect.any(Object),
       undefined,
-      true,
       true,
       'New', // slot set to New for smooth rebuild
     );
@@ -781,7 +664,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(Object),
       undefined,
       true,
-      true,
       'New', // inherited from global config
     );
   });
@@ -789,7 +671,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
   test('per-request options override global config for all query options', async () => {
     const customClient = new GraphClient('test-key', {
       cache: true,
-      stored: true,
       slot: undefined,
     });
     const customMockRequest = vi.spyOn(customClient, 'request');
@@ -816,7 +697,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
 
     await customClient.getContent({ key: 'abc123' }, {
       cache: false,
-      stored: false,
       slot: 'New',
     });
 
@@ -826,7 +706,6 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(Object),
       undefined,
       false, // cache overridden
-      false, // stored overridden
       'New', // slot overridden
     );
   });
@@ -877,7 +756,6 @@ describe('GraphClient.getPath() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
     expect(result).toHaveLength(3);
@@ -915,7 +793,6 @@ describe('GraphClient.getPath() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
   });
@@ -947,7 +824,6 @@ describe('GraphClient.getPath() with GraphReference', () => {
         },
       },
       undefined,
-      true,
       true,
       undefined,
     );
@@ -993,7 +869,7 @@ describe('GraphClient.getPath() with GraphReference', () => {
         },
       },
       locale: ['en', 'sv'],
-    }, undefined, true, true, undefined);
+    }, undefined, true, undefined);
   });
 });
 
@@ -1038,7 +914,6 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
     expect(result).toHaveLength(2);
@@ -1073,7 +948,6 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
       undefined,
       true,
-      true,
       undefined,
     );
   });
@@ -1102,7 +976,6 @@ describe('GraphClient.getItems() with GraphReference', () => {
         },
       },
       undefined,
-      true,
       true,
       undefined,
     );
@@ -1145,7 +1018,7 @@ describe('GraphClient.getItems() with GraphReference', () => {
         },
       },
       locale: ['en', 'sv'],
-    }, undefined, true, true, undefined);
+    }, undefined, true, undefined);
   });
 
   test('returns items with metadata', async () => {
@@ -1204,8 +1077,8 @@ describe('GraphClient.getPreviewContent() query options', () => {
     mockRequest = vi.spyOn(client, 'request');
   });
 
-  test('uses global stored and slot by default', async () => {
-    const customClient = new GraphClient('test-key', { stored: false, slot: 'New' });
+  test('uses global slot by default', async () => {
+    const customClient = new GraphClient('test-key', { slot: 'New' });
     const customMockRequest = vi.spyOn(customClient, 'request');
 
     customMockRequest
@@ -1228,13 +1101,12 @@ describe('GraphClient.getPreviewContent() query options', () => {
 
     await customClient.getPreviewContent(previewParams);
 
-    // Both calls should use global config: cache=false, stored=false, slot='New'
+    // Both calls should use global config: cache=false, slot='New'
     expect(customMockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
       expect.any(Object),
       'test-token',
-      false,
       false,
       'New',
     );
@@ -1243,7 +1115,6 @@ describe('GraphClient.getPreviewContent() query options', () => {
       expect.any(String),
       expect.any(Object),
       'test-token',
-      false,
       false,
       'New',
     );
@@ -1268,7 +1139,7 @@ describe('GraphClient.getPreviewContent() query options', () => {
         },
       });
 
-    await client.getPreviewContent(previewParams, { stored: false, slot: 'New' });
+    await client.getPreviewContent(previewParams, { slot: 'New' });
 
     expect(mockRequest).toHaveBeenNthCalledWith(
       2,
@@ -1276,7 +1147,6 @@ describe('GraphClient.getPreviewContent() query options', () => {
       expect.any(Object),
       'test-token',
       false,
-      false, // stored overridden
       'New', // slot overridden
     );
   });
@@ -1309,7 +1179,6 @@ describe('GraphClient.getPreviewContent() query options', () => {
       expect.any(Object),
       'test-token',
       false, // always false for preview
-      true,
       undefined,
     );
   });
