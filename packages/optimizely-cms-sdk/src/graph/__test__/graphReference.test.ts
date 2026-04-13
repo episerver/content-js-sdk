@@ -671,7 +671,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
   test('per-request options override global config for all query options', async () => {
     const customClient = new GraphClient('test-key', {
       cache: true,
-      slot: undefined,
+      slot: 'Current',
     });
     const customMockRequest = vi.spyOn(customClient, 'request');
 
@@ -1121,7 +1121,10 @@ describe('GraphClient.getPreviewContent() query options', () => {
   });
 
   test('per-request options override global config', async () => {
-    mockRequest
+    const customClient = new GraphClient('test-key', { slot: 'Current' });
+    const customMockRequest = vi.spyOn(customClient, 'request');
+
+    customMockRequest
       .mockResolvedValueOnce({
         _Content: {
           item: {
@@ -1139,9 +1142,9 @@ describe('GraphClient.getPreviewContent() query options', () => {
         },
       });
 
-    await client.getPreviewContent(previewParams, { slot: 'New' });
+    await customClient.getPreviewContent(previewParams, { slot: 'New' });
 
-    expect(mockRequest).toHaveBeenNthCalledWith(
+    expect(customMockRequest).toHaveBeenNthCalledWith(
       2,
       expect.any(String),
       expect.any(Object),
