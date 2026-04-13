@@ -37,13 +37,6 @@ export type GraphOptions = {
    */
   cache?: boolean;
   /**
-   * Enable or disable stored (persisted) queries for all requests.
-   * Only store queries that are not dynamic. If the query is dynamic, it must use variables if it should be stored.
-   * Can be overridden per request.
-   * @default true
-   */
-  stored?: boolean;
-  /**
    * Select which Graph index to query against for all requests.
    * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
    * - `'Current'`: Query the current active index (default)
@@ -88,13 +81,6 @@ export type GraphQueryOptions = {
    * Overrides the global `cache` setting in `GraphOptions`.
    */
   cache?: boolean;
-  /**
-   * Enable or disable stored queries.
-   * When true, Graph stores the query so subsequent requests can use a hash instead of the full query.
-   * Overrides the global `stored` setting in `GraphOptions`.
-   * @default true
-   */
-  stored?: boolean;
   /**
    * Select which Graph index to query against.
    * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
@@ -304,7 +290,6 @@ export class GraphClient {
   maxFragmentThreshold: number;
   host?: string;
   cache: boolean;
-  stored: boolean;
   slot?: GraphSlot;
 
   // The key is required, other options have defaults or can be set globally
@@ -314,7 +299,6 @@ export class GraphClient {
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
     this.host = options.host;
     this.cache = options.cache ?? true;
-    this.stored = options.stored ?? true;
     this.slot = options.slot;
   }
 
@@ -324,7 +308,6 @@ export class GraphClient {
     variables: any,
     previewToken?: string,
     cache: boolean = true,
-    stored: boolean = true,
     slot?: GraphSlot,
   ): Promise<any> {
     const url = new URL(this.graphUrl);
@@ -335,8 +318,6 @@ export class GraphClient {
 
     // Append cache parameter to control caching behavior
     url.searchParams.append('cache', cache.toString());
-
-    url.searchParams.append('stored', stored.toString());
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -410,7 +391,6 @@ export class GraphClient {
     input: GraphVariables,
     previewToken?: string,
     cache?: boolean,
-    stored?: boolean,
     slot?: GraphSlot,
   ) {
     const data = await this.request(
@@ -418,7 +398,6 @@ export class GraphClient {
       input,
       previewToken,
       cache ?? this.cache,
-      stored ?? this.stored,
       slot ?? this.slot,
     );
 
@@ -469,11 +448,10 @@ export class GraphClient {
     };
 
     const cacheEnabled = options?.cache ?? this.cache;
-    const storedEnabled = options?.stored ?? this.stored;
     const activeSlot = options?.slot ?? this.slot;
 
     const { contentTypeName, damEnabled } =
-      await this.getContentMetaData(input, undefined, cacheEnabled, storedEnabled, activeSlot);
+      await this.getContentMetaData(input, undefined, cacheEnabled, activeSlot);
 
     if (!contentTypeName) {
       return [];
@@ -485,7 +463,7 @@ export class GraphClient {
         damEnabled,
         this.maxFragmentThreshold,
       );
-      const response = (await this.request(query, input, undefined, cacheEnabled, storedEnabled, activeSlot)) as ItemsResponse<T>;
+      const response = (await this.request(query, input, undefined, cacheEnabled, activeSlot)) as ItemsResponse<T>;
 
       return response?._Content?.items.map(removeTypePrefix);
     } catch (error) {
@@ -549,7 +527,6 @@ export class GraphClient {
     }
 
     const cacheEnabled = options?.cache ?? this.cache;
-    const storedEnabled = options?.stored ?? this.stored;
     const activeSlot = options?.slot ?? this.slot;
 
     const data = (await this.request(
@@ -557,7 +534,6 @@ export class GraphClient {
       filter,
       undefined,
       cacheEnabled,
-      storedEnabled,
       activeSlot,
     )) as GetLinksResponse;
 
@@ -641,7 +617,6 @@ export class GraphClient {
     }
 
     const cacheEnabled = options?.cache ?? this.cache;
-    const storedEnabled = options?.stored ?? this.stored;
     const activeSlot = options?.slot ?? this.slot;
 
     const data = (await this.request(
@@ -649,7 +624,6 @@ export class GraphClient {
       filter,
       undefined,
       cacheEnabled,
-      storedEnabled,
       activeSlot,
     )) as GetLinksResponse;
 
@@ -666,14 +640,12 @@ export class GraphClient {
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
     const input = previewFilter(params);
-    const storedEnabled = options?.stored ?? this.stored;
     const activeSlot = options?.slot ?? this.slot;
 
     const { contentTypeName, damEnabled } = await this.getContentMetaData(
       input,
       params.preview_token,
       false,
-      storedEnabled,
       activeSlot,
     );
 
@@ -705,7 +677,6 @@ export class GraphClient {
       input,
       params.preview_token,
       false,
-      storedEnabled,
       activeSlot,
     );
 
@@ -828,7 +799,6 @@ export class GraphClient {
     const previewToken = options?.previewToken;
 
     const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
-    const storedEnabled = options?.stored ?? this.stored;
     const activeSlot = options?.slot ?? this.slot;
 
     const input: GraphVariables = {
@@ -848,7 +818,6 @@ export class GraphClient {
       input,
       previewToken,
       cacheEnabled,
-      storedEnabled,
       activeSlot,
     );
 
@@ -868,7 +837,6 @@ export class GraphClient {
         input,
         previewToken,
         cacheEnabled,
-        storedEnabled,
         activeSlot,
       );
 
