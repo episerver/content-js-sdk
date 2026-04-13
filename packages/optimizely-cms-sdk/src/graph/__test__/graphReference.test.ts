@@ -175,10 +175,11 @@ describe('GraphClient.getContent() with GraphReference', () => {
     // Initialize content type registry with a test Page type
     const pageType = contentType({
       key: 'Page',
+      displayName: 'Page',
       baseType: '_page',
       properties: {
-        title: { type: 'string' },
-        content: { type: 'string' },
+        title: { type: 'string', displayName: 'Title' },
+        content: { type: 'string', displayName: 'Content' },
       },
     });
     initContentTypeRegistry([pageType]);
