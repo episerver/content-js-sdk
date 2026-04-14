@@ -175,11 +175,11 @@ The specific implementation details will vary based on your framework's routing 
 
 With live preview configured, editors can see their changes instantly before publishing, improving the content editing workflow and reducing errors.
 
-To enhance the preview experience further, consider exploring the **Using Preview Utils in Components** section below to enable on-page editing capabilities.
+To enhance the preview experience further, consider exploring the **Using Preview Utils in Components** section below to enable click-to-edit functionality in preview mode.
 
 ## Using Preview Utils in Components
 
-To implement on-page editing functionality in your code, you need to add preview attributes to your HTML or JSX elements using the `getPreviewUtils` utility. These attributes enable the click-to-edit behavior that allows content editors to navigate directly from the preview to the corresponding field in the CMS editor.
+To enable click-to-edit functionality in preview mode, you need to add preview attributes to your HTML or JSX elements using the `getPreviewUtils` utility. These attributes allow content editors to click on elements in the preview and navigate directly to the corresponding field or property in the CMS editor.
 
 ![Live Preview with preview utils](https://files.readme.io/23b3c20-image.png)
 
@@ -241,11 +241,11 @@ export default function AboutUs({ content }: AboutUsProps) {
 
 **Key functions:**
 
-- **`pa('propertyName')`** - Spreads preview attributes onto elements to enable on-page editing. Use this for all content properties (text, rich text, images, etc.). The property name must match your content type definition.
+- **`pa('propertyName')`** - Spreads preview attributes onto elements to enable click-to-edit functionality in preview mode. Use this for all content properties (text, rich text, images, etc.). The property name must match your content type definition.
 - **`src(reference)`** - Resolves content reference URLs correctly in both preview and published states.
 
 > [!NOTE]
-> Apply `pa()` to all content properties to enable the full on-page editing experience. This allows editors to click elements in the preview and jump directly to the corresponding field in the CMS.
+> Apply `pa()` to all content properties to enable the full click-to-edit experience. This allows editors to click elements in the preview and navigate directly to the corresponding field or property in the CMS.
 
 ## Accessing Context Data in Components
 
