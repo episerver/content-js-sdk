@@ -43,7 +43,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   private async fetchManifest(host?: string) {
     const restClient = await createApiClient(host);
     const { data, error, response } = await restClient.GET(
-      '/experimental/packages',
+      '/manifest',
     );
     // Non-2xx responses have undefined data; check error/response instead
     if (error || (response && !response.ok)) {

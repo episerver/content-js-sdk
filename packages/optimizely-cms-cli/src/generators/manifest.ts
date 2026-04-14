@@ -1,7 +1,7 @@
 /**
  * Manifest Types - API Wire Format
  *
- * These types represent the JSON structure for POST/GET /experimental/packages.
+ * These types represent the JSON structure for POST/GET /manifest.
  * They're based on SDK types but adapted for the generator's expectations.
  */
 

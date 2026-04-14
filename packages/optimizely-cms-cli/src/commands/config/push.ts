@@ -125,7 +125,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const spinner = ora('Uploading configuration file').start();
 
-    const response = await restClient.POST('/experimental/packages', {
+    const response = await restClient.POST('/manifest', {
       headers: {
         accept: 'application/json',
         'content-type': 'application/vnd.optimizely.cms.v1.manifest+json',
