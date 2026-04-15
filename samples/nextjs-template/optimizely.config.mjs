@@ -19,4 +19,11 @@ export default buildConfig({
       sortOrder: 3,
     },
   ],
+  applications: [
+    {
+      displayName: 'Next.js Template',
+      type: 'website',
+      entryPoint: './src/app/page.tsx',
+    },
+  ],
 });

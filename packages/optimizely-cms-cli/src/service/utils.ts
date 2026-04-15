@@ -13,6 +13,11 @@ import {
 import chalk from 'chalk';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  ApplicationHostType,
+  ApplicationsType,
+} from '@optimizely/cms-sdk/buildConfig';
+import { validateRequiredStringField } from '../utils/validate.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -295,47 +300,47 @@ export function normalizePropertyGroups(
 }
 
 
-
-export function validateApplications(applications: any[]): any[] {
-  if (!Array.isArray(applications)) {
-    throw new Error('applications must be an array');
-  }
-
+/** * Validates the applications array from the config file.
+ * - Validates that each application has non-empty displayName, entryPoint, and type fields
+ * - Validates that each host in an application has a non-empty authority field
+ * @param applications - The applications array from the config
+ * @returns The validated applications array (throws error if validation fails)
+ * @throws Error if validation fails (missing or empty required fields)
+ */
+export function validateApplications(
+  applications: ApplicationsType[],
+): ApplicationsType[] {
   applications.forEach((app, applicationIndex) => {
-    if (
-      !app.displayName ||
-      typeof app.displayName !== 'string' ||
-      app.displayName.trim() === ''
-    ) {
-      throw new Error(
-        `Error in applications: Application at index ${applicationIndex} has an empty or missing "displayName" field`,
-      );
-    }
+    // Validate required fields for each application
+    const requiredApplicationFields: Array<
+      keyof Pick<ApplicationsType, 'displayName' | 'entryPoint' | 'type'>
+    > = ['displayName', 'entryPoint', 'type'];
 
-    if (
-      !app.entryPoint ||
-      typeof app.entryPoint !== 'string' ||
-      app.entryPoint.trim() === ''
-    ) {
-      throw new Error(
-        `Error in applications: Application at index ${applicationIndex} has an empty or missing "entryPoint" field`,
+    requiredApplicationFields.forEach((field) => {
+      validateRequiredStringField(
+        app[field],
+        field,
+        'applications',
+        applicationIndex,
       );
-    }
+    });
 
     app.hosts?.forEach((host: Record<string, any>, hostIndex: number) => {
-      if (
-        !host ||
-        typeof host !== 'object' ||
-        !host.authority ||
-        typeof host.authority !== 'string' ||
-        host.authority.trim() === ''
-      ) {
-        throw new Error(
-          `Error in applications: Application at index ${applicationIndex} has an empty or missing "authority" field in hosts at index ${hostIndex}`,
-        );
-      }
+      const requiredHostFields: Array<
+        keyof Pick<ApplicationHostType, 'authority'>
+      > = ['authority'];
+
+      requiredHostFields.forEach((field) => {
+        validateRequiredStringField(host[field], field, 'hosts', hostIndex);
+      });
     });
   });
+
+  // Log found applications
+  if (applications.length > 0) {
+    const appNames = applications.map((app) => app.displayName).join(', ');
+    console.log('Applications found: %s', chalk.bold.cyan(`[${appNames}]`));
+  }
 
   return applications;
 }
