@@ -5,15 +5,17 @@ This page explains how to install the Optimizely SDK and CLI into your project.
 - The SDK is a library with tools to model your content, fetch it and render it
 - The CLI is a terminal app to upload your models to the CMS via the CMS REST API
 
-You can use the CLI directly by running
+## Using the CLI
+
+You can run the CLI directly without installing it using `npx`:
 
 ```sh
 npx @optimizely/cms-cli@latest
 ```
 
-You should see a command list
+This will always use the latest version and doesn't require installation. You should see a command list.
 
-<details><summary>Alternative installation</summary>
+<details><summary>Alternative: Install the CLI</summary>
 
 ### Install globally
 
@@ -36,7 +38,7 @@ npm install @optimizely/cms-cli -D
 Then use it from the project:
 
 ```sh
-npx optimizely-cms-cli
+optimizely-cms-cli
 ```
 
 </details>

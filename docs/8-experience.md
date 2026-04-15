@@ -315,10 +315,12 @@ initContentTypeRegistry([
 
 // Register React components
 initReactComponentRegistry({
-  AboutExperience,
-  BlankExperience,
-  BlankSection,
+  resolver: {
+    AboutExperience,
+    BlankExperience,
+    BlankSection,
   // ... other components
+  }
 });
 ```
 

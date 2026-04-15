@@ -149,6 +149,9 @@ Array properties support:
 - `maxItems` - Maximum number of items
 - All item types except `array` (no nested arrays)
 
+> [!IMPORTANT]
+> When using `type: 'content'` or `type: 'contentReference'` within array items, always specify `allowedTypes` or `restrictedTypes`. Without these constraints, the SDK will generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
+
 #### Component Property
 
 For embedding a specific component type directly (also known as "Block" in the CMS UI):
@@ -243,6 +246,9 @@ const BlogPageContentType = contentType({
 - Self-reference: `['_self']` to allow the same content type
 
 **`restrictedTypes`** - Blacklist of content types that cannot be selected. Uses the same format as `allowedTypes`.
+
+> [!IMPORTANT]
+> Always specify either `allowedTypes` or `restrictedTypes` for `content` and `contentReference` properties. Without these constraints, the SDK will generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
 
 ## Container Types with mayContainTypes
 
