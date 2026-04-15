@@ -126,7 +126,6 @@ function transformProperty(property: any, parentKey: string): any {
   let updatedProperty = { ...property };
 
   updatedProperty = handleComponentType(updatedProperty);
-  updatedProperty = handleEnumFormat(updatedProperty);
   updatedProperty = handleArrayType(updatedProperty);
   updatedProperty = handleContentReferenceType(updatedProperty);
   updatedProperty = mapAllowedRestrictedTypes(updatedProperty, parentKey);
@@ -161,22 +160,6 @@ function handleComponentType(property: any): any {
     return {
       ...property,
       contentType: property.contentType.key,
-    };
-  }
-  return property;
-}
-
-/**
- * Handles the enum format for properties.
- * If the property has an 'enum' field, it sets the format to 'selectOne'.
- * @param property - The property to check and transform.
- * @returns The transformed property with 'format' set to 'selectOne' if applicable.
- */
-function handleEnumFormat(property: any): any {
-  if (Object.hasOwn(property, 'enum')) {
-    return {
-      ...property,
-      format: 'selectOne',
     };
   }
   return property;

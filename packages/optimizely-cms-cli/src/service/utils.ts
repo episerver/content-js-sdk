@@ -294,6 +294,52 @@ export function normalizePropertyGroups(
   return deduplicatedGroups;
 }
 
+
+
+export function validateApplications(applications: any[]): any[] {
+  if (!Array.isArray(applications)) {
+    throw new Error('applications must be an array');
+  }
+
+  applications.forEach((app, applicationIndex) => {
+    if (
+      !app.displayName ||
+      typeof app.displayName !== 'string' ||
+      app.displayName.trim() === ''
+    ) {
+      throw new Error(
+        `Error in applications: Application at index ${applicationIndex} has an empty or missing "displayName" field`,
+      );
+    }
+
+    if (
+      !app.entryPoint ||
+      typeof app.entryPoint !== 'string' ||
+      app.entryPoint.trim() === ''
+    ) {
+      throw new Error(
+        `Error in applications: Application at index ${applicationIndex} has an empty or missing "entryPoint" field`,
+      );
+    }
+
+    app.hosts?.forEach((host: Record<string, any>, hostIndex: number) => {
+      if (
+        !host ||
+        typeof host !== 'object' ||
+        !host.authority ||
+        typeof host.authority !== 'string' ||
+        host.authority.trim() === ''
+      ) {
+        throw new Error(
+          `Error in applications: Application at index ${applicationIndex} has an empty or missing "authority" field in hosts at index ${hostIndex}`,
+        );
+      }
+    });
+  });
+
+  return applications;
+}
+
 /**
  * Returns the key name for a PermittedTypes value.
  * If the value is the string '_self', returns the parentKey; otherwise, returns the string or the object's key property.
