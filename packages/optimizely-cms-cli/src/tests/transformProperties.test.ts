@@ -37,7 +37,6 @@ describe('Testing transformProperties', () => {
               "value": "dark",
             },
           ],
-          "format": "selectOne",
           "type": "string",
         },
       }
