@@ -167,7 +167,7 @@ export async function findMetaData(
   ).flat();
 
   // Remove duplicates and sort
-  const allFiles = [...new Set(allFilesWithDuplicates)].sort();
+  const allFiles = [...new Set(allFilesWithDuplicates)];
 
   // Process each file
   const result2 = {
