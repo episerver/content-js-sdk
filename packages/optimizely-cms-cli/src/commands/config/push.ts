@@ -9,6 +9,7 @@ import {
   findMetaData,
   readFromPath,
   normalizePropertyGroups,
+  validateApplications,
 } from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
@@ -58,10 +59,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     let componentPaths: string[];
     let propertyGroups: any;
+    let applications: any;
 
     try {
       componentPaths = await readFromPath(configPath, 'components');
       propertyGroups = await readFromPath(configPath, 'propertyGroups');
+      applications = await readFromPath(configPath, 'applications');
     } catch (error) {
       console.error(chalk.red('Failed to read configuration file'));
       if (error instanceof Error) {
@@ -93,11 +96,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
+    const validatedApplications = applications ? validateApplications(applications) : [];
 
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes).concat(manifestContracts),
       displayTemplates,
       propertyGroups: normalizedPropertyGroups,
+      applications: validatedApplications,
     };
 
     const restClient = await createApiClient(flags.host);
@@ -202,3 +207,4 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
   }
 }
+
