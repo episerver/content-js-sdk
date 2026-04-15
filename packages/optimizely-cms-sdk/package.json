@@ -3,27 +3,32 @@
   "version": "1.0.0",
   "description": "JavaScript tools for integration with Optimizely CMS",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "exports": {
     ".": {
+      "types": "./dist/cjs/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
     "./react/server": {
+      "types": "./dist/cjs/react/server.d.ts",
       "import": "./dist/esm/react/server.js",
       "require": "./dist/cjs/react/server.js"
     },
     "./react/client": {
+      "types": "./dist/cjs/react/client.d.ts",
       "import": "./dist/esm/react/client.js",
       "require": "./dist/cjs/react/client.js"
     },
     "./react/richText": {
+      "types": "./dist/cjs/react/richText/index.d.ts",
       "import": "./dist/esm/react/richText/index.js",
       "require": "./dist/cjs/react/richText/index.js"
     },
     "./buildConfig": {
-      "import": "./dist/esm/model/buildConfig.js",
-      "types": "./dist/cjs/model/buildConfig.d.ts"
+      "types": "./dist/cjs/model/buildConfig.d.ts",
+      "import": "./dist/esm/model/buildConfig.js"
     }
   },
   "repository": {
