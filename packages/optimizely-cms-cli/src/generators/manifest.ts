@@ -9,12 +9,18 @@ import {
   ContentTypes,
   Properties,
   DisplayTemplates,
+  BuildConfig,
 } from '@optimizely/cms-sdk';
+
+import ApplicationType = BuildConfig.ApplicationType;
+import ApplicationHostType = BuildConfig.ApplicationHostType;
+import ApplicationHostScheme = BuildConfig.ApplicationHostScheme;
 
 /** Manifest - the JSON accepted/returned by the API */
 export type Manifest = {
   contentTypes?: ContentType[];
   displayTemplates?: DisplayTemplate[];
+  applications?: Application[];
 };
 
 /**
@@ -30,6 +36,44 @@ export type DisplayTemplate = Partial<
   key: string;
   settings?: Record<string, any>;
 };
+
+/**
+ * Application (API format)
+ * Represents an application definition for the CMS.
+ */
+export type Application = {
+  /** Unique key identifying the application */
+  key: string;
+  /** Display name of the application */
+  displayName: string;
+  /** Type of application */
+  type: ApplicationType;
+  /** Entry point URI for the application */
+  entryPoint: string;
+  /** Whether this is the default application */
+  isDefault?: boolean;
+  /** List of hosts configured for this application */
+  hosts?: ApplicationHost[];
+  /** Whether preview tokens should be used */
+  usePreviewTokens?: boolean;
+  /** Preview URL format patterns */
+  previewUrlFormats?: string[];
+  /** Whether to use application-specific assets */
+  useApplicationSpecificAssets?: boolean;
+};
+
+/**
+ * Application Host (API format)
+ * Represents a host configuration for an application.
+ */
+export interface ApplicationHost {
+  authority: string;
+  type: ApplicationHostType;
+  locale: string | null;
+  useSecureConnection: boolean;
+  url: string;
+  scheme: ApplicationHostScheme;
+}
 
 /**
  * Content Type (API format)

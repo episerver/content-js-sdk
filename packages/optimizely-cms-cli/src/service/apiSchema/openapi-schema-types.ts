@@ -1413,11 +1413,58 @@ export interface components {
       contentTypes?: components['schemas']['ContentType'][];
       /** @description List of display templates. */
       displayTemplates?: components['schemas']['DisplayTemplate'][];
+      /** @description List of applications. */
+      applications?: components['schemas']['Application'][];
       /**
        * Format: date-time
        * @description A timestamp indicated when any item in this manifest was last modified.
        */
       readonly lastModified?: string;
+    };
+    /** @description Represents an application definition. */
+    Application: {
+      /** @description Unique key identifying the application. */
+      key: string;
+      /** @description Display name of the application. */
+      displayName: string;
+      /**
+       * @description Type of application.
+       * @enum {string}
+       */
+      type: 'website' | 'inProcessWebsite';
+      /** @description Entry point URI for the application. */
+      entryPoint: string;
+      /** @description Whether this is the default application. */
+      isDefault?: boolean;
+      /** @description List of hosts configured for this application. */
+      hosts?: components['schemas']['ApplicationHost'][];
+      /** @description Whether preview tokens should be used. */
+      usePreviewTokens?: boolean;
+      /** @description Preview URL format patterns. */
+      previewUrlFormats?: string[];
+      /** @description Whether to use application-specific assets. */
+      useApplicationSpecificAssets?: boolean;
+    };
+    /** @description Represents an application host configuration. */
+    ApplicationHost: {
+      /** @description The authority (host:port) for this host. */
+      authority: string;
+      /**
+       * @description Type of host.
+       * @enum {integer}
+       */
+      type: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+      /** @description The locale for this host, or null if not locale-specific. */
+      locale: string | null;
+      /** @description Whether to use a secure connection. */
+      useSecureConnection: boolean;
+      /** @description URL of the host. */
+      url: string;
+      /**
+       * @description The URL scheme.
+       * @enum {string}
+       */
+      scheme: 'http' | 'https';
     };
     /** @description Represents an OAuth JSON Web Token (JWT) and
      *     its expiry in seconds. */
