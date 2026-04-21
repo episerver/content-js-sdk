@@ -13,6 +13,7 @@ import {
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
+import { translateErrorMessage } from '../../utils/errors.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -174,7 +175,6 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
 
     const data = response.data;
-
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
       for (const r of response.data?.outcomes ?? []) {
@@ -192,7 +192,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     if (data.errors && data.errors.length > 0) {
       console.log(chalk.red.bold('\nErrors:'));
       for (const r of data.errors) {
-        console.log(chalk.dim('  -'), chalk.red(r.message));
+        const errorMessage = translateErrorMessage(r);
+        console.log(chalk.dim('  -'), chalk.red(errorMessage));
       }
       process.exit(1);
     }
