@@ -47,7 +47,7 @@ export async function generateStaticParams() {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
   const data = await client.request(query, {});
-  
+
   return data._Page.items
     .filter((item: any) => {
       if (item?._metadata?.url?.base !== process.env.APPLICATION_HOST) {
@@ -70,7 +70,7 @@ export async function generateStaticParams() {
       // Format as required in Next.js
       (path: string) => ({
         slug: path.split('/'),
-      })
+      }),
     );
 }
 

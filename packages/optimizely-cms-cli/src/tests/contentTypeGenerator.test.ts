@@ -1,9 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  generateContentTypeFiles,
-  generateContentTypeCode,
-  cleanKey,
-} from '../generators/contentTypeGenerator.js';
+import { generateContentTypeFiles, generateContentTypeCode, cleanKey } from '../generators/contentTypeGenerator.js';
 import { ContentType } from '../generators/manifest.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -32,11 +28,7 @@ describe('generateContentTypeFiles', () => {
   });
 
   it('should generate a file for each content type', async () => {
-    const files = await generateContentTypeFiles(
-      contentTypes,
-      displayTemplatesByContentType,
-      outputDir,
-    );
+    const files = await generateContentTypeFiles(contentTypes, displayTemplatesByContentType, outputDir);
     expect(files).toHaveLength(1);
     const filePath = path.join(outputDir, files[0]);
     const content = await fs.readFile(filePath, 'utf-8');
@@ -55,14 +47,8 @@ describe('generateContentTypeFiles', () => {
     ];
 
     await expect(
-      generateContentTypeFiles(
-        invalidContentTypes,
-        displayTemplatesByContentType,
-        outputDir,
-      ),
-    ).rejects.toThrow(
-      'Invalid key "***": must contain at least one alphanumeric character',
-    );
+      generateContentTypeFiles(invalidContentTypes, displayTemplatesByContentType, outputDir),
+    ).rejects.toThrow('Invalid key "***": must contain at least one alphanumeric character');
   });
 });
 
@@ -91,15 +77,11 @@ describe('cleanKey', () => {
   });
 
   it('should throw error for keys with no alphanumeric characters', () => {
-    expect(() => cleanKey('***')).toThrow(
-      'Invalid key "***": must contain at least one alphanumeric character'
-    );
+    expect(() => cleanKey('***')).toThrow('Invalid key "***": must contain at least one alphanumeric character');
   });
 
   it('should throw error for keys with only special characters (no alphanumeric)', () => {
-    expect(() => cleanKey('---___')).toThrow(
-      'Invalid key "---___": must contain at least one alphanumeric character'
-    );
+    expect(() => cleanKey('---___')).toThrow('Invalid key "---___": must contain at least one alphanumeric character');
   });
 
   it('should preserve case sensitivity', () => {
@@ -401,11 +383,7 @@ describe('generateContentTypeCode', () => {
         },
       };
 
-      const code = generateContentTypeCode(
-        productContentType,
-        contentTypeToGroupMap,
-        'experience',
-      );
+      const code = generateContentTypeCode(productContentType, contentTypeToGroupMap, 'experience');
 
       // Should import from ../component/SEO.js, not ./SEO.js
       expect(code).toContain("import { SEOCT } from '../component/SEO.js';");
@@ -431,11 +409,7 @@ describe('generateContentTypeCode', () => {
         },
       };
 
-      const code = generateContentTypeCode(
-        heroContentType,
-        contentTypeToGroupMap,
-        'component',
-      );
+      const code = generateContentTypeCode(heroContentType, contentTypeToGroupMap, 'component');
 
       // Should import from ./Button.js for same group
       expect(code).toContain("import { ButtonCT } from './Button.js';");

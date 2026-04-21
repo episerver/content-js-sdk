@@ -49,29 +49,13 @@ export const ctWithCollision = contentType({
   properties: {
     collision: {
       type: 'content',
-      allowedTypes: [
-        ctString,
-        ctBoolean,
-        ctInteger,
-        ctRich,
-        ctLink,
-        ctContentReference,
-        ctArray,
-      ],
+      allowedTypes: [ctString, ctBoolean, ctInteger, ctRich, ctLink, ctContentReference, ctArray],
     },
     p2: {
       type: 'array',
       items: {
         type: 'content',
-        allowedTypes: [
-          ctString,
-          ctBoolean,
-          ctInteger,
-          ctRich,
-          ctLink,
-          ctContentReference,
-          ctArray,
-        ],
+        allowedTypes: [ctString, ctBoolean, ctInteger, ctRich, ctLink, ctContentReference, ctArray],
       },
     },
   },

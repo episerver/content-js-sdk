@@ -40,9 +40,7 @@ describe('getClient - Critical Edge Cases', () => {
 
       expect(() => {
         freshGetClient();
-      }).toThrow(
-        'Graph configuration is not set. Call config() in your root layout first.',
-      );
+      }).toThrow('Graph configuration is not set. Call config() in your root layout first.');
     });
   });
 
@@ -72,7 +70,6 @@ describe('getClient - Critical Edge Cases', () => {
         config({ apiKey: null });
       }).toThrow('Invalid Optimizely Graph API key');
     });
-
 
     test('should throw error with helpful message mentioning environment variables', () => {
       expect(() => {

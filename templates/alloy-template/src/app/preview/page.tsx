@@ -18,7 +18,7 @@ async function Page({ searchParams }: Props) {
       // TODO: check types in runtime properly
       (await searchParams) as PreviewParams,
     )
-    .catch((err) => {
+    .catch(err => {
       console.log(err.errors);
       console.log(err.request?.query);
       throw err;
@@ -29,9 +29,7 @@ async function Page({ searchParams }: Props) {
 
   return (
     <>
-      <Script
-        src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
-      ></Script>
+      <Script src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}></Script>
       <PreviewComponent />
       <Header currentPath={path} />
       <ContentLayout content={content} currentPath={path} />

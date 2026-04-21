@@ -1,8 +1,5 @@
 import React, { ReactNode } from 'react';
-import {
-  ComponentRegistry,
-  ComponentResolverOrObject,
-} from '../render/componentRegistry.js';
+import { ComponentRegistry, ComponentResolverOrObject } from '../render/componentRegistry.js';
 import { JSX } from 'react';
 import {
   ExperienceStructureNode,
@@ -104,24 +101,15 @@ type OptimizelyComponentProps = {
   displaySettings?: Record<string, string | boolean>;
 };
 
-export async function OptimizelyComponent({
-  content,
-  displaySettings,
-  ...props
-}: OptimizelyComponentProps) {
+export async function OptimizelyComponent({ content, displaySettings, ...props }: OptimizelyComponentProps) {
   if (!content) {
-    throw new OptimizelyReactError(
-      'OptimizelyComponent requires a valid content prop. Received null or undefined.',
-    );
+    throw new OptimizelyReactError('OptimizelyComponent requires a valid content prop. Received null or undefined.');
   }
 
   if (!componentRegistry) {
-    throw new OptimizelyReactError(
-      'You should call `initReactComponentRegistry` first',
-    );
+    throw new OptimizelyReactError('You should call `initReactComponentRegistry` first');
   }
-  const dtKey =
-    content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
+  const dtKey = content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
   const Component = await componentRegistry.getComponent(content.__typename, {
     tag: content.__tag ?? getDisplayTemplateTag(dtKey),
   });
@@ -138,13 +126,7 @@ export async function OptimizelyComponent({
     ...content,
   };
 
-  return (
-    <Component
-      content={optiProps}
-      {...props}
-      displaySettings={displaySettings}
-    />
-  );
+  return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
 }
 
 export type StructureContainerProps = {
@@ -158,12 +140,8 @@ export type ComponentContainerProps = {
   children: React.ReactNode;
   displaySettings?: Record<string, string | boolean>;
 };
-export type StructureContainer = (
-  props: StructureContainerProps,
-) => JSX.Element;
-export type ComponentContainer = (
-  props: ComponentContainerProps,
-) => JSX.Element;
+export type StructureContainer = (props: StructureContainerProps) => JSX.Element;
+export type ComponentContainer = (props: ComponentContainerProps) => JSX.Element;
 
 export function OptimizelyComposition({
   nodes,
@@ -172,7 +150,7 @@ export function OptimizelyComposition({
   nodes: ExperienceNode[];
   ComponentWrapper?: ComponentContainer;
 }) {
-  return nodes.map((node) => {
+  return nodes.map(node => {
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
@@ -180,11 +158,7 @@ export function OptimizelyComposition({
       const Wrapper = ComponentWrapper ?? React.Fragment;
 
       return (
-        <Wrapper
-          node={node}
-          key={node.key}
-          displaySettings={parsedDisplaySettings}
-        >
+        <Wrapper node={node} key={node.key} displaySettings={parsedDisplaySettings}>
           <OptimizelyComponent
             content={{
               ...node.component,
@@ -235,20 +209,20 @@ function FallbackColumn({ node, children }: StructureContainerProps) {
 }
 
 function FallbackComponent({ children }: { children: ReactNode }) {
-  return isDev() ? (
-    <div
-      style={{
-        color: 'black',
-        margin: '1rem',
-        padding: '1rem',
-        border: '1px solid',
-        borderRadius: '8px',
-        backgroundColor: 'white',
-      }}
-    >
-      {children}
-    </div>
-  ) : null;
+  return isDev() ?
+      <div
+        style={{
+          color: 'black',
+          margin: '1rem',
+          padding: '1rem',
+          border: '1px solid',
+          borderRadius: '8px',
+          backgroundColor: 'white',
+        }}
+      >
+        {children}
+      </div>
+    : null;
 }
 
 type OptimizelyGridSectionProps = {
@@ -263,11 +237,7 @@ const fallbacks: Record<string, StructureContainer> = {
   column: FallbackColumn,
 };
 
-export function OptimizelyGridSection({
-  nodes,
-  row,
-  column,
-}: OptimizelyGridSectionProps) {
+export function OptimizelyGridSection({ nodes, row, column }: OptimizelyGridSectionProps) {
   const locallyDefined: Record<string, StructureContainer | undefined> = {
     row,
     column,
@@ -310,17 +280,8 @@ export function OptimizelyGridSection({
       React.Fragment;
 
     return (
-      <Component
-        node={node}
-        index={i}
-        key={node.key}
-        displaySettings={parsedDisplaySettings}
-      >
-        <OptimizelyGridSection
-          row={row}
-          column={column}
-          nodes={node.nodes ?? []}
-        />
+      <Component node={node} index={i} key={node.key} displaySettings={parsedDisplaySettings}>
+        <OptimizelyGridSection row={row} column={column} nodes={node.nodes ?? []} />
       </Component>
     );
   });
@@ -364,9 +325,7 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
      * />
      * ```
      */
-    src(
-      input: InferredContentReference | string | null | undefined,
-    ): string | undefined {
+    src(input: InferredContentReference | string | null | undefined): string | undefined {
       const previewToken = content.__context?.preview_token;
 
       // if input is an object with a URL

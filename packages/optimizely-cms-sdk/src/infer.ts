@@ -22,17 +22,9 @@ import {
   StringProperty,
   UrlProperty,
 } from './model/properties.js';
-import {
-  AnyContentType,
-  ExperienceContentType,
-  SectionContentType,
-} from './model/contentTypes.js';
+import { AnyContentType, ExperienceContentType, SectionContentType } from './model/contentTypes.js';
 import { Node } from './components/richText/renderer.js';
-import {
-  PublicImageAsset,
-  PublicRawFileAsset,
-  PublicVideoAsset,
-} from './model/assets.js';
+import { PublicImageAsset, PublicRawFileAsset, PublicVideoAsset } from './model/assets.js';
 import { DisplayTemplate } from './model/displayTemplates.js';
 
 /** Forces Intellisense to resolve types */
@@ -89,10 +81,7 @@ type InferredRichText = {
 };
 
 /** Asset types that can be returned in ContentReference */
-export type ContentReferenceItem =
-  | PublicImageAsset
-  | PublicVideoAsset
-  | PublicRawFileAsset;
+export type ContentReferenceItem = PublicImageAsset | PublicVideoAsset | PublicRawFileAsset;
 
 export type InferredContentReference = {
   url: InferredUrl;
@@ -136,13 +125,14 @@ type EnabledKeys<T extends Record<string, AnyProperty>> = {
 }[keyof T];
 
 /** Infers an `object` with the TS type inferred for each type */
-type InferProps<T extends AnyContentType> = T extends {
-  properties: Record<string, AnyProperty>;
-}
-  ? {
-      [Key in EnabledKeys<T['properties']>]: InferFromProperty<
-        T['properties'][Key]
-      > | null;
+type InferProps<T extends AnyContentType> =
+  T extends (
+    {
+      properties: Record<string, AnyProperty>;
+    }
+  ) ?
+    {
+      [Key in EnabledKeys<T['properties']>]: InferFromProperty<T['properties'][Key]> | null;
     }
   : {};
 
@@ -182,13 +172,13 @@ export type ExperienceComponentNode = ExperienceCompositionNode & {
 };
 
 /** Adds TS fields specific to `Experience` */
-type InferExperience<T extends AnyContentType> = T extends ExperienceContentType
-  ? { composition: ExperienceStructureNode }
-  : {};
+type InferExperience<T extends AnyContentType> =
+  T extends ExperienceContentType ? { composition: ExperienceStructureNode } : {};
 
 /** Adds TS fields specific to `Section` */
-type InferSection<T extends AnyContentType> = T extends SectionContentType
-  ? {
+type InferSection<T extends AnyContentType> =
+  T extends SectionContentType ?
+    {
       key: string;
       nodes: ExperienceNode[];
 
@@ -203,20 +193,23 @@ type InferFromContentType<T extends AnyContentType> = Prettify<
 >;
 
 /** Infers the TypeScript type for a display setting */
-type InferFromDisplayTemplate<T extends DisplayTemplate> = T extends {
-  settings: infer S;
-}
-  ? {
-      [K in keyof S]: S[K] extends {
-        choices: Record<string, any>;
-        editor: infer E;
-      }
-        ? E extends 'select'
-          ? keyof S[K]['choices']
-          : E extends 'checkbox'
-            ? boolean
-            : never
-        : never;
+type InferFromDisplayTemplate<T extends DisplayTemplate> =
+  T extends (
+    {
+      settings: infer S;
+    }
+  ) ?
+    {
+      [K in keyof S]: S[K] extends (
+        {
+          choices: Record<string, any>;
+          editor: infer E;
+        }
+      ) ?
+        E extends 'select' ? keyof S[K]['choices']
+        : E extends 'checkbox' ? boolean
+        : never
+      : never;
     }
   : {};
 

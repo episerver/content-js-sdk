@@ -44,9 +44,7 @@ describe('normalizePropertyGroups', () => {
       displayName: 'Meta',
       sortOrder: 2,
     });
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Duplicate property group keys found: seo'),
-    );
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Duplicate property group keys found: seo'));
   });
 
   it('should handle multiple duplicates correctly', () => {
@@ -81,14 +79,12 @@ describe('normalizePropertyGroups', () => {
     const result = normalizePropertyGroups(input);
 
     expect(result).toHaveLength(3);
-    expect(result.find((g) => g.key === 'seo')).toEqual({
+    expect(result.find(g => g.key === 'seo')).toEqual({
       key: 'seo',
       displayName: 'SEO 1',
       sortOrder: 1,
     });
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Duplicate property group keys found: seo'),
-    );
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Duplicate property group keys found: seo'));
   });
 
   it('should auto-generate displayName from key if missing', () => {
@@ -159,9 +155,7 @@ describe('normalizePropertyGroups', () => {
   });
 
   it('should throw error if propertyGroups is not an array', () => {
-    expect(() => normalizePropertyGroups({} as any)).toThrow(
-      'propertyGroups must be an array',
-    );
+    expect(() => normalizePropertyGroups({} as any)).toThrow('propertyGroups must be an array');
   });
 
   it('should handle empty array', () => {

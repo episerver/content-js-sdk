@@ -9,7 +9,7 @@ export function init(registry: AnyContentType[]) {
 
 /** Get the Component from a content type name */
 export function getContentType(name: string) {
-  return _registry.find((c) => c.key === name);
+  return _registry.find(c => c.key === name);
 }
 
 /** Get all the content types */
@@ -19,7 +19,7 @@ export function getAllContentTypes(): AnyContentType[] {
 
 /** Get the Component from a base type */
 export function getContentTypeByBaseType(name: string): AnyContentType[] {
-  return _registry.filter((c) => c.baseType === name) as AnyContentType[];
+  return _registry.filter(c => c.baseType === name) as AnyContentType[];
 }
 
 /**

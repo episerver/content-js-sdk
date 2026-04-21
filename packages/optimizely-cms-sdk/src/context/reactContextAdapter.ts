@@ -18,7 +18,7 @@ export class ReactContextAdapter implements ContextAdapter {
    */
   initializeContext() {
     const data = getContextData();
-    Object.keys(data).forEach((key) => delete data[key as keyof ContextData]);
+    Object.keys(data).forEach(key => delete data[key as keyof ContextData]);
   }
 
   /**
@@ -54,7 +54,7 @@ export class ReactContextAdapter implements ContextAdapter {
    */
   clear(): void {
     const data = getContextData();
-    Object.keys(data).forEach((key) => delete data[key as keyof ContextData]);
+    Object.keys(data).forEach(key => delete data[key as keyof ContextData]);
   }
 }
 

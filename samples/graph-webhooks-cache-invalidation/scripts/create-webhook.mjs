@@ -1,16 +1,6 @@
 // Use this script to create a webhook in Optimizely Graph
 // Read more: https://docs.developers.optimizely.com/platform-optimizely/reference/create-webhookhandler
-import {
-  cancel,
-  confirm,
-  intro,
-  isCancel,
-  log,
-  outro,
-  password,
-  spinner,
-  text,
-} from '@clack/prompts';
+import { cancel, confirm, intro, isCancel, log, outro, password, spinner, text } from '@clack/prompts';
 import 'dotenv/config';
 
 function validate(str) {
@@ -41,9 +31,7 @@ const url = await text({
   validate,
 }).then(exitIfCancelled);
 
-log.step(
-  'Go to your CMS > Settings > API Keys. You will need the keys under `Manage Graph`'
-);
+log.step('Go to your CMS > Settings > API Keys. You will need the keys under `Manage Graph`');
 
 const appKey = await password({
   message: "Input the 'AppKey'",
@@ -56,12 +44,12 @@ const secret = await password({
 }).then(exitIfCancelled);
 
 const prod = await confirm({
-  message:
-    'Do you use Optimizely Graph API prod (https://prod.cg.optimizely.com/api)?',
+  message: 'Do you use Optimizely Graph API prod (https://prod.cg.optimizely.com/api)?',
 }).then(exitIfCancelled);
 
-const graphApiUrl = prod
-  ? 'https://prod.cg.optimizely.com/api'
+const graphApiUrl =
+  prod ?
+    'https://prod.cg.optimizely.com/api'
   : await text({
       message: 'Input the Graph API URL',
       placeholder: 'https://prod.cg.optimizely.com/api',
@@ -84,12 +72,10 @@ const requestBody = {
 log.step(
   `You are going to make a POST request to the endpoint "${endpoint}"\n` +
     `with the following body\n\n` +
-    JSON.stringify(requestBody, null, 2)
+    JSON.stringify(requestBody, null, 2),
 );
 
-const confirmCreation = await confirm({ message: 'Confirm?' }).then(
-  exitIfCancelled
-);
+const confirmCreation = await confirm({ message: 'Confirm?' }).then(exitIfCancelled);
 
 if (!confirmCreation) {
   cancel('Operation cancelled');

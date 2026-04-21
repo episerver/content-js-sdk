@@ -16,8 +16,7 @@ export default async function Page({ params }: Props) {
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
-  const host =
-    process.env.NEXTJS_HOST ?? `https://localhost:${process.env.PORT ?? 3000}`;
+  const host = process.env.NEXTJS_HOST ?? `https://localhost:${process.env.PORT ?? 3000}`;
 
   const content = await client.getContentByPath(`/${slug.join('/')}/`, {
     host,

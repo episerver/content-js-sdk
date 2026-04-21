@@ -1,11 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest';
-import {
-  configureAdapter,
-  getAdapter,
-  getContext,
-  setContext,
-  initializeRequestContext,
-} from '../config.js';
+import { configureAdapter, getAdapter, getContext, setContext, initializeRequestContext } from '../config.js';
 import type { ContextAdapter, ContextData } from '../baseContext.js';
 
 describe('Context Configuration', () => {
@@ -78,9 +72,7 @@ describe('Context Configuration', () => {
       // Reset adapter to simulate unconfigured state
       configureAdapter(null as unknown as MockAdapter);
 
-      expect(() => getAdapter()).toThrow(
-        'Context adapter not configured',
-      );
+      expect(() => getAdapter()).toThrow('Context adapter not configured');
     });
 
     test('error message should provide helpful guidance', () => {

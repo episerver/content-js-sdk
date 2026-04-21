@@ -30,24 +30,18 @@ export default function Location({ content }: Props) {
   const { pa } = getPreviewUtils(content);
 
   return (
-    <section className="location">
-      <Image
-        className="location__image"
-        src="/building.svg"
-        alt="Location Image"
-        width={20}
-        height={20}
-      />
-      <h1 className="location__name" {...pa('name')}>
+    <section className='location'>
+      <Image className='location__image' src='/building.svg' alt='Location Image' width={20} height={20} />
+      <h1 className='location__name' {...pa('name')}>
         {content.name}
       </h1>
-      <p className="location__city" {...pa('city')}>
+      <p className='location__city' {...pa('city')}>
         {content.city}
       </p>
-      <p className="location__address" {...pa('address')}>
+      <p className='location__address' {...pa('address')}>
         {content.address}
       </p>
-      <p className="location__phone" {...pa('phone')}>
+      <p className='location__phone' {...pa('phone')}>
         {content.phone}
       </p>
     </section>

@@ -1,8 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import {
-  allContentTypes,
-  MyExperience,
-} from './createQueryExperiences.fixtures.js';
+import { allContentTypes, MyExperience } from './createQueryExperiences.fixtures.js';
 import { initContentTypeRegistry } from '../../model/index.js';
 import { createFragment } from '../createQuery.js';
 

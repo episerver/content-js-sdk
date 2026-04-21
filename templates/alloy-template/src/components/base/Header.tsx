@@ -35,23 +35,23 @@ async function Header({ currentPath }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-gray-100 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-28">
+      <header className='bg-gray-100 border-b border-gray-200'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='flex items-center justify-between h-28'>
             {/* Navigation */}
-            <nav className="flex items-center space-x-8">
+            <nav className='flex items-center space-x-8'>
               {/* Logo */}
-              <Link href="/en" className="shrink-0">
-                <img src="/logo.png" alt="Logo" className="h-14 w-auto" />
+              <Link href='/en' className='shrink-0'>
+                <img src='/logo.png' alt='Logo' className='h-14 w-auto' />
               </Link>
 
               {/* Desktop Navigation */}
-              <div className="hidden md:flex md:items-center md:space-x-8">
-                {navigations.map((item) => (
+              <div className='hidden md:flex md:items-center md:space-x-8'>
+                {navigations.map(item => (
                   <a
                     key={item.key}
                     href={item.href}
-                    className="text-gray-700 hover:text-teal-600 transition-colors duration-200 text-lg font-extrabold uppercase tracking-wide"
+                    className='text-gray-700 hover:text-teal-600 transition-colors duration-200 text-lg font-extrabold uppercase tracking-wide'
                   >
                     {item.label}
                   </a>
@@ -67,38 +67,27 @@ async function Header({ currentPath }: HeaderProps) {
 
       {/* Breadcrumbs */}
       {breadcrumbs.length > 0 && (
-        <nav
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
-          aria-label="Breadcrumb"
-        >
-          <ol className="flex items-center space-x-1">
+        <nav className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4' aria-label='Breadcrumb'>
+          <ol className='flex items-center space-x-1'>
             <li>
               <Link
                 href={ancestors[0]?._metadata?.url?.hierarchical || '/'}
-                className="text-[#1cb898] hover:text-gray-700"
+                className='text-[#1cb898] hover:text-gray-700'
               >
                 Home
               </Link>
             </li>
-            {breadcrumbs.map(
-              (crumb: { label: string; href: string }, index: number) => (
-                <li key={index} className="flex items-center">
-                  <span className="text-gray-400 mx-1">/</span>
-                  {index === breadcrumbs.length - 1 ? (
-                    <span className="text-gray-700 font-medium">
-                      {crumb.label}
-                    </span>
-                  ) : (
-                    <Link
-                      href={crumb.href}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      {crumb.label}
-                    </Link>
-                  )}
-                </li>
-              ),
-            )}
+            {breadcrumbs.map((crumb: { label: string; href: string }, index: number) => (
+              <li key={index} className='flex items-center'>
+                <span className='text-gray-400 mx-1'>/</span>
+                {index === breadcrumbs.length - 1 ?
+                  <span className='text-gray-700 font-medium'>{crumb.label}</span>
+                : <Link href={crumb.href} className='text-gray-500 hover:text-gray-700'>
+                    {crumb.label}
+                  </Link>
+                }
+              </li>
+            ))}
           </ol>
         </nav>
       )}

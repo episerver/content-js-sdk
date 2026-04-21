@@ -1,10 +1,6 @@
 import { contentType, ContentProps, damAssets } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import {
-  ComponentContainerProps,
-  getPreviewUtils,
-  OptimizelyComposition,
-} from '@optimizely/cms-sdk/react/server';
+import { ComponentContainerProps, getPreviewUtils, OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
 import { StandardContentType } from './Standard';
 import { SEOContentType } from './base/SEO';
 
@@ -44,7 +40,11 @@ type NewsPageProps = {
 
 function ComponentWrapper({ children, node }: ComponentContainerProps) {
   const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)} className="w-full block">{children}</div>;
+  return (
+    <div {...pa(node)} className='w-full block'>
+      {children}
+    </div>
+  );
 }
 
 function News({ content }: NewsPageProps) {
@@ -52,53 +52,43 @@ function News({ content }: NewsPageProps) {
   const { getAlt, getSrcset, isDamImageAsset } = damAssets(content);
 
   return (
-    <main className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12">
-        <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-1 lg:grid-cols-[1fr_320px]">
+    <main className='bg-white'>
+      <div className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12'>
+        <div className='grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-1 lg:grid-cols-[1fr_320px]'>
           {/* Main Content */}
-          <div className="space-y-6 sm:space-y-8">
+          <div className='space-y-6 sm:space-y-8'>
             {/* Heading and Description */}
-            <div className="space-y-3 sm:space-y-4">
+            <div className='space-y-3 sm:space-y-4'>
               <h1
                 {...pa('title')}
-                className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-5xl"
+                className='text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-5xl'
               >
                 {content.title}
               </h1>
-              <p
-                {...pa('description')}
-                className="text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl"
-              >
+              <p {...pa('description')} className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'>
                 {content.description}
               </p>
             </div>
 
             {/* Main Body Content */}
-            <RichText
-              {...pa('main_body')}
-              content={content.main_body?.json}
-              className="space-y-4 sm:space-y-6"
-            />
+            <RichText {...pa('main_body')} content={content.main_body?.json} className='space-y-4 sm:space-y-6' />
 
             {/* Media Asset - handles images, videos, and files */}
             {isDamImageAsset(content.image) && (
-              <div className="overflow-hidden rounded-lg">
+              <div className='overflow-hidden rounded-lg'>
                 <img
                   {...pa('image')}
                   src={src(content.image)}
                   srcSet={getSrcset(content.image)}
                   alt={getAlt(content.image, 'Teaser Image')}
-                  className="h-auto w-full object-cover aspect-video sm:aspect-auto sm:max-h-100 md:max-h-125 lg:max-h-150"
+                  className='h-auto w-full object-cover aspect-video sm:aspect-auto sm:max-h-100 md:max-h-125 lg:max-h-150'
                 />
               </div>
             )}
           </div>
 
-          <div className="flex flex-col space-y-6 sm:space-y-8">
-            <OptimizelyComposition
-              nodes={content.composition.nodes ?? []}
-              ComponentWrapper={ComponentWrapper}
-            />
+          <div className='flex flex-col space-y-6 sm:space-y-8'>
+            <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
           </div>
         </div>
       </div>

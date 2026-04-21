@@ -1,7 +1,5 @@
 import { Command, Flags, Interfaces, Errors } from '@oclif/core';
-export type Flags<T extends typeof Command> = Interfaces.InferredFlags<
-  (typeof BaseCommand)['baseFlags'] & T['flags']
->;
+export type Flags<T extends typeof Command> = Interfaces.InferredFlags<(typeof BaseCommand)['baseFlags'] & T['flags']>;
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>;
 
 /**
@@ -20,14 +18,14 @@ function handleFlagsError(err: any) {
 
     if (requiredFlags.length > 0) {
       const givenFlags = Object.keys(userFlags);
-      const missingFlags = requiredFlags.filter((f) => !givenFlags.includes(f));
+      const missingFlags = requiredFlags.filter(f => !givenFlags.includes(f));
 
       if (missingFlags.length === 1) {
         throw new Error(`Missing required flag --${missingFlags[0]}`);
       }
 
       if (missingFlags.length > 1) {
-        const missingFlagsString = missingFlags.map((f) => `--${f}`).join(',');
+        const missingFlagsString = missingFlags.map(f => `--${f}`).join(',');
         throw new Error('Missing required flags: ' + missingFlagsString);
       }
     }
@@ -39,8 +37,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
   // define flags that can be inherited by any command that extends BaseCommand
   static baseFlags = {
     host: Flags.string({
-      description:
-        'CMS instance URL including scheme. For example: `https://my-instance.cms.optimizely.com`',
+      description: 'CMS instance URL including scheme. For example: `https://my-instance.cms.optimizely.com`',
     }),
   };
 

@@ -98,10 +98,7 @@ export const setContext = (value: Partial<ContextData>): void => {
  * @param value - The value to set for the specified key
  * @internal
  */
-export const setContextData = <K extends keyof ContextData>(
-  key: K,
-  value: ContextData[K],
-): void => {
+export const setContextData = <K extends keyof ContextData>(key: K, value: ContextData[K]): void => {
   return getAdapter().set(key, value);
 };
 
@@ -112,8 +109,6 @@ export const setContextData = <K extends keyof ContextData>(
  * @returns The value for the specified key, or undefined if not found
  * @internal
  */
-export const getContextData = <K extends keyof ContextData>(
-  key: K,
-): ContextData[K] | undefined => {
+export const getContextData = <K extends keyof ContextData>(key: K): ContextData[K] | undefined => {
   return getAdapter().get(key);
 };

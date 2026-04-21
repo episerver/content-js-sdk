@@ -64,12 +64,7 @@ export interface TableCellElement extends BaseElement {
  * Element node (blocks and inline elements) - Discriminated Union
  * Based on Slate.js JSON structure with type-specific properties
  */
-export type Element =
-  | GenericElement
-  | LinkElement
-  | ImageElement
-  | TableElement
-  | TableCellElement;
+export type Element = GenericElement | LinkElement | ImageElement | TableElement | TableCellElement;
 
 /**
  * Text node with formatting marks
@@ -147,10 +142,7 @@ export type BaseLeafMap<TRenderer = unknown> = {
  * Generic props for RichText component (framework-agnostic)
  * Can be specialized for each framework with specific renderer types
  */
-export interface RichTextPropsBase<
-  TElementRenderer = unknown,
-  TLeafRenderer = unknown
-> {
+export interface RichTextPropsBase<TElementRenderer = unknown, TLeafRenderer = unknown> {
   /**
    * Slate.js compatible JSON content to render
    */
@@ -184,12 +176,7 @@ export type ElementType = Element['type'];
 /**
  * Available text marks in the default implementation
  */
-export type MarkType =
-  | 'bold'
-  | 'italic'
-  | 'underline'
-  | 'strikethrough'
-  | 'code';
+export type MarkType = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'code';
 
 /**
  * Configuration for creating HTML components
@@ -211,13 +198,7 @@ export type RendererConfig<TElement = unknown, TText = unknown> = {
 };
 
 // Reserved props that should not be passed as HTML attributes
-export const RESERVED_PROPS = new Set([
-  'url',
-  'children',
-  'type',
-  'internal',
-  'base',
-]);
+export const RESERVED_PROPS = new Set(['url', 'children', 'type', 'internal', 'base']);
 
 /**
  * Maps CMS attributes to standard HTML attributes
@@ -226,7 +207,7 @@ export function mapAttributes(node: Element): Record<string, unknown> {
   const nodeProps: Record<string, unknown> = {};
 
   // Copy non-reserved props verbatim
-  Object.keys(node).forEach((k) => {
+  Object.keys(node).forEach(k => {
     if (!RESERVED_PROPS.has(k)) {
       nodeProps[k] = node[k as keyof Element];
     }
@@ -281,9 +262,7 @@ export function mapAttributes(node: Element): Record<string, unknown> {
  * Gets text marks from a text node
  */
 export function getTextMarks(leaf: Text): string[] {
-  return Object.keys(leaf).filter(
-    (k) => k !== 'text' && leaf[k as keyof Text] === true
-  );
+  return Object.keys(leaf).filter(k => k !== 'text' && leaf[k as keyof Text] === true);
 }
 
 /**
@@ -292,7 +271,7 @@ export function getTextMarks(leaf: Text): string[] {
  */
 export function extractTextContent(children: Node[]): string {
   return children
-    .map((child) => {
+    .map(child => {
       if (isText(child)) {
         return child.text;
       } else {
@@ -307,10 +286,7 @@ export function extractTextContent(children: Node[]): string {
  * Creates type-safe element data based on element type and attributes
  * This is a utility function that can be used by framework-specific renderers
  */
-export function createElementData(
-  type: string,
-  attributes: Record<string, unknown> = {}
-): Element {
+export function createElementData(type: string, attributes: Record<string, unknown> = {}): Element {
   const baseProps = { children: [], ...attributes };
 
   switch (type) {
@@ -378,10 +354,7 @@ export function decodeHTML(input: string): string {
     '&mdash;': '—',
   };
 
-  return input.replace(
-    /(&amp;|&lt;|&gt;|&quot;|&#39;|&nbsp;|&mdash;)/g,
-    (m) => map[m] ?? m
-  );
+  return input.replace(/(&amp;|&lt;|&gt;|&quot;|&#39;|&nbsp;|&mdash;)/g, m => map[m] ?? m);
 }
 
 /**
@@ -400,22 +373,16 @@ export interface RenderNode {
 /**
  * Converts Slate JSON to framework-agnostic render tree
  */
-export function buildRenderTree(
-  nodes: Node[],
-  config: RendererConfig = {}
-): RenderNode[] {
+export function buildRenderTree(nodes: Node[], config: RendererConfig = {}): RenderNode[] {
   if (!Array.isArray(nodes)) {
     return [];
   }
-  return nodes.map((node) => buildRenderNode(node, config));
+  return nodes.map(node => buildRenderNode(node, config));
 }
 
 function buildRenderNode(node: Node, config: RendererConfig): RenderNode {
   if (isText(node)) {
-    const content =
-      config.decodeHtmlEntities && typeof node.text === 'string'
-        ? decodeHTML(node.text)
-        : node.text;
+    const content = config.decodeHtmlEntities && typeof node.text === 'string' ? decodeHTML(node.text) : node.text;
 
     return {
       type: 'text',
@@ -435,10 +402,7 @@ function buildRenderNode(node: Node, config: RendererConfig): RenderNode {
 /**
  * Default element type mapping
  */
-export const defaultElementTypeMap: Record<
-  string,
-  { tag: string; config?: HtmlComponentConfig }
-> = {
+export const defaultElementTypeMap: Record<string, { tag: string; config?: HtmlComponentConfig }> = {
   // Blocks
   paragraph: { tag: 'p' },
   div: { tag: 'div' },
@@ -524,10 +488,7 @@ export const defaultElementTypeMap: Record<
  * Available types for generic elements that don't need special properties
  * Derived from defaultElementTypeMap, excluding elements with specialized interfaces
  */
-export type GenericElementType = Exclude<
-  keyof typeof defaultElementTypeMap,
-  'link' | 'image' | 'td' | 'th'
->;
+export type GenericElementType = Exclude<keyof typeof defaultElementTypeMap, 'link' | 'image' | 'td' | 'th'>;
 
 /**
  * Default text mark mapping

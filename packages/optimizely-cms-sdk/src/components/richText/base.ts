@@ -1,10 +1,4 @@
-import {
-  buildRenderTree,
-  decodeHTML,
-  type Node,
-  type RenderNode,
-  type RendererConfig,
-} from './renderer.js';
+import { buildRenderTree, decodeHTML, type Node, type RenderNode, type RendererConfig } from './renderer.js';
 
 /**
  * Configuration for rich text renderers
@@ -15,11 +9,7 @@ export interface BaseRendererConfig extends RendererConfig {}
  * Base class for rich text renderers that provides common functionality
  * while allowing framework-specific implementations
  */
-export abstract class BaseRichTextRenderer<
-  TElement = unknown,
-  TLeaf = unknown,
-  TNode = unknown
-> {
+export abstract class BaseRichTextRenderer<TElement = unknown, TLeaf = unknown, TNode = unknown> {
   protected config: BaseRendererConfig;
 
   constructor(config: Partial<BaseRendererConfig> = {}) {
@@ -53,7 +43,7 @@ export abstract class BaseRichTextRenderer<
    */
   protected getConfig<K extends keyof BaseRendererConfig>(
     key: K,
-    fallback?: BaseRendererConfig[K]
+    fallback?: BaseRendererConfig[K],
   ): BaseRendererConfig[K] {
     return this.config[key] ?? fallback;
   }
@@ -61,11 +51,7 @@ export abstract class BaseRichTextRenderer<
   /**
    * Framework-specific element creation (must be implemented by each framework)
    */
-  protected abstract createElement(
-    node: RenderNode,
-    children: TNode[],
-    index: number
-  ): TNode;
+  protected abstract createElement(node: RenderNode, children: TNode[], index: number): TNode;
 
   /**
    * Framework-specific text node creation (must be implemented by each framework)

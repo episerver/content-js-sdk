@@ -13,14 +13,10 @@ beforeEach(() => {
 describe('withAppContext', () => {
   describe('Basic HOC functionality', () => {
     test('should wrap component and render it', async () => {
-      const TestComponent = ({ testProp }: { testProp: string }) => (
-        <div data-testid="test-component">{testProp}</div>
-      );
+      const TestComponent = ({ testProp }: { testProp: string }) => <div data-testid='test-component'>{testProp}</div>;
 
       const WrappedComponent = withAppContext(TestComponent);
-      const { findByTestId } = render(
-        await WrappedComponent({ testProp: 'test-value' }),
-      );
+      const { findByTestId } = render(await WrappedComponent({ testProp: 'test-value' }));
 
       const element = await findByTestId('test-component');
       expect(element).toBeDefined();
@@ -36,9 +32,7 @@ describe('withAppContext', () => {
       );
 
       const WrappedComponent = withAppContext(TestComponent);
-      const { container } = render(
-        await WrappedComponent({ name: 'John', age: 30, active: true }),
-      );
+      const { container } = render(await WrappedComponent({ name: 'John', age: 30, active: true }));
 
       expect(container.textContent).toBe('John-30-true');
     });
@@ -48,7 +42,7 @@ describe('withAppContext', () => {
     test('should initialize empty context', async () => {
       const TestComponent = () => {
         const data = getContext();
-        return <div data-testid="data">{JSON.stringify(data)}</div>;
+        return <div data-testid='data'>{JSON.stringify(data)}</div>;
       };
 
       const WrappedComponent = withAppContext(TestComponent);
@@ -61,15 +55,13 @@ describe('withAppContext', () => {
     test('should provide fresh context for each wrapped component', async () => {
       const TestComponent = () => {
         const data = getContext();
-        return <div data-testid="result">{data?.previewToken || 'empty'}</div>;
+        return <div data-testid='result'>{data?.previewToken || 'empty'}</div>;
       };
 
       const WrappedComponent = withAppContext(TestComponent);
 
       // First render
-      const { findByTestId: findByTestId1 } = render(
-        await WrappedComponent({}),
-      );
+      const { findByTestId: findByTestId1 } = render(await WrappedComponent({}));
       const element1 = await findByTestId1('result');
       expect(element1.textContent).toBe('empty');
     });
@@ -81,9 +73,7 @@ describe('withAppContext', () => {
         const data = getContext();
         return (
           <div>
-            <span data-testid="is-empty">
-              {Object.keys(data || {}).length === 0 ? 'empty' : 'has-data'}
-            </span>
+            <span data-testid='is-empty'>{Object.keys(data || {}).length === 0 ? 'empty' : 'has-data'}</span>
           </div>
         );
       };
@@ -99,11 +89,7 @@ describe('withAppContext', () => {
       const TestComponent = () => {
         // Components can call getContext()
         const data = getContext();
-        return (
-          <div data-testid="context-type">
-            {typeof data === 'object' ? 'object' : 'undefined'}
-          </div>
-        );
+        return <div data-testid='context-type'>{typeof data === 'object' ? 'object' : 'undefined'}</div>;
       };
 
       const WrappedComponent = withAppContext(TestComponent);
@@ -127,22 +113,14 @@ describe('withAppContext', () => {
 
       const InfoComponent = () => {
         const data = getContext();
-        return (
-          <div data-testid="info">
-            {data?.previewToken
-              ? 'preview mode'
-              : 'getPreviewContent not called'}
-          </div>
-        );
+        return <div data-testid='info'>{data?.previewToken ? 'preview mode' : 'getPreviewContent not called'}</div>;
       };
 
       const WrappedComponent = withAppContext(InfoComponent);
       const { findByTestId } = render(await WrappedComponent({}));
 
       // Without getPreviewContent being called, no preview data exists
-      expect((await findByTestId('info')).textContent).toBe(
-        'getPreviewContent not called',
-      );
+      expect((await findByTestId('info')).textContent).toBe('getPreviewContent not called');
     });
   });
 });

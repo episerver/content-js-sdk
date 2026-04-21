@@ -1,8 +1,4 @@
-import {
-  contentType,
-  displayTemplate,
-  ContentProps,
-} from '@optimizely/cms-sdk';
+import { contentType, displayTemplate, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { cn } from '../../util/merge';
 
@@ -58,16 +54,15 @@ type NoticeProps = {
 
 function Notice({ content, displaySettings }: NoticeProps) {
   const { pa } = getPreviewUtils(content);
-  const bgColor =
-    displaySettings?.color === 'green' ? 'bg-[#1cb898]' : 'bg-[#ff944f]';
+  const bgColor = displaySettings?.color === 'green' ? 'bg-[#1cb898]' : 'bg-[#ff944f]';
   return (
     <div className={cn('rounded-lg bg-teal-500 p-6 text-white', bgColor)}>
-      <h3 className="mb-4 text-xl font-bold" {...pa('title')}>
+      <h3 className='mb-4 text-xl font-bold' {...pa('title')}>
         {content.title}
       </h3>
-      <ul className="space-y-2" {...pa('points')}>
+      <ul className='space-y-2' {...pa('points')}>
         {content.points?.map((item, itemIndex) => (
-          <li key={itemIndex} className="text-sm leading-relaxed">
+          <li key={itemIndex} className='text-sm leading-relaxed'>
             {item}
           </li>
         ))}

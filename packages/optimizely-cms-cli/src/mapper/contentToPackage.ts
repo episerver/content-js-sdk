@@ -1,9 +1,5 @@
 import { AnyContentType } from '../service/utils.js';
-import {
-  transformProperties,
-  validateContentTypeKey,
-  parseChildContentType,
-} from '../utils/mapping.js';
+import { transformProperties, validateContentTypeKey, parseChildContentType } from '../utils/mapping.js';
 import chalk from 'chalk';
 
 /**
@@ -13,10 +9,7 @@ import chalk from 'chalk';
  * @param allowedKeys - Set of valid content type keys for validation.
  * @returns
  */
-function transformContentType(
-  contentType: AnyContentType,
-  allowedKeys?: Set<string>,
-): any {
+function transformContentType(contentType: AnyContentType, allowedKeys?: Set<string>): any {
   validateContentTypeKey(contentType.key);
 
   const { key, properties = {} } = contentType;
@@ -60,8 +53,6 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
     );
   }
 
-  const allowedKeys = new Set(deduplicatedContentTypes.map((ct) => ct.key));
-  return deduplicatedContentTypes.map((ct) =>
-    transformContentType(ct, allowedKeys),
-  );
+  const allowedKeys = new Set(deduplicatedContentTypes.map(ct => ct.key));
+  return deduplicatedContentTypes.map(ct => transformContentType(ct, allowedKeys));
 }

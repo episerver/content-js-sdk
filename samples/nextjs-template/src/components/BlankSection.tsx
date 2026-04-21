@@ -1,8 +1,5 @@
 import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
-import {
-  OptimizelyGridSection,
-  getPreviewUtils,
-} from '@optimizely/cms-sdk/react/server';
+import { OptimizelyGridSection, getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
   content: ContentProps<typeof BlankSectionContentType>;

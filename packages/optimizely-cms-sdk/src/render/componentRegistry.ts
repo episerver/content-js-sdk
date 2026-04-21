@@ -37,10 +37,7 @@ type ResolverOptions = {
  * implement custom logic for component resolution, such as lazy loading, conditional
  * rendering, or dynamic imports.
  */
-type ComponentResolver<C> = (
-  contentType: string,
-  options?: ResolverOptions
-) => C | undefined;
+type ComponentResolver<C> = (contentType: string, options?: ResolverOptions) => C | undefined;
 
 /** Object mapping a content type name to a {@linkcode ComponentEntry} */
 type ComponentMap<C> = Record<string, ComponentEntry<C>>;
@@ -60,10 +57,7 @@ function getDefaultComponent<C>(entry: ComponentEntry<C>): C | undefined {
 }
 
 /** Returns a component matching a tag in a {@linkcode ComponentEntry} */
-function getTagComponent<C>(
-  entry: ComponentEntry<C>,
-  tag: string
-): C | undefined {
+function getTagComponent<C>(entry: ComponentEntry<C>, tag: string): C | undefined {
   if (!hasVariants(entry)) {
     return undefined;
   }
@@ -75,9 +69,7 @@ function getTagComponent<C>(
  * Defines the component resolver as a function {@linkcode ComponentResolver}
  * or as an object {@linkcode ComponentMap}
  */
-export type ComponentResolverOrObject<C> =
-  | ComponentResolver<C>
-  | ComponentMap<C>;
+export type ComponentResolverOrObject<C> = ComponentResolver<C> | ComponentMap<C>;
 
 /** A registry mapping content type names and components */
 export class ComponentRegistry<T> {
@@ -88,10 +80,7 @@ export class ComponentRegistry<T> {
   }
 
   /** Returns the component given its content type name. Returns `undefined` if not found */
-  getComponent(
-    contentType: string,
-    options: ResolverOptions = {}
-  ): T | undefined {
+  getComponent(contentType: string, options: ResolverOptions = {}): T | undefined {
     if (typeof this.resolver === 'function') {
       return this.resolver(contentType, options);
     }

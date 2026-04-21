@@ -28,11 +28,7 @@ function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
   const omitVersion = options?.omitVersion ?? false;
 
   // Remove trailing slash if present for consistency
-  const baseUrl = (
-    host ||
-    process.env.OPTIMIZELY_CMS_API_URL ||
-    DEFAULT_GATEWAY_URL
-  ).replace(/\/$/, '');
+  const baseUrl = (host || process.env.OPTIMIZELY_CMS_API_URL || DEFAULT_GATEWAY_URL).replace(/\/$/, '');
 
   // PaaS instances always require /_cms prefix and version
   if (!isSaasApiGateway(baseUrl)) {
@@ -45,11 +41,7 @@ function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
   return `${baseUrl}/${API_VERSION}`;
 }
 
-export async function getToken(
-  clientId: string,
-  clientSecret: string,
-  host?: string,
-) {
+export async function getToken(clientId: string, clientSecret: string, host?: string) {
   const client = createClient<OAuthPaths>({
     baseUrl: rootUrl({ host, omitVersion: true }),
   });
@@ -76,15 +68,11 @@ export async function getToken(
 
         // Generic error message:
 
-        throw new Error(
-          'Something went wrong when trying to fetch token. Please try again',
-        );
+        throw new Error('Something went wrong when trying to fetch token. Please try again');
       }
 
       if (!data) {
-        throw new Error(
-          'The endpoint `/oauth/token` did not respond with data',
-        );
+        throw new Error('The endpoint `/oauth/token` did not respond with data');
       }
       return data.access_token;
     });
@@ -115,3 +103,4 @@ export async function createApiClient(host?: string) {
   const client = await createRestApiClient({ ...cred, host });
   return client;
 }
+

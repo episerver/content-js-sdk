@@ -24,7 +24,4 @@ export interface PropertyGroupRegistry {
 }
 
 // Type that combines built-in groups, registered custom groups
-export type PropertyGroupKey =
-  | BuiltInPropertyGroups
-  | keyof PropertyGroupRegistry
-  | (string & {});
+export type PropertyGroupKey = BuiltInPropertyGroups | keyof PropertyGroupRegistry | (string & {});

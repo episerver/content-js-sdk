@@ -1,14 +1,6 @@
 import { AnyProperty } from '../model/properties.js';
-import {
-  AnyContentType,
-  MAIN_BASE_TYPES,
-  PermittedTypes,
-} from '../model/contentTypes.js';
-import {
-  getContentType,
-  getAllContentTypes,
-  getContentTypeByBaseType,
-} from '../model/contentTypeRegistry.js';
+import { AnyContentType, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
+import { getContentType, getAllContentTypes, getContentTypeByBaseType } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
   buildBaseTypeFragments,
@@ -104,22 +96,10 @@ function convertProperty(
 } {
   const { maxFragmentThreshold = 100 } = options;
 
-  const result = convertPropertyField(
-    name,
-    property,
-    rootName,
-    suffix,
-    visited,
-    options,
-  );
+  const result = convertPropertyField(name, property, rootName, suffix, visited, options);
 
   // logs warnings if the fragment generation causes potential issues
-  const warningMessage = checkTypeConstraintIssues(
-    rootName,
-    property,
-    result,
-    maxFragmentThreshold,
-  );
+  const warningMessage = checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
 
   if (warningMessage) {
     console.warn(warningMessage);
@@ -169,10 +149,7 @@ function convertPropertyField(
     );
     fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
-    const allowed = resolveAllowedTypes(
-      property.allowedTypes,
-      property.restrictedTypes,
-    );
+    const allowed = resolveAllowedTypes(property.allowedTypes, property.restrictedTypes);
 
     for (const t of allowed) {
       let key = getKeyName(t);
@@ -231,10 +208,7 @@ function convertPropertyField(
  * @param options - Fragment generation options.
  * @returns A list of GraphQL fragment strings.
  */
-function createExperienceFragments(
-  visited: Set<string>,
-  options: FragmentOptions = {},
-): string[] {
+function createExperienceFragments(visited: Set<string>, options: FragmentOptions = {}): string[] {
   // Fixed fragments for all experiences
   const fixedFragments = [
     'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
@@ -242,23 +216,20 @@ function createExperienceFragments(
   ];
 
   const experienceNodes = getCachedContentTypes()
-    .filter((c) => {
+    .filter(c => {
       if (c.baseType === '_component') {
-        return (
-          'compositionBehaviors' in c &&
-          (c.compositionBehaviors?.length ?? 0) > 0
-        );
+        return 'compositionBehaviors' in c && (c.compositionBehaviors?.length ?? 0) > 0;
       }
       return false;
     })
-    .map((c) => c.key);
+    .map(c => c.key);
 
   // Get the required fragments
   const extraFragments = experienceNodes
-    .filter((n) => !visited.has(n))
-    .flatMap((n) => createFragment(n, visited, '', { ...options, includeBaseFragments: true }));
+    .filter(n => !visited.has(n))
+    .flatMap(n => createFragment(n, visited, '', { ...options, includeBaseFragments: true }));
 
-  const nodeNames = experienceNodes.map((n) => `...${n}`).join(' ');
+  const nodeNames = experienceNodes.map(n => `...${n}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
 
   return [...fixedFragments, ...extraFragments, componentFragment];
@@ -278,11 +249,7 @@ export function createFragment(
   suffix: string = '',
   options: FragmentOptions = {},
 ): string[] {
-  const {
-    damEnabled = false,
-    maxFragmentThreshold = 100,
-    includeBaseFragments = true,
-  } = options;
+  const { damEnabled = false, maxFragmentThreshold = 100, includeBaseFragments = true } = options;
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return []; // cyclic ref guard
   // Refresh registry cache only on the *root* call (avoids redundant reads)
@@ -458,23 +425,21 @@ function resolveAllowedTypes(
 
   // If a CMS base media type ("_image", "_media" …) is restricted,
   // we must also ban every user defined media type that shares the same media type
-  restricted?.forEach((r) => {
+  restricted?.forEach(r => {
     const key = getKeyName(r);
     skip.add(key);
     if (isBaseType(key)) {
-      getContentTypeByBaseType(key).forEach((ct) => skip.add(ct.key));
+      getContentTypeByBaseType(key).forEach(ct => skip.add(ct.key));
     }
   });
 
   const add = (ct: PermittedTypes | AnyContentType) => {
     const key = getKeyName(ct);
     // Skip content types where all properties are disabled
-    const ctObj =
-      typeof ct === 'object' && 'key' in ct ? ct : getContentType(key);
+    const ctObj = typeof ct === 'object' && 'key' in ct ? ct : getContentType(key);
     if (ctObj && allPropertiesAreDisabled(ctObj)) return;
     // Skip if in skip list, already seen, or is a main base type
-    if (skip.has(key) || seen.has(key) || MAIN_BASE_TYPES.includes(key as any))
-      return;
+    if (skip.has(key) || seen.has(key) || MAIN_BASE_TYPES.includes(key as any)) return;
     seen.add(key);
     result.push(ct);
   };

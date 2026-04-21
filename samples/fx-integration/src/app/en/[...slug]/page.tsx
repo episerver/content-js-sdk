@@ -38,7 +38,7 @@ export default async function Page({ params }: Props) {
     .getContentByPath(path, {
       variation: { include: 'SOME', value: [variation] },
     })
-    .then((content) => {
+    .then(content => {
       // If no variations are found, try to fetch the original
       if (content.length === 0) {
         console.log('Variation not found. Fetching original');

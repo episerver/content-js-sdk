@@ -1,8 +1,5 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
-import {
-  getPreviewUtils,
-  OptimizelyComponent,
-} from '@optimizely/cms-sdk/react/server';
+import { getPreviewUtils, OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { LocationContentType } from './Location';
 
 export const OfficeContentType = contentType({
@@ -35,14 +32,14 @@ export default function OfficeLocations({ content }: Props) {
   const { pa } = getPreviewUtils(content);
 
   return (
-    <section className="office-locations">
-      <h1 className="office-locations__title" {...pa('title')}>
+    <section className='office-locations'>
+      <h1 className='office-locations__title' {...pa('title')}>
         {content.title}
       </h1>
-      <p className="office-locations__subtitle" {...pa('subtitle')}>
+      <p className='office-locations__subtitle' {...pa('subtitle')}>
         {content.subtitle}
       </p>
-      <div className="office-locations__list" {...pa('offices')}>
+      <div className='office-locations__list' {...pa('offices')}>
         {(content.offices ?? []).map((office, i) => (
           <OptimizelyComponent content={office} key={i} />
         ))}

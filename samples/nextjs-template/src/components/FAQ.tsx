@@ -24,14 +24,11 @@ export type FAQProps = {
 export default function FAQ({ content }: FAQProps) {
   const { pa } = getPreviewUtils(content);
   return (
-    <section className="about-us">
+    <section className='about-us'>
       <h2>{content.heading}</h2>
-      <div className="about-us-content">
-        <div className="about-us-text">
-          <div
-            {...pa('body')}
-            dangerouslySetInnerHTML={{ __html: content.body?.html ?? '' }}
-          />
+      <div className='about-us-content'>
+        <div className='about-us-text'>
+          <div {...pa('body')} dangerouslySetInnerHTML={{ __html: content.body?.html ?? '' }} />
         </div>
       </div>
     </section>

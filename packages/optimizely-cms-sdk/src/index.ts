@@ -25,10 +25,7 @@ export type {
   GraphQueryOptions,
   GraphSlot,
 } from './graph/index.js';
-export {
-  BlankSectionContentType,
-  BlankExperienceContentType,
-} from './model/internalContentTypes.js';
+export { BlankSectionContentType, BlankExperienceContentType } from './model/internalContentTypes.js';
 
 export * as GraphErrors from './graph/error.js';
 export * as ContentTypes from './model/contentTypes.js';

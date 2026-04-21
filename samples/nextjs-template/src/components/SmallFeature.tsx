@@ -30,17 +30,13 @@ export default function SmallFeature({ content }: Props) {
   const imageUrl = src(content.image);
 
   return (
-    <div className="small-feature-grid">
+    <div className='small-feature-grid'>
       <h3 {...pa('heading')}>{content.heading}</h3>
       <div style={{ position: 'relative' }}>
-        {imageUrl ? (
+        {imageUrl ?
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt={getAlt(content.image, 'image')}
-            {...pa('image')}
-          />
-        ) : null}
+          <img src={imageUrl} alt={getAlt(content.image, 'image')} {...pa('image')} />
+        : null}
       </div>
       <RichText content={content.body?.json} />
     </div>

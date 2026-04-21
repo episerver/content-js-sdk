@@ -1,8 +1,4 @@
-import {
-  contentType,
-  displayTemplate,
-  ContentProps,
-} from '@optimizely/cms-sdk';
+import { contentType, displayTemplate, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 export const TileContentType = contentType({
@@ -122,7 +118,7 @@ type Props = {
 export default function Tile({ content }: Props) {
   const { pa } = getPreviewUtils(content);
   return (
-    <div className="tile">
+    <div className='tile'>
       <h1 {...pa('title')}>{content.title}</h1>
       <p {...pa('description')}>{content.description}</p>
     </div>
@@ -134,13 +130,12 @@ export function SquareTile({ content, displaySettings }: Props) {
   const { pa } = getPreviewUtils(content);
 
   return (
-    <div className="squarTile">
+    <div className='squarTile'>
       <h4 {...pa('title')}>{content.title}</h4>
       <p
         style={{
           color: displaySettings?.color,
-          flexDirection:
-            displaySettings?.orientation === 'horizontal' ? 'row' : 'column',
+          flexDirection: displaySettings?.orientation === 'horizontal' ? 'row' : 'column',
         }}
         {...pa('description')}
       >

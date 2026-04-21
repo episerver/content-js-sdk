@@ -89,9 +89,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses source/type/key format', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://cms/Page/abc123',
-    );
+    const result = (client as any).parseGraphReference('graph://cms/Page/abc123');
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
@@ -100,9 +98,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with locale query parameter', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://abc123?loc=en',
-    );
+    const result = (client as any).parseGraphReference('graph://abc123?loc=en');
     expect(result).toEqual({
       key: 'abc123',
       locale: 'en',
@@ -110,9 +106,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with version query parameter', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://abc123?ver=1.0',
-    );
+    const result = (client as any).parseGraphReference('graph://abc123?ver=1.0');
     expect(result).toEqual({
       key: 'abc123',
       version: '1.0',
@@ -120,9 +114,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with both locale and version', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://abc123?loc=en&ver=1.0',
-    );
+    const result = (client as any).parseGraphReference('graph://abc123?loc=en&ver=1.0');
     expect(result).toEqual({
       key: 'abc123',
       locale: 'en',
@@ -131,9 +123,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses full format with all parameters', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://cms/Page/abc123?loc=en&ver=1.0',
-    );
+    const result = (client as any).parseGraphReference('graph://cms/Page/abc123?loc=en&ver=1.0');
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
@@ -156,9 +146,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('handles trailing slashes', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://cms/Page/abc123/',
-    );
+    const result = (client as any).parseGraphReference('graph://cms/Page/abc123/');
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
@@ -696,10 +684,13 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await customClient.getContent({ key: 'abc123' }, {
-      cache: false,
-      slot: 'New',
-    });
+    await customClient.getContent(
+      { key: 'abc123' },
+      {
+        cache: false,
+        slot: 'New',
+      },
+    );
 
     expect(customMockRequest).toHaveBeenNthCalledWith(
       2,
@@ -863,14 +854,20 @@ describe('GraphClient.getPath() with GraphReference', () => {
 
     await client.getPath({ key: 'abc123' }, { locales: ['en', 'sv'] });
 
-    expect(mockRequest).toHaveBeenCalledWith(expect.any(String), {
-      where: {
-        _metadata: {
-          key: { eq: 'abc123' },
+    expect(mockRequest).toHaveBeenCalledWith(
+      expect.any(String),
+      {
+        where: {
+          _metadata: {
+            key: { eq: 'abc123' },
+          },
         },
+        locale: ['en', 'sv'],
       },
-      locale: ['en', 'sv'],
-    }, undefined, true, undefined);
+      undefined,
+      true,
+      undefined,
+    );
   });
 });
 
@@ -1012,14 +1009,20 @@ describe('GraphClient.getItems() with GraphReference', () => {
 
     await client.getItems({ key: 'abc123' }, { locales: ['en', 'sv'] });
 
-    expect(mockRequest).toHaveBeenCalledWith(expect.any(String), {
-      where: {
-        _metadata: {
-          key: { eq: 'abc123' },
+    expect(mockRequest).toHaveBeenCalledWith(
+      expect.any(String),
+      {
+        where: {
+          _metadata: {
+            key: { eq: 'abc123' },
+          },
         },
+        locale: ['en', 'sv'],
       },
-      locale: ['en', 'sv'],
-    }, undefined, true, undefined);
+      undefined,
+      true,
+      undefined,
+    );
   });
 
   test('returns items with metadata', async () => {

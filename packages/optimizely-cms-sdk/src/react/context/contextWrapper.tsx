@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  configureAdapter,
-  hasAdapter,
-  initializeRequestContext,
-} from '../../context/config.js';
+import { configureAdapter, hasAdapter, initializeRequestContext } from '../../context/config.js';
 import ReactContextAdapter from '../../context/reactContextAdapter.js';
 
 // Configure the React adapter only if no custom adapter has been set
@@ -46,9 +42,7 @@ if (!hasAdapter()) {
  * export default withAppContext(MyPage);
  * ```
  */
-export function withAppContext<P extends object>(
-  Component: React.ComponentType<P>,
-) {
+export function withAppContext<P extends object>(Component: React.ComponentType<P>) {
   return async function WrappedWithContext(props: P) {
     // Initialize context for this request
     initializeRequestContext();

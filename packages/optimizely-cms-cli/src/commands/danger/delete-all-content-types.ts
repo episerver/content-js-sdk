@@ -4,9 +4,7 @@ import { BaseCommand } from '../../baseCommand.js';
 import ora from 'ora';
 import { createApiClient } from '../../service/cmsRestClient.js';
 
-export default class DangerDeleteAllContentTypes extends BaseCommand<
-  typeof DangerDeleteAllContentTypes
-> {
+export default class DangerDeleteAllContentTypes extends BaseCommand<typeof DangerDeleteAllContentTypes> {
   static override args = {};
   static override description =
     '⚠️  [DANGER] Delete ALL user-defined content types from the CMS (excludes system types)';
@@ -42,9 +40,7 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<
       process.exit(1);
     }
 
-    const deletedTypes = contentTypes.filter(
-      (t) => t.source !== 'system' && t.source !== 'serverModel',
-    );
+    const deletedTypes = contentTypes.filter(t => t.source !== 'system' && t.source !== 'serverModel');
 
     if (deletedTypes.length === 0) {
       console.log(chalk.yellow('There are no user-defined content types in the CMS'));

@@ -155,9 +155,7 @@ describe('getPreviewUtils', () => {
       });
       const result = utils.src(assetWithDefaultUrl);
 
-      expect(result).toBe(
-        'https://example.com/default-image.jpg?preview_token=test-token-456',
-      );
+      expect(result).toBe('https://example.com/default-image.jpg?preview_token=test-token-456');
     });
 
     it('should handle string URL input', () => {
@@ -174,9 +172,7 @@ describe('getPreviewUtils', () => {
       });
       const result = utils.src('https://example.com/image.jpg');
 
-      expect(result).toBe(
-        'https://example.com/image.jpg?preview_token=test-token-123',
-      );
+      expect(result).toBe('https://example.com/image.jpg?preview_token=test-token-123');
     });
 
     it('should return empty string for null input', () => {
@@ -232,9 +228,7 @@ describe('getPreviewUtils', () => {
       });
       const result = utils.src('https://example.com/image.jpg?width=500');
 
-      expect(result).toBe(
-        'https://example.com/image.jpg?width=500&preview_token=test-token-123',
-      );
+      expect(result).toBe('https://example.com/image.jpg?width=500&preview_token=test-token-123');
     });
 
     it('should prefer url.default over item.Url when both exist', () => {
@@ -310,11 +304,7 @@ describe('getPreviewUtils', () => {
 
       expect(result).toBeDefined();
       const entries = result!.split(', ');
-      expect(
-        entries.every((entry: string) =>
-          entry.includes('preview_token=test-token-456'),
-        ),
-      ).toBe(true);
+      expect(entries.every((entry: string) => entry.includes('preview_token=test-token-456'))).toBe(true);
     });
 
     it('should deduplicate renditions with same width', () => {
@@ -337,11 +327,7 @@ describe('getPreviewUtils', () => {
 
       expect(result).toBeDefined();
       const entries = result!.split(', ');
-      expect(
-        entries.every((entry: string) =>
-          entry.includes('preview_token=test-token-123'),
-        ),
-      ).toBe(true);
+      expect(entries.every((entry: string) => entry.includes('preview_token=test-token-123'))).toBe(true);
     });
 
     it('should return undefined for null ContentReference', () => {
@@ -473,11 +459,7 @@ describe('getPreviewUtils', () => {
 
       expect(result).toBeDefined();
       const entries = result!.split(', ');
-      expect(
-        entries.every((entry: string) =>
-          entry.includes('preview_token=test-token-123'),
-        ),
-      ).toBe(true);
+      expect(entries.every((entry: string) => entry.includes('preview_token=test-token-123'))).toBe(true);
     });
 
     it('should extract alt text using getAlt from damAssets', () => {

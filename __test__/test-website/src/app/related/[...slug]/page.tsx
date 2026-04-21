@@ -24,7 +24,7 @@ export default async function Page({ params }: Props) {
       <h1>Links from this page</h1>
       <h2>Children</h2>
       <ul>
-        {children?.map((l) => (
+        {children?.map(l => (
           <li key={l._metadata?.key}>
             {l?._metadata?.displayName} ({l?._metadata?.url?.default})
           </li>
@@ -32,7 +32,7 @@ export default async function Page({ params }: Props) {
       </ul>
       <h2>Ancestors (breadcrumbs)</h2>
       <ol>
-        {ancestors?.map((l) => (
+        {ancestors?.map(l => (
           <li key={l._metadata?.key}>
             {l?._metadata?.displayName} ({l?._metadata?.url?.default})
           </li>
