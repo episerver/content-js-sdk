@@ -12,7 +12,7 @@ export const ButtonContentType = contentType({
       type: 'url',
       displayName: 'Button Link',
       group: 'Content',
-      required: true,
+      isRequired: true,
     },
     text: {
       type: 'string',
