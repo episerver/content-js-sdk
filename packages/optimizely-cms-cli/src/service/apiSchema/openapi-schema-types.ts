@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+  '/applications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['Applications_List'];
+    put?: never;
+    post: operations['Applications_Create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/applications/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['Applications_Get'];
+    put?: never;
+    post?: never;
+    delete: operations['Applications_Delete'];
+    options?: never;
+    head?: never;
+    patch: operations['Applications_Patch'];
+    trace?: never;
+  };
   '/changesets': {
     parameters: {
       query?: never;
@@ -630,6 +662,99 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** @description Represents a CMS application (website or remote website). */
+    Application: {
+      /** @description The unique identifier (key) of the resource. */
+      key?: string;
+      /** @description The display name of this Application. */
+      displayName: string;
+      /** @description The type of the application. */
+      type: components['schemas']['ApplicationType'];
+      /** @description A string that is used to indicate the source of this Application. */
+      source?: string;
+      /** @description A reference to the entry point (start page) content for this application. */
+      entryPoint: string;
+      /** @description Whether this is the default application. */
+      isDefault?: boolean;
+      /** @description Whether this application uses a dedicated assets folder. */
+      useApplicationSpecificAssets?: boolean;
+      /** @description Returns the root for application-specific assets, if UseApplicationSpecificAssets is true. */
+      assetsRoot?: string | null;
+      /** @description The hosts assigned to this application. */
+      hosts?: components['schemas']['ApplicationHost'][];
+      /** @description Whether to use preview tokens for this application. Only applicable when the type is 'website'. */
+      usePreviewTokens?: boolean;
+      /** @description A dictionary of preview URL formats keyed by content type base or content type key. Only applicable when the type is 'website'. */
+      previewUrlFormats?: Record<string, string>;
+      /** @description A timestamp indicating when this resource was first created. */
+      created?: string;
+      /** @description The name of the user or application that created this resource. */
+      createdBy?: string;
+      /** @description Indicates the last time this resource was modified. */
+      lastModified?: string;
+      /** @description The name of the user or application that last modified this resource. */
+      lastModifiedBy?: string;
+    };
+    /** @description Represents a host entry for an Application. */
+    ApplicationHost: {
+      /** @description The DNS host name or IP address and optional port of this host. */
+      authority: string;
+      /** @description The type of the host. */
+      type?: components['schemas']['ApplicationHostType'];
+      /** @description The locale associated with this host. */
+      locale?: string;
+      /** @description The preferred URL scheme for this host. */
+      preferredUrlScheme?: components['schemas']['UrlScheme'];
+    };
+    /** @description Represents the type of an ApplicationHost. */
+    ApplicationHostType: Record<string, never>;
+    /** @description Represents the type of an ApplicationHost for patch operations. */
+    ApplicationHostPatch: {
+      /** @description The DNS host name or IP address and optional port of this host. */
+      authority?: string | null;
+      /** @description The type of the host. */
+      type?: components['schemas']['ApplicationHostTypePatch'];
+      /** @description The locale associated with this host. */
+      locale?: string | null;
+      /** @description The preferred URL scheme for this host. */
+      preferredUrlScheme?: components['schemas']['UrlSchemePatch'];
+    };
+    /** @description Represents the type of an ApplicationHost for patch operations. */
+    ApplicationHostTypePatch: Record<string, never>;
+    /** @description Represents a single page of items in a paged collection. */
+    ApplicationPage: {
+      /** @description The items in this paged collection. */
+      items?: components['schemas']['Application'][];
+      /** @description The zero-based index of the current page. */
+      pageIndex?: number;
+      /** @description The number of items in each page. */
+      pageSize?: number;
+      /** @description The estimated total number of items in the collection. */
+      totalCount?: number | null;
+    };
+    /** @description Represents a CMS application for patch operations. */
+    ApplicationPatch: {
+      /** @description The display name of this Application. */
+      displayName?: string | null;
+      /** @description The type of the application. */
+      type?: components['schemas']['ApplicationTypePatch'];
+      /** @description A reference to the entry point (start page) content for this application. */
+      entryPoint?: string | null;
+      /** @description Whether this is the default application. */
+      isDefault?: boolean | null;
+      /** @description Whether this application uses a dedicated assets folder. */
+      useApplicationSpecificAssets?: boolean | null;
+      /** @description The hosts assigned to this application. */
+      hosts?: components['schemas']['ApplicationHostPatch'][] | null;
+      /** @description Whether to use preview tokens for this application. Only applicable when the type is 'website'. */
+      usePreviewTokens?: boolean | null;
+      /** @description A dictionary of preview URL formats keyed by content type base or content type key. Only applicable when the type is 'website'. */
+      previewUrlFormats?: Record<string, string> | null;
+    };
+    /** @description Represents the type of an Application. */
+    ApplicationType: Record<string, never>;
+    /** @description Represents the type of an Application for patch operations. */
+    ApplicationTypePatch: Record<string, never>;
     /** @description Describes a property that can contain a reference to binary data. */
     BinaryProperty: Omit<
       components['schemas']['ContentTypeProperty'],
@@ -1652,6 +1777,10 @@ export interface components {
          */
         type: 'UrlProperty';
       };
+    /** @description Represents the URL scheme. */
+    UrlScheme: Record<string, never>;
+    /** @description Represents the URL scheme for patch operations. */
+    UrlSchemePatch: Record<string, never>;
     /**
      * @description Represent the different status values of a content version.
      * @enum {string}
@@ -1673,6 +1802,340 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  Applications_List: {
+    parameters: {
+      query?: {
+        pageIndex?: number;
+        pageSize?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApplicationPage'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+    };
+  };
+  Applications_Create: {
+    parameters: {
+      query?: never;
+      header?: {
+        Prefer?: string[];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['Application'];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          ETag?: string;
+          'Last-Modified'?: string;
+          Location?: string;
+          'Preference-Applied'?: string[];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Application'];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+    };
+  };
+  Applications_Get: {
+    parameters: {
+      query?: never;
+      header?: {
+        'If-None-Match'?: string;
+        'If-Modified-Since'?: string;
+      };
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          ETag?: string;
+          'Last-Modified'?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Application'];
+        };
+      };
+      /** @description Not Modified */
+      304: {
+        headers: {
+          ETag?: string;
+          'Last-Modified'?: string;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+    };
+  };
+  Applications_Patch: {
+    parameters: {
+      query?: never;
+      header?: {
+        Prefer?: string[];
+        'If-Match'?: string;
+        'If-Unmodified-Since'?: string;
+      };
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/merge-patch+json': components['schemas']['ApplicationPatch'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          ETag?: string;
+          'Last-Modified'?: string;
+          'Preference-Applied'?: string[];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Application'];
+        };
+      };
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Precondition Failed */
+      412: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+    };
+  };
+  Applications_Delete: {
+    parameters: {
+      query?: never;
+      header?: {
+        Prefer?: string[];
+        'If-Match'?: string;
+        'If-Unmodified-Since'?: string;
+      };
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          'Preference-Applied'?: string[];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Application'];
+        };
+      };
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+      /** @description Precondition Failed */
+      412: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['ProblemDetails'];
+        };
+      };
+    };
+  };
   Changesets_List: {
     parameters: {
       query?: {

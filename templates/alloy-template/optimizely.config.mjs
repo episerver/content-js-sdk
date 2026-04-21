@@ -14,4 +14,17 @@ export default buildConfig({
       sortOrder: 2,
     },
   ],
+  startPage: {
+    key: 'Start',
+    displayName: 'Start Page',
+    baseType: '_experience',
+  },
+  applications: [
+    {
+      key: 'Alloy',
+      displayName: 'Alloy',
+      type: 'website',
+      entryPoint: '$startPage',
+    },
+  ],
 });

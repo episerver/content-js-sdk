@@ -11,6 +11,8 @@ import {
   normalizePropertyGroups,
   validateApplications,
 } from '../../service/utils.js';
+import { ensureStartPageContent } from '../../service/contentService.js';
+import { ensureApplication } from '../../service/applicationService.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -48,7 +50,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     try {
       await access(configFilePath, constants.R_OK);
     } catch {
-      console.error(chalk.red(`Configuration file not found: ${configFilePath}`));
+      console.error(
+        chalk.red(`Configuration file not found: ${configFilePath}`),
+      );
       console.error(chalk.dim(`Make sure the file exists and is readable.`));
       process.exit(1);
     }
@@ -58,11 +62,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     let componentPaths: string[];
     let propertyGroups: any;
     let applications: any;
+    let startPage: any;
 
     try {
       componentPaths = await readFromPath(configPath, 'components');
       propertyGroups = await readFromPath(configPath, 'propertyGroups');
       applications = await readFromPath(configPath, 'applications');
+      startPage = await readFromPath(configPath, 'startPage');
     } catch (error) {
       console.error(chalk.red('Failed to read configuration file'));
       if (error instanceof Error) {
@@ -73,7 +79,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Validate components field
     if (!componentPaths || !Array.isArray(componentPaths)) {
-      console.error(chalk.red('Invalid configuration: "components" field must be an array'));
+      console.error(
+        chalk.red('Invalid configuration: "components" field must be an array'),
+      );
       process.exit(1);
     }
 
@@ -97,11 +105,67 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       ? validateApplications(applications)
       : [];
 
+    // Handle startPage content creation if configured
+    let startPageContentRef: string | undefined;
+
+    if (startPage && startPage.key) {
+      const startPageSpinner = ora(
+        `Checking start page content "${startPage.key}"`,
+      ).start();
+      try {
+        startPageContentRef = await ensureStartPageContent(
+          startPage,
+          flags.host,
+        );
+        startPageSpinner.succeed(
+          chalk.green(
+            `Start page content "${startPage.key}" ready at ${startPageContentRef}`,
+          ),
+        );
+
+        // Update applications to use the startPage as entryPoint if not already set
+        for (const app of validatedApplications) {
+          if (!app.entryPoint || app.entryPoint === '') {
+            app.entryPoint = startPageContentRef;
+            console.log(
+              chalk.dim(
+                `  Updated application "${app.displayName}" entryPoint to ${startPageContentRef}`,
+              ),
+            );
+          }
+        }
+      } catch (error) {
+        startPageSpinner.fail(chalk.red(`Failed to ensure start page content`));
+        if (error instanceof Error) {
+          console.error(chalk.red(error.message));
+        }
+        throw error;
+      }
+    }
+
+    // Handle application creation if configured
+    // if (validatedApplications.length > 0) {
+    //   for (const app of validatedApplications) {
+    //     const appSpinner = ora(`Checking application "${app.displayName}"`).start();
+    //     try {
+    //       const appKey = await ensureApplication(app, flags.host);
+    //       appSpinner.succeed(
+    //         chalk.green(`Application "${app.displayName}" ready (${appKey})`),
+    //       );
+    //     } catch (error) {
+    //       appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
+    //       if (error instanceof Error) {
+    //         console.error(chalk.red(error.message));
+    //       }
+    //       throw error;
+    //     }
+    //   }
+    // }
+
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes),
       displayTemplates,
       propertyGroups: normalizedPropertyGroups,
-      applications: validatedApplications,
     };
 
     const restClient = await createApiClient(flags.host);
@@ -109,9 +173,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     if (flags.output) {
       try {
         await writeFile(flags.output, JSON.stringify(metaData, null, 2));
-        console.info(chalk.green(`Configuration file written to '${flags.output}'`));
+        console.info(
+          chalk.green(`Configuration file written to '${flags.output}'`),
+        );
       } catch (error) {
-        console.error(chalk.red(`Failed to write output file: ${flags.output}`));
+        console.error(
+          chalk.red(`Failed to write output file: ${flags.output}`),
+        );
         if (error instanceof Error) {
           console.error(chalk.dim(error.message));
         }
