@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
-import { createApiClient } from '../../service/cmsRestClient.js';
+import { createApiClient, getManifestEndpoint } from '../../service/cmsRestClient.js';
 import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
 import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
 import { ContentType } from '../../generators/manifest.js';
@@ -42,8 +42,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
    */
   private async fetchManifest(host?: string) {
     const restClient = await createApiClient(host);
+    const manifestEndpoint = getManifestEndpoint();
     const { data, error, response } = await restClient.GET(
-      '/experimental/packages',
+      manifestEndpoint,
     );
     // Non-2xx responses have undefined data; check error/response instead
     if (error || (response && !response.ok)) {

@@ -529,6 +529,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/manifest': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['Packages_Export'];
+    put?: never;
+    post: operations['Packages_Import'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/propertyformats': {
     parameters: {
       query?: never;

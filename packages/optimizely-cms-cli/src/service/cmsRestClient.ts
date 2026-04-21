@@ -21,10 +21,11 @@ function isSaasApiGateway(url: string): boolean {
  * @returns The constructed root URL for the CMS API
  */
 function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
-  const API_VERSION = 'preview3';
+  const DEFAULT_API_VERSION = 'v1';
   const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
   const host = options?.host;
   const omitVersion = options?.omitVersion ?? false;
+  const apiVersion = process.env.OPTIMIZELY_CMS_API_VERSION || DEFAULT_API_VERSION;
 
   // Remove trailing slash if present for consistency
   const baseUrl = (
@@ -35,13 +36,13 @@ function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
 
   // PaaS instances always require /_cms prefix and version
   if (!isSaasApiGateway(baseUrl)) {
-    return `${baseUrl}/_cms/${API_VERSION}`;
+    return `${baseUrl}/_cms/${apiVersion}`;
   }
 
   // SaaS gateways: omitVersion is 'true' when used for the token endpoint
   if (omitVersion) return baseUrl;
 
-  return `${baseUrl}/${API_VERSION}`;
+  return `${baseUrl}/${apiVersion}`;
 }
 
 export async function getToken(
@@ -113,4 +114,9 @@ export async function createApiClient(host?: string) {
   const cred = readEnvCredentials();
   const client = await createRestApiClient({ ...cred, host });
   return client;
+}
+
+export function getManifestEndpoint(): '/experimental/packages' | '/manifest' {
+  const apiVersion = process.env.OPTIMIZELY_CMS_API_VERSION || 'v1';
+  return apiVersion === 'preview3' ? '/experimental/packages' : '/manifest';
 }
