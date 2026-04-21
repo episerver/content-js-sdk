@@ -11,6 +11,11 @@ import {
   normalizePropertyGroups,
   validateApplications,
 } from '../../service/utils.js';
+import {
+  ensureStartPageContent,
+  ensureStartPageContentType,
+} from '../../service/contentService.js';
+import { ensureApplication } from '../../service/applicationService.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -60,11 +65,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     let componentPaths: string[];
     let propertyGroups: any;
     let applications: any;
+    let startPage: any;
 
     try {
       componentPaths = await readFromPath(configPath, 'components');
       propertyGroups = await readFromPath(configPath, 'propertyGroups');
       applications = await readFromPath(configPath, 'applications');
+      startPage = await readFromPath(configPath, 'startPage');
     } catch (error) {
       console.error(chalk.red('Failed to read configuration file'));
       if (error instanceof Error) {
@@ -98,11 +105,60 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const manifestContracts = contracts.map(contractToManifest);
     const validatedApplications = applications ? validateApplications(applications) : [];
 
+    // Handle startPage content creation if configured
+    let startPageContentRef: string | undefined;
+
+    if (startPage && startPage.key) {
+      const startPageSpinner = ora(`Checking start page content "${startPage.key}"`).start();
+      try {
+        startPageContentRef = await ensureStartPageContent(startPage, flags.host);
+        startPageSpinner.succeed(
+          chalk.green(`Start page content "${startPage.key}" ready at ${startPageContentRef}`),
+        );
+
+        // Update applications to use the startPage as entryPoint if not already set
+        for (const app of validatedApplications) {
+          if (!app.entryPoint || app.entryPoint === '') {
+            app.entryPoint = startPageContentRef;
+            console.log(
+              chalk.dim(
+                `  Updated application "${app.displayName}" entryPoint to ${startPageContentRef}`,
+              ),
+            );
+          }
+        }
+      } catch (error) {
+        startPageSpinner.fail(chalk.red(`Failed to ensure start page content`));
+        if (error instanceof Error) {
+          console.error(chalk.red(error.message));
+        }
+        throw error;
+      }
+    }
+
+    // Handle application creation if configured
+    // if (validatedApplications.length > 0) {
+    //   for (const app of validatedApplications) {
+    //     const appSpinner = ora(`Checking application "${app.displayName}"`).start();
+    //     try {
+    //       const appKey = await ensureApplication(app, flags.host);
+    //       appSpinner.succeed(
+    //         chalk.green(`Application "${app.displayName}" ready (${appKey})`),
+    //       );
+    //     } catch (error) {
+    //       appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
+    //       if (error instanceof Error) {
+    //         console.error(chalk.red(error.message));
+    //       }
+    //       throw error;
+    //     }
+    //   }
+    // }
+
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes).concat(manifestContracts),
       displayTemplates,
       propertyGroups: normalizedPropertyGroups,
-      applications: validatedApplications,
     };
 
     const restClient = await createApiClient(flags.host);

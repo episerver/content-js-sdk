@@ -1,4 +1,4 @@
-import { buildConfig } from '@optimizely/cms-sdk';
+import { buildConfig, BlankExperienceContentType } from '@optimizely/cms-sdk';
 
 export default buildConfig({
   components: ['./src/components/**.tsx', './src/components/**.ts'],
@@ -19,11 +19,18 @@ export default buildConfig({
       sortOrder: 3,
     },
   ],
+  startPage: {
+    key: 'BlankExperience',
+    displayName: 'Blank Experience',
+    baseType: '_experience',
+  },
   applications: [
     {
-      displayName: 'Next.js Template',
+      key: 'test-app',
+      displayName: 'Test App',
       type: 'website',
-      entryPoint: './src/app/page.tsx',
+      entryPoint: '/home',
     },
   ],
 });
+

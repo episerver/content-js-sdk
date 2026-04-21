@@ -1,3 +1,5 @@
+import { AnyContentType } from './contentTypes.js';
+
 export type PropertyGroupType = {
   key: string;
   displayName: string;
@@ -34,6 +36,7 @@ export type BuildConfig = {
   components: string[];
   propertyGroups: Array<PropertyGroupType>;
   applications: Array<ApplicationsType>;
+  startPage?: Pick<AnyContentType, 'key' | 'displayName' | 'baseType'>;
 };
 
 // Built-in/default property groups that all users get

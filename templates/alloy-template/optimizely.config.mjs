@@ -18,4 +18,9 @@ export default buildConfig({
       sortOrder: 2,
     },
   ],
+  startPage: {
+    key: 'Start',
+    displayName: 'Start Page',
+    baseType: '_experience',
+  },
 });
