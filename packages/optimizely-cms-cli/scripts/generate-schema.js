@@ -49,8 +49,8 @@ async function main() {
 
     // Prompt user for version
     const version = await input({
-      message: 'Enter the API version (e.g., preview3):',
-      default: 'preview3',
+      message: 'Enter the API version (e.g., v1):',
+      default: 'v1',
       validate: (value) => {
         if (!value || value.trim() === '') {
           return 'Version is required';
