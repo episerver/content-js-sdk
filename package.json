@@ -22,6 +22,9 @@
   "pnpm": {
     "neverBuiltDependencies": [
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "@redocly/ajv": "npm:ajv@^8.18.0"
+    }
   }
 }
