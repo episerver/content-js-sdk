@@ -22,8 +22,8 @@ import { setContext } from '../context/config.js';
 
 /** Configuration for initializing the Optimizely Graph Client */
 export type GraphOptions = {
-  /** Your Optimizely Graph API key */
-  key: string;
+  /** Your Optimizely Graph API key (Single key in CMS) */
+  apiKey: string;
   /** Optional custom Graph URL (defaults to production: https://cg.optimizely.com/content/v2) */
   graphUrl?: string;
   /** Optional default host for path filtering */
@@ -285,7 +285,7 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
 }
 
 export class GraphClient {
-  key: string;
+  apiKey: string;
   graphUrl: string;
   maxFragmentThreshold: number;
   host?: string;
@@ -293,8 +293,8 @@ export class GraphClient {
   slot?: GraphSlot;
 
   // The key is required, other options have defaults or can be set globally
-  constructor(key: string, options: Omit<GraphOptions, 'key'> = {}) {
-    this.key = key;
+  constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
+    this.apiKey = apiKey;
     this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
     this.host = options.host;
@@ -312,16 +312,14 @@ export class GraphClient {
   ): Promise<any> {
     const url = new URL(this.graphUrl);
 
-    if (!previewToken) {
-      url.searchParams.append('auth', this.key);
-    }
-
     // Append cache parameter to control caching behavior
     url.searchParams.append('cache', cache.toString());
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      Authorization: previewToken ? `Bearer ${previewToken}` : '',
+      Authorization: previewToken
+        ? `Bearer ${previewToken}`
+        : `epi-single ${this.apiKey}`,
     };
 
     if (slot === 'New') {
@@ -450,8 +448,12 @@ export class GraphClient {
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
 
-    const { contentTypeName, damEnabled } =
-      await this.getContentMetaData(input, undefined, cacheEnabled, activeSlot);
+    const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      input,
+      undefined,
+      cacheEnabled,
+      activeSlot,
+    );
 
     if (!contentTypeName) {
       return [];
@@ -463,7 +465,13 @@ export class GraphClient {
         damEnabled,
         this.maxFragmentThreshold,
       );
-      const response = (await this.request(query, input, undefined, cacheEnabled, activeSlot)) as ItemsResponse<T>;
+      const response = (await this.request(
+        query,
+        input,
+        undefined,
+        cacheEnabled,
+        activeSlot,
+      )) as ItemsResponse<T>;
 
       return response?._Content?.items.map(removeTypePrefix);
     } catch (error) {
@@ -882,7 +890,7 @@ export function getGraphConfig(): GraphOptions | null {
  * import { config } from '@optimizely/cms-sdk';
  *
  * config({
- *   key: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+ *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
  *   host: 'example.com', // optional
  * });
@@ -894,9 +902,9 @@ export function getGraphConfig(): GraphOptions | null {
  */
 export function config(options: GraphOptions) {
   if (
-    !options.key ||
-    typeof options.key !== 'string' ||
-    options.key.trim().length === 0
+    !options.apiKey ||
+    typeof options.apiKey !== 'string' ||
+    options.apiKey.trim().length === 0
   ) {
     throw new OptimizelyGraphError(
       'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
@@ -921,7 +929,7 @@ export function config(options: GraphOptions) {
  * import { config } from '@optimizely/cms-sdk';
  *
  * config({
- *   key: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+ *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
  *   host: 'example.com', // optional
  * });
@@ -948,5 +956,5 @@ export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient 
     ...(overrideOptions ?? {}),
   };
 
-  return new GraphClient(options.key, options);
+  return new GraphClient(options.apiKey, options);
 }
