@@ -117,9 +117,10 @@ describe('GraphClient - Context Integration', () => {
   // Define a test content type
   const TestPageContentType = contentType({
     key: 'TestPage',
+    displayName: 'Test Page',
     baseType: '_page',
     properties: {
-      title: { type: 'string' },
+      title: { type: 'string', displayName: 'Title' },
     },
   });
 

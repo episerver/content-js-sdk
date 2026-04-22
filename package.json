@@ -9,6 +9,7 @@
   "private": "true",
   "scripts": {
     "build": "pnpm --filter \"./packages/**\" build",
+    "install:all": "pnpm --filter \"./packages/**\" install && pnpm --filter \"./packages/**\" build && pnpm --filter \"./samples/**\" --filter \"./templates/**\" install",
     "build:samples": "pnpm --filter \"./samples/**\" build",
     "clean:all": "pnpm -r clean",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -21,6 +22,9 @@
   "pnpm": {
     "neverBuiltDependencies": [
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "@redocly/ajv": "npm:ajv@^8.18.0"
+    }
   }
 }

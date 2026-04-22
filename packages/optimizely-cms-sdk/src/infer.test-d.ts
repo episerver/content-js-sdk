@@ -20,6 +20,7 @@ test('ContentProps works for basic properties', () => {
 
   const Article = contentType({
     key: 'Article',
+    displayName: 'Article',
     baseType: '_page',
     properties: {
       heading: { type: 'string' },
@@ -46,6 +47,7 @@ test('ContentProps works for array properties', () => {
 
   const Article = contentType({
     key: 'Article',
+    displayName: 'Article',
     baseType: '_page',
     properties: {
       heading: { type: 'array', items: { type: 'string' } },
@@ -69,6 +71,7 @@ test('ContentProps works for component properties', () => {
 
   const Hero = contentType({
     key: 'Hero',
+    displayName: 'Hero',
     baseType: '_component',
     properties: {
       image: { type: 'contentReference' },
@@ -77,6 +80,7 @@ test('ContentProps works for component properties', () => {
 
   const Article = contentType({
     key: 'Article',
+    displayName: 'Article',
     baseType: '_page',
     properties: {
       hero: {
@@ -96,6 +100,7 @@ test('ContentProps works for disabled keys', () => {
 
   const c1 = contentType({
     key: 'c1',
+    displayName: 'C1',
     baseType: '_component',
     properties: {
       p1: { type: 'string', indexingType: 'disabled' },

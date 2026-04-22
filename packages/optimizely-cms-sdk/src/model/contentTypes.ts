@@ -27,7 +27,7 @@ export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 /** A "Base" content type that includes all common attributes for all content types */
 type BaseContentType = {
   key: string;
-  displayName?: string;
+  displayName: string;
   properties?: Record<string, AnyProperty>;
 };
 
@@ -60,7 +60,7 @@ export type FolderContentType = BaseContentType & {
 /** Represents the "Component" type (also called "Block") in CMS */
 export type ComponentContentType = BaseContentType & {
   baseType: '_component';
-  compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
+  compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[]; // Add "formsElementEnabled" here if when forms are supported in components
   mayContainTypes?: Array<ContentType<ComponentContentType> | '_self' | string>;
 };
 

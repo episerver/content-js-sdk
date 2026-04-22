@@ -11,8 +11,8 @@ type BaseProperty = {
   format?: string;
   displayName?: string;
   description?: string;
-  required?: boolean;
-  localized?: boolean;
+  isRequired?: boolean;
+  isLocalized?: boolean;
   group?: PropertyGroupKey;
   sortOrder?: number;
   indexingType?: INDEX_TYPE;

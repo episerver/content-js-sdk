@@ -1,7 +1,8 @@
 import createClient from 'openapi-fetch';
-import { paths } from './apiSchema/openapi-schema-types.js';
 import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
+import { OAuthPaths } from './apiSchema/gateway-auth-types.js';
+import { paths } from './apiSchema/openapi-schema-types.js';
 
 /**
  * Determines if the provided URL matches the pattern of a SaaS API gateway.
@@ -21,7 +22,7 @@ function isSaasApiGateway(url: string): boolean {
  * @returns The constructed root URL for the CMS API
  */
 function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
-  const API_VERSION = 'preview3';
+  const API_VERSION = 'v1';
   const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
   const host = options?.host;
   const omitVersion = options?.omitVersion ?? false;
@@ -49,7 +50,7 @@ export async function getToken(
   clientSecret: string,
   host?: string,
 ) {
-  const client = createClient<paths>({
+  const client = createClient<OAuthPaths>({
     baseUrl: rootUrl({ host, omitVersion: true }),
   });
 

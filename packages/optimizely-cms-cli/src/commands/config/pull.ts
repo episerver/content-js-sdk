@@ -42,9 +42,13 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
    */
   private async fetchManifest(host?: string) {
     const restClient = await createApiClient(host);
-    const { data, error, response } = await restClient.GET(
-      '/experimental/packages',
-    );
+    const { data, error, response } = await restClient.GET('/manifest', {
+      params: {
+        query: {
+          sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
+        },
+      },
+    });
     // Non-2xx responses have undefined data; check error/response instead
     if (error || (response && !response.ok)) {
       const status = (error as any)?.status ?? response?.status;
@@ -217,7 +221,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
           // Map content type key to its parsed group name (without leading underscore)
           const parsedGroupName = group.replace(/^_/, '');
-          contentTypeToGroupMap.set(contentType.key, parsedGroupName);
+          // The contentType.key is expected to be unique across all groups
+          contentTypeToGroupMap.set(contentType.key!, parsedGroupName);
         }
 
         // Process and match display templates to content types

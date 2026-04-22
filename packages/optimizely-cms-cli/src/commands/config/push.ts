@@ -125,15 +125,15 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const spinner = ora('Uploading configuration file').start();
 
-    const response = await restClient.POST('/experimental/packages', {
+    const response = await restClient.POST('/manifest', {
       headers: {
         accept: 'application/json',
         'content-type': 'application/vnd.optimizely.cms.v1.manifest+json',
       },
       body: metaData as any,
       params: {
-        query: {
-          ignoreDataLossWarnings: flags.force,
+        header: {
+          'cms-ignore-data-loss-warnings': flags.force,
         },
       },
     });
@@ -177,15 +177,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
-      for (const r of response.data?.outcomes ?? []) {
+      for (const r of data.outcomes) {
         console.log(chalk.dim('  -'), chalk.blue(r.message));
-      }
-    }
-
-    if (data.warnings && data.warnings.length > 0) {
-      console.log(chalk.yellow.bold('\nWarnings:'));
-      for (const r of data.warnings) {
-        console.log(chalk.dim('  -'), chalk.yellow(r.message));
       }
     }
 
