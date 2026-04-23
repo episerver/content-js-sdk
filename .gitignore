@@ -22,3 +22,5 @@ dist
 .vercel
 .DS_Store
 *-temp.json
+.vscode
+.tanstack
