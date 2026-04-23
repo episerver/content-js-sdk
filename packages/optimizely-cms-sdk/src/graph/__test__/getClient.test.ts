@@ -5,7 +5,7 @@ describe('getClient - Critical Edge Cases', () => {
   describe('Basic functionality', () => {
     beforeEach(() => {
       config({
-        key: 'test-key',
+        apiKey: 'test-key',
         graphUrl: 'https://test.optimizely.com/content/v2',
         host: 'test.com',
       });
@@ -15,7 +15,7 @@ describe('getClient - Critical Edge Cases', () => {
       const client = getClient();
 
       expect(client).toBeInstanceOf(GraphClient);
-      expect(client.key).toBe('test-key');
+      expect(client.apiKey).toBe('test-key');
       expect(client.graphUrl).toBe('https://test.optimizely.com/content/v2');
       expect(client.host).toBe('test.com');
     });
@@ -25,7 +25,7 @@ describe('getClient - Critical Edge Cases', () => {
         host: 'override.com',
       });
 
-      expect(client.key).toBe('test-key');
+      expect(client.apiKey).toBe('test-key');
       expect(client.host).toBe('override.com');
     });
   });
@@ -49,27 +49,27 @@ describe('getClient - Critical Edge Cases', () => {
   describe('CRITICAL: undefined/null key validation', () => {
     test('should throw error for empty string key in config', () => {
       expect(() => {
-        config({ key: '' });
+        config({ apiKey: '' });
       }).toThrow('Invalid Optimizely Graph API key');
     });
 
     test('should throw error for whitespace-only key in config', () => {
       expect(() => {
-        config({ key: '   ' });
+        config({ apiKey: '   ' });
       }).toThrow('Invalid Optimizely Graph API key');
     });
 
     test('should throw error for undefined key in config (runtime behavior)', () => {
       expect(() => {
         // @ts-expect-error - Testing runtime behavior
-        config({ key: undefined });
+        config({ apiKey: undefined });
       }).toThrow('Invalid Optimizely Graph API key');
     });
 
     test('should throw error for null key in config (runtime behavior)', () => {
       expect(() => {
         // @ts-expect-error - Testing runtime behavior
-        config({ key: null });
+        config({ apiKey: null });
       }).toThrow('Invalid Optimizely Graph API key');
     });
 
@@ -77,14 +77,14 @@ describe('getClient - Critical Edge Cases', () => {
     test('should throw error with helpful message mentioning environment variables', () => {
       expect(() => {
         // @ts-expect-error - Testing runtime behavior
-        config({ key: undefined });
+        config({ apiKey: undefined });
       }).toThrow('process.env.OPTIMIZELY_GRAPH_SINGLE_KEY');
     });
   });
 
   describe('CRITICAL: undefined/null graphUrl', () => {
     test('should use default graphUrl when undefined in config', () => {
-      config({ key: 'test-key', graphUrl: undefined });
+      config({ apiKey: 'test-key', graphUrl: undefined });
       const client = getClient();
 
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
@@ -92,14 +92,14 @@ describe('getClient - Critical Edge Cases', () => {
 
     test('should use default graphUrl when null in config (runtime)', () => {
       // @ts-expect-error - Testing runtime behavior
-      config({ key: 'test-key', graphUrl: null });
+      config({ apiKey: 'test-key', graphUrl: null });
       const client = getClient();
 
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
     });
 
     test('should accept empty string graphUrl', () => {
-      config({ key: 'test-key', graphUrl: '' });
+      config({ apiKey: 'test-key', graphUrl: '' });
       const client = getClient();
 
       expect(client.graphUrl).toBe('');
@@ -122,7 +122,7 @@ describe('getClient - Critical Edge Cases', () => {
   describe('CRITICAL: override options with undefined/null', () => {
     beforeEach(() => {
       config({
-        key: 'base-key',
+        apiKey: 'base-key',
         graphUrl: 'https://base.optimizely.com/content/v2',
         host: 'base.com',
       });
@@ -150,10 +150,10 @@ describe('getClient - Critical Edge Cases', () => {
 
   describe('Default values', () => {
     test('should use all defaults when only key is provided', () => {
-      config({ key: 'minimal-key' });
+      config({ apiKey: 'minimal-key' });
       const client = getClient();
 
-      expect(client.key).toBe('minimal-key');
+      expect(client.apiKey).toBe('minimal-key');
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
       expect(client.maxFragmentThreshold).toBe(100);
       expect(client.host).toBeUndefined();
@@ -161,14 +161,14 @@ describe('getClient - Critical Edge Cases', () => {
 
     test('should handle config with all optional values undefined', () => {
       config({
-        key: 'test-key',
+        apiKey: 'test-key',
         graphUrl: undefined,
         host: undefined,
         maxFragmentThreshold: undefined,
       });
       const client = getClient();
 
-      expect(client.key).toBe('test-key');
+      expect(client.apiKey).toBe('test-key');
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
       expect(client.host).toBeUndefined();
       expect(client.maxFragmentThreshold).toBe(100);
