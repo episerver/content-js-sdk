@@ -24,6 +24,10 @@
       "esbuild",
       "lightningcss"
     ],
+    "supportedArchitectures": {
+      "os": ["current"],
+      "cpu": ["current"]
+    },
     "overrides": {
       "@redocly/ajv": "npm:ajv@^8.18.0"
     }
