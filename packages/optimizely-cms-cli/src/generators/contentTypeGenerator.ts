@@ -229,12 +229,12 @@ function generatePropertyDefinition(
     parts.push(`description: '${escapeSingleQuote(property.description)}'`);
   }
 
-  if ('required' in property && property.required) {
-    parts.push(`required: true`);
+  if ('isRequired' in property && property.isRequired) {
+    parts.push(`isRequired: true`);
   }
 
-  if ('localized' in property && property.localized) {
-    parts.push(`localized: true`);
+  if ('isLocalized' in property && property.isLocalized) {
+    parts.push(`isLocalized: true`);
   }
 
   if ('group' in property && property.group) {

@@ -58,7 +58,7 @@ export namespace ContentTypeProperties {
     displayName?: string;
     description?: string;
     required?: boolean;
-    localized?: boolean;
+    isLocalized?: boolean;
     group?: string;
     sortOrder?: number;
     indexingType?: string;
