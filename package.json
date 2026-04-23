@@ -20,8 +20,9 @@
     "lerna": "^8.2.2"
   },
   "pnpm": {
-    "neverBuiltDependencies": [
-      "sharp"
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "lightningcss"
     ],
     "overrides": {
       "@redocly/ajv": "npm:ajv@^8.18.0"

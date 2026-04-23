@@ -1,4 +1,5 @@
 import { contentType, type ContentProps } from "@optimizely/cms-sdk";
+import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from "@optimizely/cms-sdk/react/server";
 
 export const ArticleContentType = contentType({
@@ -30,12 +31,9 @@ export default function Article({ content }: Props) {
 
   return (
     <main>
-      <h1 {...pa("heading")}>{content.heading}</h1>
-      <p {...pa("subtitle")}>{content.subtitle}</p>
-      <div
-        {...pa("body")}
-        dangerouslySetInnerHTML={{ __html: content.body?.html ?? "" }}
-      />
+      <h1 {...pa('heading')}>{content.heading}</h1>
+      <p {...pa('subtitle')}>{content.subtitle}</p>
+      <RichText {...pa('body')} content={content.body?.json} />
     </main>
   );
 }
