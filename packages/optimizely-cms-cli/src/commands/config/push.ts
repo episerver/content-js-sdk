@@ -153,7 +153,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
           ),
         );
       } else {
-        spinner.fail(chalk.red('Error'));
+        spinner.fail(chalk.red(' Error'));
         console.error(
           chalk.red(
             `Error ${response.error.status}: ${response.error.title || 'Unknown error'} (${response.error.code || 'N/A'})`,
@@ -161,6 +161,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
         );
         if (response.error.detail) {
           console.error(chalk.dim(response.error.detail));
+        }
+        if (response.error.errors?.length) {
+          for (const [index, err] of response.error.errors.entries()) {
+            console.error((`  - ERROR ${index + 1}`));
+            console.error(chalk.dim(`      [DETAIL] ${err.detail}`));
+            console.error(chalk.dim(`      [FIELD]  ${err.field}\n`));
+          }
         }
       }
 
