@@ -508,28 +508,29 @@ export class GraphClient {
    * ```
    */
   async getPath(
-    input: string | GraphReference,
+    reference: string | GraphReference,
     options?: GraphGetLinksOptions,
   ) {
     let filter: GraphVariables;
-    if (typeof input === 'string' && input.startsWith('graph://')) {
-      const ref = this.parseGraphReference(input);
+    if (typeof reference === 'string' && reference.startsWith('graph://')) {
+      const ref = this.parseGraphReference(reference);
       filter = {
         ...referenceFilter(ref),
         ...localeFilter(
           options?.locales ?? (ref.locale ? [ref.locale] : undefined),
         ),
       };
-    } else if (typeof input === 'string') {
+    } else if (typeof reference === 'string') {
       filter = {
-        ...pathFilter(input, options?.host ?? this.host),
+        ...pathFilter(reference, options?.host ?? this.host),
         ...localeFilter(options?.locales),
       };
     } else {
       filter = {
-        ...referenceFilter(input),
+        ...referenceFilter(reference),
         ...localeFilter(
-          options?.locales ?? (input.locale ? [input.locale] : undefined),
+          options?.locales ??
+            (reference.locale ? [reference.locale] : undefined),
         ),
       };
     }
@@ -598,28 +599,29 @@ export class GraphClient {
    * ```
    */
   async getItems(
-    input: string | GraphReference,
+    reference: string | GraphReference,
     options?: GraphGetLinksOptions,
   ) {
     let filter: GraphVariables;
-    if (typeof input === 'string' && input.startsWith('graph://')) {
-      const ref = this.parseGraphReference(input);
+    if (typeof reference === 'string' && reference.startsWith('graph://')) {
+      const ref = this.parseGraphReference(reference);
       filter = {
         ...referenceFilter(ref),
         ...localeFilter(
           options?.locales ?? (ref.locale ? [ref.locale] : undefined),
         ),
       };
-    } else if (typeof input === 'string') {
+    } else if (typeof reference === 'string') {
       filter = {
-        ...pathFilter(input, options?.host ?? this.host),
+        ...pathFilter(reference, options?.host ?? this.host),
         ...localeFilter(options?.locales),
       };
     } else {
       filter = {
-        ...referenceFilter(input),
+        ...referenceFilter(reference),
         ...localeFilter(
-          options?.locales ?? (input.locale ? [input.locale] : undefined),
+          options?.locales ??
+            (reference.locale ? [reference.locale] : undefined),
         ),
       };
     }
@@ -796,7 +798,7 @@ export class GraphClient {
    * ```
    */
   async getContent(
-    reference: GraphReference | string,
+    reference: string | GraphReference,
     options?: GraphGetItemOptions,
   ) {
     const ref =
