@@ -198,29 +198,13 @@ function generatePropertiesCode(
 }
 
 /**
- * Generates a single property definition
+ * Pushes common metadata fields to the parts array.
+ * Handles: displayName, description, isRequired, isLocalized, group, sortOrder, indexingType
  */
-function generatePropertyDefinition(
-  property: ContentTypeProperties.All,
-  contentTypeKey: string,
-  componentImports: Set<string>,
-): string {
-  if ('items' in property && property.type === 'array') {
-    // Array type
-    const itemDef = generatePropertyDefinition(
-      property.items,
-      contentTypeKey,
-      componentImports,
-    );
-    return `{\n      type: 'array',\n      items: ${itemDef},\n    }`;
-  }
-
-  // Non-array types
-  const parts: string[] = [];
-
-  // Base properties
-  parts.push(`type: '${property.type}'`);
-
+function pushMetadataFields(
+  property: ContentTypeProperties.Base,
+  parts: string[],
+): void {
   if ('displayName' in property && property.displayName) {
     parts.push(`displayName: '${escapeSingleQuote(property.displayName)}'`);
   }
@@ -248,6 +232,51 @@ function generatePropertyDefinition(
   if ('indexingType' in property && property.indexingType) {
     parts.push(`indexingType: '${property.indexingType}'`);
   }
+}
+
+/**
+ * Generates a single property definition
+ */
+function generatePropertyDefinition(
+  property: ContentTypeProperties.All,
+  contentTypeKey: string,
+  componentImports: Set<string>,
+): string {
+  if ('items' in property && property.type === 'array') {
+    // Array type - generate items definition
+    const itemDef = generatePropertyDefinition(
+      property.items,
+      contentTypeKey,
+      componentImports,
+    );
+
+    // Collect array-level properties
+    const parts: string[] = [];
+    parts.push(`type: 'array'`);
+
+    pushMetadataFields(property, parts);
+
+    // Array-specific properties
+    if ('minItems' in property && property.minItems !== undefined) {
+      parts.push(`minItems: ${property.minItems}`);
+    }
+
+    if ('maxItems' in property && property.maxItems !== undefined) {
+      parts.push(`maxItems: ${property.maxItems}`);
+    }
+
+    parts.push(`items: ${itemDef}`);
+
+    return `{\n      ${parts.join(',\n      ')},\n    }`;
+  }
+
+  // Non-array types
+  const parts: string[] = [];
+
+  // Base properties
+  parts.push(`type: '${property.type}'`);
+
+  pushMetadataFields(property, parts);
 
   // Format (common to many types)
   if ('format' in property && property.format) {

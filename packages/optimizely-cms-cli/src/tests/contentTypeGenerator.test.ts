@@ -164,6 +164,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'EnumTest',
         baseType: '_component',
+        displayName: 'Enum Test',
         properties: {
           theme: {
             type: 'string',
@@ -183,6 +184,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'EnumTest',
         baseType: '_component',
+        displayName: 'Enum Test',
         properties: {
           theme: {
             type: 'string',
@@ -204,6 +206,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'EnumTest',
         baseType: '_component',
+        displayName: 'Enum Test',
         properties: {
           theme: {
             type: 'string',
@@ -225,6 +228,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'EnumTest',
         baseType: '_component',
+        displayName: 'Enum Test',
         properties: {
           priority: {
             type: 'integer',
@@ -246,6 +250,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'EnumTest',
         baseType: '_component',
+        displayName: 'Enum Test',
         properties: {
           priority: {
             type: 'integer',
@@ -269,6 +274,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'EnumTest',
         baseType: '_component',
+        displayName: 'Enum Test',
         properties: {
           priority: {
             type: 'integer',
@@ -292,6 +298,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'EnumTest',
         baseType: '_component',
+        displayName: 'Enum Test',
         properties: {
           rating: {
             type: 'float',
@@ -309,6 +316,68 @@ describe('generateContentTypeCode', () => {
       expect(code).toContain("{ value: 1.5, displayName: 'Low' }");
       expect(code).toContain("{ value: 2.5, displayName: 'Medium' }");
       expect(code).toContain("{ value: 3.5, displayName: 'High' }");
+    });
+  });
+
+  describe('array properties', () => {
+    it('should generate array with all metadata properties', () => {
+      const contentType: ContentType = {
+        key: 'ArrayTest',
+        baseType: '_component',
+        displayName: 'Array Test',
+        properties: {
+          p_string_list: {
+            type: 'array',
+            displayName: 'p_string_list testing',
+            isLocalized: true,
+            isRequired: false,
+            group: 'Content',
+            sortOrder: 0,
+            minItems: 5,
+            maxItems: 100,
+            items: {
+              type: 'string',
+              format: 'shortString',
+              maxLength: 100,
+              pattern: '^p$*',
+            },
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("type: 'array'");
+      expect(code).toContain("displayName: 'p_string_list testing'");
+      expect(code).toContain('isLocalized: true');
+      expect(code).toContain("group: 'Content'");
+      expect(code).toContain('sortOrder: 0');
+      expect(code).toContain('minItems: 5');
+      expect(code).toContain('maxItems: 100');
+      expect(code).toContain("format: 'shortString'");
+      expect(code).toContain('maxLength: 100');
+      expect(code).toContain("pattern: '^p$*'");
+    });
+
+    it('should handle simple array without metadata', () => {
+      const contentType: ContentType = {
+        key: 'SimpleArray',
+        baseType: '_component',
+        displayName: 'Simple Array',
+        properties: {
+          tags: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("type: 'array'");
+      expect(code).toContain("type: 'string'");
+      // Should not include optional properties
+      expect(code).toContain('displayName:');
+      expect(code).not.toContain('minItems:');
+      expect(code).not.toContain('maxItems:');
     });
   });
 
@@ -377,6 +446,7 @@ describe('generateContentTypeCode', () => {
       const contentType: ContentType = {
         key: 'Product',
         baseType: '_experience',
+        displayName: 'Product',
         properties: {
           seo_properties: {
             type: 'component',
