@@ -57,7 +57,7 @@ export namespace ContentTypeProperties {
     format?: string;
     displayName?: string;
     description?: string;
-    required?: boolean;
+    isRequired?: boolean;
     isLocalized?: boolean;
     group?: string;
     sortOrder?: number;
@@ -122,9 +122,11 @@ export namespace ContentTypeProperties {
   };
 
   // Array type
-  export type Array = {
+  export type Array = Base & {
     type: 'array';
     items: NonArray;
+    minItems?: number;
+    maxItems?: number;
   };
 
   // Union types
