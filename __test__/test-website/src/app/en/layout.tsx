@@ -36,10 +36,7 @@ import {
   ctString,
   ctWithCollision,
 } from '@/components/with-repeated-properties';
-import {
-  initContentTypeRegistry,
-  initDisplayTemplateRegistry,
-} from '@optimizely/cms-sdk';
+import { initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 initContentTypeRegistry([
@@ -103,7 +100,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang='en'>
       <body>{children}</body>
     </html>
   );

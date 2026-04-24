@@ -37,9 +37,4 @@ const ExpSection = contentType({
   },
 });
 
-export const allContentTypes = [
-  MyExperience,
-  CallToAction,
-  CallToAction2,
-  ExpSection,
-];
+export const allContentTypes = [MyExperience, CallToAction, CallToAction2, ExpSection];

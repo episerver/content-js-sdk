@@ -1,20 +1,16 @@
 import { BlankSectionContentType, ContentProps } from '@optimizely/cms-sdk';
-import {
-  OptimizelyGridSection,
-  StructureContainerProps,
-  getPreviewUtils,
-} from '@optimizely/cms-sdk/react/server';
+import { OptimizelyGridSection, StructureContainerProps, getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 
 type BlankSectionProps = {
   content: ContentProps<typeof BlankSectionContentType>;
 };
 
 function Row({ children }: StructureContainerProps) {
-  return <div className="flex flex-wrap my-4">{children}</div>;
+  return <div className='flex flex-wrap my-4'>{children}</div>;
 }
 
 function Column({ children }: StructureContainerProps) {
-  return <div className="flex-1 mx-2">{children}</div>;
+  return <div className='flex-1 mx-2'>{children}</div>;
 }
 
 /** Defines a component to render a blank section */

@@ -26,20 +26,16 @@ type Props = {
 export default function Banner({ content }: Props) {
   const { pa } = getPreviewUtils(content);
   return (
-    <div className="banner">
-      <div className="banner-content">
-        <h1 className="banner-title" {...pa('title')}>
+    <div className='banner'>
+      <div className='banner-content'>
+        <h1 className='banner-title' {...pa('title')}>
           {content.title}
         </h1>
-        <p className="banner-subtitle" {...pa('subtitle')}>
+        <p className='banner-subtitle' {...pa('subtitle')}>
           {content.subtitle}
         </p>
         {content.submit && (
-          <a
-            {...pa('submit')}
-            href={content.submit.url.default ?? ''}
-            className="banner-btn"
-          >
+          <a {...pa('submit')} href={content.submit.url.default ?? ''} className='banner-btn'>
             Submit
           </a>
         )}

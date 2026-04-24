@@ -22,9 +22,7 @@ export async function SidebarNavWrapper({ currentPath }: SidebarNavWrapperProps)
   const navigationTree = await Promise.all(
     siblings.map(async (sibling: any) => {
       const siblingPath = sibling._metadata?.url?.hierarchical;
-      const children = siblingPath
-        ? ((await client.getItems(siblingPath)) ?? [])
-        : [];
+      const children = siblingPath ? ((await client.getItems(siblingPath)) ?? []) : [];
       return {
         ...sibling,
         children,

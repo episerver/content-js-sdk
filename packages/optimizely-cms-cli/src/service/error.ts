@@ -18,7 +18,7 @@ export const credentialErrors = {
   MissingCredentials: class MissingCredentials extends CLIError {
     constructor() {
       super(
-        'Credentials not provided. Get the Client ID and Secret from the CMS and define the environment variables `OPTIMIZELY_CMS_CLIENT_ID` and `OPTIMIZELY_CMS_CLIENT_SECRET`'
+        'Credentials not provided. Get the Client ID and Secret from the CMS and define the environment variables `OPTIMIZELY_CMS_CLIENT_ID` and `OPTIMIZELY_CMS_CLIENT_SECRET`',
       );
     }
   },

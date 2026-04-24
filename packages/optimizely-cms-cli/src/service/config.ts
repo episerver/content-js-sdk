@@ -9,7 +9,7 @@ const CmsSettingsSchema = z.record(
   z.object({
     clientId: z.string(),
     clientSecret: z.string(),
-  })
+  }),
 );
 
 const SettingsSchema = z.object({
@@ -32,8 +32,7 @@ export function getInstances(): string[] {
 }
 
 export function readEnvCredentials() {
-  const { OPTIMIZELY_CMS_CLIENT_ID, OPTIMIZELY_CMS_CLIENT_SECRET } =
-    process.env;
+  const { OPTIMIZELY_CMS_CLIENT_ID, OPTIMIZELY_CMS_CLIENT_SECRET } = process.env;
 
   if (OPTIMIZELY_CMS_CLIENT_ID && OPTIMIZELY_CMS_CLIENT_SECRET) {
     return {

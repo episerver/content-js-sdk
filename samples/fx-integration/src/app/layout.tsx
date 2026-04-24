@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import {
-  BlankExperienceContentType,
-  BlankSectionContentType,
-  initContentTypeRegistry,
-} from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, BlankSectionContentType, initContentTypeRegistry } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 import FxCallToAction, { FxCallToActionCT } from '@/components/FxCallToAction';
 import FxCallout, { FxCalloutCT } from '@/components/FxCallout';
@@ -13,9 +9,7 @@ import FxFeature, { FxFeatureCT } from '@/components/FxFeature';
 import FxFigure, { FxFigureCT } from '@/components/FxFigure';
 import FxHero, { FxHeroContentType } from '@/components/FxHero';
 import FxQuote, { FxQuoteCT } from '@/components/FxQuote';
-import FxSectionHeading, {
-  FxSectionHeadingCT,
-} from '@/components/FxSectionHeading';
+import FxSectionHeading, { FxSectionHeadingCT } from '@/components/FxSectionHeading';
 import BlankExperience from '@/components/BlankExperience';
 import BlankSection from '@/components/BlankSection';
 
@@ -65,10 +59,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
-      </body>
+    <html lang='en'>
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
     </html>
   );
 }

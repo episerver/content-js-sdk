@@ -22,9 +22,7 @@ describe('RichText Component', () => {
     render(<RichText content={mockRichTextContent} />);
 
     // Check for different elements
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Main Heading'
-    );
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Main Heading');
     expect(screen.getByRole('list')).toBeInTheDocument();
     expect(screen.getByRole('link')).toHaveTextContent('This is a link');
     expect(screen.getByText('bold text').tagName.toLowerCase()).toBe('strong');
@@ -39,9 +37,7 @@ describe('RichText Component', () => {
   it('should decode HTML entities by default', () => {
     render(<RichText content={htmlEntitiesContent} />);
     // Should decode HTML entities
-    expect(
-      screen.getByText('Text with <HTML> entities & symbols')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Text with <HTML> entities & symbols')).toBeInTheDocument();
   });
 
   it('should handle unknown elements with fallback', () => {
@@ -58,8 +54,6 @@ describe('RichText Component', () => {
     expect(screen.getByText('italic text').tagName.toLowerCase()).toBe('em');
     expect(screen.getByText('underlined text').tagName.toLowerCase()).toBe('u');
     expect(screen.getByText('code text').tagName.toLowerCase()).toBe('code'); // Fixed: now correctly renders as <code>
-    expect(screen.getByText('strikethrough text').tagName.toLowerCase()).toBe(
-      's'
-    );
+    expect(screen.getByText('strikethrough text').tagName.toLowerCase()).toBe('s');
   });
 });

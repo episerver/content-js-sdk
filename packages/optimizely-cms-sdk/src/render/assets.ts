@@ -1,9 +1,5 @@
 import type { InferredContentReference } from '../infer.js';
-import type {
-  PublicImageAsset,
-  PublicVideoAsset,
-  PublicRawFileAsset,
-} from '../model/assets.js';
+import type { PublicImageAsset, PublicVideoAsset, PublicRawFileAsset } from '../model/assets.js';
 import { appendToken } from '../util/preview.js';
 
 /**
@@ -27,7 +23,7 @@ function appendPreviewTokenToRenditions(
   if (result.item && 'Renditions' in result.item && result.item.Renditions) {
     result.item = {
       ...result.item,
-      Renditions: result.item.Renditions.map((r) => ({
+      Renditions: result.item.Renditions.map(r => ({
         ...r,
         Url: r.Url ? appendToken(r.Url, previewToken) : r.Url,
       })),
@@ -81,12 +77,9 @@ export function getSrcset<T extends Record<string, any>>(
   const previewToken = content?.__context?.preview_token;
 
   // Apply preview token to renditions if provided
-  const processedInput = previewToken
-    ? appendPreviewTokenToRenditions(input, previewToken)
-    : input;
+  const processedInput = previewToken ? appendPreviewTokenToRenditions(input, previewToken) : input;
 
-  if (!processedInput?.item || !('Renditions' in processedInput.item))
-    return undefined;
+  if (!processedInput?.item || !('Renditions' in processedInput.item)) return undefined;
 
   const renditions = processedInput.item.Renditions;
   if (!renditions || renditions.length === 0) return undefined;
@@ -95,14 +88,14 @@ export function getSrcset<T extends Record<string, any>>(
   const seenWidths = new Set<number>();
 
   const srcsetEntries = renditions
-    .filter((r) => {
+    .filter(r => {
       if (!r.Url || !r.Width) return false;
       // Skip if we've already seen this width
       if (seenWidths.has(r.Width)) return false;
       seenWidths.add(r.Width);
       return true;
     })
-    .map((r) => `${r.Url!} ${r.Width}w`);
+    .map(r => `${r.Url!} ${r.Width}w`);
 
   return srcsetEntries.length > 0 ? srcsetEntries.join(', ') : undefined;
 }
@@ -144,10 +137,7 @@ export function getSrcset<T extends Record<string, any>>(
  * <img alt={getAlt(content.icon)} /> // Will be alt="" if no AltText exists
  * ```
  */
-export function getAlt(
-  input: InferredContentReference | null | undefined,
-  fallback: string = '',
-): string {
+export function getAlt(input: InferredContentReference | null | undefined, fallback: string = ''): string {
   if (!input) return fallback;
 
   if (input.item && 'AltText' in input.item) {
@@ -296,14 +286,8 @@ export function isDamRawFileAsset(
  * }
  * ```
  */
-export function isDamAsset(
-  property: InferredContentReference | null | undefined,
-): boolean {
-  return (
-    isDamImageAsset(property) ||
-    isDamVideoAsset(property) ||
-    isDamRawFileAsset(property)
-  );
+export function isDamAsset(property: InferredContentReference | null | undefined): boolean {
+  return isDamImageAsset(property) || isDamVideoAsset(property) || isDamRawFileAsset(property);
 }
 
 /**
@@ -397,12 +381,9 @@ export function getDamAssetType(
  * }
  * ```
  */
-export function damAssets<T extends Record<string, any>>(
-  content: T & { __context?: { preview_token?: string } },
-) {
+export function damAssets<T extends Record<string, any>>(content: T & { __context?: { preview_token?: string } }) {
   return {
-    getSrcset: (property: InferredContentReference | null | undefined) =>
-      getSrcset(content, property),
+    getSrcset: (property: InferredContentReference | null | undefined) => getSrcset(content, property),
     getAlt,
     getDamAssetType,
     isDamImageAsset,

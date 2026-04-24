@@ -24,10 +24,8 @@ function areItemConstraintsMissing(property: AnyProperty): boolean {
   return (
     property.type === 'array' &&
     !(
-      ('allowedTypes' in property.items &&
-        property.items.allowedTypes?.length) ||
-      ('restrictedTypes' in property.items &&
-        property.items.restrictedTypes?.length)
+      ('allowedTypes' in property.items && property.items.allowedTypes?.length) ||
+      ('restrictedTypes' in property.items && property.items.restrictedTypes?.length)
     )
   );
 }
@@ -51,8 +49,7 @@ export function checkTypeConstraintIssues(
   maxFragmentThreshold: number = 100,
 ): string | null {
   if (
-    (arePropertyConstraintsMissing(property) ||
-      areItemConstraintsMissing(property)) &&
+    (arePropertyConstraintsMissing(property) || areItemConstraintsMissing(property)) &&
     result.extraFragments.length > maxFragmentThreshold
   ) {
     return (

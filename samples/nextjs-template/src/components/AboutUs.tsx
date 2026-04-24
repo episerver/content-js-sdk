@@ -36,16 +36,23 @@ export default function AboutUs({ content }: AboutUsProps) {
   const { getSrcset, getAlt } = damAssets(content);
   const image = src(content.image);
   return (
-    <section className="about-us">
+    <section className='about-us'>
       {content.image && (
-        <div className="about-us-image">
+        <div className='about-us-image'>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {image ? (<img src={image} srcSet={getSrcset(content.image)} sizes="(max-width: 768px) 100vw, 50vw" alt={getAlt(content.image, 'About us image')}/>) : null}
+          {image ?
+            <img
+              src={image}
+              srcSet={getSrcset(content.image)}
+              sizes='(max-width: 768px) 100vw, 50vw'
+              alt={getAlt(content.image, 'About us image')}
+            />
+          : null}
         </div>
       )}
       <h2>{content.heading}</h2>
-      <div className="about-us-content">
-        <div className="about-us-text">
+      <div className='about-us-content'>
+        <div className='about-us-text'>
           <RichText
             content={content.body?.json}
             elements={{

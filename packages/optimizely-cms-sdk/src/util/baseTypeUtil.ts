@@ -1,10 +1,5 @@
 import { ExperienceComponentNode, ExperienceNode } from '../infer.js';
-import {
-  AnyContentType,
-  MEDIA_BASE_TYPES,
-  PermittedTypes,
-  MediaStringTypes,
-} from '../model/contentTypes.js';
+import { AnyContentType, MEDIA_BASE_TYPES, PermittedTypes, MediaStringTypes } from '../model/contentTypes.js';
 
 /**
  * Get the key or name of ContentType or Media type
@@ -78,8 +73,6 @@ export function buildBaseTypeFragments() {
   };
 }
 
-export function isComponentNode(
-  node: ExperienceNode,
-): node is ExperienceComponentNode {
+export function isComponentNode(node: ExperienceNode): node is ExperienceComponentNode {
   return node.__typename === 'CompositionComponentNode';
 }

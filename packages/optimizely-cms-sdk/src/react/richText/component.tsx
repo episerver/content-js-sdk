@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  generateDefaultElements,
-  generateDefaultLeafs,
-  type RichTextProps,
-} from './lib.js';
+import { generateDefaultElements, generateDefaultLeafs, type RichTextProps } from './lib.js';
 import { createReactRenderer } from './renderer.js';
 
 /**

@@ -20,11 +20,7 @@ describe('mapContentToManifest', () => {
       displayName: 'Hero Component Updated',
     };
 
-    const contentTypes = [
-      HeroComponentType,
-      duplicateHero,
-      BannerComponentType,
-    ];
+    const contentTypes = [HeroComponentType, duplicateHero, BannerComponentType];
 
     const result = mapContentToManifest(contentTypes);
 
@@ -36,9 +32,7 @@ describe('mapContentToManifest', () => {
 
     // Should warn about duplicates
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Duplicate content type keys found: HeroComponent',
-      ),
+      expect.stringContaining('Duplicate content type keys found: HeroComponent'),
     );
   });
 
@@ -56,13 +50,7 @@ describe('mapContentToManifest', () => {
       displayName: 'Banner 2',
     };
 
-    const contentTypes = [
-      HeroComponentType,
-      BannerComponentType,
-      duplicate1,
-      duplicateBanner,
-      duplicate2,
-    ];
+    const contentTypes = [HeroComponentType, BannerComponentType, duplicate1, duplicateBanner, duplicate2];
 
     const result = mapContentToManifest(contentTypes);
 
@@ -74,13 +62,9 @@ describe('mapContentToManifest', () => {
     expect(result[1].displayName).toBe('Banner Component'); // First occurrence
 
     // Should warn about both duplicate keys
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Duplicate content type keys found:'));
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Duplicate content type keys found:'),
-    );
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /HeroComponent.*BannerComponent|BannerComponent.*HeroComponent/,
-      ),
+      expect.stringMatching(/HeroComponent.*BannerComponent|BannerComponent.*HeroComponent/),
     );
   });
 
@@ -135,9 +119,7 @@ describe('mapContentToManifest', () => {
     expect(result[0].key).toBe('HeroComponent');
     expect(result[0].displayName).toBe('Hero Component'); // First kept
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Duplicate content type keys found: HeroComponent',
-      ),
+      expect.stringContaining('Duplicate content type keys found: HeroComponent'),
     );
   });
 
@@ -183,9 +165,7 @@ describe('mapContentToManifest', () => {
 
     // Should warn about duplicate
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Duplicate content type keys found: HeroComponent',
-      ),
+      expect.stringContaining('Duplicate content type keys found: HeroComponent'),
     );
   });
 });

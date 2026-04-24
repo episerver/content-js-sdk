@@ -23,10 +23,7 @@ type Props = {
 };
 
 export default function FxCallToAction({ content }: Props) {
-  const cls = [
-    css.FxCallToAction,
-    content.appearance && css[content.appearance],
-  ].join(' ');
+  const cls = [css.FxCallToAction, content.appearance && css[content.appearance]].join(' ');
   return (
     <a className={cls} href={content.link?.url.default ?? '#'}>
       {content.text}

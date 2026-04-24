@@ -28,7 +28,7 @@ export class GraphMissingContentTypeError extends OptimizelyGraphError {
 
   constructor(contentType: string) {
     super(
-      `Content type "${contentType}" not included in the registry. Ensure that you called "initContentTypeRegistry()" with it before fetching content.`
+      `Content type "${contentType}" not included in the registry. Ensure that you called "initContentTypeRegistry()" with it before fetching content.`,
     );
     this.name = 'GraphMissingContentTypeError';
     this.contentType = contentType;
@@ -49,10 +49,7 @@ export class GraphResponseError extends OptimizelyGraphError {
 export class GraphHttpResponseError extends GraphResponseError {
   status: number;
 
-  constructor(
-    message: string,
-    options: { status: number; request: GraphRequest }
-  ) {
+  constructor(message: string, options: { status: number; request: GraphRequest }) {
     const msg = `HTTP ${options.status}: ${message}`;
     super(msg, options);
     this.status = options.status;
@@ -64,23 +61,14 @@ export class GraphHttpResponseError extends GraphResponseError {
 export class GraphContentResponseError extends GraphHttpResponseError {
   errors: { message: string }[];
 
-  constructor(
-    errors: { message: string }[],
-    options: { status: number; request: GraphRequest }
-  ) {
+  constructor(errors: { message: string }[], options: { status: number; request: GraphRequest }) {
     let message =
-      errors.length === 1
-        ? errors[0].message
-        : `${errors.length} errors in the GraphQL query. Check "errors" object`;
+      errors.length === 1 ? errors[0].message : `${errors.length} errors in the GraphQL query. Check "errors" object`;
 
-    if (
-      message.startsWith('Unknown type') ||
-      message.startsWith('Cannot query field')
-    ) {
+    if (message.startsWith('Unknown type') || message.startsWith('Cannot query field')) {
       message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@optimizely/cms-cli" CLI app to sync them`;
     } else if (message.startsWith('Syntax Error')) {
-      message +=
-        ' Try again later. If the error persists, contact Optimizely support';
+      message += ' Try again later. If the error persists, contact Optimizely support';
     } else {
     }
 

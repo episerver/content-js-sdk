@@ -1,8 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  generateDisplayTemplateFiles,
-  generateDisplayTemplateCode,
-} from '../generators/displayTemplateGenerator.js';
+import { generateDisplayTemplateFiles, generateDisplayTemplateCode } from '../generators/displayTemplateGenerator.js';
 import { DisplayTemplate } from '../generators/manifest.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -29,10 +26,7 @@ describe('generateDisplayTemplateFiles', () => {
   });
 
   it('should generate a file for each display template', async () => {
-    const files = await generateDisplayTemplateFiles(
-      displayTemplates,
-      outputDir,
-    );
+    const files = await generateDisplayTemplateFiles(displayTemplates, outputDir);
     expect(files).toHaveLength(1);
     const filePath = path.join(outputDir, files[0]);
     const content = await fs.readFile(filePath, 'utf-8');
@@ -49,9 +43,7 @@ describe('generateDisplayTemplateFiles', () => {
       },
     ];
 
-    await expect(
-      generateDisplayTemplateFiles(invalidDisplayTemplates, outputDir),
-    ).rejects.toThrow(
+    await expect(generateDisplayTemplateFiles(invalidDisplayTemplates, outputDir)).rejects.toThrow(
       'Invalid key "@@@": must contain at least one alphanumeric character',
     );
   });

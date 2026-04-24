@@ -21,7 +21,7 @@ async function revalidateDocId(docId: string) {
   const parts = docId.split('_');
   const id = parts[0].replaceAll('-', '');
   const locale = parts[1]; // e.g., "en"
-    
+
   const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
@@ -43,10 +43,7 @@ query GetPath($id:String, $locale: Locales) {
   console.log('Path "%s" successfully revalidated', path);
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const webhookId = (await params).id;
 
   if (webhookId !== WEBHOOK_ID) {
@@ -58,9 +55,7 @@ export async function POST(
   // Learn more about the format of webhook responses:
   // https://docs.developers.optimizely.com/platform-optimizely/docs/webhook-response
   if (body.type.subject === 'bulk' && body.type.action === 'completed') {
-    const deleted = Object.values(body.data.items ?? {}).find(
-      (status) => status === 'deleted'
-    );
+    const deleted = Object.values(body.data.items ?? {}).find(status => status === 'deleted');
 
     // At this moment, there is no way to retrieve which page has been deleted
     // so for this example, we are going to revalidate all data

@@ -55,15 +55,14 @@ type BaseDisplayTemplate = {
   tag?: string; // Optional tag property to store the name of the React component
 };
 
-export type DisplayTemplateVariant = BaseDisplayTemplate &
-  (NodeTemplate | BaseTemplate | WithContentType);
+export type DisplayTemplateVariant = BaseDisplayTemplate & (NodeTemplate | BaseTemplate | WithContentType);
 
 export type DisplayTemplate<T = DisplayTemplateVariant> = T & {
   __type: 'displayTemplate';
 };
 
 export function parseDisplaySettings(
-  displaySettings?: DisplaySettingsType[] | null
+  displaySettings?: DisplaySettingsType[] | null,
 ): Record<string, string | boolean> | undefined {
   if (!displaySettings) {
     return undefined; // Return undefined if displaySettings is not provided
@@ -74,7 +73,10 @@ export function parseDisplaySettings(
   // Iterate over the input array
   for (const { key, value } of displaySettings) {
     // Assign the value to the key in the result object
-    result[key] = value === 'true' ? true : value === 'false' ? false : value;
+    result[key] =
+      value === 'true' ? true
+      : value === 'false' ? false
+      : value;
   }
 
   return result;

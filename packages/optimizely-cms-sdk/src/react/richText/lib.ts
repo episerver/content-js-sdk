@@ -20,38 +20,33 @@ import { getContextData } from '../../context/config.js';
 /**
  * React-specific element renderer props (extends shared props with React children)
  */
-export interface ElementRendererProps
-  extends BaseElementRendererProps, PropsWithChildren {}
+export interface ElementRendererProps extends BaseElementRendererProps, PropsWithChildren {}
 
 /**
  * React-specific props for link elements with type safety
  */
-export interface LinkElementProps
-  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
+export interface LinkElementProps extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: LinkElement;
 }
 
 /**
  * React-specific props for image elements with type safety
  */
-export interface ImageElementProps
-  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
+export interface ImageElementProps extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: ImageElement;
 }
 
 /**
  * React-specific props for table elements with type safety
  */
-export interface TableElementProps
-  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
+export interface TableElementProps extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: TableElement;
 }
 
 /**
  * React-specific props for table cell elements with type safety
  */
-export interface TableCellElementRendererProps
-  extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
+export interface TableCellElementRendererProps extends Omit<BaseElementRendererProps, 'element'>, PropsWithChildren {
   element: TableCellElement;
 }
 
@@ -63,8 +58,7 @@ export type ElementProps = ElementRendererProps;
 /**
  * React-specific leaf renderer props (extends shared props with React children)
  */
-export interface LeafRendererProps
-  extends BaseLeafRendererProps, PropsWithChildren {}
+export interface LeafRendererProps extends BaseLeafRendererProps, PropsWithChildren {}
 
 /**
  * Prop type used for custom Leaf components
@@ -94,8 +88,7 @@ export type TableElementRenderer = React.ComponentType<TableElementProps>;
 /**
  * React component for rendering table cell elements with type safety
  */
-export type TableCellElementRenderer =
-  React.ComponentType<TableCellElementRendererProps>;
+export type TableCellElementRenderer = React.ComponentType<TableCellElementRendererProps>;
 
 /**
  * React component for rendering Slate text leaves
@@ -116,9 +109,7 @@ export type LeafMap = BaseLeafMap<LeafRenderer>;
  * React-specific RichText props
  */
 export interface RichTextProps
-  extends
-    RichTextPropsBase<ElementRenderer, LeafRenderer>,
-    Omit<React.HTMLAttributes<HTMLDivElement>, 'content'> {}
+  extends RichTextPropsBase<ElementRenderer, LeafRenderer>, Omit<React.HTMLAttributes<HTMLDivElement>, 'content'> {}
 
 /**
  * Maps HTML attribute names to React JSX attribute names
@@ -410,10 +401,7 @@ const HTML_ATTRIBUTE_ELEMENTS = new Set(['table', 'img', 'input', 'canvas']);
  * Converts framework-agnostic attributes to React props
  * Handles HTML attribute to React JSX attribute conversion and CSS properties
  */
-export function toReactProps(
-  attributes: Record<string, unknown>,
-  elementType?: string,
-): Record<string, unknown> {
+export function toReactProps(attributes: Record<string, unknown>, elementType?: string): Record<string, unknown> {
   const reactProps: Record<string, unknown> = {};
   const styleProps: Record<string, string> = {};
 
@@ -477,7 +465,7 @@ function parseStyleString(styleString: string): Record<string, string> {
     return styleObj;
   }
 
-  styleString.split(';').forEach((declaration) => {
+  styleString.split(';').forEach(declaration => {
     const colonIndex = declaration.indexOf(':');
 
     if (colonIndex === -1) return;
@@ -509,9 +497,7 @@ export function createHtmlComponent<T extends keyof JSX.IntrinsicElements>(
     const mergedProps = {
       ...reactProps,
       ...config.attributes,
-      className:
-        [reactProps.className, config.className].filter(Boolean).join(' ') ||
-        undefined,
+      className: [reactProps.className, config.className].filter(Boolean).join(' ') || undefined,
     };
 
     // We don't pass children to self-closing elements
@@ -533,11 +519,7 @@ export function createLinkComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T = 'a' as T,
   config: HtmlComponentConfig = {},
 ): LinkElementRenderer {
-  const Component: LinkElementRenderer = ({
-    children,
-    attributes,
-    element,
-  }) => {
+  const Component: LinkElementRenderer = ({ children, attributes, element }) => {
     // Convert to React props and merge with config
     const reactProps = toReactProps(attributes || {}, tag as string);
 
@@ -553,9 +535,7 @@ export function createLinkComponent<T extends keyof JSX.IntrinsicElements>(
       ...reactProps,
       ...linkProps,
       ...config.attributes,
-      className:
-        [reactProps.className, config.className].filter(Boolean).join(' ') ||
-        undefined,
+      className: [reactProps.className, config.className].filter(Boolean).join(' ') || undefined,
     };
 
     return React.createElement(tag, mergedProps, children);
@@ -572,11 +552,7 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T = 'img' as T,
   config: HtmlComponentConfig = {},
 ): ImageElementRenderer {
-  const Component: ImageElementRenderer = ({
-    children,
-    attributes,
-    element,
-  }) => {
+  const Component: ImageElementRenderer = ({ children, attributes, element }) => {
     // Convert to React props and merge with config
     const reactProps = toReactProps(attributes || {}, tag as string);
 
@@ -606,9 +582,7 @@ export function createImageComponent<T extends keyof JSX.IntrinsicElements>(
       ...reactProps,
       ...imageProps,
       ...config.attributes,
-      className:
-        [reactProps.className, config.className].filter(Boolean).join(' ') ||
-        undefined,
+      className: [reactProps.className, config.className].filter(Boolean).join(' ') || undefined,
     };
 
     // Image elements are self-closing and cannot have children
@@ -626,20 +600,14 @@ export function createTableComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T = 'table' as T,
   config: HtmlComponentConfig = {},
 ): TableElementRenderer {
-  const Component: TableElementRenderer = ({
-    children,
-    attributes,
-    element,
-  }) => {
+  const Component: TableElementRenderer = ({ children, attributes, element }) => {
     // Convert to React props and merge with config
     const reactProps = toReactProps(attributes || {}, tag as string);
 
     const mergedProps = {
       ...reactProps,
       ...config.attributes,
-      className:
-        [reactProps.className, config.className].filter(Boolean).join(' ') ||
-        undefined,
+      className: [reactProps.className, config.className].filter(Boolean).join(' ') || undefined,
     };
 
     return React.createElement(tag, mergedProps, children);
@@ -656,20 +624,14 @@ export function createTableCellComponent<T extends keyof JSX.IntrinsicElements>(
   tag: T,
   config: HtmlComponentConfig = {},
 ): TableCellElementRenderer {
-  const Component: TableCellElementRenderer = ({
-    children,
-    attributes,
-    element,
-  }) => {
+  const Component: TableCellElementRenderer = ({ children, attributes, element }) => {
     // Convert to React props and merge with config
     const reactProps = toReactProps(attributes || {});
 
     const mergedProps = {
       ...reactProps,
       ...config.attributes,
-      className:
-        [reactProps.className, config.className].filter(Boolean).join(' ') ||
-        undefined,
+      className: [reactProps.className, config.className].filter(Boolean).join(' ') || undefined,
     };
 
     return React.createElement(tag, mergedProps, children);
@@ -692,9 +654,7 @@ export function createLeafComponent<T extends keyof JSX.IntrinsicElements>(
     const mergedProps = {
       ...reactProps,
       ...config.attributes,
-      className:
-        [reactProps.className, config.className].filter(Boolean).join(' ') ||
-        undefined,
+      className: [reactProps.className, config.className].filter(Boolean).join(' ') || undefined,
     };
 
     return React.createElement(tag, mergedProps, children);
@@ -714,40 +674,22 @@ export function generateDefaultElements(): ElementMap {
     // Use specialized components for specific element types
     switch (type) {
       case 'link':
-        elementMap[type] = createLinkComponent(
-          'a',
-          config.config,
-        ) as ElementRenderer;
+        elementMap[type] = createLinkComponent('a', config.config) as ElementRenderer;
         break;
       case 'image':
-        elementMap[type] = createImageComponent(
-          'img',
-          config.config,
-        ) as ElementRenderer;
+        elementMap[type] = createImageComponent('img', config.config) as ElementRenderer;
         break;
       case 'table':
-        elementMap[type] = createTableComponent(
-          'table',
-          config.config,
-        ) as ElementRenderer;
+        elementMap[type] = createTableComponent('table', config.config) as ElementRenderer;
         break;
       case 'td':
-        elementMap[type] = createTableCellComponent(
-          'td',
-          config.config,
-        ) as ElementRenderer;
+        elementMap[type] = createTableCellComponent('td', config.config) as ElementRenderer;
         break;
       case 'th':
-        elementMap[type] = createTableCellComponent(
-          'th',
-          config.config,
-        ) as ElementRenderer;
+        elementMap[type] = createTableCellComponent('th', config.config) as ElementRenderer;
         break;
       default:
-        elementMap[type] = createHtmlComponent(
-          config.tag as keyof JSX.IntrinsicElements,
-          config.config,
-        );
+        elementMap[type] = createHtmlComponent(config.tag as keyof JSX.IntrinsicElements, config.config);
         break;
     }
   });

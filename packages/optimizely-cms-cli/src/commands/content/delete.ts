@@ -45,9 +45,7 @@ export default class ContentDelete extends BaseCommand<typeof ContentDelete> {
       });
 
       if (r.response.ok) {
-        spinner.succeed(
-          chalk.green(`Content type "${args.key}" deleted successfully`),
-        );
+        spinner.succeed(chalk.green(`Content type "${args.key}" deleted successfully`));
       } else {
         spinner.fail(chalk.red(`Failed to delete content type "${args.key}"`));
 
@@ -57,11 +55,7 @@ export default class ContentDelete extends BaseCommand<typeof ContentDelete> {
           } else if (r.error.status === 409) {
             console.error(chalk.red('Cannot delete: Content type is in use'));
           } else {
-            console.error(
-              chalk.red(
-                `Error ${r.error.status}: ${r.error.title || 'Unknown error'}`,
-              ),
-            );
+            console.error(chalk.red(`Error ${r.error.status}: ${r.error.title || 'Unknown error'}`));
             if (r.error.detail) {
               console.error(chalk.dim(r.error.detail));
             }

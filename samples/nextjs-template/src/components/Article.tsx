@@ -32,10 +32,7 @@ export default function Article({ content }: Props) {
     <main>
       <h1 {...pa('heading')}>{content.heading}</h1>
       <p {...pa('subtitle')}>{content.subtitle}</p>
-      <div
-        {...pa('body')}
-        dangerouslySetInnerHTML={{ __html: content.body?.html ?? '' }}
-      />
+      <div {...pa('body')} dangerouslySetInnerHTML={{ __html: content.body?.html ?? '' }} />
     </main>
   );
 }

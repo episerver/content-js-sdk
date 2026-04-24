@@ -17,9 +17,7 @@ export function processDisplayTemplates(displayTemplates: any[]): any[] {
     }
 
     // Infer contentType from key by removing common suffixes
-    const inferredContentType = dt.key
-      .replace(/DisplayTemplate$/i, '')
-      .replace(/Template$/i, '');
+    const inferredContentType = dt.key.replace(/DisplayTemplate$/i, '').replace(/Template$/i, '');
 
     return {
       ...dt,
@@ -38,10 +36,7 @@ export function processDisplayTemplates(displayTemplates: any[]): any[] {
  * @param allowedKeys - Optional set of valid content type keys for validation.
  * @returns The content type object with a normalized `mayContainTypes` array.
  */
-export function parseChildContentType(
-  contentType: Record<string, any>,
-  allowedKeys?: Set<string>
-): any {
+export function parseChildContentType(contentType: Record<string, any>, allowedKeys?: Set<string>): any {
   const { mayContainTypes, key: parentKey, ...rest } = contentType;
 
   if (!Array.isArray(mayContainTypes)) return { ...rest, key: parentKey };
@@ -73,7 +68,7 @@ export function parseChildContentType(
     throw new Error(
       `❌ [optimizely-cms-cli] Duplicate entries in mayContainTypes for content type "${
         contentType.key
-      }": ${duplicates.join(', ')}`
+      }": ${duplicates.join(', ')}`,
     );
   }
 
@@ -81,7 +76,7 @@ export function parseChildContentType(
     throw new Error(
       `❌ [optimizely-cms-cli] Invalid mayContainTypes for content type "${
         contentType.key
-      }". Unknown content types: ${invalid.join(', ')}`
+      }". Unknown content types: ${invalid.join(', ')}`,
     );
   }
 
@@ -98,14 +93,14 @@ export function parseChildContentType(
  * @param parentKey - The parent contentType key, used for context in certain transformations (when '_self' is used).
  * @returns A new object with the same keys as the input object, but with transformed values.
  */
-export function transformProperties(
-  properties: Record<string, any>,
-  parentKey: string
-): Record<string, any> {
-  return Object.entries(properties).reduce((acc, [key, value]) => {
-    acc[key] = transformProperty(value, parentKey);
-    return acc;
-  }, {} as Record<string, any>);
+export function transformProperties(properties: Record<string, any>, parentKey: string): Record<string, any> {
+  return Object.entries(properties).reduce(
+    (acc, [key, value]) => {
+      acc[key] = transformProperty(value, parentKey);
+      return acc;
+    },
+    {} as Record<string, any>,
+  );
 }
 
 /**
@@ -144,7 +139,7 @@ function transformProperty(property: any, parentKey: string): any {
 export function validateContentTypeKey(key: string): void {
   if (isKeyInvalid(key)) {
     throw new Error(
-      `❌ [optimizely-cms-cli] Invalid content type key: "${key}". Keys must be alphanumeric and cannot start with a special character or number.`
+      `❌ [optimizely-cms-cli] Invalid content type key: "${key}". Keys must be alphanumeric and cannot start with a special character or number.`,
     );
   }
 }
@@ -197,10 +192,7 @@ function handleArrayType(property: any): any {
 
   if (property.items.type === 'link') {
     updatedProperty.format = 'LinkCollection';
-  } else if (
-    property.items.type === 'component' &&
-    property.items.contentType?.key
-  ) {
+  } else if (property.items.type === 'component' && property.items.contentType?.key) {
     updatedProperty.items = {
       ...property.items,
       contentType: property.items.contentType.key,
@@ -247,10 +239,7 @@ function transformContentReference(reference: any): any {
  */
 function hasContentTypeWithKey(obj: any): boolean {
   return (
-    'contentType' in obj &&
-    typeof obj.contentType === 'object' &&
-    obj.contentType !== null &&
-    'key' in obj.contentType
+    'contentType' in obj && typeof obj.contentType === 'object' && obj.contentType !== null && 'key' in obj.contentType
   );
 }
 
@@ -265,22 +254,19 @@ function hasContentTypeWithKey(obj: any): boolean {
 function mapAllowedRestrictedTypes(updatedValue: any, parentKey: string) {
   // Recursively handle nested 'items' if it's an array
   if (updatedValue.type === 'array' && updatedValue.items) {
-    updatedValue.items = mapAllowedRestrictedTypes(
-      updatedValue.items,
-      parentKey
-    );
+    updatedValue.items = mapAllowedRestrictedTypes(updatedValue.items, parentKey);
   }
 
   if (['contentReference', 'content'].includes(updatedValue.type)) {
     if (Array.isArray(updatedValue.allowedTypes)) {
       updatedValue.allowedTypes = updatedValue.allowedTypes.map((input: any) =>
-        extractKeyName(input, parentKey)
+        extractKeyName(input, parentKey),
       ) as any;
     }
 
     if (Array.isArray(updatedValue.restrictedTypes)) {
-      updatedValue.restrictedTypes = updatedValue.restrictedTypes.map(
-        (input: any) => extractKeyName(input, parentKey)
+      updatedValue.restrictedTypes = updatedValue.restrictedTypes.map((input: any) =>
+        extractKeyName(input, parentKey),
       ) as any;
     }
   }

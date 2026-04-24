@@ -5,11 +5,7 @@ import chalk from 'chalk';
 import { BaseCommand } from '../../baseCommand.js';
 import { writeFile, access } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import {
-  findMetaData,
-  readFromPath,
-  normalizePropertyGroups,
-} from '../../service/utils.js';
+import { findMetaData, readFromPath, normalizePropertyGroups } from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -28,12 +24,10 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       description: 'do not send anything to the server',
     }),
     force: Flags.boolean({
-      description:
-        'Force updates the content type even though the changes might result in data loss.',
+      description: 'Force updates the content type even though the changes might result in data loss.',
     }),
   };
-  static override description =
-    'Push content type definitions to the CMS from a configuration file';
+  static override description = 'Push content type definitions to the CMS from a configuration file';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> ./custom-config.mjs',
@@ -76,20 +70,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
 
     //the pattern is relative to the config file
-    const configPathDirectory = pathToFileURL(
-      path.dirname(configFilePath),
-    ).href;
+    const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
 
     // extracts metadata(contentTypes, displayTemplates) from the component paths
-    const { contentTypes, displayTemplates } = await findMetaData(
-      componentPaths,
-      configPathDirectory,
-    );
+    const { contentTypes, displayTemplates } = await findMetaData(componentPaths, configPathDirectory);
 
     // Validate and normalize property groups
-    const normalizedPropertyGroups = propertyGroups
-      ? normalizePropertyGroups(propertyGroups)
-      : [];
+    const normalizedPropertyGroups = propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
 
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes),
@@ -143,9 +130,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       if (response.error.status === 404) {
         spinner.fail(chalk.red('Feature Not Active'));
         console.error(
-          chalk.red(
-            'The requested feature "preview3_packages_enabled" is not enabled in your environment.',
-          ),
+          chalk.red('The requested feature "preview3_packages_enabled" is not enabled in your environment.'),
         );
         console.error(
           chalk.dim(

@@ -1,8 +1,4 @@
-import {
-  ct4,
-  ct5,
-  notSynced,
-} from '@/components/missing-content-types/not-synced';
+import { ct4, ct5, notSynced } from '@/components/missing-content-types/not-synced';
 import { GraphClient, initContentTypeRegistry } from '@optimizely/cms-sdk';
 import React from 'react';
 

@@ -13,15 +13,11 @@ async function Page({ searchParams }: Props) {
     graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   });
 
-  const content = await client.getPreviewContent(
-    (await searchParams) as PreviewParams
-  );
+  const content = await client.getPreviewContent((await searchParams) as PreviewParams);
 
   return (
     <>
-      <Script
-        src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
-      ></Script>
+      <Script src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}></Script>
       <PreviewComponent />
       <OptimizelyComponent content={content} />
     </>

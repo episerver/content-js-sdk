@@ -31,8 +31,7 @@ export function PreviewComponent() {
     };
 
     window.addEventListener('optimizely:cms:contentSaved', handler);
-    return () =>
-      window.removeEventListener('optimizely:cms:contentSaved', handler);
+    return () => window.removeEventListener('optimizely:cms:contentSaved', handler);
   }, []);
 
   return null;

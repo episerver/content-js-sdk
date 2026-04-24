@@ -75,7 +75,7 @@ describe('parseChildContentType errors', () => {
     const allowedKeys = new Set(['Article', 'Gallery']);
 
     expect(() => parseChildContentType(contentType, allowedKeys)).toThrow(
-      '❌ [optimizely-cms-cli] Duplicate entries in mayContainTypes for content type "Blog": Article'
+      '❌ [optimizely-cms-cli] Duplicate entries in mayContainTypes for content type "Blog": Article',
     );
   });
 
@@ -87,7 +87,7 @@ describe('parseChildContentType errors', () => {
     const allowedKeys = new Set(['Valid']);
 
     expect(() => parseChildContentType(contentType, allowedKeys)).toThrow(
-      '❌ [optimizely-cms-cli] Invalid mayContainTypes for content type "Blog". Unknown content types: Unknown'
+      '❌ [optimizely-cms-cli] Invalid mayContainTypes for content type "Blog". Unknown content types: Unknown',
     );
   });
 });

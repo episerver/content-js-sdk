@@ -52,10 +52,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     // Non-2xx responses have undefined data; check error/response instead
     if (error || (response && !response.ok)) {
       const status = (error as any)?.status ?? response?.status;
-      const title =
-        (error as any)?.title ??
-        (error as any)?.message ??
-        response?.statusText;
+      const title = (error as any)?.title ?? (error as any)?.message ?? response?.statusText;
       const detail = (error as any)?.detail;
 
       // Build formatted error message
@@ -127,14 +124,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         } catch (serializeError) {
           spinner.fail('Failed to serialize response to JSON');
           process.exitCode = 1;
-          throw new Error(
-            'Response contains unserializable data (circular references or BigInt values)',
-          );
+          throw new Error('Response contains unserializable data (circular references or BigInt values)');
         }
         return;
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         spinner.fail(errorMessage);
         process.exitCode = 1;
         throw error;
@@ -142,24 +136,24 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }
 
     // Prompt for output directory if not provided
-    const outputPath = flags.output
-      ? flags.output
-      : isInteractive
-        ? await input({
-            message: 'Where should the generated files be saved?',
-            default: './src/content-types',
-          })
-        : './src/content-types'; // Default for non-interactive environments
+    const outputPath =
+      flags.output ? flags.output
+      : isInteractive ?
+        await input({
+          message: 'Where should the generated files be saved?',
+          default: './src/content-types',
+        })
+      : './src/content-types'; // Default for non-interactive environments
 
     // Prompt for grouping if not provided
     isGroupBy =
       flags.group ??
-      (isInteractive
-        ? await confirm({
-            message: 'Should the generated files be grouped?',
-            default: false,
-          })
-        : false); // Default to non-grouped in non-interactive environments
+      (isInteractive ?
+        await confirm({
+          message: 'Should the generated files be grouped?',
+          default: false,
+        })
+      : false); // Default to non-grouped in non-interactive environments
 
     const outputDir = resolve(process.cwd(), outputPath);
 
@@ -227,25 +221,17 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
         // Process and match display templates to content types
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
-          const processedTemplates = processDisplayTemplates(
-            manifest.displayTemplates,
-          );
+          const processedTemplates = processDisplayTemplates(manifest.displayTemplates);
 
           // Build a set of all content type keys for quick lookup
-          const allContentTypeKeys = new Set(
-            manifest.contentTypes.map((ct: any) => ct.key),
-          );
+          const allContentTypeKeys = new Set(manifest.contentTypes.map((ct: any) => ct.key));
 
           for (const template of processedTemplates) {
             // Templates with baseType or nodeType cannot be matched to a specific content type
             // Only templates with contentType field can be matched
-            if (
-              template.contentType &&
-              allContentTypeKeys.has(template.contentType)
-            ) {
+            if (template.contentType && allContentTypeKeys.has(template.contentType)) {
               // Match found - group with content type
-              const existing =
-                displayTemplatesByContentType.get(template.contentType) || [];
+              const existing = displayTemplatesByContentType.get(template.contentType) || [];
               existing.push(template);
               displayTemplatesByContentType.set(template.contentType, existing);
             } else {
@@ -271,19 +257,13 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           );
 
           // List generated files for the group
-          console.log(
-            chalk.cyan.bold(
-              `\nGenerated files for group "${parsedGroupName}":`,
-            ),
-          );
+          console.log(chalk.cyan.bold(`\nGenerated files for group "${parsedGroupName}":`));
           for (const file of generatedFiles) {
             console.log(chalk.dim('  -'), chalk.green(file));
           }
 
           console.log(); // Add extra spacing between groups
-          spinner.succeed(
-            `Generated ${generatedFiles.length} content type file(s) in ${groupDir}`,
-          );
+          spinner.succeed(`Generated ${generatedFiles.length} content type file(s) in ${groupDir}`);
         }
 
         // Handle orphaned display templates
@@ -294,22 +274,15 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           const displayTemplatesDir = join(outputDir, 'displayTemplates');
           await mkdir(displayTemplatesDir, { recursive: true });
 
-          const orphanedFiles = await generateDisplayTemplateFiles(
-            orphanedDisplayTemplates,
-            displayTemplatesDir,
-          );
+          const orphanedFiles = await generateDisplayTemplateFiles(orphanedDisplayTemplates, displayTemplatesDir);
 
-          console.log(
-            chalk.cyan.bold('\nDisplay templates (no matching content type):'),
-          );
+          console.log(chalk.cyan.bold('\nDisplay templates (no matching content type):'));
           for (const file of orphanedFiles) {
             console.log(chalk.dim('  -'), chalk.green(file));
           }
 
           console.log(); // Add extra spacing between groups
-          spinner.succeed(
-            `Generated ${orphanedFiles.length} display template(s) in ${displayTemplatesDir}`,
-          );
+          spinner.succeed(`Generated ${orphanedFiles.length} display template(s) in ${displayTemplatesDir}`);
           console.log(); // Add extra spacing between groups
         }
       } else {
@@ -327,15 +300,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         }
 
         console.log(); // Add extra spacing between groups
-        spinner.succeed(
-          `Generated ${generatedContentTypeFiles.length} content type file(s) in ${outputDir}`,
-        );
+        spinner.succeed(`Generated ${generatedContentTypeFiles.length} content type file(s) in ${outputDir}`);
 
         // Generate display template files if available
         if (manifest.displayTemplates && manifest.displayTemplates.length > 0) {
-          const processedDisplayTemplates = processDisplayTemplates(
-            manifest.displayTemplates,
-          );
+          const processedDisplayTemplates = processDisplayTemplates(manifest.displayTemplates);
 
           console.log(); // Add extra spacing between groups
           spinner.start('Generating display template files');
@@ -344,11 +313,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             const displayTemplatesDir = join(outputDir, 'display-templates');
             await mkdir(displayTemplatesDir, { recursive: true });
 
-            const generatedDisplayTemplateFiles =
-              await generateDisplayTemplateFiles(
-                processedDisplayTemplates,
-                displayTemplatesDir,
-              );
+            const generatedDisplayTemplateFiles = await generateDisplayTemplateFiles(
+              processedDisplayTemplates,
+              displayTemplatesDir,
+            );
 
             // List generated display template files
             console.log(chalk.cyan.bold('\nGenerated display template files:'));
@@ -365,11 +333,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         }
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       spinner.fail(errorMessage);
       process.exitCode = 1;
       throw error;
     }
   }
 }
+

@@ -36,17 +36,13 @@ export default function VideoFeature({ content }: Props) {
   const imageUrl = src(content.thumbnail_image);
 
   return (
-    <div className="video-feature">
-      <div className="video">
+    <div className='video-feature'>
+      <div className='video'>
         <a href={content.video_link ?? '#'} {...pa('video_link')}>
-          {imageUrl ? (
+          {imageUrl ?
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageUrl}
-              alt={getAlt(content.thumbnail_image, 'image')}
-              {...pa('thumbnail_image')}
-            />
-          ) : null}
+            <img src={imageUrl} alt={getAlt(content.thumbnail_image, 'image')} {...pa('thumbnail_image')} />
+          : null}
           <span>▶︎</span>
           <p {...pa('thumbnail_caption')}>{content.thumbnail_caption}</p>
         </a>

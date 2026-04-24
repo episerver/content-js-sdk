@@ -1,10 +1,6 @@
 import Image from 'next/image';
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
-import {
-  ComponentContainerProps,
-  OptimizelyComposition,
-  getPreviewUtils,
-} from '@optimizely/cms-sdk/react/server';
+import { ComponentContainerProps, OptimizelyComposition, getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { HeroContentType } from './Hero';
 
 export const LandingExperienceContentType = contentType({
@@ -35,24 +31,14 @@ export default function LandingExperienceComponent({ content }: Props) {
     <main>
       {content.hero && (
         <header className={['uni-hero', content.hero.theme].join(' ')}>
-          {heroBackgroundUrl && (
-            <Image
-              src={heroBackgroundUrl}
-              alt=""
-              fill={true}
-              {...pa('hero.background')}
-            />
-          )}
-          <div className="heading" {...pa('hero')}>
+          {heroBackgroundUrl && <Image src={heroBackgroundUrl} alt='' fill={true} {...pa('hero.background')} />}
+          <div className='heading' {...pa('hero')}>
             <h1 {...pa('hero.heading')}>{content.hero.heading}</h1>
             <p {...pa('hero.summary')}>{content.hero.summary}</p>
           </div>
         </header>
       )}
-      <OptimizelyComposition
-        nodes={content.composition.nodes ?? []}
-        ComponentWrapper={ComponentWrapper}
-      />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
     </main>
   );
 }

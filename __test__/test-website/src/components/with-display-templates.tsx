@@ -1,9 +1,4 @@
-import {
-  BlankSectionContentType,
-  contentType,
-  displayTemplate,
-  ContentProps,
-} from '@optimizely/cms-sdk';
+import { BlankSectionContentType, contentType, displayTemplate, ContentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyComposition,
   OptimizelyGridSection,
@@ -226,11 +221,7 @@ export function BlankSection2({ content }: BlankSectionProps) {
   return (
     <>
       <h2>This is BlankSection2 {content.key}</h2>
-      <OptimizelyGridSection
-        nodes={content.nodes}
-        row={Row2}
-        column={Column2}
-      />
+      <OptimizelyGridSection nodes={content.nodes} row={Row2} column={Column2} />
     </>
   );
 }

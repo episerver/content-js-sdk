@@ -1,14 +1,7 @@
-import {
-  contentType,
-  displayTemplate,
-  ContentProps,
-} from '@optimizely/cms-sdk';
+import { contentType, displayTemplate, ContentProps } from '@optimizely/cms-sdk';
 import { SmallFeatureGridContentType } from './SmallFeatureGrid';
 import { VideoFeatureContentType } from './VideoFeature';
-import {
-  getPreviewUtils,
-  OptimizelyComponent,
-} from '@optimizely/cms-sdk/react/server';
+import { getPreviewUtils, OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 
 export const LandingSectionContentType = contentType({
   key: 'LandingSection',
@@ -64,7 +57,7 @@ export default function LandingSection({ content }: Props) {
   const { pa } = getPreviewUtils(content);
   return (
     <section>
-      <header className="landing-header">
+      <header className='landing-header'>
         <h2 {...pa('heading')}>{content.heading}</h2>
         <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>

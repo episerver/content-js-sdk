@@ -1,8 +1,4 @@
-import {
-  createSingleContentQuery,
-  ItemsResponse,
-  createMultipleContentQuery,
-} from './createQuery.js';
+import { createSingleContentQuery, ItemsResponse, createMultipleContentQuery } from './createQuery.js';
 import {
   GraphContentResponseError,
   GraphHttpResponseError,
@@ -45,7 +41,6 @@ export type GraphOptions = {
    */
   slot?: GraphSlot;
 };
-
 
 // Global configuration for client factory
 let globalGraphConfig: GraphOptions | null = null;
@@ -235,7 +230,7 @@ type GetLinksResponse = {
  */
 export function removeTypePrefix(obj: any): any {
   if (Array.isArray(obj)) {
-    return obj.map((e) => removeTypePrefix(e));
+    return obj.map(e => removeTypePrefix(e));
   }
 
   if (typeof obj === 'object' && obj !== null) {
@@ -268,7 +263,7 @@ export function removeTypePrefix(obj: any): any {
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
-    return obj.map((e) => decorateWithContext(e, params));
+    return obj.map(e => decorateWithContext(e, params));
   }
   if (typeof obj === 'object' && obj !== null) {
     for (const k in obj) {
@@ -317,9 +312,7 @@ export class GraphClient {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      Authorization: previewToken
-        ? `Bearer ${previewToken}`
-        : `epi-single ${this.apiKey}`,
+      Authorization: previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
     };
 
     if (slot === 'New') {
@@ -333,7 +326,7 @@ export class GraphClient {
         query,
         variables,
       }),
-    }).catch((err) => {
+    }).catch(err => {
       if (err instanceof TypeError) {
         const optiErr = new OptimizelyGraphError(
           'Error when calling `fetch`. Ensure the Graph URL is correct or try again later.',
@@ -345,7 +338,7 @@ export class GraphClient {
     });
 
     if (!response.ok) {
-      const text = await response.text().catch((err) => {
+      const text = await response.text().catch(err => {
         console.error('Error reading response text:', err);
         return response.statusText;
       });
@@ -385,12 +378,7 @@ export class GraphClient {
    * @param previewToken - Optional preview token for fetching preview content.
    * @returns A promise that resolves to the first content type metadata object
    */
-  private async getContentMetaData(
-    input: GraphVariables,
-    previewToken?: string,
-    cache?: boolean,
-    slot?: GraphSlot,
-  ) {
+  private async getContentMetaData(input: GraphVariables, previewToken?: string, cache?: boolean, slot?: GraphSlot) {
     const data = await this.request(
       GET_CONTENT_METADATA_QUERY,
       input,
@@ -436,10 +424,7 @@ export class GraphClient {
    *
    * @returns An array of all items matching the path and options. Returns an empty array if no content is found.
    */
-  async getContentByPath<T = any>(
-    path: string,
-    options?: GraphGetContentOptions,
-  ) {
+  async getContentByPath<T = any>(path: string, options?: GraphGetContentOptions) {
     const input: GraphVariables = {
       ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
       variation: options?.variation,
@@ -448,30 +433,15 @@ export class GraphClient {
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
 
-    const { contentTypeName, damEnabled } = await this.getContentMetaData(
-      input,
-      undefined,
-      cacheEnabled,
-      activeSlot,
-    );
+    const { contentTypeName, damEnabled } = await this.getContentMetaData(input, undefined, cacheEnabled, activeSlot);
 
     if (!contentTypeName) {
       return [];
     }
 
     try {
-      const query = createMultipleContentQuery(
-        contentTypeName,
-        damEnabled,
-        this.maxFragmentThreshold,
-      );
-      const response = (await this.request(
-        query,
-        input,
-        undefined,
-        cacheEnabled,
-        activeSlot,
-      )) as ItemsResponse<T>;
+      const query = createMultipleContentQuery(contentTypeName, damEnabled, this.maxFragmentThreshold);
+      const response = (await this.request(query, input, undefined, cacheEnabled, activeSlot)) as ItemsResponse<T>;
 
       return response?._Content?.items.map(removeTypePrefix);
     } catch (error) {
@@ -507,18 +477,13 @@ export class GraphClient {
    * const path = await client.getPath('graph://Page/abc123?loc=en');
    * ```
    */
-  async getPath(
-    reference: string | GraphReference,
-    options?: GraphGetLinksOptions,
-  ) {
+  async getPath(reference: string | GraphReference, options?: GraphGetLinksOptions) {
     let filter: GraphVariables;
     if (typeof reference === 'string' && reference.startsWith('graph://')) {
       const ref = this.parseGraphReference(reference);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(
-          options?.locales ?? (ref.locale ? [ref.locale] : undefined),
-        ),
+        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
       };
     } else if (typeof reference === 'string') {
       filter = {
@@ -528,23 +493,14 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ??
-            (reference.locale ? [reference.locale] : undefined),
-        ),
+        ...localeFilter(options?.locales ?? (reference.locale ? [reference.locale] : undefined)),
       };
     }
 
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
 
-    const data = (await this.request(
-      GET_PATH_QUERY,
-      filter,
-      undefined,
-      cacheEnabled,
-      activeSlot,
-    )) as GetLinksResponse;
+    const data = (await this.request(GET_PATH_QUERY, filter, undefined, cacheEnabled, activeSlot)) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
@@ -568,10 +524,8 @@ export class GraphClient {
     }
 
     // Return sorted by the "sortedKeys"
-    const linkMap = new Map(links.map((link) => [link._metadata?.key, link]));
-    return sortedKeys
-      .map((key) => linkMap.get(key))
-      .filter((item) => item !== undefined);
+    const linkMap = new Map(links.map(link => [link._metadata?.key, link]));
+    return sortedKeys.map(key => linkMap.get(key)).filter(item => item !== undefined);
   }
 
   /**
@@ -598,18 +552,13 @@ export class GraphClient {
    * const items = await client.getItems('graph://Page/abc123?loc=en');
    * ```
    */
-  async getItems(
-    reference: string | GraphReference,
-    options?: GraphGetLinksOptions,
-  ) {
+  async getItems(reference: string | GraphReference, options?: GraphGetLinksOptions) {
     let filter: GraphVariables;
     if (typeof reference === 'string' && reference.startsWith('graph://')) {
       const ref = this.parseGraphReference(reference);
       filter = {
         ...referenceFilter(ref),
-        ...localeFilter(
-          options?.locales ?? (ref.locale ? [ref.locale] : undefined),
-        ),
+        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
       };
     } else if (typeof reference === 'string') {
       filter = {
@@ -619,23 +568,14 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ??
-            (reference.locale ? [reference.locale] : undefined),
-        ),
+        ...localeFilter(options?.locales ?? (reference.locale ? [reference.locale] : undefined)),
       };
     }
 
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
 
-    const data = (await this.request(
-      GET_ITEMS_QUERY,
-      filter,
-      undefined,
-      cacheEnabled,
-      activeSlot,
-    )) as GetLinksResponse;
+    const data = (await this.request(GET_ITEMS_QUERY, filter, undefined, cacheEnabled, activeSlot)) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
@@ -676,24 +616,11 @@ export class GraphClient {
       mode: params.ctx,
     });
 
-    const query = createSingleContentQuery(
-      contentTypeName,
-      damEnabled,
-      this.maxFragmentThreshold,
-    );
+    const query = createSingleContentQuery(contentTypeName, damEnabled, this.maxFragmentThreshold);
 
-    const response = await this.request(
-      query,
-      input,
-      params.preview_token,
-      false,
-      activeSlot,
-    );
+    const response = await this.request(query, input, params.preview_token, false, activeSlot);
 
-    return decorateWithContext(
-      removeTypePrefix(response?._Content?.item),
-      params,
-    );
+    return decorateWithContext(removeTypePrefix(response?._Content?.item), params);
   }
 
   /**
@@ -720,12 +647,10 @@ export class GraphClient {
 
     const withoutProtocol = referenceString.slice(graphProtocol.length);
     const [pathPart, queryPart] = withoutProtocol.split('?');
-    const pathSegments = pathPart.split('/').filter((s) => s.length > 0);
+    const pathSegments = pathPart.split('/').filter(s => s.length > 0);
 
     if (pathSegments.length < 1) {
-      throw new Error(
-        `Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`,
-      );
+      throw new Error(`Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`);
     }
 
     let source: string | undefined;
@@ -797,14 +722,8 @@ export class GraphClient {
    * const content = await client.getContent({ key: 'abc123', version: '1.0' }, { previewToken: 'token' });
    * ```
    */
-  async getContent(
-    reference: string | GraphReference,
-    options?: GraphGetItemOptions,
-  ) {
-    const ref =
-      typeof reference === 'string'
-        ? this.parseGraphReference(reference)
-        : reference;
+  async getContent(reference: string | GraphReference, options?: GraphGetItemOptions) {
+    const ref = typeof reference === 'string' ? this.parseGraphReference(reference) : reference;
 
     const previewToken = options?.previewToken;
 
@@ -815,11 +734,9 @@ export class GraphClient {
       where: {
         _metadata: {
           key: { eq: ref.key },
-          ...(ref.version
-            ? { version: { eq: ref.version } }
-            : ref.locale
-              ? { locale: { eq: ref.locale } }
-              : {}),
+          ...(ref.version ? { version: { eq: ref.version } }
+          : ref.locale ? { locale: { eq: ref.locale } }
+          : {}),
         },
       },
     };
@@ -836,19 +753,9 @@ export class GraphClient {
     }
 
     try {
-      const query = createSingleContentQuery(
-        contentTypeName,
-        damEnabled,
-        this.maxFragmentThreshold,
-      );
+      const query = createSingleContentQuery(contentTypeName, damEnabled, this.maxFragmentThreshold);
 
-      const response = await this.request(
-        query,
-        input,
-        previewToken,
-        cacheEnabled,
-        activeSlot,
-      );
+      const response = await this.request(query, input, previewToken, cacheEnabled, activeSlot);
 
       return removeTypePrefix(response?._Content?.item);
     } catch (error) {
@@ -903,11 +810,7 @@ export function getGraphConfig(): GraphOptions | null {
  * ```
  */
 export function config(options: GraphOptions) {
-  if (
-    !options.apiKey ||
-    typeof options.apiKey !== 'string' ||
-    options.apiKey.trim().length === 0
-  ) {
+  if (!options.apiKey || typeof options.apiKey !== 'string' || options.apiKey.trim().length === 0) {
     throw new OptimizelyGraphError(
       'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
         'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
@@ -948,9 +851,7 @@ export function config(options: GraphOptions) {
  */
 export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient {
   if (!globalGraphConfig) {
-    throw new OptimizelyGraphError(
-      'Graph configuration is not set. Call config() in your root layout first.',
-    );
+    throw new OptimizelyGraphError('Graph configuration is not set. Call config() in your root layout first.');
   }
 
   const options: GraphOptions = {
@@ -960,3 +861,4 @@ export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient 
 
   return new GraphClient(options.apiKey, options);
 }
+

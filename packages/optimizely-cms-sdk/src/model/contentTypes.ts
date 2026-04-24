@@ -1,12 +1,7 @@
 import { AnyProperty } from './properties.js';
 
 // Main base types
-export const MAIN_BASE_TYPES = [
-  '_component',
-  '_experience',
-  '_section',
-  '_page',
-] as const;
+export const MAIN_BASE_TYPES = ['_component', '_experience', '_section', '_page'] as const;
 
 // Media-related base types
 export const MEDIA_BASE_TYPES = ['_image', '_media', '_video'] as const;
@@ -15,11 +10,7 @@ export const MEDIA_BASE_TYPES = ['_image', '_media', '_video'] as const;
 export const OTHER_BASE_TYPES = ['_folder'] as const;
 
 // All base types including media and other types
-export const ALL_BASE_TYPES = [
-  ...MAIN_BASE_TYPES,
-  ...MEDIA_BASE_TYPES,
-  ...OTHER_BASE_TYPES,
-] as const;
+export const ALL_BASE_TYPES = [...MAIN_BASE_TYPES, ...MEDIA_BASE_TYPES, ...OTHER_BASE_TYPES] as const;
 
 export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
 export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
@@ -34,21 +25,13 @@ type BaseContentType = {
 /** Represents the Page type  in CMS */
 export type PageContentType = BaseContentType & {
   baseType: '_page';
-  mayContainTypes?: Array<
-    | ContentType<PageContentType | ExperienceContentType | FolderContentType>
-    | '_self'
-    | string
-  >;
+  mayContainTypes?: Array<ContentType<PageContentType | ExperienceContentType | FolderContentType> | '_self' | string>;
 };
 
 /** Represents the Experience type  in CMS */
 export type ExperienceContentType = BaseContentType & {
   baseType: '_experience';
-  mayContainTypes?: Array<
-    | ContentType<PageContentType | ExperienceContentType | FolderContentType>
-    | '_self'
-    | string
-  >;
+  mayContainTypes?: Array<ContentType<PageContentType | ExperienceContentType | FolderContentType> | '_self' | string>;
 };
 
 /** Represents the Folder (Used in the asset panel to organizing content and not in Graph) type in CMS */

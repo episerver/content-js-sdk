@@ -1,13 +1,4 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  beforeEach,
-  afterEach,
-  vi,
-  afterAll,
-} from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi, afterAll } from 'vitest';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createFragment } from '../createQuery.js';
 
@@ -26,7 +17,7 @@ describe('createFragment > Fragment threshold warning', () => {
           type: 'string',
         },
       },
-    })
+    }),
   );
 
   // Root content type that includes all child types in its content area
@@ -67,11 +58,9 @@ describe('createFragment > Fragment threshold warning', () => {
     const result = createFragment('ExplodingType');
     expect(result).toBeInstanceOf(Array);
     expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy.mock.calls[0][0]).toMatch(String.raw`generated 107 inner fragments`);
     expect(warnSpy.mock.calls[0][0]).toMatch(
-      String.raw`generated 107 inner fragments`
-    );
-    expect(warnSpy.mock.calls[0][0]).toMatch(
-      /Excessive fragment depth may breach GraphQL limits or degrade performance./
+      /Excessive fragment depth may breach GraphQL limits or degrade performance./,
     );
   });
 

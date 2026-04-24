@@ -1,13 +1,6 @@
 import React, { type ReactNode } from 'react';
-import {
-  BaseRichTextRenderer,
-  type BaseRendererConfig,
-} from '../../components/richText/base.js';
-import {
-  type RenderNode,
-  type Node,
-  createElementData,
-} from '../../components/richText/renderer.js';
+import { BaseRichTextRenderer, type BaseRendererConfig } from '../../components/richText/base.js';
+import { type RenderNode, type Node, createElementData } from '../../components/richText/renderer.js';
 import {
   generateDefaultElements,
   generateDefaultLeafs,
@@ -28,11 +21,7 @@ export interface ReactRendererConfig extends BaseRendererConfig {
 /**
  * React implementation of the rich text renderer using the base class
  */
-export class ReactRichTextRenderer extends BaseRichTextRenderer<
-  ElementRenderer,
-  LeafRenderer,
-  ReactNode
-> {
+export class ReactRichTextRenderer extends BaseRichTextRenderer<ElementRenderer, LeafRenderer, ReactNode> {
   private elements: ElementMap;
   private leafs: LeafMap;
 
@@ -40,13 +29,9 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
     super(config);
 
     // Convert custom element keys to lowercase for consistent lookup
-    const lowercaseElements = config.elements
-      ? Object.fromEntries(
-          Object.entries(config.elements).map(([key, value]) => [
-            key.toLowerCase(),
-            value,
-          ]),
-        )
+    const lowercaseElements =
+      config.elements ?
+        Object.fromEntries(Object.entries(config.elements).map(([key, value]) => [key.toLowerCase(), value]))
       : {};
 
     this.elements = {
@@ -55,13 +40,9 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
     };
 
     // Convert custom leaf keys to lowercase for consistent lookup
-    const lowercaseLeafs = config.leafs
-      ? Object.fromEntries(
-          Object.entries(config.leafs).map(([key, value]) => [
-            key.toLowerCase(),
-            value,
-          ]),
-        )
+    const lowercaseLeafs =
+      config.leafs ?
+        Object.fromEntries(Object.entries(config.leafs).map(([key, value]) => [key.toLowerCase(), value]))
       : {};
 
     this.leafs = {
@@ -81,27 +62,16 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
   /**
    * Create a React element from a render node
    */
-  protected createElement(
-    node: RenderNode,
-    children: ReactNode[],
-    index: number,
-  ): ReactNode {
+  protected createElement(node: RenderNode, children: ReactNode[], index: number): ReactNode {
     // Normalize element type to lowercase for consistent lookup
     const normalizedElementType = node.elementType!.toLowerCase();
 
-    const ElementComponent =
-      this.elements[normalizedElementType] ||
-      this.getDefaultElement(normalizedElementType);
+    const ElementComponent = this.elements[normalizedElementType] || this.getDefaultElement(normalizedElementType);
 
-    const elementData = createElementData(
-      normalizedElementType,
-      node.attributes,
-    );
+    const elementData = createElementData(normalizedElementType, node.attributes);
 
     // Extract text content from render nodes
-    const textContent = node.children
-      ? this.extractTextFromRenderNodes(node.children)
-      : '';
+    const textContent = node.children ? this.extractTextFromRenderNodes(node.children) : '';
 
     // Create the React element with enhanced props
     return React.createElement(
@@ -135,8 +105,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
       const mark = node.marks[markIndex];
       // Normalize mark to lowercase for consistent lookup
       const normalizedMark = mark.toLowerCase();
-      const LeafComponent =
-        this.leafs[normalizedMark] || this.getDefaultLeaf(normalizedMark);
+      const LeafComponent = this.leafs[normalizedMark] || this.getDefaultLeaf(normalizedMark);
 
       // Create leaf data
       const leafData = {
@@ -164,7 +133,7 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
    */
   private extractTextFromRenderNodes(nodes: RenderNode[]): string {
     return nodes
-      .map((node) => {
+      .map(node => {
         if (node.type === 'text') {
           return this.decodeEntities(node.content || '');
         } else if (node.children) {
@@ -200,8 +169,6 @@ export class ReactRichTextRenderer extends BaseRichTextRenderer<
 /**
  * Factory function to create a React renderer
  */
-export function createReactRenderer(
-  config?: Partial<ReactRendererConfig>,
-): ReactRichTextRenderer {
+export function createReactRenderer(config?: Partial<ReactRendererConfig>): ReactRichTextRenderer {
   return new ReactRichTextRenderer(config);
 }

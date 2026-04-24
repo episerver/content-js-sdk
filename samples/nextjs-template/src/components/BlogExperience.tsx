@@ -43,20 +43,17 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 export default function BlogExperience({ content }: Props) {
   const { pa } = getPreviewUtils(content);
   return (
-    <main className="blog-experience">
-      <header className="blog-header">
+    <main className='blog-experience'>
+      <header className='blog-header'>
         <h1 {...pa('title')}>{content.title}</h1>
         <p {...pa('subtitle')}>{content.subtitle}</p>
       </header>
-      <section className="blog-articles" {...pa('articles')}>
+      <section className='blog-articles' {...pa('articles')}>
         {content?.articles?.map((article, index) => (
           <OptimizelyComponent key={index} content={article} />
         ))}
       </section>
-      <OptimizelyComposition
-        nodes={content.composition.nodes ?? []}
-        ComponentWrapper={ComponentWrapper}
-      />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
     </main>
   );
 }

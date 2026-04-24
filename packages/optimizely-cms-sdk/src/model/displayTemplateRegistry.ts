@@ -9,7 +9,7 @@ export function init(registry: DisplayTemplate[]) {
 
 /** Get the DisplayTemplate from a template name */
 export function getDisplayTemplate(name: string) {
-  return _registry.find((c) => c.key === name);
+  return _registry.find(c => c.key === name);
 }
 
 /**
@@ -31,5 +31,5 @@ export function getAllDisplayTemplates(): DisplayTemplate[] {
 
 /** Get the DisplayTemplate from a tag */
 export function getDisplayTemplateByTag(tag: string): DisplayTemplate[] {
-  return _registry.filter((c) => c.tag === tag) as DisplayTemplate[];
+  return _registry.filter(c => c.tag === tag) as DisplayTemplate[];
 }

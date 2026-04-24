@@ -9,12 +9,9 @@ describe('Attribute Conversion to React Props', () => {
   it('should convert class to className', () => {
     const TestComponent = createHtmlComponent('div');
     const { container } = render(
-      <TestComponent
-        attributes={{ class: 'test-class' }}
-        element={{ type: 'div', children: [] }}
-      >
+      <TestComponent attributes={{ class: 'test-class' }} element={{ type: 'div', children: [] }}>
         Test
-      </TestComponent>
+      </TestComponent>,
     );
 
     const divElement = container.querySelector('div');
@@ -31,7 +28,7 @@ describe('Attribute Conversion to React Props', () => {
           border: '1',
         }}
         element={{ type: 'table', children: [] }}
-      />
+      />,
     );
 
     const tableElement = container.querySelector('table');
@@ -52,7 +49,7 @@ describe('Attribute Conversion to React Props', () => {
           'custom-attr': 'value', // Should stay as-is (not a known HTML attribute)
         }}
         element={{ type: 'div', children: [] }}
-      />
+      />,
     );
 
     const divElement = container.querySelector('div');
@@ -80,7 +77,7 @@ describe('Attribute Conversion to React Props', () => {
           spellcheck: 'false',
         }}
         element={{ type: 'div', children: [] }}
-      />
+      />,
     );
 
     const divElement = container.querySelector('div');
@@ -99,7 +96,7 @@ describe('Attribute Conversion to React Props', () => {
           'data-multi-word': 'test',
         }}
         element={{ type: 'div', children: [] }}
-      />
+      />,
     );
 
     const divElement = container.querySelector('div');
