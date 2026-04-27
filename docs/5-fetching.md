@@ -78,6 +78,58 @@ export default async function Page({ params }: Props) {
 }
 ```
 
+### Define client in a more flexible way
+
+With JS SDK version 2 and above, it is easier to define the client and use it throughout the application. You can now define the client in the root file and then use built-in functions to create the client.
+
+```tsx
+// Configure Optimizely Graph client
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+});
+```
+
+#### config() Parameters
+
+- **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
+- **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`
+- **`host`** (optional): Default application host for path filtering. Useful for multi-site scenarios
+- **`maxFragmentThreshold`** (optional): Maximum number of GraphQL fragments before logging warnings. Defaults to `100`
+- **`cache`** (optional): Enable/disable server-side caching for all queries. Defaults to `true`
+- **`slot`** (optional): Select which Graph index to query (`'Current'` or `'New'`). Used during smooth rebuilds
+
+After declaring this, you can get the client anywhere within the project by using the `getClient()` method.
+
+```tsx
+type Props = {
+  params: Promise<{
+    slug: string[];
+  }>;
+};
+
+export async function Page({ params }: Props) {
+  const { slug } = await params;
+
+  // gets an instance of the client
+  const client = getClient();
+  const path = `/${slug.join('/')}/`;
+  
+  // fetch content via the client
+  const content = await client.getContentByPath(path);
+
+   return <pre>{JSON.stringify(content[0], null, 2)}</pre>;
+}
+```
+
+### Why use `getClient()` instead of `new GraphClient()`?
+
+The `getClient()` approach is preferred because:
+
+- **Single configuration point**: Configure Graph client once in root layout instead of passing environment variables to every component
+- **Cleaner code**: No need to instantiate client in every page/component that needs content
+- **Easier maintenance**: Change API key or Graph URL in one place
+
 ## 4. Start the app
 
 Start the application

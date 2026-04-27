@@ -2,6 +2,9 @@
 
 The Optimizely CMS SDK provides utility functions to help you navigate and structure your site. These functions are available through the `GraphClient` instance and are particularly useful for building navigation menus, breadcrumbs, and understanding page hierarchies.
 
+> [!TIP]
+> All examples below use `new GraphClient()` for simplicity. For production apps, consider using `config()` once in your root layout and `getClient()` throughout. See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient).
+
 ## getPath()
 
 The `getPath()` method returns the ancestor pages of a given page, from the root down to the current page. This is useful for building breadcrumb navigation.

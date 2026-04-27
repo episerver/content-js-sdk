@@ -139,6 +139,80 @@ export async function Page({ params }: Props) {
 export default withAppContext(Page);
 ```
 
+### Using `getClient()` Instead
+
+Recommended approach: configure client once in root layout, use `getClient()` everywhere.
+
+**In `layout.tsx`:**
+
+```tsx
+import Article, { ArticleContentType } from '@/components/Article';
+import { initContentTypeRegistry, config } from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+
+// Configure client once
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+});
+
+initContentTypeRegistry([ArticleContentType]);
+initReactComponentRegistry({
+  resolver: {
+    Article,
+  },
+});
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+**In `page.tsx`:**
+
+```tsx
+import { getClient } from '@optimizely/cms-sdk';
+import {
+  OptimizelyComponent,
+  withAppContext,
+} from '@optimizely/cms-sdk/react/server';
+
+type Props = {
+  params: Promise<{
+    slug: string[];
+  }>;
+};
+
+export async function Page({ params }: Props) {
+  const { slug } = await params;
+
+  const client = getClient(); // No env vars needed
+  const content = await client.getContentByPath(`/${slug.join('/')}/`);
+
+  return <OptimizelyComponent content={content[0]} />;
+}
+
+export default withAppContext(Page);
+```
+
+**Benefits:**
+
+- Single config point - change API key in one place
+- Cleaner page components - no env vars passed around
+- Easier maintenance
+
+See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient) for full details.
+
+---
+
 Go again to <http://localhost:3000/en>. You should see your page
 
 ### Understanding `withAppContext`
