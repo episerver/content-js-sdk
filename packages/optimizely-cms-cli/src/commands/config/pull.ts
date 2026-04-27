@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
-import { createApiClient } from '../../service/cmsRestClient.js';
+import { createApiClient, isSaasApiGateway, resolveHost } from '../../service/cmsRestClient.js';
 import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
 import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
 import { ContentType } from '../../generators/manifest.js';
@@ -24,6 +24,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       description: 'Output manifest as JSON to stdout (useful for piping)',
       default: false,
     }),
+    includeReadOnly: Flags.boolean({
+      description:
+        'Include read-only content types in the manifest. Automatically enabled for PaaS/CMS 13 instances; use --no-include-read-only to disable.',
+      allowNo: true,
+    }),
   };
   static override description =
     'Pull content types from CMS. Generates TypeScript files interactively or outputs JSON with --json flag';
@@ -40,12 +45,13 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
    * Fetches the manifest from CMS
    * @throws Error with descriptive message if fetch fails
    */
-  private async fetchManifest(host?: string) {
+  private async fetchManifest(host?: string, includeReadOnly?: boolean) {
     const restClient = await createApiClient(host);
     const { data, error, response } = await restClient.GET('/manifest', {
       params: {
         query: {
           sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
+          ...(includeReadOnly ? { includeReadOnly: true } : {}),
         },
       },
     });
@@ -80,6 +86,12 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     // to avoid prompting when output is redirected or piped
     const isInteractive = process.stdout.isTTY === true;
 
+    // Auto-enable includeReadOnly for PaaS (CMS 13) instances; explicit flag overrides auto-detection
+    const includeReadOnly =
+      flags.includeReadOnly !== undefined
+        ? flags.includeReadOnly
+        : !isSaasApiGateway(resolveHost(flags.host));
+
     // The output mode based on flags and environment
     // 1. --json flag explicitly requests JSON output
     // 2. --output flag explicitly requests file generation (even in non-TTY environments like CI)
@@ -102,7 +114,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       }).start();
 
       try {
-        const response = await this.fetchManifest(flags.host);
+        const response = await this.fetchManifest(flags.host, includeReadOnly);
 
         if (!response) {
           spinner.fail('The server did not respond with any content');
@@ -161,7 +173,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     try {
       // Pull from CMS
-      const response = await this.fetchManifest(flags.host);
+      const response = await this.fetchManifest(flags.host, includeReadOnly);
 
       if (!response) {
         spinner.fail('The server did not respond with any content');

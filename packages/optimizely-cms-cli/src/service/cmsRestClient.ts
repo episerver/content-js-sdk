@@ -9,9 +9,23 @@ import { paths } from './apiSchema/openapi-schema-types.js';
  * @param url - The URL to check
  * @returns True if the URL is a SaaS API gateway, false otherwise
  */
-function isSaasApiGateway(url: string): boolean {
+export function isSaasApiGateway(url: string): boolean {
   // Matches: api.cms.optimizely.com, api.cmstest.optimizely.com, api-<tenant>.cms*.optimizely.com
   return /^https:\/\/api(-[^.]+)?\.cms[^.]*\.optimizely\.com$/.test(url);
+}
+
+const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
+
+/**
+ * Resolves the effective CMS host, falling back to the environment variable and
+ * then the default SaaS gateway URL. Trailing slashes are stripped.
+ */
+export function resolveHost(host?: string): string {
+  return (
+    host ||
+    process.env.OPTIMIZELY_CMS_API_URL ||
+    DEFAULT_GATEWAY_URL
+  ).replace(/\/$/, '');
 }
 
 /**
@@ -23,12 +37,9 @@ function isSaasApiGateway(url: string): boolean {
  */
 function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
   const API_VERSION = 'v1';
-  const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
-  const host = options?.host;
   const omitVersion = options?.omitVersion ?? false;
 
-  // Remove trailing slash if present for consistency
-  const baseUrl = (host || process.env.OPTIMIZELY_CMS_API_URL || DEFAULT_GATEWAY_URL).replace(/\/$/, '');
+  const baseUrl = resolveHost(options?.host);
 
   // PaaS instances always require /_cms prefix and version
   if (!isSaasApiGateway(baseUrl)) {
