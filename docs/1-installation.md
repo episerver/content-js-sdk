@@ -15,9 +15,9 @@ npx @optimizely/cms-cli@latest
 
 This will always use the latest version and doesn't require installation. You should see a command list.
 
-<details><summary>Alternative: Install the CLI</summary>
+### Alternative: Install the CLI
 
-### Install globally
+#### Install globally
 
 ```sh
 npm install @optimizely/cms-cli -g
@@ -29,7 +29,7 @@ You can test that it worked by running:
 optimizely-cms-cli
 ```
 
-### Install in a project
+#### Install in a project
 
 ```sh
 npm install @optimizely/cms-cli -D
@@ -40,8 +40,6 @@ Then use it from the project:
 ```sh
 optimizely-cms-cli
 ```
-
-</details>
 
 ## Step 1. Initialize a npm project
 
