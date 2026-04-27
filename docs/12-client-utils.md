@@ -9,7 +9,7 @@ The Optimizely CMS SDK provides utility functions to help you navigate and struc
 
 The `getPath()` method returns the ancestor pages of a given page, from the root down to the current page. This is useful for building breadcrumb navigation.
 
-### Signature
+### getPath() Signature
 
 ```typescript
 async getPath(path: string, options?: GraphGetLinksOptions): Promise<Array<PageMetadata> | null>
@@ -70,14 +70,14 @@ The `getItems()` method returns the direct child pages of a given page. This is 
 async getItems(path: string, options?: GraphGetLinksOptions): Promise<Array<PageMetadata> | null>
 ```
 
-### Parameters
+### Input Parameters
 
 - **`path`** - The URL path of the parent page (e.g., `/en/`)
 - **`options`** (optional)
   - **`host`** - The host URL for filtering
   - **`locales`** - Array of locale codes to filter by
 
-### Returns
+### Output
 
 An array of child page metadata objects, or `null` if the parent page doesn't exist.
 

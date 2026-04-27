@@ -39,7 +39,7 @@ export default function RootLayout({
 
 Create a file `src/app/[...slug]/page.tsx`. Your file structure should look like this:
 
-```
+```sh
 .
 ├── src/
 │   ├── app/
@@ -138,7 +138,7 @@ Start the application
 npm run dev
 ```
 
-Go to http://localhost:3000/en/
+Go to [http://localhost:3000/en/](http://localhost:3000/en/)
 
 You should see the content you have created as JSON
 
@@ -170,6 +170,7 @@ const content = await client.getContentByPath('/blog/my-article', {
 ```
 
 **Parameters:**
+
 - `path` (string): URL path to the content
 - `options` (optional):
   - `variation`: Filter by experience variations
@@ -210,10 +211,12 @@ const content = await client.getContent(
 ```
 
 **Parameters:**
+
 - `reference` (GraphReference | string): Content reference (object or graph:// string)
 - `previewToken` (optional): Preview token for draft content
 
 **GraphReference format:**
+
 - `key` (required): Content GUID/key
 - `locale` (optional): Content locale (e.g., 'en', 'sv')
 - `version` (optional): Specific version (takes priority over locale)
@@ -223,6 +226,7 @@ const content = await client.getContent(
 **String format:** `graph://[source]/[type]/key?loc=locale&ver=version`
 
 **Priority rules:**
+
 - If `version` is specified, it takes priority (ignores locale-based filtering)
 - If only `locale` is specified, fetches latest draft in that locale
 - If neither specified, fetches latest published version
@@ -256,6 +260,7 @@ const path = await client.getPath(
 ```
 
 **Parameters:**
+
 - `input` (string | GraphReference): URL path or GraphReference
 - `options` (optional):
   - `host`: Override default host (only for path strings)
@@ -290,6 +295,7 @@ const items = await client.getItems(
 ```
 
 **Parameters:**
+
 - `input` (string | GraphReference): URL path or GraphReference
 - `options` (optional):
   - `host`: Override default host (only for path strings)
@@ -314,7 +320,7 @@ The Content Graph endpoint URL.
 
 #### Using non-production Graph
 
-The Graph Client uses the production Content Graph endpoint by default (https://cg.optimizely.com/content/v2). If you want to use a different URL, configure it by passing the `graphUrl` as option. For example:
+The Graph Client uses the production Content Graph endpoint by default (<https://cg.optimizely.com/content/v2>). If you want to use a different URL, configure it by passing the `graphUrl` as option. For example:
 
 ```ts
 const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
@@ -361,7 +367,7 @@ const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
 
 When this threshold is exceeded, you'll see a warning like:
 
-```
+```sh
 ⚠️ [optimizely-cms-sdk] Fragment "MyContentType" generated 200 inner fragments (limit: 150).
 → Consider narrowing it using allowedTypes and restrictedTypes or reviewing schema references to reduce complexity.
 ```

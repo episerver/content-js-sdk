@@ -160,7 +160,7 @@ settings: {
 }
 ```
 
-**Behavior:**
+#### Select Editor Behavior
 
 - Editors see a drop-down with all choices
 - Single selection only
@@ -184,7 +184,7 @@ settings: {
 }
 ```
 
-**Behavior:**
+#### Checkbox Editor Behavior
 
 - Editors see a checkbox toggle
 - Returns `true` or `false`
@@ -224,7 +224,7 @@ export function SquareTile({ content, displaySettings }: Props) {
 }
 ```
 
-**Important points:**
+### Important points
 
 - `displaySettings` is optional (`?`) as it may not always be present
 - Use optional chaining (`displaySettings?.color`) to safely access values
@@ -302,7 +302,7 @@ export const SquareDisplayTemplate = displayTemplate({
 
 When registering components, you can use either of two patterns to associate the variant:
 
-**Pattern 1: Using tags object (recommended)**
+### Pattern 1: Using tags object (recommended)
 
 ```tsx
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
@@ -321,7 +321,7 @@ initReactComponentRegistry({
 });
 ```
 
-**Pattern 2: Using colon notation**
+### Pattern 2: Using colon notation
 
 ```tsx
 initReactComponentRegistry({
