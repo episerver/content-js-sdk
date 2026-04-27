@@ -135,7 +135,7 @@ export function generateContentTypeCode(
  */
 export const ${exportName} = contentType({
   key: '${escapeSingleQuote(contentType.key)}',${contentType.displayName ? `\n  displayName: '${escapeSingleQuote(contentType.displayName)}',` : ''}
-  baseType: '${escapeSingleQuote(contentType.baseType)}',${compositionBehaviors}${mayContainTypes}
+  baseType: ${contentType.baseType === null ? 'null' : `'${escapeSingleQuote(contentType.baseType)}'`},${compositionBehaviors}${mayContainTypes}
   properties: ${properties},
 });
 `;
