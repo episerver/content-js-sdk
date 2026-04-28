@@ -434,5 +434,49 @@ describe('generateContentTypeCode', () => {
       // Should use default same-directory import
       expect(code).toContain("import { SEOCT } from './SEO.js';");
     });
+
+    it('should handle allowedTypes, restrictedTypes component references with correct import paths', () => {
+      const contentTypeToGroupMap = new Map<string, string>([
+        ['Product', 'experience'],
+        ['Header', 'component'],
+        ['Button', 'component'],
+      ]);
+
+      const productContentType: ContentType = {
+        key: 'Product',
+        baseType: '_experience',
+        displayName: 'Product Page',
+        properties: {
+          seo_properties: {
+            type: 'contentReference',
+            allowedTypes: ['Button'],
+          },
+          header: {
+            type: 'array',
+            items: {
+              type: 'content',
+              allowedTypes: ['Header'],
+            },
+          },
+          footer: {
+            type: 'array',
+            items: {
+              type: 'content',
+              restrictedTypes: ['Header'],
+            },
+          },
+        },
+      };
+
+      const code = generateContentTypeCode(productContentType, contentTypeToGroupMap, 'experience');
+
+      // Should import HeaderCT from ../component/Header.js for both allowedTypes and restrictedTypes
+      expect(code).toContain("import { HeaderCT } from '../component/Header.js';");
+      expect(code).toContain("import { ButtonCT } from '../component/Button.js';");
+      expect(code).toContain('allowedTypes: [ButtonCT]');
+      expect(code).toContain('allowedTypes: [HeaderCT]');
+      expect(code).toContain('restrictedTypes: [HeaderCT]');
+    });
   });
 });
+
