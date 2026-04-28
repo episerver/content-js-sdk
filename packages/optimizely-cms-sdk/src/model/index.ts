@@ -36,7 +36,39 @@ export function contentType<T extends AnyContentType>(
   };
 }
 
-/** Defines a Optimizely CMS contract */
+/**
+ * Defines an Optimizely CMS contract.
+ *
+ * @param options - The contract definition
+ * @param options.key - Unique identifier for the contract
+ * @param options.displayName - Human-readable name shown in the CMS UI
+ * @param options.properties - Property definitions that will be inherited by extending content types
+ * @returns A contract object
+ *
+ * @example
+ * ```typescript
+ * const SEOContract = contract({
+ *   key: 'seo',
+ *   displayName: 'SEO Properties',
+ *   properties: {
+ *     metaTitle: { type: 'string' },
+ *     metaDescription: { type: 'string' },
+ *   }
+ * });
+ *
+ * // Content types can extend this contract
+ * const ArticleContentType = contentType({
+ *   key: 'article',
+ *   displayName: 'Article',
+ *   baseType: '_page',
+ *   extends: SEOContract,
+ *   properties: {
+ *     title: { type: 'string' },
+ *     body: { type: 'richText' }
+ *   }
+ * });
+ * ```
+ */
 export function contract(options: SuppliedContractValues): Contract {
   return { ...options, __type: 'contract', isContract: true };
 }
