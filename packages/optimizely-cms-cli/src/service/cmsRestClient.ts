@@ -4,28 +4,24 @@ import { credentialErrors } from './error.js';
 import { OAuthPaths } from './apiSchema/gateway-auth-types.js';
 import { paths } from './apiSchema/openapi-schema-types.js';
 
+const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
+
 /**
  * Determines if the provided URL matches the pattern of a SaaS API gateway.
  * @param url - The URL to check
  * @returns True if the URL is a SaaS API gateway, false otherwise
  */
-export function isSaasApiGateway(url: string): boolean {
+function isSaasApiGateway(url: string): boolean {
   // Matches: api.cms.optimizely.com, api.cmstest.optimizely.com, api-<tenant>.cms*.optimizely.com
   return /^https:\/\/api(-[^.]+)?\.cms[^.]*\.optimizely\.com$/.test(url);
 }
-
-const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
 
 /**
  * Resolves the effective CMS host, falling back to the environment variable and
  * then the default SaaS gateway URL. Trailing slashes are stripped.
  */
-export function resolveHost(host?: string): string {
-  return (
-    host ||
-    process.env.OPTIMIZELY_CMS_API_URL ||
-    DEFAULT_GATEWAY_URL
-  ).replace(/\/$/, '');
+function resolveHost(host?: string): string {
+  return (host || process.env.OPTIMIZELY_CMS_API_URL || DEFAULT_GATEWAY_URL).replace(/\/$/, '');
 }
 
 /**
@@ -114,4 +110,5 @@ export async function createApiClient(host?: string) {
   const client = await createRestApiClient({ ...cred, host });
   return client;
 }
+
 

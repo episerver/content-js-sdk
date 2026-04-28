@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { input, confirm } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
-import { createApiClient, isSaasApiGateway, resolveHost } from '../../service/cmsRestClient.js';
+import { createApiClient } from '../../service/cmsRestClient.js';
 import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
 import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
 import { ContentType } from '../../generators/manifest.js';
@@ -25,9 +25,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       default: false,
     }),
     includeReadOnly: Flags.boolean({
+      aliases: ['include-read-only'],
       description:
-        'Include read-only content types in the manifest. Automatically enabled for PaaS/CMS 13 instances; use --no-include-read-only to disable.',
-      allowNo: true,
+        'Include read-only content types in the manifest. This may include system-generated content types that are not editable in the CMS.',
+      default: false,
     }),
   };
   static override description =
@@ -37,6 +38,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     '<%= config.bin %> <%= command.id %> --output ./src/types',
     '<%= config.bin %> <%= command.id %> --group',
     '<%= config.bin %> <%= command.id %> --output ./src/types --group',
+    '<%= config.bin %> <%= command.id %> --include-read-only',
     '<%= config.bin %> <%= command.id %> --json > manifest.json',
     '<%= config.bin %> <%= command.id %> --json | jq .contentTypes',
   ];
@@ -51,7 +53,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       params: {
         query: {
           sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
-          ...(includeReadOnly ? { includeReadOnly: true } : {}),
+          ...(includeReadOnly ? { includeReadOnly } : {}),
         },
       },
     });
@@ -86,17 +88,21 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     // to avoid prompting when output is redirected or piped
     const isInteractive = process.stdout.isTTY === true;
 
-    // Auto-enable includeReadOnly for PaaS (CMS 13) instances; explicit flag overrides auto-detection
-    const includeReadOnly =
-      flags.includeReadOnly !== undefined
-        ? flags.includeReadOnly
-        : !isSaasApiGateway(resolveHost(flags.host));
-
     // The output mode based on flags and environment
     // 1. --json flag explicitly requests JSON output
     // 2. --output flag explicitly requests file generation (even in non-TTY environments like CI)
     // 3. Fallback to TTY detection for backward compatibility (non-interactive → JSON)
     const shouldOutputJson = flags.json || (!flags.output && !isInteractive);
+
+    const includeReadOnly = flags.includeReadOnly;
+
+    if (includeReadOnly) {
+      this.log(
+        chalk.yellow(
+          'Pulling all content types including read-only ones. This may include system-generated content types that are not editable in the CMS.',
+        ),
+      );
+    }
 
     // If JSON output mode, output manifest to stdout
     if (shouldOutputJson) {
@@ -352,4 +358,5 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }
   }
 }
+
 
