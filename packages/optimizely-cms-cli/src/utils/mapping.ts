@@ -274,3 +274,4 @@ export function filterSystemContentTypes(contentTypes: ContentType[]): ContentTy
       !['BlankExperience', 'BlankSection'].includes(ct.key),
   );
 }
+

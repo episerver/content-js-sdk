@@ -10,6 +10,7 @@ import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
 import { translateErrorMessage } from '../../utils/errors.js';
+import { contractToManifest } from '../../utils/mapping.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -72,14 +73,17 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     //the pattern is relative to the config file
     const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
 
-    // extracts metadata(contentTypes, displayTemplates) from the component paths
-    const { contentTypes, displayTemplates } = await findMetaData(componentPaths, configPathDirectory);
+    // extracts metadata(contentTypes, displayTemplates, contracts) from the component paths
+    const { contentTypes, displayTemplates, contracts } = await findMetaData(componentPaths, configPathDirectory);
 
     // Validate and normalize property groups
     const normalizedPropertyGroups = propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
 
+    // Convert contracts to manifest shape
+    const manifestContracts = contracts.map(contractToManifest);
+
     const metaData = {
-      contentTypes: mapContentToManifest(contentTypes),
+      contentTypes: mapContentToManifest(contentTypes).concat(manifestContracts),
       displayTemplates,
       propertyGroups: normalizedPropertyGroups,
     };

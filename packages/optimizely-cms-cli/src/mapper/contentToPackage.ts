@@ -2,6 +2,15 @@ import { AnyContentType } from '../service/utils.js';
 import { transformProperties, validateContentTypeKey, parseChildContentType } from '../utils/mapping.js';
 import chalk from 'chalk';
 
+function convertExtendsToContracts(contentType: AnyContentType): string[] | undefined {
+  if (!contentType.extends) return undefined;
+  
+  const extendsArr = Array.isArray(contentType.extends) ? contentType.extends : [contentType.extends];
+  if (extendsArr.length === 0) return undefined;
+
+  return extendsArr.map(contract => contract.key);
+}
+
 /**
  * Transforms a content type object to a manifest format.
  * Validates the content type key and formats its properties.
@@ -15,10 +24,12 @@ function transformContentType(contentType: AnyContentType, allowedKeys?: Set<str
   const { key, properties = {} } = contentType;
   const parsedContentType = parseChildContentType(contentType, allowedKeys);
   const formattedProperties = transformProperties(properties, key);
+  const contracts = convertExtendsToContracts(contentType);
 
   return {
     ...parsedContentType,
     properties: formattedProperties,
+    ...(contracts ? { contracts } : {})
   };
 }
 

@@ -9,6 +9,7 @@ import {
   DisplayTemplates,
   isDisplayTemplate,
   PropertyGroupType,
+  isContract,
 } from '@optimizely/cms-sdk';
 import chalk from 'chalk';
 import * as path from 'node:path';
@@ -51,6 +52,10 @@ function cleanType(obj: any) {
   if (obj !== null && '__type' in obj) delete obj.__type;
 }
 
+function cleanContract(obj: any) {
+  if (obj !== null && '__type' in obj) delete obj.__type;
+}
+
 function cleanDisplayTemplate(obj: any) {
   if (obj !== null) {
     if ('__type' in obj) delete obj.__type;
@@ -59,16 +64,18 @@ function cleanDisplayTemplate(obj: any) {
 }
 
 /**
- * Extract all `ContentType` and `DisplayTemplate` present in any property in `obj`
+ * Extract all relevant metadata present in an object
  *
- * Returns cleaned ('__type' removed) objects.
+ * Returns data arrays by type.
  */
 export function extractMetaData(obj: unknown): {
   contentTypeData: AnyContentType[];
   displayTemplateData: DisplayTemplate[];
+  contractData: ContentTypes.Contract[];
 } {
   let contentTypeData: AnyContentType[] = [];
   let displayTemplateData: DisplayTemplate[] = [];
+  let contractData: ContentTypes.Contract[] = [];
 
   if (typeof obj === 'object' && obj !== null) {
     for (const value of Object.values(obj)) {
@@ -78,6 +85,9 @@ export function extractMetaData(obj: unknown): {
       } else if (isDisplayTemplate(value)) {
         cleanDisplayTemplate(value);
         displayTemplateData.push(value);
+      } else if (isContract(value)) {
+        cleanContract(value);
+        contractData.push(value);
       }
     }
   }
@@ -85,6 +95,7 @@ export function extractMetaData(obj: unknown): {
   return {
     contentTypeData,
     displayTemplateData,
+    contractData,
   };
 }
 
@@ -113,13 +124,14 @@ async function compileAndImport(inputName: string, cwdUrl: string, outDir: strin
   }
 }
 
-/** Finds metadata (contentTypes, displayTemplates) in the given paths */
+/** Finds metadata (contentTypes, displayTemplates, contracts) in the given paths */
 export async function findMetaData(
   componentPaths: string[],
   cwd: string,
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
+  contracts: ContentTypes.Contract[];
 }> {
   const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
 
@@ -156,11 +168,12 @@ export async function findMetaData(
   const result2 = {
     contentTypes: [] as AnyContentType[],
     displayTemplates: [] as DisplayTemplate[],
+    contracts: [] as ContentTypes.Contract[],
   };
 
   for (const file of allFiles) {
     const loaded = await compileAndImport(file, cwd, tmpDir);
-    const { contentTypeData, displayTemplateData } = extractMetaData(loaded);
+    const { contentTypeData, displayTemplateData, contractData } = extractMetaData(loaded);
 
     for (const c of contentTypeData) {
       printFilesContents('Content Type', file, c);
@@ -170,6 +183,11 @@ export async function findMetaData(
     for (const d of displayTemplateData) {
       printFilesContents('Display Template', file, d);
       result2.displayTemplates.push(d);
+    }
+
+    for (const contract of contractData) {
+      printFilesContents('Contract', file, contract);
+      result2.contracts.push(contract);
     }
   }
 

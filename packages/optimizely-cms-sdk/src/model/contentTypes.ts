@@ -15,12 +15,30 @@ export const ALL_BASE_TYPES = [...MAIN_BASE_TYPES, ...MEDIA_BASE_TYPES, ...OTHER
 export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
 export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 
+export type PropertiesRecord = Record<string, AnyProperty>;
+
 /** A "Base" content type that includes all common attributes for all content types */
 type BaseContentType = {
   key: string;
   displayName: string;
-  properties?: Record<string, AnyProperty>;
+  extends?: Contract | Array<Contract>;
+  properties?: PropertiesRecord;
 };
+
+/** Represents the required values to be provided to make a Contract type */
+export type SuppliedContractValues = {
+  key: string;
+  displayName: string;
+  properties: PropertiesRecord;
+}
+
+type InnerContractValues = {
+  isContract: true;
+  __type: 'contract';
+}
+
+/** Represents the Contract type in CMS */
+export type Contract = SuppliedContractValues & InnerContractValues;
 
 /** Represents the Page type  in CMS */
 export type PageContentType = BaseContentType & {
@@ -68,5 +86,5 @@ export type AnyContentType =
 
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
 
-/** All possible content type for allowed and restricted fields */
-export type PermittedTypes = ContentType | AnyContentType['baseType'] | '_self';
+/** All possible content types for allowed and restricted fields */
+export type PermittedTypes = Contract | ContentType | AnyContentType['baseType'] | '_self';
