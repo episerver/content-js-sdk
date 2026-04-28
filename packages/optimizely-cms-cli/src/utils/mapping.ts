@@ -1,5 +1,7 @@
+import { ContentTypes } from '@optimizely/cms-sdk';
 import { extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
+import { ManifestContract } from '../generators/manifest.js';
 
 /**
  * Process display templates and infer contentType from key if missing.
@@ -37,7 +39,7 @@ export function processDisplayTemplates(displayTemplates: any[]): any[] {
  * @returns The content type object with a normalized `mayContainTypes` array.
  */
 export function parseChildContentType(contentType: Record<string, any>, allowedKeys?: Set<string>): any {
-  const { mayContainTypes, key: parentKey, ...rest } = contentType;
+  const { mayContainTypes, extends: _extends, key: parentKey, ...rest } = contentType;
 
   if (!Array.isArray(mayContainTypes)) return { ...rest, key: parentKey };
 
@@ -273,3 +275,14 @@ function mapAllowedRestrictedTypes(updatedValue: any, parentKey: string) {
 
   return updatedValue;
 }
+
+/**
+ * Converts contract into manifest shape
+ */
+export const contractToManifest = ({ key, displayName, properties }: ContentTypes.Contract): ManifestContract =>
+({
+  key,
+  displayName,
+  isContract: true,
+  properties: transformProperties(properties, key)
+})

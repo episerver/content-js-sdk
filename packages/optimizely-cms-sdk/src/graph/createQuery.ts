@@ -1,5 +1,5 @@
 import { AnyProperty } from '../model/properties.js';
-import { AnyContentType, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
+import { AnyContentType, Contract, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
 import { getContentType, getAllContentTypes, getContentTypeByBaseType } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
@@ -61,7 +61,7 @@ function refreshCache() {
  * @param ct - The content type to check.
  * @returns True if all properties are disabled, false otherwise.
  */
-function allPropertiesAreDisabled(ct: AnyContentType): boolean {
+function allPropertiesAreDisabled(ct: AnyContentType | Contract): boolean {
   if (!ct || !ct.properties) return false;
   let hasProperties = false;
   for (const k in ct.properties) {

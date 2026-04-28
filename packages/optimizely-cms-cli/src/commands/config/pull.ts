@@ -203,7 +203,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         spinner.text = 'Grouping content types by base type';
 
         for (const contentType of manifest.contentTypes) {
-          const group = contentType.baseType;
+          const group = contentType.isContract ? 'contract' : contentType.baseType;
           if (!group) {
             continue; // Skip invalid baseType
           }
@@ -243,7 +243,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
         // inside the outputDir create subdirectories for each group if grouping is enabled
         for (const group in groups) {
-          const parsedGroupName = group.replace(/^_/, ''); // Remove leading underscore for cleaner directory names
+          const parsedGroupName = group.replace(/^_/, '');  // Remove leading underscore for cleaner directory names
           const groupDir = join(outputDir, parsedGroupName);
           await mkdir(groupDir, { recursive: true });
 

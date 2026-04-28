@@ -27,8 +27,8 @@ export async function generateContentTypeFiles(
       if (relatedTemplates.length > 0) {
         // Update import to include displayTemplate
         fileContent = fileContent.replace(
-          "import { contentType } from '@optimizely/cms-sdk';",
-          "import { contentType, displayTemplate } from '@optimizely/cms-sdk';",
+          " } from '@optimizely/cms-sdk';",
+          ", displayTemplate } from '@optimizely/cms-sdk';",
         );
 
         fileContent += '\n'; // Add spacing
@@ -87,15 +87,17 @@ export function generateContentTypeCode(
   contentTypeToGroupMap?: Map<string, string>,
   currentGroup?: string,
 ): string {
-  const exportName = generateExportName(contentType.key);
+  const exportName = generateExportName(contentType.key, contentType.isContract);
 
   // Collect component imports
   const componentImports = new Set<string>();
   const properties =
     contentType.properties ? generatePropertiesCode(contentType.properties, contentType.key, componentImports) : '{}';
 
+  const contracts = contentType.contracts ?? [];
+
   // Generate import statements
-  const imports = ["import { contentType } from '@optimizely/cms-sdk';"];
+  const imports = [`import { ${contentType.isContract ? 'contract' : 'contentType'} } from '@optimizely/cms-sdk';`];
   if (componentImports.size > 0) {
     const importStatements = Array.from(componentImports).map(key => {
       const fileName = generateFileName(key);
@@ -116,6 +118,16 @@ export function generateContentTypeCode(
     imports.push(...importStatements);
   }
 
+  // Generate contract imports
+  const hasGroups = contentTypeToGroupMap?.size;
+  const contractsImportStatements = contracts.map(contract =>
+    `import { ${generateContractExportName(contract)} } from '${hasGroups ? '../contract/' : './'}${generateFileName(contract).replace('.ts', '')}'`
+  );
+  imports.push(...contractsImportStatements);
+
+  // Generate extends property
+  const extendsString = !contracts.length ? '' : `\n  extends: [${contracts.map(generateContractExportName).join(', ')}],` 
+
   // Generate compositionBehaviors if present
   const compositionBehaviors =
     contentType.compositionBehaviors && contentType.compositionBehaviors.length > 0 ?
@@ -124,7 +136,7 @@ export function generateContentTypeCode(
 
   // Generate mayContainTypes if present
   const mayContainTypes =
-    contentType.mayContainTypes && contentType.mayContainTypes.length > 0 ?
+    contentType.mayContainTypes && contentType.mayContainTypes.length > 0 && !contentType.isContract ?
       `\n  mayContainTypes: [${contentType.mayContainTypes.map(t => `'${escapeSingleQuote(t)}'`).join(', ')}],`
     : '';
 
@@ -136,20 +148,46 @@ export function generateContentTypeCode(
 export const ${exportName} = contentType({
   key: '${escapeSingleQuote(contentType.key)}',${contentType.displayName ? `\n  displayName: '${escapeSingleQuote(contentType.displayName)}',` : ''}
   baseType: '${escapeSingleQuote(contentType.baseType)}',${compositionBehaviors}${mayContainTypes}
+  properties: ${properties},${extendsString}
+});
+`; 
+
+  if (!contentType.isContract)
+    return code;
+
+  return `${imports.join('\n')}
+
+/**
+ * ${(contentType.displayName || contentType.key).replace(/\*\//g, '*\\/')}
+ */
+export const ${exportName} = contract({
+  key: '${escapeSingleQuote(contentType.key)}',
+  displayName: '${escapeSingleQuote(contentType.displayName)}',
   properties: ${properties},
 });
-`;
+`
+}
 
-  return code;
+/**
+ * Generates a valid export name from a contract key
+ * @throws Error if the key contains no alphanumeric characters
+ */
+function generateContractExportName(key: string): string { 
+  // Convert to PascalCase and add CT suffix
+  // e.g., "HelloWorld_Article" -> "HelloWorldArticleContract"
+  const cleanedKey = cleanKey(key);
+  if(cleanedKey.includes('Contract')) return key;
+  return `${cleanedKey}Contract`;
 }
 
 /**
  * Generates a valid export name from a content type key
  * @throws Error if the key contains no alphanumeric characters
  */
-function generateExportName(key: string): string {
+function generateExportName(key: string, isContract: boolean = false): string {
   // Convert to PascalCase and add CT suffix
   // e.g., "HelloWorld_Article" -> "HelloWorldArticleCT"
+  if (isContract) return generateContractExportName(key);
   return `${cleanKey(key)}CT`;
 }
 

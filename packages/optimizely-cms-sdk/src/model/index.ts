@@ -1,19 +1,57 @@
 import { BuildConfig } from './buildConfig.js';
-import { AnyContentType } from './contentTypes.js';
+import {
+  AnyContentType,
+  Contract,
+  PropertiesRecord,
+  SuppliedContractValues,
+} from './contentTypes.js';
 import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
 
+function getMergedProps<T extends AnyContentType>(
+  options: T,
+): PropertiesRecord | undefined {
+  if (!options.extends && !options.properties) return undefined;
+
+  const contracts = Array.isArray(options.extends)
+    ? options.extends
+    : [options.extends];
+  const mergedContractsProps = contracts
+    .reduce((acc, contract) => contract?.properties ? ({ ...acc, ...contract.properties }) : acc, {});
+  const props = options.properties;
+  const merged = { ...mergedContractsProps, ...props };
+
+  if (Object.keys(merged).length) return (merged as PropertiesRecord)
+  return undefined
+}
+
 /** Defines a Optimizely CMS content type */
-export function contentType<T extends AnyContentType>(options: T): T & { __type: 'contentType' } {
-  return { ...options, __type: 'contentType' };
+export function contentType<T extends AnyContentType>(
+  options: T,
+): T & { __type: 'contentType' } {
+  const properties = getMergedProps(options);
+  return {
+    ...options,
+    ...(properties ? { properties } : {}),
+    __type: 'contentType',
+  };
+}
+
+/** Defines a Optimizely CMS contract */
+export function contract(options: SuppliedContractValues): Contract {
+  return { ...options, __type: 'contract', isContract: true };
 }
 
 /** Defines a Optimizely CMS display template */
-export function displayTemplate<T extends DisplayTemplateVariant>(options: T): DisplayTemplate<T> {
+export function displayTemplate<T extends DisplayTemplateVariant>(
+  options: T,
+): DisplayTemplate<T> {
   return { ...options, __type: 'displayTemplate' };
 }
 
 /** Defines a Optimizely CMS build configuration */
-export function buildConfig<T extends BuildConfig>(options: T): T & { __type: 'buildConfig' } {
+export function buildConfig<T extends BuildConfig>(
+  options: T,
+): T & { __type: 'buildConfig' } {
   return { ...options, __type: 'buildConfig' };
 }
 
@@ -23,6 +61,15 @@ export function buildConfig<T extends BuildConfig>(options: T): T & { __type: 'b
 export function isContentType(obj: unknown): obj is AnyContentType {
   return (
     typeof obj === 'object' && obj !== null && '__type' in obj && (obj as any).__type === 'contentType' && 'key' in obj
+  );
+}
+
+/**
+ * Checks if `obj` is a contract.
+ */
+export function isContract(obj: unknown): obj is Contract {
+  return (
+    typeof obj === 'object' && obj !== null && '__type' in obj && (obj as any).__type === 'contract' && 'key' in obj
   );
 }
 
@@ -40,5 +87,8 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
 }
 
 export { PropertyGroupType } from './buildConfig.js';
-export { init as initContentTypeRegistry, isContentTypeRegistered } from './contentTypeRegistry.js';
+export {
+  init as initContentTypeRegistry,
+  isContentTypeRegistered,
+} from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';
