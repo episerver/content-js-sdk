@@ -6,7 +6,7 @@ import { input, confirm } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import { generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
+import { CONTRACT_GROUP_NAME, generateContentTypeFiles } from '../../generators/contentTypeGenerator.js';
 import { generateDisplayTemplateFiles } from '../../generators/displayTemplateGenerator.js';
 import { ContentType } from '../../generators/manifest.js';
 import { processDisplayTemplates } from '../../utils/mapping.js';
@@ -203,7 +203,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         spinner.text = 'Grouping content types by base type';
 
         for (const contentType of manifest.contentTypes) {
-          const group = contentType.isContract ? 'contract' : contentType.baseType;
+          const group = contentType.isContract ? CONTRACT_GROUP_NAME : contentType.baseType;
           if (!group) {
             continue; // Skip invalid baseType
           }

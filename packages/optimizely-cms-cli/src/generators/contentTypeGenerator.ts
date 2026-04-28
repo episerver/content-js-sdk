@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { ContentType, ContentTypeProperties, DisplayTemplate } from './manifest.js';
 import { generateDisplayTemplateCode } from './displayTemplateGenerator.js';
 
+export const CONTRACT_GROUP_NAME = 'contract';
+
 /**
  * Generates TypeScript content type definition files from a manifest
  * Optionally includes related display templates in the same file
@@ -20,7 +22,10 @@ export async function generateContentTypeFiles(
       const filePath = join(outputDir, fileName);
 
       // Generate content type code
-      let fileContent = generateContentTypeCode(contentType, contentTypeToGroupMap, currentGroup);
+      let fileContent =
+        contentType.isContract ?
+          generateContractCode(contentType, contentTypeToGroupMap, currentGroup)
+        : generateContentTypeCode(contentType, contentTypeToGroupMap, currentGroup);
 
       // Append display templates for this specific content type
       const relatedTemplates = displayTemplatesByContentType.get(contentType.key) || [];
@@ -79,6 +84,36 @@ export function generateFileName(key: string): string {
   return `${cleanKey(key)}.ts`;
 }
 
+export function generatePropertiesAndComponentImports(
+  contentType: ContentType,
+  contracts: string[],
+  contentTypeToGroupMap?: Map<string, string>,
+  currentGroup?: string,
+): [string, string[]] {
+  // Collect component imports
+  const componentImports = new Set<string>();
+  const properties =
+    contentType.properties ? generatePropertiesCode(contentType.properties, contentType.key, componentImports, contracts) : '{}';
+  const importStatements = Array.from(componentImports).map(key => {
+    const fileName = generateFileName(key);
+    const exportName = generateExportName(key);
+
+    // Calculate relative import path when grouping is enabled
+    let importPath = `./${fileName.replace('.ts', '.js')}`;
+    if (contentTypeToGroupMap && currentGroup) {
+      const targetGroup = contentTypeToGroupMap.get(key);
+      if (targetGroup && targetGroup !== currentGroup) {
+        // Different group - use relative path
+        importPath = `../${targetGroup}/${fileName.replace('.ts', '.js')}`;
+      }
+    }
+
+    return `import { ${exportName} } from '${importPath}';`;
+  });
+
+  return [properties, importStatements];
+}
+
 /**
  * Generates the TypeScript code for a content type definition
  */
@@ -89,41 +124,25 @@ export function generateContentTypeCode(
 ): string {
   const exportName = generateExportName(contentType.key, contentType.isContract);
 
-  // Collect component imports
-  const componentImports = new Set<string>();
-  const properties =
-    contentType.properties ? generatePropertiesCode(contentType.properties, contentType.key, componentImports) : '{}';
-
+  const imports = [`import { contentType } from '@optimizely/cms-sdk';`];
   const contracts = contentType.contracts ?? [];
 
-  // Generate import statements
-  const imports = [`import { ${contentType.isContract ? 'contract' : 'contentType'} } from '@optimizely/cms-sdk';`];
-  if (componentImports.size > 0) {
-    const importStatements = Array.from(componentImports).map(key => {
-      const fileName = generateFileName(key);
-      const exportName = generateExportName(key);
-
-      // Calculate relative import path when grouping is enabled
-      let importPath = `./${fileName.replace('.ts', '.js')}`;
-      if (contentTypeToGroupMap && currentGroup) {
-        const targetGroup = contentTypeToGroupMap.get(key);
-        if (targetGroup && targetGroup !== currentGroup) {
-          // Different group - use relative path
-          importPath = `../${targetGroup}/${fileName.replace('.ts', '.js')}`;
-        }
-      }
-
-      return `import { ${exportName} } from '${importPath}';`;
-    });
-    imports.push(...importStatements);
-  }
+  // Generate properties and their imports
+  const [properties, componentImports] = generatePropertiesAndComponentImports(
+    contentType,
+    contracts,
+    contentTypeToGroupMap,
+    currentGroup,
+  );
+  imports.push(...componentImports);
 
   // Generate contract imports
   const hasGroups = contentTypeToGroupMap?.size;
-  const contractsImportStatements = contracts.map(contract =>
-    `import { ${generateContractExportName(contract)} } from '${hasGroups ? '../contract/' : './'}${generateFileName(contract).replace('.ts', '')}'`
+  const contractImportStatements = contracts.map(
+    contract =>
+      `import { ${generateContractExportName(contract)} } from '${hasGroups ? `../${CONTRACT_GROUP_NAME}/` : './'}${generateFileName(contract).replace('.ts', '')}'`,
   );
-  imports.push(...contractsImportStatements);
+  imports.push(...contractImportStatements);
 
   // Generate extends property
   const extendsString = !contracts.length ? '' : `\n  extends: [${contracts.map(generateContractExportName).join(', ')}],` 
@@ -140,7 +159,7 @@ export function generateContentTypeCode(
       `\n  mayContainTypes: [${contentType.mayContainTypes.map(t => `'${escapeSingleQuote(t)}'`).join(', ')}],`
     : '';
 
-  const code = `${imports.join('\n')}
+  return `${imports.join('\n')}
 
 /**
  * ${(contentType.displayName || contentType.key).replace(/\*\//g, '*\\/')}
@@ -150,10 +169,28 @@ export const ${exportName} = contentType({
   baseType: '${escapeSingleQuote(contentType.baseType)}',${compositionBehaviors}${mayContainTypes}
   properties: ${properties},${extendsString}
 });
-`; 
+`;
+}
 
-  if (!contentType.isContract)
-    return code;
+/**
+ * Generates the TypeScript code for a content type definition
+ */
+export const generateContractCode = (
+  contentType: ContentType,
+  contentTypeToGroupMap?: Map<string, string>,
+  currentGroup?: string,
+) => {
+  const exportName = generateContractExportName(contentType.key);
+  const imports = ["import { contract } from '@optimizely/cms-sdk';"];
+
+  // Generate properties and their imports
+  const [properties, componentImports] = generatePropertiesAndComponentImports(
+    contentType,
+    [],
+    contentTypeToGroupMap,
+    currentGroup,
+  );
+  imports.push(...componentImports);
 
   return `${imports.join('\n')}
 
@@ -165,18 +202,18 @@ export const ${exportName} = contract({
   displayName: '${escapeSingleQuote(contentType.displayName)}',
   properties: ${properties},
 });
-`
-}
+`;
+};
 
 /**
  * Generates a valid export name from a contract key
  * @throws Error if the key contains no alphanumeric characters
  */
-function generateContractExportName(key: string): string { 
+function generateContractExportName(key: string): string {
   // Convert to PascalCase and add CT suffix
   // e.g., "HelloWorld_Article" -> "HelloWorldArticleContract"
   const cleanedKey = cleanKey(key);
-  if(cleanedKey.includes('Contract')) return key;
+  if (cleanedKey.includes('Contract')) return key;
   return `${cleanedKey}Contract`;
 }
 
@@ -198,10 +235,11 @@ function generatePropertiesCode(
   properties: Record<string, ContentTypeProperties.All>,
   contentTypeKey: string,
   componentImports: Set<string>,
+  contracts: string[],
 ): string {
   const propertyEntries = Object.entries(properties).map(([name, prop]) => {
     const safeKey = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) ? name : `'${escapeSingleQuote(name)}'`;
-    const propertyDef = generatePropertyDefinition(prop, contentTypeKey, componentImports);
+    const propertyDef = generatePropertyDefinition(prop, contentTypeKey, componentImports, contracts);
     return `    ${safeKey}: ${propertyDef}`;
   });
 
@@ -253,10 +291,11 @@ function generatePropertyDefinition(
   property: ContentTypeProperties.All,
   contentTypeKey: string,
   componentImports: Set<string>,
+  contracts: string[],
 ): string {
   if ('items' in property && property.type === 'array') {
     // Array type - generate items definition
-    const itemDef = generatePropertyDefinition(property.items, contentTypeKey, componentImports);
+    const itemDef = generatePropertyDefinition(property.items, contentTypeKey, componentImports, contracts);
 
     // Collect array-level properties
     const parts: string[] = [];
@@ -352,6 +391,7 @@ function generatePropertyDefinition(
     if ('allowedTypes' in property && property.allowedTypes && property.allowedTypes.length > 0) {
       const types = property.allowedTypes
         .map(t => (t === '_self' ? contentTypeKey : t))
+        .map(t => contracts.includes(t) ? generateContractExportName(t) : t)
         .map(t => `'${escapeSingleQuote(t)}'`)
         .join(', ');
       parts.push(`allowedTypes: [${types}]`);
@@ -360,6 +400,7 @@ function generatePropertyDefinition(
     if ('restrictedTypes' in property && property.restrictedTypes && property.restrictedTypes.length > 0) {
       const types = property.restrictedTypes
         .map(t => (t === '_self' ? contentTypeKey : t))
+        .map(t => contracts.includes(t) ? generateContractExportName(t) : t)
         .map(t => `'${escapeSingleQuote(t)}'`)
         .join(', ');
       parts.push(`restrictedTypes: [${types}]`);
@@ -438,4 +479,3 @@ export function escapeSingleQuote(str: string): string {
   // Escape single quotes for single-quoted string literals
   return withoutOuterQuotes.replace(/'/g, "\\'");
 }
-
