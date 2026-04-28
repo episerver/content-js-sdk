@@ -24,6 +24,12 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       description: 'Output manifest as JSON to stdout (useful for piping)',
       default: false,
     }),
+    includeReadOnly: Flags.boolean({
+      aliases: ['include-read-only'],
+      description:
+        'Include read-only content types in the manifest. This may include system-generated content types that are not editable in the CMS.',
+      default: false,
+    }),
   };
   static override description =
     'Pull content types from CMS. Generates TypeScript files interactively or outputs JSON with --json flag';
@@ -32,6 +38,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     '<%= config.bin %> <%= command.id %> --output ./src/types',
     '<%= config.bin %> <%= command.id %> --group',
     '<%= config.bin %> <%= command.id %> --output ./src/types --group',
+    '<%= config.bin %> <%= command.id %> --include-read-only',
     '<%= config.bin %> <%= command.id %> --json > manifest.json',
     '<%= config.bin %> <%= command.id %> --json | jq .contentTypes',
   ];
@@ -40,12 +47,13 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
    * Fetches the manifest from CMS
    * @throws Error with descriptive message if fetch fails
    */
-  private async fetchManifest(host?: string) {
+  private async fetchManifest(host?: string, includeReadOnly?: boolean) {
     const restClient = await createApiClient(host);
     const { data, error, response } = await restClient.GET('/manifest', {
       params: {
         query: {
           sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
+          ...(includeReadOnly ? { includeReadOnly } : {}),
         },
       },
     });
@@ -86,6 +94,16 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     // 3. Fallback to TTY detection for backward compatibility (non-interactive → JSON)
     const shouldOutputJson = flags.json || (!flags.output && !isInteractive);
 
+    const includeReadOnly = flags.includeReadOnly;
+
+    if (includeReadOnly) {
+      this.log(
+        chalk.yellow(
+          'Pulling all content types including read-only ones. This may include system-generated content types that are not editable in the CMS.',
+        ),
+      );
+    }
+
     // If JSON output mode, output manifest to stdout
     if (shouldOutputJson) {
       // Warn if flags meant for file generation mode are provided with --json
@@ -102,7 +120,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       }).start();
 
       try {
-        const response = await this.fetchManifest(flags.host);
+        const response = await this.fetchManifest(flags.host, includeReadOnly);
 
         if (!response) {
           spinner.fail('The server did not respond with any content');
@@ -161,7 +179,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     try {
       // Pull from CMS
-      const response = await this.fetchManifest(flags.host);
+      const response = await this.fetchManifest(flags.host, includeReadOnly);
 
       if (!response) {
         spinner.fail('The server did not respond with any content');
@@ -340,4 +358,5 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }
   }
 }
+
 
