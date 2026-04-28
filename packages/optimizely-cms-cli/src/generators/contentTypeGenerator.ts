@@ -135,7 +135,7 @@ export function generateContentTypeCode(
  */
 export const ${exportName} = contentType({
   key: '${escapeSingleQuote(contentType.key)}',${contentType.displayName ? `\n  displayName: '${escapeSingleQuote(contentType.displayName)}',` : ''}
-  baseType: '${escapeSingleQuote(contentType.baseType)}',${compositionBehaviors}${mayContainTypes}
+  baseType: ${contentType.baseType === null ? 'null' : `'${escapeSingleQuote(contentType.baseType)}'`},${compositionBehaviors}${mayContainTypes}
   properties: ${properties},
 });
 `;
@@ -313,16 +313,38 @@ function generatePropertyDefinition(
   if (property.type === 'content' || property.type === 'contentReference') {
     if ('allowedTypes' in property && property.allowedTypes && property.allowedTypes.length > 0) {
       const types = property.allowedTypes
-        .map(t => (t === '_self' ? contentTypeKey : t))
-        .map(t => `'${escapeSingleQuote(t)}'`)
+        .map(t => {
+          if (t === '_self') return contentTypeKey;
+          return t;
+        })
+        .map(t => {
+          // Base types stay as strings, custom content types get imported
+          if (t.startsWith('_')) {
+            return `'${escapeSingleQuote(t)}'`;
+          } else {
+            componentImports.add(t);
+            return generateExportName(t);
+          }
+        })
         .join(', ');
       parts.push(`allowedTypes: [${types}]`);
     }
 
     if ('restrictedTypes' in property && property.restrictedTypes && property.restrictedTypes.length > 0) {
       const types = property.restrictedTypes
-        .map(t => (t === '_self' ? contentTypeKey : t))
-        .map(t => `'${escapeSingleQuote(t)}'`)
+        .map(t => {
+          if (t === '_self') return contentTypeKey;
+          return t;
+        })
+        .map(t => {
+          // Base types stay as strings, custom content types get imported
+          if (t.startsWith('_')) {
+            return `'${escapeSingleQuote(t)}'`;
+          } else {
+            componentImports.add(t);
+            return generateExportName(t);
+          }
+        })
         .join(', ');
       parts.push(`restrictedTypes: [${types}]`);
     }
