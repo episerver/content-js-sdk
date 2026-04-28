@@ -194,6 +194,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       // Ensure output directory exists
       await mkdir(outputDir, { recursive: true });
 
+      const allContracts = manifest.contentTypes?.filter(t => t.isContract).map(t => t.key ?? '') ?? [];
+
       if (isGroupBy) {
         const groups: Record<string, ContentType[]> = {};
         const displayTemplatesByContentType = new Map<string, any[]>();
@@ -252,6 +254,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
             groups[group],
             displayTemplatesByContentType,
             groupDir,
+            allContracts,
             contentTypeToGroupMap,
             parsedGroupName,
           );
@@ -291,6 +294,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
           manifest.contentTypes as unknown as ContentType[],
           new Map(), // No display template grouping in non-grouped mode
           outputDir,
+          allContracts,
         );
 
         // List generated files

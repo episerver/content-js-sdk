@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateContentTypeFiles, generateContentTypeCode, cleanKey } from '../generators/contentTypeGenerator.js';
+import { generateContentTypeFiles, generateContentTypeCode, cleanKey, generateContractCode } from '../generators/contentTypeGenerator.js';
 import { ContentType } from '../generators/manifest.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -11,10 +11,12 @@ describe('generateContentTypeFiles', () => {
   const outputDir = path.join(__dirname, 'tmp');
   const contentTypes: ContentType[] = [
     {
+
       key: 'TestType',
       baseType: '_component',
       displayName: 'Test Type',
       properties: { title: { type: 'string' } },
+      isContract: false,
     },
   ];
   const displayTemplatesByContentType = new Map();
@@ -363,6 +365,113 @@ describe('generateContentTypeCode', () => {
     });
   });
 
+  describe('contracts', () => {
+    it('should generate contract code type is a contract', () => {
+      const contractType: ContentType = {
+        key: 'SEOContract',
+        baseType: '_component',
+        displayName: 'SEO Contract',
+        isContract: true,
+        properties: {
+          metaTitle: { type: 'string' },
+          metaDescription: { type: 'string' },
+        },
+      };
+      const code = generateContractCode(contractType);
+
+      expect(code).toContain("import { contract } from '@optimizely/cms-sdk';");
+      expect(code).not.toContain("import { contentType }");
+      expect(code).toContain('export const SEOContract = contract({');
+      expect(code).toContain("key: 'SEOContract'");
+      expect(code).toContain("displayName: 'SEO Contract'");
+      expect(code).not.toContain('baseType:');
+      expect(code).not.toContain('mayContainTypes:');
+    });
+
+    it('should generate content type with extends property when contracts array is present', () => {
+      const contentType: ContentType = {
+        key: 'BlogPost',
+        baseType: '_page',
+        displayName: 'Blog Post',
+        contracts: ['SEOContract', 'SharingContract'],
+        properties: {
+          title: { type: 'string' },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+
+      expect(code).toContain("import { contentType } from '@optimizely/cms-sdk';");
+      expect(code).toContain("import { SEOContract } from './SEOContract'");
+      expect(code).toContain("import { SharingContract } from './SharingContract'");
+      expect(code).toContain('extends: [SEOContract, SharingContract]');
+    });
+
+    it('should generate contract imports from contracts folder when grouped', () => {
+      const contentTypeToGroupMap = new Map<string, string>([
+        ['BlogPost', 'page'],
+        ['SEOContract', 'contract'],
+      ]);
+
+      const contentType: ContentType = {
+        key: 'BlogPost',
+        baseType: '_page',
+        displayName: 'Blog Post',
+        contracts: ['SEOContract'],
+        properties: {
+          title: { type: 'string' },
+        },
+      };
+      const code = generateContentTypeCode(contentType, [], contentTypeToGroupMap, 'page');
+
+      expect(code).toContain("import { SEOContract } from '../contract/SEOContract'");
+      expect(code).not.toContain("import { SEOContract } from './SEOContract'");
+    });
+
+    it('should generate contract imports from same directory when not grouped', () => {
+      const contentType: ContentType = {
+        key: 'BlogPost',
+        baseType: '_page',
+        displayName: 'Blog Post',
+        contracts: ['SEOContract'],
+        properties: {
+          title: { type: 'string' },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+
+      expect(code).toContain("import { SEOContract } from './SEOContract'");
+    });
+
+    it('should generate empty extends array when contracts array is empty', () => {
+      const contentType: ContentType = {
+        key: 'BlogPost',
+        baseType: '_page',
+        displayName: 'Blog Post',
+        contracts: [],
+        properties: {
+          title: { type: 'string' },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+
+      expect(code).not.toContain('extends:');
+    });
+
+    it('should handle contract key with existing Contract suffix', () => {
+      const contractType: ContentType = {
+        key: 'SEOContract',
+        baseType: '_component',
+        displayName: 'SEO Contract',
+        isContract: true,
+        properties: {},
+      };
+      const code = generateContractCode(contractType);
+
+      // Should not double the Contract suffix
+      expect(code).toContain('export const SEOContract = contract({');
+    });
+  });
+
   describe('grouped imports', () => {
     it('should generate correct relative import path for cross-group component references', () => {
       // Setup: Product (experience) referencing SEO (component)
@@ -383,11 +492,11 @@ describe('generateContentTypeCode', () => {
         },
       };
 
-      const code = generateContentTypeCode(productContentType, contentTypeToGroupMap, 'experience');
+      const code = generateContentTypeCode(productContentType, [], contentTypeToGroupMap, 'experience');
 
-      // Should import from ../component/SEO.js, not ./SEO.js
-      expect(code).toContain("import { SEOCT } from '../component/SEO.js';");
-      expect(code).not.toContain("import { SEOCT } from './SEO.js';");
+      // Should import from ../component/SEO, not ./SEO
+      expect(code).toContain("import { SEOCT } from '../component/SEO';");
+      expect(code).not.toContain("import { SEOCT } from './SEO';");
     });
 
     it('should generate same-directory import path for same-group component references', () => {
@@ -409,10 +518,10 @@ describe('generateContentTypeCode', () => {
         },
       };
 
-      const code = generateContentTypeCode(heroContentType, contentTypeToGroupMap, 'component');
+      const code = generateContentTypeCode(heroContentType, [], contentTypeToGroupMap, 'component');
 
-      // Should import from ./Button.js for same group
-      expect(code).toContain("import { ButtonCT } from './Button.js';");
+      // Should import from ./Button for same group
+      expect(code).toContain("import { ButtonCT } from './Button';");
     });
 
     it('should generate same-directory import when no grouping is used', () => {
@@ -432,7 +541,51 @@ describe('generateContentTypeCode', () => {
       const code = generateContentTypeCode(contentType);
 
       // Should use default same-directory import
-      expect(code).toContain("import { SEOCT } from './SEO.js';");
+      expect(code).toContain("import { SEOCT } from './SEO';");
+    });
+
+    it('should handle allowedTypes, restrictedTypes component references with correct import paths', () => {
+      const contentTypeToGroupMap = new Map<string, string>([
+        ['Product', 'experience'],
+        ['Header', 'component'],
+        ['Button', 'component'],
+      ]);
+
+      const productContentType: ContentType = {
+        key: 'Product',
+        baseType: '_experience',
+        displayName: 'Product Page',
+        properties: {
+          seo_properties: {
+            type: 'contentReference',
+            allowedTypes: ['Button'],
+          },
+          header: {
+            type: 'array',
+            items: {
+              type: 'content',
+              allowedTypes: ['Header'],
+            },
+          },
+          footer: {
+            type: 'array',
+            items: {
+              type: 'content',
+              restrictedTypes: ['Header'],
+            },
+          },
+        },
+      };
+
+      const code = generateContentTypeCode(productContentType, [], contentTypeToGroupMap, 'experience');
+
+      // Should import HeaderCT from ../component/Header for both allowedTypes and restrictedTypes
+      expect(code).toContain("import { HeaderCT } from '../component/Header';");
+      expect(code).toContain("import { ButtonCT } from '../component/Button';");
+      expect(code).toContain('allowedTypes: [ButtonCT]');
+      expect(code).toContain('allowedTypes: [HeaderCT]');
+      expect(code).toContain('restrictedTypes: [HeaderCT]');
     });
   });
 });
+
