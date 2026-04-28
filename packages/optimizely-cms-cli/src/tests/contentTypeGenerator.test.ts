@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('generateContentTypeFiles', () => {
-  const outputDir = path.join(__dirname, 'tmp');
+  const outputDir = path.join(__dirname, 'tmp-contentTypeGenerator');
   const contentTypes: ContentType[] = [
     {
 
