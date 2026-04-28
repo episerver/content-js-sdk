@@ -16,7 +16,7 @@ export async function generateContentTypeFiles(
   allContracts: string[] = [],
   contentTypeToGroupMap?: Map<string, string>,
   currentGroup?: string,
-): Promise<string[]> {  
+): Promise<string[]> {
   const generatedFiles = await Promise.all(
     contentTypes.map(async contentType => {
       const fileName = generateFileName(contentType.key);
@@ -99,7 +99,7 @@ export function generatePropertiesAndComponentImports(
     : '{}';
   const importStatements = Array.from(componentImports).map(key => {
     const fileName = generateFileName(key);
-    let exportName = generateExportName(key);
+    let exportName = contracts.includes(key) ? generateContractExportName(key) : generateExportName(key);
 
     // Calculate relative import path when grouping is enabled
     let importPath = `./${fileName.replace('.ts', '')}`;
@@ -109,7 +109,6 @@ export function generatePropertiesAndComponentImports(
         // Different group - use relative path
         importPath = `../${targetGroup}/${fileName.replace('.ts', '')}`;
       }
-      if (targetGroup === CONTRACT_GROUP_NAME) exportName = generateContractExportName(key);
     }
 
     return `import { ${exportName} } from '${importPath}';`;
