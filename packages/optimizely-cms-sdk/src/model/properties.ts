@@ -6,6 +6,8 @@ export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
 export type INDEX_TYPE = 'disabled' | 'queryable' | 'searchable';
 
+type ENUM_FORMAT_TYPES = 'selectOne' | 'selectMany';
+
 /** A "Base" content type property that includes all common attributes for all content type properties */
 type BaseProperty = {
   format?: string;
@@ -19,6 +21,8 @@ type BaseProperty = {
 };
 
 type WithEnum<T> = {
+  //The `format` fields will only give options `selectOne` and `selectMany` if the property has type `string`. Otherwise, it can be any string.
+  format?: T extends string ? ENUM_FORMAT_TYPES : string;
   enum?: { value: T; displayName: string }[];
 };
 
