@@ -1,6 +1,6 @@
 # CLI Commands Reference
 
-This page provides a comprehensive reference for all Optimizely CMS CLI commands.
+This page provides a reference for all Optimizely CMS CLI commands.
 
 ## Installation
 
