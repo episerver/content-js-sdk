@@ -141,7 +141,7 @@ export default withAppContext(Page);
 
 ### Using `getClient()` Instead
 
-Recommended approach: configure client once in root layout, use `getClient()` everywhere.
+Recommended approach: configure client once in your app's entry point, for example the root layout, then use `getClient()` everywhere.
 
 **In `layout.tsx`:**
 
