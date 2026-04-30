@@ -342,19 +342,64 @@ export function createElementData(type: string, attributes: Record<string, unkno
  * Minimal HTML entity decoder to avoid extra deps
  */
 export function decodeHTML(input: string): string {
-  if (!/[&<>"]/.test(input)) return input;
+  if (!/&/.test(input)) return input;
 
   const map: Record<string, string> = {
+    // Basic entities
     '&amp;': '&',
     '&lt;': '<',
     '&gt;': '>',
     '&quot;': '"',
     '&#39;': "'",
-    '&nbsp;': '\u00A0',
+
+    // Whitespace
+    '&nbsp;': ' ',
+
+    // Dashes
+    '&ndash;': '–',
     '&mdash;': '—',
+
+    // Quotes
+    '&lsquo;': '‘',
+    '&rsquo;': '’',
+    '&ldquo;': '“',
+    '&rdquo;': '”',
+    '&sbquo;': '‚',
+    '&bdquo;': '„',
+
+    // Typographic
+    '&hellip;': '…',
+    '&bull;': '•',
+    '&middot;': '·',
+    '&prime;': '′',
+    '&Prime;': '″',
+    '&lsaquo;': '‹',
+    '&rsaquo;': '›',
+    '&laquo;': '«',
+    '&raquo;': '»',
+
+    // Common symbols
+    '&copy;': '©',
+    '&reg;': '®',
+    '&trade;': '™',
+    '&deg;': '°',
+    '&plusmn;': '±',
+    '&para;': '¶',
+    '&sect;': '§',
+    '&dagger;': '†',
+    '&Dagger;': '‡',
+
+    // Math/currency
+    '&times;': '×',
+    '&divide;': '÷',
+    '&minus;': '−',
+    '&euro;': '€',
+    '&pound;': '£',
+    '&yen;': '¥',
+    '&cent;': '¢',
   };
 
-  return input.replace(/(&amp;|&lt;|&gt;|&quot;|&#39;|&nbsp;|&mdash;)/g, m => map[m] ?? m);
+  return input.replace(/&[a-z]+;|&#?\d+;/gi, m => map[m] ?? m);
 }
 
 /**
