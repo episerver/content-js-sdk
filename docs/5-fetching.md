@@ -126,7 +126,7 @@ export async function Page({ params }: Props) {
 
 The `getClient()` approach is preferred because:
 
-- **Single configuration point**: Configure Graph client once in root layout instead of passing environment variables to every component
+- **Single configuration point**: Configure Graph client once in your app's entry point instead of passing environment variables to every component
 - **Cleaner code**: No need to instantiate client in every page/component that needs content
 - **Easier maintenance**: Change API key or Graph URL in one place
 
