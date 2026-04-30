@@ -81,7 +81,7 @@ const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
 Initialize the GraphClient with your credentials. These should be stored in your environment variables for security.
 
 > [!TIP]
-> Alternatively, configure the client once in your root layout using `config()` and use `getClient()` throughout your application. See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient) for details.
+> Alternatively, configure the client once in your app's entry point using `config()` and use `getClient()` throughout your application. See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient) for details.
 
 ### Fetching Preview Content
 
