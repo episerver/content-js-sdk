@@ -8,7 +8,7 @@ Open the `src/app/components/Article.tsx` file and add the following
 
 ```tsx
 import { ContentProps } from '@optimizely/cms-sdk';
-import { RichText } from '@episerver/cms-sdk/react/richText';
+import { RichText } from '@optimizely/cms-sdk/react/richText';
 
 type Props = {
   content: ContentProps<typeof ArticleContentType>;

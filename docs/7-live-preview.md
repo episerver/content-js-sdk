@@ -119,7 +119,7 @@ Three key components work together here:
 
 ## Step 2. Configure Environment Variables
 
-Add the following environment variables to your `.env.local` file:
+Add the following environment variables to your `.env` file:
 
 ```bash
 OPTIMIZELY_GRAPH_SINGLE_KEY=your_single_key_here
@@ -134,7 +134,7 @@ Replace the values with your actual:
 - **OPTIMIZELY_CMS_URL**: Your Optimizely CMS instance URL (without trailing slash)
 
 > [!IMPORTANT]
-> Never commit your `.env.local` file to version control. Add it to your `.gitignore` to keep your credentials secure.
+> Never commit your `.env` file to version control. Add it to your `.gitignore` to keep your credentials secure.
 
 ## Step 3. Configure Hostname and Preview in CMS
 
