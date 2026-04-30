@@ -72,7 +72,7 @@ export default function ProductImage({ content }) {
 
 The generated `srcset` will look like:
 
-```sh
+```ts
 https://example.dam.optimizely.com/image1.jpg 100w, https://example.dam.optimizely.com/image2.jpg 500w, https://example.dam.optimizely.com/image3.jpg 1000w
 ```
 

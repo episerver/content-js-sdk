@@ -83,6 +83,7 @@ export default async function Page({ params }: Props) {
 With JS SDK version 2 and above, it is easier to define the client and use it throughout the application. You can now define the client in the root file and then use built-in functions to create the client.
 
 ```tsx
+import { config } from '@optimizely/cms-sdk';
 // Configure Optimizely Graph client
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
@@ -102,6 +103,8 @@ config({
 After declaring this, you can get the client anywhere within the project by using the `getClient()` method.
 
 ```tsx
+import { getClient } from '@optimizely/cms-sdk';
+
 type Props = {
   params: Promise<{
     slug: string[];
@@ -182,7 +185,7 @@ const content = await client.getContentByPath('/blog/my-article', {
 
 #### `getContent(reference, previewToken?)`
 
-**New in this version!** Unified content fetching method using GraphReference. Provides flexible content retrieval with support for key-based queries, locale filtering, and version selection.
+Unified content fetching method using GraphReference. Provides flexible content retrieval with support for key-based queries, locale filtering, and version selection.
 
 ```typescript
 // Fetch by key only (latest published)

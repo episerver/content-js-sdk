@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@optimizely/cms-sdk)](https://www.npmjs.com/package/@optimizely/cms-sdk)
 
-The official JavaScript/TypeScript SDK for building headless applications with Optimizely CMS. This comprehensive library provides everything you need to fetch, render, and manage content from Optimizely CMS with full type safety and intelligent code completion.
+The official JavaScript/TypeScript SDK for building headless applications with Optimizely CMS. This library provides everything you need to fetch, render, and manage content from Optimizely CMS with full type safety and intelligent code completion.
 
 ## Features
 

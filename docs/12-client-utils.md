@@ -34,10 +34,10 @@ import { getClient } from '@optimizely/cms-sdk';
 export default async function Page() {
   const currentPath = '/en/about/our-team';
 
-  const client = await getClient();
+  const client = getClient();
 
   // Get all ancestor pages
-  const ancestors = (client.getPath(currentPath)) || [];
+  const ancestors = (await client.getPath(currentPath)) || [];
 
   // Filter out the start page (first item) and create breadcrumbs
   const breadcrumbs = ancestors.slice(1).map((ancestor: any) => ({
@@ -88,8 +88,8 @@ import { getClient } from '@optimizely/cms-sdk';
 
 export default async function Navigation() {
   // Get all direct children of the start page
-  const client = await getClient();
-  const navLinks = (client.getItems('/en/')) ?? [];
+  const client = getClient();
+  const navLinks = (await client.getItems('/en/')) ?? [];
 
   // Create navigation from child pages
   const navigations = navLinks.map((item: any) => ({
@@ -121,8 +121,8 @@ import { getClient } from '@optimizely/cms-sdk';
 
 export default async function Layout({ currentPath }: { currentPath: string }) {
   // Get ancestors for breadcrumbs
-  const client = await getClient();
-  const ancestors = (client.getPath(currentPath)) || [];
+  const client = getClient();
+  const ancestors = (await client.getPath(currentPath)) || [];
   const breadcrumbs = ancestors.slice(1).map((ancestor: any) => ({
     key: ancestor._metadata.key,
     label: ancestor._metadata.displayName,
@@ -130,7 +130,7 @@ export default async function Layout({ currentPath }: { currentPath: string }) {
   }));
 
   // Get main navigation items
-  const navLinks = (client.getItems('/en/')) ?? [];
+  const navLinks = (await client.getItems('/en/')) ?? [];
   const navigations = navLinks.map((item: any) => ({
     key: item._metadata.key,
     label: item._metadata.displayName,
@@ -170,14 +170,14 @@ export default async function Layout({ currentPath }: { currentPath: string }) {
 Both functions support filtering by locale, which is useful for multi-language sites:
 
 ```tsx
-const client = await getClient();
+const client = getClient();
 // Get navigation items only in English and French
-const navLinks = client.getItems('/en/', {
+const navLinks = await client.getItems('/en/', {
   locales: ['en', 'fr'],
 });
 
 // Get breadcrumbs filtered by locale
-const ancestors = client.getPath('/en/about/team', {
+const ancestors = await client.getPath('/en/about/team', {
   locales: ['en'],
 });
 ```
@@ -187,8 +187,8 @@ const ancestors = client.getPath('/en/about/team', {
 Both functions return `null` if the requested page doesn't exist:
 
 ```tsx
-const client = await getClient();
-const ancestors = client.getPath('/non-existent-page');
+const client = getClient();
+const ancestors = await client.getPath('/non-existent-page');
 
 if (ancestors === null) {
   // Page doesn't exist, handle accordingly
