@@ -158,7 +158,11 @@ By default, `config pull` excludes system-generated read-only content types. Use
 optimizely-cms-cli config pull --include-read-only
 ```
 
-Read-only content types cannot be modified in the CMS but may be useful for understanding the full schema or auditing purposes.
+Read-only content types cannot be modified via the CLI or CMS REST API. This flag is useful for:
+
+- **PaaS environments** where content types may be created from C# or .NET applications
+- Auditing or understanding the full CMS content type schema
+- Generating TypeScript types for content types in CMS managed by other systems like CMP
 
 ## Authentication Commands
 
