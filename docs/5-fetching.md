@@ -39,7 +39,7 @@ export default function RootLayout({
 
 Create a file `src/app/[...slug]/page.tsx`. Your file structure should look like this:
 
-```
+```sh
 .
 ├── src/
 │   ├── app/
@@ -78,6 +78,61 @@ export default async function Page({ params }: Props) {
 }
 ```
 
+### Define client in a more flexible way
+
+With JS SDK version 2 and above, it is easier to define the client and use it throughout the application. You can now define the client in the root file and then use built-in functions to create the client.
+
+```tsx
+import { config } from '@optimizely/cms-sdk';
+// Configure Optimizely Graph client
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+});
+```
+
+#### config() Parameters
+
+- **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
+- **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`
+- **`host`** (optional): Default application host for path filtering. Useful for multi-site scenarios
+- **`maxFragmentThreshold`** (optional): Maximum number of GraphQL fragments before logging warnings. Defaults to `100`
+- **`cache`** (optional): Enable/disable server-side caching for all queries. Defaults to `true`
+- **`slot`** (optional): Select which Graph index to query (`'Current'` or `'New'`). Used during smooth rebuilds
+
+After declaring this, you can get the client anywhere within the project by using the `getClient()` method.
+
+```tsx
+import { getClient } from '@optimizely/cms-sdk';
+
+type Props = {
+  params: Promise<{
+    slug: string[];
+  }>;
+};
+
+export async function Page({ params }: Props) {
+  const { slug } = await params;
+
+  // gets an instance of the client
+  const client = getClient();
+  const path = `/${slug.join('/')}/`;
+  
+  // fetch content via the client
+  const content = await client.getContentByPath(path);
+
+   return <pre>{JSON.stringify(content[0], null, 2)}</pre>;
+}
+```
+
+### Why use `getClient()` instead of `new GraphClient()`?
+
+The `getClient()` approach is preferred because:
+
+- **Single configuration point**: Configure Graph client once in your app's entry point instead of passing environment variables to every component
+- **Cleaner code**: No need to instantiate client in every page/component that needs content
+- **Easier maintenance**: Change API key or Graph URL in one place
+
 ## 4. Start the app
 
 Start the application
@@ -86,7 +141,7 @@ Start the application
 npm run dev
 ```
 
-Go to http://localhost:3000/en/
+Go to [http://localhost:3000/en/](http://localhost:3000/en/)
 
 You should see the content you have created as JSON
 
@@ -118,6 +173,7 @@ const content = await client.getContentByPath('/blog/my-article', {
 ```
 
 **Parameters:**
+
 - `path` (string): URL path to the content
 - `options` (optional):
   - `variation`: Filter by experience variations
@@ -129,7 +185,7 @@ const content = await client.getContentByPath('/blog/my-article', {
 
 #### `getContent(reference, previewToken?)`
 
-**New in this version!** Unified content fetching method using GraphReference. Provides flexible content retrieval with support for key-based queries, locale filtering, and version selection.
+Unified content fetching method using GraphReference. Provides flexible content retrieval with support for key-based queries, locale filtering, and version selection.
 
 ```typescript
 // Fetch by key only (latest published)
@@ -158,10 +214,12 @@ const content = await client.getContent(
 ```
 
 **Parameters:**
+
 - `reference` (GraphReference | string): Content reference (object or graph:// string)
 - `previewToken` (optional): Preview token for draft content
 
 **GraphReference format:**
+
 - `key` (required): Content GUID/key
 - `locale` (optional): Content locale (e.g., 'en', 'sv')
 - `version` (optional): Specific version (takes priority over locale)
@@ -171,6 +229,7 @@ const content = await client.getContent(
 **String format:** `graph://[source]/[type]/key?loc=locale&ver=version`
 
 **Priority rules:**
+
 - If `version` is specified, it takes priority (ignores locale-based filtering)
 - If only `locale` is specified, fetches latest draft in that locale
 - If neither specified, fetches latest published version
@@ -204,6 +263,7 @@ const path = await client.getPath(
 ```
 
 **Parameters:**
+
 - `input` (string | GraphReference): URL path or GraphReference
 - `options` (optional):
   - `host`: Override default host (only for path strings)
@@ -238,6 +298,7 @@ const items = await client.getItems(
 ```
 
 **Parameters:**
+
 - `input` (string | GraphReference): URL path or GraphReference
 - `options` (optional):
   - `host`: Override default host (only for path strings)
@@ -262,7 +323,7 @@ The Content Graph endpoint URL.
 
 #### Using non-production Graph
 
-The Graph Client uses the production Content Graph endpoint by default (https://cg.optimizely.com/content/v2). If you want to use a different URL, configure it by passing the `graphUrl` as option. For example:
+The Graph Client uses the production Content Graph endpoint by default (<https://cg.optimizely.com/content/v2>). If you want to use a different URL, configure it by passing the `graphUrl` as option. For example:
 
 ```ts
 const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
@@ -309,7 +370,7 @@ const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
 
 When this threshold is exceeded, you'll see a warning like:
 
-```
+```sh
 ⚠️ [optimizely-cms-sdk] Fragment "MyContentType" generated 200 inner fragments (limit: 150).
 → Consider narrowing it using allowedTypes and restrictedTypes or reviewing schema references to reduce complexity.
 ```

@@ -80,6 +80,9 @@ const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
 
 Initialize the GraphClient with your credentials. These should be stored in your environment variables for security.
 
+> [!TIP]
+> Alternatively, configure the client once in your app's entry point using `config()` and use `getClient()` throughout your application. See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient) for details.
+
 ### Fetching Preview Content
 
 ```tsx
@@ -116,7 +119,7 @@ Three key components work together here:
 
 ## Step 2. Configure Environment Variables
 
-Add the following environment variables to your `.env.local` file:
+Add the following environment variables to your `.env` file:
 
 ```bash
 OPTIMIZELY_GRAPH_SINGLE_KEY=your_single_key_here
@@ -131,7 +134,7 @@ Replace the values with your actual:
 - **OPTIMIZELY_CMS_URL**: Your Optimizely CMS instance URL (without trailing slash)
 
 > [!IMPORTANT]
-> Never commit your `.env.local` file to version control. Add it to your `.gitignore` to keep your credentials secure.
+> Never commit your `.env` file to version control. Add it to your `.gitignore` to keep your credentials secure.
 
 ## Step 3. Configure Hostname and Preview in CMS
 

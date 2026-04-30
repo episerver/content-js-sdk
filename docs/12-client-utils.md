@@ -2,11 +2,14 @@
 
 The Optimizely CMS SDK provides utility functions to help you navigate and structure your site. These functions are available through the `GraphClient` instance and are particularly useful for building navigation menus, breadcrumbs, and understanding page hierarchies.
 
+> [!TIP]
+> Consider using `config()` in your app's entry point to configure the client globally and then `getClient()` to get a pre-configured client. Manually constructing a client with `new GraphClient()` is still fully supported. See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient).
+
 ## getPath()
 
 The `getPath()` method returns the ancestor pages of a given page, from the root down to the current page. This is useful for building breadcrumb navigation.
 
-### Signature
+### getPath() Signature
 
 ```typescript
 async getPath(path: string, options?: GraphGetLinksOptions): Promise<Array<PageMetadata> | null>
@@ -26,12 +29,12 @@ An array of page metadata objects sorted from root to the current page, or `null
 ### Example: Building Breadcrumbs
 
 ```tsx
-import { GraphClient } from '@optimizely/cms-sdk';
-
-const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!);
+import { getClient } from '@optimizely/cms-sdk';
 
 export default async function Page() {
   const currentPath = '/en/about/our-team';
+
+  const client = getClient();
 
   // Get all ancestor pages
   const ancestors = (await client.getPath(currentPath)) || [];
@@ -67,26 +70,25 @@ The `getItems()` method returns the direct child pages of a given page. This is 
 async getItems(path: string, options?: GraphGetLinksOptions): Promise<Array<PageMetadata> | null>
 ```
 
-### Parameters
+### Input Parameters
 
 - **`path`** - The URL path of the parent page (e.g., `/en/`)
 - **`options`** (optional)
   - **`host`** - The host URL for filtering
   - **`locales`** - Array of locale codes to filter by
 
-### Returns
+### Output
 
 An array of child page metadata objects, or `null` if the parent page doesn't exist.
 
 ### Example: Building Navigation
 
 ```tsx
-import { GraphClient } from '@optimizely/cms-sdk';
-
-const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!);
+import { getClient } from '@optimizely/cms-sdk';
 
 export default async function Navigation() {
   // Get all direct children of the start page
+  const client = getClient();
   const navLinks = (await client.getItems('/en/')) ?? [];
 
   // Create navigation from child pages
@@ -115,12 +117,11 @@ export default async function Navigation() {
 Here's a complete example using both functions to build breadcrumbs and primary navigation:
 
 ```tsx
-import { GraphClient } from '@optimizely/cms-sdk';
-
-const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!);
+import { getClient } from '@optimizely/cms-sdk';
 
 export default async function Layout({ currentPath }: { currentPath: string }) {
   // Get ancestors for breadcrumbs
+  const client = getClient();
   const ancestors = (await client.getPath(currentPath)) || [];
   const breadcrumbs = ancestors.slice(1).map((ancestor: any) => ({
     key: ancestor._metadata.key,
@@ -169,6 +170,7 @@ export default async function Layout({ currentPath }: { currentPath: string }) {
 Both functions support filtering by locale, which is useful for multi-language sites:
 
 ```tsx
+const client = getClient();
 // Get navigation items only in English and French
 const navLinks = await client.getItems('/en/', {
   locales: ['en', 'fr'],
@@ -185,6 +187,7 @@ const ancestors = await client.getPath('/en/about/team', {
 Both functions return `null` if the requested page doesn't exist:
 
 ```tsx
+const client = getClient();
 const ancestors = await client.getPath('/non-existent-page');
 
 if (ancestors === null) {

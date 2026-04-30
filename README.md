@@ -23,7 +23,7 @@ The official JavaScript SDK and CLI from Optimizely CMS. Build headless applicat
 
 ### 🚀 SDK - Content Delivery & Management
 
-A comprehensive JavaScript/TypeScript library for fetching, rendering, and managing content from Optimizely CMS in your applications.
+A JavaScript/TypeScript library for fetching, rendering, and managing content from Optimizely CMS in your applications.
 
 **Key Capabilities:**
 
@@ -72,7 +72,7 @@ For a complete walkthrough from scratch, see the [Documentation](#documentation)
 
 ## Documentation
 
-Comprehensive step-by-step guides to build your headless application:
+A step-by-step guides to build your headless application:
 
 | Step | Guide                                                               | Description                               |
 | ---- | ------------------------------------------------------------------- | ----------------------------------------- |

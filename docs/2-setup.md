@@ -32,7 +32,7 @@ OPTIMIZELY_CMS_CLIENT_SECRET=<the client secret>
 
 Use the command to check that the connection is correct:
 
-```
+```sh
 npx @optimizely/cms-cli@latest login
 ```
 
@@ -42,7 +42,7 @@ Create a file `optimizely.config.mjs` in the root of your project. This configur
 
 **Basic configuration:**
 
-```js
+```ts
 import { buildConfig } from '@optimizely/cms-sdk';
 
 export default buildConfig({
@@ -52,7 +52,7 @@ export default buildConfig({
 
 Your project structure should now look like this:
 
-```
+```sh
 .
 ├── src/
 │   ├── app/
@@ -70,7 +70,7 @@ The `components` field accepts an array of glob patterns to locate your componen
 
 **Multiple patterns:**
 
-```js
+```ts
 export default buildConfig({
   components: ['./src/components/*.tsx', './src/components/**/*.tsx'],
 });
@@ -80,7 +80,7 @@ export default buildConfig({
 
 Use the `!` prefix to exclude specific content types from being synced to the CMS. This is useful when you have components that define content types but shouldn't be pushed to the CMS (Like test content types).
 
-```js
+```ts
 export default buildConfig({
   components: [
     './src/components/**/*.tsx',
@@ -92,7 +92,7 @@ export default buildConfig({
 
 **Common exclusion patterns:**
 
-```js
+```ts
 export default buildConfig({
   components: [
     './src/components/**/*.tsx',
@@ -105,11 +105,11 @@ export default buildConfig({
 
 Negation patterns are processed in order, so place them after the inclusion patterns. The CLI uses these patterns to scan for content type definitions and display templates, then syncs only the matched files to your CMS instance.
 
-**Optional: Property Groups**
+#### Optional: Property Groups
 
 Property groups help organize your content type properties in the CMS editor. Add them to your configuration if you want to group related fields together:
 
-```js
+```ts
 import { buildConfig } from '@optimizely/cms-sdk';
 
 export default buildConfig({
@@ -139,7 +139,7 @@ Reference these groups in your content type properties using the `group` field.
 
 ### Non-production environment
 
-The CLI uses the production API endpoints by default (https://api.cms.optimizely.com). If you want to use a different domain (for example https://api.cmstest.optimizely.com), configure it using the environment variable `OPTIMIZELY_CMS_API_URL`:
+The CLI uses the production API endpoints by default (<https://api.cms.optimizely.com>). If you want to use a different domain (for example <https://api.cmstest.optimizely.com>), configure it using the environment variable `OPTIMIZELY_CMS_API_URL`:
 
 ```bash
 OPTIMIZELY_CMS_API_URL=https://api.cmstest.optimizely.com
