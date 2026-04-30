@@ -3,7 +3,7 @@
 The Optimizely CMS SDK provides utility functions to help you navigate and structure your site. These functions are available through the `GraphClient` instance and are particularly useful for building navigation menus, breadcrumbs, and understanding page hierarchies.
 
 > [!TIP]
-> The examples below use `new GraphClient()` (the original approach, still fully supported). For production apps, consider using `config()` once in your root layout and `getClient()` throughout. `getClient()` uses `GraphClient` under the hood but provides better configuration management. See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient).
+> Consider using `config()` in your app's entry point to configure the client globally and then `getClient()` to get a pre-configured client. Manually constructing a client with `new GraphClient()` is still fully supported. See [Fetching Content](./5-fetching.md#why-use-getclient-instead-of-new-graphclient).
 
 ## getPath()
 
