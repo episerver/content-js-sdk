@@ -125,9 +125,21 @@ optimizely-cms-cli config pull --json > manifest.json
 # Pipe JSON output to other commands (automatically detects piping)
 optimizely-cms-cli config pull | jq .contentTypes
 optimizely-cms-cli config pull | grep -i "Article"
+
+# Include read-only system content types
+optimizely-cms-cli config pull --include-read-only
 ```
 
 > **Note:** The command automatically detects when output is piped or redirected and outputs JSON without prompting. You can also explicitly use `--json` to force JSON output. The `--output` flag works in all environments, including CI/non-TTY contexts.
+
+> **Note:** Use `--include-read-only` to pull all content types including system-generated read-only types. By default, only user-editable content types are pulled. This flag is useful for:
+>
+> - **PaaS environments** where content types may be created from C# or .NET applications
+> - Auditing or understanding the full CMS content type schema
+> - Generating TypeScript types for content types in CMS managed by other systems like CMP
+> 
+>
+> Note that read-only types cannot be modified via the CLI or CMS REST API.
 
 > **Note:** When using `--group`:
 >
