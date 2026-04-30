@@ -82,12 +82,14 @@ export type FloatProperty = BaseProperty & {
 
 export type ContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
+  contentType?: AnyContentType;
   allowedTypes?: PermittedTypes[];
   restrictedTypes?: PermittedTypes[];
 };
 
 export type ContentProperty = BaseProperty & {
   type: 'content';
+  contentType?: AnyContentType;
   allowedTypes?: PermittedTypes[];
   restrictedTypes?: PermittedTypes[];
 };
@@ -107,3 +109,4 @@ export type ComponentProperty<T extends AnyContentType> = BaseProperty & {
 export type LinkProperty = BaseProperty & {
   type: 'link';
 };
+

@@ -79,13 +79,15 @@ export namespace ContentTypeProperties {
     enum?: EnumWrapper<number>;
   };
 
-  // Content/ContentReference properties - allowedTypes/restrictedTypes must be strings for API format
-  export type Content = Omit<Properties.ContentProperty, 'allowedTypes' | 'restrictedTypes'> & {
+  // Content/ContentReference properties - allowedTypes/restrictedTypes/contentType must be strings for API format
+  export type Content = Omit<Properties.ContentProperty, 'allowedTypes' | 'restrictedTypes' | 'contentType'> & {
+    contentType?: string;
     allowedTypes?: string[];
     restrictedTypes?: string[];
   };
 
-  export type ContentReference = Omit<Properties.ContentReferenceProperty, 'allowedTypes' | 'restrictedTypes'> & {
+  export type ContentReference = Omit<Properties.ContentReferenceProperty, 'allowedTypes' | 'restrictedTypes' | 'contentType'> & {
+    contentType?: string;
     allowedTypes?: string[];
     restrictedTypes?: string[];
   };
