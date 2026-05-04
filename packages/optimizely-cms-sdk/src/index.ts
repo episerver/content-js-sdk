@@ -2,8 +2,10 @@
 export {
   buildConfig,
   contentType,
+  contract,
   displayTemplate,
   isContentType,
+  isContract,
   isDisplayTemplate,
   isContentTypeRegistered,
   initContentTypeRegistry,

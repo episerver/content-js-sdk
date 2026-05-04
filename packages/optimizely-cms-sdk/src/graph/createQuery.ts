@@ -1,5 +1,5 @@
 import { AnyProperty } from '../model/properties.js';
-import { AnyContentType, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
+import { AnyContentType, ContentType, Contract, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
 import { getContentType, getAllContentTypes, getContentTypeByBaseType } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
@@ -11,6 +11,8 @@ import {
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError } from './error.js';
+import { contentType, isContract } from '../model/index.js';
+import { toArray } from '../util/general.js';
 
 /**
  * Options for controlling GraphQL fragment generation behavior.
@@ -61,7 +63,7 @@ function refreshCache() {
  * @param ct - The content type to check.
  * @returns True if all properties are disabled, false otherwise.
  */
-function allPropertiesAreDisabled(ct: AnyContentType): boolean {
+function allPropertiesAreDisabled(ct: AnyContentType | Contract): boolean {
   if (!ct || !ct.properties) return false;
   let hasProperties = false;
   for (const k in ct.properties) {
@@ -268,6 +270,12 @@ export function createFragment(
   } else {
     // User-defined content type
     const ct = getContentType(contentTypeName);
+
+    //TODO: delete me
+    if (ct && ct.key === 'GQLContractPage') {
+      console.log(JSON.stringify(ct, null, 2));
+    }
+
     if (!ct) {
       throw new GraphMissingContentTypeError(contentTypeName);
     }
@@ -408,6 +416,29 @@ export type ItemsResponse<T> = {
   };
 };
 
+function findContractExtenders(
+  contentType: PermittedTypes,
+  contentTypes: AnyContentType[],
+): ContentType<AnyContentType>[] {
+  if (typeof contentType === 'object' && contentType !== null && 'key' in contentType) {
+    const key = contentType.key;
+    return contentTypes.filter(
+      contentType => contentType.extends && toArray(contentType.extends).some(contract => contract.key === key),
+    ) as ContentType<AnyContentType>[];
+  }
+  return [];
+}
+
+function fixSpecialImports(
+  contentTypes: AnyContentType[],
+  items: PermittedTypes[] | undefined = [],
+): PermittedTypes[] | undefined {
+  if (!items || items.length === 0) return items;
+  return items
+    .map(contentType => (!isContract(contentType) ? contentType : findContractExtenders(contentType, contentTypes)))
+    .flat();
+}
+
 /**
  * Resolves the set of allowed content types for a property, excluding restricted and recursive entries.
  * @param allowed - Explicit allow list of types.
@@ -418,14 +449,18 @@ function resolveAllowedTypes(
   allowed: PermittedTypes[] | undefined,
   restricted: PermittedTypes[] | undefined,
 ): (PermittedTypes | AnyContentType)[] {
+  const contentTypes = getAllContentTypes();
+  const allowedFixed = fixSpecialImports(contentTypes, allowed);
+  const restrictedFixed = fixSpecialImports(contentTypes, restricted);
+
   const skip = new Set<string>();
   const seen = new Set<string>();
   const result: (PermittedTypes | AnyContentType)[] = [];
-  const baseline = allowed?.length ? allowed : getCachedContentTypes();
+  const baseline = allowedFixed?.length ? allowedFixed : getCachedContentTypes();
 
   // If a CMS base media type ("_image", "_media" …) is restricted,
   // we must also ban every user defined media type that shares the same media type
-  restricted?.forEach(r => {
+  restrictedFixed?.forEach(r => {
     const key = getKeyName(r);
     skip.add(key);
     if (isBaseType(key)) {
@@ -448,7 +483,7 @@ function resolveAllowedTypes(
     const key = getKeyName(entry);
 
     // If this entry is a base media type inject all matching custom media‑types *before* it.
-    if (allowed?.length && isBaseType(key)) {
+    if (allowedFixed?.length && isBaseType(key)) {
       getContentTypeByBaseType(key).forEach(add);
     }
 

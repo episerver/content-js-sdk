@@ -151,6 +151,9 @@ Array properties support:
 
 > [!IMPORTANT]
 > When using `type: 'content'` or `type: 'contentReference'` within array items, always specify `allowedTypes` or `restrictedTypes`. Without these constraints, the SDK will generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
+>
+> [!TIP]
+> You can use contracts in `allowedTypes` to allow all content types that extend a specific contract. See the [Content Relationships](#content-relationships) section for examples.
 
 #### Component Property
 
@@ -244,6 +247,7 @@ const BlogPageContentType = contentType({
 - Specific content types: `[ArticleContentType, VideoContentType]`
 - Base types: `['_page', '_component']`
 - Self-reference: `['_self']` to allow the same content type
+- Contracts: `[SEOContract]` to allow all content types that extend that contract
 
 **`restrictedTypes`** - Blacklist of content types that cannot be selected. Uses the same format as `allowedTypes`.
 
@@ -280,9 +284,200 @@ const ComponentFolderContentType = contentType({
 - Self-reference: `['_self']`
 - Wildcard: `['*']` to allow all types
 
+## Contracts
+
+Contracts enable you to define reusable sets of properties that can be shared across multiple content types. This promotes consistency, reduces duplication, and makes it easier to maintain common property sets across your content model.
+
+### Creating a Contract
+
+Use the `contract` function to define a reusable set of properties:
+
+```ts
+import { contract, contentType } from '@optimizely/cms-sdk';
+
+export const SEOContract = contract({
+  key: 'SEO',
+  displayName: 'SEO Properties',
+  properties: {
+    metaTitle: {
+      type: 'string',
+      displayName: 'Meta Title',
+      description: 'SEO title for search engines',
+      maxLength: 60,
+      group: 'seo',
+    },
+    metaDescription: {
+      type: 'string',
+      displayName: 'Meta Description',
+      description: 'SEO description for search engines',
+      maxLength: 160,
+      group: 'seo',
+    },
+    ogImage: {
+      type: 'contentReference',
+      allowedTypes: ['_image'],
+      displayName: 'Open Graph Image',
+      description: 'Image for social media sharing',
+      group: 'seo',
+    },
+  },
+});
+```
+
+### Using Contracts with Content Types
+
+Content types can extend one or multiple contracts using the `extends` property:
+
+```ts
+// Extend a single contract
+const ArticleContentType = contentType({
+  key: 'Article',
+  baseType: '_page',
+  extends: SEOContract, // Inherits metaTitle, metaDescription, ogImage
+  properties: {
+    heading: {
+      type: 'string',
+      displayName: 'Article Heading',
+    },
+    body: {
+      type: 'richText',
+      displayName: 'Article Body',
+    },
+  },
+});
+```
+
+### Extending Multiple Contracts
+
+A content type can extend multiple contracts by passing an array:
+
+```ts
+const TrackingContract = contract({
+  key: 'Tracking',
+  displayName: 'Analytics Tracking',
+  properties: {
+    analyticsId: {
+      type: 'string',
+      displayName: 'Analytics ID',
+      group: 'tracking',
+    },
+    trackingEnabled: {
+      type: 'boolean',
+      displayName: 'Enable Tracking',
+      group: 'tracking',
+    },
+  },
+});
+
+const ProductPageContentType = contentType({
+  key: 'ProductPage',
+  baseType: '_page',
+  extends: [SEOContract, TrackingContract], // Multiple contracts
+  properties: {
+    productName: {
+      type: 'string',
+      displayName: 'Product Name',
+    },
+    price: {
+      type: 'float',
+      displayName: 'Price',
+    },
+  },
+});
+```
+
+### Property Merging Behavior
+
+When a content type extends contracts:
+
+1. All contract properties are merged into the content type
+2. If multiple contracts define the same property key, the **rightmost contract** wins
+3. Properties defined directly on the content type override any inherited properties with the same key
+
+```ts
+const Contract1 = contract({
+  key: 'Contract1',
+  displayName: 'Contract 1',
+  properties: {
+    title: { type: 'string', displayName: 'Title from Contract 1' },
+    description: { type: 'string', displayName: 'Description' },
+  },
+});
+
+const Contract2 = contract({
+  key: 'Contract2',
+  displayName: 'Contract 2',
+  properties: {
+    // Overrides Contract1
+    title: { type: 'string', displayName: 'Title from Contract 2' }, 
+  },
+});
+
+const MyContentType = contentType({
+  key: 'MyType',
+  baseType: '_page',
+  extends: [Contract1, Contract2],
+  properties: {
+    // Overrides both contracts
+    title: { type: 'string', displayName: 'My Custom Title' },
+  },
+});
+
+// Result: MyContentType has:
+// - title: "My Custom Title" (from content type)
+// - description: "Description" (from Contract1)
+```
+
+
+#### Using Contracts in Content Relationships
+
+Contracts can be used in `allowedTypes` and `restrictedTypes` to allow or restrict all content types that extend a specific contract:
+
+```ts
+const PublishableContract = contract({
+  key: 'Publishable',
+  displayName: 'Publishable Content',
+  properties: {
+    publishDate: { type: 'dateTime' },
+    author: { type: 'string' },
+  },
+});
+
+const ArticleContentType = contentType({
+  key: 'Article',
+  baseType: '_page',
+  extends: PublishableContract,
+  properties: { body: { type: 'richText' } },
+});
+
+const NewsContentType = contentType({
+  key: 'News',
+  baseType: '_page',
+  extends: PublishableContract,
+  properties: { headline: { type: 'string' } },
+});
+
+const FeedPageContentType = contentType({
+  key: 'FeedPage',
+  baseType: '_page',
+  properties: {
+    featuredItems: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: [PublishableContract], // Allows Article AND News (both extend PublishableContract)
+      },
+      displayName: 'Featured Items',
+    },
+  },
+});
+```
+
+This is particularly useful when you want to allow multiple content types that share common characteristics without listing each type individually.
+
 ## Step 2. Sync content types to the CMS
 
-After defining your content types, sync them to the CMS by running the following command:
+After defining your content types and contracts, sync them to the CMS by running the following command:
 
 ```sh
 npx @optimizely/cms-cli@latest config push optimizely.config.mjs
