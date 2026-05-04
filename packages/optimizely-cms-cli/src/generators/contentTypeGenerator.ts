@@ -311,6 +311,12 @@ function generatePropertyDefinition(
 
   // Content/ContentReference-specific properties
   if (property.type === 'content' || property.type === 'contentReference') {
+    if ('contentType' in property && property.contentType) {
+      componentImports.add(property.contentType);
+      const exportName = generateExportName(property.contentType);
+      parts.push(`contentType: ${exportName}`);
+    }
+
     if ('allowedTypes' in property && property.allowedTypes && property.allowedTypes.length > 0) {
       const types = property.allowedTypes
         .map(t => {
