@@ -44,10 +44,8 @@ export type ContentType = Omit<ContentTypes.AnyContentType, 'mayContainTypes' | 
 
 /**
  * Contract (API format)
- * Based on SDK's AnyContentType but adapted for API serialization:
- * - mayContainTypes uses string[] instead of ContentType<T>[] | string[]
- * - properties uses our adapted ContentTypeProperties.All
- * - compositionBehaviors added as optional (only on ComponentContentType in SDK, but needed at API level)
+ * - Omits __type
+ * - Swaps properties to use ContentTypeProperties.All over AnyProperty
  */
 export type ManifestContract = Omit<ContentTypes.Contract, '__type' | 'properties'> & {
   properties: Record<string, ContentTypeProperties.All>;
