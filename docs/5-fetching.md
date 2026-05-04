@@ -331,6 +331,19 @@ const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
 });
 ```
 
+or
+
+```ts
+// define in root or starting point of your application
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  graphUrl: 'https://cg.staging.optimizely.com/content/v2',
+})
+
+// Use the client any where inside the application
+const client = getClient()
+```
+
 #### `host`
 
 Default application host for path filtering. Useful when multiple sites share the same CMS instance - ensures content is retrieved only from the specified domain.
@@ -344,7 +357,23 @@ const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   host: 'https://example.com',
 });
+```
 
+or
+
+```ts
+// define in root or starting point of your application
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+  host: 'https://example.com',
+})
+
+// Use the client with defined
+const client = getClient()
+```
+
+```ts
 // Uses default host from client
 await client.getContentByPath('/about');
 
@@ -366,6 +395,20 @@ const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
   maxFragmentThreshold: 150,
 });
+```
+
+or
+
+```ts
+// define in root or starting point of your application
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+  maxFragmentThreshold: 150,
+})
+
+// Use the client with maxFragmentThreshold defined
+const client = getClient()
 ```
 
 When this threshold is exceeded, you'll see a warning like:
