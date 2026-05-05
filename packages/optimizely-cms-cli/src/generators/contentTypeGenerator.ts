@@ -102,12 +102,12 @@ export function generateContentTypeCode(
       const exportName = generateExportName(key);
 
       // Calculate relative import path when grouping is enabled
-      let importPath = `./${fileName.replace('.ts', '.js')}`;
+      let importPath = `./${fileName.replace('.ts', '')}`;
       if (contentTypeToGroupMap && currentGroup) {
         const targetGroup = contentTypeToGroupMap.get(key);
         if (targetGroup && targetGroup !== currentGroup) {
           // Different group - use relative path
-          importPath = `../${targetGroup}/${fileName.replace('.ts', '.js')}`;
+          importPath = `../${targetGroup}/${fileName.replace('.ts', '')}`;
         }
       }
 
