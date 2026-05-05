@@ -181,6 +181,40 @@ const LandingPageType = contentType({
 
 The `component` type requires a `contentType` field specifying which component type to use.
 
+### Enum Properties
+
+String properties support enums for dropdown or multi-select UI. Use the `format` field to control selection behavior:
+
+- **`'selectOne'`** - Single selection dropdown
+- **`'selectMany'`** - Multiple selection checkboxes
+
+```ts
+properties: {
+  category: {
+    type: 'string',
+    format: 'selectOne',  // Dropdown for single choice
+    enum: [
+      { value: 'tech', displayName: 'Technology' },
+      { value: 'news', displayName: 'News' },
+      { value: 'sports', displayName: 'Sports' },
+    ],
+    displayName: 'Article Category',
+  },
+  tags: {
+    type: 'string',
+    format: 'selectMany',  // Checkboxes for multiple choices
+    enum: [
+      { value: 'featured', displayName: 'Featured' },
+      { value: 'trending', displayName: 'Trending' },
+      { value: 'breaking', displayName: 'Breaking News' },
+    ],
+    displayName: 'Article Tags',
+  },
+}
+```
+
+> **Note:** The `format` field (`selectOne` or `selectMany`) is only available when `enum` is defined on string properties.
+
 ### Indexing Types
 
 The `indexingType` field controls how the property is indexed for search:
