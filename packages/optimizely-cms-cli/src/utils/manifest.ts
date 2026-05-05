@@ -9,9 +9,12 @@ import { ContentTypes, Properties, DisplayTemplates } from '@optimizely/cms-sdk'
 
 /** Manifest - the JSON accepted/returned by the API */
 export type Manifest = {
-  contentTypes?: ContentType[];
+  contentTypes: ContentType[];
   displayTemplates?: DisplayTemplate[];
 };
+
+export type JSONContent = ContentType | DisplayTemplate;
+export type SupportedFunctionType = 'contentType' | 'contract' | 'displayTemplate';
 
 /**
  * Display Template (API format)
@@ -20,7 +23,9 @@ export type Manifest = {
  * - Simplified settings type (Record<string, any> instead of structured SettingsType)
  * - No __type marker or tag field
  */
-export type DisplayTemplate = Partial<Omit<DisplayTemplates.DisplayTemplateVariant, '__type' | 'settings' | 'tag'>> & {
+export type DisplayTemplate = Partial<
+  Omit<DisplayTemplates.DisplayTemplateVariant, '__type' | 'settings' | 'tag'>
+> & {
   key: string;
   settings?: Record<string, any>;
 };
@@ -32,10 +37,15 @@ export type DisplayTemplate = Partial<Omit<DisplayTemplates.DisplayTemplateVaria
  * - properties uses our adapted ContentTypeProperties.All
  * - compositionBehaviors added as optional (only on ComponentContentType in SDK, but needed at API level)
  */
-export type ContentType = Omit<ContentTypes.AnyContentType, 'mayContainTypes' | 'properties'> & {
+export type ContentType = Omit<
+  ContentTypes.AnyContentType,
+  'mayContainTypes' | 'properties' | 'baseType'
+> & {
   mayContainTypes?: string[];
   properties?: Record<string, ContentTypeProperties.All>;
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
+  isContract: boolean;
+  baseType?: string;
 };
 
 /**
@@ -80,13 +90,19 @@ export namespace ContentTypeProperties {
   };
 
   // Content/ContentReference properties - allowedTypes/restrictedTypes/contentType must be strings for API format
-  export type Content = Omit<Properties.ContentProperty, 'allowedTypes' | 'restrictedTypes' | 'contentType'> & {
+  export type Content = Omit<
+    Properties.ContentProperty,
+    'allowedTypes' | 'restrictedTypes' | 'contentType'
+  > & {
     contentType?: string;
     allowedTypes?: string[];
     restrictedTypes?: string[];
   };
 
-  export type ContentReference = Omit<Properties.ContentReferenceProperty, 'allowedTypes' | 'restrictedTypes' | 'contentType'> & {
+  export type ContentReference = Omit<
+    Properties.ContentReferenceProperty,
+    'allowedTypes' | 'restrictedTypes' | 'contentType'
+  > & {
     contentType?: string;
     allowedTypes?: string[];
     restrictedTypes?: string[];
