@@ -85,7 +85,7 @@ export class ComponentRegistry<T> {
       return this.resolver(contentType, options);
     }
 
-    const entry = this.resolver[contentType];
+    const entry = this.getEntryWithFallback(contentType);
 
     if (!options.tag) {
       if (!entry) {
@@ -111,4 +111,25 @@ export class ComponentRegistry<T> {
       getDefaultComponent(entry)
     );
   }
+
+  /** Returns entry with optional fallback to base type when contentType ends with "Property" */
+  private getEntryWithFallback(contentType: string): ComponentEntry<T> | undefined {
+    if (typeof this.resolver === 'function') {
+      return undefined;
+    }
+
+    const entry = this.resolver[contentType];
+    if (entry) {
+      return entry;
+    }
+
+    // Fallback: if contentType ends with "Property", try without the suffix
+    if (contentType.endsWith('Property')) {
+      const baseType = contentType.slice(0, -8); // Remove "Property"
+      return this.resolver[baseType];
+    }
+
+    return undefined;
+  }
 }
+
