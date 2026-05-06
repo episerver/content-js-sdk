@@ -35,6 +35,45 @@ export class GraphMissingContentTypeError extends OptimizelyGraphError {
   }
 }
 
+/**
+ * Thrown when GraphQL query generation fails due to invalid content type definitions.
+ */
+export class GraphQueryGenerationError extends OptimizelyGraphError {
+  parentContentType?: string;
+  contentType?: string;
+  propertyName?: string;
+
+  constructor(options?: { parentContentType?: string; contentType?: string; propertyName?: string }) {
+    let message: string;
+
+    // Special case: undefined content type
+    if (!options?.contentType || options.contentType === 'undefined') {
+      const parentInfo =
+        options?.parentContentType ?
+          `\nDetected in property of type 'component' or 'content' within parent content type "${options?.parentContentType}".\n` +
+          `Check the 'contentType', 'allowedTypes', or 'restrictedTypes' property fields.\n\n`
+        : '\n\n';
+      message =
+        `Content type is undefined. ${parentInfo}Common causes:\n` +
+        `- Content type defined in client component - not serializable across server/client boundary\n` +
+        `- Content type imported before it's initialized\n\n` +
+        `To fix:\n` +
+        `1. Move content type definitions to shared file (e.g., content-types.ts) without "use client"\n` +
+        `2. Import content types from shared file\n` +
+        `3. Ensure content type registry initialized before rendering`;
+    } else {
+      // Generic query generation error
+      const prop = options.propertyName ? ` (property "${options.propertyName}")` : '';
+      message = `Failed to generate GraphQL query for content type "${options.contentType}"${prop}`;
+    }
+
+    super(message);
+    this.name = 'GraphQueryGenerationError';
+    this.contentType = options?.contentType;
+    this.propertyName = options?.propertyName;
+  }
+}
+
 /** Errors related to the response */
 export class GraphResponseError extends OptimizelyGraphError {
   request: GraphRequest;
@@ -78,3 +117,4 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     this.name = 'GraphContentResponseError';
   }
 }
+
