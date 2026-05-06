@@ -76,4 +76,46 @@ describe('Testing transformProperties', () => {
       }
     `);
   });
+
+  it('should pass through string key allowedTypes unchanged', () => {
+    const properties = {
+      relatedContent: {
+        type: 'content' as const,
+        allowedTypes: ['HeroComponent', 'BannerComponent'],
+      },
+    };
+    const result = transformProperties(properties, 'ArticlePage');
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "relatedContent": {
+          "allowedTypes": [
+            "HeroComponent",
+            "BannerComponent",
+          ],
+          "type": "content",
+        },
+      }
+    `);
+  });
+
+  it('should transform mix of ContentType objects and string keys', () => {
+    const properties = {
+      section: {
+        type: 'content' as const,
+        restrictedTypes: [HeroComponentType, 'SomeOtherComponent'] as any[],
+      },
+    };
+    const result = transformProperties(properties, 'TestPage');
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "section": {
+          "restrictedTypes": [
+            "HeroComponent",
+            "SomeOtherComponent",
+          ],
+          "type": "content",
+        },
+      }
+    `);
+  });
 });
