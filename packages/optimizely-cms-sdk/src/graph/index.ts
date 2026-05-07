@@ -458,8 +458,8 @@ export class GraphClient {
    *
    * Supports both URL path (string) and GraphReference formats:
    * - String: URL path like `/blog/post-1`
-   * - GraphReference: Object like `{ key: 'abc123', locale: 'en' }`
-   * - String format: `graph://cms/Page/abc123?loc=en`
+   * - GraphReference: Object like `{ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' }`
+   * - String format: `graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en`
    *
    * @param input - URL path string or GraphReference object/string
    * @param options - Optional host and locales filters
@@ -471,10 +471,10 @@ export class GraphClient {
    * const path = await client.getPath('/blog/post-1');
    *
    * // Using GraphReference
-   * const path = await client.getPath({ key: 'abc123', locale: 'en' });
+   * const path = await client.getPath({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
    *
    * // Using string format
-   * const path = await client.getPath('graph://Page/abc123?loc=en');
+   * const path = await client.getPath('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
    * ```
    */
   async getPath(reference: string | GraphReference, options?: GraphGetLinksOptions) {
@@ -533,8 +533,8 @@ export class GraphClient {
    *
    * Supports both URL path (string) and GraphReference formats:
    * - String: URL path like `/blog`
-   * - GraphReference: Object like `{ key: 'abc123', locale: 'en' }`
-   * - String format: `graph://Page/abc123?loc=en`
+   * - GraphReference: Object like `{ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' }`
+   * - String format: `graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en`
    *
    * @param input - URL path string or GraphReference object/string
    * @param options - Optional host and locales filters
@@ -546,10 +546,10 @@ export class GraphClient {
    * const items = await client.getItems('/blog');
    *
    * // Using GraphReference
-   * const items = await client.getItems({ key: 'abc123', locale: 'en' });
+   * const items = await client.getItems({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
    *
    * // Using string format
-   * const items = await client.getItems('graph://Page/abc123?loc=en');
+   * const items = await client.getItems('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
    * ```
    */
   async getItems(reference: string | GraphReference, options?: GraphGetLinksOptions) {
@@ -632,8 +632,8 @@ export class GraphClient {
    *
    * @example
    * ```typescript
-   * parseGraphReference('graph://cms/Page/abc123?loc=en&ver=1.0')
-   * // Returns: { source: 'cms', type: 'Page', key: 'abc123', locale: 'en', version: '1.0' }
+   * parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123')
+   * // Returns: { source: 'cms', type: 'Page', key: '880777d5a2824399b07e93e3ca70668e', locale: 'en', version: '123' }
    * ```
    */
   private parseGraphReference(referenceString: string): GraphReference {
@@ -688,8 +688,8 @@ export class GraphClient {
    * Fetches content by key with optional locale and version parameters.
    *
    * Supports both object and string formats:
-   * - Object: `{ key: 'abc123', locale: 'en', version: '1.0' }`
-   * - String: `graph://source/type/key?loc=en&ver=1.0`
+   * - Object: `{ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en', version: '123' }`
+   * - String: `graph://source/type/key?loc=en&ver=123`
    *
    * **Priority rules:**
    * - If `version` is specified, it takes priority (ignores locale-based filtering)
@@ -703,23 +703,23 @@ export class GraphClient {
    * @example
    * ```typescript
    * // Fetch latest published content by key
-   * const content = await client.getContent({ key: 'abc123' });
+   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
    *
    * // Fetch latest draft in specific locale
-   * const content = await client.getContent({ key: 'abc123', locale: 'en' });
+   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
    *
    * // Fetch specific version (version has priority over locale)
    * const content = await client.getContent({
-   *   key: 'abc123',
-   *   version: '1.0',
+   *   key: '880777d5a2824399b07e93e3ca70668e',
+   *   version: '123',
    *   locale: 'en' // This will be ignored when version is specified
    * });
    *
    * // Using string format
-   * const content = await client.getContent('graph://cms/Page/abc123?loc=en&ver=1.0');
+   * const content = await client.getContent('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
    *
    * // With preview token
-   * const content = await client.getContent({ key: 'abc123', version: '1.0' }, { previewToken: 'token' });
+   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' }, { previewToken: 'token' });
    * ```
    */
   async getContent(reference: string | GraphReference, options?: GraphGetItemOptions) {
