@@ -10,6 +10,7 @@ import {
   getContentType,
   getAllContentTypes,
   getContentTypeByBaseType,
+  RegistryEntry,
 } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
@@ -21,8 +22,8 @@ import {
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
-import { contentType, isContract } from '../model/index.js';
 import { toArray } from '../util/general.js';
+import { isContract } from '../model/index.js';
 
 /**
  * Options for controlling GraphQL fragment generation behavior.
@@ -63,7 +64,7 @@ let allContentTypes: AnyContentType[] = [];
  * Avoids repeated calls to the content registry.
  * @returns An array of all contentType definitions.
  */
-function getCachedContentTypes(): AnyContentType[] {
+function getCachedContentTypes(): RegistryEntry[] {
   if (allContentTypes.length === 0) {
     allContentTypes = getAllContentTypes();
   }
@@ -81,7 +82,7 @@ function refreshCache() {
  * @param ct - The content type to check.
  * @returns True if all properties are disabled, false otherwise.
  */
-function allPropertiesAreDisabled(ct: AnyContentType | Contract): boolean {
+function allPropertiesAreDisabled(ct: RegistryEntry): boolean {
   if (!ct || !ct.properties) return false;
   let hasProperties = false;
   for (const k in ct.properties) {
@@ -247,7 +248,7 @@ function createExperienceFragments(
 
   const experienceNodes = getCachedContentTypes()
     .filter(c => {
-      if (c.baseType === '_component') {
+      if ('baseType' in c && c.baseType === '_component') {
         return 'compositionBehaviors' in c && (c.compositionBehaviors?.length ?? 0) > 0;
       }
       return false;
@@ -315,7 +316,7 @@ export function createFragment(
     fields.push(...f);
     extraFragments.push(...e);
   } else {
-    // User-defined content type
+    // User-defined content type or contract
     const ct = getContentType(contentTypeName);
 
     //TODO: delete me
@@ -353,7 +354,7 @@ export function createFragment(
       fields.push(...baseFragments.fields);
     }
 
-    if (ct.baseType === '_experience') {
+    if ('baseType' in ct && ct.baseType === '_experience') {
       fields.push('..._IExperience');
       const experienceResult = createExperienceFragments(visited, {
         damEnabled,
@@ -506,18 +507,14 @@ function resolveAllowedTypes(
   allowed: PermittedTypes[] | undefined,
   restricted: PermittedTypes[] | undefined,
 ): (PermittedTypes | AnyContentType)[] {
-  const contentTypes = getAllContentTypes();
-  const allowedFixed = fixSpecialImports(contentTypes, allowed);
-  const restrictedFixed = fixSpecialImports(contentTypes, restricted);
-
   const skip = new Set<string>();
   const seen = new Set<string>();
   const result: (PermittedTypes | AnyContentType)[] = [];
-  const baseline = allowedFixed?.length ? allowedFixed : getCachedContentTypes();
+  const baseline = allowed?.length ? allowed : getCachedContentTypes();
 
   // If a CMS base media type ("_image", "_media" …) is restricted,
   // we must also ban every user defined media type that shares the same media type
-  restrictedFixed?.forEach(r => {
+  restricted?.forEach(r => {
     const key = getKeyName(r);
     skip.add(key);
     if (isBaseType(key)) {
@@ -540,7 +537,7 @@ function resolveAllowedTypes(
     const key = getKeyName(entry);
 
     // If this entry is a base media type inject all matching custom media‑types *before* it.
-    if (allowedFixed?.length && isBaseType(key)) {
+    if (allowed?.length && isBaseType(key)) {
       getContentTypeByBaseType(key).forEach(add);
     }
 
