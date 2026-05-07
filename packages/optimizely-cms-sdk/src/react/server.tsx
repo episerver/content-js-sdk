@@ -101,6 +101,32 @@ type OptimizelyComponentProps = {
   displaySettings?: Record<string, string | boolean>;
 };
 
+/**
+ * Attempts to get component from contract types fallback.
+ * If content implements a contract but no component is registered for the contract itself,
+ * tries to find a component using the first type in content._metadata.types array.
+ */
+function getComponentFromContractFallback(
+  content: Record<string, any>,
+  options: { tag?: string },
+): React.ComponentType<any> | undefined {
+  if (
+    typeof content === 'object' &&
+    content !== null &&
+    '_metadata' in content &&
+    content._metadata &&
+    typeof content._metadata === 'object' &&
+    content._metadata !== null &&
+    'types' in content._metadata
+  ) {
+    const types = content._metadata.types;
+    if (Array.isArray(types) && types.length > 0) {
+      return componentRegistry?.getComponent(types[0], options);
+    }
+  }
+  return undefined;
+}
+
 export async function OptimizelyComponent({ content, displaySettings, ...props }: OptimizelyComponentProps) {
   if (!content) {
     throw new OptimizelyReactError('OptimizelyComponent requires a valid content prop. Received null or undefined.');
@@ -110,9 +136,14 @@ export async function OptimizelyComponent({ content, displaySettings, ...props }
     throw new OptimizelyReactError('You should call `initReactComponentRegistry` first');
   }
   const dtKey = content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
-  const Component = await componentRegistry.getComponent(content.__typename, {
-    tag: content.__tag ?? getDisplayTemplateTag(dtKey),
-  });
+  const tag = content.__tag ?? getDisplayTemplateTag(dtKey);
+
+  let Component = componentRegistry.getComponent(content.__typename, { tag });
+
+  // If component not found, try contract types fallback
+  if (!Component) {
+    Component = getComponentFromContractFallback(content, { tag });
+  }
 
   if (!Component) {
     return (
