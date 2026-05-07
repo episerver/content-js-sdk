@@ -693,9 +693,11 @@ export class GraphClient {
    *
    * **Priority rules:**
    * - If `version` is specified, it takes priority (ignores locale-based filtering)
-   * - If only `locale` is specified, fetches latest draft in that locale
+   * - If only `locale` is specified, fetches latest published version in that locale
    * - If neither specified, fetches latest published version
    *
+   * **Note:** This method always returns published content. To fetch draft content,
+   * use `getPreviewContent()` with a preview token instead.
    * @param reference - GraphReference object or string in graph:// format
    * @param previewToken - Optional preview token for preview mode
    * @returns The requested content item, or null if not found
@@ -705,7 +707,7 @@ export class GraphClient {
    * // Fetch latest published content by key
    * const content = await client.getContent({ key: 'abc123' });
    *
-   * // Fetch latest draft in specific locale
+   * // Fetch latest published content in specific locale
    * const content = await client.getContent({ key: 'abc123', locale: 'en' });
    *
    * // Fetch specific version (version has priority over locale)
