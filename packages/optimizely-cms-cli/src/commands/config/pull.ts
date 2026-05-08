@@ -207,7 +207,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
       // Show count in spinner text
       const contentTypeCount = manifest.contentTypes.length;
-      spinner.text = `Generating files for ${contentTypeCount} content type${contentTypeCount !== 1 ? 's' : ''}`;
+      const displayTemplateCount = manifest.displayTemplates?.length || 0;
+      const totalCount = contentTypeCount + displayTemplateCount;
+
+      spinner.start(`Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`);
 
       // Ensure output directory exists
       await mkdir(outputDir, { recursive: true });
@@ -231,6 +234,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       displayPaths.forEach(path => console.log(chalk.dim('  -'), chalk.green(path)));
       console.log();
 
+      spinner.info(`Content types: ${contentTypeCount}`);
+      spinner.info(`Display templates: ${displayTemplateCount}`);
+      console.log();
       spinner.succeed(` Generated ${files.length} file(s) in ${outputPath}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -240,3 +246,4 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }
   }
 }
+
