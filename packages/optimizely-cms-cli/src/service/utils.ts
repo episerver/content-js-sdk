@@ -48,15 +48,11 @@ export type FoundContentType = {
 export type ContentTypeMeta = Pick<FoundContentType, 'contentType' | 'path'>;
 export type DisplayTemplateMeta = Pick<FoundContentType, 'displayTemplates' | 'path'>;
 
+/**
+ * @param obj - The object from which to remove the __type and tag properties
+ * @returns void (the function modifies the object in place)
+ */
 function cleanType(obj: any) {
-  if (obj !== null && '__type' in obj) delete obj.__type;
-}
-
-function cleanContract(obj: any) {
-  if (obj !== null && '__type' in obj) delete obj.__type;
-}
-
-function cleanDisplayTemplate(obj: any) {
   if (obj !== null) {
     if ('__type' in obj) delete obj.__type;
     if ('tag' in obj) delete obj.tag;
@@ -83,10 +79,10 @@ export function extractMetaData(obj: unknown): {
         cleanType(value);
         contentTypeData.push(value);
       } else if (isDisplayTemplate(value)) {
-        cleanDisplayTemplate(value);
+        cleanType(value);
         displayTemplateData.push(value);
       } else if (isContract(value)) {
-        cleanContract(value);
+        cleanType(value);
         contractData.push(value);
       }
     }
@@ -295,3 +291,4 @@ export function extractKeyName(input: PermittedTypes, parentKey: string): string
     : input.key
   );
 }
+
