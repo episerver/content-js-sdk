@@ -8,6 +8,9 @@
  * @module
  */
 
+import { startComponentResolveSpan } from '../telemetry/spans.js';
+import { SemanticAttributes } from '../telemetry/index.js';
+
 /**
  * A component definition that includes a default component and optional
  * tagged variants
@@ -81,34 +84,36 @@ export class ComponentRegistry<T> {
 
   /** Returns the component given its content type name. Returns `undefined` if not found */
   getComponent(contentType: string, options: ResolverOptions = {}): T | undefined {
-    if (typeof this.resolver === 'function') {
-      return this.resolver(contentType, options);
-    }
+    const span = startComponentResolveSpan(contentType, options.tag);
 
-    const entry = this.resolver[contentType];
+    try {
+      let component: T | undefined;
 
-    if (!options.tag) {
-      if (!entry) {
-        return undefined;
+      if (typeof this.resolver === 'function') component = this.resolver(contentType, options);
+      else {
+        const entry = this.resolver[contentType];
+
+        if (!options.tag) {
+          if (!entry) component = undefined;
+          else component = getDefaultComponent(entry);
+        } else {
+          const taggedEntry = this.resolver[`${contentType}:${options.tag}`];
+
+          if (taggedEntry) component = getDefaultComponent(taggedEntry);
+          else if (!entry) component = undefined;
+          else
+            component =
+              // Search for the component with the tag in the component definition
+              getTagComponent(entry, options.tag) ??
+              // Return the default component (without tag)
+              getDefaultComponent(entry);
+        }
       }
-      return getDefaultComponent(entry);
+
+      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, !!component);
+      return component;
+    } finally {
+      span.end();
     }
-
-    const taggedEntry = this.resolver[`${contentType}:${options.tag}`];
-
-    if (taggedEntry) {
-      return getDefaultComponent(taggedEntry);
-    }
-
-    if (!entry) {
-      return undefined;
-    }
-
-    return (
-      // Search for the component with the tag in the component definition
-      getTagComponent(entry, options.tag) ??
-      // Return the default component (without tag)
-      getDefaultComponent(entry)
-    );
   }
 }

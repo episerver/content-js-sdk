@@ -15,6 +15,8 @@ import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
+import { withReactComponentSpan } from '../telemetry/spans.js';
+import { SemanticAttributes } from '../telemetry/index.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
   getContext,
@@ -109,24 +111,35 @@ export async function OptimizelyComponent({ content, displaySettings, ...props }
   if (!componentRegistry) {
     throw new OptimizelyReactError('You should call `initReactComponentRegistry` first');
   }
-  const dtKey = content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
-  const Component = await componentRegistry.getComponent(content.__typename, {
-    tag: content.__tag ?? getDisplayTemplateTag(dtKey),
-  });
 
-  if (!Component) {
-    return (
-      <FallbackComponent>
-        No component found for content type <b>{content.__typename}</b>
-      </FallbackComponent>
-    );
-  }
+  return withReactComponentSpan(
+    content.__typename,
+    !!(content.__tag || content.displayTemplateKey || content.__composition?.displayTemplateKey),
+    !!displaySettings,
+    async span => {
+      const dtKey = content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
+      const Component = await componentRegistry.getComponent(content.__typename, {
+        tag: content.__tag ?? getDisplayTemplateTag(dtKey),
+      });
 
-  const optiProps = {
-    ...content,
-  };
+      if (!Component) {
+        span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, false);
+        return (
+          <FallbackComponent>
+            No component found for content type <b>{content.__typename}</b>
+          </FallbackComponent>
+        );
+      }
 
-  return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, true);
+
+      const optiProps = {
+        ...content,
+      };
+
+      return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+    },
+  );
 }
 
 export type StructureContainerProps = {

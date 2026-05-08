@@ -11,6 +11,8 @@ import {
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError } from './error.js';
+import { logWarning, SemanticAttributes } from '../telemetry/index.js';
+import { startFragmentSpan, startSingleQuerySpan, startMultipleQuerySpan } from '../telemetry/spans.js';
 
 /**
  * Options for controlling GraphQL fragment generation behavior.
@@ -101,8 +103,13 @@ function convertProperty(
   // logs warnings if the fragment generation causes potential issues
   const warningMessage = checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
 
+  // Log warning
   if (warningMessage) {
-    console.warn(warningMessage);
+    logWarning(warningMessage, {
+      [SemanticAttributes.OPTI_CONTENT_TYPE]: rootName,
+      [SemanticAttributes.OPTI_FRAGMENT_COUNT]: result.extraFragments.length,
+      [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: maxFragmentThreshold,
+    });
   }
 
   return result;
@@ -256,6 +263,10 @@ export function createFragment(
   if (visited.size === 0) refreshCache();
   visited.add(fragmentName);
 
+  // Create telemetry span only at root level (not for recursive calls)
+  const isRootCall = visited.size === 1;
+  const span = isRootCall ? startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix) : undefined;
+
   const fields: string[] = ['__typename'];
   const extraFragments: string[] = [];
   let includesDamAssetsFragments = false;
@@ -320,10 +331,18 @@ export function createFragment(
 
   // Compose unique fragment
   const uniqueFields = [...new Set(fields)].join(' ');
-  return [
+  const fragments = [
     ...new Set(extraFragments), // unique dependency fragments
     `fragment ${fragmentName} on ${parsedFragmentName} { ${uniqueFields} }`,
   ];
+
+  // End telemetry span at root level and record fragment count
+  if (span) {
+    span.setAttribute(SemanticAttributes.OPTI_FRAGMENT_COUNT, fragments.length);
+    span.end();
+  }
+
+  return fragments;
 }
 
 /**
@@ -337,6 +356,8 @@ export function createSingleContentQuery(
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
 ) {
+  const span = startSingleQuerySpan(contentType, damEnabled);
+
   const fragment = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
@@ -344,7 +365,7 @@ export function createSingleContentQuery(
   });
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
-  return `
+  const query = `
 ${fragment.join('\n')}
 query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
@@ -358,6 +379,10 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   }
 }
   `;
+
+  // End telemetry span
+  span.end();
+  return query;
 }
 
 /**
@@ -374,6 +399,8 @@ export function createMultipleContentQuery(
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
 ) {
+  const span = startMultipleQuerySpan(contentType, damEnabled);
+
   const fragment = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
@@ -381,7 +408,7 @@ export function createMultipleContentQuery(
   });
   const fragmentName = fragment.length > 0 ? '...' + contentType : '';
 
-  return `
+  const query = `
 ${fragment.join('\n')}
 query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
@@ -395,6 +422,10 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   }
 }
   `;
+
+  // End telemetry span
+  span.end();
+  return query;
 }
 
 export type ItemsResponse<T> = {

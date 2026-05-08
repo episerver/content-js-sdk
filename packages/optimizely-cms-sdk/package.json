@@ -29,6 +29,11 @@
     "./buildConfig": {
       "types": "./dist/cjs/model/buildConfig.d.ts",
       "import": "./dist/esm/model/buildConfig.js"
+    },
+    "./telemetry": {
+      "types": "./dist/cjs/telemetry/index.d.ts",
+      "import": "./dist/esm/telemetry/index.js",
+      "require": "./dist/cjs/telemetry/index.js"
     }
   },
   "repository": {
@@ -53,6 +58,9 @@
     "react": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

@@ -24,3 +24,5 @@ dist
 *-temp.json
 .vscode
 .tanstack
+
+CLAUDE.md
