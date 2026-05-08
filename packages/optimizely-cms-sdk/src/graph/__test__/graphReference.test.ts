@@ -13,22 +13,22 @@ vi.mock('../../context/config.js', () => ({
 describe('GraphReference type and filters', () => {
   describe('referenceFilter()', () => {
     test('creates filter with key only', () => {
-      const result = referenceFilter({ key: 'abc123' });
+      const result = referenceFilter({ key: '880777d5a2824399b07e93e3ca70668e' });
       expect(result).toEqual({
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
           },
         },
       });
     });
 
     test('creates filter with key and locale', () => {
-      const result = referenceFilter({ key: 'abc123', locale: 'en' });
+      const result = referenceFilter({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
       expect(result).toEqual({
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             locale: { eq: 'en' },
           },
         },
@@ -36,12 +36,12 @@ describe('GraphReference type and filters', () => {
     });
 
     test('creates filter with key and version', () => {
-      const result = referenceFilter({ key: 'abc123', version: '1.0' });
+      const result = referenceFilter({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' });
       expect(result).toEqual({
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
-            version: { eq: '1.0' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
+            version: { eq: '123' },
           },
         },
       });
@@ -49,15 +49,15 @@ describe('GraphReference type and filters', () => {
 
     test('version takes priority over locale', () => {
       const result = referenceFilter({
-        key: 'abc123',
+        key: '880777d5a2824399b07e93e3ca70668e',
         locale: 'en',
-        version: '1.0',
+        version: '123',
       });
       expect(result).toEqual({
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
-            version: { eq: '1.0' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
+            version: { eq: '123' },
           },
         },
       });
@@ -74,68 +74,68 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses key only format', () => {
-    const result = (client as any).parseGraphReference('graph://abc123');
+    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e');
     expect(result).toEqual({
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
     });
   });
 
   test('parses type/key format', () => {
-    const result = (client as any).parseGraphReference('graph://Page/abc123');
+    const result = (client as any).parseGraphReference('graph://Page/880777d5a2824399b07e93e3ca70668e');
     expect(result).toEqual({
       type: 'Page',
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
     });
   });
 
   test('parses source/type/key format', () => {
-    const result = (client as any).parseGraphReference('graph://cms/Page/abc123');
+    const result = (client as any).parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e');
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
     });
   });
 
   test('parses with locale query parameter', () => {
-    const result = (client as any).parseGraphReference('graph://abc123?loc=en');
+    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e?loc=en');
     expect(result).toEqual({
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
       locale: 'en',
     });
   });
 
   test('parses with version query parameter', () => {
-    const result = (client as any).parseGraphReference('graph://abc123?ver=1.0');
+    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e?ver=123');
     expect(result).toEqual({
-      key: 'abc123',
-      version: '1.0',
+      key: '880777d5a2824399b07e93e3ca70668e',
+      version: '123',
     });
   });
 
   test('parses with both locale and version', () => {
-    const result = (client as any).parseGraphReference('graph://abc123?loc=en&ver=1.0');
+    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
     expect(result).toEqual({
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
       locale: 'en',
-      version: '1.0',
+      version: '123',
     });
   });
 
   test('parses full format with all parameters', () => {
-    const result = (client as any).parseGraphReference('graph://cms/Page/abc123?loc=en&ver=1.0');
+    const result = (client as any).parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
       locale: 'en',
-      version: '1.0',
+      version: '123',
     });
   });
 
   test('throws error for invalid protocol', () => {
     expect(() => {
-      (client as any).parseGraphReference('http://abc123');
+      (client as any).parseGraphReference('http://880777d5a2824399b07e93e3ca70668e');
     }).toThrow('Invalid graph reference format');
   });
 
@@ -146,11 +146,11 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('handles trailing slashes', () => {
-    const result = (client as any).parseGraphReference('graph://cms/Page/abc123/');
+    const result = (client as any).parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e/');
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
     });
   });
 });
@@ -199,7 +199,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123' });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
     expect(mockRequest).toHaveBeenCalledTimes(2);
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -208,7 +208,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
           },
         },
       },
@@ -239,7 +239,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123', locale: 'en' });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
 
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
@@ -247,7 +247,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             locale: { eq: 'en' },
           },
         },
@@ -279,7 +279,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123', version: '1.0' });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' });
 
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
@@ -287,8 +287,8 @@ describe('GraphClient.getContent() with GraphReference', () => {
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
-            version: { eq: '1.0' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
+            version: { eq: '123' },
           },
         },
       },
@@ -320,9 +320,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
       });
 
     await client.getContent({
-      key: 'abc123',
+      key: '880777d5a2824399b07e93e3ca70668e',
       locale: 'en',
-      version: '1.0',
+      version: '123',
     });
 
     // Should only have version in the filter, not locale
@@ -332,8 +332,8 @@ describe('GraphClient.getContent() with GraphReference', () => {
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
-            version: { eq: '1.0' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
+            version: { eq: '123' },
           },
         },
       },
@@ -367,7 +367,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent('graph://cms/Page/abc123?loc=en&ver=1.0');
+    await client.getContent('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
 
     // Should parse the string and use version (not locale due to priority)
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -376,8 +376,8 @@ describe('GraphClient.getContent() with GraphReference', () => {
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
-            version: { eq: '1.0' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
+            version: { eq: '123' },
           },
         },
       },
@@ -410,7 +410,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123', version: '1.0' }, { previewToken });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' }, { previewToken });
 
     // Both requests should include preview token
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -467,20 +467,20 @@ describe('GraphClient.getContent() with GraphReference', () => {
             Page__title: 'Test Page',
             Page__content: 'Test content',
             _metadata: {
-              key: 'abc123',
+              key: '880777d5a2824399b07e93e3ca70668e',
             },
           },
         },
       });
 
-    const result = await client.getContent({ key: 'abc123' });
+    const result = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
     expect(result).toEqual({
       __typename: 'Page',
       title: 'Test Page',
       content: 'Test content',
       _metadata: {
-        key: 'abc123',
+        key: '880777d5a2824399b07e93e3ca70668e',
       },
     });
   });
@@ -506,7 +506,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123' });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
     // Second call should have cache = true (4th parameter)
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -540,7 +540,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123' }, { previewToken: 'preview-token' });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' }, { previewToken: 'preview-token' });
 
     // Second call should have cache = false (4th parameter)
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -574,7 +574,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123' });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
     // slot (6th parameter) should default to undefined
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -608,7 +608,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: 'abc123' }, { slot: 'New' });
+    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' }, { slot: 'New' });
 
     // slot (6th parameter) should be 'New' → sends cg-query-new header
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -645,7 +645,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await customClient.getContent({ key: 'abc123' });
+    await customClient.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
     expect(customMockRequest).toHaveBeenNthCalledWith(
       2,
@@ -685,7 +685,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
       });
 
     await customClient.getContent(
-      { key: 'abc123' },
+      { key: '880777d5a2824399b07e93e3ca70668e' },
       {
         cache: false,
         slot: 'New',
@@ -733,14 +733,14 @@ describe('GraphClient.getPath() with GraphReference', () => {
       },
     });
 
-    const result = await client.getPath({ key: 'abc123', locale: 'en' });
+    const result = await client.getPath({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             locale: { eq: 'en' },
           },
         },
@@ -770,14 +770,14 @@ describe('GraphClient.getPath() with GraphReference', () => {
       },
     });
 
-    await client.getPath('graph://Page/abc123?loc=en');
+    await client.getPath('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             locale: { eq: 'en' },
           },
         },
@@ -852,14 +852,14 @@ describe('GraphClient.getPath() with GraphReference', () => {
       },
     });
 
-    await client.getPath({ key: 'abc123' }, { locales: ['en', 'sv'] });
+    await client.getPath({ key: '880777d5a2824399b07e93e3ca70668e' }, { locales: ['en', 'sv'] });
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
           },
         },
         locale: ['en', 'sv'],
@@ -897,14 +897,14 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
     });
 
-    const result = await client.getItems({ key: 'abc123', locale: 'en' });
+    const result = await client.getItems({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             locale: { eq: 'en' },
           },
         },
@@ -931,14 +931,14 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
     });
 
-    await client.getItems('graph://Page/abc123?loc=en');
+    await client.getItems('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             locale: { eq: 'en' },
           },
         },
@@ -1007,14 +1007,14 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
     });
 
-    await client.getItems({ key: 'abc123' }, { locales: ['en', 'sv'] });
+    await client.getItems({ key: '880777d5a2824399b07e93e3ca70668e' }, { locales: ['en', 'sv'] });
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
       {
         where: {
           _metadata: {
-            key: { eq: 'abc123' },
+            key: { eq: '880777d5a2824399b07e93e3ca70668e' },
           },
         },
         locale: ['en', 'sv'],
@@ -1058,7 +1058,7 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
     });
 
-    const result = await client.getItems({ key: 'abc123' });
+    const result = await client.getItems({ key: '880777d5a2824399b07e93e3ca70668e' });
 
     expect(result).toEqual(mockItems);
   });
@@ -1070,9 +1070,9 @@ describe('GraphClient.getPreviewContent() query options', () => {
 
   const previewParams = {
     preview_token: 'test-token',
-    key: 'abc123',
+    key: '880777d5a2824399b07e93e3ca70668e',
     ctx: 'edit',
-    ver: '1.0',
+    ver: '123',
     loc: 'en',
   };
 
