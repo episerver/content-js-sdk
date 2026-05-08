@@ -189,26 +189,26 @@ Unified content fetching method using GraphReference. Provides flexible content 
 
 ```typescript
 // Fetch by key only (latest published)
-const content = await client.getContent({ key: 'abc123' });
+const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
-// Fetch latest draft in specific locale
+// Fetch latest published content in specific locale
 const content = await client.getContent({
-  key: 'abc123',
+  key: '880777d5a2824399b07e93e3ca70668e',
   locale: 'en'
 });
 
 // Fetch specific version (version has priority)
 const content = await client.getContent({
-  key: 'abc123',
-  version: '1.0'
+  key: '880777d5a2824399b07e93e3ca70668e',
+  version: '123'
 });
 
 // Using string format
-const content = await client.getContent('graph://cms/Page/abc123?loc=en&ver=1.0');
+const content = await client.getContent('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
 
 // With preview token
 const content = await client.getContent(
-  { key: 'abc123', version: '1.0' },
+  { key: '880777d5a2824399b07e93e3ca70668e', version: '123' },
   'preview-token'
 );
 ```
@@ -231,8 +231,10 @@ const content = await client.getContent(
 **Priority rules:**
 
 - If `version` is specified, it takes priority (ignores locale-based filtering)
-- If only `locale` is specified, fetches latest draft in that locale
+- If only `locale` is specified, fetches latest published version in that locale
 - If neither specified, fetches latest published version
+
+> **Note:** `getContent()` always returns published content. To fetch draft content, use `getPreviewContent()` with a preview token instead.
 
 **Returns:** Content item or null if not found
 
@@ -248,16 +250,16 @@ const path = await client.getPath('/blog/my-article');
 
 // Using GraphReference object
 const path = await client.getPath({
-  key: 'abc123',
+  key: '880777d5a2824399b07e93e3ca70668e',
   locale: 'en'
 });
 
 // Using graph:// string format
-const path = await client.getPath('graph://Page/abc123?loc=en');
+const path = await client.getPath('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
 
 // With locales filter
 const path = await client.getPath(
-  { key: 'abc123' },
+  { key: '880777d5a2824399b07e93e3ca70668e' },
   { locales: ['en', 'sv'] }
 );
 ```
@@ -283,16 +285,16 @@ const items = await client.getItems('/blog');
 
 // Using GraphReference object
 const items = await client.getItems({
-  key: 'abc123',
+  key: '880777d5a2824399b07e93e3ca70668e',
   locale: 'en'
 });
 
 // Using graph:// string format
-const items = await client.getItems('graph://Page/abc123?loc=en');
+const items = await client.getItems('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
 
 // With locales filter
 const items = await client.getItems(
-  { key: 'abc123' },
+  { key: '880777d5a2824399b07e93e3ca70668e' },
   { locales: ['en', 'sv'] }
 );
 ```

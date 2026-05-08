@@ -10,9 +10,9 @@ import {
   DAM_ASSET_FRAGMENTS,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
-import { GraphMissingContentTypeError } from './error.js';
 import { logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { startFragmentSpan, startSingleQuerySpan, startMultipleQuerySpan } from '../telemetry/spans.js';
+import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 
 /**
  * Options for controlling GraphQL fragment generation behavior.
@@ -256,6 +256,14 @@ export function createFragment(
   suffix: string = '',
   options: FragmentOptions = {},
 ): string[] {
+  // Validate content type name before fragment generation
+  if (!contentTypeName || contentTypeName === 'undefined') {
+    throw new GraphQueryGenerationError({
+      contentType: contentTypeName,
+      parentContentType: visited.values().next().value,
+    });
+  }
+
   const { damEnabled = false, maxFragmentThreshold = 100, includeBaseFragments = true } = options;
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return []; // cyclic ref guard
