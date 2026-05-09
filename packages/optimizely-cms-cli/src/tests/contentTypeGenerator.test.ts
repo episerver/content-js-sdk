@@ -478,5 +478,72 @@ describe('generateContentTypeCode', () => {
       expect(code).toContain('restrictedTypes: [HeaderCT]');
     });
   });
+
+  describe('allowedTypes and restrictedTypes', () => {
+    it('should import and reference custom content types in allowedTypes', () => {
+      const contentType: ContentType = {
+        key: 'ArticlePage',
+        baseType: '_page',
+        properties: {
+          relatedContent: {
+            type: 'content',
+            allowedTypes: ['HeroComponent', 'BannerComponent'],
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("import { HeroComponentCT } from './HeroComponent.js';");
+      expect(code).toContain("import { BannerComponentCT } from './BannerComponent.js';");
+      expect(code).toContain('allowedTypes: [HeroComponentCT, BannerComponentCT]');
+    });
+
+    it('should import and reference custom content types in restrictedTypes', () => {
+      const contentType: ContentType = {
+        key: 'ArticlePage',
+        baseType: '_page',
+        properties: {
+          section: {
+            type: 'content',
+            restrictedTypes: ['HeroComponent'],
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("import { HeroComponentCT } from './HeroComponent.js';");
+      expect(code).toContain('restrictedTypes: [HeroComponentCT]');
+    });
+
+    it('should resolve _self to imported content type reference', () => {
+      const contentType: ContentType = {
+        key: 'NewsArticle',
+        baseType: '_page',
+        properties: {
+          relatedNews: {
+            type: 'content',
+            allowedTypes: ['_self'],
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("import { NewsArticleCT } from './NewsArticle.js';");
+      expect(code).toContain('allowedTypes: [NewsArticleCT]');
+      expect(code).not.toContain('_self');
+    });
+
+    it('should keep base types as string literals in allowedTypes', () => {
+      const contentType: ContentType = {
+        key: 'ArticlePage',
+        baseType: '_page',
+        properties: {
+          background: {
+            type: 'contentReference',
+            allowedTypes: ['_image'],
+          },
+        },
+      };
+      const code = generateContentTypeCode(contentType);
+      expect(code).toContain("allowedTypes: ['_image']");
+    });
+  });
 });
 

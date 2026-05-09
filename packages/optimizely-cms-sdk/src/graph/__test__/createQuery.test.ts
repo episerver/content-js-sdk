@@ -611,3 +611,84 @@ describe('createFragment() with component properties', () => {
     `);
   });
 });
+
+describe('createFragment() with string key references', () => {
+  test('string key in allowedTypes resolves to correct fragment', async () => {
+    const ctA = contentType({
+      key: 'ctA',
+      displayName: 'CT A',
+      baseType: '_component',
+      properties: { title: { type: 'string' } },
+    });
+    const ctB = contentType({
+      key: 'ctB',
+      displayName: 'CT B',
+      baseType: '_page',
+      properties: {
+        ref: { type: 'content', allowedTypes: ['ctA'] },
+      },
+    });
+
+    initContentTypeRegistry([ctA, ctB]);
+    const result = await createFragment('ctB');
+    const ctBFragment = result.find((f) => f.startsWith('fragment ctB '));
+    expect(ctBFragment).toContain('...ctA');
+    const ctAFragment = result.find((f) => f.startsWith('fragment ctA '));
+    expect(ctAFragment).toBeDefined();
+  });
+
+  test('circular references using string keys', async () => {
+    const ctA = contentType({
+      key: 'ctA',
+      displayName: 'CT A',
+      baseType: '_component',
+      properties: {
+        refB: { type: 'content', allowedTypes: ['ctB'] },
+      },
+    });
+    const ctB = contentType({
+      key: 'ctB',
+      displayName: 'CT B',
+      baseType: '_component',
+      properties: {
+        refA: { type: 'content', allowedTypes: ['ctA'] },
+      },
+    });
+
+    initContentTypeRegistry([ctA, ctB]);
+    const result = await createFragment('ctA');
+    const ctAFragment = result.find((f) => f.startsWith('fragment ctA '));
+    const ctBFragment = result.find((f) => f.startsWith('fragment ctB '));
+    expect(ctAFragment).toContain('...ctB');
+    expect(ctBFragment).toContain('...ctA');
+  });
+
+  test('mix of ContentType objects and string keys', async () => {
+    const ctA = contentType({
+      key: 'ctA',
+      displayName: 'CT A',
+      baseType: '_component',
+      properties: { title: { type: 'string' } },
+    });
+    const ctB = contentType({
+      key: 'ctB',
+      displayName: 'CT B',
+      baseType: '_component',
+      properties: { title: { type: 'string' } },
+    });
+    const ctC = contentType({
+      key: 'ctC',
+      displayName: 'CT C',
+      baseType: '_page',
+      properties: {
+        ref: { type: 'content', allowedTypes: [ctA, 'ctB'] },
+      },
+    });
+
+    initContentTypeRegistry([ctA, ctB, ctC]);
+    const result = await createFragment('ctC');
+    const ctCFragment = result.find((f) => f.startsWith('fragment ctC '));
+    expect(ctCFragment).toContain('...ctA');
+    expect(ctCFragment).toContain('...ctB');
+  });
+});

@@ -69,4 +69,8 @@ export type AnyContentType =
 export type ContentType<T = AnyContentType> = T & { __type: 'contentType' };
 
 /** All possible content type for allowed and restricted fields */
-export type PermittedTypes = ContentType | AnyContentType['baseType'] | '_self';
+export type PermittedTypes =
+  | ContentType
+  | AnyContentType['baseType']
+  | '_self'
+  | (string & {});
