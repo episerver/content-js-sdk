@@ -342,28 +342,7 @@ const ArticleContentType = contentType({
     body: {
       type: 'richText',
       displayName: 'Article Body',
-    },
-     metaTitle: {
-      type: 'string',
-      displayName: 'Meta Title',
-      description: 'SEO title for search engines',
-      maxLength: 60,
-      group: 'seo',
-    },
-    metaDescription: {
-      type: 'string',
-      displayName: 'Meta Description',
-      description: 'SEO description for search engines',
-      maxLength: 160,
-      group: 'seo',
-    },
-    ogImage: {
-      type: 'contentReference',
-      allowedTypes: ['_image'],
-      displayName: 'Open Graph Image',
-      description: 'Image for social media sharing',
-      group: 'seo',
-    },
+    }
   },
 });
 ```
@@ -402,37 +381,6 @@ const ProductPageContentType = contentType({
     price: {
       type: 'float',
       displayName: 'Price',
-    },
-     metaTitle: {
-      type: 'string',
-      displayName: 'Meta Title',
-      description: 'SEO title for search engines',
-      maxLength: 60,
-      group: 'seo',
-    },
-    metaDescription: {
-      type: 'string',
-      displayName: 'Meta Description',
-      description: 'SEO description for search engines',
-      maxLength: 160,
-      group: 'seo',
-    },
-    ogImage: {
-      type: 'contentReference',
-      allowedTypes: ['_image'],
-      displayName: 'Open Graph Image',
-      description: 'Image for social media sharing',
-      group: 'seo',
-    },
-    analyticsId: {
-      type: 'string',
-      displayName: 'Analytics ID',
-      group: 'tracking',
-    },
-    trackingEnabled: {
-      type: 'boolean',
-      displayName: 'Enable Tracking',
-      group: 'tracking',
     },
   },
 });
