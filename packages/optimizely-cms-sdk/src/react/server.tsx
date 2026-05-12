@@ -80,51 +80,64 @@ export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
 }
 
+/** Content data from CMS */
+type OptimizelyContent = {
+  /** Content type name */
+  __typename: string;
+
+  /** Display template tag (if any) */
+  __tag?: string;
+
+  displayTemplateKey?: string | null;
+
+  /** Preview context */
+  __context?: { edit: boolean; preview_token: string };
+
+  __composition?: ExperienceCompositionNode;
+
+  /** metadata */
+  _metadata?: {
+    types?: string[];
+    displayOption?: string | null;
+  };
+};
+
 /** Props for the {@linkcode OptimizelyComponent} component */
 type OptimizelyComponentProps = {
   /** Data read from the CMS */
-  content: {
-    /** Content type name */
-    __typename: string;
-
-    /** Display template tag (if any) */
-    __tag?: string;
-
-    displayTemplateKey?: string | null;
-
-    /** Preview context */
-    __context?: { edit: boolean; preview_token: string };
-
-    __composition?: ExperienceCompositionNode;
-  };
+  content: OptimizelyContent;
 
   displaySettings?: Record<string, string | boolean>;
 };
 
 /**
- * Attempts to get component from contract types fallback.
- * If content implements a contract but no component is registered for the contract itself,
- * tries to find a component using the first type in content._metadata.types array.
+ * Gets display template key from content, checking multiple sources.
  */
-function getComponentFromContractFallback(
-  content: Record<string, any>,
+function getDisplayTemplateKey(content: OptimizelyContent): string | null | undefined {
+  return content._metadata?.displayOption ?? content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
+}
+
+/**
+ * Finds component by trying each type in _metadata.types array, falling back to __typename.
+ * Returns both the matched component and the typename that resolved.
+ */
+function findComponent(
+  content: OptimizelyContent,
   options: { tag?: string },
-): React.ComponentType<any> | undefined {
-  if (
-    typeof content === 'object' &&
-    content !== null &&
-    '_metadata' in content &&
-    content._metadata &&
-    typeof content._metadata === 'object' &&
-    content._metadata !== null &&
-    'types' in content._metadata
-  ) {
-    const types = content._metadata.types;
-    if (Array.isArray(types) && types.length > 0) {
-      return componentRegistry?.getComponent(types[0], options);
+): { component: React.ComponentType<any> | undefined; typename: string | undefined } {
+  // Try _metadata.types array first
+  const types = content._metadata?.types;
+  if (Array.isArray(types)) {
+    for (const typename of types) {
+      const component = componentRegistry.getComponent(typename, options);
+      if (component) return { component, typename };
     }
   }
-  return undefined;
+
+  // Fallback to __typename
+  const typename = content.__typename;
+  const component = typename ? componentRegistry.getComponent(typename, options) : undefined;
+  return { component, typename };
 }
 
 export async function OptimizelyComponent({ content, displaySettings, ...props }: OptimizelyComponentProps) {
@@ -135,20 +148,15 @@ export async function OptimizelyComponent({ content, displaySettings, ...props }
   if (!componentRegistry) {
     throw new OptimizelyReactError('You should call `initReactComponentRegistry` first');
   }
-  const dtKey = content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
+
+  const dtKey = getDisplayTemplateKey(content);
   const tag = content.__tag ?? getDisplayTemplateTag(dtKey);
-
-  let Component = componentRegistry.getComponent(content.__typename, { tag });
-
-  // If component not found, try contract types fallback
-  if (!Component) {
-    Component = getComponentFromContractFallback(content, { tag });
-  }
+  const { component: Component, typename } = findComponent(content, { tag });
 
   if (!Component) {
     return (
       <FallbackComponent>
-        No component found for content type <b>{content.__typename}</b>
+        No component found for content type <b>{typename}</b>
       </FallbackComponent>
     );
   }
@@ -377,3 +385,5 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
     },
   };
 }
+
+
