@@ -49,7 +49,3 @@ export { damAssets } from './render/assets.js';
 // Telemetry
 export { getTracer, createSpan } from './telemetry/index.js';
 export type { SpanOptions } from './telemetry/index.js';
-export { SemanticAttributes } from './telemetry/index.js';
-
-// Re-export OTEL API
-export { trace, metrics } from '@opentelemetry/api';

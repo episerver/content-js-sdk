@@ -34,7 +34,9 @@ Create an `instrumentation.js` file and import it **before** any SDK imports:
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
 
-const sdk = new NodeSDK({ /* your config */ });
+const sdk = new NodeSDK({
+  traceExporter: new ConsoleSpanExporter()
+});
 
 sdk.start();
 ```
@@ -175,28 +177,6 @@ await createSpan('myapp.process_content', async (span) => {
   // Your code - span automatically ends and records errors
 });
 ```
-
-## Semantic Attributes
-
-The SDK exports `SemanticAttributes` for consistent attribute naming:
-
-```javascript
-import { SemanticAttributes } from '@optimizely/cms-sdk';
-
-span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, 'ArticlePage');
-span.setAttribute(SemanticAttributes.OPTI_CACHE_ENABLED, true);
-```
-
-Available attributes:
-
-- `HTTP_METHOD`, `HTTP_URL`, `HTTP_STATUS_CODE`, `HTTP_USER_AGENT`
-- `OPTI_CONTENT_TYPE`, `OPTI_CONTENT_KEY`, `OPTI_CONTENT_PATH`
-- `OPTI_CACHE_ENABLED`, `OPTI_SLOT`, `OPTI_PREVIEW_TOKEN`
-- `OPTI_FRAGMENT_COUNT`, `OPTI_FRAGMENT_THRESHOLD`
-- `OPTI_QUERY_TYPE`, `OPTI_DAM_ENABLED`
-- `OPTI_COMPONENT_TYPE`, `OPTI_COMPONENT_TAG`, `OPTI_COMPONENT_FOUND`
-
-See [`telemetry/attributes.ts`](../packages/optimizely-cms-sdk/src/telemetry/attributes.ts) for the complete list.
 
 ## Troubleshooting
 

@@ -22,6 +22,7 @@ import {
   withGetPreviewContentSpan,
   withGetContentSpan,
 } from '../telemetry/spans.js';
+import packageJson from '../../package.json' with { type: 'json' };
 
 /** Configuration for initializing the Optimizely Graph Client */
 export type GraphOptions = {
@@ -49,7 +50,7 @@ export type GraphOptions = {
   slot?: GraphSlot;
   /**
    * Custom User-Agent string for HTTP requests to Graph API.
-   * @default 'OptimizelySDK/1.0.0 (JS)'
+   * @default 'OptimizelySDK/{version} (JS)'
    */
   userAgent?: string;
 };
@@ -308,7 +309,7 @@ export class GraphClient {
     this.host = options.host;
     this.cache = options.cache ?? true;
     this.slot = options.slot;
-    this.userAgent = options.userAgent ?? 'OptimizelySDK/1.0.0 (JS)';
+    this.userAgent = options.userAgent ?? `OptimizelySDK/${packageJson.version} (JS)`;
   }
 
   /** Perform a GraphQL query with variables */
