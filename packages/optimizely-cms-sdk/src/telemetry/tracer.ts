@@ -1,8 +1,9 @@
 import { trace, Tracer, Span, SpanStatusCode, type Context } from '@opentelemetry/api';
+import { SDK_VERSION } from '../version.js';
 
 // SDK instrumentation identity
 const INSTRUMENTATION_NAME = '@optimizely/cms-sdk';
-const INSTRUMENTATION_VERSION = '1.0.0';
+const INSTRUMENTATION_VERSION = SDK_VERSION;
 
 // Singleton tracer instance
 let tracer: Tracer | null = null;

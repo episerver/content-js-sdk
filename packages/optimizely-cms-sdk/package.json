@@ -40,6 +40,7 @@
     "url": "https://github.com/episerver/content-js-sdk.git"
   },
   "scripts": {
+    "prebuild": "node scripts/prebuild.js",
     "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
     "clean": "rimraf dist",
     "test": "vitest --typecheck"
