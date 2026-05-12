@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { contract, contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createFragment } from '../createQuery.js';
 
 describe('contracts', () => {
-  it('should create Categorizable contract with Category and Tags properties', async () => {
-    const Categorizable = contract({
-      key: 'categorizable',
-      displayName: 'Categorizable',
+  it('should create TestContract with Category and Tags properties', async () => {
+    const TestContract = contract({
+      key: 'TestContract',
+      displayName: 'Test Contract',
       properties: {
         Category: {
           type: 'string',
@@ -17,9 +17,9 @@ describe('contracts', () => {
       },
     });
 
-    initContentTypeRegistry([Categorizable]);
+    initContentTypeRegistry([TestContract]);
 
-    const result = await createFragment('categorizable');
+    const result = await createFragment('TestContract');
     expect(result).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -28,15 +28,65 @@ describe('contracts', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment categorizable on categorizable { __typename categorizable__Category:Category categorizable__Tags:Tags ..._IContent }",
+        "fragment TestContract on ITestContract { __typename TestContract__Category:Category TestContract__Tags:Tags ..._IContent }",
       ]
     `);
   });
 
-  it('should create experience with array of content and content property with allowedTypes', async () => {
-    const Categorizable = contract({
-      key: 'categorizable',
-      displayName: 'Categorizable',
+  it('should create fragments for page with allowedTypes that accepts contracts', async () => {
+    const TestContract = contract({
+      key: 'TestContract',
+      displayName: 'Test Contract',
+      properties: {
+        Category: {
+          type: 'string',
+        },
+        Tags: {
+          type: 'string',
+        },
+      },
+    });
+
+    const TestPage = contentType({
+      baseType: '_page',
+      key: 'TestPage',
+      displayName: 'Test Page',
+      properties: {
+        sections: {
+          type: 'array',
+          items: {
+            type: 'content',
+            allowedTypes: [TestContract],
+          },
+        },
+        mainContent: {
+          type: 'content',
+          allowedTypes: [TestContract],
+        },
+      },
+    });
+
+    initContentTypeRegistry([TestContract, TestPage]);
+
+    const result = await createFragment('TestPage');
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
+        "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
+        "fragment TestContract on ITestContract { __typename TestContract__Category:Category TestContract__Tags:Tags ..._IContent }",
+        "fragment TestPage on TestPage { __typename TestPage__sections:sections { __typename ...TestContract } TestPage__mainContent:mainContent { __typename ...TestContract } ..._IContent }",
+      ]
+    `);
+  });
+
+  it('should create experience with allowedTypes contract when extending components have no composition behaviors', async () => {
+    const TestContract = contract({
+      key: 'TestContract',
+      displayName: 'Test Contract',
       properties: {
         Category: {
           type: 'string',
@@ -50,7 +100,7 @@ describe('contracts', () => {
     const ContentTypeA = contentType({
       baseType: '_component',
       key: 'ContentTypeA',
-      extends: [Categorizable],
+      extends: [TestContract],
       displayName: 'ContentTypeA',
       properties: {
         headingA: {
@@ -68,7 +118,7 @@ describe('contracts', () => {
     const ContentTypeB = contentType({
       baseType: '_component',
       key: 'ContentTypeB',
-      extends: [Categorizable],
+      extends: [TestContract],
       displayName: 'ContentTypeB',
       properties: {
         headingB: {
@@ -92,17 +142,17 @@ describe('contracts', () => {
           type: 'array',
           items: {
             type: 'content',
-            allowedTypes: [Categorizable],
+            allowedTypes: [TestContract],
           },
         },
         mainContent: {
           type: 'content',
-          allowedTypes: [Categorizable],
+          allowedTypes: [TestContract],
         },
       },
     });
 
-    initContentTypeRegistry([Categorizable, ContentTypeA, ContentTypeB, TestExperience]);
+    initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, TestExperience]);
 
     const result = await createFragment('TestExperience');
     expect(result).toMatchInlineSnapshot(`
@@ -113,19 +163,19 @@ describe('contracts', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment categorizable on categorizable { __typename categorizable__Category:Category categorizable__Tags:Tags ..._IContent }",
+        "fragment TestContract on ITestContract { __typename TestContract__Category:Category TestContract__Tags:Tags ..._IContent }",
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
         "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
         "fragment _IComponent on _IComponent { __typename  }",
-        "fragment TestExperience on TestExperience { __typename TestExperience__sections:sections { __typename ...categorizable } TestExperience__mainContent:mainContent { __typename ...categorizable } ..._IContent ..._IExperience }",
+        "fragment TestExperience on TestExperience { __typename TestExperience__sections:sections { __typename ...TestContract } TestExperience__mainContent:mainContent { __typename ...TestContract } ..._IContent ..._IExperience }",
       ]
     `);
   });
 
-  it('Test when section enabled or element enabled is used in the contentTypes ContentTypeA & ContentTypeB that extends contract ', async () => {
-    const Categorizable = contract({
-      key: 'categorizable',
-      displayName: 'Categorizable',
+  it('should create experience with allowedTypes contract when extending components have composition behaviors', async () => {
+    const TestContract = contract({
+      key: 'TestContract',
+      displayName: 'Test Contract',
       properties: {
         Category: {
           type: 'string',
@@ -139,7 +189,7 @@ describe('contracts', () => {
     const ContentTypeA = contentType({
       baseType: '_component',
       key: 'ContentTypeA',
-      extends: [Categorizable],
+      extends: [TestContract],
       displayName: 'ContentTypeA',
       compositionBehaviors: ['elementEnabled'],
       properties: {
@@ -158,7 +208,7 @@ describe('contracts', () => {
     const ContentTypeB = contentType({
       baseType: '_component',
       key: 'ContentTypeB',
-      extends: [Categorizable],
+      extends: [TestContract],
       displayName: 'ContentTypeB',
       compositionBehaviors: ['sectionEnabled'],
       properties: {
@@ -183,17 +233,17 @@ describe('contracts', () => {
           type: 'array',
           items: {
             type: 'content',
-            allowedTypes: [Categorizable],
+            allowedTypes: [TestContract],
           },
         },
         mainContent: {
           type: 'content',
-          allowedTypes: [Categorizable],
+          allowedTypes: [TestContract],
         },
       },
     });
 
-    initContentTypeRegistry([Categorizable, ContentTypeA, ContentTypeB, TestExperience]);
+    initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, TestExperience]);
 
     const result = await createFragment('TestExperience');
     expect(result).toMatchInlineSnapshot(`
@@ -204,21 +254,21 @@ describe('contracts', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment categorizable on categorizable { __typename categorizable__Category:Category categorizable__Tags:Tags ..._IContent }",
+        "fragment TestContract on ITestContract { __typename TestContract__Category:Category TestContract__Tags:Tags ..._IContent }",
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
         "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
         "fragment ContentTypeA on ContentTypeA { __typename ContentTypeA__Category:Category ContentTypeA__Tags:Tags ContentTypeA__headingA:headingA ..._IContent }",
         "fragment ContentTypeB on ContentTypeB { __typename ContentTypeB__Category:Category ContentTypeB__Tags:Tags ContentTypeB__headingB:headingB ..._IContent }",
         "fragment _IComponent on _IComponent { __typename ...ContentTypeA ...ContentTypeB }",
-        "fragment TestExperience on TestExperience { __typename TestExperience__sections:sections { __typename ...categorizable } TestExperience__mainContent:mainContent { __typename ...categorizable } ..._IContent ..._IExperience }",
+        "fragment TestExperience on TestExperience { __typename TestExperience__sections:sections { __typename ...TestContract } TestExperience__mainContent:mainContent { __typename ...TestContract } ..._IContent ..._IExperience }",
       ]
     `);
   });
 
   it('should create experience with array of content and content property with restrictedTypes', async () => {
-    const Categorizable = contract({
-      key: 'categorizable',
-      displayName: 'Categorizable',
+    const TestContract = contract({
+      key: 'testContract',
+      displayName: 'Test Contract',
       properties: {
         Category: {
           type: 'string',
@@ -232,7 +282,7 @@ describe('contracts', () => {
     const ContentTypeA = contentType({
       baseType: '_component',
       key: 'ContentTypeA',
-      extends: [Categorizable],
+      extends: [TestContract],
       displayName: 'ContentTypeA',
       properties: {
         headingA: {
@@ -250,7 +300,7 @@ describe('contracts', () => {
     const ContentTypeB = contentType({
       baseType: '_component',
       key: 'ContentTypeB',
-      extends: [Categorizable],
+      extends: [TestContract],
       displayName: 'ContentTypeB',
       properties: {
         headingB: {
@@ -274,18 +324,17 @@ describe('contracts', () => {
           type: 'array',
           items: {
             type: 'content',
-
-            restrictedTypes: [Categorizable],
+            restrictedTypes: [TestContract],
           },
         },
         mainContent: {
           type: 'content',
-          restrictedTypes: [Categorizable],
+          restrictedTypes: [TestContract],
         },
       },
     });
 
-    initContentTypeRegistry([Categorizable, ContentTypeA, ContentTypeB, TestExperience]);
+    initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, TestExperience]);
 
     const result = await createFragment('TestExperience');
     expect(result).toMatchInlineSnapshot(`
@@ -306,4 +355,5 @@ describe('contracts', () => {
     `);
   });
 });
+
 
