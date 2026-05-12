@@ -144,40 +144,6 @@ await client.getContentByPath('/');
   - `component.has_display_settings` - Whether display settings provided
   - `optimizely.component.found` - Whether component was found
 
-## Creating Custom Spans
-
-Use `getTracer()` to create custom spans for your application logic:
-
-```javascript
-import { getTracer } from '@optimizely/cms-sdk';
-
-const tracer = getTracer();
-
-const span = tracer.startSpan('myapp.process_content');
-span.setAttribute('content.count', 10);
-
-try {
-  // Your application code
-  span.setStatus({ code: 1 }); // OK
-} catch (error) {
-  span.recordException(error);
-  span.setStatus({ code: 2, message: error.message }); // ERROR
-} finally {
-  span.end();
-}
-```
-
-Or use the `createSpan` helper for automatic error handling:
-
-```javascript
-import { createSpan } from '@optimizely/cms-sdk';
-
-await createSpan('myapp.process_content', async (span) => {
-  span.setAttribute('content.count', 10);
-  // Your code - span automatically ends and records errors
-});
-```
-
 ## Troubleshooting
 
 ### No spans appearing?
@@ -195,11 +161,6 @@ await createSpan('myapp.process_content', async (span) => {
 
 - Verify you're using sampling in production
 - Check that you're not creating excessive custom spans
-
-### TypeScript errors?
-
-- Ensure `@opentelemetry/api` is installed
-- The SDK re-exports types: `import type { SpanOptions } from '@optimizely/cms-sdk'`
 
 ## Learn More
 

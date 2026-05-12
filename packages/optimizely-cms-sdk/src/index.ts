@@ -45,7 +45,3 @@ export { ContentProps } from './infer.js';
 
 // Dam assets
 export { damAssets } from './render/assets.js';
-
-// Telemetry
-export { getTracer, createSpan } from './telemetry/index.js';
-export type { SpanOptions } from './telemetry/index.js';
