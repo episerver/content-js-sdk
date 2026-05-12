@@ -10,6 +10,7 @@
 
 import { startComponentResolveSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
+import { componentResolveDuration, componentLookupCount, recordMetrics } from '../telemetry/metrics.js';
 
 /**
  * A component definition that includes a default component and optional
@@ -85,8 +86,22 @@ export class ComponentRegistry<T> {
   /** Returns the component given its content type name. Returns `undefined` if not found */
   getComponent(contentType: string, options: ResolverOptions = {}): T | undefined {
     const span = startComponentResolveSpan(contentType, options.tag);
+    const startTime = span ? performance.now() : 0;
     const endSpan = (component?: any) => {
-      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, !!component);
+      const found = !!component;
+      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, found);
+
+      if (span) {
+        const attributes: Record<string, any> = {
+          [SemanticAttributes.OPTI_COMPONENT_TYPE]: contentType,
+          [SemanticAttributes.OPTI_COMPONENT_FOUND]: found,
+        };
+        if (options.tag) {
+          attributes[SemanticAttributes.OPTI_COMPONENT_TAG] = options.tag;
+        }
+        recordMetrics(componentResolveDuration, componentLookupCount, startTime, attributes);
+      }
+
       span.end();
     };
 
@@ -103,7 +118,9 @@ export class ComponentRegistry<T> {
         endSpan();
         return undefined;
       }
-      return getDefaultComponent(entry);
+      const component = getDefaultComponent(entry);
+      endSpan(component);
+      return component;
     }
 
     const taggedEntry = this.resolver[`${contentType}:${options.tag}`];

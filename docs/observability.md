@@ -33,9 +33,13 @@ Create an `instrumentation.js` file and import it **before** any SDK imports:
 // instrumentation.js
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
+import { ConsoleMetricExporter, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 
 const sdk = new NodeSDK({
-  traceExporter: new ConsoleSpanExporter()
+  traceExporter: new ConsoleSpanExporter(),
+  metricReader: new PeriodicExportingMetricReader({
+    exporter: new ConsoleMetricExporter(),
+  }),
 });
 
 sdk.start();
@@ -143,6 +147,118 @@ await client.getContentByPath('/');
   - `component.has_tag` - Whether a tag/variant is used
   - `component.has_display_settings` - Whether display settings provided
   - `optimizely.component.found` - Whether component was found
+
+## Metrics
+
+The SDK automatically records OpenTelemetry metrics alongside spans for performance monitoring and operational dashboards. Metrics provide aggregatable data for analyzing operation durations, frequencies, and cache effectiveness over time.
+
+### Metric Types
+
+The SDK records two types of metrics:
+
+- **Histograms** - Measure operation durations in milliseconds. Useful for analyzing latency distributions (p50, p95, p99).
+- **Counters** - Count operation occurrences. Useful for tracking request rates, volumes, and cache hit rates.
+
+### Duration Histograms
+
+All duration histograms are measured in milliseconds and include relevant attributes for filtering and grouping.
+
+#### `optimizely.fragment.generation.duration`
+
+Time spent generating GraphQL fragments for content types.
+
+**Attributes:**
+
+- `optimizely.content_type` - Content type name
+- `optimizely.dam.enabled` - Whether DAM is enabled
+- `optimizely.fragment.threshold` - Fragment warning threshold
+
+#### `optimizely.query.generation.duration`
+
+Time spent generating complete GraphQL queries (single or multiple item queries).
+
+**Attributes:**
+
+- `optimizely.query.type` - "single" or "multiple"
+- `optimizely.content_type` - Content type being queried
+- `optimizely.dam.enabled` - Whether DAM is enabled
+
+#### `optimizely.http.request.duration`
+
+Duration of HTTP requests to the Optimizely Graph API.
+
+**Attributes:**
+
+- `http.method` - HTTP method (always "POST")
+- `http.status_code` - Response status code
+- `optimizely.cache.enabled` - Whether cache parameter was enabled
+- `optimizely.graph.slot` - Graph index slot ("Current" or "New")
+- `optimizely.preview.token` - Whether preview token was used
+- `error` - true if request failed (only on errors)
+
+#### `optimizely.content.fetch.duration`
+
+Total time to fetch content from CMS (includes metadata lookup and content retrieval).
+
+**Attributes:**
+
+- `optimizely.content_type` - Content type name
+- `optimizely.cache.enabled` - Whether cache is enabled
+- `content.found` - Whether content was found
+- `error` - true if fetch failed (only on errors)
+
+#### `optimizely.component.resolve.duration`
+
+Time to resolve components in the ComponentRegistry.
+
+**Attributes:**
+
+- `optimizely.component.type` - Component content type
+- `optimizely.component.tag` - Display template tag (if present)
+- `optimizely.component.found` - Whether component was found
+
+### Operation Counters
+
+Counters track the total number of operations and use the same attributes as their corresponding histograms.
+
+#### `optimizely.fragment.generation.count`
+
+Number of fragment generation operations.
+
+#### `optimizely.query.generation.count`
+
+Number of query generation operations. Track by query type to monitor single vs multiple item query usage.
+
+#### `optimizely.http.requests`
+
+Total number of HTTP requests to Graph API. Monitor by status code, cache enabled, and slot.
+
+#### `optimizely.content.fetches`
+
+Total number of content fetch operations.
+
+#### `optimizely.component.lookups`
+
+Total component resolution attempts.
+
+### Using Metrics in Your Application
+
+The SDK exports all metric instruments via the `metrics` namespace:
+
+```typescript
+import { metrics } from '@optimizely/cms-sdk/telemetry';
+
+// Access instruments for custom recording
+metrics.fragmentGenerationDuration.record(123.4, {
+  'optimizely.content_type': 'BlogPost',
+  'optimizely.dam.enabled': true,
+});
+
+metrics.httpRequestCount.add(1, {
+  'http.method': 'POST',
+  'http.status_code': 200,
+});
+```
 
 ## Troubleshooting
 

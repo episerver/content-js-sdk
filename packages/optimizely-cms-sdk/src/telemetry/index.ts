@@ -7,3 +7,6 @@ export { logError, logWarning } from './logger.js';
 
 // Export semantic attributes for custom instrumentation
 export { SemanticAttributes } from './attributes.js';
+
+// Export metrics instruments
+export * as metrics from './metrics.js';

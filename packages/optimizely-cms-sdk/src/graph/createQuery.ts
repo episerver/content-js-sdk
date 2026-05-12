@@ -12,6 +12,14 @@ import {
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { startFragmentSpan, startSingleQuerySpan, startMultipleQuerySpan } from '../telemetry/spans.js';
+import {
+  fragmentGenerationDuration,
+  fragmentGenerationCount,
+  queryGenerationDuration,
+  queryGenerationCount,
+  QueryType,
+  recordMetrics,
+} from '../telemetry/metrics.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 
 /**
@@ -274,6 +282,7 @@ export function createFragment(
   // Create telemetry span only at root level (not for recursive calls)
   const isRootCall = visited.size === 1;
   const span = isRootCall ? startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix) : undefined;
+  const startTime = isRootCall ? performance.now() : 0;
 
   const fields: string[] = ['__typename'];
   const extraFragments: string[] = [];
@@ -347,6 +356,13 @@ export function createFragment(
   // End telemetry span at root level and record fragment count
   if (span) {
     span.setAttribute(SemanticAttributes.OPTI_FRAGMENT_COUNT, fragments.length);
+
+    recordMetrics(fragmentGenerationDuration, fragmentGenerationCount, startTime, {
+      [SemanticAttributes.OPTI_CONTENT_TYPE]: contentTypeName,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+      [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: maxFragmentThreshold,
+    });
+
     span.end();
   }
 
@@ -365,6 +381,7 @@ export function createSingleContentQuery(
   maxFragmentThreshold: number = 100,
 ) {
   const span = startSingleQuerySpan(contentType, damEnabled);
+  const startTime = span ? performance.now() : 0;
 
   const fragment = createFragment(contentType, new Set(), '', {
     damEnabled,
@@ -388,7 +405,14 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
 }
   `;
 
-  // End telemetry span
+  if (span) {
+    recordMetrics(queryGenerationDuration, queryGenerationCount, startTime, {
+      [SemanticAttributes.OPTI_QUERY_TYPE]: QueryType.SINGLE,
+      [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+    });
+  }
+
   span.end();
   return query;
 }
@@ -408,6 +432,7 @@ export function createMultipleContentQuery(
   maxFragmentThreshold: number = 100,
 ) {
   const span = startMultipleQuerySpan(contentType, damEnabled);
+  const startTime = span ? performance.now() : 0;
 
   const fragment = createFragment(contentType, new Set(), '', {
     damEnabled,
@@ -431,7 +456,14 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
 }
   `;
 
-  // End telemetry span
+  if (span) {
+    recordMetrics(queryGenerationDuration, queryGenerationCount, startTime, {
+      [SemanticAttributes.OPTI_QUERY_TYPE]: QueryType.MULTIPLE,
+      [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+    });
+  }
+
   span.end();
   return query;
 }

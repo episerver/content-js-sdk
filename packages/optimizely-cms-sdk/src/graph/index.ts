@@ -22,7 +22,7 @@ import {
   withGetPreviewContentSpan,
   withGetContentSpan,
 } from '../telemetry/spans.js';
-import { SDK_VERSION } from '../version.js';
+import { SDK_VERSION } from '../generated/version.js';
 
 /** Configuration for initializing the Optimizely Graph Client */
 export type GraphOptions = {
