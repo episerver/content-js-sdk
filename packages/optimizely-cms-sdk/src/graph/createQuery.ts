@@ -10,6 +10,7 @@ import {
   DAM_ASSET_FRAGMENTS,
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
+import { withQueryCaching } from '../util/cache.js';
 import { logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { startFragmentSpan, startSingleQuerySpan, startMultipleQuerySpan } from '../telemetry/spans.js';
 import {
@@ -369,17 +370,11 @@ export function createFragment(
   return fragments;
 }
 
-/**
- * Generates a complete GraphQL query for fetching one item.
- *
- * @param contentType - The key of the content type to query.
- * @returns A string representing the GraphQL query.
- */
-export function createSingleContentQuery(
+const generateSingleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
-) {
+): string => {
   const span = startSingleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
 
@@ -415,22 +410,23 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
 
   span.end();
   return query;
-}
+};
 
 /**
- * Generates a complete GraphQL query for fetching multiple items.
- * All items must have the same content type
+ * Generates a complete GraphQL query for fetching one item.
  *
  * @param contentType - The key of the content type to query.
- * @param damEnabled - Whether DAM assets are enabled.
+ * @param damEnabled - Whether DAM assets are enabled (default: false).
  * @param maxFragmentThreshold - Maximum fragment threshold for warnings (default: 100).
  * @returns A string representing the GraphQL query.
  */
-export function createMultipleContentQuery(
+export const createSingleContentQuery = withQueryCaching('single', generateSingleContentQuery);
+
+const generateMultipleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
-) {
+): string => {
   const span = startMultipleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
 
@@ -466,7 +462,18 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
 
   span.end();
   return query;
-}
+};
+
+/**
+ * Generates a complete GraphQL query for fetching multiple items.
+ * All items must have the same content type
+ *
+ * @param contentType - The key of the content type to query.
+ * @param damEnabled - Whether DAM assets are enabled (default: false).
+ * @param maxFragmentThreshold - Maximum fragment threshold for warnings (default: 100).
+ * @returns A string representing the GraphQL query.
+ */
+export const createMultipleContentQuery = withQueryCaching('multiple', generateMultipleContentQuery);
 
 export type ItemsResponse<T> = {
   _Content: {
