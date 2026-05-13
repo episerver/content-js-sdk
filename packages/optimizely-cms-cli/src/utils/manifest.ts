@@ -46,8 +46,9 @@ export type ContentType = Omit<
   mayContainTypes?: string[];
   properties?: Record<string, ContentTypeProperties.All>;
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
-  isContract: boolean;
   baseType?: string;
+  contracts?: string[];
+  isContract?: boolean;
 };
 
 /**
