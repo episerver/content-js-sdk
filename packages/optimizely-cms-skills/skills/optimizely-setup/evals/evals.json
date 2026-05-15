@@ -1,0 +1,23 @@
+{
+  "skill_name": "optimizely-setup",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm starting a new Next.js 14 project for our company's marketing site and we're using Optimizely CMS as the headless backend. I need to get the SDK installed and configured. We use pnpm here. What do I need to do to connect to the CMS?",
+      "expected_output": "Should detect pnpm as package manager, install @optimizely/cms-sdk and @optimizely/cms-cli, create .env with credential placeholders, create optimizely.config.mjs with Next.js appropriate paths, add .env to .gitignore, and guide user to test CLI connection",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "hey so i have this react app already running (it's in ~/projects/my-app) and my PM just told me we need to integrate with optimizely cms for content management. i've never used optimizely before. where do i even start? do i need api keys or something?",
+      "expected_output": "Should explain the setup process, detect package manager, install packages, create .env with API credential placeholders, create optimizely.config.mjs, ensure .env is gitignored, and explain how to get API keys from CMS Settings",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I installed @optimizely/cms-sdk but when I try to use it I get authentication errors. I think I'm missing some environment variables? Our CMS instance is at https://acme-corp.cms.optimizely.com but I'm not sure how to configure the credentials properly. Can you help me set this up correctly?",
+      "expected_output": "Should create .env file with OPTIMIZELY_CMS_CLIENT_ID and OPTIMIZELY_CMS_CLIENT_SECRET placeholders, explain how to get credentials from CMS Settings → API Keys, ensure .env is in .gitignore, and may also create optimizely.config.mjs if missing",
+      "files": []
+    }
+  ]
+}
