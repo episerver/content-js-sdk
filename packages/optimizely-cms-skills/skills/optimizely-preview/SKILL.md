@@ -1,6 +1,6 @@
 ---
 name: optimizely-preview
-description: Set up or troubleshoot Optimizely CMS live preview in React applications. Use when the user mentions setting up live preview, preview not working, preview not showing in CMS, configuring preview, or needs help with preview setup/debugging for Optimizely. Also trigger when the user says preview is broken, can't see preview in the editor, or preview shows a blank screen.
+description: This skill should be used when the user asks to "set up live preview", "configure preview mode", "fix preview not working", "add click-to-edit", "troubleshoot preview", "preview is broken", "can't see preview in the editor", or mentions visual editing, live preview, or on-page editing for Optimizely CMS in React applications.
 ---
 
 # Optimizely Live Preview Setup and Troubleshooting
@@ -313,150 +313,13 @@ Then use `https://localhost:3000/preview` in your CMS preview URL configuration.
 - TanStack Start: Use `vite dev --https` or configure HTTPS in `vite.config.ts`
 - Consult your framework's documentation for HTTPS configuration
 
-## Troubleshooting: Preview Not Working
+## Troubleshooting
 
-When the user says "preview isn't working" or "I don't see preview in the CMS", systematically check common issues:
+When preview isn't working, systematically check common issues: blank screens, missing preview button, preview not updating, 404 errors, and environment variable issues. See `references/troubleshooting.md` for comprehensive diagnostic steps and solutions.
 
-### Issue 1: Preview Shows Blank Screen or Error
+## Click-to-Edit Features
 
-**Check**:
-1. Open browser console when clicking preview - are there errors?
-2. Check if the preview route exists and is accessible
-3. Verify environment variables are set correctly
-4. Check if dev server is running
-
-**Common causes**:
-- `OPTIMIZELY_CMS_URL` missing or incorrect
-- Missing `withAppContext` wrapper
-- Missing `<PreviewComponent />` or `<Script>` tag
-- Component not registered for the content type being previewed
-
-### Issue 2: Preview Button Doesn't Appear in CMS
-
-**Check**:
-1. Is the hostname configured in CMS?
-2. Is the preview URL format enabled and configured?
-3. Are preview tokens enabled?
-
-**How to verify in CMS**:
-- Go to Settings → Live Preview
-- Ensure "Use Preview Tokens" is selected
-- Ensure "Preview URL format" is enabled
-- Ensure the URL matches your preview route
-
-### Issue 3: Preview Opens But Doesn't Update
-
-**Check**:
-1. Is `communicationinjector.js` loading? (Check network tab)
-2. Is `<PreviewComponent />` included in the preview route?
-3. Are there CORS errors in console?
-
-**Common causes**:
-- `OPTIMIZELY_CMS_URL` doesn't match the actual CMS URL
-- CORS blocked the injector script
-- Missing `<PreviewComponent />`
-
-### Issue 4: Preview Shows 404 or Wrong Content
-
-**Check**:
-1. Is the content type registered with a component?
-2. Is `getPreviewContent()` being called with the correct parameters?
-3. Check the URL parameters being sent from CMS
-
-### Issue 5: Environment Variables Not Working
-
-**Check**:
-1. Is `.env` in the correct location (project root)?
-2. Did you restart the dev server after adding/changing .env?
-3. Are variable names exactly correct (case-sensitive)?
-
-**For Next.js specifically**:
-- Client-side env vars must be prefixed with `NEXT_PUBLIC_`
-- BUT `OPTIMIZELY_GRAPH_SINGLE_KEY`, `OPTIMIZELY_GRAPH_GATEWAY`, and `OPTIMIZELY_CMS_URL` should NOT be public (they're used server-side only)
-
-## Diagnostic Approach
-
-When troubleshooting, follow this sequence:
-
-1. **Verify preview route exists and is accessible**
-   - Visit the route directly (without params)
-   - Should not crash, even if it shows nothing
-
-2. **Check environment variables**
-   - Read the .env file
-   - Verify all three required variables are set
-   - Restart dev server
-
-3. **Verify route implementation**
-   - Has `withAppContext` wrapper
-   - Has `<Script>` for communicationinjector.js
-   - Has `<PreviewComponent />`
-   - Has `<OptimizelyComponent />`
-   - Calls `getPreviewContent()`
-
-4. **Check CMS configuration**
-   - Hostname configured
-   - Preview URL format enabled
-   - Preview URL points to correct route
-   - Preview tokens enabled
-
-5. **Test with browser console open**
-   - Click preview in CMS
-   - Watch for errors
-   - Check network tab for failed requests
-
-## Success Criteria
-
-Preview is working when:
-- Clicking "Preview" in CMS opens your application
-- The content from CMS appears in the preview
-- Changes in CMS update the preview in real-time
-- No errors in browser console
-
-## Additional Features: Click-to-Edit (Preview Utils)
-
-After basic preview works, you can enhance the editor experience by adding click-to-edit functionality using `getPreviewUtils()`.
-
-When editors hover over elements with preview attributes, they're highlighted. Clicking them jumps to the corresponding field in the CMS editor.
-
-**Example component with preview utils**:
-
-```tsx
-import { contentType, ContentProps } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-
-export const AboutUsContentType = contentType({
-  key: 'AboutUs',
-  baseType: '_component',
-  properties: {
-    heading: { type: 'string' },
-    body: { type: 'richText' },
-  },
-});
-
-type AboutUsProps = {
-  content: ContentProps<typeof AboutUsContentType>;
-};
-
-export default function AboutUs({ content }: AboutUsProps) {
-  const { pa } = getPreviewUtils(content);
-
-  return (
-    <section>
-      <h2 {...pa('heading')}>{content.heading}</h2>
-      <div {...pa('body')} className="content">
-        {/* render body */}
-      </div>
-    </section>
-  );
-}
-```
-
-**Key functions**:
-- `pa('propertyName')`: Spreads preview attributes onto elements to enable click-to-edit
-- `src(reference)`: Resolves content reference URLs correctly in preview mode
-
-Apply `pa()` to all content properties that editors should be able to click and edit.
+After basic preview works, enhance the editor experience by adding click-to-edit functionality using `getPreviewUtils()`. See `references/click-to-edit.md` for detailed guidance on preview attributes, helper functions, and best practices.
 
 ## Tips for Success
 
@@ -464,3 +327,12 @@ Apply `pa()` to all content properties that editors should be able to click and 
 2. **Don't skip any of the three required components** - Script, PreviewComponent, OptimizelyComponent
 3. **Restart the dev server** after changing environment variables
 4. **Use the exact env var names** - They're case-sensitive and must match exactly
+
+## Additional Resources
+
+### Reference Files
+
+For detailed information, consult:
+
+- **`references/troubleshooting.md`** - Comprehensive troubleshooting guide for preview issues including blank screens, missing buttons, update problems, and environment variable issues
+- **`references/click-to-edit.md`** - Click-to-edit features and preview utilities including `pa()`, `src()`, best practices, and common mistakes

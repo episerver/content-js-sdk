@@ -1,0 +1,27 @@
+{
+  "name": "episerver-content-js-sdk",
+  "description": "Optimizely CMS development tools and agent skills for building headless CMS applications",
+  "owner": {
+    "name": "Optimizely",
+    "url": "https://github.com/episerver"
+  },
+  "plugins": [
+    {
+      "name": "optimizely-cms-skills",
+      "description": "Agent Skills for Optimizely CMS development - model content types, generate React components, set up preview, and configure the SDK",
+      "author": {
+        "name": "Optimizely",
+        "url": "https://github.com/episerver"
+      },
+      "category": "development",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/episerver/content-js-sdk.git",
+        "path": "packages/optimizely-cms-skills",
+        "ref": "main"
+      },
+      "homepage": "https://github.com/episerver/content-js-sdk/tree/main/packages/optimizely-cms-skills",
+      "readme": "https://github.com/episerver/content-js-sdk/blob/main/packages/optimizely-cms-skills/README.md"
+    }
+  ]
+}

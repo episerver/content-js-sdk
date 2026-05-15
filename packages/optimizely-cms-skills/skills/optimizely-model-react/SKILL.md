@@ -1,6 +1,6 @@
 ---
 name: optimizely-model-react
-description: Generate React components for Optimizely CMS content types and display templates. Use this skill when the user asks to create/add/generate a React component, component implementation, or React rendering for an Optimizely content type, page type, component type, block type, experience type, or display template. Also trigger when they say things like "add React component for Article", "create component for BlogPage", "implement the Hero component", "render the CardTemplate", or "make a component for that content type". This skill handles React component generation and registration - for TypeScript modeling only, use the optimizely-model skill instead.
+description: This skill should be used when the user asks to "create a React component for BlogPage", "generate the component", "build the display template component", "add preview attributes", "render rich text", "implement the Hero component", "create component for Article", or mentions creating React components for Optimizely content types or display templates.
 ---
 
 # Optimizely React Component Generator
@@ -56,52 +56,7 @@ Choose where to add the React component:
 
 ## Step 2.5: Check for Existing CSS/SCSS Classes
 
-Before generating the component, check for existing styles to maintain consistency:
-
-1. **Locate style files** - Search for CSS/SCSS files in the project:
-   ```
-   glob: "**/*.css"
-   glob: "**/*.scss"
-   glob: "**/*.module.css"
-   glob: "**/*.module.scss"
-   ```
-
-2. **Search for relevant classes** - Look for class names that might apply to your component:
-   - If creating a Hero component, search for patterns like `hero`, `banner`, `header`
-   - If creating a Card component, search for `card`, `tile`, `item`
-   - Search for common structural classes like `container`, `wrapper`, `section`, `grid`
-   - Look for typography classes like `heading`, `title`, `body-text`, `subtitle`
-
-3. **Review existing components** - Check how similar components use className:
-   ```
-   grep: "className=" glob: "**/*.tsx"
-   ```
-   Look at components with similar visual structure or base types
-
-4. **Prefer existing classes** when applicable:
-   - Use existing classes that match the component's purpose
-   - Follow the project's naming conventions (BEM, camelCase, kebab-case, etc.)
-   - Combine existing utility classes rather than creating new ones
-
-5. **Only add new classes** when:
-   - No existing classes fit the component's purpose
-   - The component needs unique styling not covered by existing classes
-   - Follow the project's class naming pattern when adding new ones
-
-**Example workflow:**
-```tsx
-// After searching and finding existing classes
-<article className='blog-experience'>  // Found in existing components
-  <header className='blog-header'>      // Reusing existing header style
-    <h1 {...pa('title')}>{content.title}</h1>
-  </header>
-  <section className='blog-articles' {...pa('articles')}>  // Consistent naming
-    ...
-  </section>
-</article>
-```
-
-If no relevant CSS files exist or the project doesn't use classNames, skip this step and generate minimal semantic HTML without className attributes.
+Before generating components, check for existing styles to maintain consistency. See `references/styling-strategy.md` for detailed guidance on integrating CSS/SCSS classes, CSS Modules, Tailwind, and handling projects without styles.
 
 ## Step 3: Generate the React Component
 
@@ -414,145 +369,17 @@ After successfully creating and registering the component:
    - Display templates need to be added to `initDisplayTemplateRegistry` as well
    - Point to the `optimizely-model` skill for display template registration
 
-## Common Patterns Reference
+## Common Patterns
 
-### Content Reference Properties
+For detailed React patterns for rendering different property types (content references, booleans, enums, dates, links), see `references/react-patterns.md`.
 
-```tsx
-// Single content reference
-{content.featuredArticle && (
-  <OptimizelyComponent content={content.featuredArticle} />
-)}
+## Edge Cases
 
-// Array of content references
-{content.relatedArticles?.map((article, i) => (
-  <OptimizelyComponent key={i} content={article} />
-))}
-```
-
-### Boolean Properties
-
-```tsx
-{content.showHeader && (
-  <header>...</header>
-)}
-```
-
-### Enum/Select Properties
-
-```tsx
-<div className={content.theme === 'dark' ? 'dark-mode' : 'light-mode'}>
-  ...
-</div>
-```
-
-### DateTime Properties
-
-```tsx
-<span>
-  {new Date(content.publishDate).toLocaleDateString()}
-</span>
-```
-
-### Link Properties
-
-For `type: 'link'` properties (not `type: 'url'`):
-
-```tsx
-{content.ctaLink && (
-  <a 
-    href={content.ctaLink.url} 
-    title={content.ctaLink.title}
-    target={content.ctaLink.target}
-  >
-    {content.ctaLink.text}
-  </a>
-)}
-```
-
-## Edge Cases and Considerations
-
-### Optional Chaining
-
-Always use optional chaining for properties that might not be set:
-
-```tsx
-{content.body?.json}
-{content.sections?.map(...)}
-{content.hero?.heading}
-```
-
-### Null Fallbacks
-
-Provide sensible fallbacks for missing data:
-
-```tsx
-<img src={imageUrl} alt={getAlt(content.image, 'Decorative image')} />
-<RichText content={content.body?.json ?? undefined} />
-{content.items ?? []}
-```
-
-### Key Props
-
-When mapping arrays, use stable keys when possible:
-
-```tsx
-// Prefer content ID if available
-{content.items?.map((item) => (
-  <OptimizelyComponent key={item._metadata?.key ?? item.id} content={item} />
-))}
-
-// Fall back to index if necessary
-{content.items?.map((item, i) => (
-  <OptimizelyComponent key={i} content={item} />
-))}
-```
-
-### Preview Attributes for Arrays
-
-When using preview attributes on mapped arrays, use the array property name:
-
-```tsx
-<div {...pa('sections')}>
-  {content.sections?.map((section, i) => (
-    <OptimizelyComponent key={i} content={section} />
-  ))}
-</div>
-```
-
-Don't put `pa()` on individual items - the SDK handles that internally.
+Always use optional chaining, provide null fallbacks, use stable keys for arrays, and put preview attributes on array containers. See `references/edge-cases.md` for detailed guidance.
 
 ## Troubleshooting
 
-### Type Errors
-
-If you see TypeScript errors about missing properties:
-- Ensure the content type definition includes all properties being accessed
-- Use optional chaining `?.` for properties that might be undefined
-- Check that imports are correct (`ContentProps`, `getPreviewUtils`, etc.)
-
-### Preview Not Working
-
-If preview attributes aren't working in the CMS:
-- Verify `getPreviewUtils(content)` is called
-- Ensure `{...pa('propertyName')}` is spread on the correct element
-- Check that `withAppContext` wraps the page component
-
-### Component Not Rendering
-
-If the component doesn't render:
-- Verify it's registered in `initReactComponentRegistry`
-- Check the export is correct (`export default function ComponentName`)
-- Ensure the component name matches the content type key
-- For display templates, verify the `tag` matches the registry
-
-### Images Not Loading
-
-If images don't appear:
-- Use `src()` from `getPreviewUtils` to get the URL
-- Check that the property type is `'contentReference'` with `allowedTypes: ['_image']`
-- For DAM assets, use `damAssets(content)` utilities
-- Verify the image content reference exists in the CMS
+For solutions to type errors, preview issues, component rendering problems, and image loading issues, see `references/troubleshooting.md`.
 
 ## Summary
 
@@ -574,3 +401,14 @@ Always prioritize:
 - Providing sensible fallbacks
 - Writing semantic, accessible HTML
 - Keeping component code clean and readable
+
+## Additional Resources
+
+### Reference Files
+
+For detailed information, consult:
+
+- **`references/styling-strategy.md`** - CSS/SCSS integration guide with patterns for CSS Modules, Tailwind, and styling best practices
+- **`references/react-patterns.md`** - React patterns for rendering different property types (content references, booleans, dates, links, etc.)
+- **`references/edge-cases.md`** - Edge cases and considerations including optional chaining, null fallbacks, keys, and preview attributes
+- **`references/troubleshooting.md`** - Solutions to common issues with types, preview mode, component rendering, and images

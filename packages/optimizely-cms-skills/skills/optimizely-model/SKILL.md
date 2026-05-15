@@ -1,6 +1,6 @@
 ---
 name: optimizely-model
-description: Model Optimizely CMS content types, display templates, and contracts. Use this skill whenever the user mentions creating/modeling/adding a content type, page type, component type, block type, experience type, display template, or contract for Optimizely CMS. Also trigger when they say things like "make a BlogPage", "add an Article type", "create a Hero component", "model a Card display template", "create an SEO contract", or "make a reusable contract". Contracts are reusable property sets that content types can extend. This skill handles the TypeScript modeling only - for React components, recommend the optimizely-model-react skill.
+description: This skill should be used when the user asks to "create a content type", "model a BlogPage", "define a display template", "create a contract", "set up SEO fields", "convert JSON schema to TypeScript", "make an Article type", "add a Hero component", "model a Card display template", or mentions content type modeling, display templates, or contracts for Optimizely CMS.
 ---
 
 # Optimizely Content Modeling
@@ -68,30 +68,11 @@ export const ArticleContentType = contentType({
 
 ### Base Types
 
-Choose the appropriate `baseType`:
-- `'_page'` - Page content type
-- `'_component'` - Component/Block content type (can be used in content areas)
-- `'_experience'` - Experience content type (for visual builder experiences)
-- `'_folder'` - Folder type (for organizing content)
-- `'_image'`, `'_media'`, `'_video'` - Media types
+Choose the appropriate `baseType`: `'_page'`, `'_component'`, `'_experience'`, `'_folder'`, `'_image'`, `'_media'`, or `'_video'`. See `references/base-types.md` for detailed information.
 
 ### Property Types
 
-Available property types:
-- `'string'` - Simple text
-- `'richText'` - Formatted content (Slate.js format)
-- `'boolean'` - True/false
-- `'integer'` - Whole numbers
-- `'float'` - Decimal numbers
-- `'dateTime'` - Date and time (supports `minimum`/`maximum`)
-- `'url'` - Simple URL string
-- `'link'` - Link with metadata (text, title, target)
-- `'binary'` - Binary data
-- `'json'` - JSON data
-- `'content'` - Reference to other content
-- `'contentReference'` - Content reference with constraints
-- `'array'` - Lists (use with `items` field, supports `minItems`/`maxItems`)
-- `'component'` - Embedded component (requires `contentType` field)
+Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`, `'dateTime'`, `'url'`, `'content'`, `'contentReference'`, `'array'`, and `'component'`. See `references/property-types.md` for the complete list with examples.
 
 ### Important Patterns
 
@@ -366,11 +347,7 @@ Export with appropriate suffixes:
 
 ## Common Pitfalls to Avoid
 
-1. **Nested arrays**: Arrays cannot contain other arrays
-2. **Invalid baseType**: Only use the documented base types listed above
-3. **Missing type for component properties**: Component properties require a `type` field
-4. **Forgetting to register**: New types, and contracts must be added to `initContentTypeRegistry` and new display templates must be added to `initDisplayTemplateRegistry` to be usable
-6. **Contracts with baseType**: Contracts don't have a `baseType` field - only content types do
+Avoid nested arrays, invalid base types, missing component type fields, forgetting to register types, and adding baseType to contracts. See `references/common-pitfalls.md` for detailed explanations and solutions.
 
 ## Summary Workflow
 
@@ -382,3 +359,13 @@ Export with appropriate suffixes:
    - `initDisplayTemplateRegistry` (for display templates)
 5. **Always remind** user to run `config push` and **offer to run it** for them
 6. Suggest `optimizely-model-react` for React components if applicable
+
+## Additional Resources
+
+### Reference Files
+
+For detailed information, consult:
+
+- **`references/property-types.md`** - Comprehensive property type reference with all types, constraints, and usage examples
+- **`references/base-types.md`** - Detailed base type explanations and usage patterns for pages, components, experiences, and media
+- **`references/common-pitfalls.md`** - Common pitfalls and solutions when modeling content types, display templates, and contracts

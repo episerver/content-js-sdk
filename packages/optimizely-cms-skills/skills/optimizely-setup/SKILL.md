@@ -1,6 +1,6 @@
 ---
 name: optimizely-setup
-description: Set up the Optimizely CMS JavaScript SDK in a project. Detects package manager (npm/pnpm/yarn), installs @optimizely/cms-sdk and @optimizely/cms-cli, creates .env with API credentials, generates optimizely.config.mjs, and configures gitignore. Use this whenever the user mentions setting up Optimizely, integrating Optimizely CMS, starting a headless CMS project with Optimizely, configuring content delivery API, connecting to Optimizely CMS, or needs help with the initial SDK installation and configuration. Also trigger for Next.js/React projects that mention Optimizely, or when the user asks about CMS credentials, API keys, or environment setup for Optimizely.
+description: This skill should be used when the user asks to "set up Optimizely CMS SDK", "initialize the SDK from scratch", "configure the CMS client", "add content delivery", "integrate Optimizely CMS", "start a headless CMS project with Optimizely", "install the SDK", or mentions setting up the Optimizely CMS JavaScript SDK in a new project.
 ---
 
 # Setup Optimizely CMS SDK
