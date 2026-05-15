@@ -46,9 +46,17 @@ function NewsEventsList({ content }: NewsEventsListProps) {
 
       {/* Teasers List */}
       <div className='space-y-6'>
-        {content.teasers?.map((teaser, index) => (
-          <OptimizelyComponent key={index} content={teaser} />
-        ))}
+        {content.teasers?.map((teaser, index) => {
+          return (
+            <OptimizelyComponent
+              key={index}
+              content={teaser}
+              variant={{
+                Standard: 'mini',
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Call to Action Button */}
