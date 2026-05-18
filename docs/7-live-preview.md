@@ -117,6 +117,29 @@ Three key components work together here:
 
 3. **`<OptimizelyComponent/>`** - Renders the actual content using the component you've registered for that content type.
 
+> [!TIP]
+> For Next.js projects, use `NextPreviewComponent` for optimized preview experience. See [Next.js Optimized Preview](#nextjs-optimized-preview-recommended) below.
+
+### Next.js Optimized Preview (Recommended)
+
+For Next.js projects, use `NextPreviewComponent` instead of `PreviewComponent` for smooth preview experience:
+
+```tsx
+import { NextPreviewComponent } from '@optimizely/cms-sdk/next';
+
+return (
+  <>
+    <Script
+      src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
+    ></Script>
+    <NextPreviewComponent />
+    <OptimizelyComponent content={response} />
+  </>
+);
+```
+
+`NextPreviewComponent` provides optimized content refresh for Next.js applications, enabling seamless preview updates without full page reloads.
+
 ## Step 2. Configure Environment Variables
 
 Add the following environment variables to your `.env` file:
