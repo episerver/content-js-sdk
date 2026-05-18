@@ -1,30 +1,6 @@
+import { ContentType } from './manifest.js';
 import { extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
-
-/**
- * Process display templates and infer contentType from key if missing.
- * Display templates can have one of three mutually exclusive fields:
- * contentType, baseType, or nodeType. Only infer contentType if none exist.
- *
- * @param displayTemplates - Array of display template objects to process
- * @returns Processed array with inferred contentType where applicable
- */
-export function processDisplayTemplates(displayTemplates: any[]): any[] {
-  return displayTemplates.map((dt: any) => {
-    // If any discriminator field exists, return as-is
-    if (dt.contentType || dt.baseType || dt.nodeType) {
-      return dt;
-    }
-
-    // Infer contentType from key by removing common suffixes
-    const inferredContentType = dt.key.replace(/DisplayTemplate$/i, '').replace(/Template$/i, '');
-
-    return {
-      ...dt,
-      contentType: inferredContentType || dt.key,
-    };
-  });
-}
 
 /**
  * Normalizes the `mayContainTypes` field of a content type object.
@@ -36,7 +12,10 @@ export function processDisplayTemplates(displayTemplates: any[]): any[] {
  * @param allowedKeys - Optional set of valid content type keys for validation.
  * @returns The content type object with a normalized `mayContainTypes` array.
  */
-export function parseChildContentType(contentType: Record<string, any>, allowedKeys?: Set<string>): any {
+export function parseChildContentType(
+  contentType: Record<string, any>,
+  allowedKeys?: Set<string>,
+): any {
   const { mayContainTypes, key: parentKey, ...rest } = contentType;
 
   if (!Array.isArray(mayContainTypes)) return { ...rest, key: parentKey };
@@ -93,7 +72,10 @@ export function parseChildContentType(contentType: Record<string, any>, allowedK
  * @param parentKey - The parent contentType key, used for context in certain transformations (when '_self' is used).
  * @returns A new object with the same keys as the input object, but with transformed values.
  */
-export function transformProperties(properties: Record<string, any>, parentKey: string): Record<string, any> {
+export function transformProperties(
+  properties: Record<string, any>,
+  parentKey: string,
+): Record<string, any> {
   return Object.entries(properties).reduce(
     (acc, [key, value]) => {
       acc[key] = transformProperty(value, parentKey);
@@ -239,7 +221,10 @@ function transformContentReference(reference: any): any {
  */
 function hasContentTypeWithKey(obj: any): boolean {
   return (
-    'contentType' in obj && typeof obj.contentType === 'object' && obj.contentType !== null && 'key' in obj.contentType
+    'contentType' in obj &&
+    typeof obj.contentType === 'object' &&
+    obj.contentType !== null &&
+    'key' in obj.contentType
   );
 }
 
@@ -272,4 +257,20 @@ function mapAllowedRestrictedTypes(updatedValue: any, parentKey: string) {
   }
 
   return updatedValue;
+}
+
+/**
+ * Filters out system-generated and media content types.
+ * Removes content types with baseType of _image, _video, _media
+ * and content types with key of BlankExperience or BlankSection.
+ *
+ * @param contentTypes - Array of content types to filter
+ * @returns Filtered array of content types
+ */
+export function filterSystemContentTypes(contentTypes: ContentType[]): ContentType[] {
+  return contentTypes.filter(
+    ct =>
+      !['_image', '_video', '_media'].includes(ct.baseType ?? '') &&
+      !['BlankExperience', 'BlankSection'].includes(ct.key),
+  );
 }

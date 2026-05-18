@@ -24,3 +24,6 @@ dist
 *-temp.json
 .vscode
 .tanstack
+
+# Claude Code project instructions
+CLAUDE.md
