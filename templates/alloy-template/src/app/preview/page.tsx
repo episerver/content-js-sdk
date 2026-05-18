@@ -1,10 +1,10 @@
 import { getClient, type PreviewParams } from '@optimizely/cms-sdk';
-import { PreviewComponent } from '@optimizely/cms-sdk/react/client';
 import { ContentLayout } from '@/components/base/ContentLayout';
 import Script from 'next/script';
 import Header from '@/components/base/Header';
 import Footer from '@/components/base/Footer';
 import { withAppContext } from '@optimizely/cms-sdk/react/server';
+import { NextPreviewComponent } from '@optimizely/cms-sdk/react/nextjs';
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -29,8 +29,10 @@ async function Page({ searchParams }: Props) {
 
   return (
     <>
-      <Script src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}></Script>
-      <PreviewComponent />
+      <Script
+        src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
+      ></Script>
+      <NextPreviewComponent />
       <Header currentPath={path} />
       <ContentLayout content={content} currentPath={path} />
       <Footer />
@@ -39,3 +41,4 @@ async function Page({ searchParams }: Props) {
 }
 
 export default withAppContext(Page);
+
