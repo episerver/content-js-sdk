@@ -20,7 +20,7 @@ describe('createFragment() simple cases', () => {
     initContentTypeRegistry([ct1]);
 
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -50,7 +50,7 @@ describe('createFragment() simple cases', () => {
     initContentTypeRegistry([ct1]);
 
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -78,7 +78,7 @@ describe('createFragment() simple cases', () => {
     initContentTypeRegistry([ct1]);
 
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -96,7 +96,7 @@ describe('createFragment() simple cases', () => {
     initContentTypeRegistry([ct1]);
 
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -121,7 +121,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     });
     initContentTypeRegistry([r1, ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -151,7 +151,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     });
     initContentTypeRegistry([r1, r2, ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -185,7 +185,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     });
     initContentTypeRegistry([r1, ct1, ct2]);
     const result = await createFragment('ct2');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -212,7 +212,7 @@ describe('createFragment() with `content` properties. Base types', () => {
     });
     initContentTypeRegistry([r1, ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -242,7 +242,7 @@ describe('createFragment() with `content` properties. Base types', () => {
     });
     initContentTypeRegistry([r1, r2, ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -275,7 +275,7 @@ describe('createFragment() with `content` properties. Base types', () => {
 
     initContentTypeRegistry([r1, r2, r3, ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -310,7 +310,7 @@ describe('createFragment() with `content` properties. Base types', () => {
     });
     initContentTypeRegistry([r1, r2, ct2]);
     const result = await createFragment('ct2');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -345,7 +345,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
 
     initContentTypeRegistry([r1, r2, r3, ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -379,7 +379,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
 
     initContentTypeRegistry([r1, r2, r3, ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -406,7 +406,7 @@ describe('createFragment() with self references', () => {
 
     initContentTypeRegistry([r1]);
     const result = await createFragment('r1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -429,7 +429,7 @@ describe('createFragment() with self references', () => {
 
     initContentTypeRegistry([r1]);
     const result = await createFragment('r1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -452,7 +452,7 @@ describe('createFragment() with self references', () => {
 
     initContentTypeRegistry([r1]);
     const result = await createFragment('r1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -482,7 +482,7 @@ describe('createFragment() with self references', () => {
 
     initContentTypeRegistry([r1]);
     const result = await createFragment('r1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -510,7 +510,7 @@ describe('createFragment() empty objects', () => {
     });
     initContentTypeRegistry([ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -535,7 +535,7 @@ describe('createFragment() empty objects', () => {
     });
     initContentTypeRegistry([ct1]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -563,7 +563,7 @@ describe('createFragment() empty objects', () => {
     const result = await createFragment('ct1');
 
     // Make sure that the query is correct. The `p1 {}` part should have something between the curly braces
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -597,7 +597,7 @@ describe('createFragment() with component properties', () => {
     });
     initContentTypeRegistry([ct1, ctBlock]);
     const result = await createFragment('ct1');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
