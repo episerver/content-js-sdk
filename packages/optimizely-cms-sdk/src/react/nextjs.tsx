@@ -1,6 +1,6 @@
 'use client';
 
-// @ts-expect-error - next/navigation is optional peer dependency
+// @ts-ignore - next/navigation is optional peer dependency
 import { useRouter } from 'next/navigation';
 import { PreviewComponent } from './client.js';
 import type { ReactNode } from 'react';
