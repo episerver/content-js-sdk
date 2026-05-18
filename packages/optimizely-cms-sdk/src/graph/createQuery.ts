@@ -1,6 +1,10 @@
 import { AnyProperty } from '../model/properties.js';
 import { AnyContentType, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
-import { getContentType, getAllContentTypes, getContentTypeByBaseType } from '../model/contentTypeRegistry.js';
+import {
+  getContentType,
+  getAllContentTypes,
+  getContentTypeByBaseType,
+} from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
   buildBaseTypeFragments,
@@ -34,6 +38,14 @@ type FragmentOptions = {
    * @default true
    */
   includeBaseFragments?: boolean;
+};
+
+/**
+ * Result of fragment generation containing both the fragment strings and metadata.
+ */
+type FragmentResult = {
+  fragments: string[];
+  includesDamAssetsFragments: boolean;
 };
 
 let allContentTypes: AnyContentType[] = [];
@@ -99,7 +111,12 @@ function convertProperty(
   const result = convertPropertyField(name, property, rootName, suffix, visited, options);
 
   // logs warnings if the fragment generation causes potential issues
-  const warningMessage = checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
+  const warningMessage = checkTypeConstraintIssues(
+    rootName,
+    property,
+    result,
+    maxFragmentThreshold,
+  );
 
   if (warningMessage) {
     console.warn(warningMessage);
@@ -140,13 +157,14 @@ function convertPropertyField(
   if (property.type === 'component') {
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
-    extraFragments.push(
-      ...createFragment(key, visited, 'Property', {
-        damEnabled,
-        maxFragmentThreshold,
-        includeBaseFragments: false,
-      }),
-    );
+    const componentResult = createFragment(key, visited, 'Property', {
+      damEnabled,
+      maxFragmentThreshold,
+      includeBaseFragments: false,
+    });
+    extraFragments.push(...componentResult.fragments);
+    includesDamAssetsFragments =
+      includesDamAssetsFragments || componentResult.includesDamAssetsFragments;
     fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(property.allowedTypes, property.restrictedTypes);
@@ -157,13 +175,14 @@ function convertPropertyField(
       if (key === '_self') {
         key = rootName;
       }
-      extraFragments.push(
-        ...createFragment(key, visited, '', {
-          damEnabled,
-          maxFragmentThreshold,
-          includeBaseFragments: true,
-        }),
-      );
+      const contentResult = createFragment(key, visited, '', {
+        damEnabled,
+        maxFragmentThreshold,
+        includeBaseFragments: true,
+      });
+      extraFragments.push(...contentResult.fragments);
+      includesDamAssetsFragments =
+        includesDamAssetsFragments || contentResult.includesDamAssetsFragments;
       subfields.push(`...${key}`);
     }
 
@@ -206,9 +225,12 @@ function convertPropertyField(
  * Builds experience GraphQL fragments and their dependencies.
  * @param visited - Set of fragment names already visited to avoid cycles.
  * @param options - Fragment generation options.
- * @returns A list of GraphQL fragment strings.
+ * @returns An object containing fragment strings and DAM usage flag.
  */
-function createExperienceFragments(visited: Set<string>, options: FragmentOptions = {}): string[] {
+function createExperienceFragments(
+  visited: Set<string>,
+  options: FragmentOptions = {},
+): FragmentResult {
   // Fixed fragments for all experiences
   const fixedFragments = [
     'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
@@ -224,15 +246,26 @@ function createExperienceFragments(visited: Set<string>, options: FragmentOption
     })
     .map(c => c.key);
 
-  // Get the required fragments
-  const extraFragments = experienceNodes
+  // Get the required fragments and track DAM usage
+  const { fragments, includesDamAssetsFragments } = experienceNodes
     .filter(n => !visited.has(n))
-    .flatMap(n => createFragment(n, visited, '', { ...options, includeBaseFragments: true }));
+    .flatMap(n => createFragment(n, visited, '', { ...options, includeBaseFragments: true }))
+    .reduce(
+      (acc, result) => ({
+        fragments: [...acc.fragments, ...result.fragments],
+        includesDamAssetsFragments:
+          acc.includesDamAssetsFragments || result.includesDamAssetsFragments,
+      }),
+      { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
+    );
 
   const nodeNames = experienceNodes.map(n => `...${n}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
 
-  return [...fixedFragments, ...extraFragments, componentFragment];
+  return {
+    fragments: [...fixedFragments, ...fragments, componentFragment],
+    includesDamAssetsFragments,
+  };
 }
 
 /**
@@ -248,7 +281,7 @@ export function createFragment(
   visited: Set<string> = new Set(), // shared across recursion
   suffix: string = '',
   options: FragmentOptions = {},
-): string[] {
+): FragmentResult {
   // Validate content type name before fragment generation
   if (!contentTypeName || contentTypeName === 'undefined') {
     throw new GraphQueryGenerationError({
@@ -259,7 +292,7 @@ export function createFragment(
 
   const { damEnabled = false, maxFragmentThreshold = 100, includeBaseFragments = true } = options;
   const fragmentName = `${contentTypeName}${suffix}`;
-  if (visited.has(fragmentName)) return []; // cyclic ref guard
+  if (visited.has(fragmentName)) return { fragments: [], includesDamAssetsFragments: false }; // cyclic ref guard
   // Refresh registry cache only on the *root* call (avoids redundant reads)
   if (visited.size === 0) refreshCache();
   visited.add(fragmentName);
@@ -308,12 +341,13 @@ export function createFragment(
 
     if (ct.baseType === '_experience') {
       fields.push('..._IExperience');
-      extraFragments.push(
-        ...createExperienceFragments(visited, {
-          damEnabled,
-          maxFragmentThreshold,
-        }),
-      );
+      const experienceResult = createExperienceFragments(visited, {
+        damEnabled,
+        maxFragmentThreshold,
+      });
+      extraFragments.push(...experienceResult.fragments);
+      includesDamAssetsFragments =
+        includesDamAssetsFragments || experienceResult.includesDamAssetsFragments;
     }
   }
 
@@ -328,10 +362,14 @@ export function createFragment(
 
   // Compose unique fragment
   const uniqueFields = [...new Set(fields)].join(' ');
-  return [
+  const fragments = [
     ...new Set(extraFragments), // unique dependency fragments
     `fragment ${fragmentName} on ${parsedFragmentName} { ${uniqueFields} }`,
   ];
+  return {
+    fragments,
+    includesDamAssetsFragments,
+  };
 }
 
 /**
@@ -345,15 +383,16 @@ export function createSingleContentQuery(
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
 ) {
-  const fragment = createFragment(contentType, new Set(), '', {
+  const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: true,
   });
-  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
+  const fragments = result.fragments;
+  const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
   return `
-${fragment.join('\n')}
+${fragments.join('\n')}
 query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     item {
@@ -382,15 +421,16 @@ export function createMultipleContentQuery(
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
 ) {
-  const fragment = createFragment(contentType, new Set(), '', {
+  const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: true,
   });
-  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
+  const fragments = result.fragments;
+  const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
   return `
-${fragment.join('\n')}
+${fragments.join('\n')}
 query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     items {
@@ -465,4 +505,3 @@ function resolveAllowedTypes(
 
   return result;
 }
-
