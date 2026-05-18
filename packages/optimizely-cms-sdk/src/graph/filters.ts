@@ -32,6 +32,8 @@ function normalizePath(path: string) {
 export function pathFilter(path: string, host?: string): ContentInput {
   const { pathWithTrailingSlash, pathWithoutTrailingSlash } = normalizePath(path);
 
+  const baseFilter = host ? { eq: host } : undefined;
+
   return {
     where: {
       _or: [
@@ -39,7 +41,7 @@ export function pathFilter(path: string, host?: string): ContentInput {
           _metadata: {
             url: {
               default: { eq: pathWithTrailingSlash },
-              base: host ? { eq: host } : undefined,
+              base: baseFilter,
             },
           },
         },
@@ -47,7 +49,23 @@ export function pathFilter(path: string, host?: string): ContentInput {
           _metadata: {
             url: {
               default: { eq: pathWithoutTrailingSlash },
-              base: host ? { eq: host } : undefined,
+              base: baseFilter,
+            },
+          },
+        },
+        {
+          _metadata: {
+            url: {
+              hierarchical: { eq: pathWithTrailingSlash },
+              base: baseFilter,
+            },
+          },
+        },
+        {
+          _metadata: {
+            url: {
+              hierarchical: { eq: pathWithoutTrailingSlash },
+              base: baseFilter,
             },
           },
         },
@@ -102,7 +120,11 @@ export function localeFilter(locale?: string[]): ContentInput {
  * @param reference - GraphReference object containing key and optional parameters
  * @returns A `ContentInput` object with a `where` clause filtering by the reference
  */
-export function referenceFilter(reference: { key: string; locale?: string; version?: string }): ContentInput {
+export function referenceFilter(reference: {
+  key: string;
+  locale?: string;
+  version?: string;
+}): ContentInput {
   return {
     where: {
       _metadata: {
