@@ -37,4 +37,15 @@ const ExpSection = contentType({
   },
 });
 
-export const allContentTypes = [MyExperience, CallToAction, CallToAction2, ExpSection];
+const ImageComponent = contentType({
+  baseType: '_component',
+  key: 'ImageComponent',
+  displayName: 'Image Component',
+  compositionBehaviors: ['elementEnabled'],
+  properties: {
+    title: { type: 'string' },
+    image: { type: 'contentReference', allowedTypes: ['_image'] },
+  },
+});
+
+export const allContentTypes = [MyExperience, CallToAction, CallToAction2, ExpSection, ImageComponent];

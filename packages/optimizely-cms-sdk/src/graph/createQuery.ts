@@ -1,11 +1,11 @@
 import { AnyContentType } from '../model/contentTypes.js';
 import { getContentType } from '../model/contentTypeRegistry.js';
 import {
-  BASE_TYPE_FRAGMENTS,
   isBaseType,
   toBaseTypeFragmentKey,
   DAM_ASSET_FRAGMENTS,
   FIXED_FRAGMENTS,
+  BASE_TYPE_FRAGMENTS,
 } from '../util/baseTypeUtil.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
@@ -18,6 +18,14 @@ import {
 } from '../util/queryUtils.js';
 
 // TYPE DEFINITIONS
+
+/**
+ * Result of fragment generation containing both the fragment strings and metadata.
+ */
+type FragmentResult = {
+  fragments: string[];
+  includesDamAssetsFragments: boolean;
+};
 
 export type ItemsResponse<T> = {
   _Content: {
@@ -36,55 +44,66 @@ export type ItemsResponse<T> = {
  * Builds experience GraphQL fragments and their dependencies.
  * @param visited - Set of fragment names already visited to avoid cycles.
  * @param options - Fragment generation options.
- * @returns A list of GraphQL fragment strings.
+ * @returns An object containing fragment strings and DAM usage flag.
  */
 const createExperienceFragments = (
   visited: Set<string>,
   options: FragmentOptions = {},
-): string[] => {
+): FragmentResult => {
   const experienceNodeKeys = getCachedContentTypes()
     .filter(isExperienceComponent)
-    .map(c => c.key);
+    .map(contentType => contentType.key);
 
-  const extraFragments = experienceNodeKeys
+  const { fragments, includesDamAssetsFragments } = experienceNodeKeys
     .filter(key => !visited.has(key))
     .flatMap(key =>
       createFragment(key, visited, '', { ...options, includeBaseFragments: true }),
+    )
+    .reduce(
+      (acc, result) => ({
+        fragments: [...acc.fragments, ...result.fragments],
+        includesDamAssetsFragments:
+          acc.includesDamAssetsFragments || result.includesDamAssetsFragments,
+      }),
+      { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
     );
 
   const nodeNames = experienceNodeKeys.map(key => `...${key}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
 
-  return [...FIXED_FRAGMENTS, ...extraFragments, componentFragment];
+  return {
+    fragments: [...FIXED_FRAGMENTS, ...fragments, componentFragment],
+    includesDamAssetsFragments,
+  };
 };
 
 // VALIDATION
 
 const validateContentTypeName = (contentTypeName: string, visited: Set<string>): void => {
-  if (!contentTypeName || contentTypeName === 'undefined') {
+  if (!contentTypeName || contentTypeName === 'undefined')
     throw new GraphQueryGenerationError({
       contentType: contentTypeName,
       parentContentType: visited.values().next().value,
     });
-  }
 };
 
 // FRAGMENT PROCESSING
 
 const processUserTypeProperties = (
-  ct: AnyContentType,
+  contentType: AnyContentType,
   contentTypeName: string,
   suffix: string,
   visited: Set<string>,
   options: FragmentOptions,
 ): FragmentInfo => {
   const { damEnabled = false, maxFragmentThreshold = 100 } = options;
+  const props = Object.entries(contentType.properties ?? {}).filter(
+    ([, t]) => t.indexingType !== 'disabled',
+  );
+
   const fields: string[] = [];
   const extraFragments: string[] = [];
   let includesDamAssetsFragments = false;
-  const props = Object.entries(ct.properties ?? {}).filter(
-    ([, t]) => t.indexingType !== 'disabled',
-  );
 
   for (const [propKey, prop] of props) {
     const result = convertProperty(propKey, prop, contentTypeName, suffix, visited, {
@@ -106,7 +125,7 @@ const assembleFragment = (
   fields: string[],
   extraFragments: string[],
   includesDamAssetsFragments: boolean,
-): string[] => {
+): FragmentResult => {
   const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
 
   const allFragments =
@@ -116,10 +135,13 @@ const assembleFragment = (
   const uniqueFields = [...new Set(fields)].join(' ');
   const uniqueFragments = [...new Set(allFragments)];
 
-  return [
-    ...uniqueFragments,
-    `fragment ${fragmentName} on ${parsedFragmentName} { ${uniqueFields} }`,
-  ];
+  return {
+    fragments: [
+      ...uniqueFragments,
+      `fragment ${fragmentName} on ${parsedFragmentName} { ${uniqueFields} }`,
+    ],
+    includesDamAssetsFragments,
+  };
 };
 
 // FRAGMENT GENERATION
@@ -130,14 +152,14 @@ const assembleFragment = (
  * @param visited Set of fragment names already on the stack.
  * @param suffix Optional suffix for the fragment name.
  * @param options Fragment generation options (damEnabled, maxFragmentThreshold, includeBaseFragments).
- * @returns Array of fragment strings.
+ * @returns Fragment result containing fragments array and DAM flag.
  */
 export const createFragment = (
   contentTypeName: string,
   visited: Set<string> = new Set(),
   suffix: string = '',
   options: FragmentOptions = {},
-): string[] => {
+): FragmentResult => {
   validateContentTypeName(contentTypeName, visited);
 
   const {
@@ -147,7 +169,8 @@ export const createFragment = (
   } = options;
   const fragmentName = `${contentTypeName}${suffix}`;
 
-  if (visited.has(fragmentName)) return [];
+  if (visited.has(fragmentName))
+    return { fragments: [], includesDamAssetsFragments: false };
 
   if (visited.size === 0) refreshCache();
   visited.add(fragmentName);
@@ -184,9 +207,13 @@ export const createFragment = (
 
     if (contentType.baseType === '_experience') {
       fields.push('..._IExperience');
-      extraFragments.push(
-        ...createExperienceFragments(visited, { damEnabled, maxFragmentThreshold }),
-      );
+      const experienceResult = createExperienceFragments(visited, {
+        damEnabled,
+        maxFragmentThreshold,
+      });
+      extraFragments.push(...experienceResult.fragments);
+      includesDamAssetsFragments =
+        includesDamAssetsFragments || experienceResult.includesDamAssetsFragments;
     }
   }
 
@@ -211,15 +238,16 @@ export const createSingleContentQuery = (
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
 ) => {
-  const fragment = createFragment(contentType, new Set(), '', {
+  const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: true,
   });
-  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
+  const fragments = result.fragments;
+  const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
   return `
-${fragment.join('\n')}
+${fragments.join('\n')}
 query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     item {
@@ -248,15 +276,16 @@ export const createMultipleContentQuery = (
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
 ) => {
-  const fragment = createFragment(contentType, new Set(), '', {
+  const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: true,
   });
-  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
+  const fragments = result.fragments;
+  const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
   return `
-${fragment.join('\n')}
+${fragments.join('\n')}
 query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     items {
@@ -270,3 +299,4 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
 }
   `;
 };
+

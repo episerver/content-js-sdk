@@ -9,9 +9,9 @@ import {
   getContentTypeByBaseType,
 } from '../model/contentTypeRegistry.js';
 import { CONTENT_URL_FRAGMENT, getKeyName, isBaseType } from './baseTypeUtil.js';
-import { createFragment } from '../graph/createQuery.js';
 import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
+import { createFragment } from '../graph/createQuery.js';
 
 // TYPE DEFINITIONS
 
@@ -59,19 +59,15 @@ export type PropertyHandler = (
 let allContentTypes: AnyContentType[] = [];
 
 /**
- * Retrieves and caches all content type definitions.
- * Avoids repeated calls to the content registry.
- * @returns An array of all contentType definitions.
+ * Retrieves cached content type definitions.
  */
 export const getCachedContentTypes = (): AnyContentType[] => {
-  if (allContentTypes.length === 0) {
-    allContentTypes = getAllContentTypes();
-  }
+  if (allContentTypes.length === 0) allContentTypes = getAllContentTypes();
   return allContentTypes;
 };
 
 /**
- * Forces a refresh of the cached content type definitions.
+ * Refreshes the cached content type definitions.
  */
 export const refreshCache = () => {
   allContentTypes = getAllContentTypes();
@@ -79,27 +75,31 @@ export const refreshCache = () => {
 
 // CONTENT TYPE UTILITIES
 
-const allPropertiesAreDisabled = (ct: AnyContentType): boolean => {
-  if (!ct?.properties) return false;
-  const properties = Object.values(ct.properties);
+const allPropertiesAreDisabled = (contentType: AnyContentType): boolean => {
+  if (!contentType?.properties) return false;
+  const properties = Object.values(contentType.properties);
   return (
-    properties.length > 0 && properties.every(prop => prop?.indexingType === 'disabled')
+    properties.length > 0 &&
+    properties.every(property => property?.indexingType === 'disabled')
   );
 };
 
-export const isExperienceComponent = (ct: AnyContentType): boolean =>
-  ct.baseType === '_component' &&
-  'compositionBehaviors' in ct &&
-  (ct.compositionBehaviors?.length ?? 0) > 0;
+/**
+ * Checks if a content type is an experience component.
+ */
+export const isExperienceComponent = (contentType: AnyContentType): boolean =>
+  contentType.baseType === '_component' &&
+  'compositionBehaviors' in contentType &&
+  (contentType.compositionBehaviors?.length ?? 0) > 0;
 
 // ALLOWED TYPES
 
 const buildSkipSet = (restricted: PermittedTypes[] | undefined): Set<string> =>
   new Set(
-    restricted?.flatMap(r => {
-      const key = getKeyName(r);
+    restricted?.flatMap(type => {
+      const key = getKeyName(type);
       return isBaseType(key) ?
-          [key, ...getContentTypeByBaseType(key).map(ct => ct.key)]
+          [key, ...getContentTypeByBaseType(key).map(contentType => contentType.key)]
         : [key];
     }) ?? [],
   );
@@ -132,12 +132,6 @@ const expandBaseType = (
   return [entry];
 };
 
-/**
- * Resolves the set of allowed content types for a property, excluding restricted and recursive entries.
- * @param allowed - Explicit allow list of types.
- * @param restricted - Explicit deny list of types.
- * @returns An array of allowed content types for fragment generation.
- */
 const resolveAllowedTypes = (
   allowed: PermittedTypes[] | undefined,
   restricted: PermittedTypes[] | undefined,
@@ -151,10 +145,10 @@ const resolveAllowedTypes = (
 
   return baseline
     .flatMap(entry => expandBaseType(entry, shouldExpandBaseTypes))
-    .filter(ct => {
-      const key = getKeyName(ct);
+    .filter(contentType => {
+      const key = getKeyName(contentType);
       if (seen.has(key)) return false;
-      if (!shouldIncludeContentType(ct, skipSet)) return false;
+      if (!shouldIncludeContentType(contentType, skipSet)) return false;
       seen.add(key);
       return true;
     });
@@ -176,13 +170,17 @@ const handleComponentProperty: PropertyHandler = (
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
   const fragmentName = `${key}Property`;
   const fields = [`${nameInFragment} { ...${fragmentName} }`];
-  const extraFragments = createFragment(key, visited, 'Property', {
+  const result = createFragment(key, visited, 'Property', {
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: false,
   });
 
-  return { fields, extraFragments, includesDamAssetsFragments: false };
+  return {
+    fields,
+    extraFragments: result.fragments,
+    includesDamAssetsFragments: result.includesDamAssetsFragments,
+  };
 };
 
 const handleContentProperty: PropertyHandler = (
@@ -201,23 +199,28 @@ const handleContentProperty: PropertyHandler = (
   );
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
-  const extraFragments = allowed.flatMap(t => {
-    const key = getKeyName(t) === '_self' ? rootName : getKeyName(t);
-    return createFragment(key, visited, '', {
+
+  let includesDamAssetsFragments = false;
+  const extraFragments = allowed.flatMap(type => {
+    const key = getKeyName(type) === '_self' ? rootName : getKeyName(type);
+    const result = createFragment(key, visited, '', {
       damEnabled,
       maxFragmentThreshold,
       includeBaseFragments: true,
     });
-  });
-  const subfields = allowed.map(t => {
-    const key = getKeyName(t);
-    return `...${key === '_self' ? rootName : key}`;
+    includesDamAssetsFragments =
+      includesDamAssetsFragments || result.includesDamAssetsFragments;
+    return result.fragments;
   });
 
+  const subfields = allowed.map(type => {
+    const key = getKeyName(type);
+    return `...${key === '_self' ? rootName : key}`;
+  });
   const uniqueSubfields = ['__typename', ...new Set(subfields)].join(' ');
   const fields = [`${nameInFragment} { ${uniqueSubfields} }`];
 
-  return { fields, extraFragments, includesDamAssetsFragments: false };
+  return { fields, extraFragments, includesDamAssetsFragments };
 };
 
 const handleRichTextProperty: PropertyHandler = (
@@ -341,7 +344,6 @@ const convertPropertyField: PropertyHandler = (
 
 /**
  * Converts a property definition into GraphQL fields and fragments.
- * Logs warnings for potential performance or recursion issues based on configuration.
  */
 export const convertProperty: PropertyHandler = (
   name: string,
@@ -364,4 +366,3 @@ export const convertProperty: PropertyHandler = (
 
   return result;
 };
-
