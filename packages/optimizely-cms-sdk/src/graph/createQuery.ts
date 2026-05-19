@@ -17,7 +17,6 @@ import {
   buildBaseTypeFragments,
   isBaseType,
   toBaseTypeFragmentKey,
-  getFragmentName,
   CONTENT_URL_FRAGMENT,
   DAM_ASSET_FRAGMENTS,
 } from '../util/baseTypeUtil.js';
@@ -58,7 +57,7 @@ type FragmentResult = {
   includesDamAssetsFragments: boolean;
 };
 
-let allContentTypes: AnyContentType[] = [];
+let allContentTypes: RegistryEntry[] = [];
 
 /**
  * Retrieves and caches all content type definitions.
@@ -269,7 +268,7 @@ function createExperienceFragments(
       { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
     );
 
-  const nodeNames = experienceNodes.map(n => `...${getFragmentName(n)}`).join(' ');
+  const nodeNames = experienceNodes.map(n => `...${n}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
 
   return {
@@ -369,7 +368,7 @@ export function createFragment(
 
   // Convert base type key to GraphQL fragment format
   // eg: "_image" -> "_Image", "testContract" contract -> "ITestContract"
-  const parsedFragmentName = toBaseTypeFragmentKey(typeName);
+  const parsedFragmentName = toBaseTypeFragmentKey(contentTypeName);
 
   // Add DAM asset fragments if contentReference with DAM was used
   if (includesDamAssetsFragments) {

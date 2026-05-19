@@ -33,19 +33,6 @@ export function toBaseTypeFragmentKey(key: string): string {
 }
 
 /**
- * Gets the fragment name for a content type.
- * @param key - The content type key.
- * @returns The fragment name to use in GraphQL fragment references.
- */
-export function getFragmentName(key: string): string {
-  // Base types keep original key as fragment name (e.g., "_image" not "_Image")
-  if (isBaseType(key)) {
-    return key;
-  }
-  return key;
-}
-
-/**
  * Check if the keyName is a Media type
  * @param key keyName of the content type
  * @returns boolean
