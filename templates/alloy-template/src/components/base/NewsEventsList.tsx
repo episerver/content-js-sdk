@@ -52,7 +52,7 @@ function NewsEventsList({ content }: NewsEventsListProps) {
               key={index}
               content={teaser}
               variant={{
-                Standard: 'mini',
+                Standard: 'teaser',
               }}
             />
           );
@@ -70,4 +70,5 @@ function NewsEventsList({ content }: NewsEventsListProps) {
 }
 
 export default NewsEventsList;
+
 

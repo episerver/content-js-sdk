@@ -69,7 +69,7 @@ initReactComponentRegistry({
     Standard: {
       default: Standard,
       tags: {
-        mini: StandardTeaser,
+        teaser: StandardTeaser,
       },
     },
     Start,

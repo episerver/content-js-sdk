@@ -98,7 +98,7 @@ function News({ content }: NewsPageProps) {
                 key={index}
                 content={teaser}
                 variant={{
-                  Standard: 'mini',
+                  Standard: 'teaser',
                 }}
               />
             ))}
@@ -110,4 +110,5 @@ function News({ content }: NewsPageProps) {
 }
 
 export default News;
+
 
