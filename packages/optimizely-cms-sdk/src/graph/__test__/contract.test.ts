@@ -20,7 +20,7 @@ describe('Fragment generation for single contract', () => {
     initContentTypeRegistry([TestContract]);
 
     const result = await createFragment('TestContract');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -64,7 +64,7 @@ describe('Fragment generation of contracts used in pages', () => {
     initContentTypeRegistry([TestContract, TestPage]);
 
     const result = await createFragment('TestPage');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -97,7 +97,7 @@ describe('Fragment generation of contracts used in pages', () => {
     initContentTypeRegistry([TestContract, TestPage]);
 
     const result = await createFragment('TestPage');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -173,7 +173,7 @@ describe('Fragment generation of contracts with experiences', () => {
     initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, TestExperience]);
 
     const result = await createFragment('TestExperience');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -251,7 +251,7 @@ describe('Fragment generation of contracts with experiences', () => {
     initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, TestExperience]);
 
     const result = await createFragment('TestExperience');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -349,10 +349,16 @@ describe('Fragment generation of contracts with experiences', () => {
       },
     });
 
-    initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, ContentTypeC, TestExperience]);
+    initContentTypeRegistry([
+      TestContract,
+      ContentTypeA,
+      ContentTypeB,
+      ContentTypeC,
+      TestExperience,
+    ]);
 
     const result = await createFragment('TestExperience');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -369,5 +375,4 @@ describe('Fragment generation of contracts with experiences', () => {
     `);
   });
 });
-
 

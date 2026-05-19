@@ -1,11 +1,5 @@
 import { AnyProperty } from '../model/properties.js';
-import {
-  AnyContentType,
-  ContentType,
-  Contract,
-  MAIN_BASE_TYPES,
-  PermittedTypes,
-} from '../model/contentTypes.js';
+import { AnyContentType, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
 import {
   getContentType,
   getAllContentTypes,
@@ -22,7 +16,6 @@ import {
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
-import { toArray } from '../util/general.js';
 import { isContract } from '../model/index.js';
 
 /**
@@ -278,6 +271,30 @@ function createExperienceFragments(
 }
 
 /**
+ * Determines the parsed fragment name based on content type characteristics.
+ * @param contentTypeName - The original content type name/key.
+ * @param fragmentName - The fragment name (may include suffix).
+ * @param ct - The content type registry entry (undefined for base types).
+ * @returns The parsed fragment name for GraphQL fragment definition.
+ */
+function getParsedFragmentName(
+  contentTypeName: string,
+  fragmentName: string,
+  ct: RegistryEntry | undefined,
+): string {
+  if (isBaseType(contentTypeName)) {
+    // Base types: apply capitalization (e.g., "_image" -> "_Image")
+    return toBaseTypeFragmentKey(contentTypeName);
+  } else if (ct && isContract(ct)) {
+    // Contracts: add "I" prefix to fragment name (includes suffix)
+    return `I${fragmentName}`;
+  } else {
+    // Regular content types or component properties: use fragment name as-is (includes suffix)
+    return fragmentName;
+  }
+}
+
+/**
  * Builds a GraphQL fragment for the requested content-type **and** returns every nested fragment it depends on.
  * @param contentTypeName Name/key of the content-type to expand.
  * @param visited Set of fragment names already on the stack.
@@ -368,7 +385,7 @@ export function createFragment(
 
   // Convert base type key to GraphQL fragment format
   // eg: "_image" -> "_Image", "testContract" contract -> "ITestContract"
-  const parsedFragmentName = toBaseTypeFragmentKey(contentTypeName);
+  const parsedFragmentName = getParsedFragmentName(contentTypeName, fragmentName, ct);
 
   // Add DAM asset fragments if contentReference with DAM was used
   if (includesDamAssetsFragments) {
@@ -471,32 +488,6 @@ export type ItemsResponse<T> = {
   };
 };
 
-function findContractExtenders(
-  contentType: PermittedTypes,
-  contentTypes: AnyContentType[],
-): ContentType<AnyContentType>[] {
-  if (typeof contentType === 'object' && contentType !== null && 'key' in contentType) {
-    const key = contentType.key;
-    return contentTypes.filter(
-      contentType =>
-        contentType.extends && toArray(contentType.extends).some(contract => contract.key === key),
-    ) as ContentType<AnyContentType>[];
-  }
-  return [];
-}
-
-function fixSpecialImports(
-  contentTypes: AnyContentType[],
-  items: PermittedTypes[] | undefined = [],
-): PermittedTypes[] | undefined {
-  if (!items || items.length === 0) return items;
-  return items
-    .map(contentType =>
-      !isContract(contentType) ? contentType : findContractExtenders(contentType, contentTypes),
-    )
-    .flat();
-}
-
 /**
  * Resolves the set of allowed content types for a property, excluding restricted and recursive entries.
  * @param allowed - Explicit allow list of types.
@@ -546,4 +537,5 @@ function resolveAllowedTypes(
 
   return result;
 }
+
 
