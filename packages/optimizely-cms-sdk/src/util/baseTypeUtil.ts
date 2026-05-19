@@ -1,45 +1,55 @@
 import { ExperienceComponentNode, ExperienceNode } from '../infer.js';
-import { AnyContentType, MEDIA_BASE_TYPES, PermittedTypes, MediaStringTypes } from '../model/contentTypes.js';
+import {
+  AnyContentType,
+  MEDIA_BASE_TYPES,
+  PermittedTypes,
+  MediaStringTypes,
+} from '../model/contentTypes.js';
 
-/**
- * Get the key or name of ContentType or Media type
- * @param t ContentType or Media type property
- * @returns Name of the ContentType or Media type
- */
-export function getKeyName(t: PermittedTypes | AnyContentType): string {
-  if (typeof t === 'string') return t;
-  return t.key;
-}
+// TYPE CHECKING
 
 /**
  * Check if the keyName is a built‑in CMS baseTypes
  * @param key keyName of the content type
  * @returns boolean
  */
-export function isBaseType(key: string): boolean {
-  return /^_/.test(key);
-}
-
-/**
- * Check if the keyName is a built-in CMS baseType.
- * @param key - The keyName of the content type.
- * @returns True if the key is a built-in CMS baseType format, otherwise return the original key.
- */
-export function toBaseTypeFragmentKey(key: string): string {
-  if (isBaseType(key)) {
-    return `_${key.charAt(1).toUpperCase()}${key.slice(2)}`;
-  }
-  return key;
-}
+export const isBaseType = (key: string): boolean => /^_/.test(key);
 
 /**
  * Check if the keyName is a Media type
  * @param key keyName of the content type
  * @returns boolean
  */
-export function isBaseMediaType(key: string): key is MediaStringTypes {
-  return (MEDIA_BASE_TYPES as readonly string[]).includes(key);
-}
+export const isBaseMediaType = (key: string): key is MediaStringTypes =>
+  (MEDIA_BASE_TYPES as readonly string[]).includes(key);
+
+/**
+ * Check if the node is a component node
+ * @param node - The experience node to check
+ * @returns True if the node is a component node
+ */
+export const isComponentNode = (node: ExperienceNode): node is ExperienceComponentNode =>
+  node.__typename === 'CompositionComponentNode';
+
+// KEY UTILITIES
+
+/**
+ * Get the key or name of ContentType or Media type
+ * @param type ContentType or Media type property
+ * @returns Name of the ContentType or Media type
+ */
+export const getKeyName = (type: PermittedTypes | AnyContentType): string =>
+  typeof type === 'string' ? type : type.key;
+
+/**
+ * Check if the keyName is a built-in CMS baseType.
+ * @param key - The keyName of the content type.
+ * @returns True if the key is a built-in CMS baseType format, otherwise return the original key.
+ */
+export const toBaseTypeFragmentKey = (key: string): string =>
+  isBaseType(key) ? `_${key.charAt(1).toUpperCase()}${key.slice(2)}` : key;
+
+// FRAGMENT CONSTANTS
 
 export const CONTENT_URL_FRAGMENT =
   'fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }';
@@ -49,6 +59,11 @@ export const DAM_ASSET_FRAGMENTS = [
   'fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }',
   'fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }',
   'fragment ContentReferenceItem on ContentReference { item { __typename ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }',
+];
+
+export const FIXED_FRAGMENTS = [
+  'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
+  'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }',
 ];
 
 const COMMON_FRAGMENTS = [
@@ -62,17 +77,7 @@ const COMMON_FRAGMENTS = [
 
 const COMMON_FIELDS = '..._IContent';
 
-/**
- * Generates and adds fragments for base types
- * @returns { fields, extraFragments }
- */
-export function buildBaseTypeFragments() {
-  return {
-    fields: [COMMON_FIELDS],
-    extraFragments: [...COMMON_FRAGMENTS],
-  };
-}
-
-export function isComponentNode(node: ExperienceNode): node is ExperienceComponentNode {
-  return node.__typename === 'CompositionComponentNode';
-}
+export const BASE_TYPE_FRAGMENTS = {
+  fields: [COMMON_FIELDS],
+  extraFragments: [...COMMON_FRAGMENTS],
+};
