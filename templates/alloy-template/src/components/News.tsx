@@ -97,9 +97,7 @@ function News({ content }: NewsPageProps) {
               <OptimizelyComponent
                 key={index}
                 content={teaser}
-                variant={{
-                  Standard: 'teaser',
-                }}
+                tag="teaser"
               />
             ))}
           </div>

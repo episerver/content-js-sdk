@@ -51,9 +51,7 @@ function NewsEventsList({ content }: NewsEventsListProps) {
             <OptimizelyComponent
               key={index}
               content={teaser}
-              variant={{
-                Standard: 'teaser',
-              }}
+              tag="teaser"
             />
           );
         })}

@@ -109,38 +109,37 @@ type OptimizelyComponentProps = {
 
   displaySettings?: Record<string, string | boolean>;
 
-  /** Manual variant override - maps content type to display variant */
-  variant?: Record<string, string>;
+  /** Manual tag override for component lookup */
+  tag?: string;
 };
 
 /**
  * Gets display template key from content, checking multiple sources.
  */
 function getDisplayTemplateKey(content: OptimizelyContent): string | null | undefined {
-  return content._metadata?.displayOption ?? content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
+  return (
+    content._metadata?.displayOption ??
+    content.__composition?.displayTemplateKey ??
+    content.displayTemplateKey
+  );
 }
 
 /**
  * Resolves the tag to use for component lookup.
- * Checks variant override first, then falls back to content.__tag or display template tag.
+ * Checks tag override first, then falls back to content.__tag or display template tag.
  */
-function resolveTag(content: OptimizelyContent, variant: Record<string, string> | undefined): string | undefined {
-  const dtKey = getDisplayTemplateKey(content);
-  let tag = content.__tag ?? getDisplayTemplateTag(dtKey);
-
-  // Check variant override - try metadata.types first, then __typename
-  if (variant) {
-    const types = content._metadata?.types ?? [];
-    const allTypes = [...types, content.__typename];
-    for (const typename of allTypes) {
-      if (typename && variant[typename]) {
-        tag = variant[typename];
-        break;
-      }
-    }
+function resolveTag(
+  content: OptimizelyContent,
+  componentTag: string | undefined,
+): string | undefined {
+  //  tag override priority for tag provided by caller (e.g. OptimizelyComponent's `tag` prop)
+  if (componentTag) {
+    return componentTag;
   }
 
-  return tag;
+  // Fall back to content tag or display template tag or displayOption
+  const dtKey = getDisplayTemplateKey(content);
+  return content.__tag ?? getDisplayTemplateTag(dtKey);
 }
 
 /**
@@ -166,17 +165,24 @@ function findComponent(
   return { component, typename };
 }
 
-export async function OptimizelyComponent({ content, displaySettings, variant, ...props }: OptimizelyComponentProps) {
+export async function OptimizelyComponent({
+  content,
+  displaySettings,
+  tag,
+  ...props
+}: OptimizelyComponentProps) {
   if (!content) {
-    throw new OptimizelyReactError('OptimizelyComponent requires a valid content prop. Received null or undefined.');
+    throw new OptimizelyReactError(
+      'OptimizelyComponent requires a valid content prop. Received null or undefined.',
+    );
   }
 
   if (!componentRegistry) {
     throw new OptimizelyReactError('You should call `initReactComponentRegistry` first');
   }
 
-  const tag = resolveTag(content, variant);
-  const { component: Component, typename } = findComponent(content, { tag });
+  const resolvedTag = resolveTag(content, tag);
+  const { component: Component, typename } = findComponent(content, { tag: resolvedTag });
 
   if (!Component) {
     return (
@@ -410,4 +416,5 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
     },
   };
 }
+
 
