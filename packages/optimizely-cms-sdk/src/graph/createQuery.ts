@@ -4,6 +4,7 @@ import {
   getContentType,
   getAllContentTypes,
   getContentTypeByBaseType,
+  RegistryEntry,
 } from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
@@ -15,6 +16,7 @@ import {
 } from '../util/baseTypeUtil.js';
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
+import { isContract } from '../model/index.js';
 
 /**
  * Options for controlling GraphQL fragment generation behavior.
@@ -48,14 +50,14 @@ type FragmentResult = {
   includesDamAssetsFragments: boolean;
 };
 
-let allContentTypes: AnyContentType[] = [];
+let allContentTypes: RegistryEntry[] = [];
 
 /**
  * Retrieves and caches all content type definitions.
  * Avoids repeated calls to the content registry.
  * @returns An array of all contentType definitions.
  */
-function getCachedContentTypes(): AnyContentType[] {
+function getCachedContentTypes(): RegistryEntry[] {
   if (allContentTypes.length === 0) {
     allContentTypes = getAllContentTypes();
   }
@@ -73,7 +75,7 @@ function refreshCache() {
  * @param ct - The content type to check.
  * @returns True if all properties are disabled, false otherwise.
  */
-function allPropertiesAreDisabled(ct: AnyContentType): boolean {
+function allPropertiesAreDisabled(ct: RegistryEntry): boolean {
   if (!ct || !ct.properties) return false;
   let hasProperties = false;
   for (const k in ct.properties) {
@@ -239,7 +241,7 @@ function createExperienceFragments(
 
   const experienceNodes = getCachedContentTypes()
     .filter(c => {
-      if (c.baseType === '_component') {
+      if ('baseType' in c && c.baseType === '_component') {
         return 'compositionBehaviors' in c && (c.compositionBehaviors?.length ?? 0) > 0;
       }
       return false;
@@ -269,6 +271,30 @@ function createExperienceFragments(
 }
 
 /**
+ * Determines the parsed fragment name based on content type characteristics.
+ * @param contentTypeName - The original content type name/key.
+ * @param fragmentName - The fragment name (may include suffix).
+ * @param ct - The content type registry entry (undefined for base types).
+ * @returns The parsed fragment name for GraphQL fragment definition.
+ */
+function getParsedFragmentName(
+  contentTypeName: string,
+  fragmentName: string,
+  ct: RegistryEntry | undefined,
+): string {
+  if (isBaseType(contentTypeName)) {
+    // Base types: apply capitalization (e.g., "_image" -> "_Image")
+    return toBaseTypeFragmentKey(contentTypeName);
+  } else if (ct && isContract(ct)) {
+    // Contracts: add "I" prefix to fragment name (includes suffix)
+    return `I${fragmentName}`;
+  } else {
+    // Regular content types or component properties: use fragment name as-is (includes suffix)
+    return fragmentName;
+  }
+}
+
+/**
  * Builds a GraphQL fragment for the requested content-type **and** returns every nested fragment it depends on.
  * @param contentTypeName Name/key of the content-type to expand.
  * @param visited Set of fragment names already on the stack.
@@ -291,6 +317,17 @@ export function createFragment(
   }
 
   const { damEnabled = false, maxFragmentThreshold = 100, includeBaseFragments = true } = options;
+  let ct: RegistryEntry | undefined;
+
+  // Determine content type early to know if it's a contract
+  if (!isBaseType(contentTypeName)) {
+    ct = getContentType(contentTypeName);
+    if (!ct) {
+      throw new GraphMissingContentTypeError(contentTypeName);
+    }
+  }
+
+  // Fragment name for definition (no "I" prefix)
   const fragmentName = `${contentTypeName}${suffix}`;
   if (visited.has(fragmentName)) return { fragments: [], includesDamAssetsFragments: false }; // cyclic ref guard
   // Refresh registry cache only on the *root* call (avoids redundant reads)
@@ -307,14 +344,9 @@ export function createFragment(
     fields.push(...f);
     extraFragments.push(...e);
   } else {
-    // User-defined content type
-    const ct = getContentType(contentTypeName);
-    if (!ct) {
-      throw new GraphMissingContentTypeError(contentTypeName);
-    }
-
+    // User-defined content type or contract (ct already retrieved above)
     // Gather fields for every property
-    for (const [propKey, prop] of Object.entries(ct.properties ?? {})) {
+    for (const [propKey, prop] of Object.entries(ct!.properties ?? {})) {
       // Skip properties with indexingType "disabled"
       if (prop.indexingType === 'disabled') {
         continue;
@@ -323,7 +355,7 @@ export function createFragment(
         fields: f,
         extraFragments: e,
         includesDamAssetsFragments: propHasRef,
-      } = convertProperty(propKey, prop, contentTypeName, suffix, visited, {
+      } = convertProperty(propKey, prop, fragmentName, '', visited, {
         damEnabled,
         maxFragmentThreshold,
       });
@@ -339,7 +371,7 @@ export function createFragment(
       fields.push(...baseFragments.fields);
     }
 
-    if (ct.baseType === '_experience') {
+    if ('baseType' in ct! && ct!.baseType === '_experience') {
       fields.push('..._IExperience');
       const experienceResult = createExperienceFragments(visited, {
         damEnabled,
@@ -352,8 +384,8 @@ export function createFragment(
   }
 
   // Convert base type key to GraphQL fragment format
-  // eg: "_image" -> "_Image"
-  const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
+  // eg: "_image" -> "_Image", "testContract" contract -> "ITestContract"
+  const parsedFragmentName = getParsedFragmentName(contentTypeName, fragmentName, ct);
 
   // Add DAM asset fragments if contentReference with DAM was used
   if (includesDamAssetsFragments) {
@@ -505,3 +537,5 @@ function resolveAllowedTypes(
 
   return result;
 }
+
+
