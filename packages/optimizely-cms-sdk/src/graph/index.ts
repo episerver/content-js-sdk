@@ -230,25 +230,40 @@ type GetLinksResponse = {
  */
 export function removeTypePrefix(obj: any): any {
   if (Array.isArray(obj)) {
-    return obj.map(e => removeTypePrefix(e));
+    return obj.map(removeTypePrefix);
   }
 
   if (typeof obj === 'object' && obj !== null) {
     const obj2: Record<string, any> = {};
     if ('__typename' in obj && typeof obj.__typename === 'string') {
-      // Object has a GraphQL type, check for and remove aliased field prefixes
-      const prefix = obj.__typename + '__';
+      // Get all types from metadata (includes contracts/interfaces)
+      const types = obj._metadata?.types || [obj.__typename];
 
-      // Copy all properties, remove the typename from prefix
       for (const k in obj) {
-        if (k.startsWith(prefix)) {
-          obj2[k.slice(prefix.length)] = removeTypePrefix(obj[k]);
-        } else {
+        // skip prefix check for keys without '__'
+        if (!k.includes('__')) {
+          obj2[k] = removeTypePrefix(obj[k]);
+          continue;
+        }
+
+        // Check each type prefix and strip first match
+        let stripped = false;
+        for (let i = 0; i < types.length; i++) {
+          const prefix = types[i] + '__';
+          if (k.startsWith(prefix)) {
+            obj2[k.slice(prefix.length)] = removeTypePrefix(obj[k]);
+            stripped = true;
+            break;
+          }
+        }
+
+        // No prefix matched, copy as-is
+        if (!stripped) {
           obj2[k] = removeTypePrefix(obj[k]);
         }
       }
     } else {
-      // Traverse recursively
+      // Traverse recursively for objects without __typename
       for (const k in obj) {
         obj2[k] = removeTypePrefix(obj[k]);
       }

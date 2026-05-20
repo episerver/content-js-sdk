@@ -69,6 +69,10 @@ const generateContentTypeArguments = (content: ContentType) => {
       : undefined,
     mayContainTypes:
       !isContract(content) && content.mayContainTypes?.length ? content.mayContainTypes : undefined,
+    extends:
+      content.contracts?.length ?
+        content.contracts.map(c => (isImportable(c) ? markForImport(c) : c))
+      : undefined,
     properties: generateProperties(content),
   };
   return JSON.stringify(fnArguments, null, 2);
@@ -77,9 +81,11 @@ const generateContentTypeArguments = (content: ContentType) => {
 const generateDisplayTemplateArguments = (content: DisplayTemplate) => {
   const fnArguments = {
     key: content.key,
+    isDefault: content.isDefault,
     displayName: content.displayName,
-    contentType: content.contentType,
-    nodeType: content.nodeType,
+    contentType: 'contentType' in content ? content.contentType : undefined,
+    nodeType: 'nodeType' in content ? content.nodeType : undefined,
+    baseType: 'baseType' in content ? content.baseType : undefined,
     settings: content.settings,
   };
   return JSON.stringify(fnArguments, null, 2);
@@ -203,7 +209,7 @@ const commonKeyContents = ['Contract', 'CT', 'ContentType', 'DT', 'DisplayTempla
 
 const markedImportRegex = /\<\|(.+?)\|\>/g;
 
-const propertiesThatCanHoldImports = ['contentType', 'allowedTypes', 'restrictedTypes'];
+const propertiesThatCanHoldImports = ['contentType', 'allowedTypes', 'restrictedTypes', 'extends'];
 
 const skipPropertyConditions: Record<string, (it: any) => boolean> = {
   isLocalized: (it: any) => it === false,
@@ -212,4 +218,8 @@ const skipPropertyConditions: Record<string, (it: any) => boolean> = {
   allowedTypes: (it: any) => it?.length === 0,
   restrictedTypes: (it: any) => it?.length === 0,
   mayContainTypes: (it: any) => it?.length === 0,
+  extends: (it: any) => it?.length === 0,
+  contentType: (it: any) => it === undefined,
+  nodeType: (it: any) => it === undefined,
+  baseType: (it: any) => it === undefined,
 };

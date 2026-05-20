@@ -1,5 +1,5 @@
 import { AnyContentType } from '../model/contentTypes.js';
-import { getContentType } from '../model/contentTypeRegistry.js';
+import { getContentType, RegistryEntry } from '../model/contentTypeRegistry.js';
 import {
   isBaseType,
   toBaseTypeFragmentKey,
@@ -16,6 +16,7 @@ import {
   refreshCache,
   FragmentInfo,
 } from '../util/queryUtils.js';
+import { isContract } from '../model/index.js';
 
 // TYPE DEFINITIONS
 
@@ -120,13 +121,29 @@ const processUserTypeProperties = (
   return { fields, extraFragments, includesDamAssetsFragments };
 };
 
-const assembleFragment = (
+const getParsedFragmentName = (
+  contentTypeName: string,
   fragmentName: string,
+  contentType: RegistryEntry | undefined,
+): string => {
+  if (isBaseType(contentTypeName)) return toBaseTypeFragmentKey(contentTypeName);
+  if (contentType && isContract(contentType)) return `I${fragmentName}`;
+  return fragmentName;
+};
+
+const assembleFragment = (
+  contentTypeName: string,
+  fragmentName: string,
+  contentType: RegistryEntry | undefined,
   fields: string[],
   extraFragments: string[],
   includesDamAssetsFragments: boolean,
 ): FragmentResult => {
-  const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
+  const parsedFragmentName = getParsedFragmentName(
+    contentTypeName,
+    fragmentName,
+    contentType,
+  );
 
   const allFragments =
     includesDamAssetsFragments ?
@@ -178,16 +195,18 @@ export const createFragment = (
   let fields: string[] = ['__typename'];
   let extraFragments: string[] = [];
   let includesDamAssetsFragments = false;
+  let contentType: RegistryEntry | undefined;
 
   if (isBaseType(contentTypeName)) {
     fields.push(...BASE_TYPE_FRAGMENTS.fields);
     extraFragments.push(...BASE_TYPE_FRAGMENTS.extraFragments);
   } else {
-    const contentType = getContentType(contentTypeName);
+    contentType = getContentType(contentTypeName);
     if (!contentType) throw new GraphMissingContentTypeError(contentTypeName);
 
+    // Process properties (contracts and content types both have properties)
     const propResult = processUserTypeProperties(
-      contentType,
+      contentType as AnyContentType,
       contentTypeName,
       suffix,
       visited,
@@ -205,7 +224,7 @@ export const createFragment = (
       fields.push(...BASE_TYPE_FRAGMENTS.fields);
     }
 
-    if (contentType.baseType === '_experience') {
+    if ('baseType' in contentType && contentType.baseType === '_experience') {
       fields.push('..._IExperience');
       const experienceResult = createExperienceFragments(visited, {
         damEnabled,
@@ -218,7 +237,9 @@ export const createFragment = (
   }
 
   return assembleFragment(
+    contentTypeName,
     fragmentName,
+    contentType,
     fields,
     extraFragments,
     includesDamAssetsFragments,
@@ -299,4 +320,3 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
 }
   `;
 };
-
