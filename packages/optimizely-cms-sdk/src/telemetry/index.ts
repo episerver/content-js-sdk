@@ -8,5 +8,11 @@ export { logError, logWarning } from './logger.js';
 // Export semantic attributes for custom instrumentation
 export { SemanticAttributes } from './attributes.js';
 
+// Export meter instrumentation identity for OTEL configuration
+export { METER_NAME, METER_VERSION } from './meter.js';
+
+// Export metric names for OTEL views and configuration
+export { MetricNames } from './metrics.js';
+
 // Export metrics instruments
 export * as metrics from './metrics.js';

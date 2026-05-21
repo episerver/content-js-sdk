@@ -2,8 +2,8 @@ import { metrics, Meter } from '@opentelemetry/api';
 import { SDK_VERSION } from '../generated/version.js';
 
 // SDK instrumentation identity
-const INSTRUMENTATION_NAME = '@optimizely/cms-sdk';
-const INSTRUMENTATION_VERSION = SDK_VERSION;
+export const METER_NAME = '@optimizely/cms-sdk';
+export const METER_VERSION = SDK_VERSION;
 
 // Singleton meter instance
 let meter: Meter | null = null;
@@ -18,7 +18,7 @@ let meter: Meter | null = null;
  */
 export const getMeter = (): Meter => {
   if (!meter) {
-    meter = metrics.getMeter(INSTRUMENTATION_NAME, INSTRUMENTATION_VERSION);
+    meter = metrics.getMeter(METER_NAME, METER_VERSION);
   }
   return meter;
 };
