@@ -82,6 +82,16 @@ export async function getToken(clientId: string, clientSecret: string, host?: st
         throw new Error('The endpoint `/oauth/token` did not respond with data');
       }
       return data.access_token;
+    })
+    .catch(err => {
+      const cause = err instanceof Error ? (err.cause as any) : undefined;
+      if (cause?.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
+        throw new Error(
+          'Node is not accepting the self-signed certificates by default. Please set NODE_TLS_REJECT_UNAUTHORIZED=0 in your environment variables and try again.',
+        );
+      }
+
+      throw err;
     });
 }
 
@@ -110,5 +120,3 @@ export async function createApiClient(host?: string) {
   const client = await createRestApiClient({ ...cred, host });
   return client;
 }
-
-
