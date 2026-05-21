@@ -15,18 +15,22 @@ export const ProductContentType = contentType({
   properties: {
     heading: {
       type: 'string',
+      sortOrder: 1,
       displayName: 'Heading',
     },
     description: {
       type: 'string',
+      sortOrder: 2,
       displayName: 'Description',
     },
     main_body: {
       type: 'richText',
+      sortOrder: 3,
       displayName: 'Main Body',
     },
     title: {
       type: 'string',
+      sortOrder: 4,
       displayName: 'Title',
     },
     content_area: {
@@ -35,11 +39,13 @@ export const ProductContentType = contentType({
         type: 'content',
       },
       displayName: 'Content Area',
+      sortOrder: 5,
     },
     seo_properties: {
       type: 'component',
       contentType: SEOContentType,
       displayName: 'SEO',
+      sortOrder: 6,
     },
   },
 });
@@ -74,13 +80,20 @@ function Product({ content }: ProductProps) {
               >
                 {content.heading}
               </h1>
-              <p {...pa('description')} className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'>
+              <p
+                {...pa('description')}
+                className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'
+              >
                 {content.description}
               </p>
             </div>
 
             {/* Main Body Content */}
-            <RichText {...pa('main_body')} content={content.main_body?.json} className='space-y-4 sm:space-y-6' />
+            <RichText
+              {...pa('main_body')}
+              content={content.main_body?.json}
+              className='space-y-4 sm:space-y-6'
+            />
           </div>
 
           {/* Sidebar */}
@@ -90,7 +103,10 @@ function Product({ content }: ProductProps) {
             })}
           </div>
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
+            <OptimizelyComposition
+              nodes={content.composition.nodes ?? []}
+              ComponentWrapper={ComponentWrapper}
+            />
           </div>
         </div>
       </div>

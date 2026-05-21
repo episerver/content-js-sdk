@@ -9,6 +9,7 @@ import {
   DisplayTemplates,
   isDisplayTemplate,
   PropertyGroupType,
+  isContract,
 } from '@optimizely/cms-sdk';
 import chalk from 'chalk';
 import * as path from 'node:path';
@@ -47,11 +48,11 @@ export type FoundContentType = {
 export type ContentTypeMeta = Pick<FoundContentType, 'contentType' | 'path'>;
 export type DisplayTemplateMeta = Pick<FoundContentType, 'displayTemplates' | 'path'>;
 
+/**
+ * @param obj - The object from which to remove the __type and tag properties
+ * @returns void (the function modifies the object in place)
+ */
 function cleanType(obj: any) {
-  if (obj !== null && '__type' in obj) delete obj.__type;
-}
-
-function cleanDisplayTemplate(obj: any) {
   if (obj !== null) {
     if ('__type' in obj) delete obj.__type;
     if ('tag' in obj) delete obj.tag;
@@ -59,16 +60,18 @@ function cleanDisplayTemplate(obj: any) {
 }
 
 /**
- * Extract all `ContentType` and `DisplayTemplate` present in any property in `obj`
+ * Extract all relevant metadata present in an object
  *
- * Returns cleaned ('__type' removed) objects.
+ * Returns data arrays by type.
  */
 export function extractMetaData(obj: unknown): {
   contentTypeData: AnyContentType[];
   displayTemplateData: DisplayTemplate[];
+  contractData: ContentTypes.Contract[];
 } {
   let contentTypeData: AnyContentType[] = [];
   let displayTemplateData: DisplayTemplate[] = [];
+  let contractData: ContentTypes.Contract[] = [];
 
   if (typeof obj === 'object' && obj !== null) {
     for (const value of Object.values(obj)) {
@@ -76,8 +79,11 @@ export function extractMetaData(obj: unknown): {
         cleanType(value);
         contentTypeData.push(value);
       } else if (isDisplayTemplate(value)) {
-        cleanDisplayTemplate(value);
+        cleanType(value);
         displayTemplateData.push(value);
+      } else if (isContract(value)) {
+        cleanType(value);
+        contractData.push(value);
       }
     }
   }
@@ -85,6 +91,7 @@ export function extractMetaData(obj: unknown): {
   return {
     contentTypeData,
     displayTemplateData,
+    contractData,
   };
 }
 
@@ -113,13 +120,14 @@ async function compileAndImport(inputName: string, cwdUrl: string, outDir: strin
   }
 }
 
-/** Finds metadata (contentTypes, displayTemplates) in the given paths */
+/** Finds metadata (contentTypes, displayTemplates, contracts) in the given paths */
 export async function findMetaData(
   componentPaths: string[],
   cwd: string,
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
+  contracts: ContentTypes.Contract[];
 }> {
   const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
 
@@ -132,7 +140,9 @@ export async function findMetaData(
 
   // Validate patterns
   if (includePatterns.length === 0 && excludePatterns.length > 0) {
-    throw new Error(`❌ [optimizely-cms-cli] Invalid component paths: cannot have only exclusion patterns`);
+    throw new Error(
+      `❌ [optimizely-cms-cli] Invalid component paths: cannot have only exclusion patterns`,
+    );
   }
 
   // Retrieve sets of files via glob for inclusion patterns, using ignore for exclusions
@@ -156,11 +166,12 @@ export async function findMetaData(
   const result2 = {
     contentTypes: [] as AnyContentType[],
     displayTemplates: [] as DisplayTemplate[],
+    contracts: [] as ContentTypes.Contract[],
   };
 
   for (const file of allFiles) {
     const loaded = await compileAndImport(file, cwd, tmpDir);
-    const { contentTypeData, displayTemplateData } = extractMetaData(loaded);
+    const { contentTypeData, displayTemplateData, contractData } = extractMetaData(loaded);
 
     for (const c of contentTypeData) {
       printFilesContents('Content Type', file, c);
@@ -170,6 +181,11 @@ export async function findMetaData(
     for (const d of displayTemplateData) {
       printFilesContents('Display Template', file, d);
       result2.displayTemplates.push(d);
+    }
+
+    for (const contract of contractData) {
+      printFilesContents('Contract', file, contract);
+      result2.contracts.push(contract);
     }
   }
 
@@ -181,7 +197,12 @@ function printFilesContents(
   path: string,
   metaData: AnyContentType | DisplayTemplate | PropertyGroupType,
 ) {
-  console.log('%s %s found in %s', type, chalk.bold(metaData.key), chalk.yellow.italic.underline(path));
+  console.log(
+    '%s %s found in %s',
+    type,
+    chalk.bold(metaData.key),
+    chalk.yellow.italic.underline(path),
+  );
 }
 
 export async function readFromPath(configPath: string, section: string) {
@@ -207,12 +228,18 @@ export function normalizePropertyGroups(propertyGroups: any[]): PropertyGroupTyp
   const normalizedGroups = propertyGroups.map((group, index) => {
     // Validate key is present and not empty
     if (!group.key || typeof group.key !== 'string' || group.key.trim() === '') {
-      throw new Error(`Error in property groups: Property group at index ${index} has an empty or missing "key" field`);
+      throw new Error(
+        `Error in property groups: Property group at index ${index} has an empty or missing "key" field`,
+      );
     }
 
     // Auto-generate displayName from key if missing (capitalize first letter)
     const displayName =
-      group.displayName && typeof group.displayName === 'string' && group.displayName.trim() !== '' ?
+      (
+        group.displayName &&
+        typeof group.displayName === 'string' &&
+        group.displayName.trim() !== ''
+      ) ?
         group.displayName
       : group.key.charAt(0).toUpperCase() + group.key.slice(1);
 

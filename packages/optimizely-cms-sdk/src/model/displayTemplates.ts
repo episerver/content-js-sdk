@@ -1,4 +1,4 @@
-import { DisplaySettingsType, ContentProps } from '../infer.js';
+import { DisplaySettingsType } from '../infer.js';
 import { BaseTypes } from './contentTypes.js';
 
 // section node types
@@ -55,7 +55,11 @@ type BaseDisplayTemplate = {
   tag?: string; // Optional tag property to store the name of the React component
 };
 
-export type DisplayTemplateVariant = BaseDisplayTemplate & (NodeTemplate | BaseTemplate | WithContentType);
+export type DisplayTemplateVariant =
+  | BaseDisplayTemplate
+  | (BaseDisplayTemplate & NodeTemplate)
+  | (BaseDisplayTemplate & BaseTemplate)
+  | (BaseDisplayTemplate & WithContentType);
 
 export type DisplayTemplate<T = DisplayTemplateVariant> = T & {
   __type: 'displayTemplate';

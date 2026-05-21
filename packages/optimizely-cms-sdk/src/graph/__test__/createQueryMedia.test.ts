@@ -35,7 +35,7 @@ describe('createFragment() creates types for base types', () => {
     initContentTypeRegistry([ctImage, ctVideo, ctMedia, ctPage]);
 
     const result = await createFragment('ctPage');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -64,7 +64,7 @@ describe('createFragment() creates types for base types', () => {
     initContentTypeRegistry([ctImage, ctVideo, ctMedia, ctPage]);
 
     const result = await createFragment('ctPage');
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",

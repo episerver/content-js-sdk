@@ -21,6 +21,11 @@
       "import": "./dist/esm/react/client.js",
       "require": "./dist/cjs/react/client.js"
     },
+    "./react/nextjs": {
+      "types": "./dist/cjs/react/nextjs.d.ts",
+      "import": "./dist/esm/react/nextjs.js",
+      "require": "./dist/cjs/react/nextjs.js"
+    },
     "./react/richText": {
       "types": "./dist/cjs/react/richText/index.d.ts",
       "import": "./dist/esm/react/richText/index.js",
@@ -53,9 +58,13 @@
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.7.0",
   "peerDependencies": {
+    "next": ">=14.0.0",
     "react": ">=19.0.0"
   },
   "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
     "react": {
       "optional": true
     }

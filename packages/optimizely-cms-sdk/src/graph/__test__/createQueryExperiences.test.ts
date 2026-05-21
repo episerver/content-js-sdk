@@ -10,7 +10,7 @@ beforeAll(() => {
 describe('createFragment()', () => {
   test('for experience types', async () => {
     const result = await createFragment(MyExperience.key);
-    expect(result).toMatchInlineSnapshot(`
+    expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
         "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
@@ -22,9 +22,25 @@ describe('createFragment()', () => {
         "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
         "fragment CallToAction on CallToAction { __typename CallToAction__label:label CallToAction__link:link ..._IContent }",
         "fragment ExpSection on ExpSection { __typename ExpSection__heading:heading ..._IContent }",
-        "fragment _IComponent on _IComponent { __typename ...CallToAction ...ExpSection }",
+        "fragment ImageComponent on ImageComponent { __typename ImageComponent__title:title image { key url { ...ContentUrl } } ..._IContent }",
+        "fragment _IComponent on _IComponent { __typename ...CallToAction ...ExpSection ...ImageComponent }",
         "fragment MyExperience on MyExperience { __typename ..._IContent ..._IExperience }",
       ]
     `);
+    expect(result.includesDamAssetsFragments).toBe(false);
+  });
+
+  test('includes DAM fragments when experience components have contentReference with damEnabled', async () => {
+    const result = await createFragment(MyExperience.key, new Set(), '', { damEnabled: true });
+
+    // Should include DAM fragments
+    const fragmentsString = result.fragments.join('\n');
+    expect(fragmentsString).toContain('fragment PublicImageAsset');
+    expect(fragmentsString).toContain('fragment PublicVideoAsset');
+    expect(fragmentsString).toContain('fragment PublicRawFileAsset');
+    expect(fragmentsString).toContain('fragment ContentReferenceItem');
+
+    // Should have DAM flag set to true
+    expect(result.includesDamAssetsFragments).toBe(true);
   });
 });

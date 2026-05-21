@@ -1,6 +1,11 @@
 import { AnyProperty } from '../model/properties.js';
 import { AnyContentType, MAIN_BASE_TYPES, PermittedTypes } from '../model/contentTypes.js';
-import { getContentType, getAllContentTypes, getContentTypeByBaseType } from '../model/contentTypeRegistry.js';
+import {
+  getContentType,
+  getAllContentTypes,
+  getContentTypeByBaseType,
+  RegistryEntry,
+} from '../model/contentTypeRegistry.js';
 import {
   getKeyName,
   buildBaseTypeFragments,
@@ -12,7 +17,11 @@ import {
 import { checkTypeConstraintIssues } from '../util/fragmentConstraintChecks.js';
 import { withQueryCaching } from '../util/cache.js';
 import { logWarning, SemanticAttributes } from '../telemetry/index.js';
-import { startFragmentSpan, startSingleQuerySpan, startMultipleQuerySpan } from '../telemetry/spans.js';
+import {
+  startFragmentSpan,
+  startSingleQuerySpan,
+  startMultipleQuerySpan,
+} from '../telemetry/spans.js';
 import {
   fragmentGenerationDuration,
   fragmentGenerationCount,
@@ -22,6 +31,7 @@ import {
   recordMetrics,
 } from '../telemetry/metrics.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
+import { isContract } from '../model/index.js';
 
 /**
  * Options for controlling GraphQL fragment generation behavior.
@@ -47,14 +57,22 @@ type FragmentOptions = {
   includeBaseFragments?: boolean;
 };
 
-let allContentTypes: AnyContentType[] = [];
+/**
+ * Result of fragment generation containing both the fragment strings and metadata.
+ */
+type FragmentResult = {
+  fragments: string[];
+  includesDamAssetsFragments: boolean;
+};
+
+let allContentTypes: RegistryEntry[] = [];
 
 /**
  * Retrieves and caches all content type definitions.
  * Avoids repeated calls to the content registry.
  * @returns An array of all contentType definitions.
  */
-function getCachedContentTypes(): AnyContentType[] {
+function getCachedContentTypes(): RegistryEntry[] {
   if (allContentTypes.length === 0) {
     allContentTypes = getAllContentTypes();
   }
@@ -72,7 +90,7 @@ function refreshCache() {
  * @param ct - The content type to check.
  * @returns True if all properties are disabled, false otherwise.
  */
-function allPropertiesAreDisabled(ct: AnyContentType): boolean {
+function allPropertiesAreDisabled(ct: RegistryEntry): boolean {
   if (!ct || !ct.properties) return false;
   let hasProperties = false;
   for (const k in ct.properties) {
@@ -110,7 +128,12 @@ function convertProperty(
   const result = convertPropertyField(name, property, rootName, suffix, visited, options);
 
   // logs warnings if the fragment generation causes potential issues
-  const warningMessage = checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
+  const warningMessage = checkTypeConstraintIssues(
+    rootName,
+    property,
+    result,
+    maxFragmentThreshold,
+  );
 
   // Log warning
   if (warningMessage) {
@@ -156,13 +179,14 @@ function convertPropertyField(
   if (property.type === 'component') {
     const key = property.contentType.key;
     const fragmentName = `${key}Property`;
-    extraFragments.push(
-      ...createFragment(key, visited, 'Property', {
-        damEnabled,
-        maxFragmentThreshold,
-        includeBaseFragments: false,
-      }),
-    );
+    const componentResult = createFragment(key, visited, 'Property', {
+      damEnabled,
+      maxFragmentThreshold,
+      includeBaseFragments: false,
+    });
+    extraFragments.push(...componentResult.fragments);
+    includesDamAssetsFragments =
+      includesDamAssetsFragments || componentResult.includesDamAssetsFragments;
     fields.push(`${nameInFragment} { ...${fragmentName} }`);
   } else if (property.type === 'content') {
     const allowed = resolveAllowedTypes(property.allowedTypes, property.restrictedTypes);
@@ -173,13 +197,14 @@ function convertPropertyField(
       if (key === '_self') {
         key = rootName;
       }
-      extraFragments.push(
-        ...createFragment(key, visited, '', {
-          damEnabled,
-          maxFragmentThreshold,
-          includeBaseFragments: true,
-        }),
-      );
+      const contentResult = createFragment(key, visited, '', {
+        damEnabled,
+        maxFragmentThreshold,
+        includeBaseFragments: true,
+      });
+      extraFragments.push(...contentResult.fragments);
+      includesDamAssetsFragments =
+        includesDamAssetsFragments || contentResult.includesDamAssetsFragments;
       subfields.push(`...${key}`);
     }
 
@@ -222,9 +247,12 @@ function convertPropertyField(
  * Builds experience GraphQL fragments and their dependencies.
  * @param visited - Set of fragment names already visited to avoid cycles.
  * @param options - Fragment generation options.
- * @returns A list of GraphQL fragment strings.
+ * @returns An object containing fragment strings and DAM usage flag.
  */
-function createExperienceFragments(visited: Set<string>, options: FragmentOptions = {}): string[] {
+function createExperienceFragments(
+  visited: Set<string>,
+  options: FragmentOptions = {},
+): FragmentResult {
   // Fixed fragments for all experiences
   const fixedFragments = [
     'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
@@ -233,22 +261,57 @@ function createExperienceFragments(visited: Set<string>, options: FragmentOption
 
   const experienceNodes = getCachedContentTypes()
     .filter(c => {
-      if (c.baseType === '_component') {
+      if ('baseType' in c && c.baseType === '_component') {
         return 'compositionBehaviors' in c && (c.compositionBehaviors?.length ?? 0) > 0;
       }
       return false;
     })
     .map(c => c.key);
 
-  // Get the required fragments
-  const extraFragments = experienceNodes
+  // Get the required fragments and track DAM usage
+  const { fragments, includesDamAssetsFragments } = experienceNodes
     .filter(n => !visited.has(n))
-    .flatMap(n => createFragment(n, visited, '', { ...options, includeBaseFragments: true }));
+    .flatMap(n => createFragment(n, visited, '', { ...options, includeBaseFragments: true }))
+    .reduce(
+      (acc, result) => ({
+        fragments: [...acc.fragments, ...result.fragments],
+        includesDamAssetsFragments:
+          acc.includesDamAssetsFragments || result.includesDamAssetsFragments,
+      }),
+      { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
+    );
 
   const nodeNames = experienceNodes.map(n => `...${n}`).join(' ');
   const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
 
-  return [...fixedFragments, ...extraFragments, componentFragment];
+  return {
+    fragments: [...fixedFragments, ...fragments, componentFragment],
+    includesDamAssetsFragments,
+  };
+}
+
+/**
+ * Determines the parsed fragment name based on content type characteristics.
+ * @param contentTypeName - The original content type name/key.
+ * @param fragmentName - The fragment name (may include suffix).
+ * @param ct - The content type registry entry (undefined for base types).
+ * @returns The parsed fragment name for GraphQL fragment definition.
+ */
+function getParsedFragmentName(
+  contentTypeName: string,
+  fragmentName: string,
+  ct: RegistryEntry | undefined,
+): string {
+  if (isBaseType(contentTypeName)) {
+    // Base types: apply capitalization (e.g., "_image" -> "_Image")
+    return toBaseTypeFragmentKey(contentTypeName);
+  } else if (ct && isContract(ct)) {
+    // Contracts: add "I" prefix to fragment name (includes suffix)
+    return `I${fragmentName}`;
+  } else {
+    // Regular content types or component properties: use fragment name as-is (includes suffix)
+    return fragmentName;
+  }
 }
 
 /**
@@ -264,7 +327,7 @@ export function createFragment(
   visited: Set<string> = new Set(), // shared across recursion
   suffix: string = '',
   options: FragmentOptions = {},
-): string[] {
+): FragmentResult {
   // Validate content type name before fragment generation
   if (!contentTypeName || contentTypeName === 'undefined') {
     throw new GraphQueryGenerationError({
@@ -274,15 +337,29 @@ export function createFragment(
   }
 
   const { damEnabled = false, maxFragmentThreshold = 100, includeBaseFragments = true } = options;
+  let ct: RegistryEntry | undefined;
+
+  // Determine content type early to know if it's a contract
+  if (!isBaseType(contentTypeName)) {
+    ct = getContentType(contentTypeName);
+    if (!ct) {
+      throw new GraphMissingContentTypeError(contentTypeName);
+    }
+  }
+
+  // Fragment name for definition (no "I" prefix)
   const fragmentName = `${contentTypeName}${suffix}`;
-  if (visited.has(fragmentName)) return []; // cyclic ref guard
+  if (visited.has(fragmentName)) return { fragments: [], includesDamAssetsFragments: false }; // cyclic ref guard
   // Refresh registry cache only on the *root* call (avoids redundant reads)
   if (visited.size === 0) refreshCache();
   visited.add(fragmentName);
 
   // Create telemetry span only at root level (not for recursive calls)
   const isRootCall = visited.size === 1;
-  const span = isRootCall ? startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix) : undefined;
+  const span =
+    isRootCall ?
+      startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix)
+    : undefined;
   const startTime = isRootCall ? performance.now() : 0;
 
   const fields: string[] = ['__typename'];
@@ -295,14 +372,9 @@ export function createFragment(
     fields.push(...f);
     extraFragments.push(...e);
   } else {
-    // User-defined content type
-    const ct = getContentType(contentTypeName);
-    if (!ct) {
-      throw new GraphMissingContentTypeError(contentTypeName);
-    }
-
+    // User-defined content type or contract (ct already retrieved above)
     // Gather fields for every property
-    for (const [propKey, prop] of Object.entries(ct.properties ?? {})) {
+    for (const [propKey, prop] of Object.entries(ct!.properties ?? {})) {
       // Skip properties with indexingType "disabled"
       if (prop.indexingType === 'disabled') {
         continue;
@@ -311,7 +383,7 @@ export function createFragment(
         fields: f,
         extraFragments: e,
         includesDamAssetsFragments: propHasRef,
-      } = convertProperty(propKey, prop, contentTypeName, suffix, visited, {
+      } = convertProperty(propKey, prop, fragmentName, '', visited, {
         damEnabled,
         maxFragmentThreshold,
       });
@@ -327,20 +399,21 @@ export function createFragment(
       fields.push(...baseFragments.fields);
     }
 
-    if (ct.baseType === '_experience') {
+    if ('baseType' in ct! && ct!.baseType === '_experience') {
       fields.push('..._IExperience');
-      extraFragments.push(
-        ...createExperienceFragments(visited, {
-          damEnabled,
-          maxFragmentThreshold,
-        }),
-      );
+      const experienceResult = createExperienceFragments(visited, {
+        damEnabled,
+        maxFragmentThreshold,
+      });
+      extraFragments.push(...experienceResult.fragments);
+      includesDamAssetsFragments =
+        includesDamAssetsFragments || experienceResult.includesDamAssetsFragments;
     }
   }
 
   // Convert base type key to GraphQL fragment format
-  // eg: "_image" -> "_Image"
-  const parsedFragmentName = toBaseTypeFragmentKey(fragmentName);
+  // eg: "_image" -> "_Image", "testContract" contract -> "ITestContract"
+  const parsedFragmentName = getParsedFragmentName(contentTypeName, fragmentName, ct);
 
   // Add DAM asset fragments if contentReference with DAM was used
   if (includesDamAssetsFragments) {
@@ -367,7 +440,10 @@ export function createFragment(
     span.end();
   }
 
-  return fragments;
+  return {
+    fragments,
+    includesDamAssetsFragments,
+  };
 }
 
 const generateSingleContentQuery = (
@@ -378,15 +454,16 @@ const generateSingleContentQuery = (
   const span = startSingleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
 
-  const fragment = createFragment(contentType, new Set(), '', {
+  const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: true,
   });
-  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
+  const fragments = result.fragments;
+  const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
   const query = `
-${fragment.join('\n')}
+${fragments.join('\n')}
 query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     item {
@@ -406,9 +483,9 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
     });
+    span.end();
   }
 
-  span.end();
   return query;
 };
 
@@ -430,15 +507,16 @@ const generateMultipleContentQuery = (
   const span = startMultipleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
 
-  const fragment = createFragment(contentType, new Set(), '', {
+  const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: true,
   });
-  const fragmentName = fragment.length > 0 ? '...' + contentType : '';
+  const fragments = result.fragments;
+  const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
   const query = `
-${fragment.join('\n')}
+${fragments.join('\n')}
 query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     items {
@@ -458,9 +536,9 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
     });
+    span.end();
   }
 
-  span.end();
   return query;
 };
 
@@ -473,7 +551,10 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
  * @param maxFragmentThreshold - Maximum fragment threshold for warnings (default: 100).
  * @returns A string representing the GraphQL query.
  */
-export const createMultipleContentQuery = withQueryCaching('multiple', generateMultipleContentQuery);
+export const createMultipleContentQuery = withQueryCaching(
+  'multiple',
+  generateMultipleContentQuery,
+);
 
 export type ItemsResponse<T> = {
   _Content: {

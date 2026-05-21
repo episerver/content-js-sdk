@@ -1,8 +1,14 @@
 import { contentType, ContentProps, damAssets } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import { ComponentContainerProps, getPreviewUtils, OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
+import {
+  ComponentContainerProps,
+  getPreviewUtils,
+  OptimizelyComponent,
+  OptimizelyComposition,
+} from '@optimizely/cms-sdk/react/server';
 import { StandardContentType } from './Standard';
 import { SEOContentType } from './base/SEO';
+import { TeaserCardContract } from './contracts/TeaserCard';
 
 export const NewsContentType = contentType({
   key: 'News',
@@ -21,6 +27,14 @@ export const NewsContentType = contentType({
     description: {
       type: 'string',
       displayName: 'Description',
+    },
+    teasers: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: [TeaserCardContract],
+      },
+      displayName: 'Teasers',
     },
     main_body: {
       type: 'richText',
@@ -48,8 +62,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 }
 
 function News({ content }: NewsPageProps) {
-  const { pa, src } = getPreviewUtils(content);
-  const { getAlt, getSrcset, isDamImageAsset } = damAssets(content);
+  const { pa } = getPreviewUtils(content);
 
   return (
     <main className='bg-white'>
@@ -65,30 +78,34 @@ function News({ content }: NewsPageProps) {
               >
                 {content.title}
               </h1>
-              <p {...pa('description')} className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'>
+              <p
+                {...pa('description')}
+                className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'
+              >
                 {content.description}
               </p>
             </div>
 
             {/* Main Body Content */}
-            <RichText {...pa('main_body')} content={content.main_body?.json} className='space-y-4 sm:space-y-6' />
-
-            {/* Media Asset - handles images, videos, and files */}
-            {isDamImageAsset(content.image) && (
-              <div className='overflow-hidden rounded-lg'>
-                <img
-                  {...pa('image')}
-                  src={src(content.image)}
-                  srcSet={getSrcset(content.image)}
-                  alt={getAlt(content.image, 'Teaser Image')}
-                  className='h-auto w-full object-cover aspect-video sm:aspect-auto sm:max-h-100 md:max-h-125 lg:max-h-150'
-                />
-              </div>
-            )}
+            <RichText
+              {...pa('main_body')}
+              content={content.main_body?.json}
+              className='space-y-4 sm:space-y-6'
+            />
           </div>
 
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
+            <OptimizelyComposition
+              nodes={content.composition.nodes ?? []}
+              ComponentWrapper={ComponentWrapper}
+            />
+          </div>
+
+          {/* Teasers - Full Width */}
+          <div {...pa('teasers')} className='lg:col-span-2 w-full space-y-4'>
+            {content.teasers?.map((teaser, index) => (
+              <OptimizelyComponent key={index} content={teaser} tag='teaser' />
+            ))}
           </div>
         </div>
       </div>

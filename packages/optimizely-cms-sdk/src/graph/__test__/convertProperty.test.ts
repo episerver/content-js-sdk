@@ -56,7 +56,7 @@ describe('createFragment > Fragment threshold warning', () => {
 
   it('should log a warning when fragment count exceeds threshold', () => {
     const result = createFragment('ExplodingType');
-    expect(result).toBeInstanceOf(Array);
+    expect(result.fragments).toBeInstanceOf(Array);
     expect(warnSpy).toHaveBeenCalledOnce();
     expect(warnSpy.mock.calls[0][0]).toMatch(String.raw`generated 107 inner fragments`);
     expect(warnSpy.mock.calls[0][0]).toMatch(
@@ -79,7 +79,7 @@ describe('createFragment > Fragment threshold warning', () => {
 
     initContentTypeRegistry([minimalType, childTypes[0]]);
     const result = createFragment('SafeType');
-    expect(result).toBeInstanceOf(Array);
+    expect(result.fragments).toBeInstanceOf(Array);
     expect(warnSpy).not.toHaveBeenCalled();
   });
 });

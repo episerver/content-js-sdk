@@ -2,8 +2,10 @@
 export {
   buildConfig,
   contentType,
+  contract,
   displayTemplate,
   isContentType,
+  isContract,
   isDisplayTemplate,
   isContentTypeRegistered,
   initContentTypeRegistry,
@@ -31,7 +33,10 @@ export type {
 } from './graph/index.js';
 
 // Provided content types and experiences
-export { BlankSectionContentType, BlankExperienceContentType } from './model/internalContentTypes.js';
+export {
+  BlankSectionContentType,
+  BlankExperienceContentType,
+} from './model/internalContentTypes.js';
 
 // Namespaces for errors, types, and utilities
 export * as GraphErrors from './graph/error.js';

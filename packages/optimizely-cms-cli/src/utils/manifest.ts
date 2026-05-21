@@ -11,6 +11,7 @@ import { ContentTypes, Properties, DisplayTemplates } from '@optimizely/cms-sdk'
 export type Manifest = {
   contentTypes: ContentType[];
   displayTemplates?: DisplayTemplate[];
+  contracts?: ManifestContract[];
 };
 
 export type JSONContent = ContentType | DisplayTemplate;
@@ -36,16 +37,27 @@ export type DisplayTemplate = Partial<
  * - mayContainTypes uses string[] instead of ContentType<T>[] | string[]
  * - properties uses our adapted ContentTypeProperties.All
  * - compositionBehaviors added as optional (only on ComponentContentType in SDK, but needed at API level)
+ * - contracts replaces extends and uses only the key of the contract
  */
 export type ContentType = Omit<
   ContentTypes.AnyContentType,
-  'mayContainTypes' | 'properties' | 'baseType'
+  'mayContainTypes' | 'properties' | 'extends'
 > & {
   mayContainTypes?: string[];
   properties?: Record<string, ContentTypeProperties.All>;
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
-  isContract: boolean;
   baseType?: string;
+  contracts?: string[];
+  isContract?: boolean;
+};
+
+/**
+ * Contract (API format)
+ * - Omits __type
+ * - Swaps properties to use ContentTypeProperties.All over AnyProperty
+ */
+export type ManifestContract = Omit<ContentTypes.Contract, '__type' | 'properties'> & {
+  properties: Record<string, ContentTypeProperties.All>;
 };
 
 /**

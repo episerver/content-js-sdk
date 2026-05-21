@@ -1,5 +1,9 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
-import { ComponentContainerProps, getPreviewUtils, OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
+import {
+  ComponentContainerProps,
+  getPreviewUtils,
+  OptimizelyComposition,
+} from '@optimizely/cms-sdk/react/server';
 import { ProductContentType } from './Product';
 import { StandardContentType } from './Standard';
 import { SEOContentType } from './base/SEO';
@@ -18,14 +22,17 @@ export const StartContentType = contentType({
       allowedTypes: ['_image'],
       displayName: 'Teaser Image',
       group: 'Content',
+      sortOrder: 3,
     },
     title: {
       type: 'string',
+      sortOrder: 1,
       displayName: 'Teaser Title',
       group: 'Content',
     },
     description: {
       type: 'string',
+      sortOrder: 2,
       displayName: 'Description',
       group: 'Content',
     },
@@ -169,7 +176,10 @@ function Start({ content }: StartProps) {
       <div className='bg-white'>
         <div className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12'>
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
+            <OptimizelyComposition
+              nodes={content.composition.nodes ?? []}
+              ComponentWrapper={ComponentWrapper}
+            />
           </div>
         </div>
       </div>

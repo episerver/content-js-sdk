@@ -1,9 +1,11 @@
-import { AnyContentType } from './contentTypes.js';
+import { AnyContentType, Contract } from './contentTypes.js';
 
-let _registry: AnyContentType[] = [];
+export type RegistryEntry = AnyContentType | Contract;
+
+let _registry: RegistryEntry[] = [];
 
 /** Initializes the content type registry */
-export function init(registry: AnyContentType[]) {
+export function init(registry: RegistryEntry[]) {
   _registry = registry;
 }
 
@@ -13,13 +15,13 @@ export function getContentType(name: string) {
 }
 
 /** Get all the content types */
-export function getAllContentTypes(): AnyContentType[] {
+export function getAllContentTypes(): RegistryEntry[] {
   return _registry;
 }
 
 /** Get the Component from a base type */
 export function getContentTypeByBaseType(name: string): AnyContentType[] {
-  return _registry.filter(c => c.baseType === name) as AnyContentType[];
+  return _registry.filter((c): c is AnyContentType => 'baseType' in c && c.baseType === name);
 }
 
 /**
