@@ -68,6 +68,34 @@ type FragmentResult = {
 let allContentTypes: RegistryEntry[] = [];
 
 /**
+ * Use @recursive directive for composition nodes.
+ * When false, generates nested fragment structure manually.
+ *
+ * NOTE: Temporary workaround for Graph issue with @recursive directive.
+ * The @recursive directive does not propagate document-level inline fragments
+ * (...on cmp_PublicImageAsset / ...on cmp_PublicVideoAsset / ...on cmp_PublicRawFileAsset)
+ * referenced via ContentReferenceItem down to the leaf interface resolver.
+ * This Will be removed once Graph properly supports @recursive on cmp assets.
+ */
+const USE_RECURSIVE_DIRECTIVE = false;
+
+/**
+ * Generates nested composition node structure for given depth.
+ * @param depth - Current nesting level (0 = deepest).
+ * @returns Nested fragment string.
+ *
+ * NOTE: Temporary workaround for Graph issue with @recursive directive.
+ * This function will not be used once Graph properly supports @recursive.
+ */
+function buildNestedCompositionNodes(depth: number): string {
+  if (depth === 0) {
+    return '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
+  }
+  const nested = buildNestedCompositionNodes(depth - 1);
+  return `__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
+}
+
+/**
  * Retrieves and caches all content type definitions.
  * Avoids repeated calls to the content registry.
  * @returns An array of all contentType definitions.
@@ -253,10 +281,16 @@ function createExperienceFragments(
   visited: Set<string>,
   options: FragmentOptions = {},
 ): FragmentResult {
+  // Build ICompositionNode fragment based on USE_RECURSIVE_DIRECTIVE flag
+  const compositionNodeFragment =
+    USE_RECURSIVE_DIRECTIVE ?
+      'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }'
+    : `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(4)} }`;
+
   // Fixed fragments for all experiences
   const fixedFragments = [
     'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
-    'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }',
+    compositionNodeFragment,
   ];
 
   const experienceNodes = getCachedContentTypes()
@@ -616,3 +650,4 @@ function resolveAllowedTypes(
 
   return result;
 }
+
