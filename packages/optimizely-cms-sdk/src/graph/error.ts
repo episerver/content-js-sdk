@@ -117,4 +117,3 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     this.name = 'GraphContentResponseError';
   }
 }
-

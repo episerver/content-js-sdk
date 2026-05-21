@@ -43,7 +43,10 @@ function StandardTeaser({ content }: StandardTeaserProps) {
         >
           {content.heading}
         </h2>
-        <p {...pa('description')} className='text-xs md:text-sm lg:text-base text-gray-700 leading-relaxed'>
+        <p
+          {...pa('description')}
+          className='text-xs md:text-sm lg:text-base text-gray-700 leading-relaxed'
+        >
           {content.description}
         </p>
       </div>
@@ -52,5 +55,3 @@ function StandardTeaser({ content }: StandardTeaserProps) {
 }
 
 export default StandardTeaser;
-
-

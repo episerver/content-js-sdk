@@ -34,7 +34,7 @@ export interface NextPreviewComponentProps {
  */
 export function NextPreviewComponent({
   refreshTimeout = 300,
-  children
+  children,
 }: NextPreviewComponentProps = {}) {
   const router = useRouter();
 

@@ -15,6 +15,8 @@ import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
+import { withReactComponentSpan } from '../telemetry/spans.js';
+import { SemanticAttributes } from '../telemetry/index.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
   getContext,
@@ -182,21 +184,32 @@ export async function OptimizelyComponent({
   }
 
   const resolvedTag = resolveTag(content, tag);
-  const { component: Component, typename } = findComponent(content, { tag: resolvedTag });
 
-  if (!Component) {
-    return (
-      <FallbackComponent>
-        No component found for content type <b>{typename}</b>
-      </FallbackComponent>
-    );
-  }
+  return withReactComponentSpan(
+    content.__typename,
+    !!resolvedTag,
+    !!displaySettings,
+    async span => {
+      const { component: Component, typename } = findComponent(content, { tag: resolvedTag });
 
-  const optiProps = {
-    ...content,
-  };
+      if (!Component) {
+        span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, false);
+        return (
+          <FallbackComponent>
+            No component found for content type <b>{typename}</b>
+          </FallbackComponent>
+        );
+      }
 
-  return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, true);
+
+      const optiProps = {
+        ...content,
+      };
+
+      return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+    },
+  );
 }
 
 export type StructureContainerProps = {
@@ -416,5 +429,3 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
     },
   };
 }
-
-

@@ -72,4 +72,3 @@ export function mapContentToManifest(contentTypes: AnyContentType[]): any[] {
   const allowedKeys = new Set(deduplicatedContentTypes.map(ct => ct.key));
   return deduplicatedContentTypes.map(ct => transformContentType(ct, allowedKeys));
 }
-

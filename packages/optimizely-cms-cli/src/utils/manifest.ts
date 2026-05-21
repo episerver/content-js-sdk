@@ -159,4 +159,3 @@ export namespace ContentTypeProperties {
 
   export type All = Array | NonArray;
 }
-

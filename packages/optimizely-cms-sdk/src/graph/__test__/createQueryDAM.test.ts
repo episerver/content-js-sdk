@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { createFragment, createSingleContentQuery, createMultipleContentQuery } from '../createQuery.js';
+import {
+  createFragment,
+  createSingleContentQuery,
+  createMultipleContentQuery,
+} from '../createQuery.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 
 describe('createFragment() with damEnabled for contentReference properties', () => {
@@ -169,7 +173,9 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       damEnabled: false,
       includeBaseFragments: true,
     });
-    expect(resultDisabled.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(false);
+    expect(resultDisabled.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      false,
+    );
 
     // Test with damEnabled = true
     const resultEnabled = await createFragment('ct1', new Set(), '', {

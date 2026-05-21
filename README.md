@@ -70,6 +70,33 @@ npm install -D @optimizely/cms-cli
 
 For a complete walkthrough from scratch, see the [Documentation](#documentation) section below.
 
+## Observability
+
+The SDK includes built-in OpenTelemetry instrumentation for production observability. All major operations are automatically traced, including GraphQL queries, content fetching, and component resolution.
+
+```javascript
+// Initialize OpenTelemetry SDK first
+import { NodeSDK } from '@opentelemetry/sdk-node';
+const sdk = new NodeSDK({ /* your config */ });
+sdk.start();
+
+// Then use the Optimizely SDK - all operations automatically instrumented
+import { config, getClient } from '@optimizely/cms-sdk';
+config({ apiKey: 'your-key' });
+const client = getClient();
+
+await client.getContentByPath('/'); // Automatically creates spans
+```
+
+**What gets instrumented:**
+
+- Content retrieval (`getContentByPath`, `getContent`, `getPreviewContent`)
+- GraphQL query and fragment generation
+- HTTP requests to Optimizely Graph
+- Component resolution and rendering (React)
+
+**Learn more:** See the complete [Observability Guide](./docs/observability.md) for setup, span details, and production configuration.
+
 ## Documentation
 
 A step-by-step guides to build your headless application:

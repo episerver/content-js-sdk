@@ -34,12 +34,18 @@
     "./buildConfig": {
       "types": "./dist/cjs/model/buildConfig.d.ts",
       "import": "./dist/esm/model/buildConfig.js"
+    },
+    "./telemetry": {
+      "types": "./dist/cjs/telemetry/index.d.ts",
+      "import": "./dist/esm/telemetry/index.js",
+      "require": "./dist/cjs/telemetry/index.js"
     }
   },
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git"
   },
   "scripts": {
+    "prebuild": "node scripts/prebuild.js",
     "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
     "clean": "rimraf dist",
     "test": "vitest --typecheck"
@@ -62,6 +68,9 @@
     "react": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

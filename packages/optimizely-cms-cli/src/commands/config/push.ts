@@ -195,4 +195,3 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
   }
 }
-

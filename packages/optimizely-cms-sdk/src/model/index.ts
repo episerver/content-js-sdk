@@ -1,5 +1,11 @@
 import { BuildConfig } from './buildConfig.js';
-import { AnyContentType, ContentType, Contract, PropertiesRecord, SuppliedContractValues } from './contentTypes.js';
+import {
+  AnyContentType,
+  ContentType,
+  Contract,
+  PropertiesRecord,
+  SuppliedContractValues,
+} from './contentTypes.js';
 import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
 
 function getMergedProps<T extends AnyContentType>(options: T): PropertiesRecord | undefined {
@@ -60,7 +66,9 @@ export function contentType<T extends AnyContentType>(options: T): ContentType<T
  * });
  * ```
  */
-export function contract<P extends PropertiesRecord>(options: SuppliedContractValues<P>): Contract<P> {
+export function contract<P extends PropertiesRecord>(
+  options: SuppliedContractValues<P>,
+): Contract<P> {
   return { ...options, __type: 'contract', isContract: true };
 }
 
@@ -79,7 +87,11 @@ export function buildConfig<T extends BuildConfig>(options: T): T & { __type: 'b
  */
 export function isContentType(obj: unknown): obj is AnyContentType {
   return (
-    typeof obj === 'object' && obj !== null && '__type' in obj && (obj as any).__type === 'contentType' && 'key' in obj
+    typeof obj === 'object' &&
+    obj !== null &&
+    '__type' in obj &&
+    (obj as any).__type === 'contentType' &&
+    'key' in obj
   );
 }
 
@@ -88,7 +100,11 @@ export function isContentType(obj: unknown): obj is AnyContentType {
  */
 export function isContract(obj: unknown): obj is Contract {
   return (
-    typeof obj === 'object' && obj !== null && '__type' in obj && (obj as any).__type === 'contract' && 'key' in obj
+    typeof obj === 'object' &&
+    obj !== null &&
+    '__type' in obj &&
+    (obj as any).__type === 'contract' &&
+    'key' in obj
   );
 }
 

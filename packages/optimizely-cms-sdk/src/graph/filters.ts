@@ -120,7 +120,11 @@ export function localeFilter(locale?: string[]): ContentInput {
  * @param reference - GraphReference object containing key and optional parameters
  * @returns A `ContentInput` object with a `where` clause filtering by the reference
  */
-export function referenceFilter(reference: { key: string; locale?: string; version?: string }): ContentInput {
+export function referenceFilter(reference: {
+  key: string;
+  locale?: string;
+  version?: string;
+}): ContentInput {
   return {
     where: {
       _metadata: {

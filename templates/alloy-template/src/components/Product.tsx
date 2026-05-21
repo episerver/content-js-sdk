@@ -115,4 +115,3 @@ function Product({ content }: ProductProps) {
 }
 
 export default Product;
-

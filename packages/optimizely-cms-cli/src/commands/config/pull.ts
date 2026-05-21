@@ -246,4 +246,3 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }
   }
 }
-

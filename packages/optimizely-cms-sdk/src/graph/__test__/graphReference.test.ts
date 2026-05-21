@@ -123,7 +123,9 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses full format with all parameters', () => {
-    const result = (client as any).parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
+    const result = (client as any).parseGraphReference(
+      'graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123',
+    );
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',

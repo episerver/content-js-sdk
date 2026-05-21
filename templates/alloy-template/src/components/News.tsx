@@ -78,27 +78,33 @@ function News({ content }: NewsPageProps) {
               >
                 {content.title}
               </h1>
-              <p {...pa('description')} className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'>
+              <p
+                {...pa('description')}
+                className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'
+              >
                 {content.description}
               </p>
             </div>
 
             {/* Main Body Content */}
-            <RichText {...pa('main_body')} content={content.main_body?.json} className='space-y-4 sm:space-y-6' />
+            <RichText
+              {...pa('main_body')}
+              content={content.main_body?.json}
+              className='space-y-4 sm:space-y-6'
+            />
           </div>
 
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
+            <OptimizelyComposition
+              nodes={content.composition.nodes ?? []}
+              ComponentWrapper={ComponentWrapper}
+            />
           </div>
 
           {/* Teasers - Full Width */}
           <div {...pa('teasers')} className='lg:col-span-2 w-full space-y-4'>
             {content.teasers?.map((teaser, index) => (
-              <OptimizelyComponent
-                key={index}
-                content={teaser}
-                tag="teaser"
-              />
+              <OptimizelyComponent key={index} content={teaser} tag='teaser' />
             ))}
           </div>
         </div>
@@ -108,5 +114,3 @@ function News({ content }: NewsPageProps) {
 }
 
 export default News;
-
-

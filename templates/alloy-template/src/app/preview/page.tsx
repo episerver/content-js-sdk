@@ -41,4 +41,3 @@ async function Page({ searchParams }: Props) {
 }
 
 export default withAppContext(Page);
-

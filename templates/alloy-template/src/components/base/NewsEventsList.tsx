@@ -41,19 +41,15 @@ function NewsEventsList({ content }: NewsEventsListProps) {
     <div className='space-y-8'>
       {/* Title */}
       {content.title && (
-        <h2 className='text-3xl md:text-3xl font-bold text-gray-900 uppercase tracking-tight'>{content.title}</h2>
+        <h2 className='text-3xl md:text-3xl font-bold text-gray-900 uppercase tracking-tight'>
+          {content.title}
+        </h2>
       )}
 
       {/* Teasers List */}
       <div className='space-y-6'>
         {content.teasers?.map((teaser, index) => {
-          return (
-            <OptimizelyComponent
-              key={index}
-              content={teaser}
-              tag="teaser"
-            />
-          );
+          return <OptimizelyComponent key={index} content={teaser} tag='teaser' />;
         })}
       </div>
 
@@ -68,5 +64,3 @@ function NewsEventsList({ content }: NewsEventsListProps) {
 }
 
 export default NewsEventsList;
-
-
