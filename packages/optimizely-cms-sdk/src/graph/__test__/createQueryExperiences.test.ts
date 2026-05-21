@@ -8,6 +8,7 @@ beforeAll(() => {
 });
 
 describe('createFragment()', () => {
+  // Will be changed after Graph bug for @recursive directive is fixed and nested fragments are no longer needed for composition nodes
   test('for experience types', async () => {
     const result = await createFragment(MyExperience.key);
     expect(result.fragments).toMatchInlineSnapshot(`
@@ -19,7 +20,7 @@ describe('createFragment()', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
-        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
+        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
         "fragment CallToAction on CallToAction { __typename CallToAction__label:label CallToAction__link:link ..._IContent }",
         "fragment ExpSection on ExpSection { __typename ExpSection__heading:heading ..._IContent }",
         "fragment ImageComponent on ImageComponent { __typename ImageComponent__title:title image { key url { ...ContentUrl } } ..._IContent }",
@@ -44,3 +45,4 @@ describe('createFragment()', () => {
     expect(result.includesDamAssetsFragments).toBe(true);
   });
 });
+
