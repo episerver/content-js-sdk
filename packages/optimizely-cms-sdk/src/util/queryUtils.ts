@@ -7,6 +7,7 @@ import {
   getAllContentTypes,
   getContentType,
   getContentTypeByBaseType,
+  RegistryEntry,
 } from '../model/contentTypeRegistry.js';
 import { CONTENT_URL_FRAGMENT, getKeyName, isBaseType } from './baseTypeUtil.js';
 import { AnyProperty } from '../model/properties.js';
@@ -56,12 +57,12 @@ export type PropertyHandler = (
 
 // CACHING
 
-let allContentTypes: AnyContentType[] = [];
+let allContentTypes: RegistryEntry[] = [];
 
 /**
  * Retrieves cached content type definitions.
  */
-export const getCachedContentTypes = (): AnyContentType[] => {
+export const getCachedContentTypes = (): RegistryEntry[] => {
   if (allContentTypes.length === 0) allContentTypes = getAllContentTypes();
   return allContentTypes;
 };
@@ -75,7 +76,7 @@ export const refreshCache = () => {
 
 // CONTENT TYPE UTILITIES
 
-const allPropertiesAreDisabled = (contentType: AnyContentType): boolean => {
+const allPropertiesAreDisabled = (contentType: RegistryEntry): boolean => {
   if (!contentType?.properties) return false;
   const properties = Object.values(contentType.properties);
   return (
@@ -87,7 +88,8 @@ const allPropertiesAreDisabled = (contentType: AnyContentType): boolean => {
 /**
  * Checks if a content type is an experience component.
  */
-export const isExperienceComponent = (contentType: AnyContentType): boolean =>
+export const isExperienceComponent = (contentType: RegistryEntry): boolean =>
+  'baseType' in contentType &&
   contentType.baseType === '_component' &&
   'compositionBehaviors' in contentType &&
   (contentType.compositionBehaviors?.length ?? 0) > 0;
@@ -135,7 +137,7 @@ const expandBaseType = (
 const resolveAllowedTypes = (
   allowed: PermittedTypes[] | undefined,
   restricted: PermittedTypes[] | undefined,
-  cached: AnyContentType[],
+  cached: RegistryEntry[],
 ): (PermittedTypes | AnyContentType)[] => {
   const baseline = allowed?.length ? allowed : cached;
   const skipSet = buildSkipSet(restricted);
