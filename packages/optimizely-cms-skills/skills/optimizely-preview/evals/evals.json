@@ -1,0 +1,23 @@
+{
+  "skill_name": "optimizely-preview",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Hey, I need to set up live preview for my Next.js app. I've already got the Optimizely SDK installed and I can fetch content just fine, but now my content editors want to be able to preview their changes before publishing. The app is using the App Router (src/app directory structure). Can you help me set this up? I have my CMS instance at https://cms.mycompany.com and my app runs on localhost:3000 for dev.",
+      "expected_output": "Creates src/app/preview/page.tsx with correct implementation, verifies/creates .env with required variables including OPTIMIZELY_CMS_URL, updates .gitignore, provides clear instructions for CMS configuration (hostname and preview URL setup)",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "so i set up preview following some docs but when i click the preview button in optimizely cms nothing happens. well, not nothing - a new tab opens but its just blank white screen. console shows some error about OPTIMIZELY_CMS_URL being undefined. i have the preview route at app/preview/page.tsx and i think everything is there but something's not working. can you help me figure out what's wrong?",
+      "expected_output": "Diagnoses missing OPTIMIZELY_CMS_URL environment variable, checks if .env exists and has correct variables, verifies preview route implementation has all required components (withAppContext, Script, PreviewComponent, OptimizelyComponent), instructs to restart dev server after fixing env vars, tests the preview route",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I'm using TanStack Start and want to set up Optimizely preview",
+      "expected_output": "Creates src/routes/preview.tsx with TanStack Start-specific implementation (createFileRoute, createServerFn, renderServerComponent, ver conversion), sets up environment variables if missing, provides clear CMS configuration instructions",
+      "files": []
+    }
+  ]
+}
