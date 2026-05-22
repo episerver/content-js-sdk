@@ -14,7 +14,8 @@ export type Manifest = {
 };
 
 export type JSONContent = ContentType | DisplayTemplate;
-export type SupportedFunctionType = 'contentType' | 'contract' | 'displayTemplate';
+export const SupportedFunctionTypes = ['contentType', 'contract', 'displayTemplate'] as const;
+export type SupportedFunctionType = typeof SupportedFunctionTypes[number];
 
 /**
  * Display Template (API format)

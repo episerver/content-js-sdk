@@ -11,4 +11,8 @@ export const makeDirs = (dirs: string[], path: string) =>
 
 /** Writes multiple files to disk */
 export const makeFiles = (files: { path: string; content: string }[]) =>
-  Promise.all(files.map(file => writeFile(file.path, file.content, 'utf-8')));
+  Promise.all(files.map(makeFile));
+
+/** Writes multiple files to disk */
+export const makeFile = (file: { path: string; content: string }) =>
+  writeFile(file.path, file.content, 'utf-8');
