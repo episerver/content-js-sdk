@@ -1,6 +1,7 @@
-import { ContentType } from './manifest.js';
+import { ContentType, ManifestContract } from './manifest.js';
 import { extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
+import { ContentTypes } from '@optimizely/cms-sdk';
 
 /**
  * Normalizes the `mayContainTypes` field of a content type object.
@@ -274,3 +275,17 @@ export function filterSystemContentTypes(contentTypes: ContentType[]): ContentTy
       !['BlankExperience', 'BlankSection'].includes(ct.key),
   );
 }
+
+/**
+ * Converts contract into manifest shape
+ */
+export const contractToManifest = ({
+  key,
+  displayName,
+  properties,
+}: ContentTypes.Contract): ManifestContract => ({
+  key,
+  displayName,
+  isContract: true,
+  properties: transformProperties(properties, key),
+});

@@ -48,4 +48,10 @@ const ImageComponent = contentType({
   },
 });
 
-export const allContentTypes = [MyExperience, CallToAction, CallToAction2, ExpSection, ImageComponent];
+export const allContentTypes = [
+  MyExperience,
+  CallToAction,
+  CallToAction2,
+  ExpSection,
+  ImageComponent,
+];

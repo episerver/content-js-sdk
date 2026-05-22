@@ -15,6 +15,8 @@ import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
+import { withReactComponentSpan } from '../telemetry/spans.js';
+import { SemanticAttributes } from '../telemetry/index.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
   getContext,
@@ -80,53 +82,134 @@ export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
 }
 
+/** Content data from CMS */
+type OptimizelyContent = {
+  /** Content type name */
+  __typename: string;
+
+  /** Display template tag (if any) */
+  __tag?: string;
+
+  displayTemplateKey?: string | null;
+
+  /** Preview context */
+  __context?: { edit: boolean; preview_token: string };
+
+  __composition?: ExperienceCompositionNode;
+
+  /** metadata */
+  _metadata?: {
+    types?: string[];
+    displayOption?: string | null;
+  };
+};
+
 /** Props for the {@linkcode OptimizelyComponent} component */
 type OptimizelyComponentProps = {
   /** Data read from the CMS */
-  content: {
-    /** Content type name */
-    __typename: string;
-
-    /** Display template tag (if any) */
-    __tag?: string;
-
-    displayTemplateKey?: string | null;
-
-    /** Preview context */
-    __context?: { edit: boolean; preview_token: string };
-
-    __composition?: ExperienceCompositionNode;
-  };
+  content: OptimizelyContent;
 
   displaySettings?: Record<string, string | boolean>;
+
+  /** Manual tag override for component lookup */
+  tag?: string;
 };
 
-export async function OptimizelyComponent({ content, displaySettings, ...props }: OptimizelyComponentProps) {
+/**
+ * Gets display template key from content, checking multiple sources.
+ */
+function getDisplayTemplateKey(content: OptimizelyContent): string | null | undefined {
+  return (
+    content._metadata?.displayOption ??
+    content.__composition?.displayTemplateKey ??
+    content.displayTemplateKey
+  );
+}
+
+/**
+ * Resolves the tag to use for component lookup.
+ * Checks tag override first, then falls back to content.__tag or display template tag.
+ */
+function resolveTag(
+  content: OptimizelyContent,
+  componentTag: string | undefined,
+): string | undefined {
+  //  tag override priority for tag provided by caller (e.g. OptimizelyComponent's `tag` prop)
+  if (componentTag) {
+    return componentTag;
+  }
+
+  // Fall back to content tag or display template tag or displayOption
+  const dtKey = getDisplayTemplateKey(content);
+  return content.__tag ?? getDisplayTemplateTag(dtKey);
+}
+
+/**
+ * Finds component by trying each type in _metadata.types array, falling back to __typename.
+ * Returns both the matched component and the typename that resolved.
+ */
+function findComponent(
+  content: OptimizelyContent,
+  options: { tag?: string },
+): { component: React.ComponentType<any> | undefined; typename: string | undefined } {
+  // Try _metadata.types array first
+  const types = content._metadata?.types;
+  if (Array.isArray(types)) {
+    for (const typename of types) {
+      const component = componentRegistry.getComponent(typename, options);
+      if (component) return { component, typename };
+    }
+  }
+
+  // Fallback to __typename
+  const typename = content.__typename;
+  const component = typename ? componentRegistry.getComponent(typename, options) : undefined;
+  return { component, typename };
+}
+
+export async function OptimizelyComponent({
+  content,
+  displaySettings,
+  tag,
+  ...props
+}: OptimizelyComponentProps) {
   if (!content) {
-    throw new OptimizelyReactError('OptimizelyComponent requires a valid content prop. Received null or undefined.');
+    throw new OptimizelyReactError(
+      'OptimizelyComponent requires a valid content prop. Received null or undefined.',
+    );
   }
 
   if (!componentRegistry) {
     throw new OptimizelyReactError('You should call `initReactComponentRegistry` first');
   }
-  const dtKey = content.__composition?.displayTemplateKey ?? content.displayTemplateKey;
-  const Component = await componentRegistry.getComponent(content.__typename, {
-    tag: content.__tag ?? getDisplayTemplateTag(dtKey),
-  });
 
-  if (!Component) {
-    return (
-      <FallbackComponent>
-        No component found for content type <b>{content.__typename}</b>
-      </FallbackComponent>
-    );
-  }
+  const resolvedTag = resolveTag(content, tag);
 
-  const optiProps = {
-    ...content,
-  };
+  return withReactComponentSpan(
+    content.__typename,
+    !!resolvedTag,
+    !!displaySettings,
+    async span => {
+      const { component: Component, typename } = findComponent(content, { tag: resolvedTag });
 
-  return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+      if (!Component) {
+        span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, false);
+        return (
+          <FallbackComponent>
+            No component found for content type <b>{typename}</b>
+          </FallbackComponent>
+        );
+      }
+
+      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, true);
+
+      const optiProps = {
+        ...content,
+      };
+
+      return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+    },
+  );
 }
 
 export type StructureContainerProps = {

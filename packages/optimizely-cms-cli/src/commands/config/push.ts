@@ -10,6 +10,7 @@ import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
 import { translateErrorMessage } from '../../utils/errors.js';
+import { contractToManifest } from '../../utils/mapping.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -24,10 +25,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       description: 'do not send anything to the server',
     }),
     force: Flags.boolean({
-      description: 'Force updates the content type even though the changes might result in data loss.',
+      description:
+        'Force updates the content type even though the changes might result in data loss.',
     }),
   };
-  static override description = 'Push content type definitions to the CMS from a configuration file';
+  static override description =
+    'Push content type definitions to the CMS from a configuration file';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> ./custom-config.mjs',
@@ -72,14 +75,20 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     //the pattern is relative to the config file
     const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
 
-    // extracts metadata(contentTypes, displayTemplates) from the component paths
-    const { contentTypes, displayTemplates } = await findMetaData(componentPaths, configPathDirectory);
+    // extracts metadata(contentTypes, displayTemplates, contracts) from the component paths
+    const { contentTypes, displayTemplates, contracts } = await findMetaData(
+      componentPaths,
+      configPathDirectory,
+    );
 
     // Validate and normalize property groups
     const normalizedPropertyGroups = propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
 
+    // Convert contracts to manifest shape
+    const manifestContracts = contracts.map(contractToManifest);
+
     const metaData = {
-      contentTypes: mapContentToManifest(contentTypes),
+      contentTypes: mapContentToManifest(contentTypes).concat(manifestContracts),
       displayTemplates,
       propertyGroups: normalizedPropertyGroups,
     };
@@ -130,7 +139,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       if (response.error.status === 404) {
         spinner.fail(chalk.red('Feature Not Active'));
         console.error(
-          chalk.red('The requested feature "preview3_packages_enabled" is not enabled in your environment.'),
+          chalk.red(
+            'The requested feature "preview3_packages_enabled" is not enabled in your environment.',
+          ),
         );
         console.error(
           chalk.dim(
@@ -149,7 +160,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
         }
         if (response.error.errors?.length) {
           for (const [index, err] of response.error.errors.entries()) {
-            console.error((`  - ERROR ${index + 1}`));
+            console.error(`  - ERROR ${index + 1}`);
             console.error(chalk.dim(`      [DETAIL] ${err.detail}`));
             console.error(chalk.dim(`      [FIELD]  ${err.field}\n`));
           }

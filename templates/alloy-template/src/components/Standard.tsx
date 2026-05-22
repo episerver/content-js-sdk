@@ -1,13 +1,19 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import { ComponentContainerProps, getPreviewUtils, OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
+import {
+  ComponentContainerProps,
+  getPreviewUtils,
+  OptimizelyComposition,
+} from '@optimizely/cms-sdk/react/server';
 import { SEOContentType } from './base/SEO';
+import { TeaserCardContract } from './contracts/TeaserCard';
 
 export const StandardContentType = contentType({
   key: 'Standard',
   displayName: 'Standard Page',
   baseType: '_experience',
   mayContainTypes: ['*'],
+  extends: [TeaserCardContract],
   properties: {
     image: {
       type: 'contentReference',
@@ -20,7 +26,7 @@ export const StandardContentType = contentType({
     },
     description: {
       type: 'string',
-      displayName: 'Description',
+      displayName: 'Teaser Description',
     },
     main_body: {
       type: 'richText',
@@ -48,7 +54,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 }
 
 function Standard({ content }: StandardPageProps) {
-  const { pa } = getPreviewUtils(content);
+  const { pa, src } = getPreviewUtils(content);
   return (
     <main className='bg-white'>
       <div className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12'>
@@ -61,17 +67,34 @@ function Standard({ content }: StandardPageProps) {
             >
               {content.heading}
             </h1>
-            <p {...pa('description')} className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'>
+            <p
+              {...pa('description')}
+              className='text-base leading-relaxed text-gray-700 sm:text-lg md:text-xl'
+            >
               {content.description}
             </p>
           </div>
 
           {/* Main Body Content */}
-          <RichText {...pa('main_body')} content={content.main_body?.json} className='space-y-4 sm:space-y-6' />
+          <RichText
+            {...pa('main_body')}
+            content={content.main_body?.json}
+            className='space-y-4 sm:space-y-6'
+          />
+
+          {/* Teasers Image */}
+          <div>
+            {content.image && (
+              <img src={src(content.image)} className='w-full h-full object-cover rounded-lg' />
+            )}
+          </div>
 
           {/* section Area */}
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition nodes={content.composition.nodes ?? []} ComponentWrapper={ComponentWrapper} />
+            <OptimizelyComposition
+              nodes={content.composition.nodes ?? []}
+              ComponentWrapper={ComponentWrapper}
+            />
           </div>
         </div>
       </div>
