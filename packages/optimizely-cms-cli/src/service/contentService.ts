@@ -10,6 +10,9 @@ interface StartPageConfig {
   baseType: string;
 }
 
+// Root container is common for all CMS instances
+const ROOT_CONTAINER_KEY = '43f936c99b234ea397b261c538ad07c9';
+
 export async function ensureStartPageContentType(startPage: StartPageConfig, host?: string) {
   const client = await createApiClient(host);
 
@@ -40,7 +43,7 @@ export async function ensureStartPageContentType(startPage: StartPageConfig, hos
 
   if (!contentTypeResponse.response.ok) {
     throw new Error(
-      `Failed to create content type "${startPage.key}": ${contentTypeResponse.error?.title || 'Unknown error'}`
+      `Failed to create content type "${startPage.key}": ${contentTypeResponse.error?.title || 'Unknown error'}`,
     );
   }
 
@@ -75,7 +78,7 @@ export async function ensureStartPageContent(
   // Content doesn't exist, create it
   const newContent: NewContent = {
     contentType: startPage.key,
-    container: '43f936c99b234ea397b261c538ad07c9',
+    container: ROOT_CONTAINER_KEY,
     initialVersion: {
       displayName: startPage.displayName,
       locale: 'en',
@@ -127,7 +130,10 @@ export async function getContent(key: string, host?: string): Promise<ContentNod
   return response.data;
 }
 
-export async function createContent(content: NewContent, host?: string): Promise<ContentNode | undefined> {
+export async function createContent(
+  content: NewContent,
+  host?: string,
+): Promise<ContentNode | undefined> {
   const client = await createApiClient(host);
 
   const response = await client.POST('/content', {
@@ -140,4 +146,5 @@ export async function createContent(content: NewContent, host?: string): Promise
 
   return response.data;
 }
+
 

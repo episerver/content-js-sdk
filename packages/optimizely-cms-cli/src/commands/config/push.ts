@@ -11,8 +11,10 @@ import {
   normalizePropertyGroups,
   validateApplications,
 } from '../../service/utils.js';
-import { ensureStartPageContent } from '../../service/contentService.js';
-import { ensureApplication, getApplication } from '../../service/applicationService.js';
+import {
+  ensureApplicationsWithContent,
+  buildStartPageMap,
+} from '../../service/applicationService.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -89,10 +91,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
 
     // extracts metadata(contentTypes, displayTemplates, contracts) from the component paths
-    const { contentTypes, displayTemplates, contracts } = await findMetaData(
+    const { contentTypes, displayTemplates, contracts, startPageMarkers } = await findMetaData(
       componentPaths,
       configPathDirectory,
     );
+
+    // Build map of application key → startPage contentType using markers
+    const startPageMap = buildStartPageMap(startPageMarkers, contentTypes);
 
     // Validate and normalize property groups
     const normalizedPropertyGroups =
@@ -103,10 +108,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const validatedApplications = applications ? validateApplications(applications) : [];
 
     // Validate that startPage is configured if applications exist
-    if (validatedApplications.length > 0 && !startPage) {
+    // Either via config startPage OR via .startPage() marker on contentTypes
+    if (validatedApplications.length > 0 && !startPage && startPageMap.size === 0) {
       console.error(chalk.red('StartPage must be configured when applications are defined'));
       console.error(
-        chalk.dim('Applications require entryPoint which is auto-generated from startPage content'),
+        chalk.dim(
+          'Either configure startPage in config OR mark a contentType with .startPage(appKey)',
+        ),
       );
       process.exit(1);
     }
@@ -190,76 +198,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Handle application creation if configured (AFTER manifest push)
     if (validatedApplications.length > 0) {
-      for (const app of validatedApplications) {
-        const appSpinner = ora(`Checking application "${app.displayName}"`).start();
-        try {
-          // Check if application already exists first
-          const existingApp = await getApplication(app.key!, flags.host);
-
-          if (existingApp) {
-            // Application exists - use its existing entryPoint
-            appSpinner.succeed(
-              chalk.green(`Application "${app.displayName}" already exists (${app.key})`),
-            );
-            continue; // Skip content creation and app creation
-          }
-
-          // Application doesn't exist - need to create start page content first
-          let startPageContentRef: string | undefined;
-
-          if (startPage && startPage.key) {
-            const contentSpinner = ora(`Creating start page content "${startPage.key}"`).start();
-            try {
-              const result = await ensureStartPageContent(startPage, flags.host);
-              startPageContentRef = result.contentRef;
-
-              if (result.existed) {
-                contentSpinner.succeed(
-                  chalk.green(
-                    `Start page content "${startPage.key}" already exists at ${startPageContentRef}`,
-                  ),
-                );
-              } else {
-                contentSpinner.succeed(
-                  chalk.green(
-                    `Start page content "${startPage.key}" created at ${startPageContentRef}`,
-                  ),
-                );
-              }
-
-              // Set application entryPoint to content reference
-              app.entryPoint = startPageContentRef;
-              console.log(
-                chalk.dim(
-                  `  Set application "${app.displayName}" entryPoint to ${startPageContentRef}`,
-                ),
-              );
-            } catch (error) {
-              contentSpinner.fail(chalk.red(`Failed to create start page content`));
-              throw error;
-            }
-          }
-
-          // Set default previewUrlFormats if not provided
-          if (!app.previewUrlFormats) {
-            app.previewUrlFormats = {
-              any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
-            };
-          }
-
-          // Now create the application
-          const result = await ensureApplication(app, flags.host);
-          appSpinner.succeed(
-            chalk.green(`Application "${app.displayName}" created (${result.key})`),
-          );
-        } catch (error) {
-          appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
-          if (error instanceof Error) {
-            console.error(chalk.red(error.message));
-          }
-          throw error;
-        }
-      }
+      await ensureApplicationsWithContent(
+        validatedApplications,
+        startPageMap,
+        startPage,
+        flags.host,
+      );
     }
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));

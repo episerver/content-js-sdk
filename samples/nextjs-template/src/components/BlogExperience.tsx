@@ -29,7 +29,7 @@ export const BlogExperienceContentType = contentType({
       },
     },
   },
-});
+}).startPage(['blog_app', 'test_app']);
 
 type Props = {
   content: ContentProps<typeof BlogExperienceContentType>;

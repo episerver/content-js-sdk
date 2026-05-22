@@ -26,7 +26,7 @@ export const AboutExperienceContentType = contentType({
       restrictedTypes: [HeroContentType, BannerContentType],
     },
   },
-});
+}).startPage('nextjs_app');
 
 type Props = {
   content: ContentProps<typeof AboutExperienceContentType>;

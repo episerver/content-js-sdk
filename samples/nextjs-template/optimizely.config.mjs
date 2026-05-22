@@ -1,4 +1,4 @@
-import { buildConfig, BlankExperienceContentType } from '@optimizely/cms-sdk';
+import { buildConfig } from '@optimizely/cms-sdk';
 
 export default buildConfig({
   components: ['./src/components/**.tsx', './src/components/**.ts'],
@@ -19,11 +19,6 @@ export default buildConfig({
       sortOrder: 3,
     },
   ],
-  startPage: {
-    key: 'BlankExperience',
-    displayName: 'Blank Experience',
-    baseType: '_experience',
-  },
   applications: [
     {
       key: 'nextjs_app',
@@ -39,9 +34,40 @@ export default buildConfig({
         },
       ],
       usePreviewTokens: true,
-      previewUrlFormats: {
-        any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
-      },
+      // previewUrlFormats: {
+      //   any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
+      // },
+    },
+    {
+      key: 'blog_app',
+      displayName: 'Blog App',
+      type: 'website',
+      isDefault: false,
+      useApplicationSpecificAssets: false,
+      hosts: [
+        {
+          authority: 'localhost:3002',
+          type: 'primary',
+          preferredUrlScheme: 'https',
+        },
+      ],
+      usePreviewTokens: true,
+    },
+    {
+      key: 'test_app',
+      displayName: 'Test App',
+      type: 'website',
+      isDefault: false,
+      useApplicationSpecificAssets: false,
+      hosts: [
+        {
+          authority: 'localhost:3003',
+          type: 'primary',
+          preferredUrlScheme: 'https',
+        },
+      ],
+      usePreviewTokens: true,
     },
   ],
+
 });
