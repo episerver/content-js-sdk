@@ -40,7 +40,9 @@ export async function Page({ searchParams }: Props) {
   return (
     <>
       <Script
-        src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
+        src={
+          new URL('/util/javascript/communicationinjector.js', process.env.OPTIMIZELY_CMS_URL).href
+        }
       ></Script>
       <PreviewComponent />
       <OptimizelyComponent content={response} />
@@ -101,8 +103,10 @@ The `getPreviewContent` method handles all the complexity of fetching the right 
 return (
   <>
     <Script
-      src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
-    ></Script>
+        src={
+          new URL('/util/javascript/communicationinjector.js', process.env.OPTIMIZELY_CMS_URL).href
+        }
+      ></Script>
     <PreviewComponent />
     <OptimizelyComponent content={response} />
   </>
@@ -130,8 +134,10 @@ import { NextPreviewComponent } from '@optimizely/cms-sdk/next';
 return (
   <>
     <Script
-      src={`${process.env.OPTIMIZELY_CMS_URL}/util/javascript/communicationinjector.js`}
-    ></Script>
+        src={
+          new URL('/util/javascript/communicationinjector.js', process.env.OPTIMIZELY_CMS_URL).href
+        }
+      ></Script>
     <NextPreviewComponent />
     <OptimizelyComponent content={response} />
   </>
