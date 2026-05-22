@@ -25,7 +25,7 @@ export type ApplicationsType = {
   type: ApplicationType;
   isDefault?: boolean;
   displayName: string;
-  entryPoint: string;
+  entryPoint?: string;
   usePreviewTokens?: boolean;
   hosts?: ApplicationHostType[];
   useApplicationSpecificAssets?: boolean;

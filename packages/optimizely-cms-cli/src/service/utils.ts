@@ -312,8 +312,8 @@ export function validateApplications(
   applications.forEach((app, applicationIndex) => {
     // Validate required fields for each application
     const requiredApplicationFields: Array<
-      keyof Pick<ApplicationsType, 'displayName' | 'entryPoint' | 'type'>
-    > = ['displayName', 'entryPoint', 'type'];
+      keyof Pick<ApplicationsType, 'key' | 'displayName' | 'type'>
+    > = ['key', 'displayName', 'type'];
 
     requiredApplicationFields.forEach((field) => {
       validateRequiredStringField(

@@ -26,11 +26,22 @@ export default buildConfig({
   },
   applications: [
     {
-      key: 'test-app',
-      displayName: 'Test App',
+      key: 'nextjs_app',
+      displayName: 'Next.js Template',
       type: 'website',
-      entryPoint: '/home',
+      isDefault: true,
+      useApplicationSpecificAssets: false,
+      hosts: [
+        {
+          authority: 'localhost:3001',
+          type: 'primary',
+          preferredUrlScheme: 'https',
+        },
+      ],
+      usePreviewTokens: true,
+      previewUrlFormats: {
+        any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
+      },
     },
   ],
 });
-

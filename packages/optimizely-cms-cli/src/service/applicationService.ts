@@ -21,8 +21,9 @@ export async function createApplication(
   });
 
   if (!response.response.ok) {
+    const errorDetails = response.error?.detail || JSON.stringify(response.error);
     throw new Error(
-      `Failed to create application: ${response.error?.title || 'Unknown error'}`,
+      `Failed to create application: ${response.error?.title || 'Unknown error'}. Details: ${errorDetails}`,
     );
   }
 
@@ -40,6 +41,11 @@ export async function getApplication(
       path: { key },
     },
   });
+
+  // 404 means application doesn't exist - return undefined
+  if (response.response.status === 404) {
+    return undefined;
+  }
 
   if (!response.response.ok) {
     throw new Error(
@@ -78,19 +84,15 @@ export async function listApplications(
 export async function ensureApplication(
   application: ApplicationsType,
   host?: string,
-): Promise<string> {
+): Promise<{ key: string; existed: boolean }> {
   if (!application.key) {
     throw new Error('Application key is required');
   }
 
-  try {
-    // Check if application already exists
-    const existing = await getApplication(application.key, host);
-    if (existing) {
-      return application.key;
-    }
-  } catch (error) {
-    // Application doesn't exist, will create below
+  // Check if application already exists
+  const existing = await getApplication(application.key, host);
+  if (existing) {
+    return { key: application.key, existed: true };
   }
 
   // Create application (cast to Application for API compatibility)
@@ -99,5 +101,5 @@ export async function ensureApplication(
     throw new Error('Failed to create application: no key returned');
   }
 
-  return created.key;
+  return { key: created.key, existed: false };
 }

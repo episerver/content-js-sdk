@@ -127,9 +127,14 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
   );
 }
 
-export { PropertyGroupType } from './buildConfig.js';
+export {
+  PropertyGroupType,
+  ApplicationsType,
+  ApplicationHostType,
+} from './buildConfig.js';
 export {
   init as initContentTypeRegistry,
   isContentTypeRegistered,
 } from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';
+

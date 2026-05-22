@@ -11,11 +11,8 @@ import {
   normalizePropertyGroups,
   validateApplications,
 } from '../../service/utils.js';
-import {
-  ensureStartPageContent,
-  ensureStartPageContentType,
-} from '../../service/contentService.js';
-import { ensureApplication } from '../../service/applicationService.js';
+import { ensureStartPageContent } from '../../service/contentService.js';
+import { ensureApplication, getApplication } from '../../service/applicationService.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -105,55 +102,14 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const manifestContracts = contracts.map(contractToManifest);
     const validatedApplications = applications ? validateApplications(applications) : [];
 
-    // Handle startPage content creation if configured
-    let startPageContentRef: string | undefined;
-
-    if (startPage && startPage.key) {
-      const startPageSpinner = ora(`Checking start page content "${startPage.key}"`).start();
-      try {
-        startPageContentRef = await ensureStartPageContent(startPage, flags.host);
-        startPageSpinner.succeed(
-          chalk.green(`Start page content "${startPage.key}" ready at ${startPageContentRef}`),
-        );
-
-        // Update applications to use the startPage as entryPoint if not already set
-        for (const app of validatedApplications) {
-          if (!app.entryPoint || app.entryPoint === '') {
-            app.entryPoint = startPageContentRef;
-            console.log(
-              chalk.dim(
-                `  Updated application "${app.displayName}" entryPoint to ${startPageContentRef}`,
-              ),
-            );
-          }
-        }
-      } catch (error) {
-        startPageSpinner.fail(chalk.red(`Failed to ensure start page content`));
-        if (error instanceof Error) {
-          console.error(chalk.red(error.message));
-        }
-        throw error;
-      }
+    // Validate that startPage is configured if applications exist
+    if (validatedApplications.length > 0 && !startPage) {
+      console.error(chalk.red('StartPage must be configured when applications are defined'));
+      console.error(
+        chalk.dim('Applications require entryPoint which is auto-generated from startPage content'),
+      );
+      process.exit(1);
     }
-
-    // Handle application creation if configured
-    // if (validatedApplications.length > 0) {
-    //   for (const app of validatedApplications) {
-    //     const appSpinner = ora(`Checking application "${app.displayName}"`).start();
-    //     try {
-    //       const appKey = await ensureApplication(app, flags.host);
-    //       appSpinner.succeed(
-    //         chalk.green(`Application "${app.displayName}" ready (${appKey})`),
-    //       );
-    //     } catch (error) {
-    //       appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
-    //       if (error instanceof Error) {
-    //         console.error(chalk.red(error.message));
-    //       }
-    //       throw error;
-    //     }
-    //   }
-    // }
 
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes).concat(manifestContracts),
@@ -204,37 +160,22 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     });
 
     if (response.error) {
-      if (response.error.status === 404) {
-        spinner.fail(chalk.red('Feature Not Active'));
-        console.error(
-          chalk.red(
-            'The requested feature "preview3_packages_enabled" is not enabled in your environment.',
-          ),
-        );
-        console.error(
-          chalk.dim(
-            'Please contact your system administrator or support team to request that this feature be enabled.',
-          ),
-        );
-      } else {
-        spinner.fail(chalk.red(' Error'));
-        console.error(
-          chalk.red(
-            `Error ${response.error.status}: ${response.error.title || 'Unknown error'} (${response.error.code || 'N/A'})`,
-          ),
-        );
-        if (response.error.detail) {
-          console.error(chalk.dim(response.error.detail));
-        }
-        if (response.error.errors?.length) {
-          for (const [index, err] of response.error.errors.entries()) {
-            console.error(`  - ERROR ${index + 1}`);
-            console.error(chalk.dim(`      [DETAIL] ${err.detail}`));
-            console.error(chalk.dim(`      [FIELD]  ${err.field}\n`));
-          }
+      spinner.fail(chalk.red(' Error'));
+      console.error(
+        chalk.red(
+          `Error ${response.error.status}: ${response.error.title || 'Unknown error'} (${response.error.code || 'N/A'})`,
+        ),
+      );
+      if (response.error.detail) {
+        console.error(chalk.dim(response.error.detail));
+      }
+      if (response.error.errors?.length) {
+        for (const [index, err] of response.error.errors.entries()) {
+          console.error(`  - ERROR ${index + 1}`);
+          console.error(chalk.dim(`      [DETAIL] ${err.detail}`));
+          console.error(chalk.dim(`      [FIELD]  ${err.field}\n`));
         }
       }
-
       process.exit(1);
     }
 
@@ -246,6 +187,80 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
 
     const data = response.data;
+
+    // Handle application creation if configured (AFTER manifest push)
+    if (validatedApplications.length > 0) {
+      for (const app of validatedApplications) {
+        const appSpinner = ora(`Checking application "${app.displayName}"`).start();
+        try {
+          // Check if application already exists first
+          const existingApp = await getApplication(app.key!, flags.host);
+
+          if (existingApp) {
+            // Application exists - use its existing entryPoint
+            appSpinner.succeed(
+              chalk.green(`Application "${app.displayName}" already exists (${app.key})`),
+            );
+            continue; // Skip content creation and app creation
+          }
+
+          // Application doesn't exist - need to create start page content first
+          let startPageContentRef: string | undefined;
+
+          if (startPage && startPage.key) {
+            const contentSpinner = ora(`Creating start page content "${startPage.key}"`).start();
+            try {
+              const result = await ensureStartPageContent(startPage, flags.host);
+              startPageContentRef = result.contentRef;
+
+              if (result.existed) {
+                contentSpinner.succeed(
+                  chalk.green(
+                    `Start page content "${startPage.key}" already exists at ${startPageContentRef}`,
+                  ),
+                );
+              } else {
+                contentSpinner.succeed(
+                  chalk.green(
+                    `Start page content "${startPage.key}" created at ${startPageContentRef}`,
+                  ),
+                );
+              }
+
+              // Set application entryPoint to content reference
+              app.entryPoint = startPageContentRef;
+              console.log(
+                chalk.dim(
+                  `  Set application "${app.displayName}" entryPoint to ${startPageContentRef}`,
+                ),
+              );
+            } catch (error) {
+              contentSpinner.fail(chalk.red(`Failed to create start page content`));
+              throw error;
+            }
+          }
+
+          // Set default previewUrlFormats if not provided
+          if (!app.previewUrlFormats) {
+            app.previewUrlFormats = {
+              any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
+            };
+          }
+
+          // Now create the application
+          const result = await ensureApplication(app, flags.host);
+          appSpinner.succeed(
+            chalk.green(`Application "${app.displayName}" created (${result.key})`),
+          );
+        } catch (error) {
+          appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
+          if (error instanceof Error) {
+            console.error(chalk.red(error.message));
+          }
+          throw error;
+        }
+      }
+    }
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
       for (const r of data.outcomes) {
