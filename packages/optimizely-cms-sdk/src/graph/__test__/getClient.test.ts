@@ -95,11 +95,11 @@ describe('getClient - Critical Edge Cases', () => {
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
     });
 
-    test('should accept empty string graphUrl', () => {
+    test('should use default graphUrl when empty string in config', () => {
       config({ apiKey: 'test-key', graphUrl: '' });
       const client = getClient();
 
-      expect(client.graphUrl).toBe('');
+      expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
     });
 
     test('GraphClient constructor should handle undefined graphUrl', () => {
@@ -132,16 +132,17 @@ describe('getClient - Critical Edge Cases', () => {
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
     });
 
+    test('should override with empty graphUrl and use default', () => {
+      const client = getClient({ graphUrl: '' });
+
+      // Empty string override replaces config value, then constructor applies default
+      expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
+    });
+
     test('should override with undefined host', () => {
       const client = getClient({ host: undefined });
 
       expect(client.host).toBeUndefined();
-    });
-
-    test('should override with empty string graphUrl', () => {
-      const client = getClient({ graphUrl: '' });
-
-      expect(client.graphUrl).toBe('');
     });
   });
 

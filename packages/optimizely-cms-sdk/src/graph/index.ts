@@ -323,7 +323,7 @@ export class GraphClient {
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
-    this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
+    this.graphUrl = options.graphUrl || 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
     this.host = options.host;
     this.cache = options.cache ?? true;
