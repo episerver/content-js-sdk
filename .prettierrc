@@ -5,7 +5,7 @@
   "endOfLine": "crlf",
   "experimentalTernaries": true,
   "jsxSingleQuote": true,
-  "printWidth": 100,
+  "printWidth": 90,
   "proseWrap": "always",
   "quoteProps": "as-needed",
   "rangeStart": 0,

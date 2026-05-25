@@ -354,7 +354,8 @@ export class GraphClient {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
           'User-Agent': this.userAgent,
-          Authorization: previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
+          Authorization:
+            previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
         };
 
         if (slot === 'New') {
@@ -568,7 +569,9 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(reference),
-        ...localeFilter(options?.locales ?? (reference.locale ? [reference.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
+        ),
       };
     }
 
@@ -649,7 +652,9 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(reference),
-        ...localeFilter(options?.locales ?? (reference.locale ? [reference.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
+        ),
       };
     }
 
@@ -712,7 +717,13 @@ export class GraphClient {
         this.maxFragmentThreshold,
       );
 
-      const response = await this.request(query, input, params.preview_token, false, activeSlot);
+      const response = await this.request(
+        query,
+        input,
+        params.preview_token,
+        false,
+        activeSlot,
+      );
 
       return decorateWithContext(removeTypePrefix(response?._Content?.item), params);
     });
@@ -822,7 +833,8 @@ export class GraphClient {
    * ```
    */
   async getContent(reference: string | GraphReference, options?: GraphGetItemOptions) {
-    const ref = typeof reference === 'string' ? this.parseGraphReference(reference) : reference;
+    const ref =
+      typeof reference === 'string' ? this.parseGraphReference(reference) : reference;
 
     return withGetContentSpan(ref, async span => {
       const previewToken = options?.previewToken;
@@ -862,7 +874,13 @@ export class GraphClient {
           this.maxFragmentThreshold,
         );
 
-        const response = await this.request(query, input, previewToken, cacheEnabled, activeSlot);
+        const response = await this.request(
+          query,
+          input,
+          previewToken,
+          cacheEnabled,
+          activeSlot,
+        );
 
         return removeTypePrefix(response?._Content?.item);
       } catch (error) {
@@ -918,7 +936,11 @@ export function getGraphConfig(): GraphOptions | null {
  * ```
  */
 export function config(options: GraphOptions) {
-  if (!options.apiKey || typeof options.apiKey !== 'string' || options.apiKey.trim().length === 0) {
+  if (
+    !options.apiKey ||
+    typeof options.apiKey !== 'string' ||
+    options.apiKey.trim().length === 0
+  ) {
     throw new OptimizelyGraphError(
       'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
         'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',

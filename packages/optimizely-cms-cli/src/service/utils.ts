@@ -116,7 +116,9 @@ async function compileAndImport(inputName: string, cwdUrl: string, outDir: strin
     const f = await import(outUrl);
     return f;
   } catch (err) {
-    throw new Error(`Error when importing the file at path "${outPath}": ${(err as any).message}`);
+    throw new Error(
+      `Error when importing the file at path "${outPath}": ${(err as any).message}`,
+    );
   }
 }
 
@@ -136,7 +138,9 @@ export async function findMetaData(
 
   // Separate inclusion and exclusion patterns
   const includePatterns = cleanedPaths.filter(p => !p.startsWith('!'));
-  const excludePatterns = cleanedPaths.filter(p => p.startsWith('!')).map(p => p.substring(1)); // Remove '!' prefix
+  const excludePatterns = cleanedPaths
+    .filter(p => p.startsWith('!'))
+    .map(p => p.substring(1)); // Remove '!' prefix
 
   // Validate patterns
   if (includePatterns.length === 0 && excludePatterns.length > 0) {
@@ -171,7 +175,8 @@ export async function findMetaData(
 
   for (const file of allFiles) {
     const loaded = await compileAndImport(file, cwd, tmpDir);
-    const { contentTypeData, displayTemplateData, contractData } = extractMetaData(loaded);
+    const { contentTypeData, displayTemplateData, contractData } =
+      extractMetaData(loaded);
 
     for (const c of contentTypeData) {
       printFilesContents('Content Type', file, c);

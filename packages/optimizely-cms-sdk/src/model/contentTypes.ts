@@ -1,7 +1,12 @@
 import { AnyProperty } from './properties.js';
 
 // Main base types
-export const MAIN_BASE_TYPES = ['_component', '_experience', '_section', '_page'] as const;
+export const MAIN_BASE_TYPES = [
+  '_component',
+  '_experience',
+  '_section',
+  '_page',
+] as const;
 
 // Media-related base types
 export const MEDIA_BASE_TYPES = ['_image', '_media', '_video'] as const;
@@ -42,8 +47,8 @@ type InnerContractValues = {
 };
 
 /** Represents the Contract type in CMS */
-export type Contract<P extends PropertiesRecord = PropertiesRecord> = SuppliedContractValues<P> &
-  InnerContractValues;
+export type Contract<P extends PropertiesRecord = PropertiesRecord> =
+  SuppliedContractValues<P> & InnerContractValues;
 
 /** Convert union to intersection type */
 type UnionToIntersection<U> =
@@ -65,7 +70,9 @@ type MergedPropertiesType<T extends AnyContentType> = ('extends' extends keyof T
 export type PageContentType = BaseContentType & {
   baseType: '_page';
   mayContainTypes?: Array<
-    ContentType<PageContentType | ExperienceContentType | FolderContentType> | '_self' | string
+    | ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | '_self'
+    | string
   >;
 };
 
@@ -73,7 +80,9 @@ export type PageContentType = BaseContentType & {
 export type ExperienceContentType = BaseContentType & {
   baseType: '_experience';
   mayContainTypes?: Array<
-    ContentType<PageContentType | ExperienceContentType | FolderContentType> | '_self' | string
+    | ContentType<PageContentType | ExperienceContentType | FolderContentType>
+    | '_self'
+    | string
   >;
 };
 
@@ -109,10 +118,17 @@ export type AnyContentType =
   | SectionContentType
   | MediaContentType;
 
-export type ContentType<T extends AnyContentType = AnyContentType> = Omit<T, 'properties'> & {
+export type ContentType<T extends AnyContentType = AnyContentType> = Omit<
+  T,
+  'properties'
+> & {
   properties: MergedPropertiesType<T>;
   __type: 'contentType';
 };
 
 /** All possible content types for allowed and restricted fields */
-export type PermittedTypes = Contract | ContentType | AnyContentType['baseType'] | '_self';
+export type PermittedTypes =
+  | Contract
+  | ContentType
+  | AnyContentType['baseType']
+  | '_self';

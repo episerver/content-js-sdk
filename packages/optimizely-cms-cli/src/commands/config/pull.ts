@@ -215,7 +215,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       // Ensure output directory exists
       await mkdir(outputDir, { recursive: true });
 
-      const allContents = [...manifest.contentTypes, ...(manifest.displayTemplates || [])];
+      const allContents = [
+        ...manifest.contentTypes,
+        ...(manifest.displayTemplates || []),
+      ];
 
       const files = allContents.map(content => ({
         path: generateFilePath(content, outputDir, isGroupBy),
@@ -227,7 +230,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         makeFiles(files),
       ]);
 
-      const displayPaths = files.map(file => getRelevantPath(file.path, outputDir)).sort();
+      const displayPaths = files
+        .map(file => getRelevantPath(file.path, outputDir))
+        .sort();
 
       console.log();
       console.log(chalk.cyan.bold('\nGenerated files:'));

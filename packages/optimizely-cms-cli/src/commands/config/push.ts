@@ -5,7 +5,11 @@ import chalk from 'chalk';
 import { BaseCommand } from '../../baseCommand.js';
 import { writeFile, access } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
-import { findMetaData, readFromPath, normalizePropertyGroups } from '../../service/utils.js';
+import {
+  findMetaData,
+  readFromPath,
+  normalizePropertyGroups,
+} from '../../service/utils.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -68,7 +72,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Validate components field
     if (!componentPaths || !Array.isArray(componentPaths)) {
-      console.error(chalk.red('Invalid configuration: "components" field must be an array'));
+      console.error(
+        chalk.red('Invalid configuration: "components" field must be an array'),
+      );
       process.exit(1);
     }
 
@@ -82,7 +88,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     );
 
     // Validate and normalize property groups
-    const normalizedPropertyGroups = propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
+    const normalizedPropertyGroups =
+      propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
