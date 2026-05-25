@@ -155,9 +155,3 @@ export async function processContentWithApplications(
     }
   }
 }
-
-
-
-
-
-

@@ -190,17 +190,3 @@ export async function checkApplications(
 
   return false;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
