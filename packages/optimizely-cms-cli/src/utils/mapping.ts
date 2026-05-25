@@ -271,9 +271,9 @@ function mapAllowedRestrictedTypes(updatedValue: any, parentKey: string) {
 export function filterSystemContentTypes(contentTypes: ContentType[]): ContentType[] {
   return contentTypes.filter(
     ct =>
-      !['_image', '_video', '_media'].includes(ct.baseType ?? '') &&
-      !['BlankExperience', 'BlankSection'].includes(ct.key),
-  );
+      ct.source !== 'globalcontract' &&
+      !['BlankExperience', 'BlankSection'].includes(ct.key)
+    );
 }
 
 /**

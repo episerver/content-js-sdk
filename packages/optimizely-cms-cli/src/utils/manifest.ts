@@ -49,6 +49,7 @@ export type ContentType = Omit<
   baseType?: string;
   contracts?: string[];
   isContract?: boolean;
+  readonly source?: string;
 };
 
 /**
