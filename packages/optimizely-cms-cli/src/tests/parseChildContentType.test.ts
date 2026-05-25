@@ -31,7 +31,6 @@ describe('parseChildContentType', () => {
           "child1",
           "child2",
         ],
-        "startPage": [Function],
       }
     `);
   });
@@ -53,7 +52,6 @@ describe('parseChildContentType', () => {
         "mayContainTypes": [
           "example",
         ],
-        "startPage": [Function],
       }
     `);
   });
@@ -71,7 +69,6 @@ describe('parseChildContentType', () => {
         "baseType": "_component",
         "displayName": "Example",
         "key": "example",
-        "startPage": [Function],
       }
     `);
   });

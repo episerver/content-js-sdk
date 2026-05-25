@@ -11,10 +11,7 @@ import {
   normalizePropertyGroups,
   validateApplications,
 } from '../../service/utils.js';
-import {
-  ensureApplicationsWithContent,
-  buildStartPageMap,
-} from '../../service/applicationService.js';
+import { checkApplications } from '../../service/applicationService.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -64,13 +61,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     let componentPaths: string[];
     let propertyGroups: any;
     let applications: any;
-    let startPage: any;
+    let contentArray: any;
 
     try {
       componentPaths = await readFromPath(configPath, 'components');
       propertyGroups = await readFromPath(configPath, 'propertyGroups');
       applications = await readFromPath(configPath, 'applications');
-      startPage = await readFromPath(configPath, 'startPage');
+      contentArray = await readFromPath(configPath, 'content');
     } catch (error) {
       console.error(chalk.red('Failed to read configuration file'));
       if (error instanceof Error) {
@@ -91,13 +88,10 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const configPathDirectory = pathToFileURL(path.dirname(configFilePath)).href;
 
     // extracts metadata(contentTypes, displayTemplates, contracts) from the component paths
-    const { contentTypes, displayTemplates, contracts, startPageMarkers } = await findMetaData(
+    const { contentTypes, displayTemplates, contracts } = await findMetaData(
       componentPaths,
       configPathDirectory,
     );
-
-    // Build map of application key → startPage contentType using markers
-    const startPageMap = buildStartPageMap(startPageMarkers, contentTypes);
 
     // Validate and normalize property groups
     const normalizedPropertyGroups =
@@ -107,13 +101,19 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const manifestContracts = contracts.map(contractToManifest);
     const validatedApplications = applications ? validateApplications(applications) : [];
 
-    // Validate that startPage is configured if applications exist
-    // Either via config startPage OR via .startPage() marker on contentTypes
-    if (validatedApplications.length > 0 && !startPage && startPageMap.size === 0) {
-      console.error(chalk.red('StartPage must be configured when applications are defined'));
+    // Check if apps have entryPoint set (will be mapped from content config)
+    const hasAppsWithoutEntryPoint = validatedApplications.some(app => !app.entryPoint);
+
+    // Validate that content array is configured if applications exist without entryPoint
+    if (hasAppsWithoutEntryPoint && !contentArray) {
+      console.error(
+        chalk.red(
+          'Content configuration required when applications defined without entryPoint',
+        ),
+      );
       console.error(
         chalk.dim(
-          'Either configure startPage in config OR mark a contentType with .startPage(appKey)',
+          'Either configure entryPoint in application OR configure content array',
         ),
       );
       process.exit(1);
@@ -196,15 +196,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const data = response.data;
 
-    // Handle application creation if configured (AFTER manifest push)
-    if (validatedApplications.length > 0) {
-      await ensureApplicationsWithContent(
-        validatedApplications,
-        startPageMap,
-        startPage,
-        flags.host,
-      );
-    }
+    // Check and ensure applications (skips if all exist)
+    await checkApplications(validatedApplications, contentArray, flags.host);
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
       for (const r of data.outcomes) {
@@ -222,4 +215,5 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
   }
 }
+
 

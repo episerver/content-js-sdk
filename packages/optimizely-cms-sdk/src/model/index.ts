@@ -25,30 +25,16 @@ function getMergedProps<T extends AnyContentType>(
   return undefined;
 }
 
-/** Conditional type - only includes startPage method for _experience or _page baseTypes */
-type WithStartPage<T extends AnyContentType> = T['baseType'] extends '_experience' | '_page'
-  ? { startPage: (appKey: string | string[]) => ContentType<T> & { __startPage: string | string[] } }
-  : {};
-
 /** Defines a Optimizely CMS content type */
 export function contentType<T extends AnyContentType>(
   options: T,
-): ContentType<T> & WithStartPage<T> {
+): ContentType<T> {
   const properties = getMergedProps(options);
-  const base = {
+  return {
     ...options,
     ...(properties ? { properties } : {}),
     __type: 'contentType',
   } as unknown as ContentType<T>;
-
-  // Add chainable startPage method (only exposed via types for _experience/_page)
-  return {
-    ...base,
-    startPage: (appKey: string | string[]) => ({
-      ...base,
-      __startPage: appKey,
-    }),
-  } as ContentType<T> & WithStartPage<T>;
 }
 
 /**

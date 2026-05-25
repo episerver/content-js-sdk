@@ -19,9 +19,22 @@ export default buildConfig({
       sortOrder: 3,
     },
   ],
+  content: [
+    {
+      key: 'AboutExperienceContent',
+      displayName: 'About Experience',
+      contentType: 'AboutExperience',
+    },
+    {
+      key: 'BlogExperienceContent',
+      displayName: 'Blog Experience',
+      contentType: 'BlogExperience',
+    },
+  ],
   applications: [
     {
       key: 'nextjs_app',
+      entryPoint: 'AboutExperienceContent',
       displayName: 'Next.js Template',
       type: 'website',
       isDefault: true,
@@ -34,34 +47,17 @@ export default buildConfig({
         },
       ],
       usePreviewTokens: true,
-      // previewUrlFormats: {
-      //   any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
-      // },
     },
     {
       key: 'blog_app',
       displayName: 'Blog App',
       type: 'website',
       isDefault: false,
+      entryPoint: 'BlogExperienceContent',
       useApplicationSpecificAssets: false,
       hosts: [
         {
           authority: 'localhost:3002',
-          type: 'primary',
-          preferredUrlScheme: 'https',
-        },
-      ],
-      usePreviewTokens: true,
-    },
-    {
-      key: 'test_app',
-      displayName: 'Test App',
-      type: 'website',
-      isDefault: false,
-      useApplicationSpecificAssets: false,
-      hosts: [
-        {
-          authority: 'localhost:3003',
           type: 'primary',
           preferredUrlScheme: 'https',
         },

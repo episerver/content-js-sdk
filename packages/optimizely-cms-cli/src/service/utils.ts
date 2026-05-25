@@ -51,14 +51,13 @@ export type ContentTypeMeta = Pick<FoundContentType, 'contentType' | 'path'>;
 export type DisplayTemplateMeta = Pick<FoundContentType, 'displayTemplates' | 'path'>;
 
 /**
- * @param obj - The object from which to remove the __type, tag, and __startPage properties
+ * @param obj - The object from which to remove the __type and tag properties
  * @returns void (the function modifies the object in place)
  */
 function cleanType(obj: any) {
   if (obj !== null) {
     if ('__type' in obj) delete obj.__type;
     if ('tag' in obj) delete obj.tag;
-    if ('__startPage' in obj) delete obj.__startPage;
   }
 }
 
@@ -71,24 +70,14 @@ export function extractMetaData(obj: unknown): {
   contentTypeData: AnyContentType[];
   displayTemplateData: DisplayTemplate[];
   contractData: ContentTypes.Contract[];
-  startPageMarkers: Array<{ contentTypeKey: string; appKeys: string | string[] }>;
 } {
   let contentTypeData: AnyContentType[] = [];
   let displayTemplateData: DisplayTemplate[] = [];
   let contractData: ContentTypes.Contract[] = [];
-  let startPageMarkers: Array<{ contentTypeKey: string; appKeys: string | string[] }> =
-    [];
 
   if (typeof obj === 'object' && obj !== null) {
     for (const value of Object.values(obj)) {
       if (isContentType(value)) {
-        // Extract __startPage marker before cleaning
-        if ((value as any).__startPage) {
-          startPageMarkers.push({
-            contentTypeKey: value.key,
-            appKeys: (value as any).__startPage,
-          });
-        }
         cleanType(value);
         contentTypeData.push(value);
       } else if (isDisplayTemplate(value)) {
@@ -105,7 +94,6 @@ export function extractMetaData(obj: unknown): {
     contentTypeData,
     displayTemplateData,
     contractData,
-    startPageMarkers,
   };
 }
 
@@ -144,7 +132,6 @@ export async function findMetaData(
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
   contracts: ContentTypes.Contract[];
-  startPageMarkers: Array<{ contentTypeKey: string; appKeys: string | string[] }>;
 }> {
   const tmpDir = await mkdtemp(path.join(tmpdir(), 'optimizely-cli-'));
 
@@ -186,12 +173,11 @@ export async function findMetaData(
     contentTypes: [] as AnyContentType[],
     displayTemplates: [] as DisplayTemplate[],
     contracts: [] as ContentTypes.Contract[],
-    startPageMarkers: [] as Array<{ contentTypeKey: string; appKeys: string | string[] }>,
   };
 
   for (const file of allFiles) {
     const loaded = await compileAndImport(file, cwd, tmpDir);
-    const { contentTypeData, displayTemplateData, contractData, startPageMarkers } =
+    const { contentTypeData, displayTemplateData, contractData } =
       extractMetaData(loaded);
 
     for (const c of contentTypeData) {
@@ -208,8 +194,6 @@ export async function findMetaData(
       printFilesContents('Contract', file, contract);
       result2.contracts.push(contract);
     }
-
-    result2.startPageMarkers.push(...startPageMarkers);
   }
 
   return result2;

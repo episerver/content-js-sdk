@@ -1,11 +1,8 @@
-import { AnyContentType } from './contentTypes.js';
-
 export type PropertyGroupType = {
   key: string;
   displayName: string;
   sortOrder?: number;
 };
-
 
 const applicationTypes = ['website', 'inProcessWebsite'] as const;
 const hostTypes = ['default', 'primary', 'preview', 'edit', 'media'] as const;
@@ -32,11 +29,17 @@ export type ApplicationsType = {
   previewUrlFormats?: Record<string, string>;
 };
 
+export type ContentType = {
+  key: string;
+  displayName: string;
+  contentType: string;
+};
+
 export type BuildConfig = {
   components: string[];
   propertyGroups: Array<PropertyGroupType>;
   applications: Array<ApplicationsType>;
-  startPage?: Pick<AnyContentType, 'key' | 'displayName' | 'baseType'>;
+  content?: Array<ContentType>;
 };
 
 // Built-in/default property groups that all users get
@@ -54,4 +57,8 @@ export interface PropertyGroupRegistry {
 }
 
 // Type that combines built-in groups, registered custom groups
-export type PropertyGroupKey = BuiltInPropertyGroups | keyof PropertyGroupRegistry | (string & {});
+export type PropertyGroupKey =
+  | BuiltInPropertyGroups
+  | keyof PropertyGroupRegistry
+  | (string & {});
+
