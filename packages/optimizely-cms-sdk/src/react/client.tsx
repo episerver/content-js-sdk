@@ -60,14 +60,14 @@ export interface PreviewComponentProps {
  *
  * Both may fire for same save. Deduplication prevents duplicate refreshes.
  */
-export const PreviewComponent: FunctionComponent<PropsWithChildren<PreviewComponentProps>> = ({
-  onNavigate,
-  refreshTimeout = 300,
-  children,
-}) => {
+export const PreviewComponent: FunctionComponent<
+  PropsWithChildren<PreviewComponentProps>
+> = ({ onNavigate, refreshTimeout = 300, children }) => {
   const [showMask, setShowMask] = useState<boolean>(false);
   const reloadDelay = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastProcessedRef = useRef<{ contentLink: string; timestamp: number } | null>(null);
+  const lastProcessedRef = useRef<{ contentLink: string; timestamp: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     const normalizeUrl = (url: string): string => {
@@ -108,7 +108,9 @@ export const PreviewComponent: FunctionComponent<PropsWithChildren<PreviewCompon
 
       const executeNavigation = () => {
         if (onNavigate) {
-          Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => setShowMask(false));
+          Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
+            setShowMask(false),
+          );
         } else {
           // Fallback: hard reload
           window.location.replace(finalUrl);

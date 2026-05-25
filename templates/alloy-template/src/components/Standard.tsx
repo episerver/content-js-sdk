@@ -85,7 +85,10 @@ function Standard({ content }: StandardPageProps) {
           {/* Teasers Image */}
           <div>
             {content.image && (
-              <img src={src(content.image)} className='w-full h-full object-cover rounded-lg' />
+              <img
+                src={src(content.image)}
+                className='w-full h-full object-cover rounded-lg'
+              />
             )}
           </div>
 

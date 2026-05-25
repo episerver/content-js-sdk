@@ -22,12 +22,18 @@ function convertExtendsToContracts(contentType: AnyContentType): string[] | unde
  * @param allowedKeys - Set of valid content type keys for validation.
  * @returns
  */
-function transformContentType(contentType: AnyContentType, allowedKeys?: Set<string>): any {
+function transformContentType(
+  contentType: AnyContentType,
+  allowedKeys?: Set<string>,
+): any {
   validateContentTypeKey(contentType.key);
 
   const { key, properties = {} } = contentType;
   // Parse the content type, excluding 'extends' from the content type
-  const { extends: _, ...parsedContentType } = parseChildContentType(contentType, allowedKeys);
+  const { extends: _, ...parsedContentType } = parseChildContentType(
+    contentType,
+    allowedKeys,
+  );
   const formattedProperties = transformProperties(properties, key);
   const contracts = convertExtendsToContracts(contentType);
 

@@ -24,7 +24,10 @@ describe('GraphReference type and filters', () => {
     });
 
     test('creates filter with key and locale', () => {
-      const result = referenceFilter({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
+      const result = referenceFilter({
+        key: '880777d5a2824399b07e93e3ca70668e',
+        locale: 'en',
+      });
       expect(result).toEqual({
         where: {
           _metadata: {
@@ -36,7 +39,10 @@ describe('GraphReference type and filters', () => {
     });
 
     test('creates filter with key and version', () => {
-      const result = referenceFilter({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' });
+      const result = referenceFilter({
+        key: '880777d5a2824399b07e93e3ca70668e',
+        version: '123',
+      });
       expect(result).toEqual({
         where: {
           _metadata: {
@@ -74,14 +80,18 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses key only format', () => {
-    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e');
+    const result = (client as any).parseGraphReference(
+      'graph://880777d5a2824399b07e93e3ca70668e',
+    );
     expect(result).toEqual({
       key: '880777d5a2824399b07e93e3ca70668e',
     });
   });
 
   test('parses type/key format', () => {
-    const result = (client as any).parseGraphReference('graph://Page/880777d5a2824399b07e93e3ca70668e');
+    const result = (client as any).parseGraphReference(
+      'graph://Page/880777d5a2824399b07e93e3ca70668e',
+    );
     expect(result).toEqual({
       type: 'Page',
       key: '880777d5a2824399b07e93e3ca70668e',
@@ -89,7 +99,9 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses source/type/key format', () => {
-    const result = (client as any).parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e');
+    const result = (client as any).parseGraphReference(
+      'graph://cms/Page/880777d5a2824399b07e93e3ca70668e',
+    );
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
@@ -98,7 +110,9 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with locale query parameter', () => {
-    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e?loc=en');
+    const result = (client as any).parseGraphReference(
+      'graph://880777d5a2824399b07e93e3ca70668e?loc=en',
+    );
     expect(result).toEqual({
       key: '880777d5a2824399b07e93e3ca70668e',
       locale: 'en',
@@ -106,7 +120,9 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with version query parameter', () => {
-    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e?ver=123');
+    const result = (client as any).parseGraphReference(
+      'graph://880777d5a2824399b07e93e3ca70668e?ver=123',
+    );
     expect(result).toEqual({
       key: '880777d5a2824399b07e93e3ca70668e',
       version: '123',
@@ -114,7 +130,9 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with both locale and version', () => {
-    const result = (client as any).parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
+    const result = (client as any).parseGraphReference(
+      'graph://880777d5a2824399b07e93e3ca70668e?loc=en&ver=123',
+    );
     expect(result).toEqual({
       key: '880777d5a2824399b07e93e3ca70668e',
       locale: 'en',
@@ -148,7 +166,9 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('handles trailing slashes', () => {
-    const result = (client as any).parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e/');
+    const result = (client as any).parseGraphReference(
+      'graph://cms/Page/880777d5a2824399b07e93e3ca70668e/',
+    );
     expect(result).toEqual({
       source: 'cms',
       type: 'Page',
@@ -369,7 +389,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
+    await client.getContent(
+      'graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123',
+    );
 
     // Should parse the string and use version (not locale due to priority)
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -412,7 +434,10 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' }, { previewToken });
+    await client.getContent(
+      { key: '880777d5a2824399b07e93e3ca70668e', version: '123' },
+      { previewToken },
+    );
 
     // Both requests should include preview token
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -542,7 +567,10 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       });
 
-    await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' }, { previewToken: 'preview-token' });
+    await client.getContent(
+      { key: '880777d5a2824399b07e93e3ca70668e' },
+      { previewToken: 'preview-token' },
+    );
 
     // Second call should have cache = false (4th parameter)
     expect(mockRequest).toHaveBeenNthCalledWith(
@@ -735,7 +763,10 @@ describe('GraphClient.getPath() with GraphReference', () => {
       },
     });
 
-    const result = await client.getPath({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
+    const result = await client.getPath({
+      key: '880777d5a2824399b07e93e3ca70668e',
+      locale: 'en',
+    });
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
@@ -854,7 +885,10 @@ describe('GraphClient.getPath() with GraphReference', () => {
       },
     });
 
-    await client.getPath({ key: '880777d5a2824399b07e93e3ca70668e' }, { locales: ['en', 'sv'] });
+    await client.getPath(
+      { key: '880777d5a2824399b07e93e3ca70668e' },
+      { locales: ['en', 'sv'] },
+    );
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
@@ -899,7 +933,10 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
     });
 
-    const result = await client.getItems({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
+    const result = await client.getItems({
+      key: '880777d5a2824399b07e93e3ca70668e',
+      locale: 'en',
+    });
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),
@@ -1009,7 +1046,10 @@ describe('GraphClient.getItems() with GraphReference', () => {
       },
     });
 
-    await client.getItems({ key: '880777d5a2824399b07e93e3ca70668e' }, { locales: ['en', 'sv'] });
+    await client.getItems(
+      { key: '880777d5a2824399b07e93e3ca70668e' },
+      { locales: ['en', 'sv'] },
+    );
 
     expect(mockRequest).toHaveBeenCalledWith(
       expect.any(String),

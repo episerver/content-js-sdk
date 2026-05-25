@@ -8,7 +8,9 @@ import {
 } from './contentTypes.js';
 import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
 
-function getMergedProps<T extends AnyContentType>(options: T): PropertiesRecord | undefined {
+function getMergedProps<T extends AnyContentType>(
+  options: T,
+): PropertiesRecord | undefined {
   if (!options.extends && !options.properties) return undefined;
 
   const contracts = Array.isArray(options.extends) ? options.extends : [options.extends];
@@ -73,12 +75,16 @@ export function contract<P extends PropertiesRecord>(
 }
 
 /** Defines a Optimizely CMS display template */
-export function displayTemplate<T extends DisplayTemplateVariant>(options: T): DisplayTemplate<T> {
+export function displayTemplate<T extends DisplayTemplateVariant>(
+  options: T,
+): DisplayTemplate<T> {
   return { ...options, __type: 'displayTemplate' };
 }
 
 /** Defines a Optimizely CMS build configuration */
-export function buildConfig<T extends BuildConfig>(options: T): T & { __type: 'buildConfig' } {
+export function buildConfig<T extends BuildConfig>(
+  options: T,
+): T & { __type: 'buildConfig' } {
   return { ...options, __type: 'buildConfig' };
 }
 
@@ -122,5 +128,8 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
 }
 
 export { PropertyGroupType } from './buildConfig.js';
-export { init as initContentTypeRegistry, isContentTypeRegistered } from './contentTypeRegistry.js';
+export {
+  init as initContentTypeRegistry,
+  isContentTypeRegistered,
+} from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';

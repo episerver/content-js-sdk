@@ -1,5 +1,8 @@
 import React, { ReactNode } from 'react';
-import { ComponentRegistry, ComponentResolverOrObject } from '../render/componentRegistry.js';
+import {
+  ComponentRegistry,
+  ComponentResolverOrObject,
+} from '../render/componentRegistry.js';
 import { JSX } from 'react';
 import {
   ExperienceStructureNode,
@@ -163,7 +166,8 @@ function findComponent(
 
   // Fallback to __typename
   const typename = content.__typename;
-  const component = typename ? componentRegistry.getComponent(typename, options) : undefined;
+  const component =
+    typename ? componentRegistry.getComponent(typename, options) : undefined;
   return { component, typename };
 }
 
@@ -190,7 +194,9 @@ export async function OptimizelyComponent({
     !!resolvedTag,
     !!displaySettings,
     async span => {
-      const { component: Component, typename } = findComponent(content, { tag: resolvedTag });
+      const { component: Component, typename } = findComponent(content, {
+        tag: resolvedTag,
+      });
 
       if (!Component) {
         span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, false);
@@ -207,7 +213,9 @@ export async function OptimizelyComponent({
         ...content,
       };
 
-      return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+      return (
+        <Component content={optiProps} {...props} displaySettings={displaySettings} />
+      );
     },
   );
 }
@@ -320,7 +328,11 @@ const fallbacks: Record<string, StructureContainer> = {
   column: FallbackColumn,
 };
 
-export function OptimizelyGridSection({ nodes, row, column }: OptimizelyGridSectionProps) {
+export function OptimizelyGridSection({
+  nodes,
+  row,
+  column,
+}: OptimizelyGridSectionProps) {
   const locallyDefined: Record<string, StructureContainer | undefined> = {
     row,
     column,
@@ -363,7 +375,12 @@ export function OptimizelyGridSection({ nodes, row, column }: OptimizelyGridSect
       React.Fragment;
 
     return (
-      <Component node={node} index={i} key={node.key} displaySettings={parsedDisplaySettings}>
+      <Component
+        node={node}
+        index={i}
+        key={node.key}
+        displaySettings={parsedDisplaySettings}
+      >
         <OptimizelyGridSection row={row} column={column} nodes={node.nodes ?? []} />
       </Component>
     );

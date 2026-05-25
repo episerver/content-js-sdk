@@ -31,7 +31,10 @@ async function Page({ searchParams }: Props) {
     <>
       <Script
         src={
-          new URL('/util/javascript/communicationinjector.js', process.env.OPTIMIZELY_CMS_URL).href
+          new URL(
+            '/util/javascript/communicationinjector.js',
+            process.env.OPTIMIZELY_CMS_URL,
+          ).href
         }
       ></Script>
       <NextPreviewComponent />
