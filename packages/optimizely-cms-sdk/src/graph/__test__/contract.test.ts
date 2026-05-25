@@ -375,4 +375,3 @@ describe('Fragment generation of contracts with experiences', () => {
     `);
   });
 });
-

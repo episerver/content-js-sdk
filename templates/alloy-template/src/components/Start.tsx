@@ -188,4 +188,3 @@ function Start({ content }: StartProps) {
 }
 
 export default Start;
-

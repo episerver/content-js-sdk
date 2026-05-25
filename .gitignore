@@ -25,5 +25,8 @@ dist
 .vscode
 .tanstack
 
+# Auto-generated files
+packages/optimizely-cms-sdk/src/generated/
+
 # Claude Code project instructions
 CLAUDE.md

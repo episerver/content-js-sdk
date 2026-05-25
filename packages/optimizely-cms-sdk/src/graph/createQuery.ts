@@ -7,6 +7,21 @@ import {
   FIXED_FRAGMENTS,
   BASE_TYPE_FRAGMENTS,
 } from '../util/baseTypeUtil.js';
+import { withQueryCaching } from '../util/cache.js';
+import { SemanticAttributes } from '../telemetry/index.js';
+import {
+  startFragmentSpan,
+  startSingleQuerySpan,
+  startMultipleQuerySpan,
+} from '../telemetry/spans.js';
+import {
+  fragmentGenerationDuration,
+  fragmentGenerationCount,
+  queryGenerationDuration,
+  queryGenerationCount,
+  QueryType,
+  recordMetrics,
+} from '../telemetry/metrics.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
   isExperienceComponent,
@@ -192,8 +207,16 @@ export const createFragment = (
   if (visited.size === 0) refreshCache();
   visited.add(fragmentName);
 
-  let fields: string[] = ['__typename'];
-  let extraFragments: string[] = [];
+  // Create telemetry span only at root level (not for recursive calls)
+  const isRootCall = visited.size === 1;
+  const span =
+    isRootCall ?
+      startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix)
+    : undefined;
+  const startTime = isRootCall ? performance.now() : 0;
+
+  const fields: string[] = ['__typename'];
+  const extraFragments: string[] = [];
   let includesDamAssetsFragments = false;
   let contentType: RegistryEntry | undefined;
 
@@ -236,7 +259,7 @@ export const createFragment = (
     }
   }
 
-  return assembleFragment(
+  const result = assembleFragment(
     contentTypeName,
     fragmentName,
     contentType,
@@ -244,21 +267,32 @@ export const createFragment = (
     extraFragments,
     includesDamAssetsFragments,
   );
+
+  if (span) {
+    span.setAttribute(SemanticAttributes.OPTI_FRAGMENT_COUNT, result.fragments.length);
+
+    recordMetrics(fragmentGenerationDuration, fragmentGenerationCount, startTime, {
+      [SemanticAttributes.OPTI_CONTENT_TYPE]: contentTypeName,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+      [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: maxFragmentThreshold,
+    });
+
+    span.end();
+  }
+
+  return result;
 };
 
 // QUERY BUILDERS
 
-/**
- * Generates a complete GraphQL query for fetching one item.
- *
- * @param contentType - The key of the content type to query.
- * @returns A string representing the GraphQL query.
- */
-export const createSingleContentQuery = (
+const generateSingleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
-) => {
+): string => {
+  const span = startSingleQuerySpan(contentType, damEnabled);
+  const startTime = span ? performance.now() : 0;
+
   const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
@@ -267,7 +301,7 @@ export const createSingleContentQuery = (
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
-  return `
+  const query = `
 ${fragments.join('\n')}
 query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
@@ -281,22 +315,40 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
   }
 }
   `;
+
+  if (span) {
+    recordMetrics(queryGenerationDuration, queryGenerationCount, startTime, {
+      [SemanticAttributes.OPTI_QUERY_TYPE]: QueryType.SINGLE,
+      [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+    });
+    span.end();
+  }
+
+  return query;
 };
 
 /**
- * Generates a complete GraphQL query for fetching multiple items.
- * All items must have the same content type
+ * Generates a complete GraphQL query for fetching one item.
  *
  * @param contentType - The key of the content type to query.
- * @param damEnabled - Whether DAM assets are enabled.
+ * @param damEnabled - Whether DAM assets are enabled (default: false).
  * @param maxFragmentThreshold - Maximum fragment threshold for warnings (default: 100).
  * @returns A string representing the GraphQL query.
  */
-export const createMultipleContentQuery = (
+export const createSingleContentQuery = withQueryCaching(
+  'single',
+  generateSingleContentQuery,
+);
+
+const generateMultipleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = 100,
-) => {
+): string => {
+  const span = startMultipleQuerySpan(contentType, damEnabled);
+  const startTime = span ? performance.now() : 0;
+
   const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
@@ -305,12 +357,12 @@ export const createMultipleContentQuery = (
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
-  return `
+  const query = `
 ${fragments.join('\n')}
 query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   _Content(where: $where, variation: $variation) {
     items {
-
+      __typename
       ${fragmentName}
       _metadata {
         variation
@@ -319,4 +371,29 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
   }
 }
   `;
+
+  if (span) {
+    recordMetrics(queryGenerationDuration, queryGenerationCount, startTime, {
+      [SemanticAttributes.OPTI_QUERY_TYPE]: QueryType.MULTIPLE,
+      [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+    });
+    span.end();
+  }
+
+  return query;
 };
+
+/**
+ * Generates a complete GraphQL query for fetching multiple items.
+ * All items must have the same content type
+ *
+ * @param contentType - The key of the content type to query.
+ * @param damEnabled - Whether DAM assets are enabled (default: false).
+ * @param maxFragmentThreshold - Maximum fragment threshold for warnings (default: 100).
+ * @returns A string representing the GraphQL query.
+ */
+export const createMultipleContentQuery = withQueryCaching(
+  'multiple',
+  generateMultipleContentQuery,
+);

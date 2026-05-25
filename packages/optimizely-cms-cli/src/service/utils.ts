@@ -116,7 +116,9 @@ async function compileAndImport(inputName: string, cwdUrl: string, outDir: strin
     const f = await import(outUrl);
     return f;
   } catch (err) {
-    throw new Error(`Error when importing the file at path "${outPath}": ${(err as any).message}`);
+    throw new Error(
+      `Error when importing the file at path "${outPath}": ${(err as any).message}`,
+    );
   }
 }
 
@@ -136,11 +138,15 @@ export async function findMetaData(
 
   // Separate inclusion and exclusion patterns
   const includePatterns = cleanedPaths.filter(p => !p.startsWith('!'));
-  const excludePatterns = cleanedPaths.filter(p => p.startsWith('!')).map(p => p.substring(1)); // Remove '!' prefix
+  const excludePatterns = cleanedPaths
+    .filter(p => p.startsWith('!'))
+    .map(p => p.substring(1)); // Remove '!' prefix
 
   // Validate patterns
   if (includePatterns.length === 0 && excludePatterns.length > 0) {
-    throw new Error(`❌ [optimizely-cms-cli] Invalid component paths: cannot have only exclusion patterns`);
+    throw new Error(
+      `❌ [optimizely-cms-cli] Invalid component paths: cannot have only exclusion patterns`,
+    );
   }
 
   // Retrieve sets of files via glob for inclusion patterns, using ignore for exclusions
@@ -169,7 +175,8 @@ export async function findMetaData(
 
   for (const file of allFiles) {
     const loaded = await compileAndImport(file, cwd, tmpDir);
-    const { contentTypeData, displayTemplateData, contractData } = extractMetaData(loaded);
+    const { contentTypeData, displayTemplateData, contractData } =
+      extractMetaData(loaded);
 
     for (const c of contentTypeData) {
       printFilesContents('Content Type', file, c);
@@ -195,7 +202,12 @@ function printFilesContents(
   path: string,
   metaData: AnyContentType | DisplayTemplate | PropertyGroupType,
 ) {
-  console.log('%s %s found in %s', type, chalk.bold(metaData.key), chalk.yellow.italic.underline(path));
+  console.log(
+    '%s %s found in %s',
+    type,
+    chalk.bold(metaData.key),
+    chalk.yellow.italic.underline(path),
+  );
 }
 
 export async function readFromPath(configPath: string, section: string) {
@@ -221,12 +233,18 @@ export function normalizePropertyGroups(propertyGroups: any[]): PropertyGroupTyp
   const normalizedGroups = propertyGroups.map((group, index) => {
     // Validate key is present and not empty
     if (!group.key || typeof group.key !== 'string' || group.key.trim() === '') {
-      throw new Error(`Error in property groups: Property group at index ${index} has an empty or missing "key" field`);
+      throw new Error(
+        `Error in property groups: Property group at index ${index} has an empty or missing "key" field`,
+      );
     }
 
     // Auto-generate displayName from key if missing (capitalize first letter)
     const displayName =
-      group.displayName && typeof group.displayName === 'string' && group.displayName.trim() !== '' ?
+      (
+        group.displayName &&
+        typeof group.displayName === 'string' &&
+        group.displayName.trim() !== ''
+      ) ?
         group.displayName
       : group.key.charAt(0).toUpperCase() + group.key.slice(1);
 
@@ -291,4 +309,3 @@ export function extractKeyName(input: PermittedTypes, parentKey: string): string
     : input.key
   );
 }
-

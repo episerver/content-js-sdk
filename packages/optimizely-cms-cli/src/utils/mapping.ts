@@ -289,4 +289,3 @@ export const contractToManifest = ({
   isContract: true,
   properties: transformProperties(properties, key),
 });
-

@@ -1,7 +1,11 @@
 import { buildConfig } from '@optimizely/cms-sdk';
 
 export default buildConfig({
-  components: ['./src/components/*.tsx', './src/components/**/*.tsx', './src/components/contracts/*.ts'],
+  components: [
+    './src/components/*.tsx',
+    './src/components/**/*.tsx',
+    './src/components/contracts/*.ts',
+  ],
   propertyGroups: [
     {
       key: 'SEO',

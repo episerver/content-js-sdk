@@ -84,7 +84,11 @@ export function pathFilter(path: string, host?: string): ContentInput {
  *
  * @returns A `GraphQueryArguments` object with a `where` clause filtering by key, version, and locale.
  */
-export function previewFilter(params: { key: string; ver: string; loc: string }): ContentInput {
+export function previewFilter(params: {
+  key: string;
+  ver: string;
+  loc: string;
+}): ContentInput {
   return {
     where: {
       _metadata: {
@@ -120,7 +124,11 @@ export function localeFilter(locale?: string[]): ContentInput {
  * @param reference - GraphReference object containing key and optional parameters
  * @returns A `ContentInput` object with a `where` clause filtering by the reference
  */
-export function referenceFilter(reference: { key: string; locale?: string; version?: string }): ContentInput {
+export function referenceFilter(reference: {
+  key: string;
+  locale?: string;
+  version?: string;
+}): ContentInput {
   return {
     where: {
       _metadata: {

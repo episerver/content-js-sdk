@@ -1,4 +1,8 @@
-import { createSingleContentQuery, ItemsResponse, createMultipleContentQuery } from './createQuery.js';
+import {
+  createSingleContentQuery,
+  ItemsResponse,
+  createMultipleContentQuery,
+} from './createQuery.js';
 import {
   GraphContentResponseError,
   GraphHttpResponseError,
@@ -15,6 +19,14 @@ import {
   referenceFilter,
 } from './filters.js';
 import { setContext } from '../context/config.js';
+import { logError, SemanticAttributes } from '../telemetry/index.js';
+import {
+  withRequestSpan,
+  withGetContentByPathSpan,
+  withGetPreviewContentSpan,
+  withGetContentSpan,
+} from '../telemetry/spans.js';
+import { SDK_VERSION } from '../generated/version.js';
 
 /** Configuration for initializing the Optimizely Graph Client */
 export type GraphOptions = {
@@ -40,6 +52,11 @@ export type GraphOptions = {
    * Can be overridden per request.
    */
   slot?: GraphSlot;
+  /**
+   * Custom User-Agent string for HTTP requests to Graph API.
+   * @default 'OptimizelySDK/{version} (JS)'
+   */
+  userAgent?: string;
 };
 
 // Global configuration for client factory
@@ -301,15 +318,17 @@ export class GraphClient {
   host?: string;
   cache: boolean;
   slot?: GraphSlot;
+  userAgent: string;
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
-    this.graphUrl = options.graphUrl ?? 'https://cg.optimizely.com/content/v2';
+    this.graphUrl = options.graphUrl || 'https://cg.optimizely.com/content/v2';
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
     this.host = options.host;
     this.cache = options.cache ?? true;
     this.slot = options.slot;
+    this.userAgent = options.userAgent ?? `OptimizelySDK/${SDK_VERSION} (JS)`;
   }
 
   /** Perform a GraphQL query with variables */
@@ -320,70 +339,87 @@ export class GraphClient {
     cache: boolean = true,
     slot?: GraphSlot,
   ): Promise<any> {
-    const url = new URL(this.graphUrl);
+    return withRequestSpan(
+      this.graphUrl,
+      this.userAgent,
+      cache,
+      slot || 'Current',
+      !!previewToken,
+      async span => {
+        const url = new URL(this.graphUrl);
 
-    // Append cache parameter to control caching behavior
-    url.searchParams.append('cache', cache.toString());
+        // Append cache parameter to control caching behavior
+        url.searchParams.append('cache', cache.toString());
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Authorization: previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
-    };
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'User-Agent': this.userAgent,
+          Authorization:
+            previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
+        };
 
-    if (slot === 'New') {
-      headers['cg-query-new'] = 'true';
-    }
+        if (slot === 'New') {
+          headers['cg-query-new'] = 'true';
+        }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    }).catch(err => {
-      if (err instanceof TypeError) {
-        const optiErr = new OptimizelyGraphError(
-          'Error when calling `fetch`. Ensure the Graph URL is correct or try again later.',
-        );
-        optiErr.cause = err;
-        throw optiErr;
-      }
-      throw err;
-    });
-
-    if (!response.ok) {
-      const text = await response.text().catch(err => {
-        console.error('Error reading response text:', err);
-        return response.statusText;
-      });
-
-      let json;
-      try {
-        json = JSON.parse(text);
-      } catch (err) {
-        // When the response is not JSON
-        throw new GraphHttpResponseError(text, {
-          status: response.status,
-          request: { query, variables },
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            query,
+            variables,
+          }),
+        }).catch(err => {
+          if (err instanceof TypeError) {
+            const optiErr = new OptimizelyGraphError(
+              'Error when calling `fetch`. Ensure the Graph URL is correct or try again later.',
+            );
+            optiErr.cause = err;
+            // Exception is automatically recorded by createSpan wrapper
+            throw optiErr;
+          }
+          throw err;
         });
-      }
 
-      if (json.errors) {
-        throw new GraphContentResponseError(json.errors, {
-          status: response.status,
-          request: { query, variables },
-        });
-      } else {
-        throw new GraphHttpResponseError(response.statusText, {
-          status: response.status,
-          request: { query, variables },
-        });
-      }
-    }
+        // Record HTTP status code
+        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, response.status);
 
-    const json = (await response.json()) as any;
-    return json.data;
+        if (!response.ok) {
+          const text = await response.text().catch(err => {
+            logError('Error reading response text', err as Error, {
+              [SemanticAttributes.HTTP_STATUS_CODE]: response.status,
+            });
+            return response.statusText;
+          });
+
+          let json;
+          try {
+            json = JSON.parse(text);
+          } catch (err) {
+            // When the response is not JSON
+            throw new GraphHttpResponseError(text, {
+              status: response.status,
+              request: { query, variables },
+            });
+          }
+
+          if (json.errors) {
+            throw new GraphContentResponseError(json.errors, {
+              status: response.status,
+              request: { query, variables },
+            });
+          } else {
+            throw new GraphHttpResponseError(response.statusText, {
+              status: response.status,
+              request: { query, variables },
+            });
+          }
+        }
+
+        const json = (await response.json()) as any;
+        return json.data;
+      },
+    );
   }
 
   /**
@@ -393,7 +429,12 @@ export class GraphClient {
    * @param previewToken - Optional preview token for fetching preview content.
    * @returns A promise that resolves to the first content type metadata object
    */
-  private async getContentMetaData(input: GraphVariables, previewToken?: string, cache?: boolean, slot?: GraphSlot) {
+  private async getContentMetaData(
+    input: GraphVariables,
+    previewToken?: string,
+    cache?: boolean,
+    slot?: GraphSlot,
+  ) {
     const data = await this.request(
       GET_CONTENT_METADATA_QUERY,
       input,
@@ -440,32 +481,52 @@ export class GraphClient {
    * @returns An array of all items matching the path and options. Returns an empty array if no content is found.
    */
   async getContentByPath<T = any>(path: string, options?: GraphGetContentOptions) {
-    const input: GraphVariables = {
-      ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
-      variation: options?.variation,
-    };
+    return withGetContentByPathSpan(path, options?.cache ?? this.cache, async span => {
+      const input: GraphVariables = {
+        ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
+        variation: options?.variation,
+      };
 
-    const cacheEnabled = options?.cache ?? this.cache;
-    const activeSlot = options?.slot ?? this.slot;
+      const cacheEnabled = options?.cache ?? this.cache;
+      const activeSlot = options?.slot ?? this.slot;
 
-    const { contentTypeName, damEnabled } = await this.getContentMetaData(input, undefined, cacheEnabled, activeSlot);
+      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+        input,
+        undefined,
+        cacheEnabled,
+        activeSlot,
+      );
 
-    if (!contentTypeName) {
-      return [];
-    }
-
-    try {
-      const query = createMultipleContentQuery(contentTypeName, damEnabled, this.maxFragmentThreshold);
-      const response = (await this.request(query, input, undefined, cacheEnabled, activeSlot)) as ItemsResponse<T>;
-
-      return response?._Content?.items.map(removeTypePrefix);
-    } catch (error) {
-      // If content type is not registered, return empty array instead of throwing
-      if (error instanceof GraphMissingContentTypeError) {
+      if (!contentTypeName) {
+        span.setAttribute(SemanticAttributes.CONTENT_FOUND, false);
         return [];
       }
-      throw error;
-    }
+
+      span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
+
+      try {
+        const query = createMultipleContentQuery(
+          contentTypeName,
+          damEnabled,
+          this.maxFragmentThreshold,
+        );
+        const response = (await this.request(
+          query,
+          input,
+          undefined,
+          cacheEnabled,
+          activeSlot,
+        )) as ItemsResponse<T>;
+
+        return response?._Content?.items.map(removeTypePrefix);
+      } catch (error) {
+        // If content type is not registered, return empty array instead of throwing
+        if (error instanceof GraphMissingContentTypeError) {
+          return [];
+        }
+        throw error;
+      }
+    });
   }
 
   /**
@@ -508,14 +569,22 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(reference),
-        ...localeFilter(options?.locales ?? (reference.locale ? [reference.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
+        ),
       };
     }
 
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
 
-    const data = (await this.request(GET_PATH_QUERY, filter, undefined, cacheEnabled, activeSlot)) as GetLinksResponse;
+    const data = (await this.request(
+      GET_PATH_QUERY,
+      filter,
+      undefined,
+      cacheEnabled,
+      activeSlot,
+    )) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
@@ -583,14 +652,22 @@ export class GraphClient {
     } else {
       filter = {
         ...referenceFilter(reference),
-        ...localeFilter(options?.locales ?? (reference.locale ? [reference.locale] : undefined)),
+        ...localeFilter(
+          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
+        ),
       };
     }
 
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
 
-    const data = (await this.request(GET_ITEMS_QUERY, filter, undefined, cacheEnabled, activeSlot)) as GetLinksResponse;
+    const data = (await this.request(
+      GET_ITEMS_QUERY,
+      filter,
+      undefined,
+      cacheEnabled,
+      activeSlot,
+    )) as GetLinksResponse;
 
     // Check if the page itself exist.
     if (!data._Content.item._id) {
@@ -604,38 +681,52 @@ export class GraphClient {
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
-    const input = previewFilter(params);
-    const activeSlot = options?.slot ?? this.slot;
+    return withGetPreviewContentSpan(params, async span => {
+      const input = previewFilter(params);
+      const activeSlot = options?.slot ?? this.slot;
 
-    const { contentTypeName, damEnabled } = await this.getContentMetaData(
-      input,
-      params.preview_token,
-      false,
-      activeSlot,
-    );
-
-    if (!contentTypeName) {
-      throw new GraphResponseError(
-        `No content found for key [${params.key}]. Check that your CMS contains something there`,
-        { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
+      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+        input,
+        params.preview_token,
+        false,
+        activeSlot,
       );
-    }
 
-    // Auto-populate context with preview parameters
-    setContext({
-      previewToken: params.preview_token,
-      version: params.ver,
-      locale: params.loc,
-      type: contentTypeName,
-      key: params.key,
-      mode: params.ctx,
+      if (!contentTypeName) {
+        throw new GraphResponseError(
+          `No content found for key [${params.key}]. Check that your CMS contains something there`,
+          { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
+        );
+      }
+
+      span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
+
+      // Auto-populate context with preview parameters
+      setContext({
+        previewToken: params.preview_token,
+        version: params.ver,
+        locale: params.loc,
+        type: contentTypeName,
+        key: params.key,
+        mode: params.ctx,
+      });
+
+      const query = createSingleContentQuery(
+        contentTypeName,
+        damEnabled,
+        this.maxFragmentThreshold,
+      );
+
+      const response = await this.request(
+        query,
+        input,
+        params.preview_token,
+        false,
+        activeSlot,
+      );
+
+      return decorateWithContext(removeTypePrefix(response?._Content?.item), params);
     });
-
-    const query = createSingleContentQuery(contentTypeName, damEnabled, this.maxFragmentThreshold);
-
-    const response = await this.request(query, input, params.preview_token, false, activeSlot);
-
-    return decorateWithContext(removeTypePrefix(response?._Content?.item), params);
   }
 
   /**
@@ -665,7 +756,9 @@ export class GraphClient {
     const pathSegments = pathPart.split('/').filter(s => s.length > 0);
 
     if (pathSegments.length < 1) {
-      throw new Error(`Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`);
+      throw new Error(
+        `Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`,
+      );
     }
 
     let source: string | undefined;
@@ -740,47 +833,63 @@ export class GraphClient {
    * ```
    */
   async getContent(reference: string | GraphReference, options?: GraphGetItemOptions) {
-    const ref = typeof reference === 'string' ? this.parseGraphReference(reference) : reference;
+    const ref =
+      typeof reference === 'string' ? this.parseGraphReference(reference) : reference;
 
-    const previewToken = options?.previewToken;
+    return withGetContentSpan(ref, async span => {
+      const previewToken = options?.previewToken;
 
-    const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
-    const activeSlot = options?.slot ?? this.slot;
+      const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
+      const activeSlot = options?.slot ?? this.slot;
 
-    const input: GraphVariables = {
-      where: {
-        _metadata: {
-          key: { eq: ref.key },
-          ...(ref.version ? { version: { eq: ref.version } }
-          : ref.locale ? { locale: { eq: ref.locale } }
-          : {}),
+      const input: GraphVariables = {
+        where: {
+          _metadata: {
+            key: { eq: ref.key },
+            ...(ref.version ? { version: { eq: ref.version } }
+            : ref.locale ? { locale: { eq: ref.locale } }
+            : {}),
+          },
         },
-      },
-    };
+      };
 
-    const { contentTypeName, damEnabled } = await this.getContentMetaData(
-      input,
-      previewToken,
-      cacheEnabled,
-      activeSlot,
-    );
+      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+        input,
+        previewToken,
+        cacheEnabled,
+        activeSlot,
+      );
 
-    if (!contentTypeName) {
-      return null;
-    }
-
-    try {
-      const query = createSingleContentQuery(contentTypeName, damEnabled, this.maxFragmentThreshold);
-
-      const response = await this.request(query, input, previewToken, cacheEnabled, activeSlot);
-
-      return removeTypePrefix(response?._Content?.item);
-    } catch (error) {
-      if (error instanceof GraphMissingContentTypeError) {
+      if (!contentTypeName) {
+        span.setAttribute(SemanticAttributes.CONTENT_FOUND, false);
         return null;
       }
-      throw error;
-    }
+
+      span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
+
+      try {
+        const query = createSingleContentQuery(
+          contentTypeName,
+          damEnabled,
+          this.maxFragmentThreshold,
+        );
+
+        const response = await this.request(
+          query,
+          input,
+          previewToken,
+          cacheEnabled,
+          activeSlot,
+        );
+
+        return removeTypePrefix(response?._Content?.item);
+      } catch (error) {
+        if (error instanceof GraphMissingContentTypeError) {
+          return null;
+        }
+        throw error;
+      }
+    });
   }
 }
 
@@ -827,7 +936,11 @@ export function getGraphConfig(): GraphOptions | null {
  * ```
  */
 export function config(options: GraphOptions) {
-  if (!options.apiKey || typeof options.apiKey !== 'string' || options.apiKey.trim().length === 0) {
+  if (
+    !options.apiKey ||
+    typeof options.apiKey !== 'string' ||
+    options.apiKey.trim().length === 0
+  ) {
     throw new OptimizelyGraphError(
       'Invalid Optimizely Graph API key: key must be a non-empty string. ' +
         'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
@@ -868,7 +981,9 @@ export function config(options: GraphOptions) {
  */
 export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient {
   if (!globalGraphConfig) {
-    throw new OptimizelyGraphError('Graph configuration is not set. Call config() in your root layout first.');
+    throw new OptimizelyGraphError(
+      'Graph configuration is not set. Call config() in your root layout first.',
+    );
   }
 
   const options: GraphOptions = {
@@ -878,4 +993,3 @@ export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient 
 
   return new GraphClient(options.apiKey, options);
 }
-

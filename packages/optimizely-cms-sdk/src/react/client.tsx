@@ -5,7 +5,7 @@ import {
   useRef,
   type ReactNode,
   type FunctionComponent,
-  type PropsWithChildren
+  type PropsWithChildren,
 } from 'react';
 
 interface ContentSavedEvent {
@@ -60,14 +60,14 @@ export interface PreviewComponentProps {
  *
  * Both may fire for same save. Deduplication prevents duplicate refreshes.
  */
-export const PreviewComponent: FunctionComponent<PropsWithChildren<PreviewComponentProps>> = ({
-  onNavigate,
-  refreshTimeout = 300,
-  children
-}) => {
+export const PreviewComponent: FunctionComponent<
+  PropsWithChildren<PreviewComponentProps>
+> = ({ onNavigate, refreshTimeout = 300, children }) => {
   const [showMask, setShowMask] = useState<boolean>(false);
   const reloadDelay = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastProcessedRef = useRef<{ contentLink: string; timestamp: number } | null>(null);
+  const lastProcessedRef = useRef<{ contentLink: string; timestamp: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     const normalizeUrl = (url: string): string => {
@@ -108,8 +108,9 @@ export const PreviewComponent: FunctionComponent<PropsWithChildren<PreviewCompon
 
       const executeNavigation = () => {
         if (onNavigate) {
-          Promise.resolve(onNavigate(finalUrl, isSameUrl))
-            .finally(() => setShowMask(false));
+          Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
+            setShowMask(false),
+          );
         } else {
           // Fallback: hard reload
           window.location.replace(finalUrl);
@@ -133,7 +134,7 @@ export const PreviewComponent: FunctionComponent<PropsWithChildren<PreviewCompon
 
     // Try to subscribe to window.epi if available
     waitFor(() => window.epi, 10, 250)
-      .then((epi) => {
+      .then(epi => {
         if (!cancelled) {
           const subscription = epi.subscribe('contentSaved', handleContentSaved);
           unsubscribeEpi = subscription.remove;
@@ -157,7 +158,7 @@ export const PreviewComponent: FunctionComponent<PropsWithChildren<PreviewCompon
 function waitFor<T>(
   fn: () => T | undefined,
   timeOutSeconds: number = 10,
-  intervalMs: number = 250
+  intervalMs: number = 250,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const iv = setInterval(() => {
@@ -184,7 +185,7 @@ declare global {
     epi?: {
       subscribe: (
         eventName: string,
-        handler: (data: ContentSavedEvent) => void
+        handler: (data: ContentSavedEvent) => void,
       ) => {
         remove: () => void;
       };

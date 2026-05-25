@@ -1,5 +1,8 @@
 import React, { ReactNode } from 'react';
-import { ComponentRegistry, ComponentResolverOrObject } from '../render/componentRegistry.js';
+import {
+  ComponentRegistry,
+  ComponentResolverOrObject,
+} from '../render/componentRegistry.js';
 import { JSX } from 'react';
 import {
   ExperienceStructureNode,
@@ -15,6 +18,8 @@ import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
+import { withReactComponentSpan } from '../telemetry/spans.js';
+import { SemanticAttributes } from '../telemetry/index.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
   getContext,
@@ -161,7 +166,8 @@ function findComponent(
 
   // Fallback to __typename
   const typename = content.__typename;
-  const component = typename ? componentRegistry.getComponent(typename, options) : undefined;
+  const component =
+    typename ? componentRegistry.getComponent(typename, options) : undefined;
   return { component, typename };
 }
 
@@ -182,21 +188,36 @@ export async function OptimizelyComponent({
   }
 
   const resolvedTag = resolveTag(content, tag);
-  const { component: Component, typename } = findComponent(content, { tag: resolvedTag });
 
-  if (!Component) {
-    return (
-      <FallbackComponent>
-        No component found for content type <b>{typename}</b>
-      </FallbackComponent>
-    );
-  }
+  return withReactComponentSpan(
+    content.__typename,
+    !!resolvedTag,
+    !!displaySettings,
+    async span => {
+      const { component: Component, typename } = findComponent(content, {
+        tag: resolvedTag,
+      });
 
-  const optiProps = {
-    ...content,
-  };
+      if (!Component) {
+        span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, false);
+        return (
+          <FallbackComponent>
+            No component found for content type <b>{typename}</b>
+          </FallbackComponent>
+        );
+      }
 
-  return <Component content={optiProps} {...props} displaySettings={displaySettings} />;
+      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, true);
+
+      const optiProps = {
+        ...content,
+      };
+
+      return (
+        <Component content={optiProps} {...props} displaySettings={displaySettings} />
+      );
+    },
+  );
 }
 
 export type StructureContainerProps = {
@@ -307,7 +328,11 @@ const fallbacks: Record<string, StructureContainer> = {
   column: FallbackColumn,
 };
 
-export function OptimizelyGridSection({ nodes, row, column }: OptimizelyGridSectionProps) {
+export function OptimizelyGridSection({
+  nodes,
+  row,
+  column,
+}: OptimizelyGridSectionProps) {
   const locallyDefined: Record<string, StructureContainer | undefined> = {
     row,
     column,
@@ -350,7 +375,12 @@ export function OptimizelyGridSection({ nodes, row, column }: OptimizelyGridSect
       React.Fragment;
 
     return (
-      <Component node={node} index={i} key={node.key} displaySettings={parsedDisplaySettings}>
+      <Component
+        node={node}
+        index={i}
+        key={node.key}
+        displaySettings={parsedDisplaySettings}
+      >
         <OptimizelyGridSection row={row} column={column} nodes={node.nodes ?? []} />
       </Component>
     );
@@ -416,5 +446,3 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
     },
   };
 }
-
-
