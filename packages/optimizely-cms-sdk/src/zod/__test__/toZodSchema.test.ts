@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { toZodSchema } from '../toZodSchema.js';
-import { contentType, initContentTypeRegistry } from '../../model/index.js';
+import { contentType, contract, initContentTypeRegistry } from '../../model/index.js';
 
 describe('toZodSchema', () => {
   const validBase = {
@@ -465,6 +465,68 @@ describe('toZodSchema', () => {
         ...validBase,
         label: 'Root',
         child: { label: 'Child', child: null },
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('contract support', () => {
+    it('should validate content type that extends a contract', () => {
+      const SEOContract = contract({
+        key: 'SEOContract',
+        displayName: 'SEO Contract',
+        properties: {
+          metaTitle: { type: 'string' },
+          metaDescription: { type: 'string' },
+        },
+      });
+
+      const ArticleCT = contentType({
+        key: 'ArticleWithContract',
+        baseType: '_page',
+        displayName: 'Article',
+        extends: [SEOContract],
+        properties: {
+          title: { type: 'string' },
+          body: { type: 'richText' },
+        },
+      } as any);
+
+      const schema = toZodSchema(ArticleCT);
+      const result = schema.safeParse({
+        ...validBase,
+        title: 'Hello',
+        body: { html: '<p>Hi</p>', json: { type: 'richText', children: [] } },
+        metaTitle: 'SEO Title',
+        metaDescription: 'SEO Description',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('should handle component referencing a contract via registry', () => {
+      const SharedContract = contract({
+        key: 'SharedContract',
+        displayName: 'Shared Contract',
+        properties: {
+          sharedField: { type: 'string' },
+        },
+      });
+
+      initContentTypeRegistry([SharedContract as any]);
+
+      const PageCT = contentType({
+        key: 'PageWithContractRef',
+        baseType: '_page',
+        displayName: 'Page',
+        properties: {
+          section: { type: 'component', contentType: 'SharedContract' as any },
+        },
+      });
+
+      const schema = toZodSchema(PageCT);
+      const result = schema.safeParse({
+        ...validBase,
+        section: { sharedField: 'value' },
       });
       expect(result.success).toBe(true);
     });

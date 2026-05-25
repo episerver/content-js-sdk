@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { AnyContentType, ContentType } from '../model/contentTypes.js';
+import type { AnyContentType, ContentType, Contract } from '../model/contentTypes.js';
+import type { RegistryEntry } from '../model/contentTypeRegistry.js';
 import type {
   AnyProperty,
   ArrayProperty,
@@ -151,7 +152,7 @@ function buildFloatSchema(property: FloatProperty): z.ZodTypeAny {
   return schema;
 }
 
-function buildComponentSchema(contentType: AnyContentType, visited: Set<string>): z.ZodTypeAny {
+function buildComponentSchema(contentType: RegistryEntry, visited: Set<string>): z.ZodTypeAny {
   if (visited.has(contentType.key)) {
     return z.lazy(() => buildComponentSchema(contentType, new Set()));
   }
