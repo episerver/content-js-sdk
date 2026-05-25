@@ -5,9 +5,13 @@ import ora from 'ora';
 import chalk from 'chalk';
 
 type Application = components['schemas']['Application'];
-type ApplicationPage = components['schemas']['ApplicationPage'];
 
-export async function createApplication(
+/**
+ * Creates an application in the CMS.
+ * Returns the created application with its key.
+ * Throws an error if creation fails.
+ */
+async function createApplication(
   application: Application,
   host?: string,
 ): Promise<Application | undefined> {
@@ -32,7 +36,11 @@ export async function createApplication(
   return response.data;
 }
 
-export async function getApplication(
+/**
+ * Checks if content exists based on config keys. Creates content if not present.
+ * Returns a map of content config keys to CMS content refs (GUIDs).
+ */
+async function getApplication(
   key: string,
   host?: string,
 ): Promise<Application | undefined> {
@@ -58,25 +66,58 @@ export async function getApplication(
   return response.data;
 }
 
-export async function listApplications(
-  options?: { pageIndex?: number; pageSize?: number },
+/**
+ * Ensures applications exist.
+ * Creates applications if they don't exist. Requires entryPoint to be set.
+ */
+async function checkApplicationsWithContent(
+  applications: ApplicationsType[],
   host?: string,
-): Promise<ApplicationPage | undefined> {
-  const client = await createApiClient(host);
+): Promise<void> {
+  for (const app of applications) {
+    const appSpinner = ora(`Checking application "${app.displayName}"`).start();
+    try {
+      // Check if application already exists first
+      const existingApp = await getApplication(app.key!, host);
 
-  const response = await client.GET('/applications', {
-    params: {
-      query: options,
-    },
-  });
+      if (existingApp) {
+        appSpinner.succeed(
+          chalk.green(`Application "${app.displayName}" already exists (${app.key})`),
+        );
+        continue;
+      }
 
-  if (!response.response.ok) {
-    throw new Error(
-      `Failed to list applications: ${response.error?.title || 'Unknown error'}`,
-    );
+      // Validate entryPoint is set
+      if (!app.entryPoint) {
+        appSpinner.fail(
+          chalk.red(`No entryPoint defined for application "${app.displayName}"`),
+        );
+        console.error(
+          chalk.dim(`Configure entryPoint in application config via content array`),
+        );
+        throw new Error(`No entryPoint defined for application ${app.key}`);
+      }
+
+      // Set default previewUrlFormats if not provided
+      if (!app.previewUrlFormats) {
+        app.previewUrlFormats = {
+          any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
+        };
+      }
+
+      // Create the application
+      const result = await checkApplication(app, host);
+      appSpinner.succeed(
+        chalk.green(`Application "${app.displayName}" created (${result.key})`),
+      );
+    } catch (error) {
+      appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
+      if (error instanceof Error) {
+        console.error(chalk.red(error.message));
+      }
+      throw error;
+    }
   }
-
-  return response.data;
 }
 
 /**
@@ -133,7 +174,7 @@ export async function checkApplications(
 
   checkSpinner.info(chalk.blue('Some applications need setup'));
 
-  // Process content and create applications
+  // lazy load content service to avoid circular dependency
   const { processContentWithApplications } = await import('./contentService.js');
 
   const contentSpinner = ora('Processing content configuration').start();
@@ -150,57 +191,16 @@ export async function checkApplications(
   return false;
 }
 
-/**
- * Ensures applications exist.
- * Creates applications if they don't exist. Requires entryPoint to be set.
- */
-export async function checkApplicationsWithContent(
-  applications: ApplicationsType[],
-  host?: string,
-): Promise<void> {
-  for (const app of applications) {
-    const appSpinner = ora(`Checking application "${app.displayName}"`).start();
-    try {
-      // Check if application already exists first
-      const existingApp = await getApplication(app.key!, host);
 
-      if (existingApp) {
-        appSpinner.succeed(
-          chalk.green(`Application "${app.displayName}" already exists (${app.key})`),
-        );
-        continue;
-      }
 
-      // Validate entryPoint is set
-      if (!app.entryPoint) {
-        appSpinner.fail(
-          chalk.red(`No entryPoint defined for application "${app.displayName}"`),
-        );
-        console.error(
-          chalk.dim(`Configure entryPoint in application config via content array`),
-        );
-        throw new Error(`No entryPoint defined for application ${app.key}`);
-      }
 
-      // Set default previewUrlFormats if not provided
-      if (!app.previewUrlFormats) {
-        app.previewUrlFormats = {
-          any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
-        };
-      }
 
-      // Create the application
-      const result = await checkApplication(app, host);
-      appSpinner.succeed(
-        chalk.green(`Application "${app.displayName}" created (${result.key})`),
-      );
-    } catch (error) {
-      appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
-      if (error instanceof Error) {
-        console.error(chalk.red(error.message));
-      }
-      throw error;
-    }
-  }
-}
+
+
+
+
+
+
+
+
 
