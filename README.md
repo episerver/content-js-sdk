@@ -43,6 +43,21 @@ A command-line tool that syncs your TypeScript content type definitions to Optim
 - Simple, intuitive command-line interface
 - Streamlined developer workflow
 
+### 🤖 Agent Skills - AI-Powered Development
+
+A collection of [Agent Skills](https://agentskills.io) that teach AI coding agents how to work with Optimizely CMS.
+
+**Key Capabilities:**
+
+- Automated content type modeling
+- React component generation
+- Live preview setup and troubleshooting
+- SDK configuration assistance
+
+**Compatible with:** Claude Code, Cursor, GitHub Copilot, and others
+
+> **Learn more:** See the [packages/optimizely-cms-skills/](./packages/optimizely-cms-skills/README.md) package
+>
 > **Framework Support:** While the SDK is designed to be framework-agnostic, this version currently includes first-class support for React and Next.js. Support for additional frameworks is coming soon.
 
 ## Prerequisites
@@ -115,6 +130,7 @@ A step-by-step guides to build your headless application:
 | 10   | [RichText Component (React)](./docs/10-richtext-component-react.md) | Render rich text content                  |
 | 11   | [DAM Assets](./docs/11-dam-assets.md)                               | Manage digital assets                     |
 | 12   | [Client Utils](./docs/12-client-utils.md)                           | Utility functions and helpers             |
+| 13   | [Agent Skills](./docs/13-agent-skills.md)                           | AI-powered development                    |
 
 ## Community & Support
 

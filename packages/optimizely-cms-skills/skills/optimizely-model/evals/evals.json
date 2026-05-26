@@ -1,0 +1,87 @@
+{
+  "skill_name": "optimizely-model",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Hey, I need to create a BlogPage content type for our company blog. It should have a title (required), an author name, publish date, featured image, article body (needs to support rich formatting), and a list of tags. Also we want to be able to add related articles at the bottom. Our content lives in src/components and we already have optimizely.config.mjs set up. Can you help me model this?",
+      "expected_output": "Should create BlogPage.tsx in src/components directory with contentType() definition including: title (string, required), author (string), publishDate (dateTime), featuredImage (content or contentReference with allowedTypes: ['_image']), body (richText), tags (array with items: {type: 'string'}), relatedArticles (array of content references to other BlogPage or Article types). Should use baseType: '_page'. Should find and update initContentTypeRegistry if it exists. Should remind user to run 'npx @optimizely/cms-cli@latest config push optimizely.config.mjs' and offer to run it.",
+      "files": [],
+      "assertions": [
+        {
+          "name": "Creates TypeScript file with .tsx or .ts extension",
+          "check": "Output includes a file named BlogPage.tsx or BlogPage.ts"
+        },
+        {
+          "name": "Imports contentType from @optimizely/cms-sdk",
+          "check": "File contains: import { contentType } from '@optimizely/cms-sdk' or similar"
+        },
+        {
+          "name": "Uses contentType() function",
+          "check": "File contains contentType({ ... }) function call"
+        },
+        {
+          "name": "Sets baseType to '_page'",
+          "check": "contentType definition includes baseType: '_page'"
+        },
+        {
+          "name": "Includes title property with string type",
+          "check": "Properties include title field with type: 'string'"
+        },
+        {
+          "name": "Includes publishDate with dateTime type",
+          "check": "Properties include publishDate with type: 'dateTime'"
+        },
+        {
+          "name": "Includes body with richText type",
+          "check": "Properties include body/articleBody with type: 'richText'"
+        },
+        {
+          "name": "Includes tags as array of strings",
+          "check": "Properties include tags with type: 'array' and items: { type: 'string' }"
+        },
+        {
+          "name": "Includes featuredImage with image restriction",
+          "check": "Properties include featuredImage with allowedTypes containing '_image'"
+        },
+        {
+          "name": "Includes relatedArticles as content array",
+          "check": "Properties include relatedArticles with type: 'array' of content references"
+        },
+        {
+          "name": "Mentions config push command",
+          "check": "Response mentions 'config push' or 'npx @optimizely/cms-cli'"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "i'm working on a headless cms project (next.js 14 app router) and my content team wants different visual styles for how articles display - like a card view vs a list view vs a featured hero layout. i think these are called display templates? we have an Article content type already defined. how do i set up a card display template that lets editors choose whether to show the image or not?",
+      "expected_output": "Should create a display template file (e.g., ArticleCardTemplate.tsx) with displayTemplate() definition including: key, displayName, contentType: 'Article', settings object with a showImage setting (editor: 'checkbox', choices for true/false with displayName and sortOrder). Should find and update initDisplayTemplateRegistry if it exists. Should remind user to run config push and offer to run it. Should explain that this provides visual variation options for the Article content type.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Our marketing team keeps asking me to add the same SEO fields (meta title, meta description, og:image) to every single page type we create. It's getting repetitive and I keep forgetting fields. Is there a way to define these once and reuse them across multiple content types? I saw something about contracts in the docs but I'm not sure how to set that up. We're using TypeScript and the fields should go in a group called 'seo'.",
+      "expected_output": "Should create an SEO contract file (e.g., SEOContract.tsx) with contract() definition including: key: 'seo', displayName: 'SEO Properties', properties including metaTitle (string with maxLength: 60), metaDescription (string with maxLength: 160), ogImage (contentReference with allowedTypes: ['_image']). Each property should have group: 'seo'. Should explain how to use the contract with extends in content types. Should find and update initContentTypeRegistry to add the contract. Should remind about config push.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "We're migrating from our old CMS to Optimizely and I have JSON exports of our existing content types from the CMS. Here's one for our ProductPage - can you convert this to the TypeScript format? {\"contentType\":[{\"key\":\"ProductPage\",\"displayName\":\"Product Page\",\"baseType\":\"_page\",\"properties\":[{\"name\":\"productName\",\"type\":\"string\",\"displayName\":\"Product Name\"},{\"name\":\"price\",\"type\":\"float\",\"displayName\":\"Price\"},{\"name\":\"description\",\"type\":\"richText\",\"displayName\":\"Product Description\"},{\"name\":\"images\",\"type\":\"array\",\"items\":{\"type\":\"contentReference\",\"allowedTypes\":[\"_image\"]},\"displayName\":\"Product Images\"}]}]}",
+      "expected_output": "Should parse the JSON structure and create ProductPage.tsx with contentType() definition matching the JSON schema: key: 'ProductPage', displayName: 'Product Page', baseType: '_page', properties with productName (string), price (float), description (richText), images (array with items contentReference allowing _image types). Should maintain all displayName values from JSON. Should handle the array of content references correctly. Should add to registry and remind about config push.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I want to create a Hero component that can be dropped into content areas on any page. It needs a heading, subheading, background image, and a CTA button (which should be an embedded component with its own text and link properties). The component should be usable in both section and element composition modes. How do I model this?",
+      "expected_output": "Should create Hero.tsx with contentType() definition: baseType: '_component', compositionBehaviors: ['sectionEnabled', 'elementEnabled'], properties including heading (string), subheading (string), backgroundImage (contentReference with allowedTypes: ['_image']), and ctaButton (type: 'component' with contentType pointing to a Button component or inline component definition). Should explain that components with '_component' baseType can be used in content areas. Should add to registry and remind about config push.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "creating a LandingPage type that should only allow certain child pages underneath it - specifically it can contain PricingPage, TestimonialPage, and more LandingPages for sub-sections. also need fields for hero title, hero subtitle, and a sections content area. this is for a marketing site. components are in ./app/components/",
+      "expected_output": "Should read optimizely.config.mjs to confirm components path, then create LandingPage.tsx in ./app/components/ with contentType() definition: baseType: '_page', mayContainTypes: [PricingPageContentType, TestimonialPageContentType, '_self'] (or string keys if types not imported), properties including heroTitle (string), heroSubtitle (string), sections (array or contentArea type). Should explain mayContainTypes controls the allowed child pages in the content tree. Should add to registry and remind about config push.",
+      "files": []
+    }
+  ]
+}
