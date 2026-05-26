@@ -20,7 +20,7 @@ export type ApplicationHostType = {
 };
 
 export type ApplicationsType = {
-  key: string;
+  key?: string;
   type: ApplicationType;
   isDefault?: boolean;
   displayName: string;
@@ -63,5 +63,4 @@ export type PropertyGroupKey =
   | BuiltInPropertyGroups
   | keyof PropertyGroupRegistry
   | (string & {});
-
 
