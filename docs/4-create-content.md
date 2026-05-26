@@ -73,13 +73,12 @@ Create content and applications automatically using `optimizely.config.mjs`:
    optimizely-cms-cli config push
    ```
 
-   This Creates content instances from contentTypes and applications automatically.
+    This creates content instances from the `content` array and applications automatically.
 
 **How it works:**
 
-- Content instances created from `contentType`.
-- Applications reference content via `entryPoint`.
-- Generate Applications
+- `content` array → content instances (each references existing `contentType`)
+- `applications` array → applications (linked to content via `entryPoint`)
 
 ## Step 3. Change the "home" URL
 

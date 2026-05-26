@@ -296,15 +296,20 @@ export function normalizePropertyGroups(propertyGroups: any[]): PropertyGroupTyp
 }
 
 /** * Validates the applications array from the config file.
- * - Validates that each application has non-empty displayName, entryPoint, and type fields
- * - Validates that each host in an application has a non-empty authority field
+ * - Validates that applications is an array
+ * - Validates that each application has non-empty key, displayName, and type fields
  * @param applications - The applications array from the config
  * @returns The validated applications array (throws error if validation fails)
- * @throws Error if validation fails (missing or empty required fields)
+ * @throws Error if validation fails (invalid array type, missing or empty required fields)
  */
 export function validateApplications(
   applications: ApplicationsType[],
 ): ApplicationsType[] {
+  if (!Array.isArray(applications)) {
+    throw new Error(
+      'Validation error: "applications" must be an array in the config file',
+    );
+  }
   applications.forEach((app, applicationIndex) => {
     // Validate required fields for each application
     const requiredApplicationFields: Array<
@@ -351,4 +356,5 @@ export function extractKeyName(input: PermittedTypes, parentKey: string): string
     : input.key
   );
 }
+
 

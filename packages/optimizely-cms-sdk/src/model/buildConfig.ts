@@ -4,9 +4,11 @@ export type PropertyGroupType = {
   sortOrder?: number;
 };
 
+const urlSchemes = ['http', 'https'] as const;
 const applicationTypes = ['website', 'inProcessWebsite'] as const;
 const hostTypes = ['default', 'primary', 'preview', 'edit', 'media'] as const;
 
+export type UrlScheme = (typeof urlSchemes)[number];
 export type HostType = (typeof hostTypes)[number];
 export type ApplicationType = (typeof applicationTypes)[number];
 
@@ -14,11 +16,11 @@ export type ApplicationHostType = {
   type?: HostType;
   locale?: string;
   authority: string;
-  preferredUrlScheme?: object;
+  preferredUrlScheme?: UrlScheme;
 };
 
 export type ApplicationsType = {
-  key?: string;
+  key: string;
   type: ApplicationType;
   isDefault?: boolean;
   displayName: string;
@@ -38,7 +40,7 @@ export type ContentType = {
 export type BuildConfig = {
   components: string[];
   propertyGroups: Array<PropertyGroupType>;
-  applications: Array<ApplicationsType>;
+  applications?: Array<ApplicationsType>;
   content?: Array<ContentType>;
 };
 
@@ -61,4 +63,5 @@ export type PropertyGroupKey =
   | BuiltInPropertyGroups
   | keyof PropertyGroupRegistry
   | (string & {});
+
 
