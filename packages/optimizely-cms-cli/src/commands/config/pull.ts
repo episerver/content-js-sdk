@@ -93,6 +93,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     try {
       const response = await this.fetchManifest(flags.host, includeReadOnly);
 
+      console.log(JSON.stringify(response, null, 2));
+
       if (!this.handleEmptyResponse(response, spinner)) return;
 
       // Show count in success message
