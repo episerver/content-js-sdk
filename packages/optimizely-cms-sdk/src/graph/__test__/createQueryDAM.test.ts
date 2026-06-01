@@ -27,8 +27,12 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     // Should not include ContentReferenceItem fragments
     expect(result.fragments.some(line => line.includes('PublicImageAsset'))).toBe(false);
     expect(result.fragments.some(line => line.includes('PublicVideoAsset'))).toBe(false);
-    expect(result.fragments.some(line => line.includes('PublicRawFileAsset'))).toBe(false);
-    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(false);
+    expect(result.fragments.some(line => line.includes('PublicRawFileAsset'))).toBe(
+      false,
+    );
+    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      false,
+    );
 
     // Should only include key and url (no ...ContentReferenceItem)
     expect(result.fragments).toMatchInlineSnapshot(`
@@ -65,7 +69,9 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     expect(result.fragments.some(line => line.includes('PublicImageAsset'))).toBe(true);
     expect(result.fragments.some(line => line.includes('PublicVideoAsset'))).toBe(true);
     expect(result.fragments.some(line => line.includes('PublicRawFileAsset'))).toBe(true);
-    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(true);
+    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      true,
+    );
 
     expect(result.fragments).toMatchInlineSnapshot(`
       [
@@ -101,7 +107,9 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       includeBaseFragments: true,
     });
 
-    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(false);
+    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      false,
+    );
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -131,7 +139,9 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       includeBaseFragments: true,
     });
 
-    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(true);
+    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      true,
+    );
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
@@ -173,16 +183,18 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       damEnabled: false,
       includeBaseFragments: true,
     });
-    expect(resultDisabled.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
-      false,
-    );
+    expect(
+      resultDisabled.fragments.some(line => line.includes('ContentReferenceItem')),
+    ).toBe(false);
 
     // Test with damEnabled = true
     const resultEnabled = await createFragment('ct1', new Set(), '', {
       damEnabled: true,
       includeBaseFragments: true,
     });
-    expect(resultEnabled.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(true);
+    expect(
+      resultEnabled.fragments.some(line => line.includes('ContentReferenceItem')),
+    ).toBe(true);
     expect(resultEnabled.fragments).toMatchInlineSnapshot(`
       [
         "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
@@ -225,7 +237,9 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       damEnabled: true,
       includeBaseFragments: true,
     });
-    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(true);
+    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      true,
+    );
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }",
@@ -266,8 +280,12 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     // Should NOT include DAM fragments
     expect(result.fragments.some(line => line.includes('PublicImageAsset'))).toBe(false);
     expect(result.fragments.some(line => line.includes('PublicVideoAsset'))).toBe(false);
-    expect(result.fragments.some(line => line.includes('PublicRawFileAsset'))).toBe(false);
-    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(false);
+    expect(result.fragments.some(line => line.includes('PublicRawFileAsset'))).toBe(
+      false,
+    );
+    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      false,
+    );
 
     expect(result).toMatchInlineSnapshot(`
       {
@@ -310,7 +328,9 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
 
     // Should NOT include DAM fragments since no contentReference anywhere
-    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(false);
+    expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
+      false,
+    );
     expect(result.fragments.some(line => line.includes('PublicImageAsset'))).toBe(false);
   });
 });
@@ -351,7 +371,9 @@ describe('createSingleContentQuery() with damEnabled', () => {
     expect(query.includes('PublicVideoAsset')).toBe(true);
     expect(query.includes('PublicRawFileAsset')).toBe(true);
     expect(query.includes('ContentReferenceItem')).toBe(true);
-    expect(query).toContain('image { key url { ...ContentUrl } ...ContentReferenceItem }');
+    expect(query).toContain(
+      'image { key url { ...ContentUrl } ...ContentReferenceItem }',
+    );
   });
 });
 

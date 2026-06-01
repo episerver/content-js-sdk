@@ -10,7 +10,11 @@
 
 import { startComponentResolveSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
-import { componentResolveDuration, componentLookupCount, recordMetrics } from '../telemetry/metrics.js';
+import {
+  componentResolveDuration,
+  componentLookupCount,
+  recordMetrics,
+} from '../telemetry/metrics.js';
 
 /**
  * A component definition that includes a default component and optional
@@ -41,7 +45,10 @@ type ResolverOptions = {
  * implement custom logic for component resolution, such as lazy loading, conditional
  * rendering, or dynamic imports.
  */
-type ComponentResolver<C> = (contentType: string, options?: ResolverOptions) => C | undefined;
+type ComponentResolver<C> = (
+  contentType: string,
+  options?: ResolverOptions,
+) => C | undefined;
 
 /** Object mapping a content type name to a {@linkcode ComponentEntry} */
 type ComponentMap<C> = Record<string, ComponentEntry<C>>;
@@ -99,7 +106,12 @@ export class ComponentRegistry<T> {
         if (options.tag) {
           attributes[SemanticAttributes.OPTI_COMPONENT_TAG] = options.tag;
         }
-        recordMetrics(componentResolveDuration, componentLookupCount, startTime, attributes);
+        recordMetrics(
+          componentResolveDuration,
+          componentLookupCount,
+          startTime,
+          attributes,
+        );
       }
 
       span.end();

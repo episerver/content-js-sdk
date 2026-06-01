@@ -85,7 +85,8 @@ export const generateFilePath = (
   : join(outputDir, `${generateName(content)}.ts`);
 
 /** Generates the file path for a manifest file */
-export const generateManifestFilePath = (outputDir: string) => join(outputDir, 'manifest.ts');
+export const generateManifestFilePath = (outputDir: string) =>
+  join(outputDir, 'manifest.ts');
 
 /** Returns unique group names from content array */
 export const generateGroups = (contents: JSONContent[]) => [
@@ -135,7 +136,8 @@ const generateDisplayTemplateArguments = (content: DisplayTemplate) => {
 };
 
 const generateProperties = (content: ContentType) => {
-  if (!content.properties || Object.keys(content.properties).length === 0) return undefined;
+  if (!content.properties || Object.keys(content.properties).length === 0)
+    return undefined;
   return remakeObject(content.properties);
 };
 
@@ -155,7 +157,11 @@ const generateGroup = (content: JSONContent) => {
   return content.baseType?.replace(/^_/, '') ?? '';
 };
 
-const generateImportPath = (content: JSONContent, fromGroup?: string, toGroup?: string): string => {
+const generateImportPath = (
+  content: JSONContent,
+  fromGroup?: string,
+  toGroup?: string,
+): string => {
   if (fromGroup !== toGroup) return `../${toGroup}/${generateName(content)}`;
   return `./${generateName(content)}`;
 };
@@ -193,21 +199,33 @@ const extractMarkedImports = (content: string): string[] => {
 
 const markForImport = (item: string): string => `<|${item}|>`;
 
-const removeImportMarkers = (item: string, components: JSONContent[], currentKey: string) =>
+const removeImportMarkers = (
+  item: string,
+  components: JSONContent[],
+  currentKey: string,
+) =>
   components.reduce(
     (acc, it) =>
-      acc.replaceAll(`"<|${it.key}|>"`, it.key === currentKey ? "'_self'" : generateName(it)),
+      acc.replaceAll(
+        `"<|${it.key}|>"`,
+        it.key === currentKey ? "'_self'" : generateName(it),
+      ),
     item,
   );
 
 const addImports = (prop: string, value: any) => {
   if (!propertiesThatCanHoldImports.includes(prop)) return value;
-  if (typeof value === 'string') return isImportable(value) ? markForImport(value) : value;
-  if (Array.isArray(value)) return value.map(it => (isImportable(it) ? markForImport(it) : it));
+  if (typeof value === 'string')
+    return isImportable(value) ? markForImport(value) : value;
+  if (Array.isArray(value))
+    return value.map(it => (isImportable(it) ? markForImport(it) : it));
   return value;
 };
 
-const sortByDependencies = (contents: JSONContent[], manifest: Manifest): JSONContent[] => {
+const sortByDependencies = (
+  contents: JSONContent[],
+  manifest: Manifest,
+): JSONContent[] => {
   const dependencyMap = new Map<string, Set<string>>();
 
   // Build dependency graph
@@ -244,7 +262,8 @@ const sortByDependencies = (contents: JSONContent[], manifest: Manifest): JSONCo
 
 const isContract = (content: JSONContent) => isContentType(content) && content.isContract;
 
-const isContentType = (content: JSONContent): content is ContentType => 'isContract' in content;
+const isContentType = (content: JSONContent): content is ContentType =>
+  'isContract' in content;
 
 const isImportable = (value: string) => !value.startsWith('_');
 
@@ -271,12 +290,15 @@ const showProperty = (prop: string, value: any) => {
 const cleanKey = (key: string) => {
   const cleaned = key.replace(/[^a-zA-Z0-9_]/g, '');
   if (!cleaned || !/[a-zA-Z0-9]/.test(cleaned))
-    throw new Error(`Invalid key "${key}": must contain at least one alphanumeric character`);
+    throw new Error(
+      `Invalid key "${key}": must contain at least one alphanumeric character`,
+    );
 
   return cleaned;
 };
 
-const cleanupString = (item: string) => item.replaceAll(/"(\w+)":/g, '$1:').replaceAll('"', "'");
+const cleanupString = (item: string) =>
+  item.replaceAll(/"(\w+)":/g, '$1:').replaceAll('"', "'");
 
 const findContent = (key: string, manifest: Manifest) =>
   manifest.contentTypes.find(it => it.key === key) ||
@@ -289,7 +311,12 @@ const commonKeyContents = ['Contract', 'CT', 'ContentType', 'DT', 'DisplayTempla
 
 const markedImportRegex = /\<\|(.+?)\|\>/g;
 
-const propertiesThatCanHoldImports = ['contentType', 'allowedTypes', 'restrictedTypes', 'extends'];
+const propertiesThatCanHoldImports = [
+  'contentType',
+  'allowedTypes',
+  'restrictedTypes',
+  'extends',
+];
 
 const skipPropertyConditions: Record<string, (it: any) => boolean> = {
   isLocalized: (it: any) => it === false,

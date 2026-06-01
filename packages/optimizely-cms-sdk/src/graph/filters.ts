@@ -84,7 +84,11 @@ export function pathFilter(path: string, host?: string): ContentInput {
  *
  * @returns A `GraphQueryArguments` object with a `where` clause filtering by key, version, and locale.
  */
-export function previewFilter(params: { key: string; ver: string; loc: string }): ContentInput {
+export function previewFilter(params: {
+  key: string;
+  ver: string;
+  loc: string;
+}): ContentInput {
   return {
     where: {
       _metadata: {

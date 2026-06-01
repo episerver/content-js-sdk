@@ -1,0 +1,47 @@
+{
+  "skill_name": "optimizely-model-react",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "okay so I just created an Article content type (it's in src/components/Article.tsx) with properties: title (string), author (string), publishDate (dateTime), body (richText), and featuredImage (content reference). Now I need the actual React component to render it. Can you generate that for me? We're using Next.js 14 App Router and the components are server components by default.",
+      "expected_output": "Should read src/components/Article.tsx to understand the content type structure. Should add a React component to the same file (or create separate if requested) with: ContentProps<typeof ArticleContentType> type, getPreviewUtils for preview attributes, proper rendering of title with {...pa('title')}, author, formatted publishDate, RichText component for body with {...pa('body')}, and OptimizelyImage or similar for featuredImage with {...pa('featuredImage')}. Should find and update initComponentRegistry if it exists. Should check for existing CSS classes before adding className attributes.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I've got a BlogPage content type that has a relatedArticles property which is an array of content references to other Article pages. I need to create the React component but I'm not sure how to handle rendering that array of related articles - should they show as links? cards? and how do I make sure editors can edit them in preview mode? the content type is in ./src/components/BlogPage.tsx",
+      "expected_output": "Should read the BlogPage content type definition. Should create React component with proper handling of the relatedArticles array: map over content.relatedArticles, use OptimizelyLink or OptimizelyComponent for each item, apply preview attributes using {...pa('relatedArticles')} on the container. Should explain that OptimizelyComponent will recursively render each article using its registered component, or OptimizelyLink can create simple links. Should suggest checking for existing list/card CSS classes. Should add to component registry.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "hey so we have existing CSS for our site and I'm about to generate React components for our Optimizely content types. Before you add a bunch of new className attributes can you check what styles already exist? we have scss files in src/styles/ and some components already have module.scss files next to them. specifically im about to make a HeroSection component and i want to reuse existing classes if they're there",
+      "expected_output": "Should search for CSS/SCSS files in src/styles/ and look for module.scss files. Should grep for existing className usage in similar components. Should search for relevant class patterns like 'hero', 'section', 'banner', 'container', etc. Should read found style files to understand existing class names and patterns. When generating the HeroSection component, should use existing classes where applicable and follow the project's naming convention (BEM, camelCase, kebab-case, etc). Should only add new classes if necessary. Should explain which existing classes were found and why they were chosen.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "I created a CardDisplayTemplate for our Article type with a settings.showImage boolean. Now I need the React component that actually implements this template - it should render differently based on whether showImage is true or false. The Article content type has title, excerpt, image, and publishDate. How do I access those display template settings in the component?",
+      "expected_output": "Should create a React component for the CardDisplayTemplate (separate from the main Article component). Should show how to access template settings from content (typically content._template?.settings or similar). Should implement conditional rendering based on settings.showImage - showing the image when true, hiding when false. Should include preview attributes on all editable properties. Should use proper TypeScript typing for the template settings. Should explain this is a display template component variant, not the default Article component.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "We have a Hero content type with an embedded ctaButton component (type: 'component'). The ctaButton has text and link properties. I'm generating the Hero React component and need to make sure the nested button component renders correctly and is editable in preview mode. The Hero also has heading, subheading, and backgroundImage properties. Hero is in src/components/Hero.tsx",
+      "expected_output": "Should read Hero.tsx to understand the content type with embedded component. Should create Hero component that renders the embedded ctaButton using OptimizelyComponent with preview attributes {...pa('ctaButton')}. Should handle nested preview attributes correctly - the embedded component gets its own preview context. Should render heading, subheading, and backgroundImage with their own preview attributes. Should explain that OptimizelyComponent handles rendering the ctaButton using its registered component. Should note that nested components need separate component definitions and registrations.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "im working on a ProductPage component and it has this tags property which is just an array of strings (like ['electronics', 'sale', 'featured']). how should i render that in react? do i need preview attributes on each tag individually or just on the container? also the product has a rich text description field. the content type is defined in app/components/ProductPage.tsx using next.js 15 app router",
+      "expected_output": "Should create ProductPage component with proper handling of primitive array (tags). Should map over content.tags to render each string, with preview attributes {...pa('tags')} on the container element (not on individual items for primitive arrays). Should render the description using RichText component with {...pa('description')}. Should import RichText from '@optimizely/cms-sdk/react/server'. Should use semantic HTML (like <ul> for tags). Should check for existing tag/badge CSS classes. Should explain that preview attributes on the container allow editors to manage the entire array.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Creating components for a real estate site. We have a PropertyListing type with: address (string), price (float), bedrooms (integer), bathrooms (float), description (richText), gallery (array of image content references), agent (content reference to AgentProfile type), and amenities (array of strings). Need the React component with proper formatting for price (currency), dates, and the image gallery. Using Next.js Image component for optimization. File is in ./src/components/PropertyListing.tsx",
+      "expected_output": "Should read PropertyListing content type. Should create component with: formatted price using Intl.NumberFormat or similar, integer display for bedrooms, float for bathrooms, RichText for description, mapped gallery using OptimizelyImage or Next.js Image with preview attributes {...pa('gallery')}, OptimizelyComponent for agent with {...pa('agent')}, mapped amenities list with {...pa('amenities')}. Should include proper TypeScript typing. Should check for existing real estate site CSS classes. Should add to component registry. Should explain formatting choices for price and numbers.",
+      "files": []
+    }
+  ]
+}

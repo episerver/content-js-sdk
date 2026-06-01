@@ -21,7 +21,10 @@ function isSaasApiGateway(url: string): boolean {
  * then the default SaaS gateway URL. Trailing slashes are stripped.
  */
 function resolveHost(host?: string): string {
-  return (host || process.env.OPTIMIZELY_CMS_API_URL || DEFAULT_GATEWAY_URL).replace(/\/$/, '');
+  return (host || process.env.OPTIMIZELY_CMS_API_URL || DEFAULT_GATEWAY_URL).replace(
+    /\/$/,
+    '',
+  );
 }
 
 /**
@@ -75,7 +78,9 @@ export async function getToken(clientId: string, clientSecret: string, host?: st
 
         // Generic error message:
 
-        throw new Error('Something went wrong when trying to fetch token. Please try again');
+        throw new Error(
+          'Something went wrong when trying to fetch token. Please try again',
+        );
       }
 
       if (!data) {

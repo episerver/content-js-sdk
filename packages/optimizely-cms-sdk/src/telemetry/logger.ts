@@ -24,7 +24,11 @@ import { trace } from '@opentelemetry/api';
  * }
  * ```
  */
-export const logError = (message: string, error?: Error, attributes?: Record<string, any>): void => {
+export const logError = (
+  message: string,
+  error?: Error,
+  attributes?: Record<string, any>,
+): void => {
   const span = getCurrentSpan();
 
   if (span) {

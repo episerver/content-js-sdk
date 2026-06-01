@@ -8,7 +8,12 @@ import type { PreviewParams, GraphReference } from '../graph/index.js';
 /**
  * Span for fragment generation at the root level.
  */
-export function startFragmentSpan(contentType: string, damEnabled: boolean, threshold: number, suffix: string) {
+export function startFragmentSpan(
+  contentType: string,
+  damEnabled: boolean,
+  threshold: number,
+  suffix: string,
+) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.fragment.create', {
     attributes: {
@@ -77,7 +82,11 @@ export function withRequestSpan<T>(
 /**
  * Wraps getContentByPath in span.
  */
-export function withGetContentByPathSpan<T>(path: string, cache: boolean, fn: (span: any) => Promise<T>): Promise<T> {
+export function withGetContentByPathSpan<T>(
+  path: string,
+  cache: boolean,
+  fn: (span: any) => Promise<T>,
+): Promise<T> {
   return createSpan('optimizely.content.get_by_path', async span => {
     span.setAttributes({
       [SemanticAttributes.OPTI_CONTENT_PATH]: path,
@@ -90,7 +99,10 @@ export function withGetContentByPathSpan<T>(path: string, cache: boolean, fn: (s
 /**
  * Wraps getPreviewContent in span.
  */
-export function withGetPreviewContentSpan<T>(params: PreviewParams, fn: (span: any) => Promise<T>): Promise<T> {
+export function withGetPreviewContentSpan<T>(
+  params: PreviewParams,
+  fn: (span: any) => Promise<T>,
+): Promise<T> {
   return createSpan('optimizely.content.get_preview', async span => {
     span.setAttributes({
       [SemanticAttributes.OPTI_CONTENT_KEY]: params.key,
@@ -106,7 +118,10 @@ export function withGetPreviewContentSpan<T>(params: PreviewParams, fn: (span: a
 /**
  * Wraps getContent in span.
  */
-export function withGetContentSpan<T>(ref: GraphReference, fn: (span: any) => Promise<T>): Promise<T> {
+export function withGetContentSpan<T>(
+  ref: GraphReference,
+  fn: (span: any) => Promise<T>,
+): Promise<T> {
   return createSpan('optimizely.content.get', async span => {
     span.setAttributes({
       [SemanticAttributes.OPTI_CONTENT_KEY]: ref.key,

@@ -43,7 +43,11 @@ export class GraphQueryGenerationError extends OptimizelyGraphError {
   contentType?: string;
   propertyName?: string;
 
-  constructor(options?: { parentContentType?: string; contentType?: string; propertyName?: string }) {
+  constructor(options?: {
+    parentContentType?: string;
+    contentType?: string;
+    propertyName?: string;
+  }) {
     let message: string;
 
     // Special case: undefined content type
@@ -100,9 +104,14 @@ export class GraphHttpResponseError extends GraphResponseError {
 export class GraphContentResponseError extends GraphHttpResponseError {
   errors: { message: string }[];
 
-  constructor(errors: { message: string }[], options: { status: number; request: GraphRequest }) {
+  constructor(
+    errors: { message: string }[],
+    options: { status: number; request: GraphRequest },
+  ) {
     let message =
-      errors.length === 1 ? errors[0].message : `${errors.length} errors in the GraphQL query. Check "errors" object`;
+      errors.length === 1 ?
+        errors[0].message
+      : `${errors.length} errors in the GraphQL query. Check "errors" object`;
 
     if (message.startsWith('Unknown type') || message.startsWith('Cannot query field')) {
       message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@optimizely/cms-cli" CLI app to sync them`;

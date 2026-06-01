@@ -89,13 +89,19 @@ export const httpRequestCount: Counter = meter.createCounter('optimizely.http.re
   description: 'Total number of HTTP requests to Graph API',
 });
 
-export const contentFetchCount: Counter = meter.createCounter('optimizely.content.fetches', {
-  description: 'Total number of content fetch operations',
-});
+export const contentFetchCount: Counter = meter.createCounter(
+  'optimizely.content.fetches',
+  {
+    description: 'Total number of content fetch operations',
+  },
+);
 
-export const componentLookupCount: Counter = meter.createCounter('optimizely.component.lookups', {
-  description: 'Total component resolution attempts',
-});
+export const componentLookupCount: Counter = meter.createCounter(
+  'optimizely.component.lookups',
+  {
+    description: 'Total component resolution attempts',
+  },
+);
 
 export const recordMetrics = (
   histogram: Histogram,

@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { BlankExperienceContentType, initContentTypeRegistry, config } from '@optimizely/cms-sdk';
+import {
+  BlankExperienceContentType,
+  initContentTypeRegistry,
+  config,
+} from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 import './globals.css';
@@ -18,7 +22,9 @@ import { SEOContentType } from '@/components/base/SEO';
 import Button, { ButtonContentType } from '@/components/base/Button';
 import { TeaserCardContract } from '@/components/contracts/TeaserCard';
 import StandardTeaser from '@/components/base/StandardTeaser';
-import NewsEventsList, { NewsEventsListContentType } from '@/components/base/NewsEventsList';
+import NewsEventsList, {
+  NewsEventsListContentType,
+} from '@/components/base/NewsEventsList';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -87,7 +93,9 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }
