@@ -77,8 +77,13 @@ Create content and applications automatically using `optimizely.config.mjs`:
 
 **How it works:**
 
-- `content` array → content instances (each references existing `contentType`)
-- `applications` array → applications (linked to content via `entryPoint`)
+The application creation operates on the following order with explicit dependencies:
+
+1. **Content instances** (defined in the `content` array) instantiate Page (`_page`) or Experience (`_experience`) content by referencing existing contentType definitions. Each instance specifies a `contentType` key and provides display metadata for CMS presentation.
+
+2. **Applications** (defined in the `applications` array) establish the deployment context for content. Each application designates an `entryPoint` that references a content instance key, defining the application's start page. Applications also configure routing hosts, preview URL patterns, and application-level settings.
+
+The CLI enforces this dependency chain during `config push`: contentTypes must exist before content instances can reference them, and content instances must exist before applications can designate them as entry points.
 
 ## Step 3. Change the "home" URL
 

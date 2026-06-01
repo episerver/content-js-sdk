@@ -58,23 +58,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const configPath = pathToFileURL(configFilePath).href;
 
-    let componentPaths: string[];
-    let propertyGroups: any;
-    let applications: any;
-    let contentArray: any;
-
-    try {
-      componentPaths = await readFromPath(configPath, 'components');
-      propertyGroups = await readFromPath(configPath, 'propertyGroups');
-      applications = await readFromPath(configPath, 'applications');
-      contentArray = await readFromPath(configPath, 'content');
-    } catch (error) {
-      console.error(chalk.red('Failed to read configuration file'));
-      if (error instanceof Error) {
-        console.error(chalk.dim(error.message));
-      }
-      throw error;
-    }
+    const { componentPaths, propertyGroups, applications, content } =
+      await readFromPath(configPath);
 
     // Validate components field
     if (!componentPaths || !Array.isArray(componentPaths)) {
@@ -105,7 +90,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const hasAppsWithoutEntryPoint = validatedApplications.some(app => !app.entryPoint);
 
     // Validate that content array is configured if applications exist without entryPoint
-    if (hasAppsWithoutEntryPoint && !contentArray) {
+    if (hasAppsWithoutEntryPoint && !content) {
       console.error(
         chalk.red(
           'Content configuration required when applications defined without entryPoint',
@@ -197,7 +182,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const data = response.data;
 
     // Check and ensure applications (skips if all exist)
-    await checkApplications(validatedApplications, contentArray, flags.host);
+    await checkApplications(validatedApplications, content, flags.host);
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
       for (const r of data.outcomes) {
@@ -215,5 +200,3 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
   }
 }
-
-

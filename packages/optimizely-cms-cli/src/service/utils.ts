@@ -212,9 +212,23 @@ function printFilesContents(
   );
 }
 
-export async function readFromPath(configPath: string, section: string) {
-  const config = await import(configPath);
-  return config.default[section];
+/** Reads and extracts the relevant fields from the config file at the given path */
+export async function readFromPath(configPath: string) {
+  try {
+    const config = await import(configPath);
+    return {
+      componentPaths: config.default['components'],
+      propertyGroups: config.default['propertyGroups'],
+      applications: config.default['applications'],
+      content: config.default['content'],
+    };
+  } catch (error) {
+    console.error(chalk.red('Failed to read configuration file'));
+    if (error instanceof Error) {
+      console.error(chalk.dim(error.message));
+    }
+    throw error;
+  }
 }
 
 /**
@@ -356,5 +370,3 @@ export function extractKeyName(input: PermittedTypes, parentKey: string): string
     : input.key
   );
 }
-
-
