@@ -73,7 +73,12 @@ const mockDisplayTemplate: DisplayTemplate = {
 };
 
 const mockManifest: Manifest = {
-  contentTypes: [mockContract, mockContentType, mockContentTypeWithContract, mockComponent],
+  contentTypes: [
+    mockContract,
+    mockContentType,
+    mockContentTypeWithContract,
+    mockComponent,
+  ],
   displayTemplates: [mockDisplayTemplate],
 };
 
@@ -169,7 +174,12 @@ describe('generateContentCode', () => {
       isContract: false,
       properties: {
         title: { type: 'string', isLocalized: false, isRequired: false, sortOrder: 0 },
-        description: { type: 'string', isLocalized: true, isRequired: true, sortOrder: 1 },
+        description: {
+          type: 'string',
+          isLocalized: true,
+          isRequired: true,
+          sortOrder: 1,
+        },
       },
     };
 
@@ -259,7 +269,9 @@ describe('generateContentCode - edge cases', () => {
     };
 
     const result = generateContentCode(contentTypeWithImport, mockManifest, true);
-    expect(result).toContain("import { HeroComponentCT } from '../component/HeroComponentCT'");
+    expect(result).toContain(
+      "import { HeroComponentCT } from '../component/HeroComponentCT'",
+    );
   });
 
   it('should not import system types (starting with _)', () => {
@@ -576,5 +588,41 @@ describe('generateManifestCode', () => {
     expect(result).toContain('displayTemplate');
     expect(result).toContain('export const ArticlePageCT');
     expect(result).toContain('export const ArticlePageTemplateDT');
+  });
+
+  it('should remove unresolved import markers for content types not in manifest', () => {
+    const pageWithSystemTypeRef: ContentType = {
+      key: 'NewsPage',
+      displayName: 'News Page',
+      baseType: '_page',
+      isContract: false,
+      mayContainTypes: ['SysContentFolder', 'PageListBlock'],
+      properties: {},
+    };
+
+    const pageListBlock: ContentType = {
+      key: 'PageListBlock',
+      displayName: 'Page List Block',
+      baseType: '_component',
+      isContract: false,
+      properties: {},
+    };
+
+    // Manifest only contains PageListBlock, not SysContentFolder (simulates filtering)
+    const manifest: Manifest = {
+      contentTypes: [pageWithSystemTypeRef, pageListBlock],
+      displayTemplates: [],
+    };
+
+    const result = generateManifestCode(manifest);
+
+    // Should not contain any unresolved import markers like '<|SysContentFolder|>'
+    expect(result).not.toMatch(/<\|.*?\|>/);
+
+    // Should contain resolved reference to PageListBlock
+    expect(result).toContain('PageListBlockCT');
+
+    // Should handle missing SysContentFolder gracefully (either removed or kept as string)
+    expect(result).not.toContain('<|SysContentFolder|>');
   });
 });

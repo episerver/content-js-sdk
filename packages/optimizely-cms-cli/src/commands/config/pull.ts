@@ -141,7 +141,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     console.log();
   }
 
-  private logGeneratedFiles(files: { path: string; content: string }[], outputDir: string) {
+  private logGeneratedFiles(
+    files: { path: string; content: string }[],
+    outputDir: string,
+  ) {
     const displayPaths = files.map(file => getRelevantPath(file.path, outputDir)).sort();
 
     console.log();
@@ -222,7 +225,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     manifest: Manifest,
   ): Promise<void> {
     const { totalCount } = this.getManifestCounts(manifest);
-    const spinner = ora(`Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`).start();
+    const spinner = ora(
+      `Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`,
+    ).start();
 
     await mkdir(outputDir, { recursive: true });
 
@@ -245,7 +250,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     manifest: Manifest,
   ): Promise<void> {
     const { totalCount } = this.getManifestCounts(manifest);
-    const spinner = ora(`Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`).start();
+    const spinner = ora(
+      `Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`,
+    ).start();
 
     await mkdir(outputDir, { recursive: true });
 
@@ -255,7 +262,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       content: generateContentCode(content, manifest, true),
     }));
 
-    await Promise.all([makeDirs(generateGroups(allContents), outputDir), makeFiles(files)]);
+    await Promise.all([
+      makeDirs(generateGroups(allContents), outputDir),
+      makeFiles(files),
+    ]);
 
     this.logGeneratedFiles(files, outputDir);
     this.logManifestStats(manifest, spinner);
@@ -283,7 +293,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
         await select({
           message: 'How would you like to organize the output?',
           choices: [
-            { name: 'Group by base type (page/, component/, section/, etc.)', value: 'group' },
+            {
+              name: 'Group by base type (page/, component/, section/, etc.)',
+              value: 'group',
+            },
             { name: 'Individual files', value: 'individual' },
             { name: 'Single file', value: 'single-file' },
           ],
@@ -296,7 +309,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       flags.output ||
       (isInteractive ?
         await input({
-          message: 'Where should the generated files be saved?',
+          message: 'Where should the generated file(s) be saved?',
           default: './src/content-types',
         })
       : './src/content-types');

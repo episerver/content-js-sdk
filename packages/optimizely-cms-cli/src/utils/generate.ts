@@ -204,14 +204,17 @@ const removeImportMarkers = (
   components: JSONContent[],
   currentKey: string,
 ) =>
-  components.reduce(
-    (acc, it) =>
-      acc.replaceAll(
-        `"<|${it.key}|>"`,
-        it.key === currentKey ? "'_self'" : generateName(it),
-      ),
-    item,
-  );
+  components
+    .reduce(
+      (acc, it) =>
+        acc.replaceAll(
+          `"<|${it.key}|>"`,
+          it.key === currentKey ? "'_self'" : generateName(it),
+        ),
+      item,
+    )
+    .replace(/"<\|[^|]+\|>",?\s*/g, '')
+    .replace(/,(\s*])/g, '$1');
 
 const addImports = (prop: string, value: any) => {
   if (!propertiesThatCanHoldImports.includes(prop)) return value;
