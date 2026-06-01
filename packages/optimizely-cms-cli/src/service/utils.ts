@@ -14,6 +14,8 @@ import {
 import chalk from 'chalk';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { ApplicationHostType, ApplicationsType } from '@optimizely/cms-sdk/buildConfig';
+import { validateRequiredStringField } from '../utils/validate.js';
 
 export type Prettify<T> = {
   [K in keyof T]: T[K];
@@ -210,9 +212,23 @@ function printFilesContents(
   );
 }
 
-export async function readFromPath(configPath: string, section: string) {
-  const config = await import(configPath);
-  return config.default[section];
+/** Reads and extracts the relevant fields from the config file at the given path */
+export async function readFromPath(configPath: string) {
+  try {
+    const config = await import(configPath);
+    return {
+      componentPaths: config.default['components'],
+      propertyGroups: config.default['propertyGroups'],
+      applications: config.default['applications'],
+      content: config.default['content'],
+    };
+  } catch (error) {
+    console.error(chalk.red('Failed to read configuration file'));
+    if (error instanceof Error) {
+      console.error(chalk.dim(error.message));
+    }
+    throw error;
+  }
 }
 
 /**
@@ -291,6 +307,51 @@ export function normalizePropertyGroups(propertyGroups: any[]): PropertyGroupTyp
 
   // Return deduplicated array in the order they were first seen
   return deduplicatedGroups;
+}
+
+/** * Validates the applications array from the config file.
+ * - Validates that applications is an array
+ * - Validates that each application has non-empty key, displayName, and type fields
+ * @param applications - The applications array from the config
+ * @returns The validated applications array (throws error if validation fails)
+ * @throws Error if validation fails (invalid array type, missing or empty required fields)
+ */
+export function validateApplications(
+  applications: ApplicationsType[],
+): ApplicationsType[] {
+  if (!Array.isArray(applications)) {
+    throw new Error(
+      'Validation error: "applications" must be an array in the config file',
+    );
+  }
+  applications.forEach((app, applicationIndex) => {
+    // Validate required fields for each application
+    const requiredApplicationFields: Array<
+      keyof Pick<ApplicationsType, 'key' | 'displayName' | 'type'>
+    > = ['key', 'displayName', 'type'];
+
+    requiredApplicationFields.forEach(field => {
+      validateRequiredStringField(app[field], field, 'applications', applicationIndex);
+    });
+
+    app.hosts?.forEach((host: Record<string, any>, hostIndex: number) => {
+      const requiredHostFields: Array<keyof Pick<ApplicationHostType, 'authority'>> = [
+        'authority',
+      ];
+
+      requiredHostFields.forEach(field => {
+        validateRequiredStringField(host[field], field, 'hosts', hostIndex);
+      });
+    });
+  });
+
+  // Log found applications
+  if (applications.length > 0) {
+    const appNames = applications.map(app => app.displayName).join(', ');
+    console.log('Applications found: %s', chalk.bold.cyan(`[${appNames}]`));
+  }
+
+  return applications;
 }
 
 /**

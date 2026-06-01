@@ -19,4 +19,51 @@ export default buildConfig({
       sortOrder: 3,
     },
   ],
+  content: [
+    {
+      key: 'AboutExperienceContent',
+      displayName: 'About Experience',
+      contentType: 'AboutExperience',
+    },
+    {
+      key: 'BlogExperienceContent',
+      displayName: 'Blog Experience',
+      contentType: 'BlogExperience',
+    },
+  ],
+  applications: [
+    {
+      key: 'nextjs_app',
+      entryPoint: 'AboutExperienceContent',
+      displayName: 'Next.js Template',
+      type: 'website',
+      isDefault: true,
+      useApplicationSpecificAssets: false,
+      hosts: [
+        {
+          authority: 'localhost:3001',
+          type: 'primary',
+          preferredUrlScheme: 'https',
+        },
+      ],
+      usePreviewTokens: true,
+    },
+    {
+      key: 'blog_app',
+      displayName: 'Blog App',
+      type: 'website',
+      isDefault: false,
+      entryPoint: 'BlogExperienceContent',
+      useApplicationSpecificAssets: false,
+      hosts: [
+        {
+          authority: 'localhost:3002',
+          type: 'primary',
+          preferredUrlScheme: 'https',
+        },
+      ],
+      usePreviewTokens: true,
+    },
+  ],
+
 });
