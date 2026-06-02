@@ -244,19 +244,13 @@ function mapAllowedRestrictedTypes(updatedValue: any, parentKey: string) {
 }
 
 /**
- * Filters out system-generated and media content types.
- * Removes content types with baseType of _image, _video, _media
- * and content types with key of BlankExperience or BlankSection.
+ * Filters out built-in content types (i.e. BlankExperience and BlankSection).
  *
  * @param contentTypes - Array of content types to filter
  * @returns Filtered array of content types
  */
-export function filterSystemContentTypes(contentTypes: ContentType[]): ContentType[] {
-  return contentTypes.filter(
-    ct =>
-      !['_image', '_video', '_media'].includes(ct.baseType ?? '') &&
-      !['BlankExperience', 'BlankSection'].includes(ct.key),
-  );
+export function filterOutBuiltinTypes(contentTypes: ContentType[]): ContentType[] {
+  return contentTypes.filter(ct => !['BlankExperience', 'BlankSection'].includes(ct.key));
 }
 
 /**

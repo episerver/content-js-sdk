@@ -7,7 +7,7 @@ import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import { Manifest } from '../../utils/manifest.js';
-import { filterSystemContentTypes } from '../../utils/mapping.js';
+import { filterOutBuiltinTypes } from '../../utils/mapping.js';
 import { generateCode, generateFilePath, generateGroups } from '../../utils/generate.js';
 import { getRelevantPath, makeDirs, makeFiles } from '../../utils/make.js';
 import { formatCounts, validateManifest } from '../../utils/general.js';
@@ -203,7 +203,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       }
 
       const manifest = response as unknown as Manifest;
-      manifest.contentTypes = filterSystemContentTypes(manifest.contentTypes);
+      manifest.contentTypes = filterOutBuiltinTypes(manifest.contentTypes);
 
       // Show count in spinner text
       const contentTypeCount = manifest.contentTypes.length;
