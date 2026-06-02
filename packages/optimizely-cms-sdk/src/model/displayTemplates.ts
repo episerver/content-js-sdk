@@ -51,7 +51,7 @@ type BaseDisplayTemplate = {
   key: string;
   displayName: string;
   isDefault: boolean;
-  settings: SettingsType;
+  settings?: SettingsType;
   tag?: string; // Optional tag property to store the name of the React component
 };
 

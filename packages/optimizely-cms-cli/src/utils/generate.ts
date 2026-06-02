@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import {
-  ContentType,
-  DisplayTemplate,
+  ManifestContentType,
+  ManifestDisplayTemplate,
   JSONContent,
   Manifest,
   SupportedFunctionType,
@@ -96,21 +96,20 @@ export const generateGroups = (contents: JSONContent[]) => [
 // ARGUMENT GENERATION
 
 const generateArguments = (content: JSONContent) => {
+  if (isContract(content)) return generateContractArguments(content);
   if (isContentType(content)) return generateContentTypeArguments(content);
   return generateDisplayTemplateArguments(content);
 };
 
-const generateContentTypeArguments = (content: ContentType) => {
+const generateContentTypeArguments = (content: ManifestContentType) => {
   const functionArguments = {
     key: content.key,
     displayName: content.displayName,
-    baseType: !isContract(content) ? content.baseType || 'null' : undefined,
+    baseType: content.baseType || 'null',
     compositionBehaviors:
-      !isContract(content) && content.compositionBehaviors?.length ?
-        content.compositionBehaviors
-      : undefined,
+      content.compositionBehaviors?.length ? content.compositionBehaviors : undefined,
     mayContainTypes:
-      !isContract(content) && content.mayContainTypes?.length ?
+      content.mayContainTypes?.length ?
         content.mayContainTypes.map(it => (isImportable(it) ? markForImport(it) : it))
       : undefined,
     extends:
@@ -122,7 +121,16 @@ const generateContentTypeArguments = (content: ContentType) => {
   return JSON.stringify(functionArguments, null, 2);
 };
 
-const generateDisplayTemplateArguments = (content: DisplayTemplate) => {
+const generateContractArguments = (content: ManifestContentType) => {
+  const functionArguments = {
+    key: content.key,
+    displayName: content.displayName,
+    properties: generateProperties(content),
+  };
+  return JSON.stringify(functionArguments, null, 2);
+};
+
+const generateDisplayTemplateArguments = (content: ManifestDisplayTemplate) => {
   const functionArguments = {
     key: content.key,
     isDefault: content.isDefault,
@@ -135,7 +143,7 @@ const generateDisplayTemplateArguments = (content: DisplayTemplate) => {
   return JSON.stringify(functionArguments, null, 2);
 };
 
-const generateProperties = (content: ContentType) => {
+const generateProperties = (content: ManifestContentType) => {
   if (!content.properties || Object.keys(content.properties).length === 0)
     return undefined;
   return remakeObject(content.properties);
@@ -262,10 +270,11 @@ const sortByDependencies = (
 
 // TYPE GUARDS
 
-const isContract = (content: JSONContent) => isContentType(content) && content.isContract;
-
-const isContentType = (content: JSONContent): content is ContentType =>
+const isContentType = (content: JSONContent): content is ManifestContentType =>
   'isContract' in content;
+
+const isContract = (content: JSONContent): boolean =>
+  isContentType(content) && content.isContract === true;
 
 const isImportable = (value: string) => !value.startsWith('_');
 
