@@ -6,14 +6,17 @@ describe('parseChildContentType', () => {
   it('should parse a content type with mayContainTypes', () => {
     const child1 = contentType({
       key: 'child1',
+      displayName: 'Child 1',
       baseType: '_component',
     });
     const child2 = contentType({
       key: 'child2',
+      displayName: 'Child 2',
       baseType: '_component',
     });
     const input = contentType({
       key: 'example',
+      displayName: 'Example',
       baseType: '_component',
       mayContainTypes: [child1, child2],
     });
@@ -22,6 +25,7 @@ describe('parseChildContentType', () => {
       {
         "__type": "contentType",
         "baseType": "_component",
+        "displayName": "Example",
         "key": "example",
         "mayContainTypes": [
           "child1",
@@ -34,6 +38,7 @@ describe('parseChildContentType', () => {
   it('should handle content types that self-reference mayContainTypes', () => {
     const input = contentType({
       key: 'example',
+      displayName: 'Example',
       baseType: '_component',
       mayContainTypes: ['_self'],
     });
@@ -42,6 +47,7 @@ describe('parseChildContentType', () => {
       {
         "__type": "contentType",
         "baseType": "_component",
+        "displayName": "Example",
         "key": "example",
         "mayContainTypes": [
           "example",
@@ -53,6 +59,7 @@ describe('parseChildContentType', () => {
   it('should handle content types without mayContainTypes', () => {
     const input = contentType({
       key: 'example',
+      displayName: 'Example',
       baseType: '_component',
     });
 
@@ -60,6 +67,7 @@ describe('parseChildContentType', () => {
       {
         "__type": "contentType",
         "baseType": "_component",
+        "displayName": "Example",
         "key": "example",
       }
     `);
@@ -91,3 +99,4 @@ describe('parseChildContentType errors', () => {
     );
   });
 });
+

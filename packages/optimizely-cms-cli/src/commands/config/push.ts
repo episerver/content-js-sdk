@@ -9,7 +9,9 @@ import {
   findMetaData,
   readFromPath,
   normalizePropertyGroups,
+  validateApplications,
 } from '../../service/utils.js';
+import { checkApplications } from '../../service/applicationService.js';
 import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
@@ -56,19 +58,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const configPath = pathToFileURL(configFilePath).href;
 
-    let componentPaths: string[];
-    let propertyGroups: any;
-
-    try {
-      componentPaths = await readFromPath(configPath, 'components');
-      propertyGroups = await readFromPath(configPath, 'propertyGroups');
-    } catch (error) {
-      console.error(chalk.red('Failed to read configuration file'));
-      if (error instanceof Error) {
-        console.error(chalk.dim(error.message));
-      }
-      throw error;
-    }
+    const { componentPaths, propertyGroups, applications, content } =
+      await readFromPath(configPath);
 
     // Validate components field
     if (!componentPaths || !Array.isArray(componentPaths)) {
@@ -93,6 +84,25 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
+    const validatedApplications = applications ? validateApplications(applications) : [];
+
+    // Check if apps have entryPoint set (will be mapped from content config)
+    const hasAppsWithoutEntryPoint = validatedApplications.some(app => !app.entryPoint);
+
+    // Validate that content array is configured if applications exist without entryPoint
+    if (hasAppsWithoutEntryPoint && !content) {
+      console.error(
+        chalk.red(
+          'Content configuration required when applications defined without entryPoint',
+        ),
+      );
+      console.error(
+        chalk.dim(
+          'Either configure entryPoint in application OR configure content array',
+        ),
+      );
+      process.exit(1);
+    }
 
     const metaData = {
       contentTypes: mapContentToManifest(contentTypes).concat(manifestContracts),
@@ -143,37 +153,22 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     });
 
     if (response.error) {
-      if (response.error.status === 404) {
-        spinner.fail(chalk.red('Feature Not Active'));
-        console.error(
-          chalk.red(
-            'The requested feature "preview3_packages_enabled" is not enabled in your environment.',
-          ),
-        );
-        console.error(
-          chalk.dim(
-            'Please contact your system administrator or support team to request that this feature be enabled.',
-          ),
-        );
-      } else {
-        spinner.fail(chalk.red(' Error'));
-        console.error(
-          chalk.red(
-            `Error ${response.error.status}: ${response.error.title || 'Unknown error'} (${response.error.code || 'N/A'})`,
-          ),
-        );
-        if (response.error.detail) {
-          console.error(chalk.dim(response.error.detail));
-        }
-        if (response.error.errors?.length) {
-          for (const [index, err] of response.error.errors.entries()) {
-            console.error(`  - ERROR ${index + 1}`);
-            console.error(chalk.dim(`      [DETAIL] ${err.detail}`));
-            console.error(chalk.dim(`      [FIELD]  ${err.field}\n`));
-          }
+      spinner.fail(chalk.red(' Error'));
+      console.error(
+        chalk.red(
+          `Error ${response.error.status}: ${response.error.title || 'Unknown error'} (${response.error.code || 'N/A'})`,
+        ),
+      );
+      if (response.error.detail) {
+        console.error(chalk.dim(response.error.detail));
+      }
+      if (response.error.errors?.length) {
+        for (const [index, err] of response.error.errors.entries()) {
+          console.error(`  - ERROR ${index + 1}`);
+          console.error(chalk.dim(`      [DETAIL] ${err.detail}`));
+          console.error(chalk.dim(`      [FIELD]  ${err.field}\n`));
         }
       }
-
       process.exit(1);
     }
 
@@ -185,6 +180,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
 
     const data = response.data;
+
+    // Check and ensure applications (skips if all exist)
+    await checkApplications(validatedApplications, content, flags.host);
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
       for (const r of data.outcomes) {
