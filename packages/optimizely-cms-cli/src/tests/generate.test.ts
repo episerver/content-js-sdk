@@ -357,6 +357,44 @@ describe('generateCode - edge cases', () => {
     expect(result).toContain("nodeType: 'row'");
   });
 
+  it('should preserve double quotes in string values (not convert to escaped single quotes)', () => {
+    const contentTypeWithQuotedDesc: ContentType = {
+      key: 'EventPage',
+      displayName: 'Event Page',
+      baseType: '_page',
+      isContract: false,
+      properties: {
+        StartTime: {
+          type: 'dateTime',
+          displayName: 'Starttid',
+          description: 'She said, "What a beautiful day!"',
+        } as any,
+      },
+    };
+
+    const result = generateCode(contentTypeWithQuotedDesc, mockManifest, false);
+    expect(result).toContain(`'She said, "What a beautiful day!"'`);
+    expect(result).not.toContain(`\\'What a beautiful day\\'`);
+  });
+
+  it('should escape literal single quotes in string values', () => {
+    const contentTypeWithSingleQuoteDesc: ContentType = {
+      key: 'EventPage',
+      displayName: 'Event Page',
+      baseType: '_page',
+      isContract: false,
+      properties: {
+        Info: {
+          type: 'string',
+          description: "it's a beautiful day",
+        } as any,
+      },
+    };
+
+    const result = generateCode(contentTypeWithSingleQuoteDesc, mockManifest, false);
+    expect(result).toContain(`'it\\'s a beautiful day'`);
+  });
+
   it('should handle content type with multiple imports from same group', () => {
     const pageWithMultipleComponents: ContentType = {
       key: 'RichPage',
