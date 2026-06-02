@@ -1,16 +1,17 @@
 import { join } from 'node:path';
 import {
-  ContentType,
-  DisplayTemplate,
+  ManifestContentType,
+  ManifestDisplayTemplate,
   JSONContent,
   Manifest,
   SupportedFunctionType,
+  SupportedFunctionTypes,
 } from './manifest.js';
 
 // EXPORTS
 
 /** Generates TypeScript code for a content type or display template */
-export const generateCode = (
+export const generateContentCode = (
   content: JSONContent,
   manifest: Manifest,
   useGrouping: boolean = false,
@@ -19,9 +20,14 @@ export const generateCode = (
 
   const argumentsWithImports = generateArguments(content);
   const importedComponents = findImportedComponents(manifest, argumentsWithImports);
-  const argumentsString = removeImportMarkers(argumentsWithImports, importedComponents);
+  const argumentsString = removeImportMarkers(
+    argumentsWithImports,
+    importedComponents,
+    content.key,
+  );
 
   const componentImports = importedComponents
+    .filter(it => it.key !== content.key)
     .map(it => generateComponentImport(it, group))
     .join('\n');
 
@@ -31,6 +37,38 @@ ${componentImports ? `${componentImports}\n` : ''}
  * ${generateCommentContent(content)}
  */
 export const ${generateName(content)} = ${generateFunctionType(content)}(${argumentsString});
+`;
+
+  return cleanupString(code);
+};
+
+/** Generates TypeScript code for a full manifest */
+export const generateManifestCode = (manifest: Manifest) => {
+  const contents = sortByDependencies(
+    [...manifest.contentTypes, ...(manifest.displayTemplates || [])],
+    manifest,
+  );
+  const contentTypes: SupportedFunctionType[] = findUsedContentTypes(contents);
+
+  const code = `import { ${contentTypes.join(', ')} } from '@optimizely/cms-sdk';
+
+  ${contents
+    .map((content: JSONContent) => {
+      const argumentsWithImports = generateArguments(content);
+      const importedComponents = findImportedComponents(manifest, argumentsWithImports);
+      const argumentsString = removeImportMarkers(
+        argumentsWithImports,
+        importedComponents,
+        content.key,
+      );
+
+      return `/**
+ * ${generateCommentContent(content)}
+ */
+export const ${generateName(content)} = ${generateFunctionType(content)}(${argumentsString});
+`;
+    })
+    .join('\n')}
 `;
 
   return cleanupString(code);
@@ -46,6 +84,10 @@ export const generateFilePath = (
     join(outputDir, generateGroup(content), `${generateName(content)}.ts`)
   : join(outputDir, `${generateName(content)}.ts`);
 
+/** Generates the file path for a manifest file */
+export const generateManifestFilePath = (outputDir: string) =>
+  join(outputDir, 'manifest.ts');
+
 /** Returns unique group names from content array */
 export const generateGroups = (contents: JSONContent[]) => [
   ...new Set(contents.map(generateGroup)),
@@ -54,22 +96,21 @@ export const generateGroups = (contents: JSONContent[]) => [
 // ARGUMENT GENERATION
 
 const generateArguments = (content: JSONContent) => {
+  if (isContract(content)) return generateContractArguments(content);
   if (isContentType(content)) return generateContentTypeArguments(content);
   return generateDisplayTemplateArguments(content);
 };
 
-const generateContentTypeArguments = (content: ContentType) => {
-  const fnArguments = {
+const generateContentTypeArguments = (content: ManifestContentType) => {
+  const functionArguments = {
     key: content.key,
     displayName: content.displayName,
-    baseType: !isContract(content) ? content.baseType || 'null' : undefined,
+    baseType: content.baseType || 'null',
     compositionBehaviors:
-      !isContract(content) && content.compositionBehaviors?.length ?
-        content.compositionBehaviors
-      : undefined,
+      content.compositionBehaviors?.length ? content.compositionBehaviors : undefined,
     mayContainTypes:
-      !isContract(content) && content.mayContainTypes?.length ?
-        content.mayContainTypes
+      content.mayContainTypes?.length ?
+        content.mayContainTypes.map(it => (isImportable(it) ? markForImport(it) : it))
       : undefined,
     extends:
       content.contracts?.length ?
@@ -77,11 +118,20 @@ const generateContentTypeArguments = (content: ContentType) => {
       : undefined,
     properties: generateProperties(content),
   };
-  return JSON.stringify(fnArguments, null, 2);
+  return JSON.stringify(functionArguments, null, 2);
 };
 
-const generateDisplayTemplateArguments = (content: DisplayTemplate) => {
-  const fnArguments = {
+const generateContractArguments = (content: ManifestContentType) => {
+  const functionArguments = {
+    key: content.key,
+    displayName: content.displayName,
+    properties: generateProperties(content),
+  };
+  return JSON.stringify(functionArguments, null, 2);
+};
+
+const generateDisplayTemplateArguments = (content: ManifestDisplayTemplate) => {
+  const functionArguments = {
     key: content.key,
     isDefault: content.isDefault,
     displayName: content.displayName,
@@ -90,10 +140,10 @@ const generateDisplayTemplateArguments = (content: DisplayTemplate) => {
     baseType: 'baseType' in content ? content.baseType : undefined,
     settings: content.settings,
   };
-  return JSON.stringify(fnArguments, null, 2);
+  return JSON.stringify(functionArguments, null, 2);
 };
 
-const generateProperties = (content: ContentType) => {
+const generateProperties = (content: ManifestContentType) => {
   if (!content.properties || Object.keys(content.properties).length === 0)
     return undefined;
   return remakeObject(content.properties);
@@ -127,15 +177,14 @@ const generateImportPath = (
 const generateName = (content: JSONContent) => {
   const cleaned = cleanKey(content.key);
 
-  if (commonKeyContents.some(it => cleaned.endsWith(it)))
-    return cleaned;
+  if (commonKeyContents.some(it => cleaned.endsWith(it))) return cleaned;
 
-  const ending =
+  const nameSuffix =
     isContentType(content) && content.isContract ? 'Contract'
     : isContentType(content) ? 'CT'
     : 'DT';
 
-  return cleaned + ending;
+  return cleaned + nameSuffix;
 };
 
 // IMPORT HANDLING
@@ -157,11 +206,22 @@ const extractMarkedImports = (content: string): string[] => {
 
 const markForImport = (item: string): string => `<|${item}|>`;
 
-const removeImportMarkers = (item: string, components: JSONContent[]) =>
-  components.reduce(
-    (acc, it) => acc.replaceAll(`"<|${it.key}|>"`, generateName(it)),
-    item,
-  );
+const removeImportMarkers = (
+  item: string,
+  components: JSONContent[],
+  currentKey: string,
+) =>
+  components
+    .reduce(
+      (acc, it) =>
+        acc.replaceAll(
+          `"<|${it.key}|>"`,
+          it.key === currentKey ? "'_self'" : generateName(it),
+        ),
+      item,
+    )
+    .replaceAll('<|', '')
+    .replaceAll('|>', '');
 
 const addImports = (prop: string, value: any) => {
   if (!propertiesThatCanHoldImports.includes(prop)) return value;
@@ -172,12 +232,49 @@ const addImports = (prop: string, value: any) => {
   return value;
 };
 
+const sortByDependencies = (
+  contents: JSONContent[],
+  manifest: Manifest,
+): JSONContent[] => {
+  const dependencyMap = new Map<string, Set<string>>();
+
+  // Build dependency graph
+  contents.forEach(content => {
+    const args = generateArguments(content);
+    const dependencies = findImportedComponents(manifest, args);
+    dependencyMap.set(content.key, new Set(dependencies.map(d => d.key)));
+  });
+
+  // Topological sort
+  const sorted: JSONContent[] = [];
+  const visited = new Set<string>();
+  const visiting = new Set<string>();
+
+  const visit = (key: string) => {
+    if (visited.has(key)) return;
+    if (visiting.has(key)) return; // Circular dependency, skip
+
+    visiting.add(key);
+    const dependencies = dependencyMap.get(key) || new Set();
+    dependencies.forEach(depKey => visit(depKey));
+    visiting.delete(key);
+    visited.add(key);
+
+    const content = contents.find(c => c.key === key);
+    if (content) sorted.push(content);
+  };
+
+  contents.forEach(content => visit(content.key));
+  return sorted;
+};
+
 // TYPE GUARDS
 
-const isContract = (content: JSONContent) => isContentType(content) && content.isContract;
-
-const isContentType = (content: JSONContent): content is ContentType =>
+const isContentType = (content: JSONContent): content is ManifestContentType =>
   'isContract' in content;
+
+const isContract = (content: JSONContent): boolean =>
+  isContentType(content) && content.isContract === true;
 
 const isImportable = (value: string) => !value.startsWith('_');
 
@@ -218,8 +315,9 @@ const cleanupString = (item: string) =>
     // Convert JSON string literals from double-quoted to single-quoted.
     // For each matched string value: unescape \" → " (safe inside single quotes)
     // and escape any literal ' → \' to avoid breaking the single-quoted string.
-    .replaceAll(/"((?:[^"\\]|\\.)*)"/g, (_, inner: string) =>
-      `'${inner.replaceAll('\\"', '"').replaceAll("'", "\\'")}'`,
+    .replaceAll(
+      /"((?:[^"\\]|\\.)*)"/g,
+      (_, inner: string) => `'${inner.replaceAll('\\"', '"').replaceAll("'", "\\'")}'`,
     );
 
 const findContent = (key: string, manifest: Manifest) =>
@@ -251,4 +349,16 @@ const skipPropertyConditions: Record<string, (it: any) => boolean> = {
   contentType: (it: any) => it === undefined,
   nodeType: (it: any) => it === undefined,
   baseType: (it: any) => it === undefined,
+};
+
+const findUsedContentTypes = (contents: JSONContent[]): SupportedFunctionType[] => {
+  const types: SupportedFunctionType[] = [];
+  for (const it of contents) {
+    if (types.length === SupportedFunctionTypes.length) break;
+
+    const type = generateFunctionType(it);
+    if (!types.includes(type)) types.push(type);
+  }
+
+  return types;
 };

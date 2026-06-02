@@ -26,9 +26,7 @@ function getMergedProps<T extends AnyContentType>(
 }
 
 /** Defines a Optimizely CMS content type */
-export function contentType<T extends AnyContentType>(
-  options: T,
-): ContentType<T> {
+export function contentType<T extends AnyContentType>(options: T): ContentType<T> {
   const properties = getMergedProps(options);
   return {
     ...options,
@@ -139,4 +137,3 @@ export {
   isContentTypeRegistered,
 } from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';
-

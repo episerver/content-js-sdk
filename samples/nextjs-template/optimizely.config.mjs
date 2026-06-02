@@ -65,5 +65,4 @@ export default buildConfig({
       usePreviewTokens: true,
     },
   ],
-
 });

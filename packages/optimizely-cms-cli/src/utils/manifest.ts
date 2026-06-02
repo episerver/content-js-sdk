@@ -9,13 +9,17 @@ import { ContentTypes, Properties, DisplayTemplates } from '@optimizely/cms-sdk'
 
 /** Manifest - the JSON accepted/returned by the API */
 export type Manifest = {
-  contentTypes: ContentType[];
-  displayTemplates?: DisplayTemplate[];
-  contracts?: ManifestContract[];
+  contentTypes: ManifestContentType[];
+  displayTemplates?: ManifestDisplayTemplate[];
 };
 
-export type JSONContent = ContentType | DisplayTemplate;
-export type SupportedFunctionType = 'contentType' | 'contract' | 'displayTemplate';
+export type JSONContent = ManifestContentType | ManifestDisplayTemplate;
+export const SupportedFunctionTypes = [
+  'contentType',
+  'contract',
+  'displayTemplate',
+] as const;
+export type SupportedFunctionType = (typeof SupportedFunctionTypes)[number];
 
 /**
  * Display Template (API format)
@@ -24,11 +28,8 @@ export type SupportedFunctionType = 'contentType' | 'contract' | 'displayTemplat
  * - Simplified settings type (Record<string, any> instead of structured SettingsType)
  * - No __type marker or tag field
  */
-export type DisplayTemplate = Partial<
-  Omit<DisplayTemplates.DisplayTemplateVariant, '__type' | 'settings' | 'tag'>
-> & {
-  key: string;
-  settings?: Record<string, any>;
+export type ManifestDisplayTemplate = DisplayTemplates.DisplayTemplateVariant & {
+  tag?: never;
 };
 
 /**
@@ -39,9 +40,9 @@ export type DisplayTemplate = Partial<
  * - compositionBehaviors added as optional (only on ComponentContentType in SDK, but needed at API level)
  * - contracts replaces extends and uses only the key of the contract
  */
-export type ContentType = Omit<
+export type ManifestContentType = Omit<
   ContentTypes.AnyContentType,
-  'mayContainTypes' | 'properties' | 'extends'
+  'mayContainTypes' | 'properties' | 'extends' | 'baseType'
 > & {
   mayContainTypes?: string[];
   properties?: Record<string, ContentTypeProperties.All>;
@@ -49,15 +50,6 @@ export type ContentType = Omit<
   baseType?: string;
   contracts?: string[];
   isContract?: boolean;
-};
-
-/**
- * Contract (API format)
- * - Omits __type
- * - Swaps properties to use ContentTypeProperties.All over AnyProperty
- */
-export type ManifestContract = Omit<ContentTypes.Contract, '__type' | 'properties'> & {
-  properties: Record<string, ContentTypeProperties.All>;
 };
 
 /**

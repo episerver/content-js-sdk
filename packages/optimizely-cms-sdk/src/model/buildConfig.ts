@@ -63,4 +63,3 @@ export type PropertyGroupKey =
   | BuiltInPropertyGroups
   | keyof PropertyGroupRegistry
   | (string & {});
-

@@ -2,33 +2,59 @@ import { Flags } from '@oclif/core';
 import { resolve } from 'node:path';
 import ora from 'ora';
 import chalk from 'chalk';
-import { input, confirm } from '@inquirer/prompts';
+import { input, select } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import { Manifest } from '../../utils/manifest.js';
-import { filterOutBuiltinTypes } from '../../utils/mapping.js';
-import { generateCode, generateFilePath, generateGroups } from '../../utils/generate.js';
-import { getRelevantPath, makeDirs, makeFiles } from '../../utils/make.js';
+import {
+  generateContentCode,
+  generateFilePath,
+  generateGroups,
+  generateManifestCode,
+  generateManifestFilePath,
+} from '../../utils/generate.js';
+import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make.js';
 import { formatCounts, validateManifest } from '../../utils/general.js';
+import { filterOutBuiltinTypes } from '../../utils/mapping.js';
 
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   static override flags = {
-    output: Flags.string({
-      description: 'Output directory for generated files',
-    }),
-    group: Flags.boolean({
-      description:
-        'Group files by base type (page/, component/, section/, etc.) and co-locate display templates with their content types',
-    }),
-    json: Flags.boolean({
-      description: 'Output manifest as JSON to stdout (useful for piping)',
-      default: false,
-    }),
     includeReadOnly: Flags.boolean({
+      char: 'i',
       aliases: ['include-read-only'],
       description:
         'Include read-only content types in the manifest. This may include system-generated content types that are not editable in the CMS.',
+      default: false,
+    }),
+    output: Flags.string({
+      char: 'o',
+      description: 'Output directory for generated files',
+      exclusive: ['json'],
+    }),
+    json: Flags.boolean({
+      char: 'j',
+      description: 'Output manifest as JSON to stdout (useful for piping)',
+      exclusive: ['individual', 'single-file', 'group', 'output'],
+      default: false,
+    }),
+    'single-file': Flags.boolean({
+      char: 's',
+      description: 'Produce single file containing all types',
+      exclusive: ['individual', 'group', 'json'],
+      default: false,
+    }),
+    individual: Flags.boolean({
+      char: 'i',
+      description: 'Write each type to a separate file',
+      exclusive: ['single-file', 'group', 'json'],
+      default: false,
+    }),
+    group: Flags.boolean({
+      char: 'g',
+      description:
+        'Group files by base type (page/, component/, section/, etc.) and co-locate display templates with their content types',
+      exclusive: ['individual', 'single-file', 'json'],
       default: false,
     }),
   };
@@ -43,6 +69,30 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     '<%= config.bin %> <%= command.id %> --json > manifest.json',
     '<%= config.bin %> <%= command.id %> --json | jq .contentTypes',
   ];
+
+  // API METHODS
+
+  /**
+   * Fetches the manifest from CMS
+   * @throws Error with descriptive message if fetch fails
+   */
+  private async fetchManifest(host?: string, includeReadOnly?: boolean) {
+    const restClient = await createApiClient(host);
+    const { data, error, response } = await restClient.GET('/manifest', {
+      params: {
+        query: {
+          sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
+          ...(includeReadOnly ? { includeReadOnly } : {}),
+        },
+      },
+    });
+    if (error || (response && !response.ok)) {
+      throw new Error(this.buildErrorMessage(error, response));
+    }
+    return data;
+  }
+
+  // ERROR HANDLING
 
   /**
    * Builds formatted error message from API response
@@ -73,18 +123,57 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     return true;
   }
 
+  // UTILITY METHODS
+
+  private getManifestCounts(manifest: Manifest) {
+    const contentTypeCount = manifest.contentTypes.length;
+    const displayTemplateCount = manifest.displayTemplates?.length || 0;
+    const totalCount = contentTypeCount + displayTemplateCount;
+    return { contentTypeCount, displayTemplateCount, totalCount };
+  }
+
+  private logManifestStats(manifest: Manifest, spinner: any) {
+    const { contentTypeCount, displayTemplateCount } = this.getManifestCounts(manifest);
+
+    console.log();
+    spinner.info(`Content types: ${contentTypeCount}`);
+    spinner.info(`Display templates: ${displayTemplateCount}`);
+    console.log();
+  }
+
+  private logGeneratedFiles(
+    files: { path: string; content: string }[],
+    outputDir: string,
+  ) {
+    const displayPaths = files.map(file => getRelevantPath(file.path, outputDir)).sort();
+
+    console.log();
+    console.log(chalk.cyan.bold('\nGenerated files:'));
+    displayPaths.forEach(path => console.log(chalk.dim('  -'), chalk.green(path)));
+    console.log();
+  }
+
+  private warnAboutReadOnly(includeReadOnly: boolean) {
+    if (includeReadOnly)
+      this.log(
+        chalk.yellow(
+          'Pulling all content types including read-only ones. This may include system-generated content types that are not editable in the CMS.',
+        ),
+      );
+  }
+
+  // OUTPUT HANDLERS
+
   /**
    * Handles JSON output mode - fetches and outputs manifest as JSON to stdout
    */
   private async handleJsonOutput(flags: any, includeReadOnly: boolean): Promise<void> {
-    // Warn if flags meant for file generation mode are provided with --json
     if (flags.json && (flags.output || flags.group)) {
       this.warn(
         'Flags --output and --group are ignored when --json is used. Remove --json to generate TypeScript files.',
       );
     }
 
-    // Use stderr for spinner when outputting JSON to stdout
     const spinner = ora({
       stream: process.stderr,
       text: 'Downloading configuration from CMS',
@@ -92,13 +181,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     try {
       const response = await this.fetchManifest(flags.host, includeReadOnly);
-
       if (!this.handleEmptyResponse(response, spinner)) return;
 
-      // Show count in success message
       spinner.succeed(` Downloaded configuration from CMS (${formatCounts(response)})`);
 
-      // Safely serialize JSON with error handling
       try {
         this.log(JSON.stringify(response, null, 2));
       } catch (serializeError) {
@@ -116,133 +202,146 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }
   }
 
-  /**
-   * Fetches the manifest from CMS
-   * @throws Error with descriptive message if fetch fails
-   */
-  private async fetchManifest(host?: string, includeReadOnly?: boolean) {
-    const restClient = await createApiClient(host);
-    const { data, error, response } = await restClient.GET('/manifest', {
-      params: {
-        query: {
-          sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
-          ...(includeReadOnly ? { includeReadOnly } : {}),
-        },
-      },
+  private async handleSingleFileOutput(
+    outputDir: string,
+    outputPath: string,
+    manifest: Manifest,
+  ): Promise<void> {
+    const spinner = ora('Generating file').start();
+    await mkdir(outputDir, { recursive: true });
+
+    await makeFile({
+      path: generateManifestFilePath(outputDir),
+      content: generateManifestCode(manifest),
     });
-    // Non-2xx responses have undefined data; check error/response instead
-    if (error || (response && !response.ok)) {
-      throw new Error(this.buildErrorMessage(error, response));
-    }
-    return data;
+
+    this.logManifestStats(manifest, spinner);
+    spinner.succeed(` Generated manifest.ts file in ${outputPath}`);
   }
 
+  private async handleIndividualOutput(
+    outputDir: string,
+    outputPath: string,
+    manifest: Manifest,
+  ): Promise<void> {
+    const { totalCount } = this.getManifestCounts(manifest);
+    const spinner = ora(
+      `Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`,
+    ).start();
+
+    await mkdir(outputDir, { recursive: true });
+
+    const allContents = [...manifest.contentTypes, ...(manifest.displayTemplates || [])];
+    const files = allContents.map(content => ({
+      path: generateFilePath(content, outputDir, false),
+      content: generateContentCode(content, manifest, false),
+    }));
+
+    await makeFiles(files);
+
+    this.logGeneratedFiles(files, outputDir);
+    this.logManifestStats(manifest, spinner);
+    spinner.succeed(` Generated ${files.length} file(s) in ${outputPath}`);
+  }
+
+  private async handleGroupOutput(
+    outputDir: string,
+    outputPath: string,
+    manifest: Manifest,
+  ): Promise<void> {
+    const { totalCount } = this.getManifestCounts(manifest);
+    const spinner = ora(
+      `Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`,
+    ).start();
+
+    await mkdir(outputDir, { recursive: true });
+
+    const allContents = [...manifest.contentTypes, ...(manifest.displayTemplates || [])];
+    const files = allContents.map(content => ({
+      path: generateFilePath(content, outputDir, true),
+      content: generateContentCode(content, manifest, true),
+    }));
+
+    await Promise.all([
+      makeDirs(generateGroups(allContents), outputDir),
+      makeFiles(files),
+    ]);
+
+    this.logGeneratedFiles(files, outputDir);
+    this.logManifestStats(manifest, spinner);
+    spinner.succeed(` Generated ${files.length} file(s) in ${outputPath}`);
+  }
+
+  // MAIN EXECUTION
+
   public async run(): Promise<void | any> {
-    let isGroupBy: boolean;
     const { flags } = await this.parse(ConfigPull);
-
-    // Detect interactive mode using stdout.isTTY (not stdin.isTTY)
-    // to avoid prompting when output is redirected or piped
     const isInteractive = process.stdout.isTTY === true;
-
-    // The output mode based on flags and environment
-    // 1. --json flag explicitly requests JSON output
-    // 2. --output flag explicitly requests file generation (even in non-TTY environments like CI)
-    // 3. Fallback to TTY detection for backward compatibility (non-interactive → JSON)
-    const shouldOutputJson = flags.json || (!flags.output && !isInteractive);
-
+    const shouldOutputJson = flags.json || !isInteractive;
     const includeReadOnly = flags.includeReadOnly;
 
-    if (includeReadOnly) {
-      this.log(
-        chalk.yellow(
-          'Pulling all content types including read-only ones. This may include system-generated content types that are not editable in the CMS.',
-        ),
-      );
-    }
-
-    // If JSON output mode, output manifest to stdout
     if (shouldOutputJson) return this.handleJsonOutput(flags, includeReadOnly);
+
+    // Warn only after json output, to avoid crowding sdtout
+    this.warnAboutReadOnly(includeReadOnly);
+
+    const outputType =
+      flags['single-file'] ? 'single-file'
+      : flags.individual ? 'individual'
+      : flags.group ? 'group'
+      : isInteractive ?
+        await select({
+          message: 'How would you like to organize the output?',
+          choices: [
+            {
+              name: 'Group by base type (page/, component/, section/, etc.)',
+              value: 'group',
+            },
+            { name: 'Individual files', value: 'individual' },
+            { name: 'Single file', value: 'single-file' },
+          ],
+          default: 'group',
+        })
+      : 'group';
 
     // Prompt for output directory if not provided
     const outputPath =
       flags.output ||
       (isInteractive ?
         await input({
-          message: 'Where should the generated files be saved?',
+          message: 'Where should the generated file(s) be saved?',
           default: './src/content-types',
         })
       : './src/content-types');
-
-    // Prompt for grouping if not provided
-    isGroupBy =
-      flags.group ??
-      (isInteractive ?
-        await confirm({
-          message: 'Should the generated files be grouped?',
-          default: false,
-        })
-      : false); // Default to non-grouped in non-interactive environments
-
     const outputDir = resolve(process.cwd(), outputPath);
 
     const spinner = ora('Downloading configuration from CMS').start();
 
     try {
-      // Pull from CMS
       const response = await this.fetchManifest(flags.host, includeReadOnly);
-
       if (!this.handleEmptyResponse(response, spinner)) return;
 
       spinner.text = 'Validating manifest';
 
       if (!validateManifest(response)) {
         spinner.fail('Invalid manifest: contentTypes array not found');
-        process.exitCode = 1; // Set error exit code
+        process.exitCode = 1;
         return;
       }
 
       const manifest = response as unknown as Manifest;
       manifest.contentTypes = filterOutBuiltinTypes(manifest.contentTypes);
 
-      // Show count in spinner text
-      const contentTypeCount = manifest.contentTypes.length;
-      const displayTemplateCount = manifest.displayTemplates?.length || 0;
-      const totalCount = contentTypeCount + displayTemplateCount;
+      spinner.succeed(' Downloaded configuration from CMS');
 
-      spinner.start(`Generating ${totalCount} file${totalCount !== 1 ? 's' : ''}`);
-
-      // Ensure output directory exists
-      await mkdir(outputDir, { recursive: true });
-
-      const allContents = [
-        ...manifest.contentTypes,
-        ...(manifest.displayTemplates || []),
-      ];
-
-      const files = allContents.map(content => ({
-        path: generateFilePath(content, outputDir, isGroupBy),
-        content: generateCode(content, manifest, isGroupBy),
-      }));
-
-      await Promise.all([
-        isGroupBy ? makeDirs(generateGroups(allContents), outputDir) : Promise.resolve(),
-        makeFiles(files),
-      ]);
-
-      const displayPaths = files
-        .map(file => getRelevantPath(file.path, outputDir))
-        .sort();
-
-      console.log();
-      console.log(chalk.cyan.bold('\nGenerated files:'));
-      displayPaths.forEach(path => console.log(chalk.dim('  -'), chalk.green(path)));
-      console.log();
-
-      spinner.info(`Content types: ${contentTypeCount}`);
-      spinner.info(`Display templates: ${displayTemplateCount}`);
-      console.log();
-      spinner.succeed(` Generated ${files.length} file(s) in ${outputPath}`);
+      switch (outputType) {
+        case 'single-file':
+          return this.handleSingleFileOutput(outputDir, outputPath, manifest);
+        case 'individual':
+          return this.handleIndividualOutput(outputDir, outputPath, manifest);
+        default:
+          return this.handleGroupOutput(outputDir, outputPath, manifest);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       spinner.fail(errorMessage);
