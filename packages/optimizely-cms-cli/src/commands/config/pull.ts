@@ -2,12 +2,11 @@ import { Flags } from '@oclif/core';
 import { resolve } from 'node:path';
 import ora from 'ora';
 import chalk from 'chalk';
-import { input, confirm, select } from '@inquirer/prompts';
+import { input, select } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import { Manifest } from '../../utils/manifest.js';
-import { filterSystemContentTypes } from '../../utils/mapping.js';
 import {
   generateContentCode,
   generateFilePath,
@@ -17,6 +16,7 @@ import {
 } from '../../utils/generate.js';
 import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make.js';
 import { formatCounts, validateManifest } from '../../utils/general.js';
+import { filterOutBuiltinTypes } from '../../utils/mapping.js';
 
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   static override flags = {
@@ -330,7 +330,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       }
 
       const manifest = response as unknown as Manifest;
-      manifest.contentTypes = filterSystemContentTypes(manifest.contentTypes);
+      manifest.contentTypes = filterOutBuiltinTypes(manifest.contentTypes);
 
       spinner.succeed(' Downloaded configuration from CMS');
 

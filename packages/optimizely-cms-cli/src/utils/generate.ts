@@ -169,8 +169,7 @@ const generateImportPath = (
 const generateName = (content: JSONContent) => {
   const cleaned = cleanKey(content.key);
 
-  if (commonKeyContents.some(it => cleaned.toLowerCase().includes(it.toLowerCase())))
-    return cleaned;
+  if (commonKeyContents.some(it => cleaned.endsWith(it))) return cleaned;
 
   const nameSuffix =
     isContentType(content) && content.isContract ? 'Contract'
@@ -301,7 +300,16 @@ const cleanKey = (key: string) => {
 };
 
 const cleanupString = (item: string) =>
-  item.replaceAll(/"(\w+)":/g, '$1:').replaceAll('"', "'");
+  item
+    // Remove quotes from object keys: "key": → key:
+    .replaceAll(/"(\w+)":/g, '$1:')
+    // Convert JSON string literals from double-quoted to single-quoted.
+    // For each matched string value: unescape \" → " (safe inside single quotes)
+    // and escape any literal ' → \' to avoid breaking the single-quoted string.
+    .replaceAll(
+      /"((?:[^"\\]|\\.)*)"/g,
+      (_, inner: string) => `'${inner.replaceAll('\\"', '"').replaceAll("'", "\\'")}'`,
+    );
 
 const findContent = (key: string, manifest: Manifest) =>
   manifest.contentTypes.find(it => it.key === key) ||

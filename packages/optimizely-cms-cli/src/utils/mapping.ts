@@ -104,7 +104,6 @@ function transformProperty(property: any, parentKey: string): any {
   let updatedProperty = { ...property };
 
   updatedProperty = handleComponentType(updatedProperty);
-  updatedProperty = handleEnumFormat(updatedProperty);
   updatedProperty = handleArrayType(updatedProperty);
   updatedProperty = handleContentReferenceType(updatedProperty);
   updatedProperty = mapAllowedRestrictedTypes(updatedProperty, parentKey);
@@ -139,22 +138,6 @@ function handleComponentType(property: any): any {
     return {
       ...property,
       contentType: property.contentType.key,
-    };
-  }
-  return property;
-}
-
-/**
- * Handles the enum format for properties.
- * If the property has an 'enum' field, it sets the format to 'selectOne'.
- * @param property - The property to check and transform.
- * @returns The transformed property with 'format' set to 'selectOne' if applicable.
- */
-function handleEnumFormat(property: any): any {
-  if (Object.hasOwn(property, 'enum')) {
-    return {
-      ...property,
-      format: 'selectOne',
     };
   }
   return property;
@@ -261,19 +244,13 @@ function mapAllowedRestrictedTypes(updatedValue: any, parentKey: string) {
 }
 
 /**
- * Filters out system-generated and media content types.
- * Removes content types with baseType of _image, _video, _media
- * and content types with key of BlankExperience or BlankSection.
+ * Filters out built-in content types (i.e. BlankExperience and BlankSection).
  *
  * @param contentTypes - Array of content types to filter
  * @returns Filtered array of content types
  */
-export function filterSystemContentTypes(contentTypes: ContentType[]): ContentType[] {
-  return contentTypes.filter(
-    ct =>
-      !['_image', '_video', '_media'].includes(ct.baseType ?? '') &&
-      !['BlankExperience', 'BlankSection'].includes(ct.key),
-  );
+export function filterOutBuiltinTypes(contentTypes: ContentType[]): ContentType[] {
+  return contentTypes.filter(ct => !['BlankExperience', 'BlankSection'].includes(ct.key));
 }
 
 /**

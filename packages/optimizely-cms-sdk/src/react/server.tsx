@@ -255,6 +255,7 @@ export function OptimizelyComposition({
               ...node.component,
               __tag: tag,
             }}
+            displaySettings={parsedDisplaySettings}
           />
         </Wrapper>
       );
