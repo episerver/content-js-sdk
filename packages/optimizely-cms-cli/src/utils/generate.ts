@@ -213,8 +213,8 @@ const removeImportMarkers = (
         ),
       item,
     )
-    .replace(/"<\|[^|]+\|>",?\s*/g, '')
-    .replace(/,(\s*])/g, '$1');
+    .replaceAll('<|', '')
+    .replaceAll('|>', '');
 
 const addImports = (prop: string, value: any) => {
   if (!propertiesThatCanHoldImports.includes(prop)) return value;
