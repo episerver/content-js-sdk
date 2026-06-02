@@ -127,7 +127,7 @@ const generateImportPath = (
 const generateName = (content: JSONContent) => {
   const cleaned = cleanKey(content.key);
 
-  if (commonKeyContents.some(it => cleaned.toLowerCase().includes(it.toLowerCase())))
+  if (commonKeyContents.some(it => cleaned.endsWith(it)))
     return cleaned;
 
   const ending =
