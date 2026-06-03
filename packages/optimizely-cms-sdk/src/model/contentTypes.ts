@@ -131,4 +131,5 @@ export type PermittedTypes =
   | Contract
   | ContentType
   | AnyContentType['baseType']
-  | '_self';
+  | '_self'
+  | (string & {});
