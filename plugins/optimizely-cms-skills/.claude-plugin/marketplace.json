@@ -17,11 +17,11 @@
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/episerver/content-js-sdk.git",
-        "path": "packages/optimizely-cms-skills",
+        "path": "plugins/optimizely-cms-skills",
         "ref": "main"
       },
-      "homepage": "https://github.com/episerver/content-js-sdk/tree/main/packages/optimizely-cms-skills",
-      "readme": "https://github.com/episerver/content-js-sdk/blob/main/packages/optimizely-cms-skills/README.md"
+      "homepage": "https://github.com/episerver/content-js-sdk/tree/main/plugins/optimizely-cms-skills",
+      "readme": "https://github.com/episerver/content-js-sdk/blob/main/plugins/optimizely-cms-skills/README.md"
     }
   ]
 }

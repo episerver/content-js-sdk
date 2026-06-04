@@ -39,6 +39,7 @@ First, find where the content type or display template is defined:
    - Array items and content references
    - Embedded components
    - Display template settings
+   - **CRITICAL for display templates**: Read the `tag` field value - this exact value will be used as the key in the component registry
 
 ## Step 2: Determine File Strategy
 
@@ -236,7 +237,7 @@ export const SquareDisplayTemplate = displayTemplate({
       },
     },
   },
-  tag: 'Square',
+  tag: 'Square',  // CRITICAL: This tag value must match the key in initReactComponentRegistry tags object
 });
 
 type Props = {
@@ -255,7 +256,7 @@ export function SquareTile({ content, displaySettings }: Props) {
 }
 ```
 
-The `tag` field in the display template determines the component name used during registration.
+**CRITICAL**: The `tag` field in the display template definition is the exact key that MUST be used in the `initReactComponentRegistry` tags object. If the display template has `tag: 'Square'`, then the registration MUST use `tags: { Square: SquareTile }`.
 
 ### Choosing Semantic HTML
 
@@ -288,7 +289,7 @@ import { HeroContentType } from './Hero';
 
 ## Step 4: Register the Component
 
-After creating the component, automatically register it in `initReactComponentRegistry`:
+After creating the component, automatically register it in both `initContentTypeRegistry` and `initReactComponentRegistry`.
 
 ### Find the Registration File
 
@@ -298,39 +299,149 @@ After creating the component, automatically register it in `initReactComponentRe
    ```
 2. Typically found in `app/layout.tsx` or `src/app/layout.tsx`
 
-### Add Import and Registration
+### Determine the Correct Import Path
 
-**For regular components:**
+**CRITICAL**: Before adding imports, check `tsconfig.json` to understand the path alias configuration:
+
+#### Step 1: Read tsconfig.json
+
+1. Open `tsconfig.json` and find `compilerOptions.paths`
+2. Common configurations:
+   - `"@/*": ["./src/*"]` → Alias maps to src directory
+   - `"@/*": ["./*"]` → Alias maps to project root
+   - `"~/*": ["./src/*"]` → Alternative alias convention
+3. Also check `compilerOptions.baseUrl` (usually `"."` or `"./"`)
+
+#### Step 2: Determine the Import Path
+
+If the component file is at `src/components/Article.tsx`:
+
+| tsconfig paths | baseUrl | Import as |
+|----------------|---------|-----------|
+| `"@/*": ["./src/*"]` | `"."` | `@/components/Article` |
+| `"@/*": ["./*"]` | `"."` | `@/src/components/Article` |
+| `"~/*": ["./src/*"]` | `"."` | `~/components/Article` |
+| No paths, only baseUrl | `"./src"` | `./components/Article` |
+
+#### Step 3: Verify the Import Path Works
+
+**BEFORE adding the import to the registration file**, verify the path resolves correctly:
+
+1. **Check existing imports** in the registration file:
+   - Look for other component imports in the same file
+   - Match their pattern (if they use `@/components/...`, use the same)
+
+2. **Test the import path** by adding it temporarily:
+   ```tsx
+   import Article, { ArticleContentType } from '@/components/Article';
+   ```
+
+3. **Verify TypeScript resolves it**:
+   - Check for red squiggles in your editor
+   - Run `npx tsc --noEmit` to verify no import errors
+   - If error "Cannot find module '@/components/Article'", adjust the path
+
+4. **Common fixes for import errors**:
+   - **Error: "Cannot find module '@/...'"**
+     - Check if `tsconfig.json` has `"paths"` configured
+     - Verify `baseUrl` is set (required for paths to work)
+     - Try relative path instead: `../components/Article`
+   
+   - **Error: "Module has no default export"**
+     - Verify component uses `export default function ...`
+     - Check you're importing from the right file
+   
+   - **Error: "Module has no exported member 'ArticleContentType'"**
+     - Verify content type is exported: `export const ArticleContentType = ...`
+     - Check you're importing the named export correctly
+
+#### Step 4: Match Existing Patterns
+
+If the registration file already has imports, copy their exact pattern:
 
 ```tsx
-import Article, { ArticleContentType } from '@/components/Article';
-import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+// Existing imports in the file:
+import HomePage, { HomePageContentType } from '@/components/HomePage';
+import Hero from '@/components/Hero';
 
+// Your new import should match:
+import Article, { ArticleContentType } from '@/components/Article';  // ✅ Matches pattern
+```
+
+### Add Imports and Registration
+
+**For regular components (most common case):**
+
+```tsx
+import { initContentTypeRegistry } from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+import Article, { ArticleContentType } from '@/src/components/Article'; // Adjust path based on tsconfig
+
+// Register the content type
+initContentTypeRegistry([
+  ArticleContentType,
+  // ... other content types
+]);
+
+// Register the React component
 initReactComponentRegistry({
   resolver: {
-    Article,  // Add this line
+    Article,
     // ... other components
   },
 });
 ```
 
+**Key points:**
+- Import `initContentTypeRegistry` from `@optimizely/cms-sdk` (NOT from react/server)
+- `initContentTypeRegistry` takes an **array** of content types
+- Import both the component (default export) AND the content type (named export)
+- Only import what you use - don't import `ArticleContentType` if you're not registering it
+
 **For components with display template variants:**
 
-When a content type has multiple display templates with different `tag` values:
+When a content type has multiple display templates with different `tag` values, you MUST:
+
+**STEP 1**: Read the display template definition to find the `tag` field value
+**STEP 2**: Use that EXACT tag value as the key in the `tags` object
+
+Example: If the display template is defined as:
+```tsx
+export const SquareDisplayTemplate = displayTemplate({
+  key: 'SquareDisplayTemplate',
+  displayName: 'Square Display',
+  tag: 'Square',  // ← This is the value you need
+  // ...
+});
+```
+
+Then the registration MUST use `'Square'` as the key:
 
 ```tsx
+import { initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 import Tile, { 
   SquareTile,
   TileContentType,
   SquareDisplayTemplate 
-} from '@/components/Tile';
+} from '@/src/components/Tile'; // Adjust path based on tsconfig
+
+initContentTypeRegistry([
+  TileContentType,
+  // ... other content types
+]);
+
+initDisplayTemplateRegistry([
+  SquareDisplayTemplate,
+  // ... other display templates
+]);
 
 initReactComponentRegistry({
   resolver: {
     Tile: {
-      default: Tile,           // Default component
+      default: Tile,           // Default component (no display template)
       tags: {
-        Square: SquareTile,    // Display template with tag='Square'
+        Square: SquareTile,    // ← Key MUST match display template's tag field
       },
     },
     // ... other components
@@ -338,18 +449,18 @@ initReactComponentRegistry({
 });
 ```
 
+**CRITICAL POINTS:**
+- The key in the `tags` object MUST match the `tag` field from the display template definition
+- Do NOT use the component name, display template name, or any other identifier
+- Do NOT make up tag names - always read them from the display template definition
+- Example mistake: `tags: { SquareTile: SquareTile }` ❌ - component name doesn't match tag
+- Example correct: `tags: { Square: SquareTile }` ✅ - matches the tag field
+
 The registry matches components using:
 1. First, check if there's a display template `tag` setting in the content
 2. If tag matches, use `tags[tagName]` component
 3. Otherwise, use the `default` component
 4. If no display template variants, just register the component directly by name
-
-### Determine the Import Alias
-
-Check the existing imports in the layout file to determine the correct path alias:
-- If other imports use `@/components/...`, use that pattern
-- If they use relative paths like `../components/...`, match that
-- Most Next.js projects use `@/` configured in `tsconfig.json`
 
 ## Step 5: Inform the User
 
@@ -380,6 +491,8 @@ Always use optional chaining, provide null fallbacks, use stable keys for arrays
 ## Troubleshooting
 
 For solutions to type errors, preview issues, component rendering problems, and image loading issues, see `references/troubleshooting.md`.
+
+For detailed path resolution verification and debugging, see `references/path-resolution-workflow.md`.
 
 ## Summary
 
@@ -412,3 +525,4 @@ For detailed information, consult:
 - **`references/react-patterns.md`** - React patterns for rendering different property types (content references, booleans, dates, links, etc.)
 - **`references/edge-cases.md`** - Edge cases and considerations including optional chaining, null fallbacks, keys, and preview attributes
 - **`references/troubleshooting.md`** - Solutions to common issues with types, preview mode, component rendering, and images
+- **`references/path-resolution-workflow.md`** - Complete guide to verifying tsconfig.json path aliases and debugging import errors

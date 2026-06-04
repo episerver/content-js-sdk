@@ -1,7 +1,7 @@
 {
   "name": "optimizely-cms-skills",
   "description": "Agent Skills for Optimizely CMS development",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": {
     "name": "Optimizely",
     "url": "https://github.com/episerver/content-js-sdk.git"
