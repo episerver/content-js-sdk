@@ -52,11 +52,11 @@ type NoticeProps = {
   displaySettings?: Record<string, string>;
 };
 
-function Notice({ content, displaySettings }: NoticeProps) {
+function Notice({ content, displaySettings, ...props }: NoticeProps) {
   const { pa } = getPreviewUtils(content);
   const bgColor = displaySettings?.color === 'green' ? 'bg-[#1cb898]' : 'bg-[#ff944f]';
   return (
-    <div className={cn('rounded-lg bg-teal-500 p-6 text-white', bgColor)}>
+    <div className={cn('rounded-lg bg-teal-500 p-6 text-white', bgColor)} {...props}>
       <h3 className='mb-4 text-xl font-bold' {...pa('title')}>
         {content.title}
       </h3>

@@ -36,20 +36,27 @@ export type ContactProps = {
   content: ContentProps<typeof ContactContentType>;
 };
 
-function Contact({ content }: ContactProps) {
+function Contact({ content, ...props }: ContactProps) {
   const { pa, src } = getPreviewUtils(content);
   const image = src(content.image);
   return (
-    <div className='bg-white rounded-lg shadow-lg p-6 max-w-md'>
+    <div className='bg-white rounded-lg shadow-lg p-6 max-w-md' {...props}>
       {content.image?.url.default && (
         <div className='mb-4' {...pa('image')}>
           {image ?
-            <img src={image} alt={`${content.name}'s Image`} className='w-full h-64 object-cover rounded-lg' />
+            <img
+              src={image}
+              alt={`${content.name}'s Image`}
+              className='w-full h-64 object-cover rounded-lg'
+            />
           : null}
         </div>
       )}
       <div className='space-y-3'>
-        <h3 {...pa('name')} className='text-2xl font-bold text-gray-900 uppercase tracking-wide'>
+        <h3
+          {...pa('name')}
+          className='text-2xl font-bold text-gray-900 uppercase tracking-wide'
+        >
           {content.name}
         </h3>
         <p {...pa('description')} className='text-gray-700 text-base leading-relaxed'>

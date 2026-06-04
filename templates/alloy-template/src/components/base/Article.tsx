@@ -27,10 +27,10 @@ type ArticlePageProps = {
   content: ContentProps<typeof ArticleContentType>;
 };
 
-function Article({ content }: ArticlePageProps) {
+function Article({ content, ...props }: ArticlePageProps) {
   const { pa } = getPreviewUtils(content);
   return (
-    <div>
+    <div {...props}>
       <h1 {...pa('title')}>{content.title}</h1>
       <p {...pa('description')}>{content.description}</p>
       <RichText {...pa('body')} content={content.body?.json} />
