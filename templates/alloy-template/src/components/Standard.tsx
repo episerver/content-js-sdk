@@ -44,19 +44,10 @@ type StandardPageProps = {
   content: ContentProps<typeof StandardContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
-  const { pa } = getPreviewUtils(node);
-  return (
-    <div {...pa(node)} className='w-full block'>
-      {children}
-    </div>
-  );
-}
-
-function Standard({ content }: StandardPageProps) {
+function Standard({ content, ...props }: StandardPageProps) {
   const { pa, src } = getPreviewUtils(content);
   return (
-    <main className='bg-white'>
+    <main className='bg-white' {...props}>
       <div className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12'>
         <div className='space-y-6 sm:space-y-8'>
           {/* Heading and Description */}
@@ -94,10 +85,7 @@ function Standard({ content }: StandardPageProps) {
 
           {/* section Area */}
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition
-              nodes={content.composition.nodes ?? []}
-              ComponentWrapper={ComponentWrapper}
-            />
+            <OptimizelyComposition nodes={content.composition.nodes ?? []} />
           </div>
         </div>
       </div>
