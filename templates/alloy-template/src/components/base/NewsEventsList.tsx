@@ -34,13 +34,12 @@ export const NewsEventsListContentType = contentType({
 
 export type NewsEventsListProps = {
   content: ContentProps<typeof NewsEventsListContentType>;
-  optiAttrs?: Record<string, unknown>;
 };
 
-function NewsEventsList({ content, optiAttrs }: NewsEventsListProps) {
+function NewsEventsList({ content }: NewsEventsListProps) {
   const { pa } = getPreviewUtils(content);
   return (
-    <div className='space-y-8' {...optiAttrs}>
+    <div className='space-y-8'>
       {/* Title */}
       {content.title && (
         <h2

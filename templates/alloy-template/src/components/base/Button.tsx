@@ -24,21 +24,18 @@ export const ButtonContentType = contentType({
 
 type ButtonProps = {
   content: ContentProps<typeof ButtonContentType>;
-  optiAttrs?: Record<string, unknown>;
 };
 
-function Button({ content, optiAttrs }: ButtonProps) {
+function Button({ content }: ButtonProps) {
   const { pa } = getPreviewUtils(content);
   return (
-    <div {...optiAttrs}>
-      <a
-        {...pa('link')}
-        href={content?.link?.default ?? undefined}
-        className='inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium py-2.5 px-6 sm:py-3 sm:px-8 rounded-md transition-colors duration-200 text-sm sm:text-base'
-      >
-        <span {...pa('text')}>{content.text}</span>
-      </a>
-    </div>
+    <a
+      {...pa('link')}
+      href={content?.link?.default ?? undefined}
+      className='inline-block bg-teal-500 hover:bg-teal-600 text-white font-medium py-2.5 px-6 sm:py-3 sm:px-8 rounded-md transition-colors duration-200 text-sm sm:text-base'
+    >
+      <span {...pa('text')}>{content.text}</span>
+    </a>
   );
 }
 

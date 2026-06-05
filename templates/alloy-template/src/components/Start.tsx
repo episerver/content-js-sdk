@@ -120,15 +120,14 @@ export const StartContentType = contentType({
 
 type StartProps = {
   content: ContentProps<typeof StartContentType>;
-  optiAttrs?: Record<string, unknown>;
 };
 
-function Start({ content, optiAttrs }: StartProps) {
+function Start({ content }: StartProps) {
   const { pa, src } = getPreviewUtils(content);
   const image = src(content.image);
 
   return (
-    <div {...optiAttrs}>
+    <>
       <div className='relative w-full h-40 sm:h-50 md:h-48 lg:h-120 rounded-sm overflow-hidden'>
         {/* Hero Image */}
         {image && (
@@ -178,7 +177,7 @@ function Start({ content, optiAttrs }: StartProps) {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

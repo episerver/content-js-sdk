@@ -50,14 +50,13 @@ export const NewsContentType = contentType({
 
 type NewsPageProps = {
   content: ContentProps<typeof NewsContentType>;
-  optiAttrs?: Record<string, unknown>;
 };
 
-function News({ content, optiAttrs }: NewsPageProps) {
+function News({ content }: NewsPageProps) {
   const { pa } = getPreviewUtils(content);
 
   return (
-    <main className='bg-white' {...optiAttrs}>
+    <main className='bg-white'>
       <div className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12'>
         <div className='grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-1 lg:grid-cols-[1fr_320px]'>
           {/* Main Content */}

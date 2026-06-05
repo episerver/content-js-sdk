@@ -5,26 +5,25 @@ import Link from 'next/link';
 
 type StandardTeaserProps = {
   content: ContentProps<typeof StandardContentType>;
-  optiAttrs?: Record<string, unknown>;
 };
 
-function StandardTeaser({ content, optiAttrs }: StandardTeaserProps) {
+function StandardTeaser({ content }: StandardTeaserProps) {
   const { pa, src } = getPreviewUtils(content);
   const { getAlt } = damAssets(content);
 
   const href = content._metadata.url.default || '#';
+  const imageSrc = src(content.image);
 
   return (
     <Link
       href={href}
       className='group grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6  items-start w-full hover:opacity-90 transition-opacity'
-      {...optiAttrs}
     >
       {/* Image Section */}
       <div {...pa('image')} className='w-full h-48'>
-        {content.image ?
+        {imageSrc ?
           <img
-            src={src(content.image)}
+            src={imageSrc}
             alt={getAlt(content.image, 'Teaser Image')}
             className='w-full h-48 object-cover rounded-lg'
           />
@@ -32,7 +31,7 @@ function StandardTeaser({ content, optiAttrs }: StandardTeaserProps) {
             className='w-full h-48 flex items-center justify-center rounded-lg'
             style={{ backgroundColor: 'rgb(255 175 32 / 55%)' }}
           >
-            <img src={'/logo.png'} className='w-18 h-18 object-cover rounded-lg' />
+            <img src='/logo.png' className='w-18 h-18 object-cover rounded-lg' />
           </div>
         }
       </div>

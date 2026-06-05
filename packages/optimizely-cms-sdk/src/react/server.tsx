@@ -228,14 +228,20 @@ export async function OptimizelyComponent({
         }
       }
 
-      return (
+      const element = (
         <Component
           content={optiProps}
           displaySettings={displaySettings}
-          optiAttrs={previewAttrs}
           {...componentProps}
         />
       );
+
+      // Wrap in div with previewAttrs only in edit mode
+      if (content.__context?.edit && Object.keys(previewAttrs).length > 0) {
+        return <div {...previewAttrs}>{element}</div>;
+      }
+
+      return element;
     },
   );
 }

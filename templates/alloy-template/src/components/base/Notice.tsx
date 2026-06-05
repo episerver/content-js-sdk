@@ -49,15 +49,14 @@ export const NoticeDisplayTemplate = displayTemplate({
 
 type NoticeProps = {
   content: ContentProps<typeof NoticeContentType>;
-  optiAttrs?: Record<string, unknown>;
   displaySettings?: Record<string, string>;
 };
 
-function Notice({ content, displaySettings, optiAttrs }: NoticeProps) {
+function Notice({ content, displaySettings }: NoticeProps) {
   const { pa } = getPreviewUtils(content);
   const bgColor = displaySettings?.color === 'green' ? 'bg-[#1cb898]' : 'bg-[#ff944f]';
   return (
-    <div className={cn('rounded-lg bg-teal-500 p-6 text-white', bgColor)} {...optiAttrs}>
+    <div className={cn('rounded-lg bg-teal-500 p-6 text-white', bgColor)}>
       <h3 className='mb-4 text-xl font-bold' {...pa('title')}>
         {content.title}
       </h3>

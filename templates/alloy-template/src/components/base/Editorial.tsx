@@ -17,14 +17,11 @@ export const EditorialContentType = contentType({
 
 type EditorialProps = {
   content: ContentProps<typeof EditorialContentType>;
-  optiAttrs?: Record<string, unknown>;
 };
 
-function Editorial({ content, optiAttrs }: EditorialProps) {
+function Editorial({ content }: EditorialProps) {
   const { pa } = getPreviewUtils(content);
-  return (
-    <RichText {...pa('main_body')} content={content.main_body?.json} {...optiAttrs} />
-  );
+  return <RichText {...pa('main_body')} content={content.main_body?.json} />;
 }
 
 export default Editorial;
