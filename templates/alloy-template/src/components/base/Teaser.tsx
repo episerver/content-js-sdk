@@ -56,9 +56,10 @@ export const TeaserDisplayTemplate = displayTemplate({
 type TeaserProps = {
   content: ContentProps<typeof TeaserContentType>;
   displaySettings?: Record<string, string>;
+  optiAttrs?: Record<string, unknown>;
 };
 
-function Teaser({ content, displaySettings, ...props }: TeaserProps) {
+function Teaser({ content, displaySettings, optiAttrs }: TeaserProps) {
   const { pa, src } = getPreviewUtils(content);
   const image = src(content.image);
   const isHorizontal = displaySettings?.orientation === 'horizontal';
@@ -113,7 +114,7 @@ function Teaser({ content, displaySettings, ...props }: TeaserProps) {
 
   if (content.link?.default) {
     return (
-      <div {...props}>
+      <div {...optiAttrs}>
         <Link
           {...pa('link')}
           href={content.link.default}
@@ -126,7 +127,7 @@ function Teaser({ content, displaySettings, ...props }: TeaserProps) {
   }
 
   return (
-    <div className='h-[calc(100%-1rem)] mb-4' {...props}>
+    <div className='h-[calc(100%-1rem)] mb-4' {...optiAttrs}>
       {teaserContent}
     </div>
   );

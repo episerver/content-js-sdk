@@ -34,13 +34,14 @@ export const ContactContentType = contentType({
 
 export type ContactProps = {
   content: ContentProps<typeof ContactContentType>;
+  optiAttrs?: Record<string, unknown>;
 };
 
-function Contact({ content, ...props }: ContactProps) {
+function Contact({ content, optiAttrs }: ContactProps) {
   const { pa, src } = getPreviewUtils(content);
   const image = src(content.image);
   return (
-    <div className='bg-white rounded-lg shadow-lg p-6 max-w-md' {...props}>
+    <div className='bg-white rounded-lg shadow-lg p-6 max-w-md' {...optiAttrs}>
       {content.image?.url.default && (
         <div className='mb-4' {...pa('image')}>
           {image ?

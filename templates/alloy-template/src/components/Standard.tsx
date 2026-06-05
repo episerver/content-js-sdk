@@ -42,12 +42,13 @@ export const StandardContentType = contentType({
 
 type StandardPageProps = {
   content: ContentProps<typeof StandardContentType>;
+  optiAttrs?: Record<string, unknown>;
 };
 
-function Standard({ content, ...props }: StandardPageProps) {
+function Standard({ content, optiAttrs }: StandardPageProps) {
   const { pa, src } = getPreviewUtils(content);
   return (
-    <main className='bg-white' {...props}>
+    <main className='bg-white' {...optiAttrs}>
       <div className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12'>
         <div className='space-y-6 sm:space-y-8'>
           {/* Heading and Description */}

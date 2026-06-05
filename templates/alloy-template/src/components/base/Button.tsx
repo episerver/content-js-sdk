@@ -24,12 +24,13 @@ export const ButtonContentType = contentType({
 
 type ButtonProps = {
   content: ContentProps<typeof ButtonContentType>;
+  optiAttrs?: Record<string, unknown>;
 };
 
-function Button({ content, ...props }: ButtonProps) {
+function Button({ content, optiAttrs }: ButtonProps) {
   const { pa } = getPreviewUtils(content);
   return (
-    <div {...props}>
+    <div {...optiAttrs}>
       <a
         {...pa('link')}
         href={content?.link?.default ?? undefined}

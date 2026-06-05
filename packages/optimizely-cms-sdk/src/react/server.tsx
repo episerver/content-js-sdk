@@ -216,8 +216,25 @@ export async function OptimizelyComponent({
         ...content,
       };
 
+      // Extract preview attrs (data-epi-*) from props
+      const previewAttrs: Record<string, unknown> = {};
+      const componentProps: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(props)) {
+        if (key.startsWith('data-epi-')) {
+          previewAttrs[key] = value;
+        } else {
+          componentProps[key] = value;
+        }
+      }
+
       return (
-        <Component content={optiProps} {...props} displaySettings={displaySettings} />
+        <Component
+          content={optiProps}
+          displaySettings={displaySettings}
+          optiAttrs={previewAttrs}
+          {...componentProps}
+        />
       );
     },
   );
@@ -379,22 +396,33 @@ export function OptimizelyGridSection({
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
-      const Wrapper = ComponentWrapper ?? React.Fragment;
-
-      return (
-        <Wrapper node={node} key={node.key} displaySettings={parsedDisplaySettings}>
-          <OptimizelyComponent
-            content={{
-              // `node.component` contains user-defined properties
-              ...node.component,
-              __composition: node,
-              __tag: tag,
-            }}
-            displaySettings={parsedDisplaySettings}
-            {...previewAttrs}
-          />
-        </Wrapper>
+      const component = (
+        <OptimizelyComponent
+          content={{
+            // `node.component` contains user-defined properties
+            ...node.component,
+            __composition: node,
+            __tag: tag,
+          }}
+          displaySettings={parsedDisplaySettings}
+          {...previewAttrs}
+        />
       );
+
+      // we can only pass key, ref to fragments to avoid React warnings, so if there's a wrapper component, use that, otherwise render the component directly without a wrapper
+      if (ComponentWrapper) {
+        return (
+          <ComponentWrapper
+            key={node.key}
+            node={node}
+            displaySettings={parsedDisplaySettings}
+          >
+            {component}
+          </ComponentWrapper>
+        );
+      }
+
+      return <React.Fragment key={node.key}>{component}</React.Fragment>;
     }
 
     const { nodeType } = node;
