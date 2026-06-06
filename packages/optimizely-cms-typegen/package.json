@@ -1,0 +1,38 @@
+{
+  "name": "@optimizely/cms-typegen",
+  "version": "2.0.0",
+  "description": "Auto-generates Optimizely CMS component registry and TypeScript types",
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "optimizely",
+    "cms",
+    "vite",
+    "webpack",
+    "unplugin"
+  ],
+  "author": "Optimizely",
+  "license": "Apache-2.0",
+  "bin": {
+    "opti-typegen": "./dist/cli.js",
+    "opti-dev": "./dist/dev.js"
+  },
+  "dependencies": {
+    "fast-glob": "^3.3.2",
+    "chokidar": "^3.6.0",
+    "concurrently": "^9.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsdown": "^0.4.1",
+    "typescript": "^5.7.2",
+    "vitest": "^3.1.6"
+  },
+  "peerDependencies": {
+    "@optimizely/cms-sdk": "workspace:*"
+  }
+}

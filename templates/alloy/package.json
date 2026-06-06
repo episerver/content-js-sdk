@@ -6,8 +6,8 @@
     "node": "^22.23.4 || ^24.22.1"
   },
   "scripts": {
-    "dev": "next dev --experimental-https",
-    "build": "next build",
+    "dev": "opti-dev next dev --experimental-https",
+    "build": "opti-typegen && next build",
     "start": "next start",
     "deploy": "optimizely-cms-cli deploy"
   },
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@optimizely/cms-cli": "workspace:*",
+    "@optimizely/cms-typegen": "workspace:*",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
