@@ -32,6 +32,28 @@ describe('Fragment generation for single contract', () => {
       ]
     `);
   });
+
+  it('should allow contracts without properties', async () => {
+    const EmptyContract = contract({
+      key: 'EmptyContract',
+      displayName: 'Empty Contract',
+    });
+
+    initContentTypeRegistry([EmptyContract]);
+
+    const result = await createFragment('EmptyContract');
+    expect(result.fragments).toMatchInlineSnapshot(`
+      [
+        "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
+        "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
+        "fragment EmptyContract on IEmptyContract { __typename ..._IContent }",
+      ]
+    `);
+  });
 });
 
 describe('Fragment generation of contracts used in pages', () => {
