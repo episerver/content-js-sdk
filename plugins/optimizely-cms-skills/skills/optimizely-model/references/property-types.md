@@ -23,6 +23,32 @@ The following property types are supported when defining content type properties
 
 ## Type-Specific Constraints
 
+### Numeric Types (Integer and Float)
+
+Both `'integer'` and `'float'` types support `minimum` and `maximum` constraints to define valid value ranges:
+
+```typescript
+// Integer with range constraints
+quantity: {
+  type: 'integer',
+  displayName: 'Quantity',
+  minimum: 1,      // Smallest allowed value
+  maximum: 100     // Largest allowed value
+}
+
+// Float with range constraints
+price: {
+  type: 'float',
+  displayName: 'Price',
+  minimum: 0.01,   // Smallest allowed value
+  maximum: 999.99  // Largest allowed value
+}
+```
+
+**When user specifies numeric constraints:**
+- "minimum", "min value", "at least" → use `minimum` field
+- "maximum", "max value", "up to", "no more than" → use `maximum` field
+
 ### DateTime Type
 
 When using `'dateTime'` type, you can specify date range constraints:

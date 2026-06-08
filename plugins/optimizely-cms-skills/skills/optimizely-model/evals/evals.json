@@ -106,6 +106,12 @@
       "prompt": "Create content type TestingPage with p_longstring property is a long string and required",
       "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_longstring property. MUST have: type: 'string', isRequired: true. Should NOT use 'required' field (wrong field name). The correct field name is 'isRequired'.",
       "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Create content type TestingPage, add p_float is float property and this property has display name is \"float display name\", group: 'content', indexing type: 'queryable', minimum: 20, maximum: 50",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_float property. MUST have: type: 'float', displayName: 'float display name', group: 'content', indexingType: 'queryable', minimum: 20, maximum: 50. Should NOT omit minimum or maximum constraints.",
+      "files": []
     }
   ]
 }

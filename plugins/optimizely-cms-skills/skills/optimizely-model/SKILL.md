@@ -72,7 +72,18 @@ Choose the appropriate `baseType`: `'_page'`, `'_component'`, `'_experience'`, `
 
 ### Property Types
 
-Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`, `'dateTime'`, `'url'`, `'content'`, `'contentReference'`, `'array'`, and `'component'`. See `references/property-types.md` for the complete list with examples.
+Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`, `'dateTime'`, `'url'`, `'content'`, `'contentReference'`, `'array'`, and `'component'`. 
+
+**Numeric types** (`'integer'` and `'float'`) support `minimum` and `maximum` constraints:
+```typescript
+price: {
+  type: 'float',
+  minimum: 0.01,
+  maximum: 999.99
+}
+```
+
+See `references/property-types.md` for the complete list with examples.
 
 ### Property Metadata Fields
 
