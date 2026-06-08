@@ -74,6 +74,44 @@ Choose the appropriate `baseType`: `'_page'`, `'_component'`, `'_experience'`, `
 
 Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`, `'dateTime'`, `'url'`, `'content'`, `'contentReference'`, `'array'`, and `'component'`. See `references/property-types.md` for the complete list with examples.
 
+### Property Metadata Fields
+
+**CRITICAL**: All properties support these metadata fields - use them when specified by the user:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `displayName` | Label in CMS UI | `'Article Title'` |
+| `description` | Help text for editors | `'The main heading for this article'` |
+| `group` | Tab/section in editor | `'content'`, `'seo'` |
+| `sortOrder` | Display order in group | `1`, `5`, `10` |
+| `required` | Must have a value | `true`, `false` |
+| `isLocalized` | Different value per language | `true`, `false` |
+| `indexingType` | Search indexing behavior | `'searchable'`, `'queryable'` |
+
+**When user says** → **Use this field**:
+- "display name", "label" → `displayName`
+- "description", "help text" → `description`
+- "localized", "culture specific", "per language" → `isLocalized: true`
+- "sort order", "sort index", "order" → `sortOrder`
+- "group", "tab" → `group`
+- "searchable" → `indexingType: 'searchable'`
+- "required", "mandatory" → `required: true`
+
+**Example with metadata:**
+```typescript
+title: {
+  type: 'string',
+  displayName: 'Article Title',
+  description: 'The main heading displayed at the top',
+  isLocalized: true,
+  group: 'content',
+  sortOrder: 1,
+  indexingType: 'searchable',
+  required: true,
+  maxLength: 100
+}
+```
+
 ### Recognizing Property Intent from User Requests
 
 **CRITICAL**: When users describe properties, recognize the intended UI control and use the correct pattern:

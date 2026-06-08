@@ -82,6 +82,74 @@ ctaButton: {
 
 ## Common Property Patterns
 
+### Property Metadata Fields
+
+All property types support these common metadata fields:
+
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| `displayName` | string | Label shown in CMS editor UI | `'Article Title'` |
+| `description` | string | Help text shown to editors | `'The main heading for this article'` |
+| `group` | string | Tab/group in editor where property appears | `'content'`, `'seo'`, `'settings'` |
+| `sortOrder` | number | Display order within group (lower = first) | `1`, `5`, `10` |
+| `required` | boolean | Whether property must have a value | `true`, `false` |
+| `isLocalized` | boolean | Whether property has different values per language/culture | `true`, `false` |
+| `indexingType` | string | How property is indexed for search | `'searchable'`, `'queryable'` |
+
+**Complete example with all metadata:**
+
+```typescript
+title: {
+  type: 'string',
+  displayName: 'Article Title',
+  description: 'The main heading displayed at the top of the article',
+  isLocalized: true,
+  group: 'content',
+  sortOrder: 1,
+  indexingType: 'searchable',
+  required: true,
+  maxLength: 100
+}
+```
+
+### Recognizing Metadata from User Input
+
+**CRITICAL**: Map user phrases to the correct field names:
+
+| User Says | Property Field | Value |
+|-----------|----------------|-------|
+| "display name", "label", "title" | `displayName` | The specified text |
+| "description", "help text", "tooltip" | `description` | The specified text |
+| "localized", "culture specific", "per language", "translated" | `isLocalized` | `true` |
+| "sort order", "sort index", "display order", "order" | `sortOrder` | The specified number |
+| "group", "tab", "section" | `group` | The specified group name |
+| "searchable", "indexed for search" | `indexingType` | `'searchable'` |
+| "queryable", "filterable" | `indexingType` | `'queryable'` |
+| "required", "mandatory", "must have value" | `required` | `true` |
+
+**Example mappings:**
+
+```typescript
+// User: "add a title property with display name 'Page Title', description 'Main page heading', localized, sort index 1"
+title: {
+  type: 'string',
+  displayName: 'Page Title',
+  description: 'Main page heading',
+  isLocalized: true,
+  sortOrder: 1
+}
+
+// User: "add a category dropdown in the SEO group, sort order 5, searchable"
+category: {
+  type: 'string',
+  format: 'selectOne',
+  group: 'seo',
+  sortOrder: 5,
+  indexingType: 'searchable',
+  enum: [...]
+}
+```
+
 ### Required Fields
 
 Mark properties as required using the `required` field:
