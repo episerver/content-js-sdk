@@ -84,7 +84,7 @@ Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`
 | `description` | Help text for editors | `'The main heading for this article'` |
 | `group` | Tab/section in editor | `'content'`, `'seo'` |
 | `sortOrder` | Display order in group | `1`, `5`, `10` |
-| `required` | Must have a value | `true`, `false` |
+| `isRequired` | Must have a value | `true`, `false` |
 | `isLocalized` | Different value per language | `true`, `false` |
 | `indexingType` | Search indexing behavior | `'searchable'`, `'queryable'` |
 
@@ -95,7 +95,7 @@ Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`
 - "sort order", "sort index", "order" → `sortOrder`
 - "group", "tab" → `group`
 - "searchable" → `indexingType: 'searchable'`
-- "required", "mandatory" → `required: true`
+- "required", "mandatory" → `isRequired: true`
 
 **Example with metadata:**
 ```typescript
@@ -107,7 +107,7 @@ title: {
   group: 'content',
   sortOrder: 1,
   indexingType: 'searchable',
-  required: true,
+  isRequired: true,
   maxLength: 100
 }
 ```

@@ -92,7 +92,7 @@ All property types support these common metadata fields:
 | `description` | string | Help text shown to editors | `'The main heading for this article'` |
 | `group` | string | Tab/group in editor where property appears | `'content'`, `'seo'`, `'settings'` |
 | `sortOrder` | number | Display order within group (lower = first) | `1`, `5`, `10` |
-| `required` | boolean | Whether property must have a value | `true`, `false` |
+| `isRequired` | boolean | Whether property must have a value | `true`, `false` |
 | `isLocalized` | boolean | Whether property has different values per language/culture | `true`, `false` |
 | `indexingType` | string | How property is indexed for search | `'searchable'`, `'queryable'` |
 
@@ -107,7 +107,7 @@ title: {
   group: 'content',
   sortOrder: 1,
   indexingType: 'searchable',
-  required: true,
+  isRequired: true,
   maxLength: 100
 }
 ```
@@ -125,7 +125,7 @@ title: {
 | "group", "tab", "section" | `group` | The specified group name |
 | "searchable", "indexed for search" | `indexingType` | `'searchable'` |
 | "queryable", "filterable" | `indexingType` | `'queryable'` |
-| "required", "mandatory", "must have value" | `required` | `true` |
+| "required", "mandatory", "must have value" | `isRequired` | `true` |
 
 **Example mappings:**
 
@@ -152,12 +152,12 @@ category: {
 
 ### Required Fields
 
-Mark properties as required using the `required` field:
+Mark properties as required using the `isRequired` field:
 
 ```typescript
 title: {
   type: 'string',
-  required: true
+  isRequired: true
 }
 ```
 

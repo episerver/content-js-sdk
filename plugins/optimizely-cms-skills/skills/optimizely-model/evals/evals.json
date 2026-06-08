@@ -100,6 +100,12 @@
       "prompt": "Create content type TestingPage with p_string property is a long string and has display name is \"string display name\", description: 'A sample string field', localized (culture specific): true, group: 'content', sort index: 5, indexing type: 'searchable', start with \"string\", min length is 1, max length is 100",
       "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_string property. MUST have: type: 'string', displayName: 'string display name', description: 'A sample string field', isLocalized: true, group: 'content', sortOrder: 5, indexingType: 'searchable', pattern: '^string', minLength: 1, maxLength: 100. Should NOT omit description, isLocalized, or sortOrder fields.",
       "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Create content type TestingPage with p_longstring property is a long string and required",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_longstring property. MUST have: type: 'string', isRequired: true. Should NOT use 'required' field (wrong field name). The correct field name is 'isRequired'.",
+      "files": []
     }
   ]
 }
