@@ -82,6 +82,60 @@
       "prompt": "creating a LandingPage type that should only allow certain child pages underneath it - specifically it can contain PricingPage, TestimonialPage, and more LandingPages for sub-sections. also need fields for hero title, hero subtitle, and a sections content area. this is for a marketing site. components are in ./app/components/",
       "expected_output": "Should read optimizely.config.mjs to confirm components path, then create LandingPage.tsx in ./app/components/ with contentType() definition: baseType: '_page', mayContainTypes: [PricingPageContentType, TestimonialPageContentType, '_self'] (or string keys if types not imported), properties including heroTitle (string), heroSubtitle (string), sections (array or contentArea type). Should explain mayContainTypes controls the allowed child pages in the content tree. Should add to registry and remind about config push.",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Create a page type SkillTestingPage with 2 properties: a dropdown property p_dropdownlist with options Red, Green, Blue and a select list property p_selectlist with options Large, Medium, Small",
+      "expected_output": "Should create SkillTestingPage.tsx with contentType() definition containing two properties. For p_dropdownlist: MUST have type: 'string', format: 'selectOne', and enum array with objects {value: 'Red', displayName: 'Red'}, {value: 'Green', displayName: 'Green'}, {value: 'Blue', displayName: 'Blue'}. For p_selectlist: MUST have type: 'array', format: 'selectMany', and items.enum array with objects {value: 'Large', displayName: 'Large'}, {value: 'Medium', displayName: 'Medium'}, {value: 'Small', displayName: 'Small'}. Should NOT create properties without format field. Should NOT create properties without enum arrays.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Create a page type SkillBug5Page with a url to document property p_urlToDocument, a url to image property p_urlToImage, a short string property p_shortString, a long string property p_longString, and a guid property p_guid",
+      "expected_output": "Should create SkillBug5Page.tsx with contentType() definition containing five properties. For p_urlToDocument: MUST have type: 'url', format: 'DocumentUrl'. For p_urlToImage: MUST have type: 'url', format: 'ImageUrl'. For p_shortString: MUST have type: 'string', format: 'shortString'. For p_longString: MUST have type: 'string' with NO format field. For p_guid: MUST have type: 'string', format: 'guid'. Should correctly recognize format requirements from property descriptions.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Create content type TestingPage with p_string property is a long string and has display name is \"string display name\", description: 'A sample string field', localized (culture specific): true, group: 'content', sort index: 5, indexing type: 'searchable', start with \"string\", min length is 1, max length is 100",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_string property. MUST have: type: 'string', displayName: 'string display name', description: 'A sample string field', isLocalized: true, group: 'content', sortOrder: 5, indexingType: 'searchable', pattern: '^string', minLength: 1, maxLength: 100. Should NOT omit description, isLocalized, or sortOrder fields.",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Create content type TestingPage with p_longstring property is a long string and required",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_longstring property. MUST have: type: 'string', isRequired: true. Should NOT use 'required' field (wrong field name). The correct field name is 'isRequired'.",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "Create content type TestingPage, add p_float is float property and this property has display name is \"float display name\", group: 'content', indexing type: 'queryable', minimum: 20, maximum: 50",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_float property. MUST have: type: 'float', displayName: 'float display name', group: 'content', indexingType: 'queryable', minimum: 20, maximum: 50. Should NOT omit minimum or maximum constraints.",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "Create content type TestingPage, add p_list_string is a list of string property and this property has minLength is 1, maxLength is 10, each item start with \"test\"",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_list_string property. MUST have: type: 'array', items with type: 'string', items.minLength: 1, items.maxLength: 10, items.pattern: '^test'. Constraints must be INSIDE the items object, not at the array property level. Should NOT omit item-level constraints.",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "Create content type TestingPage, add p_contentReference is contentReference property and this property has display name is \"content reference display name\", restrictedType is RestrictContentType, allowedType is AllowedContentType",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_contentReference property. MUST have: type: 'contentReference', displayName: 'content reference display name', allowedTypes: [AllowedContentType] (object reference, NOT string), restrictedTypes: [RestrictContentType] (object reference). Should import AllowedContentType and RestrictContentType at top of file. Should NOT use string values like ['AllowedContentType'].",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "Create content type TestingPage, add p_contentReference is contentReference property and this property has reference type is ReferenceContentType",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_contentReference property. MUST have: type: 'contentReference', contentType: ReferenceContentType (object reference, singular not array). Should import ReferenceContentType at top of file. Should NOT omit contentType field.",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "Create content type TestingPage, add p_contentReference is contentReference property and this property has restrictedType is RestrictContentType, allowedType is AllowedContentType, reference type is ReferenceContentType",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_contentReference property. Since contentType and allowedTypes/restrictedTypes are mutually exclusive, should use ONLY contentType: ReferenceContentType and omit allowedTypes/restrictedTypes. Should warn user about the conflict. Should import ReferenceContentType at top of file.",
+      "files": []
     }
   ]
 }

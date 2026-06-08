@@ -72,31 +72,248 @@ Choose the appropriate `baseType`: `'_page'`, `'_component'`, `'_experience'`, `
 
 ### Property Types
 
-Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`, `'dateTime'`, `'url'`, `'content'`, `'contentReference'`, `'array'`, and `'component'`. See `references/property-types.md` for the complete list with examples.
+Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`, `'dateTime'`, `'url'`, `'content'`, `'contentReference'`, `'array'`, and `'component'`. 
 
-### Important Patterns
-
-**Content References**: Optionally use `allowedTypes` or `restrictedTypes` to control which content types can be referenced:
+**Numeric types** (`'integer'` and `'float'`) support `minimum` and `maximum` constraints:
 ```typescript
-featuredArticle: {
-  type: 'content',
-  allowedTypes: [ArticleContentType], // Reference to type object, NOT string like 'ArticleContentType'
-  displayName: 'Featured Article',
+price: {
+  type: 'float',
+  minimum: 0.01,
+  maximum: 999.99
 }
 ```
 
-**IMPORTANT**: Use type object references (e.g., `[ArticleContentType]`), NOT strings (e.g., `['ArticleContentType']`). The same applies to `restrictedTypes`.
+See `references/property-types.md` for the complete list with examples.
 
-**Arrays**: Specify what type of items the array contains:
+### Property Metadata Fields
+
+**CRITICAL**: All properties support these metadata fields - use them when specified by the user:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `displayName` | Label in CMS UI | `'Article Title'` |
+| `description` | Help text for editors | `'The main heading for this article'` |
+| `group` | Tab/section in editor | `'content'`, `'seo'` |
+| `sortOrder` | Display order in group | `1`, `5`, `10` |
+| `isRequired` | Must have a value | `true`, `false` |
+| `isLocalized` | Different value per language | `true`, `false` |
+| `indexingType` | Search indexing behavior | `'searchable'`, `'queryable'` |
+
+**When user says** → **Use this field**:
+- "display name", "label" → `displayName`
+- "description", "help text" → `description`
+- "localized", "culture specific", "per language" → `isLocalized: true`
+- "sort order", "sort index", "order" → `sortOrder`
+- "group", "tab" → `group`
+- "searchable" → `indexingType: 'searchable'`
+- "required", "mandatory" → `isRequired: true`
+
+**Example with metadata:**
 ```typescript
+title: {
+  type: 'string',
+  displayName: 'Article Title',
+  description: 'The main heading displayed at the top',
+  isLocalized: true,
+  group: 'content',
+  sortOrder: 1,
+  indexingType: 'searchable',
+  isRequired: true,
+  maxLength: 100
+}
+```
+
+### Recognizing Property Intent from User Requests
+
+**CRITICAL**: When users describe properties, recognize the intended UI control and use the correct pattern:
+
+| User Says | Property Type | Required Fields |
+|-----------|---------------|-----------------|
+| "dropdown", "select one", "choice", "pick one from..." | String with selectOne | `type: 'string'`, `format: 'selectOne'`, `enum: [...]` |
+| "select list", "multi-select", "select many", "checkboxes", "pick multiple from..." | Array with selectMany | `type: 'array'`, `format: 'selectMany'`, `items: { type: 'string', enum: [...] }` |
+| "URL to document", "document link", "URL to doc" | URL with DocumentUrl | `type: 'url'`, `format: 'DocumentUrl'` |
+| "URL to image", "image link", "image URL" | URL with ImageUrl | `type: 'url'`, `format: 'ImageUrl'` |
+| "short string", "single-line text", "title", "name" | String with shortString | `type: 'string'`, `format: 'shortString'` |
+| "long string", "multi-line text", "description" | String (no format) | `type: 'string'` |
+| "GUID", "unique identifier", "UUID" | String with guid | `type: 'string'`, `format: 'guid'` |
+| "rich text", "formatted text", "WYSIWYG" | RichText | `type: 'richText'` |
+| "image", "picture", "photo" | ContentReference | `type: 'contentReference'`, `allowedTypes: ['_image']` |
+| "list of tags", "array of strings" | Array | `type: 'array'`, `items: { type: 'string' }` |
+
+**Example**: If user says "add a dropdown with Red, Green, Blue options", create:
+```typescript
+colorChoice: {
+  type: 'string',
+  format: 'selectOne',
+  enum: [
+    { value: 'Red', displayName: 'Red' },
+    { value: 'Green', displayName: 'Green' },
+    { value: 'Blue', displayName: 'Blue' }
+  ],
+  displayName: 'Color Choice'
+}
+```
+
+### Important Patterns
+
+**Content References**: Control what can be referenced using `allowedTypes`, `restrictedTypes`, or `contentType`:
+
+```typescript
+// Using allowedTypes (whitelist)
+featuredImage: {
+  type: 'contentReference',
+  allowedTypes: ['_image', '_video'],  // Base types as strings
+  displayName: 'Featured Media'
+}
+
+relatedArticle: {
+  type: 'contentReference',
+  allowedTypes: [ArticleContentType],  // Custom types as object references (NOT strings)
+  restrictedTypes: [DraftContentType], // Can combine with restrictedTypes
+  displayName: 'Related Article'
+}
+
+// Using contentType (single specific type)
+heroSection: {
+  type: 'contentReference',
+  contentType: HeroContentType,  // Object reference
+  displayName: 'Hero Section'
+}
+```
+
+**CRITICAL - Object References vs Strings**:
+- **Base types** (start with underscore: `_page`, `_component`, `_image`, etc.) → use as **strings**: `['_image']`
+- **Custom types** (no underscore: ArticleContentType, AllowedContentType, etc.) → use as **object references**: `[ArticleContentType]`
+- When using custom type objects, **import them** at the top of the file
+
+**How to determine:**
+```typescript
+// Starts with underscore → string
+allowedTypes: ['_image']
+
+// No underscore → object reference + import
+allowedTypes: [ArticleContentType]
+import { ArticleContentType } from './Article';
+
+// Mixed
+allowedTypes: ['_image', ArticleContentType]
+import { ArticleContentType } from './Article';
+```
+
+**CRITICAL - Mutual Exclusivity**:
+⚠️ **Cannot use `contentType` together with `allowedTypes`/`restrictedTypes`** - they are mutually exclusive. If user specifies both, use only `contentType` and warn the user.
+
+**When user says**:
+- "allowedType is X" → Check if X starts with underscore:
+  - If X starts with `_` (e.g., `_image`) → `allowedTypes: ['_image']` (string)
+  - If X does NOT start with `_` (e.g., `ArticleContentType`) → `allowedTypes: [ArticleContentType]` (object) + import
+- "restrictedType is X" → `restrictedTypes: [XContentType]` (object, never string) + import
+- "reference type is X" → `contentType: XContentType` (object, singular, not array) + import
+
+**Examples of type name recognition**:
+```
+User says: "allowedType is AllowedContentType"
+→ AllowedContentType (no underscore) = custom type
+→ allowedTypes: [AllowedContentType]  // Object reference
+→ import { AllowedContentType } from './AllowedContentType';
+
+User says: "allowedType is _image"
+→ _image (starts with underscore) = base type
+→ allowedTypes: ['_image']  // String
+
+User says: "restrictedType is RestrictContentType"
+→ RestrictContentType (no underscore) = custom type
+→ restrictedTypes: [RestrictContentType]  // Object reference
+→ import { RestrictContentType } from './RestrictContentType';
+```
+
+**Arrays**: Specify what type of items the array contains. **CRITICAL**: Constraints on individual items go **inside the `items` object**:
+
+```typescript
+// Simple array
 tags: {
   type: 'array',
   items: { type: 'string' },
   displayName: 'Tags',
+  minItems: 1,    // Array-level: min number of items
+  maxItems: 10,   // Array-level: max number of items
+}
+
+// Array with constraints on each item
+validatedTags: {
+  type: 'array',
+  items: {
+    type: 'string',
+    minLength: 1,      // Item-level: each string min length
+    maxLength: 20,     // Item-level: each string max length
+    pattern: '^test'   // Item-level: each string must start with "test"
+  },
   minItems: 1,
-  maxItems: 10,
+  maxItems: 10
+}
+
+// Array of numbers with range per item
+prices: {
+  type: 'array',
+  items: {
+    type: 'float',
+    minimum: 0.01,   // Item-level: each price >= 0.01
+    maximum: 999.99  // Item-level: each price <= 999.99
+  }
+}
+
+// Array of content references with type restrictions per item
+relatedArticles: {
+  type: 'array',
+  items: {
+    type: 'content',
+    allowedTypes: [ArticleContentType]  // Item-level: each must be Article
+  }
 }
 ```
+
+**When user says "each item must...", "per item", "every item should..."** → add constraints inside `items` object.
+
+**Dropdown Properties (Select One)**: 
+
+**CRITICAL**: For dropdown/select-one properties, you MUST include both `format: 'selectOne'` AND an `enum` array.
+
+```typescript
+color: {
+  type: 'string',
+  format: 'selectOne',
+  enum: [
+    { value: 'Red', displayName: 'Red' },
+    { value: 'Green', displayName: 'Green' },
+    { value: 'Blue', displayName: 'Blue' }
+  ],
+  displayName: 'Color'
+}
+```
+
+**Common mistake**: Omitting `format` or `enum` will result in a plain text field instead of a dropdown.
+
+**Select List Properties (Select Many)**:
+
+**CRITICAL**: For multi-select lists, you MUST use `type: 'array'`, include `format: 'selectMany'`, AND define `items.enum`.
+
+```typescript
+sizes: {
+  type: 'array',
+  format: 'selectMany',
+  displayName: 'Sizes',
+  items: {
+    type: 'string',
+    enum: [
+      { value: 'Small', displayName: 'Small' },
+      { value: 'Medium', displayName: 'Medium' },
+      { value: 'Large', displayName: 'Large' }
+    ]
+  }
+}
+```
+
+**Common mistake**: Putting `enum` at the property level instead of inside `items`, or omitting `format`.
 
 **Components**: Embed a specific component type (use the type object reference, NOT a string):
 ```typescript
