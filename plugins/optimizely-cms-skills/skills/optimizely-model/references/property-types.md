@@ -161,22 +161,205 @@ sections: {
 
 ### Content Reference Type
 
-Use `contentReference` with `allowedTypes` to restrict which content types can be referenced:
+Content references allow editors to select existing content items. You can control what can be referenced using three different approaches:
+
+#### 1. Using `allowedTypes` (Whitelist)
+
+Restricts the reference to specific content types:
 
 ```typescript
 featuredImage: {
   type: 'contentReference',
-  allowedTypes: ['_image']  // Base types like '_image' can be strings
+  displayName: 'Featured Image',
+  allowedTypes: ['_image']  // Base types use strings
 }
 
-// For custom content types, use type object references:
 relatedArticle: {
   type: 'contentReference',
-  allowedTypes: [ArticleContentType]  // Reference to type object, NOT string
+  displayName: 'Related Article',
+  allowedTypes: [ArticleContentType, BlogPostContentType]  // Custom types use object references
 }
 ```
 
-**IMPORTANT**: When referencing custom content types in `allowedTypes` or `restrictedTypes`, use the type object (e.g., `ArticleContentType`), NOT a string (e.g., `'ArticleContentType'`). Base types like `'_image'`, `'_page'`, etc. can remain as strings.
+#### 2. Using `restrictedTypes` (Blacklist)
+
+Prevents certain content types from being referenced (allows everything except these):
+
+```typescript
+anyContentExceptDrafts: {
+  type: 'contentReference',
+  displayName: 'Any Content (No Drafts)',
+  restrictedTypes: [DraftContentType]  // Custom types use object references
+}
+```
+
+#### 3. Using `contentType` (Single Type)
+
+Restricts to exactly one specific content type:
+
+```typescript
+heroSection: {
+  type: 'contentReference',
+  displayName: 'Hero Section',
+  contentType: HeroContentType  // Object reference to specific type
+}
+```
+
+#### Combining Constraints
+
+You can use both `allowedTypes` and `restrictedTypes` together:
+
+```typescript
+selectableContent: {
+  type: 'contentReference',
+  displayName: 'Content Selector',
+  allowedTypes: [ArticleContentType, BlogPostContentType],  // Only these types
+  restrictedTypes: [DraftContentType]  // But not drafts
+}
+```
+
+**CRITICAL - Mutual Exclusivity Warning**: 
+
+⚠️ **You CANNOT use `contentType` together with `allowedTypes` or `restrictedTypes`.** These are mutually exclusive:
+
+- ✅ **Valid**: `allowedTypes` only
+- ✅ **Valid**: `restrictedTypes` only  
+- ✅ **Valid**: `allowedTypes` + `restrictedTypes` together
+- ✅ **Valid**: `contentType` only
+- ❌ **INVALID**: `contentType` + `allowedTypes`
+- ❌ **INVALID**: `contentType` + `restrictedTypes`
+- ❌ **INVALID**: `contentType` + `allowedTypes` + `restrictedTypes`
+
+If a user specifies both `contentType` and allowed/restricted types, **use only `contentType`** and warn them:
+
+```typescript
+// User says: "reference type is HeroContentType, allowedType is ArticleContentType"
+// ❌ WRONG - will fail when pushing to CMS:
+heroRef: {
+  type: 'contentReference',
+  contentType: HeroContentType,
+  allowedTypes: [ArticleContentType]  // Conflict!
+}
+
+// ✅ CORRECT - use contentType only and warn user:
+heroRef: {
+  type: 'contentReference',
+  contentType: HeroContentType  // Specific type only
+}
+```
+
+#### Object References vs Strings
+
+**CRITICAL**: 
+
+- **Base types** (`_page`, `_component`, `_experience`, `_media`, `_image`, `_video`, `_folder`) → use as **strings** with quotes
+- **Custom content types** (e.g., `ArticleContentType`, `HeroContentType`) → use as **object references** without quotes
+
+```typescript
+// ✅ CORRECT
+mixedReferences: {
+  type: 'contentReference',
+  allowedTypes: [
+    '_image',              // Base type as string
+    '_video',              // Base type as string  
+    ArticleContentType,    // Custom type as object reference
+    BlogPostContentType    // Custom type as object reference
+  ]
+}
+
+// ❌ WRONG - custom types as strings
+wrongReferences: {
+  type: 'contentReference',
+  allowedTypes: ['ArticleContentType', 'BlogPostContentType']  // Won't work!
+}
+```
+
+When using custom type object references, **import them** at the top of the file:
+
+```typescript
+import { contentType } from '@optimizely/cms-sdk';
+import { ArticleContentType } from './Article';  // Import referenced type
+import { BlogPostContentType } from './BlogPost';
+
+export const TestingPageContentType = contentType({
+  key: 'TestingPage',
+  baseType: '_page',
+  properties: {
+    relatedContent: {
+      type: 'contentReference',
+      allowedTypes: [ArticleContentType, BlogPostContentType]  // Use imported refs
+    }
+  }
+});
+```
+
+#### When User Specifies Content References
+
+**Phrase recognition:**
+
+| User Says | Field to Use | Value Format |
+|-----------|--------------|--------------|
+| "allowedType is X", "allowed type X", "can reference X" | `allowedTypes` | `[XContentType]` (object) or `['_base']` (string) |
+| "restrictedType is X", "restricted type X", "cannot reference X" | `restrictedTypes` | `[XContentType]` (object) |
+| "reference type is X", "content type X", "must be X" | `contentType` | `XContentType` (object, singular) |
+| "allowedTypes _image and _video" | `allowedTypes` | `['_image', '_video']` |
+
+**CRITICAL - Determining String vs Object Reference**:
+
+When the user specifies a type name, determine if it's a base type or custom type:
+
+**Base types** (use as strings):
+- `_page`, `_component`, `_experience`, `_media`, `_image`, `_video`, `_folder`
+- These are built-in CMS base types
+- Example: `allowedTypes: ['_image', '_video']`
+
+**Custom types** (use as object references):
+- ANY other type name that doesn't start with underscore
+- Examples: `ArticleContentType`, `HeroContentType`, `AllowedContentType`, `RestrictContentType`
+- Must import at top of file
+- Example: `allowedTypes: [ArticleContentType]`
+
+```typescript
+// User: "allowedType is _image"
+allowedTypes: ['_image']  // String because it starts with underscore
+
+// User: "allowedType is ArticleContentType"  
+allowedTypes: [ArticleContentType]  // Object reference because no underscore
+// Also add: import { ArticleContentType } from './Article';
+
+// User: "allowedType is AllowedContentType"
+allowedTypes: [AllowedContentType]  // Object reference (custom type)
+// Also add: import { AllowedContentType } from './AllowedContentType';
+
+// User: "allowedTypes are _image and ArticleContentType"
+allowedTypes: ['_image', ArticleContentType]  // Mixed: string + object
+// Also add: import { ArticleContentType } from './Article';
+```
+
+**Examples:**
+
+```typescript
+// User: "add p_ref with allowedType is Article and restrictedType is Draft"
+p_ref: {
+  type: 'contentReference',
+  allowedTypes: [ArticleContentType],
+  restrictedTypes: [DraftContentType]
+}
+
+// User: "add p_ref with reference type is Hero"  
+p_ref: {
+  type: 'contentReference',
+  contentType: HeroContentType
+}
+
+// User: "add p_ref with allowedType is Article and reference type is Hero"
+// ⚠️ Conflict! Use contentType only and warn:
+p_ref: {
+  type: 'contentReference',
+  contentType: HeroContentType  // contentType takes precedence
+}
+// Output warning: "Cannot use contentType together with allowedTypes. Using contentType only."
+```
 
 ### Component Type
 

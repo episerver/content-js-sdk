@@ -156,16 +156,76 @@ colorChoice: {
 
 ### Important Patterns
 
-**Content References**: Optionally use `allowedTypes` or `restrictedTypes` to control which content types can be referenced:
+**Content References**: Control what can be referenced using `allowedTypes`, `restrictedTypes`, or `contentType`:
+
 ```typescript
-featuredArticle: {
-  type: 'content',
-  allowedTypes: [ArticleContentType], // Reference to type object, NOT string like 'ArticleContentType'
-  displayName: 'Featured Article',
+// Using allowedTypes (whitelist)
+featuredImage: {
+  type: 'contentReference',
+  allowedTypes: ['_image', '_video'],  // Base types as strings
+  displayName: 'Featured Media'
+}
+
+relatedArticle: {
+  type: 'contentReference',
+  allowedTypes: [ArticleContentType],  // Custom types as object references (NOT strings)
+  restrictedTypes: [DraftContentType], // Can combine with restrictedTypes
+  displayName: 'Related Article'
+}
+
+// Using contentType (single specific type)
+heroSection: {
+  type: 'contentReference',
+  contentType: HeroContentType,  // Object reference
+  displayName: 'Hero Section'
 }
 ```
 
-**IMPORTANT**: Use type object references (e.g., `[ArticleContentType]`), NOT strings (e.g., `['ArticleContentType']`). The same applies to `restrictedTypes`.
+**CRITICAL - Object References vs Strings**:
+- **Base types** (start with underscore: `_page`, `_component`, `_image`, etc.) → use as **strings**: `['_image']`
+- **Custom types** (no underscore: ArticleContentType, AllowedContentType, etc.) → use as **object references**: `[ArticleContentType]`
+- When using custom type objects, **import them** at the top of the file
+
+**How to determine:**
+```typescript
+// Starts with underscore → string
+allowedTypes: ['_image']
+
+// No underscore → object reference + import
+allowedTypes: [ArticleContentType]
+import { ArticleContentType } from './Article';
+
+// Mixed
+allowedTypes: ['_image', ArticleContentType]
+import { ArticleContentType } from './Article';
+```
+
+**CRITICAL - Mutual Exclusivity**:
+⚠️ **Cannot use `contentType` together with `allowedTypes`/`restrictedTypes`** - they are mutually exclusive. If user specifies both, use only `contentType` and warn the user.
+
+**When user says**:
+- "allowedType is X" → Check if X starts with underscore:
+  - If X starts with `_` (e.g., `_image`) → `allowedTypes: ['_image']` (string)
+  - If X does NOT start with `_` (e.g., `ArticleContentType`) → `allowedTypes: [ArticleContentType]` (object) + import
+- "restrictedType is X" → `restrictedTypes: [XContentType]` (object, never string) + import
+- "reference type is X" → `contentType: XContentType` (object, singular, not array) + import
+
+**Examples of type name recognition**:
+```
+User says: "allowedType is AllowedContentType"
+→ AllowedContentType (no underscore) = custom type
+→ allowedTypes: [AllowedContentType]  // Object reference
+→ import { AllowedContentType } from './AllowedContentType';
+
+User says: "allowedType is _image"
+→ _image (starts with underscore) = base type
+→ allowedTypes: ['_image']  // String
+
+User says: "restrictedType is RestrictContentType"
+→ RestrictContentType (no underscore) = custom type
+→ restrictedTypes: [RestrictContentType]  // Object reference
+→ import { RestrictContentType } from './RestrictContentType';
+```
 
 **Arrays**: Specify what type of items the array contains. **CRITICAL**: Constraints on individual items go **inside the `items` object**:
 
