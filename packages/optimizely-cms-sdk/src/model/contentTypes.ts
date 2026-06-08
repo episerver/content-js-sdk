@@ -38,7 +38,7 @@ type BaseContentType = {
 export type SuppliedContractValues<P extends PropertiesRecord = PropertiesRecord> = {
   key: string;
   displayName: string;
-  properties: P;
+  properties?: P;
 };
 
 type InnerContractValues = {

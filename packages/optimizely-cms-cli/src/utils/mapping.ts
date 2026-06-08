@@ -266,5 +266,5 @@ export const contractToManifest = ({
   key,
   displayName,
   isContract: true,
-  properties: transformProperties(properties, key),
+  properties: properties ? transformProperties(properties, key) : undefined,
 });
