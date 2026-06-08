@@ -76,7 +76,7 @@ async function main() {
     });
 
     process.on('SIGINT', () => {
-      console.log(`\n${PREFIX} 👋 Stopping watch mode...`);
+      console.log(`\n${PREFIX} ⏹ Stopping watch mode...`);
       watcher.close();
       process.exit(0);
     });

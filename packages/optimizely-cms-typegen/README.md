@@ -210,10 +210,18 @@ declare module '@optimizely/cms-sdk' {
 
   export interface PropertyGroupRegistry {
   }
+
+  export interface MayContainRegistry {
+    'Start': string;
+  }
 }
 
 export {};
 ```
+
+`MayContainRegistry` holds the keys of content types whose `baseType` is
+`_page`, `_experience`, or `_folder`. These are the values accepted by a
+content type's `mayContainTypes`.
 
 ## Usage in Your App
 

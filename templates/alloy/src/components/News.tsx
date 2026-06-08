@@ -14,7 +14,7 @@ export const NewsContentType = contentType({
   key: 'News',
   displayName: 'News Page',
   baseType: '_experience',
-  mayContainTypes: [StandardContentType],
+  mayContainTypes: ['Standard'],
   properties: {
     image: {
       type: 'contentReference',

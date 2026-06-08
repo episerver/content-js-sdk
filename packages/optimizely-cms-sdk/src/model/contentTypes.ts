@@ -23,7 +23,7 @@ export const ALL_BASE_TYPES = [
 
 export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
 export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
-
+export type CombinedBaseTypes = BaseTypes | MediaStringTypes;
 export type PropertiesRecord = Record<string, AnyProperty>;
 
 /** A "Base" content type that includes all common attributes for all content types */
@@ -80,15 +80,22 @@ type MergedPropertiesType<T extends AnyContentType> = ('extends' extends keyof T
 /** Utility type for content types that don't support composition behaviors */
 type SkipCompositionBehaviors<T> = Omit<T, 'compositionBehaviors'>;
 
+/**
+ * Content type keys allowed in `mayContainTypes`.
+ * Only accepts keys of content types whose baseType is `_page`, `_experience`, or `_folder`.
+ * Object form or registered key (autocomplete via {@link MayContainRegistry}); any string still allowed.
+ */
+export type MayContainKey =
+  | ContentType<PageContentType | ExperienceContentType | FolderContentType>
+  | keyof MayContainRegistry
+  | '_self'
+  | (string & {});
+
 /** Represents the Page type  in CMS */
 export type PageContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: '_page';
-    mayContainTypes?: Array<
-      | ContentType<PageContentType | ExperienceContentType | FolderContentType>
-      | '_self'
-      | string
-    >;
+    mayContainTypes?: Array<MayContainKey>;
   }
 >;
 
@@ -96,11 +103,7 @@ export type PageContentType = SkipCompositionBehaviors<
 export type ExperienceContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: '_experience';
-    mayContainTypes?: Array<
-      | ContentType<PageContentType | ExperienceContentType | FolderContentType>
-      | '_self'
-      | string
-    >;
+    mayContainTypes?: Array<MayContainKey>;
   }
 >;
 
@@ -108,7 +111,7 @@ export type ExperienceContentType = SkipCompositionBehaviors<
 export type FolderContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: '_folder';
-    mayContainTypes?: Array<ContentType<AnyContentType> | '_self' | string>;
+    mayContainTypes?: Array<MayContainKey>;
   }
 >;
 
@@ -150,10 +153,22 @@ export type ContentType<T extends AnyContentType = AnyContentType> = Omit<
   __type: 'contentType';
 };
 
+// Global registry for custom content type keys - can be augmented per project
+export interface ContentTypeRegistry {
+  // Developers can add custom content types here via module augmentation
+}
+
+// Global registry for keys allowed in `mayContainTypes` - can be augmented per project.
+// Only holds keys of content types whose baseType is _page, _experience, or _folder.
+export interface MayContainRegistry {
+  // Developers can add allowed container child keys here via module augmentation
+}
+
 /** All possible content types for allowed and restricted fields */
 export type PermittedTypes =
   | AnyContract
   | ContentType
-  | AnyContentType['baseType']
+  | CombinedBaseTypes
+  | keyof ContentTypeRegistry
   | '_self'
   | (string & {});

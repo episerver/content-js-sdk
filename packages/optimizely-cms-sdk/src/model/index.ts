@@ -150,7 +150,9 @@ export {
   PropertyGroupType,
   ApplicationsType,
   ApplicationHostType,
+  PropertyGroupRegistry,
 } from './buildConfig.js';
+export { ContentTypeRegistry, MayContainRegistry } from './contentTypes.js';
 export {
   init as initContentTypeRegistry,
   isContentTypeRegistered,

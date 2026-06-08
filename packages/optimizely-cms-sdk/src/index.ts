@@ -11,6 +11,9 @@ export {
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
   PropertyGroupType,
+  PropertyGroupRegistry,
+  ContentTypeRegistry,
+  MayContainRegistry,
 } from './model/index.js';
 
 // GraphQL

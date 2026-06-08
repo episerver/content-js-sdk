@@ -22,6 +22,13 @@ declare module '@optimizely/cms-sdk' {
     'SEO': string;
     'SiteSettings': string;
   }
+
+  export interface MayContainRegistry {
+    'News': string;
+    'Product': string;
+    'Standard': string;
+    'Start': string;
+  }
 }
 
 export {};
