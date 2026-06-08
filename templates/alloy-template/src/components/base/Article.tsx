@@ -30,11 +30,11 @@ type ArticlePageProps = {
 function Article({ content }: ArticlePageProps) {
   const { pa } = getPreviewUtils(content);
   return (
-    <div>
+    <>
       <h1 {...pa('title')}>{content.title}</h1>
       <p {...pa('description')}>{content.description}</p>
       <RichText {...pa('body')} content={content.body?.json} />
-    </div>
+    </>
   );
 }
 

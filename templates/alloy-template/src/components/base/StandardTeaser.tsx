@@ -12,6 +12,7 @@ function StandardTeaser({ content }: StandardTeaserProps) {
   const { getAlt } = damAssets(content);
 
   const href = content._metadata.url.default || '#';
+  const imageSrc = src(content.image);
 
   return (
     <Link
@@ -20,9 +21,9 @@ function StandardTeaser({ content }: StandardTeaserProps) {
     >
       {/* Image Section */}
       <div {...pa('image')} className='w-full h-48'>
-        {content.image ?
+        {imageSrc ?
           <img
-            src={src(content.image)}
+            src={imageSrc}
             alt={getAlt(content.image, 'Teaser Image')}
             className='w-full h-48 object-cover rounded-lg'
           />
@@ -30,7 +31,7 @@ function StandardTeaser({ content }: StandardTeaserProps) {
             className='w-full h-48 flex items-center justify-center rounded-lg'
             style={{ backgroundColor: 'rgb(255 175 32 / 55%)' }}
           >
-            <img src={'/logo.png'} className='w-18 h-18 object-cover rounded-lg' />
+            <img src='/logo.png' className='w-18 h-18 object-cover rounded-lg' />
           </div>
         }
       </div>

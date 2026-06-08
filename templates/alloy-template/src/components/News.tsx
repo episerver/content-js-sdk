@@ -52,15 +52,6 @@ type NewsPageProps = {
   content: ContentProps<typeof NewsContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
-  const { pa } = getPreviewUtils(node);
-  return (
-    <div {...pa(node)} className='w-full block'>
-      {children}
-    </div>
-  );
-}
-
 function News({ content }: NewsPageProps) {
   const { pa } = getPreviewUtils(content);
 
@@ -95,10 +86,7 @@ function News({ content }: NewsPageProps) {
           </div>
 
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition
-              nodes={content.composition.nodes ?? []}
-              ComponentWrapper={ComponentWrapper}
-            />
+            <OptimizelyComposition nodes={content.composition.nodes ?? []} />
           </div>
 
           {/* Teasers - Full Width */}

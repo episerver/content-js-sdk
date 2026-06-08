@@ -216,9 +216,32 @@ export async function OptimizelyComponent({
         ...content,
       };
 
-      return (
-        <Component content={optiProps} {...props} displaySettings={displaySettings} />
+      // Extract preview attrs (data-epi-*) from props
+      const previewAttrs: Record<string, unknown> = {};
+      const componentProps: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(props)) {
+        if (key.startsWith('data-epi-')) {
+          previewAttrs[key] = value;
+        } else {
+          componentProps[key] = value;
+        }
+      }
+
+      const element = (
+        <Component
+          content={optiProps}
+          displaySettings={displaySettings}
+          {...componentProps}
+        />
       );
+
+      // Wrap in div with previewAttrs only in edit mode
+      if (content.__context?.edit && Object.keys(previewAttrs).length > 0) {
+        return <div {...previewAttrs}>{element}</div>;
+      }
+
+      return element;
     },
   );
 }
@@ -237,6 +260,30 @@ export type ComponentContainerProps = {
 export type StructureContainer = (props: StructureContainerProps) => JSX.Element;
 export type ComponentContainer = (props: ComponentContainerProps) => JSX.Element;
 
+/**
+ * Default wrapper for components when in preview mode.
+ * Adds necessary preview attributes to the wrapper div.
+ * */
+function DefaultComponentWrapper({
+  children,
+  node,
+  displaySettings,
+}: ComponentContainerProps) {
+  const { pa } = getPreviewUtils(node);
+
+  // Clone children and inject displaySettings if it's a valid React element
+  const childrenWithProps =
+    React.isValidElement(children) && displaySettings ?
+      React.cloneElement(children, { displaySettings } as any)
+    : children;
+
+  return (
+    <div {...pa(node)} style={{ width: '100%', display: 'block' }}>
+      {childrenWithProps}
+    </div>
+  );
+}
+
 export function OptimizelyComposition({
   nodes,
   ComponentWrapper,
@@ -245,11 +292,13 @@ export function OptimizelyComposition({
   ComponentWrapper?: ComponentContainer;
 }) {
   return nodes.map(node => {
+    const { pa } = getPreviewUtils(node);
+    const previewAttrs = pa(node);
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
-      const Wrapper = ComponentWrapper ?? React.Fragment;
+      const Wrapper = ComponentWrapper ?? DefaultComponentWrapper;
 
       return (
         <Wrapper node={node} key={node.key} displaySettings={parsedDisplaySettings}>
@@ -259,12 +308,13 @@ export function OptimizelyComposition({
               __tag: tag,
             }}
             displaySettings={parsedDisplaySettings}
+            {...previewAttrs}
           />
         </Wrapper>
       );
     }
 
-    const { type, nodes } = node;
+    const { type } = node;
 
     if (type === null) {
       // TODO: Error handling
@@ -280,6 +330,7 @@ export function OptimizelyComposition({
           __tag: tag,
         }}
         displaySettings={parsedDisplaySettings}
+        {...previewAttrs}
       />
     );
   });
@@ -324,6 +375,7 @@ type OptimizelyGridSectionProps = {
   nodes: ExperienceNode[];
   row?: StructureContainer;
   column?: StructureContainer;
+  ComponentWrapper?: ComponentContainer;
   displaySettings?: DisplaySettingsType[];
 };
 
@@ -336,6 +388,7 @@ export function OptimizelyGridSection({
   nodes,
   row,
   column,
+  ComponentWrapper,
 }: OptimizelyGridSectionProps) {
   const locallyDefined: Record<string, StructureContainer | undefined> = {
     row,
@@ -343,11 +396,13 @@ export function OptimizelyGridSection({
   };
 
   return nodes.map((node, i) => {
+    const { pa } = getPreviewUtils(node);
+    const previewAttrs = pa(node);
     const tag = getDisplayTemplateTag(node.displayTemplateKey);
     const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
 
     if (isComponentNode(node)) {
-      return (
+      const component = (
         <OptimizelyComponent
           content={{
             // `node.component` contains user-defined properties
@@ -355,10 +410,25 @@ export function OptimizelyGridSection({
             __composition: node,
             __tag: tag,
           }}
-          key={node.key}
           displaySettings={parsedDisplaySettings}
+          {...previewAttrs}
         />
       );
+
+      // we can only pass key, ref to fragments to avoid React warnings, so if there's a wrapper component, use that, otherwise render the component directly without a wrapper
+      if (ComponentWrapper) {
+        return (
+          <ComponentWrapper
+            key={node.key}
+            node={node}
+            displaySettings={parsedDisplaySettings}
+          >
+            {component}
+          </ComponentWrapper>
+        );
+      }
+
+      return <React.Fragment key={node.key}>{component}</React.Fragment>;
     }
 
     const { nodeType } = node;
@@ -385,7 +455,13 @@ export function OptimizelyGridSection({
         key={node.key}
         displaySettings={parsedDisplaySettings}
       >
-        <OptimizelyGridSection row={row} column={column} nodes={node.nodes ?? []} />
+        <OptimizelyGridSection
+          row={row}
+          column={column}
+          ComponentWrapper={ComponentWrapper}
+          nodes={node.nodes ?? []}
+          {...previewAttrs}
+        />
       </Component>
     );
   });

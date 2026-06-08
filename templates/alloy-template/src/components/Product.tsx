@@ -54,15 +54,6 @@ type ProductProps = {
   content: ContentProps<typeof ProductContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
-  const { pa } = getPreviewUtils(node);
-  return (
-    <div {...pa(node)} className='w-full block'>
-      {children}
-    </div>
-  );
-}
-
 function Product({ content }: ProductProps) {
   const { pa } = getPreviewUtils(content);
 
@@ -103,10 +94,7 @@ function Product({ content }: ProductProps) {
             })}
           </div>
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition
-              nodes={content.composition.nodes ?? []}
-              ComponentWrapper={ComponentWrapper}
-            />
+            <OptimizelyComposition nodes={content.composition.nodes ?? []} />
           </div>
         </div>
       </div>

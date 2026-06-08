@@ -61,65 +61,75 @@ type TeaserProps = {
 function Teaser({ content, displaySettings }: TeaserProps) {
   const { pa, src } = getPreviewUtils(content);
   const image = src(content.image);
-  // Helper function to wrap content with link if available
-  const wrapWithLink = (children: React.ReactNode) => {
-    if (content.link?.default) {
-      return (
-        <Link {...pa('link')} href={content.link.default} className='block h-[calc(100%-1rem)] cursor-pointer mb-4'>
-          {children}
-        </Link>
-      );
-    }
-    return <div className='h-[calc(100%-1rem)] mb-4'>{children}</div>;
-  };
+  const isHorizontal = displaySettings?.orientation === 'horizontal';
 
-  // Horizontal layout
-  if (displaySettings?.orientation === 'horizontal') {
-    const horizontalContent = (
+  const teaserContent =
+    isHorizontal ?
       <div className='h-full max-w-4xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden flex flex-col'>
         <div className='flex flex-col md:flex-row flex-1'>
-          {content.image?.url.default && (
+          {image && (
             <div className='md:w-1/2 h-64 md:h-auto overflow-hidden' {...pa('image')}>
-              {image ?
-                <img src={image} alt='teaser_image' className='w-full h-full object-cover' />
-              : null}
+              <img
+                src={image}
+                alt='teaser_image'
+                className='w-full h-full object-cover'
+              />
             </div>
           )}
           <div className='md:w-1/2 p-8 flex flex-col justify-center'>
-            <h2 {...pa('heading')} className='text-2xl font-bold text-gray-900 mb-4 uppercase tracking-wide'>
+            <h2
+              {...pa('heading')}
+              className='text-2xl font-bold text-gray-900 mb-4 uppercase tracking-wide'
+            >
               {content.heading}
             </h2>
-            <blockquote {...pa('text')} className='text-gray-700 text-base leading-relaxed mb-4 italic'>
+            <blockquote
+              {...pa('text')}
+              className='text-gray-700 text-base leading-relaxed mb-4 italic'
+            >
               "{content.text}"
             </blockquote>
           </div>
         </div>
       </div>
-    );
+    : <div className='h-full max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden flex flex-col'>
+        {image && (
+          <div className='h-48 w-full overflow-hidden' {...pa('image')}>
+            <img src={image} alt='teaser_image' className='w-full h-full object-cover' />
+          </div>
+        )}
+        <div className='p-6 text-center'>
+          <h2
+            {...pa('heading')}
+            className='text-xl font-bold text-gray-900 mb-3 uppercase tracking-wide'
+          >
+            {content.heading}
+          </h2>
+          <p {...pa('text')} className='text-gray-600 text-sm leading-relaxed'>
+            {content.text}
+          </p>
+        </div>
+      </div>;
 
-    return wrapWithLink(horizontalContent);
+  if (content.link?.default) {
+    return (
+      <div>
+        <Link
+          {...pa('link')}
+          href={content.link.default}
+          className='block h-[calc(100%-1rem)] cursor-pointer mb-4'
+        >
+          {teaserContent}
+        </Link>
+      </div>
+    );
   }
 
-  // Vertical layout (default)
-  const verticalContent = (
-    <div className='h-full max-w-lg mx-auto bg-white rounded-lg shadow-sm overflow-hidden flex flex-col'>
-      {content.image?.url.default && (
-        <div className='h-48 w-full overflow-hidden' {...pa('image')}>
-          <img src={content.image?.url.default} alt='teaser_image' className='w-full h-full object-cover' />
-        </div>
-      )}
-      <div className='p-6 text-center'>
-        <h2 {...pa('heading')} className='text-xl font-bold text-gray-900 mb-3 uppercase tracking-wide'>
-          {content.heading}
-        </h2>
-        <p {...pa('text')} className='text-gray-600 text-sm leading-relaxed'>
-          {content.text}
-        </p>
-      </div>
+  return (
+    <div className='h-[calc(100%-1rem)] mb-4'>
+      {teaserContent}
     </div>
   );
-
-  return wrapWithLink(verticalContent);
 }
 
 export default Teaser;

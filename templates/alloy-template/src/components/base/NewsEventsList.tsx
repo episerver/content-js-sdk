@@ -1,5 +1,5 @@
 import { ContentProps, contentType } from '@optimizely/cms-sdk';
-import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import { getPreviewUtils, OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { TeaserCardContract } from '../contracts/TeaserCard';
 import { ButtonContentType } from './Button';
 
@@ -37,17 +37,21 @@ export type NewsEventsListProps = {
 };
 
 function NewsEventsList({ content }: NewsEventsListProps) {
+  const { pa } = getPreviewUtils(content);
   return (
     <div className='space-y-8'>
       {/* Title */}
       {content.title && (
-        <h2 className='text-3xl md:text-3xl font-bold text-gray-900 uppercase tracking-tight'>
+        <h2
+          className='text-3xl md:text-3xl font-bold text-gray-900 uppercase tracking-tight'
+          {...pa('title')}
+        >
           {content.title}
         </h2>
       )}
 
       {/* Teasers List */}
-      <div className='space-y-6'>
+      <div className='space-y-6' {...pa('teasers')}>
         {content.teasers?.map((teaser, index) => {
           return <OptimizelyComponent key={index} content={teaser} tag='teaser' />;
         })}
@@ -55,7 +59,7 @@ function NewsEventsList({ content }: NewsEventsListProps) {
 
       {/* Call to Action Button */}
       {content.call_to_action && (
-        <div className='pt-4'>
+        <div className='pt-4' {...pa('call_to_action')}>
           <OptimizelyComponent content={content.call_to_action} />
         </div>
       )}

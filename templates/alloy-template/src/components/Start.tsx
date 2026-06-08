@@ -122,32 +122,29 @@ type StartProps = {
   content: ContentProps<typeof StartContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
-  const { pa } = getPreviewUtils(node);
-  return (
-    <div {...pa(node)} className='w-full block'>
-      {children}
-    </div>
-  );
-}
-
 function Start({ content }: StartProps) {
-  const { pa } = getPreviewUtils(content);
+  const { pa, src } = getPreviewUtils(content);
+  const image = src(content.image);
 
   return (
     <>
-      <div
-        {...pa('image')}
-        style={{ backgroundImage: `url(${content.image?.url.default})` }}
-        className='relative min-h-96 sm:min-h-112 md:min-h-128 lg:min-h-144 w-full flex items-center bg-cover bg-center rounded-sm'
-      >
-        {/* Dark overlay for better text readability */}
+      <div className='relative w-full h-40 sm:h-50 md:h-48 lg:h-120 rounded-sm overflow-hidden'>
+        {/* Hero Image */}
+        {image && (
+          <img
+            {...pa('image')}
+            src={image}
+            alt={content.title || 'Hero image'}
+            className='w-full h-full object-cover object-center'
+          />
+        )}
+
+        {/* Dark overlay */}
         <div className='absolute inset-0 bg-black/40' />
 
-        {/* Content */}
-        <div className='relative z-10 max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12 w-full'>
+        {/* Content positioned at top */}
+        <div className='absolute top-10 left-0 right-0 z-10 max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12 w-full'>
           <div className='max-w-3xl'>
-            {/* Large Heading */}
             <h1
               {...pa('title')}
               className='text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-5 md:mb-6 leading-tight tracking-tight'
@@ -155,7 +152,6 @@ function Start({ content }: StartProps) {
               {content.title}
             </h1>
 
-            {/* Description */}
             {content.description && (
               <p
                 {...pa('description')}
@@ -164,7 +160,7 @@ function Start({ content }: StartProps) {
                 {content.description}
               </p>
             )}
-            {/* Button */}
+
             {content.button && (
               <div {...pa('button')}>
                 <Button content={content.button} />
@@ -173,13 +169,11 @@ function Start({ content }: StartProps) {
           </div>
         </div>
       </div>
+
       <div className='bg-white'>
         <div className='mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:py-10 lg:px-8 lg:py-12'>
           <div className='flex flex-col space-y-6 sm:space-y-8'>
-            <OptimizelyComposition
-              nodes={content.composition.nodes ?? []}
-              ComponentWrapper={ComponentWrapper}
-            />
+            <OptimizelyComposition nodes={content.composition.nodes ?? []} />
           </div>
         </div>
       </div>
