@@ -151,6 +151,54 @@ const imageUrl = src(content.background);
 {imageUrl && <Image src={imageUrl} alt="" fill={true} />}
 ```
 
+**3a. URL Properties**
+
+**CRITICAL**: URL properties (`type: 'url'`) return an `InferredUrl` object, NOT a string. Always access `.default` for the href value.
+
+```tsx
+// ✅ CORRECT: Access .default from InferredUrl object
+{content.websiteUrl && (
+  <a href={content.websiteUrl.default ?? undefined} {...pa('websiteUrl')}>
+    Visit Website
+  </a>
+)}
+
+// ❌ WRONG: Using URL directly as string causes TypeScript error
+{content.websiteUrl && (
+  <a href={content.websiteUrl}>Visit</a>
+)}
+// Error: Type 'InferredUrl' is not assignable to type 'string'
+```
+
+**3b. Link Properties**
+
+**CRITICAL**: Link properties (`type: 'link'`) return a `LinkItem` object with nullable fields. TypeScript requires `string | undefined` for HTML attributes, NOT `string | null`. Always use `?? undefined` to convert null to undefined.
+
+```tsx
+// ✅ CORRECT: Convert null to undefined with ?? undefined
+{content.ctaButton && (
+  <a 
+    href={content.ctaButton.url ?? undefined}
+    title={content.ctaButton.title ?? undefined}
+    target={content.ctaButton.target ?? undefined}
+    rel={content.ctaButton.target === '_blank' ? 'noopener noreferrer' : undefined}
+    {...pa('ctaButton')}
+  >
+    {content.ctaButton.text}
+  </a>
+)}
+
+// ❌ WRONG: Passing null to attributes causes TypeScript error
+{content.ctaButton && (
+  <a 
+    title={content.ctaButton.title}
+    target={content.ctaButton.target}
+  >
+// Error: Type 'string | null' is not assignable to type 'string | undefined'
+```
+
+For detailed patterns on URL and link rendering, see `references/react-patterns.md`.
+
 **4. ContentReference Properties**
 ContentReference properties return `InferredContentReference` which contains `{ key, url, item }` but NOT `__typename`. They cannot be used with `OptimizelyComponent`.
 
