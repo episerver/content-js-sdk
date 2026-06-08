@@ -248,3 +248,163 @@ sizes: {
 | Format | `format: 'selectOne'` | `format: 'selectMany'` |
 | Enum location | `enum: [...]` (on property) | `items: { enum: [...] }` (in items) |
 | Return value | Single string | Array of strings |
+
+## Property Formats
+
+The `format` field provides additional semantic information about how a property should be handled in the CMS UI. Different property types support different formats.
+
+### URL Type Formats
+
+URL properties (`type: 'url'`) support formats that indicate the expected URL target:
+
+| Format | Use When | Example |
+|--------|----------|---------|
+| `'DocumentUrl'` | URL points to a document (PDF, Word, etc.) | Link to downloadable file |
+| `'ImageUrl'` | URL points to an image | Link to external image |
+| No format | Generic URL field | Any URL type |
+
+```typescript
+// URL to a document
+documentLink: {
+  type: 'url',
+  format: 'DocumentUrl',
+  displayName: 'Document Link'
+}
+
+// URL to an image
+externalImage: {
+  type: 'url',
+  format: 'ImageUrl',
+  displayName: 'External Image URL'
+}
+
+// Generic URL (no format needed)
+websiteUrl: {
+  type: 'url',
+  displayName: 'Website URL'
+}
+```
+
+### String Type Formats
+
+String properties (`type: 'string'`) support formats that control the UI widget and validation:
+
+| Format | Use When | UI Control | Example |
+|--------|----------|------------|---------|
+| `'shortString'` | Short single-line text | Single-line textbox | Titles, names, labels |
+| `'guid'` | Globally unique identifier | Text input with GUID validation | Tracking IDs, external references |
+| `'selectOne'` | Single choice from predefined options | Dropdown list | Color picker, category selection |
+| No format | Default string behavior | Multi-line textarea | General text content |
+
+```typescript
+// Short string (single-line)
+title: {
+  type: 'string',
+  format: 'shortString',
+  displayName: 'Title'
+}
+
+// GUID
+trackingId: {
+  type: 'string',
+  format: 'guid',
+  displayName: 'Tracking ID'
+}
+
+// Dropdown (requires enum)
+priority: {
+  type: 'string',
+  format: 'selectOne',
+  enum: [
+    { value: 'Low', displayName: 'Low' },
+    { value: 'Medium', displayName: 'Medium' },
+    { value: 'High', displayName: 'High' }
+  ],
+  displayName: 'Priority'
+}
+
+// Long text (no format)
+description: {
+  type: 'string',
+  displayName: 'Description'
+}
+```
+
+### Array Type Formats
+
+Array properties (`type: 'array'`) support the `selectMany` format for multi-selection:
+
+| Format | Use When | UI Control | Example |
+|--------|----------|------------|---------|
+| `'selectMany'` | Multiple choices from predefined options | Multi-select list | Tag selection, feature toggles |
+| No format | Free-form array | Array input | List of strings |
+
+```typescript
+// Multi-select list (requires items.enum)
+features: {
+  type: 'array',
+  format: 'selectMany',
+  items: {
+    type: 'string',
+    enum: [
+      { value: 'WiFi', displayName: 'WiFi' },
+      { value: 'Parking', displayName: 'Parking' },
+      { value: 'Pool', displayName: 'Pool' }
+    ]
+  },
+  displayName: 'Available Features'
+}
+
+// Free-form string array (no format)
+tags: {
+  type: 'array',
+  items: { type: 'string' },
+  displayName: 'Tags'
+}
+```
+
+### Format Recognition from User Input
+
+**CRITICAL**: When users describe properties using certain keywords, apply the appropriate format:
+
+| User Says | Property Type | Format | Additional Fields |
+|-----------|---------------|--------|-------------------|
+| "URL to document", "document link" | `'url'` | `'DocumentUrl'` | None |
+| "URL to image", "image link" | `'url'` | `'ImageUrl'` | None |
+| "short string", "single-line text", "title" | `'string'` | `'shortString'` | None |
+| "long string", "multi-line text", "description" | `'string'` | None | None |
+| "GUID", "unique identifier" | `'string'` | `'guid'` | None |
+| "dropdown", "select one" | `'string'` | `'selectOne'` | `enum: [...]` required |
+| "select list", "multi-select" | `'array'` | `'selectMany'` | `items: { enum: [...] }` required |
+
+**Example mappings:**
+
+```typescript
+// User: "add a URL to document property"
+documentUrl: {
+  type: 'url',
+  format: 'DocumentUrl',
+  displayName: 'Document URL'
+}
+
+// User: "add a short string property for the title"
+title: {
+  type: 'string',
+  format: 'shortString',
+  displayName: 'Title'
+}
+
+// User: "add a GUID property for tracking"
+trackingGuid: {
+  type: 'string',
+  format: 'guid',
+  displayName: 'Tracking GUID'
+}
+
+// User: "add a long string property for description"
+description: {
+  type: 'string',
+  // No format - defaults to multi-line
+  displayName: 'Description'
+}
+```

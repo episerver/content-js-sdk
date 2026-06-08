@@ -88,6 +88,12 @@
       "prompt": "Create a page type SkillTestingPage with 2 properties: a dropdown property p_dropdownlist with options Red, Green, Blue and a select list property p_selectlist with options Large, Medium, Small",
       "expected_output": "Should create SkillTestingPage.tsx with contentType() definition containing two properties. For p_dropdownlist: MUST have type: 'string', format: 'selectOne', and enum array with objects {value: 'Red', displayName: 'Red'}, {value: 'Green', displayName: 'Green'}, {value: 'Blue', displayName: 'Blue'}. For p_selectlist: MUST have type: 'array', format: 'selectMany', and items.enum array with objects {value: 'Large', displayName: 'Large'}, {value: 'Medium', displayName: 'Medium'}, {value: 'Small', displayName: 'Small'}. Should NOT create properties without format field. Should NOT create properties without enum arrays.",
       "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Create a page type SkillBug5Page with a url to document property p_urlToDocument, a url to image property p_urlToImage, a short string property p_shortString, a long string property p_longString, and a guid property p_guid",
+      "expected_output": "Should create SkillBug5Page.tsx with contentType() definition containing five properties. For p_urlToDocument: MUST have type: 'url', format: 'DocumentUrl'. For p_urlToImage: MUST have type: 'url', format: 'ImageUrl'. For p_shortString: MUST have type: 'string', format: 'shortString'. For p_longString: MUST have type: 'string' with NO format field. For p_guid: MUST have type: 'string', format: 'guid'. Should correctly recognize format requirements from property descriptions.",
+      "files": []
     }
   ]
 }

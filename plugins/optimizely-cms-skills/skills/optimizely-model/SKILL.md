@@ -82,6 +82,11 @@ Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`
 |-----------|---------------|-----------------|
 | "dropdown", "select one", "choice", "pick one from..." | String with selectOne | `type: 'string'`, `format: 'selectOne'`, `enum: [...]` |
 | "select list", "multi-select", "select many", "checkboxes", "pick multiple from..." | Array with selectMany | `type: 'array'`, `format: 'selectMany'`, `items: { type: 'string', enum: [...] }` |
+| "URL to document", "document link", "URL to doc" | URL with DocumentUrl | `type: 'url'`, `format: 'DocumentUrl'` |
+| "URL to image", "image link", "image URL" | URL with ImageUrl | `type: 'url'`, `format: 'ImageUrl'` |
+| "short string", "single-line text", "title", "name" | String with shortString | `type: 'string'`, `format: 'shortString'` |
+| "long string", "multi-line text", "description" | String (no format) | `type: 'string'` |
+| "GUID", "unique identifier", "UUID" | String with guid | `type: 'string'`, `format: 'guid'` |
 | "rich text", "formatted text", "WYSIWYG" | RichText | `type: 'richText'` |
 | "image", "picture", "photo" | ContentReference | `type: 'contentReference'`, `allowedTypes: ['_image']` |
 | "list of tags", "array of strings" | Array | `type: 'array'`, `items: { type: 'string' }` |
