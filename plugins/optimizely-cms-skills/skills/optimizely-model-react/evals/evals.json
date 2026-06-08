@@ -99,6 +99,39 @@
           "content": "import { contentType } from '@optimizely/cms-sdk';\n\nexport const HeroContentType = contentType({\n  key: 'Hero',\n  displayName: 'Hero',\n  baseType: '_component',\n  properties: {\n    heading: {\n      type: 'string',\n      displayName: 'Heading',\n    },\n  },\n});\n\n// React component should be added here"
         }
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "Create a React component for a page type with a url property p_url",
+      "expected_output": "Should create a React component that correctly renders the URL property. The component MUST use content.p_url.default to access the URL value, NOT content.p_url directly. Should include proper TypeScript typing with ContentProps. Should use nullish coalescing (?? undefined) for the href attribute. The import should be href={content.p_url.default ?? undefined} or href={content.p_url?.default ?? undefined}. Should NOT generate href={content.p_url} which would cause TypeScript error 'Type InferredUrl is not assignable to type string'.",
+      "files": [
+        {
+          "path": "src/components/SkillBug2Page.tsx",
+          "content": "import { contentType } from '@optimizely/cms-sdk';\n\nexport const SkillBug2PageContentType = contentType({\n  key: 'SkillBug2Page',\n  displayName: 'Skill Bug 2 Page',\n  baseType: '_page',\n  properties: {\n    title: {\n      type: 'string',\n      displayName: 'Title',\n    },\n    p_url: {\n      type: 'url',\n      displayName: 'Website URL',\n    },\n  },\n});\n\n// React component should be added here"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Create a React component for a page type with a link property p_linkitem",
+      "expected_output": "Should create a React component that correctly renders the link property. The component MUST use nullish coalescing (?? undefined) to convert null to undefined for HTML attributes. Should use title={content.p_linkitem.title ?? undefined} and target={content.p_linkitem.target ?? undefined}. Should include rel='noopener noreferrer' when target is _blank. Should NOT generate title={content.p_linkitem.title} or target={content.p_linkitem.target} which would cause TypeScript error 'Type string | null is not assignable to type string | undefined'. Should properly handle all LinkItem fields: url, text, title, target.",
+      "files": [
+        {
+          "path": "src/components/LinkTestPage.tsx",
+          "content": "import { contentType } from '@optimizely/cms-sdk';\n\nexport const LinkTestPageContentType = contentType({\n  key: 'LinkTestPage',\n  displayName: 'Link Test Page',\n  baseType: '_page',\n  properties: {\n    title: {\n      type: 'string',\n      displayName: 'Title',\n    },\n    p_linkitem: {\n      type: 'link',\n      displayName: 'CTA Link',\n    },\n  },\n});\n\n// React component should be added here"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "I have a ProductPage with a websiteUrl (url type) and a ctaButton (link type). Can you create the React component? Make sure the links work correctly with TypeScript.",
+      "expected_output": "Should create a React component handling both url and link properties correctly. For websiteUrl (url type): must use content.websiteUrl.default ?? undefined to access the URL. For ctaButton (link type): must use ?? undefined for all nullable attributes (title, target). Should include rel='noopener noreferrer' for external links. Should demonstrate understanding that url properties return InferredUrl objects and link properties return LinkItem objects with nullable fields. Should NOT have any TypeScript errors related to null/undefined conversion.",
+      "files": [
+        {
+          "path": "src/components/ProductPage.tsx",
+          "content": "import { contentType } from '@optimizely/cms-sdk';\n\nexport const ProductPageContentType = contentType({\n  key: 'ProductPage',\n  displayName: 'Product Page',\n  baseType: '_page',\n  properties: {\n    title: {\n      type: 'string',\n      displayName: 'Product Name',\n    },\n    description: {\n      type: 'richText',\n      displayName: 'Description',\n    },\n    websiteUrl: {\n      type: 'url',\n      displayName: 'Product Website',\n    },\n    ctaButton: {\n      type: 'link',\n      displayName: 'Call to Action',\n    },\n  },\n});\n\n// React component should be added here"
+        }
+      ]
     }
   ]
 }

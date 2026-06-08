@@ -186,33 +186,44 @@ DateTime properties store ISO 8601 date strings.
 
 ## Link Properties
 
-Link properties (`type: 'link'`) include metadata beyond just the URL.
+Link properties (`type: 'link'`) include metadata beyond just the URL. The SDK returns a `LinkItem` object.
+
+### LinkItem Object Structure
+
+```typescript
+{
+  url: string | null;      // The link destination URL
+  text: string | null;     // The link text/label
+  title: string | null;    // The title attribute (tooltip)
+  target: string | null;   // The link target (_blank, _self, etc.)
+}
+```
 
 ### Full Link Pattern
+
+**CRITICAL**: Link properties can have `null` values. TypeScript requires `string | undefined` for HTML attributes, not `string | null`. Use nullish coalescing `?? undefined` to convert `null` to `undefined`.
 
 ```tsx
 {content.ctaLink && (
   <a 
-    href={content.ctaLink.url} 
-    title={content.ctaLink.title}
-    target={content.ctaLink.target}
+    href={content.ctaLink.url ?? undefined} 
+    title={content.ctaLink.title ?? undefined}
+    target={content.ctaLink.target ?? undefined}
+    rel={content.ctaLink.target === '_blank' ? 'noopener noreferrer' : undefined}
   >
     {content.ctaLink.text}
   </a>
 )}
 ```
 
-**Link object structure:**
-- `url`: The link destination
-- `text`: The link text/label
-- `title`: The link title attribute (tooltip)
-- `target`: The link target (`_blank`, `_self`, etc.)
-
 ### Link with Fallback Text
 
 ```tsx
 {content.ctaLink && (
-  <a href={content.ctaLink.url} target={content.ctaLink.target}>
+  <a 
+    href={content.ctaLink.url ?? undefined} 
+    target={content.ctaLink.target ?? undefined}
+  >
     {content.ctaLink.text || 'Learn More'}
   </a>
 )}
@@ -223,8 +234,9 @@ Link properties (`type: 'link'`) include metadata beyond just the URL.
 ```tsx
 {content.ctaLink && (
   <a 
-    href={content.ctaLink.url}
-    target={content.ctaLink.target}
+    href={content.ctaLink.url ?? undefined}
+    title={content.ctaLink.title ?? undefined}
+    target={content.ctaLink.target ?? undefined}
     rel={content.ctaLink.target === '_blank' ? 'noopener noreferrer' : undefined}
   >
     {content.ctaLink.text}
@@ -233,38 +245,93 @@ Link properties (`type: 'link'`) include metadata beyond just the URL.
 )}
 ```
 
+**Common mistakes to avoid:**
+
+```tsx
+// ❌ WRONG: Passing null to attributes
+<a 
+  title={content.ctaLink.title}
+  target={content.ctaLink.target}
+>
+// Error: Type 'string | null' is not assignable to type 'string | undefined'
+
+// ✅ CORRECT: Convert null to undefined with ?? undefined
+<a 
+  title={content.ctaLink.title ?? undefined}
+  target={content.ctaLink.target ?? undefined}
+>
+```
+
 **Key points:**
+
+- Link properties return `LinkItem` objects with nullable fields
+- Always use `?? undefined` to convert `null` to `undefined` for HTML attributes
+- TypeScript HTML attributes accept `string | undefined` but NOT `string | null`
 - Always add `rel="noopener noreferrer"` for `target="_blank"` links
-- Provide fallback text if `content.ctaLink.text` is empty
+- Provide fallback text if `content.ctaLink.text` is empty or null
 - Use the `title` attribute for accessibility
 - Consider indicating external links visually
 
 ## URL Properties
 
-URL properties (`type: 'url'`) are simple strings, unlike link properties.
+URL properties (`type: 'url'`) return an `InferredUrl` object with routing information, not simple strings.
 
-### Basic URL
+### InferredUrl Object Structure
+
+```typescript
+{
+  default: string | null;        // The primary URL
+  base: string | null;           // Base path
+  hierarchical: string | null;   // Full hierarchical path
+  internal: string | null;       // Internal route
+}
+```
+
+### Basic URL Pattern
+
+**CRITICAL**: URL properties return an object, not a string. Always access `.default` for the href value.
 
 ```tsx
 {content.websiteUrl && (
-  <a href={content.websiteUrl}>Visit Website</a>
+  <a href={content.websiteUrl.default ?? undefined}>Visit Website</a>
 )}
 ```
 
-### URL with Validation
+### URL with Text Display
 
 ```tsx
-{content.websiteUrl && isValidUrl(content.websiteUrl) && (
-  <a href={content.websiteUrl} target='_blank' rel='noopener noreferrer'>
-    {content.websiteUrl}
+{content.websiteUrl?.default && (
+  <a href={content.websiteUrl.default} target='_blank' rel='noopener noreferrer'>
+    {content.websiteUrl.default}
   </a>
 )}
 ```
 
+### URL with Fallback
+
+```tsx
+<a href={content.websiteUrl?.default ?? '#'}>
+  {content.linkText || 'Visit Website'}
+</a>
+```
+
+**Common mistakes to avoid:**
+
+```tsx
+// ❌ WRONG: Trying to use URL directly as string
+<a href={content.websiteUrl}>Visit</a>
+// Error: Type 'InferredUrl' is not assignable to type 'string'
+
+// ✅ CORRECT: Access .default property
+<a href={content.websiteUrl?.default ?? undefined}>Visit</a>
+```
+
 **Key points:**
-- URL properties are just strings (no `.url` or `.text` properties)
-- Validate URLs before rendering if needed
-- Provide your own link text
+- URL properties return `InferredUrl` objects, NOT strings
+- Always access `.default` for the href value (e.g., `content.websiteUrl.default`)
+- Use nullish coalescing `?? undefined` or `?? '#'` for fallback
+- The `.default` property can be `null`, so use optional chaining
+- Other properties (`.base`, `.hierarchical`, `.internal`) are available for advanced routing
 
 ## String and Rich Text Properties
 
