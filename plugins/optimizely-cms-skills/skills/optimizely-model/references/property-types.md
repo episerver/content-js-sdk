@@ -57,9 +57,17 @@ Use `contentReference` with `allowedTypes` to restrict which content types can b
 ```typescript
 featuredImage: {
   type: 'contentReference',
-  allowedTypes: ['_image']  // Only allow image content
+  allowedTypes: ['_image']  // Base types like '_image' can be strings
+}
+
+// For custom content types, use type object references:
+relatedArticle: {
+  type: 'contentReference',
+  allowedTypes: [ArticleContentType]  // Reference to type object, NOT string
 }
 ```
+
+**IMPORTANT**: When referencing custom content types in `allowedTypes` or `restrictedTypes`, use the type object (e.g., `ArticleContentType`), NOT a string (e.g., `'ArticleContentType'`). Base types like `'_image'`, `'_page'`, etc. can remain as strings.
 
 ### Component Type
 

@@ -80,10 +80,12 @@ Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`
 ```typescript
 featuredArticle: {
   type: 'content',
-  allowedTypes: [ArticleContentType], // or ['Article'] as string - limits to only Articles
+  allowedTypes: [ArticleContentType], // Reference to type object, NOT string like 'ArticleContentType'
   displayName: 'Featured Article',
 }
 ```
+
+**IMPORTANT**: Use type object references (e.g., `[ArticleContentType]`), NOT strings (e.g., `['ArticleContentType']`). The same applies to `restrictedTypes`.
 
 **Arrays**: Specify what type of items the array contains:
 ```typescript
@@ -96,14 +98,16 @@ tags: {
 }
 ```
 
-**Components**: Embed a specific component type:
+**Components**: Embed a specific component type (use the type object reference, NOT a string):
 ```typescript
 hero: {
   type: 'component',
-  contentType: HeroComponentType,
+  contentType: HeroComponentType, // Reference to the component type object
   displayName: 'Hero Section',
 }
 ```
+
+**IMPORTANT**: The `contentType` field must reference the actual type object (e.g., `HeroComponentType`), not a string like `'HeroComponentType'`.
 
 **Container Types**: Use `mayContainTypes` for pages, experiences, and folders:
 ```typescript
@@ -128,6 +132,30 @@ If the user wants to model based on existing content types, display templates, o
    - Content types → `contentType()` format
    - Display templates → `displayTemplate()` format
    - Contracts → `contract()` format
+
+### Creating Multiple Content Types (Batch Creation)
+
+When creating multiple content types at once (e.g., generating from CMS site data or creating a set of related types):
+
+1. Create all content type files in the components directory
+2. **IMPORTANT**: After creating all files, check if `initContentTypeRegistry` exists in the project (search for it in `layout.tsx` or `app/layout.tsx`)
+3. If the registry exists, add all new content types and contracts to it:
+   ```typescript
+   import { ArticleContentType } from '@/components/Article';
+   import { BlogPageContentType } from '@/components/BlogPage';
+   import { HeroComponentType } from '@/components/Hero';
+   import { SEOContract } from '@/components/SEOContract';
+   import { initContentTypeRegistry } from '@optimizely/cms-sdk';
+   
+   initContentTypeRegistry([
+     SEOContract, // Contracts first
+     ArticleContentType,
+     BlogPageContentType,
+     HeroComponentType,
+   ]);
+   ```
+4. If creating a script to generate content types, ensure the script also updates the registry
+5. Remind the user to sync with `config push` after all types are created and registered
 
 ### Component-Specific Configuration
 
@@ -304,6 +332,19 @@ initDisplayTemplateRegistry([
 ```
 
 3. If not found, inform the user they may need to set up the registry in their application bootstrap code
+
+### React Components for Display Templates
+
+Display templates define the structure and settings in CMS, but they need corresponding React components for rendering.
+
+After creating display template definitions, **always** suggest to the user:
+
+> **Next Step**: Create the React rendering component for this display template using the `optimizely-model-react` skill.
+
+The React component should:
+- Match the display template's `tag` field (if specified) or use the display template key
+- Implement the visual variation defined by the template
+- Use the template's settings to customize rendering
 
 ## After Creating Files
 
