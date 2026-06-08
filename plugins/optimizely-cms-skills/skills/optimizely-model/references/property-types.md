@@ -63,16 +63,99 @@ publishDate: {
 
 ### Array Type
 
-Arrays require an `items` field to define what the array contains:
+Arrays require an `items` field to define what the array contains. You can specify constraints on:
+1. **The array itself** using `minItems` and `maxItems`
+2. **Each item in the array** by adding constraints inside the `items` object
 
 ```typescript
+// Array-level constraints only
 tags: {
   type: 'array',
   items: { type: 'string' },
-  minItems: 1,      // Optional: minimum number of items
-  maxItems: 10      // Optional: maximum number of items
+  minItems: 1,      // Minimum number of items in array
+  maxItems: 10      // Maximum number of items in array
+}
+
+// Item-level constraints (applied to each string in the array)
+validatedTags: {
+  type: 'array',
+  displayName: 'Validated Tags',
+  items: {
+    type: 'string',
+    minLength: 1,      // Each string must be at least 1 char
+    maxLength: 20,     // Each string must be max 20 chars
+    pattern: '^[A-Z]'  // Each string must start with uppercase letter
+  },
+  minItems: 1,
+  maxItems: 5
+}
+
+// Array of integers with range constraints on each item
+quantities: {
+  type: 'array',
+  displayName: 'Quantities',
+  items: {
+    type: 'integer',
+    minimum: 1,    // Each integer must be >= 1
+    maximum: 100   // Each integer must be <= 100
+  }
+}
+
+// Array of floats with range constraints on each item
+prices: {
+  type: 'array',
+  displayName: 'Price List',
+  items: {
+    type: 'float',
+    minimum: 0.01,   // Each price must be >= 0.01
+    maximum: 999.99  // Each price must be <= 999.99
+  }
+}
+
+// Array of dateTimes with range constraints on each item
+eventDates: {
+  type: 'array',
+  displayName: 'Event Dates',
+  items: {
+    type: 'dateTime',
+    minimum: '2024-01-01T00:00:00Z',  // Each date must be >= this
+    maximum: '2024-12-31T23:59:59Z'   // Each date must be <= this
+  }
+}
+
+// Array of content references with type restrictions on each item
+relatedArticles: {
+  type: 'array',
+  displayName: 'Related Articles',
+  items: {
+    type: 'content',
+    allowedTypes: [ArticleContentType],  // Each item must be an Article
+    restrictedTypes: [DraftContentType]  // Each item cannot be a Draft
+  }
+}
+
+// Array of content references with allowedTypes
+images: {
+  type: 'array',
+  displayName: 'Image Gallery',
+  items: {
+    type: 'contentReference',
+    allowedTypes: ['_image']  // Each item must be an image
+  }
+}
+
+// Array of components with specific component type for each item
+sections: {
+  type: 'array',
+  displayName: 'Page Sections',
+  items: {
+    type: 'component',
+    contentType: SectionComponentType  // Each item must be this component type
+  }
 }
 ```
+
+**CRITICAL**: When users specify constraints for array items (e.g., "each item must start with X", "minimum value per item"), those constraints go **inside the `items` object**, not at the array property level.
 
 **Important**: Arrays cannot contain other arrays (nested arrays are not supported).
 

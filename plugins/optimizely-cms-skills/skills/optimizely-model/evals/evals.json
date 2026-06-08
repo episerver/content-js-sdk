@@ -112,6 +112,12 @@
       "prompt": "Create content type TestingPage, add p_float is float property and this property has display name is \"float display name\", group: 'content', indexing type: 'queryable', minimum: 20, maximum: 50",
       "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_float property. MUST have: type: 'float', displayName: 'float display name', group: 'content', indexingType: 'queryable', minimum: 20, maximum: 50. Should NOT omit minimum or maximum constraints.",
       "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "Create content type TestingPage, add p_list_string is a list of string property and this property has minLength is 1, maxLength is 10, each item start with \"test\"",
+      "expected_output": "Should create TestingPage.tsx with contentType() definition containing p_list_string property. MUST have: type: 'array', items with type: 'string', items.minLength: 1, items.maxLength: 10, items.pattern: '^test'. Constraints must be INSIDE the items object, not at the array property level. Should NOT omit item-level constraints.",
+      "files": []
     }
   ]
 }

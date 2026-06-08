@@ -167,16 +167,52 @@ featuredArticle: {
 
 **IMPORTANT**: Use type object references (e.g., `[ArticleContentType]`), NOT strings (e.g., `['ArticleContentType']`). The same applies to `restrictedTypes`.
 
-**Arrays**: Specify what type of items the array contains:
+**Arrays**: Specify what type of items the array contains. **CRITICAL**: Constraints on individual items go **inside the `items` object**:
+
 ```typescript
+// Simple array
 tags: {
   type: 'array',
   items: { type: 'string' },
   displayName: 'Tags',
+  minItems: 1,    // Array-level: min number of items
+  maxItems: 10,   // Array-level: max number of items
+}
+
+// Array with constraints on each item
+validatedTags: {
+  type: 'array',
+  items: {
+    type: 'string',
+    minLength: 1,      // Item-level: each string min length
+    maxLength: 20,     // Item-level: each string max length
+    pattern: '^test'   // Item-level: each string must start with "test"
+  },
   minItems: 1,
-  maxItems: 10,
+  maxItems: 10
+}
+
+// Array of numbers with range per item
+prices: {
+  type: 'array',
+  items: {
+    type: 'float',
+    minimum: 0.01,   // Item-level: each price >= 0.01
+    maximum: 999.99  // Item-level: each price <= 999.99
+  }
+}
+
+// Array of content references with type restrictions per item
+relatedArticles: {
+  type: 'array',
+  items: {
+    type: 'content',
+    allowedTypes: [ArticleContentType]  // Item-level: each must be Article
+  }
 }
 ```
+
+**When user says "each item must...", "per item", "every item should..."** → add constraints inside `items` object.
 
 **Dropdown Properties (Select One)**: 
 
