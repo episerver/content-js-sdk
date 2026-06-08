@@ -82,6 +82,12 @@
       "prompt": "creating a LandingPage type that should only allow certain child pages underneath it - specifically it can contain PricingPage, TestimonialPage, and more LandingPages for sub-sections. also need fields for hero title, hero subtitle, and a sections content area. this is for a marketing site. components are in ./app/components/",
       "expected_output": "Should read optimizely.config.mjs to confirm components path, then create LandingPage.tsx in ./app/components/ with contentType() definition: baseType: '_page', mayContainTypes: [PricingPageContentType, TestimonialPageContentType, '_self'] (or string keys if types not imported), properties including heroTitle (string), heroSubtitle (string), sections (array or contentArea type). Should explain mayContainTypes controls the allowed child pages in the content tree. Should add to registry and remind about config push.",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Create a page type SkillTestingPage with 2 properties: a dropdown property p_dropdownlist with options Red, Green, Blue and a select list property p_selectlist with options Large, Medium, Small",
+      "expected_output": "Should create SkillTestingPage.tsx with contentType() definition containing two properties. For p_dropdownlist: MUST have type: 'string', format: 'selectOne', and enum array with objects {value: 'Red', displayName: 'Red'}, {value: 'Green', displayName: 'Green'}, {value: 'Blue', displayName: 'Blue'}. For p_selectlist: MUST have type: 'array', format: 'selectMany', and items.enum array with objects {value: 'Large', displayName: 'Large'}, {value: 'Medium', displayName: 'Medium'}, {value: 'Small', displayName: 'Small'}. Should NOT create properties without format field. Should NOT create properties without enum arrays.",
+      "files": []
     }
   ]
 }

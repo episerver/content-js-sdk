@@ -117,3 +117,134 @@ title: {
   maxLength: 100
 }
 ```
+
+### Dropdown Properties (Select One)
+
+**CRITICAL**: Dropdown/select properties require both `format: 'selectOne'` AND an `enum` array defining the available options.
+
+For single-selection dropdowns:
+
+```typescript
+color: {
+  type: 'string',
+  format: 'selectOne',
+  enum: [
+    {
+      value: 'Red',
+      displayName: 'Red'
+    },
+    {
+      value: 'Green',
+      displayName: 'Green'
+    },
+    {
+      value: 'Blue',
+      displayName: 'Blue'
+    }
+  ],
+  displayName: 'Color'
+}
+```
+
+**Common mistake to avoid:**
+
+```typescript
+// ❌ WRONG: Missing format field
+color: {
+  type: 'string',
+  displayName: 'Color'
+}
+
+// ❌ WRONG: Missing enum array
+color: {
+  type: 'string',
+  format: 'selectOne',
+  displayName: 'Color'
+}
+
+// ✅ CORRECT: Both format and enum
+color: {
+  type: 'string',
+  format: 'selectOne',
+  enum: [
+    { value: 'Red', displayName: 'Red' },
+    { value: 'Green', displayName: 'Green' }
+  ],
+  displayName: 'Color'
+}
+```
+
+### Select List Properties (Select Many)
+
+**CRITICAL**: Multi-selection lists require `type: 'array'`, `format: 'selectMany'`, AND `items.enum` defining the available options.
+
+For multi-selection lists:
+
+```typescript
+sizes: {
+  type: 'array',
+  format: 'selectMany',
+  displayName: 'Available Sizes',
+  items: {
+    type: 'string',
+    enum: [
+      {
+        value: 'Small',
+        displayName: 'Small'
+      },
+      {
+        value: 'Medium',
+        displayName: 'Medium'
+      },
+      {
+        value: 'Large',
+        displayName: 'Large'
+      }
+    ]
+  }
+}
+```
+
+**Common mistake to avoid:**
+
+```typescript
+// ❌ WRONG: Missing format field
+sizes: {
+  type: 'array',
+  items: { type: 'string' },
+  displayName: 'Sizes'
+}
+
+// ❌ WRONG: enum on wrong level (should be in items)
+sizes: {
+  type: 'array',
+  format: 'selectMany',
+  enum: [...],  // Wrong location
+  items: { type: 'string' },
+  displayName: 'Sizes'
+}
+
+// ✅ CORRECT: format on property, enum in items
+sizes: {
+  type: 'array',
+  format: 'selectMany',
+  items: {
+    type: 'string',
+    enum: [
+      { value: 'Small', displayName: 'Small' },
+      { value: 'Medium', displayName: 'Medium' },
+      { value: 'Large', displayName: 'Large' }
+    ]
+  },
+  displayName: 'Sizes'
+}
+```
+
+**Key differences between selectOne and selectMany:**
+
+| Feature | selectOne (Dropdown) | selectMany (Select List) |
+|---------|---------------------|--------------------------|
+| Type | `'string'` | `'array'` |
+| Format | `format: 'selectOne'` | `format: 'selectMany'` |
+| Enum location | `enum: [...]` (on property) | `items: { enum: [...] }` (in items) |
+| Return value | Single string | Array of strings |

@@ -74,6 +74,32 @@ Choose the appropriate `baseType`: `'_page'`, `'_component'`, `'_experience'`, `
 
 Common property types include `'string'`, `'richText'`, `'boolean'`, `'integer'`, `'float'`, `'dateTime'`, `'url'`, `'content'`, `'contentReference'`, `'array'`, and `'component'`. See `references/property-types.md` for the complete list with examples.
 
+### Recognizing Property Intent from User Requests
+
+**CRITICAL**: When users describe properties, recognize the intended UI control and use the correct pattern:
+
+| User Says | Property Type | Required Fields |
+|-----------|---------------|-----------------|
+| "dropdown", "select one", "choice", "pick one from..." | String with selectOne | `type: 'string'`, `format: 'selectOne'`, `enum: [...]` |
+| "select list", "multi-select", "select many", "checkboxes", "pick multiple from..." | Array with selectMany | `type: 'array'`, `format: 'selectMany'`, `items: { type: 'string', enum: [...] }` |
+| "rich text", "formatted text", "WYSIWYG" | RichText | `type: 'richText'` |
+| "image", "picture", "photo" | ContentReference | `type: 'contentReference'`, `allowedTypes: ['_image']` |
+| "list of tags", "array of strings" | Array | `type: 'array'`, `items: { type: 'string' }` |
+
+**Example**: If user says "add a dropdown with Red, Green, Blue options", create:
+```typescript
+colorChoice: {
+  type: 'string',
+  format: 'selectOne',
+  enum: [
+    { value: 'Red', displayName: 'Red' },
+    { value: 'Green', displayName: 'Green' },
+    { value: 'Blue', displayName: 'Blue' }
+  ],
+  displayName: 'Color Choice'
+}
+```
+
 ### Important Patterns
 
 **Content References**: Optionally use `allowedTypes` or `restrictedTypes` to control which content types can be referenced:
@@ -97,6 +123,47 @@ tags: {
   maxItems: 10,
 }
 ```
+
+**Dropdown Properties (Select One)**: 
+
+**CRITICAL**: For dropdown/select-one properties, you MUST include both `format: 'selectOne'` AND an `enum` array.
+
+```typescript
+color: {
+  type: 'string',
+  format: 'selectOne',
+  enum: [
+    { value: 'Red', displayName: 'Red' },
+    { value: 'Green', displayName: 'Green' },
+    { value: 'Blue', displayName: 'Blue' }
+  ],
+  displayName: 'Color'
+}
+```
+
+**Common mistake**: Omitting `format` or `enum` will result in a plain text field instead of a dropdown.
+
+**Select List Properties (Select Many)**:
+
+**CRITICAL**: For multi-select lists, you MUST use `type: 'array'`, include `format: 'selectMany'`, AND define `items.enum`.
+
+```typescript
+sizes: {
+  type: 'array',
+  format: 'selectMany',
+  displayName: 'Sizes',
+  items: {
+    type: 'string',
+    enum: [
+      { value: 'Small', displayName: 'Small' },
+      { value: 'Medium', displayName: 'Medium' },
+      { value: 'Large', displayName: 'Large' }
+    ]
+  }
+}
+```
+
+**Common mistake**: Putting `enum` at the property level instead of inside `items`, or omitting `format`.
 
 **Components**: Embed a specific component type (use the type object reference, NOT a string):
 ```typescript
