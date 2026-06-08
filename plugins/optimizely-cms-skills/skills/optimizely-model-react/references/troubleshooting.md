@@ -72,6 +72,162 @@ Cannot find module '@optimizely/cms-sdk/react'
 - Check import path: `@optimizely/cms-sdk/react` not `@optimizely/cms-sdk`
 - Restart TypeScript server in IDE
 
+### Path Alias Import Errors
+
+**Error:**
+```
+Cannot find module '@/components/Article'
+```
+
+**Symptoms:**
+- TypeScript shows red squiggles on component imports
+- Build fails with module resolution errors
+- IDE autocomplete doesn't suggest the path
+
+**Root Cause:** The `tsconfig.json` path alias configuration doesn't match the import pattern.
+
+**Solution Steps:**
+
+**1. Verify tsconfig.json has path aliases configured:**
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+```
+
+**CRITICAL:** The `baseUrl` field is REQUIRED for `paths` to work. If `baseUrl` is missing, path aliases won't resolve.
+
+**2. Check the file actually exists:**
+
+```bash
+# If import is: @/components/Article
+# And tsconfig has: "@/*": ["./src/*"]
+# Then file should be at:
+ls src/components/Article.tsx
+```
+
+**3. Test path resolution with TypeScript:**
+
+```bash
+# Check for TypeScript errors (won't compile, just checks types)
+npx tsc --noEmit
+
+# If error persists, check if Next.js/build tool picks up tsconfig
+npm run build
+```
+
+**4. Common tsconfig.json patterns and their import paths:**
+
+| tsconfig.json | File location | Import as | Notes |
+|---------------|---------------|-----------|-------|
+| `"@/*": ["./src/*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `@/components/Article` | Most common Next.js pattern |
+| `"@/*": ["./*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `@/src/components/Article` | Alias points to root, include src |
+| `"~/*": ["./src/*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `~/components/Article` | Alternative alias character |
+| `"baseUrl": "./src"` (no paths) | `src/components/Article.tsx` | `components/Article` | Relative to baseUrl |
+
+**5. If path aliases don't work, use relative imports:**
+
+```tsx
+// Instead of:
+import Article from '@/components/Article';  // ❌ If this doesn't work
+
+// Use relative path:
+import Article from '../../components/Article';  // ✅ Always works
+```
+
+**6. Restart TypeScript server after changing tsconfig.json:**
+
+In VS Code:
+- Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows)
+- Type "TypeScript: Restart TS Server"
+- Press Enter
+
+**7. Verify existing imports in the same file:**
+
+```tsx
+// Look at other imports in the registration file
+// If they use @/ and work, your new import should too
+import HomePage from '@/components/HomePage';  // Existing working import
+import Article from '@/components/Article';    // Your new import should match
+```
+
+### Framework-Specific Path Resolution Issues
+
+**Next.js:**
+- Ensure `tsconfig.json` is in the project root
+- Next.js automatically configures `@/*` → `./src/*` if you have a `src` folder
+- Check if `next.config.js` has custom webpack aliases that override tsconfig
+
+**Vite:**
+- Path aliases in `tsconfig.json` are for TypeScript only
+- You MUST also add them to `vite.config.ts`:
+  ```ts
+  import { defineConfig } from 'vite';
+  import path from 'path';
+  
+  export default defineConfig({
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+  });
+  ```
+
+**Create React App:**
+- CRA doesn't support `tsconfig.json` path aliases by default
+- Use `craco` or `react-app-rewired` to enable path aliases
+- Or use relative imports instead
+
+### Debugging Import Path Issues
+
+**Step-by-step debugging process:**
+
+1. **Confirm file exists:**
+   ```bash
+   ls -la src/components/Article.tsx
+   ```
+
+2. **Check TypeScript can resolve it:**
+   ```bash
+   npx tsc --traceResolution --noEmit | grep Article
+   ```
+   This shows how TypeScript resolves the import.
+
+3. **Verify IDE recognizes the path:**
+   - Hover over the import in your editor
+   - It should show the resolved file path
+   - If it shows an error, the path is wrong
+
+4. **Test with a known working import:**
+   - Copy an existing import from the same file
+   - Change just the component name
+   - If that works, your path pattern is correct
+
+5. **Try the import in a different file:**
+   - If it works elsewhere, the issue is file-specific
+   - Check if the file has a different `tsconfig.json` (monorepo)
+
+**Quick diagnostic:**
+
+```tsx
+// Add this temporarily to test path resolution
+import { ArticleContentType } from '@/components/Article';
+//                                   ^^^^^^^^^^^^^^^^^^^^^^
+//                                   Hover here in IDE
+
+// If hover shows:
+// - Full file path → Path works ✅
+// - "Cannot find module" → Path wrong ❌
+// - Type info → Everything working ✅
+```
+
 ## Preview Not Working
 
 When components don't show live preview in the CMS editor.
@@ -195,6 +351,8 @@ export default function BlogPage({ content }: BlogPageProps) {
 **Symptoms:**
 - Display template doesn't appear in CMS selector
 - Wrong component renders for content
+- Changing display template in CMS has no effect
+- Default component always renders regardless of selected display template
 
 **Solutions:**
 
@@ -208,20 +366,55 @@ initDisplayTemplateRegistry([
 ]);
 ```
 
-2. **Verify `tag` matches component name:**
+2. **CRITICAL: Verify `tag` field matches the key in `initReactComponentRegistry`:**
+
+This is the most common mistake. The `tag` field in the display template definition MUST exactly match the key used in the component registry's `tags` object.
+
 ```tsx
-// Display template definition
-export const CardDisplayTemplate = displayTemplate({
-  key: 'CardTemplate',
-  tag: 'ArticleCard',  // Must match component name
-  contentType: 'Article',
+// ❌ WRONG - using component name as key
+export const AnimatedHeadingStylesDisplayTemplate = displayTemplate({
+  key: 'AnimatedHeadingStyles',
+  displayName: 'Animated',
+  contentType: 'HeadingElement',
+  tag: 'TestingTag',  // ← This is the value you need
 });
 
-// Component
-export default function ArticleCard({ content, settings }: ArticleCardProps) {
-  // Name must match 'tag' field
-}
+initReactComponentRegistry({
+  resolver: {
+    HeadingElement: {
+      default: HeadingElementDefault,
+      tags: {
+        HeadingElementTemplate: HeadingElementTemplate,  // ❌ Wrong - doesn't match 'TestingTag'
+      },
+    },
+  },
+});
+
+// ✅ CORRECT - tag field matches registry key
+export const AnimatedHeadingStylesDisplayTemplate = displayTemplate({
+  key: 'AnimatedHeadingStyles',
+  displayName: 'Animated',
+  contentType: 'HeadingElement',
+  tag: 'TestingTag',  // ← This exact value must be used below
+});
+
+initReactComponentRegistry({
+  resolver: {
+    HeadingElement: {
+      default: HeadingElementDefault,
+      tags: {
+        TestingTag: HeadingElementTemplate,  // ✅ Correct - matches tag field
+      },
+    },
+  },
+});
 ```
+
+**How to fix:**
+1. Find the display template definition and read the `tag` field value
+2. Use that EXACT value as the key in `initReactComponentRegistry` `tags` object
+3. Do NOT use the component name, display template name, or any other identifier
+4. The tag value is case-sensitive and must match exactly
 
 ## Images Not Loading
 
