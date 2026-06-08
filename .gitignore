@@ -32,3 +32,6 @@ packages/optimizely-cms-sdk/src/generated/
 CLAUDE.md
 
 .agents/
+
+# Skill test/eval workspaces
+*-workspace/
