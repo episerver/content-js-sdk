@@ -77,14 +77,18 @@ Cannot find module '@optimizely/cms-sdk/react'
 **Error:**
 ```
 Cannot find module '@/components/Article'
+Module not found: Can't resolve '@/components/experiences/BlankExperience'
 ```
 
 **Symptoms:**
 - TypeScript shows red squiggles on component imports
 - Build fails with module resolution errors
 - IDE autocomplete doesn't suggest the path
+- Dev server crashes on startup with import errors
 
 **Root Cause:** The `tsconfig.json` path alias configuration doesn't match the import pattern.
+
+**Most Common Scenario:** Components are in `src/components/` directory, but `tsconfig.json` has `"@/*": ["./*"]` (maps to root, not src). The generated import incorrectly uses `@/components/...` when it should be `@/src/components/...`.
 
 **Solution Steps:**
 
@@ -126,10 +130,35 @@ npm run build
 
 | tsconfig.json | File location | Import as | Notes |
 |---------------|---------------|-----------|-------|
-| `"@/*": ["./src/*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `@/components/Article` | Most common Next.js pattern |
-| `"@/*": ["./*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `@/src/components/Article` | Alias points to root, include src |
+| `"@/*": ["./src/*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `@/components/Article` | Most common Next.js pattern ✅ |
+| `"@/*": ["./*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `@/src/components/Article` | ⚠️ Alias at root - MUST include src/ |
 | `"~/*": ["./src/*"]` + `"baseUrl": "."` | `src/components/Article.tsx` | `~/components/Article` | Alternative alias character |
 | `"baseUrl": "./src"` (no paths) | `src/components/Article.tsx` | `components/Article` | Relative to baseUrl |
+
+⚠️ **CRITICAL**: The second pattern (`"@/*": ["./*"]`) is the most commonly misconfigured. When the alias maps to the project root (`./*`), you MUST include the `src/` prefix in your import path. Forgetting this causes "Cannot find module" errors.
+
+**Example of the common mistake:**
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]  // ← Maps to project root, NOT src/
+    }
+  }
+}
+```
+
+```tsx
+// ❌ WRONG - Missing src/ prefix
+import BlankExperience from '@/components/experiences/BlankExperience';
+// Error: Cannot find module '@/components/experiences/BlankExperience'
+
+// ✅ CORRECT - Include src/ because @/ maps to root
+import BlankExperience from '@/src/components/experiences/BlankExperience';
+```
 
 **5. If path aliases don't work, use relative imports:**
 
