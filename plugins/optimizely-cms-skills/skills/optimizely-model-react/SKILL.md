@@ -151,8 +151,31 @@ const imageUrl = src(content.background);
 {imageUrl && <Image src={imageUrl} alt="" fill={true} />}
 ```
 
-**4. Array Properties**
-Map over arrays and render with OptimizelyComponent:
+**4. ContentReference Properties**
+ContentReference properties return `InferredContentReference` which contains `{ key, url, item }` but NOT `__typename`. They cannot be used with `OptimizelyComponent`.
+
+For single contentReference:
+```tsx
+{content.relatedPage?.url && (
+  <a href={content.relatedPage.url.default ?? ''}>
+    {content.relatedPage.key}
+  </a>
+)}
+```
+
+For array of contentReferences:
+```tsx
+{content.relatedPages?.map((ref, i) => (
+  ref?.url && (
+    <a key={i} href={ref.url.default ?? ''}>
+      {ref.key}
+    </a>
+  )
+))}
+```
+
+**5. Array Properties (Content Type Arrays)**
+For arrays of content types (not contentReferences), use OptimizelyComponent:
 
 ```tsx
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
@@ -171,7 +194,9 @@ import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 </div>
 ```
 
-**5. Embedded Component Properties**
+Note: Use `OptimizelyComponent` for `type: 'content'` arrays, NOT for `type: 'contentReference'` arrays.
+
+**6. Embedded Component Properties**
 For `type: 'component'` properties, access the nested data directly:
 
 ```tsx
@@ -184,7 +209,7 @@ For `type: 'component'` properties, access the nested data directly:
 )}
 ```
 
-**6. Experience Types with Composition**
+**7. Experience Types with Composition**
 Experiences need OptimizelyComposition to render the visual builder nodes:
 
 ```tsx
@@ -217,7 +242,7 @@ export default function MyExperience({ content }: Props) {
 }
 ```
 
-**7. Display Templates**
+**8. Display Templates**
 For display template components, accept displaySettings as a prop:
 
 ```tsx

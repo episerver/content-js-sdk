@@ -4,50 +4,85 @@ This reference provides common React patterns for rendering different property t
 
 ## Content Reference Properties
 
-Content references allow linking to other content items. The SDK provides `OptimizelyComponent` for rendering referenced content.
+**IMPORTANT:** Properties with `type: 'contentReference'` return `InferredContentReference` which contains `{ key, url, item }` but NOT `__typename`. These **CANNOT** be used with `OptimizelyComponent`.
 
 ### Single Content Reference
 
-For properties that reference a single content item:
+For properties that reference a single content item, render as a link:
 
 ```tsx
-{content.featuredArticle && (
-  <OptimizelyComponent content={content.featuredArticle} />
+{content.relatedPage?.url && (
+  <a href={content.relatedPage.url.default ?? ''}>
+    {content.relatedPage.key}
+  </a>
 )}
 ```
 
 **Key points:**
-- Always check if the reference exists before rendering
-- `OptimizelyComponent` automatically renders the correct component based on content type
-- The referenced content is passed as the `content` prop
+
+- ContentReference returns `{ key, url, item }` - no `__typename`
+- Always check if `url` exists before rendering
+- Use `url.default` for the href value
+- Use `key` for the link text (or provide custom text)
+- Cannot use `OptimizelyComponent` - type mismatch
 
 ### Array of Content References
 
 For properties that reference multiple content items:
 
 ```tsx
-{content.relatedArticles?.map((article, i) => (
+{content.relatedPages?.map((ref, i) => (
+  ref?.url && (
+    <a key={i} href={ref.url.default ?? ''}>
+      {ref.key}
+    </a>
+  )
+))}
+```
+
+**Key points:**
+
+- Use optional chaining `?.` since the array might be undefined
+- Each item needs a unique `key` prop
+- Check if `url` exists on each item before rendering
+- Render as plain links, not `OptimizelyComponent`
+
+### Content Reference with Custom Rendering
+
+You can access the `item` property for asset metadata:
+
+```tsx
+{content.documentRef?.item && (
+  <div>
+    <a href={content.documentRef.url.default ?? ''}>
+      {content.documentRef.key}
+    </a>
+    {content.documentRef.item.contentType === 'application/pdf' && (
+      <span className="file-type">PDF</span>
+    )}
+  </div>
+)}
+```
+
+## Content Type Properties (Arrays)
+
+**Different from contentReference**: Properties with `type: 'content'` return full content objects with `__typename` and can be used with `OptimizelyComponent`.
+
+### Array of Content Type Items
+
+```tsx
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+
+{content.articles?.map((article, i) => (
   <OptimizelyComponent key={i} content={article} />
 ))}
 ```
 
 **Key points:**
-- Use optional chaining `?.` since the array might be undefined
-- Each item needs a unique `key` prop
-- Prefer stable keys (content ID) over array indices when possible
 
-### Content Reference with Custom Rendering
-
-If you need custom rendering instead of the default component:
-
-```tsx
-{content.author && (
-  <div className='author-info'>
-    <h3>{content.author.name}</h3>
-    <p>{content.author.bio}</p>
-  </div>
-)}
-```
+- Use `OptimizelyComponent` for `type: 'content'` arrays
+- Content items have `__typename` which OptimizelyComponent requires
+- Each item is a full content object, not just a reference
 
 ## Boolean Properties
 
