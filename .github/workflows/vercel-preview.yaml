@@ -5,10 +5,12 @@ env:
   OPTIMIZELY_GRAPH_SINGLE_KEY: ${{ secrets.OPTIMIZELY_GRAPH_SINGLE_KEY }}
   OPTIMIZELY_CMS_URL: ${{ secrets.OPTIMIZELY_CMS_URL }}
   OPTIMIZELY_GRAPH_GATEWAY: ${{ secrets.OPTIMIZELY_GRAPH_GATEWAY }}
-on:
-  push:
-    branches-ignore:
-      - main
+# Temporary change
+on: workflow_dispatch
+# on:
+#   push:
+#     branches-ignore:
+#       - main
 jobs:
   Deploy-Preview:
     runs-on: ubuntu-latest
