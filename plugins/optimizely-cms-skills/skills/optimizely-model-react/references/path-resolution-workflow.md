@@ -355,14 +355,16 @@ Import fails?
 
 ## Quick Reference: Common Path Patterns
 
-| Pattern | tsconfig.json | File at | Import as |
-|---------|--------------|---------|-----------|
-| Next.js (src) | `"@/*": ["./src/*"]` | `src/components/Article.tsx` | `@/components/Article` |
-| Next.js (root) | `"@/*": ["./*"]` | `components/Article.tsx` | `@/components/Article` |
-| Next.js (root, file in src) | `"@/*": ["./*"]` | `src/components/Article.tsx` | `@/src/components/Article` |
-| Tilde alias | `"~/*": ["./src/*"]` | `src/components/Article.tsx` | `~/components/Article` |
-| BaseUrl only | `"baseUrl": "./src"` | `src/components/Article.tsx` | `components/Article` |
-| Relative (always works) | N/A | `src/components/Article.tsx` from `app/layout.tsx` | `../src/components/Article` |
+| Pattern | tsconfig.json | File at | Import as | Notes |
+|---------|--------------|---------|-----------|-------|
+| Next.js (src) | `"@/*": ["./src/*"]` | `src/components/Article.tsx` | `@/components/Article` | Alias strips `./src/` |
+| Next.js (root) | `"@/*": ["./*"]` | `components/Article.tsx` | `@/components/Article` | File at root level |
+| **Next.js (root alias, file in src)** | `"@/*": ["./*"]` | `src/components/Article.tsx` | `@/src/components/Article` | **MUST include src/** ⚠️ |
+| Tilde alias | `"~/*": ["./src/*"]` | `src/components/Article.tsx` | `~/components/Article` | Alternative symbol |
+| BaseUrl only | `"baseUrl": "./src"` | `src/components/Article.tsx` | `components/Article` | Relative from baseUrl |
+| Relative (always works) | N/A | `src/components/Article.tsx` from `app/layout.tsx` | `../src/components/Article` | Safest fallback |
+
+⚠️ **Most common mistake**: When tsconfig has `"@/*": ["./*"]` (maps to root) and file is in `src/components/`, developers often write `@/components/Article` (forgetting `src/`), causing "Cannot find module" errors. The correct import is `@/src/components/Article`.
 
 ## Testing Checklist
 

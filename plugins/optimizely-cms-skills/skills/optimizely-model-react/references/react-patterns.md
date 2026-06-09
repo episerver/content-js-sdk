@@ -4,50 +4,85 @@ This reference provides common React patterns for rendering different property t
 
 ## Content Reference Properties
 
-Content references allow linking to other content items. The SDK provides `OptimizelyComponent` for rendering referenced content.
+**IMPORTANT:** Properties with `type: 'contentReference'` return `InferredContentReference` which contains `{ key, url, item }` but NOT `__typename`. These **CANNOT** be used with `OptimizelyComponent`.
 
 ### Single Content Reference
 
-For properties that reference a single content item:
+For properties that reference a single content item, render as a link:
 
 ```tsx
-{content.featuredArticle && (
-  <OptimizelyComponent content={content.featuredArticle} />
+{content.relatedPage?.url && (
+  <a href={content.relatedPage.url.default ?? ''}>
+    {content.relatedPage.key}
+  </a>
 )}
 ```
 
 **Key points:**
-- Always check if the reference exists before rendering
-- `OptimizelyComponent` automatically renders the correct component based on content type
-- The referenced content is passed as the `content` prop
+
+- ContentReference returns `{ key, url, item }` - no `__typename`
+- Always check if `url` exists before rendering
+- Use `url.default` for the href value
+- Use `key` for the link text (or provide custom text)
+- Cannot use `OptimizelyComponent` - type mismatch
 
 ### Array of Content References
 
 For properties that reference multiple content items:
 
 ```tsx
-{content.relatedArticles?.map((article, i) => (
+{content.relatedPages?.map((ref, i) => (
+  ref?.url && (
+    <a key={i} href={ref.url.default ?? ''}>
+      {ref.key}
+    </a>
+  )
+))}
+```
+
+**Key points:**
+
+- Use optional chaining `?.` since the array might be undefined
+- Each item needs a unique `key` prop
+- Check if `url` exists on each item before rendering
+- Render as plain links, not `OptimizelyComponent`
+
+### Content Reference with Custom Rendering
+
+You can access the `item` property for asset metadata:
+
+```tsx
+{content.documentRef?.item && (
+  <div>
+    <a href={content.documentRef.url.default ?? ''}>
+      {content.documentRef.key}
+    </a>
+    {content.documentRef.item.contentType === 'application/pdf' && (
+      <span className="file-type">PDF</span>
+    )}
+  </div>
+)}
+```
+
+## Content Type Properties (Arrays)
+
+**Different from contentReference**: Properties with `type: 'content'` return full content objects with `__typename` and can be used with `OptimizelyComponent`.
+
+### Array of Content Type Items
+
+```tsx
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+
+{content.articles?.map((article, i) => (
   <OptimizelyComponent key={i} content={article} />
 ))}
 ```
 
 **Key points:**
-- Use optional chaining `?.` since the array might be undefined
-- Each item needs a unique `key` prop
-- Prefer stable keys (content ID) over array indices when possible
 
-### Content Reference with Custom Rendering
-
-If you need custom rendering instead of the default component:
-
-```tsx
-{content.author && (
-  <div className='author-info'>
-    <h3>{content.author.name}</h3>
-    <p>{content.author.bio}</p>
-  </div>
-)}
-```
+- Use `OptimizelyComponent` for `type: 'content'` arrays
+- Content items have `__typename` which OptimizelyComponent requires
+- Each item is a full content object, not just a reference
 
 ## Boolean Properties
 
@@ -151,33 +186,44 @@ DateTime properties store ISO 8601 date strings.
 
 ## Link Properties
 
-Link properties (`type: 'link'`) include metadata beyond just the URL.
+Link properties (`type: 'link'`) include metadata beyond just the URL. The SDK returns a `LinkItem` object.
+
+### LinkItem Object Structure
+
+```typescript
+{
+  url: string | null;      // The link destination URL
+  text: string | null;     // The link text/label
+  title: string | null;    // The title attribute (tooltip)
+  target: string | null;   // The link target (_blank, _self, etc.)
+}
+```
 
 ### Full Link Pattern
+
+**CRITICAL**: Link properties can have `null` values. TypeScript requires `string | undefined` for HTML attributes, not `string | null`. Use nullish coalescing `?? undefined` to convert `null` to `undefined`.
 
 ```tsx
 {content.ctaLink && (
   <a 
-    href={content.ctaLink.url} 
-    title={content.ctaLink.title}
-    target={content.ctaLink.target}
+    href={content.ctaLink.url ?? undefined} 
+    title={content.ctaLink.title ?? undefined}
+    target={content.ctaLink.target ?? undefined}
+    rel={content.ctaLink.target === '_blank' ? 'noopener noreferrer' : undefined}
   >
     {content.ctaLink.text}
   </a>
 )}
 ```
 
-**Link object structure:**
-- `url`: The link destination
-- `text`: The link text/label
-- `title`: The link title attribute (tooltip)
-- `target`: The link target (`_blank`, `_self`, etc.)
-
 ### Link with Fallback Text
 
 ```tsx
 {content.ctaLink && (
-  <a href={content.ctaLink.url} target={content.ctaLink.target}>
+  <a 
+    href={content.ctaLink.url ?? undefined} 
+    target={content.ctaLink.target ?? undefined}
+  >
     {content.ctaLink.text || 'Learn More'}
   </a>
 )}
@@ -188,8 +234,9 @@ Link properties (`type: 'link'`) include metadata beyond just the URL.
 ```tsx
 {content.ctaLink && (
   <a 
-    href={content.ctaLink.url}
-    target={content.ctaLink.target}
+    href={content.ctaLink.url ?? undefined}
+    title={content.ctaLink.title ?? undefined}
+    target={content.ctaLink.target ?? undefined}
     rel={content.ctaLink.target === '_blank' ? 'noopener noreferrer' : undefined}
   >
     {content.ctaLink.text}
@@ -198,38 +245,93 @@ Link properties (`type: 'link'`) include metadata beyond just the URL.
 )}
 ```
 
+**Common mistakes to avoid:**
+
+```tsx
+// ❌ WRONG: Passing null to attributes
+<a 
+  title={content.ctaLink.title}
+  target={content.ctaLink.target}
+>
+// Error: Type 'string | null' is not assignable to type 'string | undefined'
+
+// ✅ CORRECT: Convert null to undefined with ?? undefined
+<a 
+  title={content.ctaLink.title ?? undefined}
+  target={content.ctaLink.target ?? undefined}
+>
+```
+
 **Key points:**
+
+- Link properties return `LinkItem` objects with nullable fields
+- Always use `?? undefined` to convert `null` to `undefined` for HTML attributes
+- TypeScript HTML attributes accept `string | undefined` but NOT `string | null`
 - Always add `rel="noopener noreferrer"` for `target="_blank"` links
-- Provide fallback text if `content.ctaLink.text` is empty
+- Provide fallback text if `content.ctaLink.text` is empty or null
 - Use the `title` attribute for accessibility
 - Consider indicating external links visually
 
 ## URL Properties
 
-URL properties (`type: 'url'`) are simple strings, unlike link properties.
+URL properties (`type: 'url'`) return an `InferredUrl` object with routing information, not simple strings.
 
-### Basic URL
+### InferredUrl Object Structure
+
+```typescript
+{
+  default: string | null;        // The primary URL
+  base: string | null;           // Base path
+  hierarchical: string | null;   // Full hierarchical path
+  internal: string | null;       // Internal route
+}
+```
+
+### Basic URL Pattern
+
+**CRITICAL**: URL properties return an object, not a string. Always access `.default` for the href value.
 
 ```tsx
 {content.websiteUrl && (
-  <a href={content.websiteUrl}>Visit Website</a>
+  <a href={content.websiteUrl.default ?? undefined}>Visit Website</a>
 )}
 ```
 
-### URL with Validation
+### URL with Text Display
 
 ```tsx
-{content.websiteUrl && isValidUrl(content.websiteUrl) && (
-  <a href={content.websiteUrl} target='_blank' rel='noopener noreferrer'>
-    {content.websiteUrl}
+{content.websiteUrl?.default && (
+  <a href={content.websiteUrl.default} target='_blank' rel='noopener noreferrer'>
+    {content.websiteUrl.default}
   </a>
 )}
 ```
 
+### URL with Fallback
+
+```tsx
+<a href={content.websiteUrl?.default ?? '#'}>
+  {content.linkText || 'Visit Website'}
+</a>
+```
+
+**Common mistakes to avoid:**
+
+```tsx
+// ❌ WRONG: Trying to use URL directly as string
+<a href={content.websiteUrl}>Visit</a>
+// Error: Type 'InferredUrl' is not assignable to type 'string'
+
+// ✅ CORRECT: Access .default property
+<a href={content.websiteUrl?.default ?? undefined}>Visit</a>
+```
+
 **Key points:**
-- URL properties are just strings (no `.url` or `.text` properties)
-- Validate URLs before rendering if needed
-- Provide your own link text
+- URL properties return `InferredUrl` objects, NOT strings
+- Always access `.default` for the href value (e.g., `content.websiteUrl.default`)
+- Use nullish coalescing `?? undefined` or `?? '#'` for fallback
+- The `.default` property can be `null`, so use optional chaining
+- Other properties (`.base`, `.hierarchical`, `.internal`) are available for advanced routing
 
 ## String and Rich Text Properties
 
