@@ -10,6 +10,9 @@ export const EditorialContentType = contentType({
     main_body: {
       type: 'richText',
       displayName: 'Main Body',
+      editorSettings: {
+        preset: 'expanded',
+      },
     },
   },
   compositionBehaviors: ['elementEnabled'],
