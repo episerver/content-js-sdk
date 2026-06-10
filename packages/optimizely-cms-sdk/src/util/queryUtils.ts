@@ -13,6 +13,11 @@ import { CONTENT_URL_FRAGMENT, getKeyName, isBaseType } from './baseTypeUtil.js'
 import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
 import { createFragment } from '../graph/createQuery.js';
+import { isContract, findExtendingContentTypes } from '../model/index.js';
+
+// CONSTANTS
+
+const CONTRACT_EXPANSION_WARNING_COUNT = 10;
 
 // TYPE DEFINITIONS
 
@@ -134,6 +139,25 @@ const expandBaseType = (
   return [entry];
 };
 
+const expandContract = (
+  entry: PermittedTypes | AnyContentType,
+): (PermittedTypes | AnyContentType)[] => {
+  if (typeof entry === 'object' && isContract(entry)) {
+    const extendingTypes = findExtendingContentTypes(entry);
+
+    if (extendingTypes.length > CONTRACT_EXPANSION_WARNING_COUNT) {
+      console.warn(
+        `Contract "${entry.key}" has ${extendingTypes.length} implementing types. ` +
+          `This may result in a large GraphQL query. Consider using explicit allowedTypes instead.`,
+      );
+    }
+
+    return [entry, ...extendingTypes];
+  }
+
+  return [entry];
+};
+
 const resolveAllowedTypes = (
   allowed: PermittedTypes[] | undefined,
   restricted: PermittedTypes[] | undefined,
@@ -146,6 +170,7 @@ const resolveAllowedTypes = (
   const seen = new Set<string>();
 
   return baseline
+    .flatMap(expandContract)
     .flatMap(entry => expandBaseType(entry, shouldExpandBaseTypes))
     .filter(contentType => {
       const key = getKeyName(contentType);
