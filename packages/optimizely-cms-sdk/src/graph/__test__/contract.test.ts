@@ -400,3 +400,89 @@ describe('Fragment generation of contracts with experiences', () => {
     `);
   });
 });
+
+describe('Contract expansion in allowedTypes', () => {
+  it('should expand contracts to include implementing content types', async () => {
+    const CategorizableContract = contract({
+      key: 'Categorizable',
+      displayName: 'Categorizable',
+      properties: {
+        category: {
+          type: 'string',
+        },
+        tags: {
+          type: 'string',
+        },
+      },
+    });
+
+    const BlogArticleContentType = contentType({
+      key: 'BlogArticle',
+      displayName: 'Blog Article',
+      baseType: '_page',
+      extends: CategorizableContract,
+      properties: {
+        title: {
+          type: 'string',
+        },
+        body: {
+          type: 'richText',
+        },
+      },
+    });
+
+    const NewsArticleContentType = contentType({
+      key: 'NewsArticle',
+      displayName: 'News Article',
+      baseType: '_page',
+      extends: CategorizableContract,
+      properties: {
+        headline: {
+          type: 'string',
+        },
+        content: {
+          type: 'richText',
+        },
+      },
+    });
+
+    const LandingPageContentType = contentType({
+      key: 'LandingPage',
+      displayName: 'Landing Page',
+      baseType: '_page',
+      properties: {
+        featuredContent: {
+          type: 'content',
+          allowedTypes: [CategorizableContract],
+        },
+      },
+    });
+
+    initContentTypeRegistry([
+      CategorizableContract,
+      BlogArticleContentType,
+      NewsArticleContentType,
+      LandingPageContentType,
+    ]);
+
+    const result = await createFragment('LandingPage');
+
+    const fragmentString = result.fragments.join('\n');
+
+    expect(fragmentString).toContain('fragment Categorizable on ICategorizable');
+    expect(fragmentString).toContain('Categorizable__category:category');
+    expect(fragmentString).toContain('Categorizable__tags:tags');
+
+    expect(fragmentString).toContain('fragment BlogArticle on BlogArticle');
+    expect(fragmentString).toContain('BlogArticle__title:title');
+    expect(fragmentString).toContain('BlogArticle__body:body');
+
+    expect(fragmentString).toContain('fragment NewsArticle on NewsArticle');
+    expect(fragmentString).toContain('NewsArticle__headline:headline');
+    expect(fragmentString).toContain('NewsArticle__content:content');
+
+    expect(fragmentString).toContain('...Categorizable');
+    expect(fragmentString).toContain('...BlogArticle');
+    expect(fragmentString).toContain('...NewsArticle');
+  });
+});
