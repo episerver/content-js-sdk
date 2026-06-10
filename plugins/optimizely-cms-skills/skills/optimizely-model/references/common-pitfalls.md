@@ -209,30 +209,33 @@ featuredImage: {
 }
 ```
 
-## 7. Using editorSettings for Rich Text
+## 7. Incorrect editorSettings Usage
 
-**Problem:** Adding `editorSettings` field to rich text properties to configure TinyMCE toolbar.
+**Problem:** Using `editorSettings` with wrong structure or on non-richText properties.
 
-**Why it fails:** The `editorSettings` field is not recognized by the SDK. Rich text configuration is handled differently.
+**Why it matters:** `editorSettings` is now supported in SDK for configuring TinyMCE toolbar, but only on `richText` properties.
 
 **Example of what NOT to do:**
 ```typescript
-// ❌ WRONG - editorSettings is not a valid field
-bodyText: {
-  type: 'richText',
-  editorSettings: {  // This field is not supported
-    toolbar: 'minimal'
+// ❌ WRONG - editorSettings on non-richText property
+title: {
+  type: 'string',
+  editorSettings: {  // Only valid on richText
+    preset: 'minimal'
   }
 }
 ```
 
-**Solution:** Omit `editorSettings`:
+**Solution:** Use `editorSettings` only on `richText` properties:
 ```typescript
-// ✅ CORRECT - No editorSettings field
+// ✅ CORRECT - editorSettings on richText property
 bodyText: {
   type: 'richText',
   displayName: 'Body Text',
-  group: 'content'
+  group: 'content',
+  editorSettings: {
+    preset: 'minimal'  // Now supported!
+  }
 }
 ```
 
@@ -248,4 +251,4 @@ Before finalizing your content type definition:
 - [ ] All required imports are present
 - [ ] File naming follows conventions (e.g., `BlogPage.tsx` for BlogPage type)
 - [ ] Type references use objects (e.g., `ArticleContentType`), not strings (e.g., `'ArticleContentType'`)
-- [ ] No `editorSettings` field on rich text properties
+- [ ] `editorSettings` used only on `richText` properties (not on string/other types)

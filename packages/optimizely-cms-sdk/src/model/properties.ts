@@ -6,6 +6,8 @@ export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
 export type INDEX_TYPE = 'disabled' | 'queryable' | 'searchable';
 
+export type RICHTEXT_PRESET = 'expanded' | 'standard' | 'minimal';
+
 /** A "Base" content type property that includes all common attributes for all content type properties */
 type BaseProperty = {
   format?: string;
@@ -67,7 +69,10 @@ export type DateTimeProperty = BaseProperty & {
   maximum?: string;
 };
 
-export type RichTextProperty = BaseProperty & { type: 'richText' };
+export type RichTextProperty = BaseProperty & {
+  type: 'richText';
+  editorSettings?: { preset: RICHTEXT_PRESET };
+};
 export type UrlProperty = BaseProperty & { type: 'url' };
 export type IntegerProperty = BaseProperty & {
   type: 'integer';
@@ -109,4 +114,3 @@ export type ComponentProperty<T extends AnyContentType> = BaseProperty & {
 export type LinkProperty = BaseProperty & {
   type: 'link';
 };
-
