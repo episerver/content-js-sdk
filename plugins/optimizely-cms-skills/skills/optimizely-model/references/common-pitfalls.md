@@ -221,7 +221,7 @@ featuredImage: {
 title: {
   type: 'string',
   editorSettings: {  // Only valid on richText
-    toolbar: 'minimal'
+    preset: 'minimal'
   }
 }
 ```
@@ -234,7 +234,7 @@ bodyText: {
   displayName: 'Body Text',
   group: 'content',
   editorSettings: {
-    toolbar: 'minimal'  // Now supported!
+    preset: 'minimal'  // Now supported!
   }
 }
 ```
