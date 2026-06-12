@@ -27,10 +27,21 @@ async function createApplication(
   });
 
   if (!response.response.ok) {
+    const errorTitle = response.error?.title || 'Unknown error';
+    const errors = (response.error as any)?.errors;
+
+    if (errors && Array.isArray(errors)) {
+      const formattedErrors = errors
+        .map((err: any) => {
+          const field = err.field ? `[${err.field}]` : '';
+          return `  ${field} ${err.detail}`;
+        })
+        .join('\n');
+      throw new Error(`Failed to create application: ${errorTitle}\n${formattedErrors}`);
+    }
+
     const errorDetails = response.error?.detail || JSON.stringify(response.error);
-    throw new Error(
-      `Failed to create application: ${response.error?.title || 'Unknown error'}. Details: ${errorDetails}`,
-    );
+    throw new Error(`Failed to create application: ${errorTitle}. Details: ${errorDetails}`);
   }
 
   return response.data;
@@ -112,9 +123,6 @@ async function checkApplicationsWithContent(
       );
     } catch (error) {
       appSpinner.fail(chalk.red(`Failed to ensure application "${app.displayName}"`));
-      if (error instanceof Error) {
-        console.error(chalk.red(error.message));
-      }
       throw error;
     }
   }
@@ -174,12 +182,19 @@ export async function checkApplications(
 
   checkSpinner.info(chalk.blue('Some applications need setup'));
 
+  // Collect missing app keys
+  const missingAppKeys = new Set(
+    applications
+      .filter((_, i) => !existingApps[i])
+      .map(app => app.key!)
+  );
+
   // lazy load content service to avoid circular dependency
   const { processContentWithApplications } = await import('./contentService.js');
 
   const contentSpinner = ora('Processing content configuration').start();
   try {
-    await processContentWithApplications(contentArray || [], applications, host);
+    await processContentWithApplications(contentArray || [], applications, host, missingAppKeys);
     contentSpinner.succeed(chalk.green('Content configuration processed'));
   } catch (error) {
     contentSpinner.fail(chalk.red('Failed to process content configuration'));
