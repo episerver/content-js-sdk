@@ -42,7 +42,7 @@ async function validateContentType(
 
 /**
  * Creates content in CMS.
- * Returns content key if successful, undefined if 403 (content exists), throws on other errors.
+ * Returns content key if successful, undefined if 409 (content exists), throws on other errors.
  */
 async function createContent(
   config: ContentConfig,
@@ -71,8 +71,8 @@ async function createContent(
   });
 
   if (!response.response.ok) {
-    // If Forbidden, content likely exists
-    if (response.response.status === 403) {
+    // Status code 409 means content exists
+    if (response.response.status === 409) {
       return undefined;
     }
 
