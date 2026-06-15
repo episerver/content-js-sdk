@@ -399,7 +399,7 @@ export function decodeHTML(input: string): string {
     '&cent;': '¢',
   };
 
-  return input.replace(/&[a-z]+;|&#?\d+;/gi, m => map[m] ?? m);
+  return input.replace(/&[a-z]+;|&#?\d+;/gi, m => map[m.toLowerCase()] ?? m);
 }
 
 /**
