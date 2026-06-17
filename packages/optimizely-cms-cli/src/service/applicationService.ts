@@ -109,8 +109,23 @@ async function checkApplicationsWithContent(
         throw new Error(`No entryPoint defined for application ${app.key}`);
       }
 
+      // Validate inProcessWebsite doesn't use preview fields
+      if (app.type === 'inProcessWebsite') {
+        if ('usePreviewTokens' in app || 'previewUrlFormats' in app) {
+          appSpinner.fail(
+            chalk.red(`Application "${app.displayName}" has invalid configuration`),
+          );
+          console.error(
+            chalk.dim(
+              `Fields 'usePreviewTokens' and 'previewUrlFormats' are only valid for type 'website'`,
+            ),
+          );
+          throw new Error(`Invalid fields for inProcessWebsite application ${app.key}`);
+        }
+      }
+
       // Set default previewUrlFormats if not provided
-      if (!app.previewUrlFormats) {
+      if (app.type !== 'inProcessWebsite' && !app.previewUrlFormats) {
         app.previewUrlFormats = {
           any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
         };
