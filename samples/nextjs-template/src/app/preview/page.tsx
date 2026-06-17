@@ -1,4 +1,4 @@
-import { GraphClient, type PreviewParams } from '@optimizely/cms-sdk';
+import { getClient, type PreviewParams } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { PreviewComponent } from '@optimizely/cms-sdk/react/client';
 import { withAppContext } from '@optimizely/cms-sdk/react/server';
@@ -9,9 +9,7 @@ type Props = {
 };
 
 async function Page({ searchParams }: Props) {
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  });
+  const client = getClient();
 
   const content = await client.getPreviewContent(
     // TODO: check types in runtime properly
