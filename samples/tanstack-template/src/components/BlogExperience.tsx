@@ -1,7 +1,6 @@
 import { contentType, type ContentProps } from '@optimizely/cms-sdk';
 import { BlogCardContentType } from './BlogCard';
 import {
-  type ComponentContainerProps,
   getPreviewUtils,
   OptimizelyComponent,
   OptimizelyComposition,
@@ -35,11 +34,6 @@ type Props = {
   content: ContentProps<typeof BlogExperienceContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
-  const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
-}
-
 export default function BlogExperience({ content }: Props) {
   const { pa } = getPreviewUtils(content);
   return (
@@ -53,10 +47,7 @@ export default function BlogExperience({ content }: Props) {
           <OptimizelyComponent key={index} content={article} />
         ))}
       </section>
-      <OptimizelyComposition
-        nodes={content.composition.nodes ?? []}
-        ComponentWrapper={ComponentWrapper}
-      />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </main>
   );
 }

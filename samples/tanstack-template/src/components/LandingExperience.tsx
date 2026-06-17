@@ -1,6 +1,5 @@
 import { contentType, type ContentProps } from '@optimizely/cms-sdk';
 import {
-  type ComponentContainerProps,
   OptimizelyComposition,
   getPreviewUtils,
 } from '@optimizely/cms-sdk/react/server';
@@ -22,11 +21,6 @@ type Props = {
   content: ContentProps<typeof LandingExperienceContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
-  const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
-}
-
 export default function LandingExperienceComponent({ content }: Props) {
   const { pa, src } = getPreviewUtils(content);
   const heroBackgroundUrl = src(content.hero?.background);
@@ -47,10 +41,7 @@ export default function LandingExperienceComponent({ content }: Props) {
           </div>
         </header>
       )}
-      <OptimizelyComposition
-        nodes={content.composition.nodes ?? []}
-        ComponentWrapper={ComponentWrapper}
-      />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </main>
   );
 }
