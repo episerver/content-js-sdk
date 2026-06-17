@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { GraphClient, isContentTypeRegistered } from '@optimizely/cms-sdk';
+import { getClient, isContentTypeRegistered } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { notFound } from 'next/navigation';
 import React from 'react';
@@ -43,9 +43,7 @@ export async function generateStaticParams() {
   }
     `;
 
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  });
+  const client = getClient();
   const data = await client.request(query, {});
 
   return data._Page.items
@@ -83,9 +81,7 @@ type Props = {
 export default async function Page({ params }: Props) {
   const { slug } = await params;
 
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  });
+  const client = getClient();
   const content = await client.getContentByPath(`/${slug.join('/')}/`);
 
   if (content.length === 0) {

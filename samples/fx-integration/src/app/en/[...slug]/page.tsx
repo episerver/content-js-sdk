@@ -1,5 +1,5 @@
 import { getVariation } from '@/lib/fx';
-import { GraphClient } from '@optimizely/cms-sdk';
+import { getClient } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { notFound } from 'next/navigation';
 
@@ -22,9 +22,7 @@ export default async function Page({ params }: Props) {
   const path = `/en/${slug.join('/')}/`;
   const variation = await getVariation(path);
 
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  });
+  const client = getClient();
 
   if (!variation) {
     console.log('Showing original');

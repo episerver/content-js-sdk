@@ -3,7 +3,7 @@
 //
 // For this example, when a content in a given path is modified and published,
 // the same path in this project is revalidated.
-import { GraphClient } from '@optimizely/cms-sdk';
+import { getClient } from '@optimizely/cms-sdk';
 import { revalidatePath } from 'next/cache';
 import { notFound } from 'next/navigation';
 
@@ -22,9 +22,7 @@ async function revalidateDocId(docId: string) {
   const id = parts[0].replaceAll('-', '');
   const locale = parts[1]; // e.g., "en"
 
-  const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
-    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  });
+  const client = getClient();
 
   const getPathQuery = `
 query GetPath($id:String, $locale: Locales) {

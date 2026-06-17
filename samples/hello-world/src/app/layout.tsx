@@ -1,6 +1,11 @@
 import Article, { ArticleContentType } from '@/components/Article';
-import { initContentTypeRegistry } from '@optimizely/cms-sdk';
+import { config, initContentTypeRegistry } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || "your api key here",
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+});
 
 initContentTypeRegistry([ArticleContentType]);
 initReactComponentRegistry({

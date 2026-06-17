@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
-import { BlankExperienceContentType, initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, config, initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 import Landing, { LandingPageContentType } from '@/components/Landing';
@@ -32,6 +32,11 @@ import OfficeLocations, { OfficeContentType } from '@/components/OfficeLocations
 import Location, { LocationContentType } from '@/components/Location';
 import BlankExperience from '@/components/BlankExperience';
 import FAQ, { FAQContentType } from '@/components/FAQ';
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || "your api key here",
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+});
 
 initContentTypeRegistry([
   BlankExperienceContentType,

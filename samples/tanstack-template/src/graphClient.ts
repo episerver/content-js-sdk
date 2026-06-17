@@ -2,7 +2,8 @@ import {
   initContentTypeRegistry,
   BlankExperienceContentType,
   initDisplayTemplateRegistry,
-  GraphClient,
+  config,
+  getClient,
 } from "@optimizely/cms-sdk";
 import { initReactComponentRegistry } from "@optimizely/cms-sdk/react/server";
 import AboutExperience, {
@@ -114,8 +115,9 @@ initDisplayTemplateRegistry([
   SquareDisplayTemplate,
 ]);
 
-const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || "your api key here",
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
 });
 
-export default client;
+export default getClient();

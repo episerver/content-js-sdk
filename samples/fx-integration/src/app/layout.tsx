@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { BlankExperienceContentType, BlankSectionContentType, initContentTypeRegistry } from '@optimizely/cms-sdk';
+import { BlankExperienceContentType, BlankSectionContentType, config, initContentTypeRegistry } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 import FxCallToAction, { FxCallToActionCT } from '@/components/FxCallToAction';
 import FxCallout, { FxCalloutCT } from '@/components/FxCallout';
@@ -12,6 +12,11 @@ import FxQuote, { FxQuoteCT } from '@/components/FxQuote';
 import FxSectionHeading, { FxSectionHeadingCT } from '@/components/FxSectionHeading';
 import BlankExperience from '@/components/BlankExperience';
 import BlankSection from '@/components/BlankSection';
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || "your api key here",
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+});
 
 initContentTypeRegistry([
   BlankExperienceContentType,
