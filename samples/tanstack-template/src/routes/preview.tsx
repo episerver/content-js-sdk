@@ -28,14 +28,14 @@ async function Page({ search }: Props) {
 
   return (
     <>
-      <Script
+      <script
         src={
           new URL(
             '/util/javascript/communicationinjector.js',
             process.env.OPTIMIZELY_CMS_URL,
           ).href
         }
-      ></Script>
+      ></script>
       <PreviewComponent />
       <OptimizelyComponent content={content} />
     </>

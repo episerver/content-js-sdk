@@ -2,7 +2,6 @@ import { contentType, type ContentProps } from "@optimizely/cms-sdk";
 import { HeroContentType } from "./Hero";
 import { BannerContentType } from "./Banner";
 import {
-  type ComponentContainerProps,
   getPreviewUtils,
   OptimizelyComponent,
   OptimizelyComposition,
@@ -32,11 +31,6 @@ type Props = {
   content: ContentProps<typeof AboutExperienceContentType>;
 };
 
-function ComponentWrapper({ children, node }: ComponentContainerProps) {
-  const { pa } = getPreviewUtils(node);
-  return <div {...pa(node)}>{children}</div>;
-}
-
 export default function AboutExperience({ content }: Props) {
   const { pa } = getPreviewUtils(content);
   return (
@@ -50,10 +44,7 @@ export default function AboutExperience({ content }: Props) {
           <OptimizelyComponent content={content.section} />
         </div>
       )}
-      <OptimizelyComposition
-        nodes={content.composition.nodes ?? []}
-        ComponentWrapper={ComponentWrapper}
-      />
+      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </main>
   );
 }
