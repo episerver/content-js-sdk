@@ -112,6 +112,8 @@ await client.getContentByPath('/'); // Automatically creates spans
 
 **Learn more:** See the complete [Observability Guide](./docs/observability.md) for setup, span details, and production configuration.
 
+**Reference implementation:** See [samples/nextjs-template/src/instrumentation.ts](./samples/nextjs-template/src/instrumentation.ts) for a working example with Next.js.
+
 ## Documentation
 
 A step-by-step guides to build your headless application:

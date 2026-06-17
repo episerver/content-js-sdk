@@ -10,6 +10,10 @@
     "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-metrics": "^1.29.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
+    "@opentelemetry/sdk-trace-node": "^1.29.0",
     "@optimizely/cms-sdk": "workspace:*",
     "next": "16.2.1",
     "react": "^19.2.4",
