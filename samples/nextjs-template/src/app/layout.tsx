@@ -34,7 +34,7 @@ import BlankExperience from '@/components/BlankExperience';
 import FAQ, { FAQContentType } from '@/components/FAQ';
 
 config({
-  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || "your api key here",
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
 });
 
