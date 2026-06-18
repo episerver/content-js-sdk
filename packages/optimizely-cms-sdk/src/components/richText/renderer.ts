@@ -1,3 +1,5 @@
+import { decode } from 'html-entities';
+
 /**
  * Base element properties shared by all element types
  */
@@ -339,67 +341,10 @@ export function createElementData(type: string, attributes: Record<string, unkno
 }
 
 /**
- * Minimal HTML entity decoder to avoid extra deps
+ * Decode HTML entities using html-entities library
  */
 export function decodeHTML(input: string): string {
-  if (!/&/.test(input)) return input;
-
-  const map: Record<string, string> = {
-    // Basic entities
-    '&amp;': '&',
-    '&lt;': '<',
-    '&gt;': '>',
-    '&quot;': '"',
-    '&#39;': "'",
-
-    // Whitespace
-    '&nbsp;': ' ',
-
-    // Dashes
-    '&ndash;': '–',
-    '&mdash;': '—',
-
-    // Quotes
-    '&lsquo;': '‘',
-    '&rsquo;': '’',
-    '&ldquo;': '“',
-    '&rdquo;': '”',
-    '&sbquo;': '‚',
-    '&bdquo;': '„',
-
-    // Typographic
-    '&hellip;': '…',
-    '&bull;': '•',
-    '&middot;': '·',
-    '&prime;': '′',
-    '&Prime;': '″',
-    '&lsaquo;': '‹',
-    '&rsaquo;': '›',
-    '&laquo;': '«',
-    '&raquo;': '»',
-
-    // Common symbols
-    '&copy;': '©',
-    '&reg;': '®',
-    '&trade;': '™',
-    '&deg;': '°',
-    '&plusmn;': '±',
-    '&para;': '¶',
-    '&sect;': '§',
-    '&dagger;': '†',
-    '&Dagger;': '‡',
-
-    // Math/currency
-    '&times;': '×',
-    '&divide;': '÷',
-    '&minus;': '−',
-    '&euro;': '€',
-    '&pound;': '£',
-    '&yen;': '¥',
-    '&cent;': '¢',
-  };
-
-  return input.replace(/&[a-z]+;|&#?\d+;/gi, m => map[m.toLowerCase()] ?? m);
+  return decode(input);
 }
 
 /**
