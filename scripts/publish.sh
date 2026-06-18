@@ -9,8 +9,8 @@ if [ -f .changeset/pre.json ]; then
   echo "@optimizely:registry=https://npm.pkg.github.com/episerver" > .npmrc
   echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
   
-  # Publish using Changesets (no-git-checks required for CI environments)
-  pnpm changeset publish --no-git-checks
+  # Publish using Changesets
+  pnpm changeset publish
 else
   echo "🚀 Stable release mode detected. Routing to Public NPM..."
   
