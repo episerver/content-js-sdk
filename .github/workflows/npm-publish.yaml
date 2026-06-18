@@ -25,6 +25,8 @@ jobs:
         with:
           # Required to trigger other actions when the bot pushes commits
           fetch-depth: 0
+          # Prevent token from persisting in .git/config (security best practice)
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
