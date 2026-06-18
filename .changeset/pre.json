@@ -13,5 +13,7 @@
     "nextjs-template": "1.0.0",
     "alloy-template": "0.1.0"
   },
-  "changesets": []
+  "changesets": [
+    "olive-turtles-smash"
+  ]
 }
