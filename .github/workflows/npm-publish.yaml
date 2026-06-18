@@ -9,6 +9,7 @@ on:
     paths:
       - 'packages/**'
       - '.changeset/**'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
 
 # Prevents multiple release workflows from running simultaneously
 concurrency: ${{ github.workflow }}-${{ github.ref }}
