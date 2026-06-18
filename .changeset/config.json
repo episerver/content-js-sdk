@@ -7,5 +7,15 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": [
+    "cli-runtime-test",
+    "cli-test",
+    "test-website",
+    "fx-integration",
+    "graph-webhooks-cache-invalidation",
+    "hello-world",
+    "nextjs-template",
+    "tanstack-template",
+    "alloy-template"
+  ]
 }
