@@ -1,10 +1,14 @@
 name: Release Packages
 
 # Triggers automatically whenever code is pushed or merged to the main branch
+# Only runs when packages or changesets are modified
 on:
   push:
     branches:
       - main
+    paths:
+      - 'packages/**'
+      - '.changeset/**'
 
 # Prevents multiple release workflows from running simultaneously
 concurrency: ${{ github.workflow }}-${{ github.ref }}
