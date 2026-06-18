@@ -2,7 +2,7 @@ import { AnyContentType } from '../service/utils.js';
 import {
   transformProperties,
   validateContentTypeKey,
-  parseChildContentType,
+  normalizeMayContainTypes,
 } from '../utils/mapping.js';
 import chalk from 'chalk';
 
@@ -30,7 +30,7 @@ function transformContentType(
 
   const { key, properties = {} } = contentType;
   // Parse the content type, excluding 'extends' from the content type
-  const { extends: _, ...parsedContentType } = parseChildContentType(
+  const { extends: _, ...parsedContentType } = normalizeMayContainTypes(
     contentType,
     allowedKeys,
   );
