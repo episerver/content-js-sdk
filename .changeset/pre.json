@@ -1,0 +1,17 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "cli-runtime-test": "1.0.0",
+    "cli-test": "1.0.0",
+    "test-website": "0.1.0",
+    "@optimizely/cms-cli": "2.0.0",
+    "@optimizely/cms-sdk": "2.0.0",
+    "fx-integration": "1.0.0",
+    "graph-webhooks-cache-invalidation": "1.0.0",
+    "hello-world": "1.0.0",
+    "nextjs-template": "1.0.0",
+    "alloy-template": "0.1.0"
+  },
+  "changesets": []
+}

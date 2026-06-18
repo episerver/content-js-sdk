@@ -1,39 +1,71 @@
-name: Publish package to NPM
+name: Release Packages
+
+# Triggers automatically whenever code is pushed or merged to the main branch
+# Only runs when packages or changesets are modified
 on:
   push:
     branches:
-      - release/*
-  release:
-    types: [released]
+      - main
+    paths:
+      - 'packages/**'
+      - '.changeset/**'
+
+# Prevents multiple release workflows from running simultaneously
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
-  npm_publish:
+  release:
+    name: Release
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write       # Needed to push version bumps and tags
+      pull-requests: write  # Needed for Changesets Bot to open the Version PR
+      packages: write       # Needed to publish pre-releases to GitHub Packages
+      id-token: write       # CRITICAL: Needed for NPM Provenance security signing
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup .npmrc file
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Required to trigger other actions when the bot pushes commits
+          fetch-depth: 0
+          # Prevent token from persisting in .git/config (security best practice)
+          persist-credentials: false
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          registry-url: "https://registry.npmjs.org/"
           node-version: 24
+          # The bash script will handle the specific registry routing via .npmrc
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
-      - name: Install (all) dependencies)
-        run: pnpm  --filter "./packages/**" install
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Build Packages
+        run: pnpm --filter "./packages/**" build
+
+      # ==========================================
+      # CHANGESETS AUTOMATION & PUBLISHING
+      # ==========================================
+      - name: Create Release PR or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # Command to bump versions and update changelogs
+          version: pnpm changeset version
+          
+          # Command to execute the custom deployment script
+          publish: bash ./scripts/publish.sh
+          
+          # Git commit message for the bot
+          commit: "chore(release): version packages"
+          title: "chore(release): version packages"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Run tests
-        run: pnpm -r --filter "./packages/**" test
-
-      - name: Publish packages
-        run: pnpm publish:all
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Both tokens must be provided so the bash script can authenticate dynamically
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
