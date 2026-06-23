@@ -1,4 +1,5 @@
 import { AnyProperty } from '../model/properties.js';
+import { DEFAULT_MAX_FRAGMENT_THRESHOLD } from '../graph/constants.js';
 
 /**
  * Checks if the `allowedTypes` or `restrictedTypes` of a property are undefined or empty.
@@ -36,7 +37,7 @@ function areItemConstraintsMissing(property: AnyProperty): boolean {
  * @param rootName - The root content type name for tracing.
  * @param property - The property definition to check.
  * @param result - The conversion result containing fields and fragments.
- * @param maxFragmentThreshold - Maximum fragment threshold for this check (default: 100).
+ * @param maxFragmentThreshold - Maximum fragment threshold for this check.
  * @returns string | null - A warning message if type constraints are missing or incomplete, otherwise null.
  */
 export function checkTypeConstraintIssues(
@@ -46,7 +47,7 @@ export function checkTypeConstraintIssues(
     fields: string[];
     extraFragments: string[];
   },
-  maxFragmentThreshold: number = 100,
+  maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
 ): string | null {
   if (
     (arePropertyConstraintsMissing(property) || areItemConstraintsMissing(property)) &&

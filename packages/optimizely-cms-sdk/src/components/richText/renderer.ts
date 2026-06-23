@@ -1,4 +1,4 @@
-import { decode } from 'html-entities';
+import { decode } from './htmlDecode/index.js';
 
 /**
  * Base element properties shared by all element types
@@ -341,7 +341,7 @@ export function createElementData(type: string, attributes: Record<string, unkno
 }
 
 /**
- * Decode HTML entities using html-entities library
+ * Decode HTML entities using custom htmlDecode implementation
  */
 export function decodeHTML(input: string): string {
   return decode(input);

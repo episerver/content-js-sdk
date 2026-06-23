@@ -110,6 +110,9 @@ optimizely-cms-cli config pull
 # With output directory specified
 optimizely-cms-cli config pull --output ./src/content-types
 
+# With output file specified (automatic single-file mode)
+optimizely-cms-cli config pull --output ./src/cms-types.ts
+
 # Group generated files by content type base type (page/, component/, section/, etc.)
 optimizely-cms-cli config pull --output ./src/types --group
 
@@ -129,6 +132,8 @@ optimizely-cms-cli config pull | grep -i "Article"
 # Include read-only system content types
 optimizely-cms-cli config pull --include-read-only
 ```
+
+> **Tip:** If `--output` ends with `.ts` or `.tsx`, the CLI automatically uses single-file mode and writes to that exact file path. For example, `--output ./src/cms-types.ts` creates a single file at `./src/cms-types.ts`.
 
 > **Note:** The command automatically detects when output is piped or redirected and outputs JSON without prompting. You can also explicitly use `--json` to force JSON output. The `--output` flag works in all environments, including CI/non-TTY contexts.
 

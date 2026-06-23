@@ -13,6 +13,11 @@ import { CONTENT_URL_FRAGMENT, getKeyName, isBaseType } from './baseTypeUtil.js'
 import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
 import { createFragment } from '../graph/createQuery.js';
+import { isContract, findExtendingContentTypes } from '../model/index.js';
+import {
+  DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  DEFAULT_EXPAND_CONTRACTS,
+} from '../graph/constants.js';
 
 // TYPE DEFINITIONS
 
@@ -29,9 +34,14 @@ export type FragmentOptions = {
   /**
    * Maximum number of fragments allowed before logging performance warnings.
    * Helps prevent excessive GraphQL query complexity from unrestricted content types.
-   * @default 100
    */
   maxFragmentThreshold?: number;
+  /**
+   * Enable or disable contract expansion.
+   * When true, contracts are expanded to include all implementing types.
+   * When false, only the contract itself is included without expansion.
+   */
+  expandContracts?: boolean;
   /**
    * Whether to include CMS base type fragments (e.g., _IContent, _IPage) in generated fragments.
    * Set to false for component property fragments that don't need base metadata.
@@ -134,10 +144,24 @@ const expandBaseType = (
   return [entry];
 };
 
+const expandContract = (
+  entry: PermittedTypes | AnyContentType,
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+): (PermittedTypes | AnyContentType)[] => {
+  if (typeof entry === 'object' && isContract(entry)) {
+    if (!expandContracts) return [entry];
+    const extendingTypes = findExtendingContentTypes(entry);
+    return [entry, ...extendingTypes];
+  }
+
+  return [entry];
+};
+
 const resolveAllowedTypes = (
   allowed: PermittedTypes[] | undefined,
   restricted: PermittedTypes[] | undefined,
   cached: RegistryEntry[],
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): (PermittedTypes | AnyContentType)[] => {
   const baseline = allowed?.length ? allowed : cached;
   const skipSet = buildSkipSet(restricted);
@@ -146,6 +170,7 @@ const resolveAllowedTypes = (
   const seen = new Set<string>();
 
   return baseline
+    .flatMap(entry => expandContract(entry, expandContracts))
     .flatMap(entry => expandBaseType(entry, shouldExpandBaseTypes))
     .filter(contentType => {
       const key = getKeyName(contentType);
@@ -166,7 +191,8 @@ const handleComponentProperty: PropertyHandler = (
   visited: Set<string>,
   options: FragmentOptions,
 ) => {
-  const { damEnabled = false, maxFragmentThreshold = 100 } = options;
+  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } =
+    options;
   const key = (property as any).contentType.key;
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
@@ -193,11 +219,16 @@ const handleContentProperty: PropertyHandler = (
   visited: Set<string>,
   options: FragmentOptions,
 ) => {
-  const { damEnabled = false, maxFragmentThreshold = 100 } = options;
+  const {
+    damEnabled = false,
+    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
+  } = options;
   const allowed = resolveAllowedTypes(
     (property as any).allowedTypes,
     (property as any).restrictedTypes,
     getCachedContentTypes(),
+    expandContracts,
   );
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
@@ -208,6 +239,7 @@ const handleContentProperty: PropertyHandler = (
     const result = createFragment(key, visited, '', {
       damEnabled,
       maxFragmentThreshold,
+      expandContracts,
       includeBaseFragments: true,
     });
     includesDamAssetsFragments =
@@ -293,7 +325,8 @@ const handleArrayProperty: PropertyHandler = (
   visited: Set<string>,
   options: FragmentOptions,
 ) => {
-  const { damEnabled = false, maxFragmentThreshold = 100 } = options;
+  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } =
+    options;
 
   return convertProperty(name, (property as any).items, rootName, suffix, visited, {
     damEnabled,
@@ -355,7 +388,7 @@ export const convertProperty: PropertyHandler = (
   visited: Set<string>,
   options: FragmentOptions = {},
 ) => {
-  const { maxFragmentThreshold = 100 } = options;
+  const { maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } = options;
   const result = convertPropertyField(name, property, rootName, suffix, visited, options);
 
   const warningMessage = checkTypeConstraintIssues(
