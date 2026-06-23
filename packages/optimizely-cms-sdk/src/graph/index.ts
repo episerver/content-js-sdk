@@ -26,18 +26,28 @@ import {
   withGetPreviewContentSpan,
   withGetContentSpan,
 } from '../telemetry/spans.js';
-import { SDK_VERSION } from '../generated/version.js';
+import {
+  DEFAULT_GRAPH_URL,
+  DEFAULT_USER_AGENT,
+  DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+} from './constants.js';
 
 /** Configuration for initializing the Optimizely Graph Client */
 export type GraphOptions = {
   /** Your Optimizely Graph API key (Single key in CMS) */
   apiKey: string;
-  /** Optional custom Graph URL (defaults to production: https://cg.optimizely.com/content/v2) */
+  /** Optional custom Graph URL */
   graphUrl?: string;
   /** Optional default host for path filtering */
   host?: string;
-  /** Default maximum fragment threshold for GraphQL queries (default: 100) */
+  /** Default maximum fragment threshold for GraphQL queries */
   maxFragmentThreshold?: number;
+  /**
+   * Maximum number of implementing types for a contract before expansion is skipped
+   * When a contract has more implementing types than this threshold, the contract itself is used without expansion
+   */
+  maxContractExpansionLimit?: number;
   /**
    * Enable or disable server-side caching for all queries.
    * Can be overridden per request.
@@ -315,6 +325,7 @@ export class GraphClient {
   apiKey: string;
   graphUrl: string;
   maxFragmentThreshold: number;
+  maxContractExpansionLimit: number;
   host?: string;
   cache: boolean;
   slot?: GraphSlot;
@@ -323,12 +334,13 @@ export class GraphClient {
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
-    this.graphUrl = options.graphUrl || 'https://cg.optimizely.com/content/v2';
-    this.maxFragmentThreshold = options.maxFragmentThreshold ?? 100;
+    this.graphUrl = options.graphUrl || DEFAULT_GRAPH_URL;
+    this.maxFragmentThreshold = options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
+    this.maxContractExpansionLimit = options.maxContractExpansionLimit ?? DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT;
     this.host = options.host;
     this.cache = options.cache ?? true;
     this.slot = options.slot;
-    this.userAgent = options.userAgent ?? `OptimizelySDK/${SDK_VERSION} (JS)`;
+    this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
   }
 
   /** Perform a GraphQL query with variables */
@@ -509,6 +521,7 @@ export class GraphClient {
           contentTypeName,
           damEnabled,
           this.maxFragmentThreshold,
+          this.maxContractExpansionLimit,
         );
         const response = (await this.request(
           query,
@@ -715,6 +728,7 @@ export class GraphClient {
         contentTypeName,
         damEnabled,
         this.maxFragmentThreshold,
+        this.maxContractExpansionLimit,
       );
 
       const response = await this.request(
@@ -872,6 +886,7 @@ export class GraphClient {
           contentTypeName,
           damEnabled,
           this.maxFragmentThreshold,
+          this.maxContractExpansionLimit,
         );
 
         const response = await this.request(

@@ -1,9 +1,15 @@
+import {
+  DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+} from '../graph/constants.js';
+
 const queryCache = new Map<string, string>();
 
 type QueryGenerator = (
   contentType: string,
   damEnabled?: boolean,
   maxFragmentThreshold?: number,
+  maxContractExpansionLimit?: number,
 ) => string;
 
 /**
@@ -17,16 +23,17 @@ export const withQueryCaching = (
   return (
     contentType: string,
     damEnabled: boolean = false,
-    maxFragmentThreshold: number = 100,
+    maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    maxContractExpansionLimit: number = DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
   ): string => {
-    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}`;
+    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${maxContractExpansionLimit}`;
 
     const cached = queryCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold);
+    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, maxContractExpansionLimit);
     queryCache.set(cacheKey, query);
     return query;
   };
