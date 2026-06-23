@@ -187,7 +187,9 @@ export async function OptimizelyComponent({
   }
 
   if (!componentRegistry) {
-    throw new OptimizelyReactError('You should call `initReactComponentRegistry` first');
+    throw new OptimizelyReactError(
+      'The component registry is not initialized. Call `initReactComponentRegistry` in the application entry point.',
+    );
   }
 
   const resolvedTag = resolveTag(content, tag);
@@ -475,7 +477,7 @@ export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
       if (content.__context?.edit) {
         if (typeof property === 'string') {
           return {
-            'data-epi-property-name': property,
+            'data-epi-edit': property,
           };
         } else if (property) {
           return {

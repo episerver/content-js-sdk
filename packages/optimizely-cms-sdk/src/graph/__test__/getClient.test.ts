@@ -41,7 +41,7 @@ describe('getClient - Critical Edge Cases', () => {
       expect(() => {
         freshGetClient();
       }).toThrow(
-        'Graph configuration is not set. Call config() in your root layout first.',
+        'The Graph client is not configured. Call config() in the application entry point.',
       );
     });
   });

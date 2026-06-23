@@ -53,12 +53,7 @@ export interface PreviewComponentProps {
 
 /**
  * Listens for Optimizely CMS content saved events and triggers navigation/refresh.
- *
- * Uses dual event sources for maximum compatibility:
- * - window.epi.subscribe - Official CMS API (communicationinjector.js)
- * - Custom event 'optimizely:cms:contentSaved' - Fallback for older CMS
- *
- * Both may fire for same save. Deduplication prevents duplicate refreshes.
+ * Deduplication prevents duplicate refreshes.
  */
 export const PreviewComponent: FunctionComponent<
   PropsWithChildren<PreviewComponentProps>
@@ -129,66 +124,11 @@ export const PreviewComponent: FunctionComponent<
 
     window.addEventListener('optimizely:cms:contentSaved', customEventListener);
 
-    let unsubscribeEpi: (() => void) | undefined;
-    let cancelled = false;
-
-    // Try to subscribe to window.epi if available
-    waitFor(() => window.epi, 10, 250)
-      .then(epi => {
-        if (!cancelled) {
-          const subscription = epi.subscribe('contentSaved', handleContentSaved);
-          unsubscribeEpi = subscription.remove;
-        }
-      })
-      .catch(() => {
-        // window.epi not available - fine, we have custom event
-      });
-
     return () => {
-      cancelled = true;
       window.removeEventListener('optimizely:cms:contentSaved', customEventListener);
-      if (unsubscribeEpi) unsubscribeEpi();
       if (reloadDelay.current) clearTimeout(reloadDelay.current);
     };
   }, [onNavigate, refreshTimeout]);
 
   return showMask && children ? <>{children}</> : null;
 };
-
-function waitFor<T>(
-  fn: () => T | undefined,
-  timeOutSeconds: number = 10,
-  intervalMs: number = 250,
-): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const iv = setInterval(() => {
-      try {
-        const cv = fn();
-        if (cv !== undefined) {
-          clearInterval(iv);
-          clearTimeout(wt);
-          resolve(cv);
-        }
-      } catch {
-        // Ignore errors
-      }
-    }, intervalMs);
-    const wt = setTimeout(() => {
-      clearInterval(iv);
-      reject(`Function did not yield value within ${timeOutSeconds} seconds`);
-    }, timeOutSeconds * 1000);
-  });
-}
-
-declare global {
-  interface Window {
-    epi?: {
-      subscribe: (
-        eventName: string,
-        handler: (data: ContentSavedEvent) => void,
-      ) => {
-        remove: () => void;
-      };
-    };
-  }
-}
