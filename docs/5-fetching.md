@@ -419,3 +419,62 @@ When this threshold is exceeded, you'll see a warning like:
 ⚠️ [optimizely-cms-sdk] Fragment "MyContentType" generated 200 inner fragments (limit: 150).
 → Consider narrowing it using allowedTypes and restrictedTypes or reviewing schema references to reduce complexity.
 ```
+
+---
+
+### Runtime Validation with Schema
+
+If you use a custom GraphQL client (e.g., Apollo, urql) instead of the built-in `GraphClient`, the SDK cannot guarantee that the response matches your content type definition. The `toSchema` function generates a validation schema from your content type, so you can validate data at runtime.
+
+> **Note:** If you use `GraphClient` or `getClient()` from the SDK, you do **not** need this — the SDK already builds type-safe queries for you.
+
+#### Usage
+
+```typescript
+import { contentType } from '@optimizely/cms-sdk';
+import { toSchema } from '@optimizely/cms-sdk/schema';
+
+// Define your content type
+const Article = contentType({
+  key: 'Article',
+  baseType: '_page',
+  displayName: 'Article',
+  properties: {
+    title: { type: 'string' },
+    body: { type: 'richText' },
+  },
+});
+
+// Generate a schema from the content type
+const ArticleSchema = toSchema(Article);
+
+// Validate data from an external source
+const response = await fetch('https://my-graphql-endpoint/...');
+const data = await response.json();
+
+const result = ArticleSchema.safeParse(data);
+if (result.success) {
+  console.log(result.data.title); // type-safe, validated
+} else {
+  console.error('Validation failed:', result.errors);
+}
+```
+
+#### Options
+
+```typescript
+// Default: passthrough mode (accepts extra fields from GraphQL response)
+const schema = toSchema(Article);
+
+// Strict mode: rejects any fields not defined in the content type
+const strictSchema = toSchema(Article, { strict: true });
+```
+
+#### When to use
+
+| Scenario | Need `toSchema`? |
+|---|---|
+| Using `GraphClient` / `getClient()` from SDK | No |
+| Using Apollo, urql, or custom `fetch` | Yes |
+| Receiving data from CMS webhooks | Yes |
+| Validating user-submitted content | Yes |

@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { toZodSchema } from '../toZodSchema.js';
+import { describe, it, expect } from 'vitest';
+import { toSchema, SchemaValidationError } from '../toSchema.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 
-describe('toZodSchema', () => {
+describe('toSchema', () => {
   const validBase = {
     _id: 'id-1',
     _metadata: {
@@ -31,7 +31,7 @@ describe('toZodSchema', () => {
         displayName: 'String Test',
         properties: { title: { type: 'string' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({ ...validBase, title: 'Hello' });
       expect(result.success).toBe(true);
     });
@@ -43,7 +43,7 @@ describe('toZodSchema', () => {
         displayName: 'Bool Test',
         properties: { active: { type: 'boolean' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, active: true }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, active: 'yes' }).success).toBe(false);
     });
@@ -55,7 +55,7 @@ describe('toZodSchema', () => {
         displayName: 'Int Test',
         properties: { count: { type: 'integer' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, count: 42 }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, count: 3.14 }).success).toBe(false);
     });
@@ -67,7 +67,7 @@ describe('toZodSchema', () => {
         displayName: 'Float Test',
         properties: { rating: { type: 'float' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, rating: 3.14 }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, rating: 'abc' }).success).toBe(false);
     });
@@ -79,7 +79,7 @@ describe('toZodSchema', () => {
         displayName: 'Date Test',
         properties: { publishDate: { type: 'dateTime' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, publishDate: '2024-01-01T00:00:00Z' }).success).toBe(true);
     });
 
@@ -90,7 +90,7 @@ describe('toZodSchema', () => {
         displayName: 'Null Test',
         properties: { title: { type: 'string' }, count: { type: 'integer' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, title: null, count: null }).success).toBe(true);
     });
   });
@@ -103,7 +103,7 @@ describe('toZodSchema', () => {
         displayName: 'RichText Test',
         properties: { body: { type: 'richText' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({
         ...validBase,
         body: {
@@ -121,7 +121,7 @@ describe('toZodSchema', () => {
         displayName: 'Url Test',
         properties: { link: { type: 'url' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({
         ...validBase,
         link: { type: 'default', default: '/page', hierarchical: null, internal: null, graph: null, base: null },
@@ -136,7 +136,7 @@ describe('toZodSchema', () => {
         displayName: 'Link Test',
         properties: { cta: { type: 'link' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({
         ...validBase,
         cta: {
@@ -156,7 +156,7 @@ describe('toZodSchema', () => {
         displayName: 'Ref Test',
         properties: { image: { type: 'contentReference' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({
         ...validBase,
         image: {
@@ -175,7 +175,7 @@ describe('toZodSchema', () => {
         displayName: 'Content Test',
         properties: { area: { type: 'content' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({
         ...validBase,
         area: { __typename: 'HeroBlock', __viewname: 'default' },
@@ -194,7 +194,7 @@ describe('toZodSchema', () => {
           tags: { type: 'array', items: { type: 'string' } },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, tags: ['a', 'b', 'c'] }).success).toBe(true);
     });
 
@@ -207,7 +207,7 @@ describe('toZodSchema', () => {
           items: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 5 },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, items: ['a'] }).success).toBe(false);
       expect(schema.safeParse({ ...validBase, items: ['a', 'b'] }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, items: ['a', 'b', 'c', 'd', 'e', 'f'] }).success).toBe(false);
@@ -224,7 +224,7 @@ describe('toZodSchema', () => {
           name: { type: 'string', minLength: 3, maxLength: 10 },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, name: 'ab' }).success).toBe(false);
       expect(schema.safeParse({ ...validBase, name: 'abc' }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, name: 'a'.repeat(11) }).success).toBe(false);
@@ -239,7 +239,7 @@ describe('toZodSchema', () => {
           code: { type: 'string', pattern: '^[A-Z]{3}$' },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, code: 'ABC' }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, code: 'abc' }).success).toBe(false);
     });
@@ -253,7 +253,7 @@ describe('toZodSchema', () => {
           age: { type: 'integer', minimum: 0, maximum: 120 },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, age: -1 }).success).toBe(false);
       expect(schema.safeParse({ ...validBase, age: 25 }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, age: 121 }).success).toBe(false);
@@ -276,7 +276,7 @@ describe('toZodSchema', () => {
           },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, theme: 'light' }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, theme: 'neon' }).success).toBe(false);
     });
@@ -297,7 +297,7 @@ describe('toZodSchema', () => {
           },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, priority: 1 }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, priority: 99 }).success).toBe(false);
     });
@@ -314,10 +314,9 @@ describe('toZodSchema', () => {
           hidden: { type: 'string', indexingType: 'disabled' },
         },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({ ...validBase, visible: 'yes' });
       expect(result.success).toBe(true);
-      // hidden property should not be required or validated
       const result2 = schema.safeParse({ ...validBase, visible: 'yes', hidden: 123 });
       expect(result2.success).toBe(true);
     });
@@ -342,7 +341,7 @@ describe('toZodSchema', () => {
         },
       });
 
-      const schema = toZodSchema(HeroCT);
+      const schema = toSchema(HeroCT);
       const result = schema.safeParse({
         ...validBase,
         title: 'Welcome',
@@ -370,7 +369,7 @@ describe('toZodSchema', () => {
         },
       });
 
-      const schema = toZodSchema(PageCT);
+      const schema = toSchema(PageCT);
       const result = schema.safeParse({
         ...validBase,
         banner: { text: 'Hello' },
@@ -387,7 +386,7 @@ describe('toZodSchema', () => {
         displayName: 'Empty',
         properties: {},
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse(validBase);
       expect(result.success).toBe(true);
     });
@@ -401,7 +400,7 @@ describe('toZodSchema', () => {
         displayName: 'Passthrough Test',
         properties: { title: { type: 'string' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({ ...validBase, title: 'Hi', extraField: 'bonus' });
       expect(result.success).toBe(true);
     });
@@ -413,7 +412,7 @@ describe('toZodSchema', () => {
         displayName: 'Strict Test',
         properties: { title: { type: 'string' } },
       });
-      const schema = toZodSchema(ct, { strict: true });
+      const schema = toSchema(ct, { strict: true });
       const result = schema.safeParse({ ...validBase, title: 'Hi', extraField: 'bonus' });
       expect(result.success).toBe(false);
     });
@@ -427,7 +426,7 @@ describe('toZodSchema', () => {
         displayName: 'Experience Test',
         properties: { title: { type: 'string' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({
         ...validBase,
         title: 'Test',
@@ -460,7 +459,7 @@ describe('toZodSchema', () => {
       TreeNodeCT.properties.child = { type: 'component', contentType: TreeNodeCT };
       const ct = contentType(TreeNodeCT);
 
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       const result = schema.safeParse({
         ...validBase,
         label: 'Root',
@@ -478,7 +477,7 @@ describe('toZodSchema', () => {
         displayName: 'Json Test',
         properties: { data: { type: 'json' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, data: { any: 'thing' } }).success).toBe(true);
       expect(schema.safeParse({ ...validBase, data: 42 }).success).toBe(true);
     });
@@ -490,8 +489,33 @@ describe('toZodSchema', () => {
         displayName: 'Binary Test',
         properties: { file: { type: 'binary' } },
       });
-      const schema = toZodSchema(ct);
+      const schema = toSchema(ct);
       expect(schema.safeParse({ ...validBase, file: 'base64data' }).success).toBe(true);
+    });
+  });
+
+  describe('parse method', () => {
+    it('should return data on valid input', () => {
+      const ct = contentType({
+        key: 'ParseTest',
+        baseType: '_component',
+        displayName: 'Parse Test',
+        properties: { title: { type: 'string' } },
+      });
+      const schema = toSchema(ct);
+      const data = { ...validBase, title: 'Hello' };
+      expect(schema.parse(data)).toBe(data);
+    });
+
+    it('should throw SchemaValidationError on invalid input', () => {
+      const ct = contentType({
+        key: 'ParseFailTest',
+        baseType: '_component',
+        displayName: 'Parse Fail Test',
+        properties: { count: { type: 'integer' } },
+      });
+      const schema = toSchema(ct);
+      expect(() => schema.parse({ ...validBase, count: 'not a number' })).toThrow(SchemaValidationError);
     });
   });
 });

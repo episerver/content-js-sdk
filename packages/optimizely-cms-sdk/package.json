@@ -44,10 +44,10 @@
       "import": "./dist/esm/telemetry/index.js",
       "require": "./dist/cjs/telemetry/index.js"
     },
-    "./zod": {
-      "types": "./dist/cjs/zod/index.d.ts",
-      "import": "./dist/esm/zod/index.js",
-      "require": "./dist/cjs/zod/index.js"
+    "./schema": {
+      "types": "./dist/cjs/schema/index.d.ts",
+      "import": "./dist/esm/schema/index.js",
+      "require": "./dist/cjs/schema/index.js"
     }
   },
   "repository": {
@@ -68,17 +68,13 @@
   "packageManager": "pnpm@10.7.0",
   "peerDependencies": {
     "next": ">=14.0.0",
-    "react": ">=19.0.0",
-    "zod": ">=3.20.0"
+    "react": ">=19.0.0"
   },
   "peerDependenciesMeta": {
     "next": {
       "optional": true
     },
     "react": {
-      "optional": true
-    },
-    "zod": {
       "optional": true
     }
   },
@@ -94,7 +90,6 @@
     "jsdom": "^27.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.2",
-    "vitest": "^3.2.6",
-    "zod": "^3.24.2"
+    "vitest": "^3.2.6"
   }
 }
