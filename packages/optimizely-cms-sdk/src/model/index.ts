@@ -7,6 +7,7 @@ import {
   SuppliedContractValues,
 } from './contentTypes.js';
 import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
+import { getAllContentTypes } from './contentTypeRegistry.js';
 
 function getMergedProps<T extends AnyContentType>(
   options: T,
@@ -126,6 +127,21 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
     'key' in obj
   );
 }
+
+/**
+ * Finds all content types that extend a given contract.
+ *
+ * @param contract - The contract to search for
+ * @returns Array of content types that extend the contract
+ */
+export const findExtendingContentTypes = (contract: Contract): AnyContentType[] =>
+  getAllContentTypes().filter((entry): entry is AnyContentType => {
+    if (!isContentType(entry)) return false;
+
+    const extendedContracts =
+      Array.isArray(entry.extends) ? entry.extends : [entry.extends];
+    return extendedContracts.some(c => c?.key === contract.key);
+  });
 
 export {
   PropertyGroupType,
