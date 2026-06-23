@@ -1,6 +1,6 @@
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  DEFAULT_EXPAND_CONTRACTS,
 } from '../graph/constants.js';
 
 const queryCache = new Map<string, string>();
@@ -9,7 +9,7 @@ type QueryGenerator = (
   contentType: string,
   damEnabled?: boolean,
   maxFragmentThreshold?: number,
-  maxContractExpansionLimit?: number,
+  expandContracts?: boolean,
 ) => string;
 
 /**
@@ -24,16 +24,16 @@ export const withQueryCaching = (
     contentType: string,
     damEnabled: boolean = false,
     maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-    maxContractExpansionLimit: number = DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+    expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
   ): string => {
-    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${maxContractExpansionLimit}`;
+    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}`;
 
     const cached = queryCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, maxContractExpansionLimit);
+    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts);
     queryCache.set(cacheKey, query);
     return query;
   };

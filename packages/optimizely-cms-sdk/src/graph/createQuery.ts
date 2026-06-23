@@ -34,7 +34,7 @@ import {
 import { isContract } from '../model/index.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  DEFAULT_EXPAND_CONTRACTS,
 } from './constants.js';
 
 // TYPE DEFINITIONS
@@ -116,7 +116,7 @@ const processUserTypeProperties = (
   visited: Set<string>,
   options: FragmentOptions,
 ): FragmentInfo => {
-  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } = options;
+  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD, expandContracts = DEFAULT_EXPAND_CONTRACTS } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
   );
@@ -129,6 +129,7 @@ const processUserTypeProperties = (
     const result = convertProperty(propKey, prop, contentTypeName, suffix, visited, {
       damEnabled,
       maxFragmentThreshold,
+      expandContracts,
     });
 
     fields.push(...result.fields);
@@ -201,6 +202,7 @@ export const createFragment = (
   const {
     damEnabled = false,
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
     includeBaseFragments = true,
   } = options;
   const fragmentName = `${contentTypeName}${suffix}`;
@@ -240,6 +242,7 @@ export const createFragment = (
       {
         damEnabled,
         maxFragmentThreshold,
+        expandContracts,
       },
     );
     fields.push(...propResult.fields);
@@ -256,6 +259,7 @@ export const createFragment = (
       const experienceResult = createExperienceFragments(visited, {
         damEnabled,
         maxFragmentThreshold,
+        expandContracts,
       });
       extraFragments.push(...experienceResult.fragments);
       includesDamAssetsFragments =
@@ -293,7 +297,7 @@ const generateSingleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  maxContractExpansionLimit: number = DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): string => {
   const span = startSingleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -301,7 +305,7 @@ const generateSingleContentQuery = (
   const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
-    maxContractExpansionLimit,
+    expandContracts,
     includeBaseFragments: true,
   });
   const fragments = result.fragments;
@@ -340,7 +344,7 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
  * @param contentType - The key of the content type to query.
  * @param damEnabled - Whether DAM assets are enabled (default: false).
  * @param maxFragmentThreshold - Maximum fragment threshold for warnings.
- * @param maxContractExpansionLimit - Maximum number of implementing types for a contract before expansion is skipped.
+ * @param expandContracts - Enable or disable contract expansion.
  * @returns A string representing the GraphQL query.
  */
 export const createSingleContentQuery = withQueryCaching(
@@ -352,7 +356,7 @@ const generateMultipleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  maxContractExpansionLimit: number = DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): string => {
   const span = startMultipleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -360,7 +364,7 @@ const generateMultipleContentQuery = (
   const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
-    maxContractExpansionLimit,
+    expandContracts,
     includeBaseFragments: true,
   });
   const fragments = result.fragments;
@@ -400,7 +404,7 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
  * @param contentType - The key of the content type to query.
  * @param damEnabled - Whether DAM assets are enabled (default: false).
  * @param maxFragmentThreshold - Maximum fragment threshold for warnings.
- * @param maxContractExpansionLimit - Maximum number of implementing types for a contract before expansion is skipped.
+ * @param expandContracts - Enable or disable contract expansion.
  * @returns A string representing the GraphQL query.
  */
 export const createMultipleContentQuery = withQueryCaching(

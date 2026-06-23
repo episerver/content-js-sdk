@@ -30,7 +30,7 @@ import {
   DEFAULT_GRAPH_URL,
   DEFAULT_USER_AGENT,
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  DEFAULT_EXPAND_CONTRACTS,
 } from './constants.js';
 
 /** Configuration for initializing the Optimizely Graph Client */
@@ -44,10 +44,11 @@ export type GraphOptions = {
   /** Default maximum fragment threshold for GraphQL queries */
   maxFragmentThreshold?: number;
   /**
-   * Maximum number of implementing types for a contract before expansion is skipped
-   * When a contract has more implementing types than this threshold, the contract itself is used without expansion
+   * Enable or disable contract expansion.
+   * When true, contracts are expanded to include all implementing types.
+   * When false, only the contract itself is included without expansion.
    */
-  maxContractExpansionLimit?: number;
+  expandContracts?: boolean;
   /**
    * Enable or disable server-side caching for all queries.
    * Can be overridden per request.
@@ -325,7 +326,7 @@ export class GraphClient {
   apiKey: string;
   graphUrl: string;
   maxFragmentThreshold: number;
-  maxContractExpansionLimit: number;
+  expandContracts: boolean;
   host?: string;
   cache: boolean;
   slot?: GraphSlot;
@@ -336,7 +337,7 @@ export class GraphClient {
     this.apiKey = apiKey;
     this.graphUrl = options.graphUrl || DEFAULT_GRAPH_URL;
     this.maxFragmentThreshold = options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
-    this.maxContractExpansionLimit = options.maxContractExpansionLimit ?? DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT;
+    this.expandContracts = options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS;
     this.host = options.host;
     this.cache = options.cache ?? true;
     this.slot = options.slot;
@@ -521,7 +522,7 @@ export class GraphClient {
           contentTypeName,
           damEnabled,
           this.maxFragmentThreshold,
-          this.maxContractExpansionLimit,
+          this.expandContracts,
         );
         const response = (await this.request(
           query,
@@ -728,7 +729,7 @@ export class GraphClient {
         contentTypeName,
         damEnabled,
         this.maxFragmentThreshold,
-        this.maxContractExpansionLimit,
+        this.expandContracts,
       );
 
       const response = await this.request(
@@ -886,7 +887,7 @@ export class GraphClient {
           contentTypeName,
           damEnabled,
           this.maxFragmentThreshold,
-          this.maxContractExpansionLimit,
+          this.expandContracts,
         );
 
         const response = await this.request(

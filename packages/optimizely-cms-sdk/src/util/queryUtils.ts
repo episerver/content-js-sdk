@@ -16,7 +16,7 @@ import { createFragment } from '../graph/createQuery.js';
 import { isContract, findExtendingContentTypes } from '../model/index.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  DEFAULT_EXPAND_CONTRACTS,
 } from '../graph/constants.js';
 
 // TYPE DEFINITIONS
@@ -37,10 +37,11 @@ export type FragmentOptions = {
    */
   maxFragmentThreshold?: number;
   /**
-   * Maximum number of implementing types for a contract before expansion is skipped.
-   * When a contract has more implementing types than this threshold, the contract itself is used without expansion.
+   * Enable or disable contract expansion.
+   * When true, contracts are expanded to include all implementing types.
+   * When false, only the contract itself is included without expansion.
    */
-  maxContractExpansionLimit?: number;
+  expandContracts?: boolean;
   /**
    * Whether to include CMS base type fragments (e.g., _IContent, _IPage) in generated fragments.
    * Set to false for component property fragments that don't need base metadata.
@@ -145,11 +146,11 @@ const expandBaseType = (
 
 const expandContract = (
   entry: PermittedTypes | AnyContentType,
-  maxContractExpansionLimit: number = DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): (PermittedTypes | AnyContentType)[] => {
   if (typeof entry === 'object' && isContract(entry)) {
+    if (!expandContracts) return [entry];
     const extendingTypes = findExtendingContentTypes(entry);
-    if (extendingTypes.length > maxContractExpansionLimit) return [entry];
     return [entry, ...extendingTypes];
   }
 
@@ -160,7 +161,7 @@ const resolveAllowedTypes = (
   allowed: PermittedTypes[] | undefined,
   restricted: PermittedTypes[] | undefined,
   cached: RegistryEntry[],
-  maxContractExpansionLimit: number = DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): (PermittedTypes | AnyContentType)[] => {
   const baseline = allowed?.length ? allowed : cached;
   const skipSet = buildSkipSet(restricted);
@@ -169,7 +170,7 @@ const resolveAllowedTypes = (
   const seen = new Set<string>();
 
   return baseline
-    .flatMap(entry => expandContract(entry, maxContractExpansionLimit))
+    .flatMap(entry => expandContract(entry, expandContracts))
     .flatMap(entry => expandBaseType(entry, shouldExpandBaseTypes))
     .filter(contentType => {
       const key = getKeyName(contentType);
@@ -221,13 +222,13 @@ const handleContentProperty: PropertyHandler = (
   const {
     damEnabled = false,
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-    maxContractExpansionLimit = DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
   } = options;
   const allowed = resolveAllowedTypes(
     (property as any).allowedTypes,
     (property as any).restrictedTypes,
     getCachedContentTypes(),
-    maxContractExpansionLimit,
+    expandContracts,
   );
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
@@ -238,6 +239,7 @@ const handleContentProperty: PropertyHandler = (
     const result = createFragment(key, visited, '', {
       damEnabled,
       maxFragmentThreshold,
+      expandContracts,
       includeBaseFragments: true,
     });
     includesDamAssetsFragments =

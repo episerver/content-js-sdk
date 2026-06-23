@@ -17,7 +17,8 @@ export const DEFAULT_USER_AGENT = `OptimizelySDK/${SDK_VERSION} (JS)`;
 export const DEFAULT_MAX_FRAGMENT_THRESHOLD = 100;
 
 /**
- * Default maximum number of implementing types for a contract before expansion is skipped.
- * When a contract has more implementing types than this threshold, the contract itself is used without expansion.
+ * Default setting for contract expansion.
+ * When true, contracts are expanded to include all implementing types.
+ * When false, only the contract itself is included without expansion.
  */
-export const DEFAULT_MAX_CONTRACT_EXPANSION_LIMIT = 10;
+export const DEFAULT_EXPAND_CONTRACTS = false;
