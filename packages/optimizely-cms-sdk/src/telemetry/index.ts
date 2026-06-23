@@ -2,6 +2,9 @@
 export { getTracer, createSpan } from './tracer.js';
 export type { SpanOptions } from './tracer.js';
 
+// Export meter utilities for creating custom metrics
+export { getMeter } from './meter.js';
+
 // Export logging utilities (internal use, but exposed for advanced scenarios)
 export { logError, logWarning } from './logger.js';
 
