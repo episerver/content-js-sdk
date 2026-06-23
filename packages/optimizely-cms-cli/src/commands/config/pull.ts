@@ -17,6 +17,7 @@ import {
 import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make.js';
 import { formatCounts, validateManifest } from '../../utils/general.js';
 import { filterOutBuiltinTypes } from '../../utils/mapping.js';
+import { buildCircularDependencyMap } from '../../utils/dependency.js';
 
 const defaultOutput = './src/content-types';
 
@@ -241,9 +242,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     await mkdir(outputDir, { recursive: true });
 
     const allContents = [...manifest.contentTypes, ...(manifest.displayTemplates || [])];
+    const circularMap = buildCircularDependencyMap(allContents, manifest);
     const files = allContents.map(content => ({
       path: generateFilePath(content, outputDir, false),
-      content: generateContentCode(content, manifest, false),
+      content: generateContentCode(content, manifest, false, circularMap),
     }));
 
     await makeFiles(files);
@@ -266,9 +268,10 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     await mkdir(outputDir, { recursive: true });
 
     const allContents = [...manifest.contentTypes, ...(manifest.displayTemplates || [])];
+    const circularMap = buildCircularDependencyMap(allContents, manifest);
     const files = allContents.map(content => ({
       path: generateFilePath(content, outputDir, true),
-      content: generateContentCode(content, manifest, true),
+      content: generateContentCode(content, manifest, true, circularMap),
     }));
 
     await Promise.all([
