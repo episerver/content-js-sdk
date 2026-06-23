@@ -998,7 +998,7 @@ export function config(options: GraphOptions) {
 export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient {
   if (!globalGraphConfig) {
     throw new OptimizelyGraphError(
-      'Graph configuration is not set. Call config() in your root layout first.',
+      'The Graph client is not configured. Call config() in the application entry point.',
     );
   }
 

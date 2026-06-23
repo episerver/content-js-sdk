@@ -28,7 +28,7 @@ export class GraphMissingContentTypeError extends OptimizelyGraphError {
 
   constructor(contentType: string) {
     super(
-      `Content type "${contentType}" not included in the registry. Ensure that you called "initContentTypeRegistry()" with it before fetching content.`,
+      `Content type "${contentType}" is not available in the component registry. Register the content type with "initContentTypeRegistry()".`,
     );
     this.name = 'GraphMissingContentTypeError';
     this.contentType = contentType;

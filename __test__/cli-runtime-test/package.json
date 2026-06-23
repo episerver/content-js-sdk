@@ -10,7 +10,7 @@
   "dependencies": {
     "@optimizely/cms-cli": "workspace:*",
     "@optimizely/cms-sdk": "workspace:*",
-    "react": "^19.0.0"
+    "react": "^19.2.7"
   },
   "keywords": [],
   "author": "",

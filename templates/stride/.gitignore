@@ -1,0 +1,9 @@
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+.env*
+next-env.d.ts
