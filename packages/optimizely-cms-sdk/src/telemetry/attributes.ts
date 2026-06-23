@@ -29,7 +29,7 @@ export const SemanticAttributes = {
   // Fragment generation attributes
   OPTI_FRAGMENT_COUNT: 'optimizely.fragment.count', // Number of GraphQL fragments generated
   OPTI_FRAGMENT_THRESHOLD: 'optimizely.fragment.threshold', // Max fragment threshold before warnings
-  FRAGMENT_SUFFIX: 'fragment.suffix', // Fragment name suffix
+  OPTI_FRAGMENT_SUFFIX: 'optimizely.fragment.suffix', // Fragment name suffix
 
   // Query generation attributes
   OPTI_QUERY_TYPE: 'optimizely.query.type', // Type of query: 'single', 'multiple', or 'metadata'
@@ -38,14 +38,16 @@ export const SemanticAttributes = {
   OPTI_COMPONENT_TYPE: 'optimizely.component.type', // Component content type
   OPTI_COMPONENT_TAG: 'optimizely.component.tag', // Component display tag/variant
   OPTI_COMPONENT_FOUND: 'optimizely.component.found', // Whether component was found (boolean)
+  OPTI_COMPONENT_HAS_TAG: 'optimizely.component.has_tag', // Whether component has a tag/variant (boolean)
+  OPTI_COMPONENT_HAS_DISPLAY_SETTINGS: 'optimizely.component.has_display_settings', // Whether display settings provided (boolean)
 
   // Preview mode attributes
-  PREVIEW_MODE: 'preview.mode', // Preview context mode
-  PREVIEW_VERSION: 'preview.version', // Preview version identifier
-  PREVIEW_LOCALE: 'preview.locale', // Preview locale
+  OPTI_PREVIEW_MODE: 'optimizely.preview.mode', // Preview context mode
+  OPTI_PREVIEW_VERSION: 'optimizely.preview.version', // Preview version identifier
+  OPTI_PREVIEW_LOCALE: 'optimizely.preview.locale', // Preview locale
 
   // Content retrieval attributes
-  CONTENT_LOCALE: 'content.locale', // Content locale/language
-  CONTENT_VERSION: 'content.version', // Content version
-  CONTENT_FOUND: 'content.found', // Whether content was found (boolean)
+  OPTI_CONTENT_LOCALE: 'optimizely.content.locale', // Content locale/language
+  OPTI_CONTENT_VERSION: 'optimizely.content.version', // Content version
+  OPTI_CONTENT_FOUND: 'optimizely.content.found', // Whether content was found (boolean)
 } as const;

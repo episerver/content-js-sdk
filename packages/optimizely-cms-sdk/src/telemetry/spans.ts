@@ -20,7 +20,7 @@ export function startFragmentSpan(
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
       [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: threshold,
-      [SemanticAttributes.FRAGMENT_SUFFIX]: suffix,
+      [SemanticAttributes.OPTI_FRAGMENT_SUFFIX]: suffix,
     },
   });
 }
@@ -107,9 +107,9 @@ export function withGetPreviewContentSpan<T>(
     span.setAttributes({
       [SemanticAttributes.OPTI_CONTENT_KEY]: params.key,
       [SemanticAttributes.OPTI_PREVIEW_TOKEN]: true,
-      [SemanticAttributes.PREVIEW_MODE]: params.ctx,
-      [SemanticAttributes.PREVIEW_VERSION]: params.ver,
-      [SemanticAttributes.PREVIEW_LOCALE]: params.loc,
+      [SemanticAttributes.OPTI_PREVIEW_MODE]: params.ctx,
+      [SemanticAttributes.OPTI_PREVIEW_VERSION]: params.ver,
+      [SemanticAttributes.OPTI_PREVIEW_LOCALE]: params.loc,
     });
     return fn(span);
   });
@@ -125,8 +125,8 @@ export function withGetContentSpan<T>(
   return createSpan('optimizely.content.get', async span => {
     span.setAttributes({
       [SemanticAttributes.OPTI_CONTENT_KEY]: ref.key,
-      [SemanticAttributes.CONTENT_LOCALE]: ref.locale || 'default',
-      [SemanticAttributes.CONTENT_VERSION]: ref.version || 'latest',
+      [SemanticAttributes.OPTI_CONTENT_LOCALE]: ref.locale || 'default',
+      [SemanticAttributes.OPTI_CONTENT_VERSION]: ref.version || 'latest',
     });
     return fn(span);
   });
@@ -159,8 +159,8 @@ export function withReactComponentSpan<T>(
   return createSpan('optimizely.react.render_component', async span => {
     span.setAttributes({
       [SemanticAttributes.OPTI_COMPONENT_TYPE]: contentType,
-      'component.has_tag': hasTag,
-      'component.has_display_settings': hasDisplaySettings,
+      [SemanticAttributes.OPTI_COMPONENT_HAS_TAG]: hasTag,
+      [SemanticAttributes.OPTI_COMPONENT_HAS_DISPLAY_SETTINGS]: hasDisplaySettings,
     });
     return fn(span);
   });

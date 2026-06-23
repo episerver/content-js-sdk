@@ -498,7 +498,7 @@ export class GraphClient {
       );
 
       if (!contentTypeName) {
-        span.setAttribute(SemanticAttributes.CONTENT_FOUND, false);
+        span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
         return [];
       }
 
@@ -861,7 +861,7 @@ export class GraphClient {
       );
 
       if (!contentTypeName) {
-        span.setAttribute(SemanticAttributes.CONTENT_FOUND, false);
+        span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
         return null;
       }
 

@@ -70,17 +70,17 @@ await client.getContentByPath('/');
   - `optimizely.content.path` - URL path being fetched
   - `optimizely.cache.enabled` - Whether caching is enabled
   - `optimizely.content_type` - Resolved content type name
-  - `content.found` - Whether content was found
+  - `optimizely.content.found` - Whether content was found
 
 **Span: `optimizely.content.get`**
 
 - Fetches content by GUID/key
 - Attributes:
   - `optimizely.content.key` - Content GUID
-  - `content.locale` - Content locale (or "default")
-  - `content.version` - Content version (or "latest")
+  - `optimizely.content.locale` - Content locale (or "default")
+  - `optimizely.content.version` - Content version (or "latest")
   - `optimizely.content_type` - Content type name
-  - `content.found` - Whether content was found
+  - `optimizely.content.found` - Whether content was found
 
 **Span: `optimizely.content.get_preview`**
 
@@ -88,9 +88,9 @@ await client.getContentByPath('/');
 - Attributes:
   - `optimizely.content.key` - Content GUID
   - `optimizely.preview.token` - Always `true`
-  - `preview.mode` - Preview context mode
-  - `preview.version` - Preview version
-  - `preview.locale` - Preview locale
+  - `optimizely.preview.mode` - Preview context mode
+  - `optimizely.preview.version` - Preview version
+  - `optimizely.preview.locale` - Preview locale
   - `optimizely.content_type` - Content type name
 
 ### Query Generation
@@ -112,7 +112,7 @@ await client.getContentByPath('/');
   - `optimizely.content_type` - Content type name
   - `optimizely.dam.enabled` - Whether DAM is enabled
   - `optimizely.fragment.threshold` - Max fragment threshold
-  - `fragment.suffix` - Fragment name suffix
+  - `optimizely.fragment.suffix` - Fragment name suffix
   - `optimizely.fragment.count` - Number of fragments generated
 
 ### HTTP Requests
@@ -144,8 +144,8 @@ await client.getContentByPath('/');
 - React component rendering with OptimizelyComponent
 - Attributes:
   - `optimizely.component.type` - Content type being rendered
-  - `component.has_tag` - Whether a tag/variant is used
-  - `component.has_display_settings` - Whether display settings provided
+  - `optimizely.component.has_tag` - Whether a tag/variant is used
+  - `optimizely.component.has_display_settings` - Whether display settings provided
   - `optimizely.component.found` - Whether component was found
 
 ## Metrics
@@ -194,7 +194,7 @@ Duration of HTTP requests to the Optimizely Graph API.
 - `optimizely.cache.enabled` - Whether cache parameter was enabled
 - `optimizely.graph.slot` - Graph index slot ("Current" or "New")
 - `optimizely.preview.token` - Whether preview token was used
-- `error` - true if request failed (only on errors)
+- `optimizely.error` - true if request failed (only on errors)
 
 #### `optimizely.content.fetch.duration`
 
@@ -204,8 +204,8 @@ Total time to fetch content from CMS (includes metadata lookup and content retri
 
 - `optimizely.content_type` - Content type name
 - `optimizely.cache.enabled` - Whether cache is enabled
-- `content.found` - Whether content was found
-- `error` - true if fetch failed (only on errors)
+- `optimizely.content.found` - Whether content was found
+- `optimizely.error` - true if fetch failed (only on errors)
 
 #### `optimizely.component.resolve.duration`
 
