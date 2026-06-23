@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core';
-import { resolve } from 'node:path';
+import { resolve, dirname, basename } from 'node:path';
 import ora from 'ora';
 import chalk from 'chalk';
 import { input, select } from '@inquirer/prompts';
@@ -17,6 +17,8 @@ import {
 import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make.js';
 import { formatCounts, validateManifest } from '../../utils/general.js';
 import { filterOutBuiltinTypes } from '../../utils/mapping.js';
+
+const defaultOutput = './src/content-types';
 
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   static override flags = {
@@ -203,20 +205,27 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   }
 
   private async handleSingleFileOutput(
-    outputDir: string,
-    outputPath: string,
+    resolvedOutput: string,
+    providedOutput: string,
     manifest: Manifest,
+    hasProvidedFilename: boolean,
   ): Promise<void> {
     const spinner = ora('Generating file').start();
+    const outputDir = hasProvidedFilename ? dirname(resolvedOutput) : resolvedOutput;
+    const filePath =
+      hasProvidedFilename ? resolvedOutput : generateManifestFilePath(resolvedOutput);
+
     await mkdir(outputDir, { recursive: true });
 
     await makeFile({
-      path: generateManifestFilePath(outputDir),
+      path: filePath,
       content: generateManifestCode(manifest),
     });
 
     this.logManifestStats(manifest, spinner);
-    spinner.succeed(` Generated manifest.ts file in ${outputPath}`);
+    const fileName = hasProvidedFilename ? basename(resolvedOutput) : 'manifest.ts';
+    const displayLocation = hasProvidedFilename ? providedOutput : `in ${providedOutput}`;
+    spinner.succeed(` Generated ${fileName} file ${displayLocation}`);
   }
 
   private async handleIndividualOutput(
@@ -305,15 +314,26 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       : 'group';
 
     // Prompt for output directory if not provided
-    const outputPath =
+    const providedOutput =
       flags.output ||
       (isInteractive ?
         await input({
           message: 'Where should the generated file(s) be saved?',
-          default: './src/content-types',
+          default: defaultOutput,
         })
-      : './src/content-types');
-    const outputDir = resolve(process.cwd(), outputPath);
+      : defaultOutput);
+    const resolvedOutput = resolve(process.cwd(), providedOutput);
+
+    // Check if user provided a file path (ends with .ts or .tsx)
+    const isForcedSingleFileMode = /\.tsx?$/.test(providedOutput);
+    const actualOutputType = isForcedSingleFileMode ? 'single-file' : outputType;
+
+    // Warn if conflicting flags are present
+    if (isForcedSingleFileMode && (flags.group || flags.individual)) {
+      this.warn(
+        'Flags --group and --individual are ignored when --output ends with .ts(x) (single-file mode)',
+      );
+    }
 
     const spinner = ora('Downloading configuration from CMS').start();
 
@@ -334,13 +354,18 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
       spinner.succeed(' Downloaded configuration from CMS');
 
-      switch (outputType) {
+      switch (actualOutputType) {
         case 'single-file':
-          return this.handleSingleFileOutput(outputDir, outputPath, manifest);
+          return this.handleSingleFileOutput(
+            resolvedOutput,
+            providedOutput,
+            manifest,
+            isForcedSingleFileMode,
+          );
         case 'individual':
-          return this.handleIndividualOutput(outputDir, outputPath, manifest);
+          return this.handleIndividualOutput(resolvedOutput, providedOutput, manifest);
         default:
-          return this.handleGroupOutput(outputDir, outputPath, manifest);
+          return this.handleGroupOutput(resolvedOutput, providedOutput, manifest);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
