@@ -341,7 +341,7 @@ export function createElementData(type: string, attributes: Record<string, unkno
 }
 
 /**
- * Decode HTML entities using vendored html-entities implementation
+ * Decode HTML entities using custom htmlDecode implementation
  */
 export function decodeHTML(input: string): string {
   return decode(input);
