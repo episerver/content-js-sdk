@@ -43,6 +43,11 @@
       "types": "./dist/cjs/telemetry/index.d.ts",
       "import": "./dist/esm/telemetry/index.js",
       "require": "./dist/cjs/telemetry/index.js"
+    },
+    "./schema": {
+      "types": "./dist/cjs/schema/index.d.ts",
+      "import": "./dist/esm/schema/index.js",
+      "require": "./dist/cjs/schema/index.js"
     }
   },
   "repository": {
