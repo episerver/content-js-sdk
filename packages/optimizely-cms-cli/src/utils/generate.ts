@@ -8,6 +8,10 @@ import {
   SupportedFunctionTypes,
 } from './manifest.js';
 
+// UTILITY FUNCTIONS
+
+const unique = <T>(array: T[]): T[] => [...new Set(array)];
+
 // EXPORTS
 
 /** Generates TypeScript code for a content type or display template */
@@ -89,9 +93,8 @@ export const generateManifestFilePath = (outputDir: string) =>
   join(outputDir, 'manifest.ts');
 
 /** Returns unique group names from content array */
-export const generateGroups = (contents: JSONContent[]) => [
-  ...new Set(contents.map(generateGroup)),
-];
+export const generateGroups = (contents: JSONContent[]) =>
+  unique(contents.map(generateGroup));
 
 // ARGUMENT GENERATION
 
@@ -101,47 +104,53 @@ const generateArguments = (content: JSONContent) => {
   return generateDisplayTemplateArguments(content);
 };
 
-const generateContentTypeArguments = (content: ManifestContentType) => {
-  const functionArguments = {
-    key: content.key,
-    displayName: content.displayName,
-    baseType: content.baseType || 'null',
-    compositionBehaviors:
-      content.compositionBehaviors?.length ? content.compositionBehaviors : undefined,
-    mayContainTypes:
-      content.mayContainTypes?.length ?
-        content.mayContainTypes.map(it => (isImportable(it) ? markForImport(it) : it))
-      : undefined,
-    extends:
-      content.contracts?.length ?
-        content.contracts.map(c => (isImportable(c) ? markForImport(c) : c))
-      : undefined,
-    properties: generateProperties(content),
-  };
-  return JSON.stringify(functionArguments, null, 2);
-};
+const generateContentTypeArguments = (content: ManifestContentType) =>
+  JSON.stringify(
+    {
+      key: content.key,
+      displayName: content.displayName,
+      baseType: content.baseType || 'null',
+      compositionBehaviors:
+        content.compositionBehaviors?.length ? content.compositionBehaviors : undefined,
+      mayContainTypes:
+        content.mayContainTypes?.length ?
+          content.mayContainTypes.map(it => (isImportable(it) ? markForImport(it) : it))
+        : undefined,
+      extends:
+        content.contracts?.length ?
+          content.contracts.map(c => (isImportable(c) ? markForImport(c) : c))
+        : undefined,
+      properties: generateProperties(content),
+    },
+    null,
+    2,
+  );
 
-const generateContractArguments = (content: ManifestContentType) => {
-  const functionArguments = {
-    key: content.key,
-    displayName: content.displayName,
-    properties: generateProperties(content),
-  };
-  return JSON.stringify(functionArguments, null, 2);
-};
+const generateContractArguments = (content: ManifestContentType) =>
+  JSON.stringify(
+    {
+      key: content.key,
+      displayName: content.displayName,
+      properties: generateProperties(content),
+    },
+    null,
+    2,
+  );
 
-const generateDisplayTemplateArguments = (content: ManifestDisplayTemplate) => {
-  const functionArguments = {
-    key: content.key,
-    isDefault: content.isDefault,
-    displayName: content.displayName,
-    contentType: 'contentType' in content ? content.contentType : undefined,
-    nodeType: 'nodeType' in content ? content.nodeType : undefined,
-    baseType: 'baseType' in content ? content.baseType : undefined,
-    settings: content.settings,
-  };
-  return JSON.stringify(functionArguments, null, 2);
-};
+const generateDisplayTemplateArguments = (content: ManifestDisplayTemplate) =>
+  JSON.stringify(
+    {
+      key: content.key,
+      isDefault: content.isDefault,
+      displayName: content.displayName,
+      contentType: 'contentType' in content ? content.contentType : undefined,
+      nodeType: 'nodeType' in content ? content.nodeType : undefined,
+      baseType: 'baseType' in content ? content.baseType : undefined,
+      settings: content.settings,
+    },
+    null,
+    2,
+  );
 
 const generateProperties = (content: ManifestContentType) => {
   if (!content.properties || Object.keys(content.properties).length === 0)
@@ -176,7 +185,6 @@ const generateImportPath = (
 
 const generateName = (content: JSONContent) => {
   const cleaned = cleanKey(content.key);
-
   if (commonKeyContents.some(it => cleaned.endsWith(it))) return cleaned;
 
   const nameSuffix =
@@ -191,8 +199,8 @@ const generateName = (content: JSONContent) => {
 
 const findImportedComponents = (manifest: Manifest, contents: string): JSONContent[] =>
   extractMarkedImports(contents)
-    .map(it => findContent(it, manifest))
-    .filter(it => it !== null);
+    .map(key => findContent(key, manifest))
+    .filter((content): content is JSONContent => content !== null);
 
 const generateComponentImport = (content: JSONContent, fromGroup?: string) => {
   const toGroup = fromGroup ? generateGroup(content) : undefined;
@@ -201,7 +209,7 @@ const generateComponentImport = (content: JSONContent, fromGroup?: string) => {
 
 const extractMarkedImports = (content: string): string[] => {
   const matches = content.matchAll(markedImportRegex);
-  return [...new Set(Array.from(matches, match => match[1]))];
+  return unique(Array.from(matches, match => match[1]));
 };
 
 const markForImport = (item: string): string => `<|${item}|>`;
@@ -210,49 +218,54 @@ const removeImportMarkers = (
   item: string,
   components: JSONContent[],
   currentKey: string,
-) =>
+): string =>
   components
     .reduce(
-      (acc, it) =>
+      (acc, component) =>
         acc.replaceAll(
-          `"<|${it.key}|>"`,
-          it.key === currentKey ? "'_self'" : generateName(it),
+          `"<|${component.key}|>"`,
+          component.key === currentKey ? "'_self'" : generateName(component),
         ),
       item,
     )
     .replaceAll('<|', '')
     .replaceAll('|>', '');
 
-const addImports = (prop: string, value: any) => {
+const addImports = (prop: string, value: any): any => {
   if (!propertiesThatCanHoldImports.includes(prop)) return value;
+
   if (typeof value === 'string')
     return isImportable(value) ? markForImport(value) : value;
+
   if (Array.isArray(value))
-    return value.map(it => (isImportable(it) ? markForImport(it) : it));
+    return value.map(item => (isImportable(item) ? markForImport(item) : item));
+
   return value;
 };
+
+const buildDependencyMap = (
+  contents: JSONContent[],
+  manifest: Manifest,
+): Map<string, Set<string>> =>
+  new Map(
+    contents.map(content => {
+      const args = generateArguments(content);
+      const dependencies = findImportedComponents(manifest, args);
+      return [content.key, new Set(dependencies.map(dependency => dependency.key))];
+    }),
+  );
 
 const sortByDependencies = (
   contents: JSONContent[],
   manifest: Manifest,
 ): JSONContent[] => {
-  const dependencyMap = new Map<string, Set<string>>();
-
-  // Build dependency graph
-  contents.forEach(content => {
-    const args = generateArguments(content);
-    const dependencies = findImportedComponents(manifest, args);
-    dependencyMap.set(content.key, new Set(dependencies.map(d => d.key)));
-  });
-
-  // Topological sort
+  const dependencyMap = buildDependencyMap(contents, manifest);
   const sorted: JSONContent[] = [];
   const visited = new Set<string>();
   const visiting = new Set<string>();
 
-  const visit = (key: string) => {
-    if (visited.has(key)) return;
-    if (visiting.has(key)) return; // Circular dependency, skip
+  const visit = (key: string): void => {
+    if (visited.has(key) || visiting.has(key)) return;
 
     visiting.add(key);
     const dependencies = dependencyMap.get(key) || new Set();
@@ -286,15 +299,16 @@ const isObject = (item: unknown): item is Record<string, unknown> =>
 const remakeObject = (item: Record<string, unknown>): Record<string, unknown> =>
   Object.entries(item)
     .filter(([key, value]) => showProperty(key, value))
-    .reduce((acc, [key, value]) => {
-      const newValue = isObject(value) ? remakeObject(value) : addImports(key, value);
-      return { ...acc, [key]: newValue };
-    }, {});
+    .reduce(
+      (acc, [key, value]) => ({
+        ...acc,
+        [key]: isObject(value) ? remakeObject(value) : addImports(key, value),
+      }),
+      {},
+    );
 
-const showProperty = (prop: string, value: any) => {
-  if (prop in skipPropertyConditions) return !skipPropertyConditions[prop](value);
-  return true;
-};
+const showProperty = (prop: string, value: any): boolean =>
+  prop in skipPropertyConditions ? !skipPropertyConditions[prop](value) : true;
 
 // STRING UTILITIES
 
@@ -352,13 +366,6 @@ const skipPropertyConditions: Record<string, (it: any) => boolean> = {
 };
 
 const findUsedContentTypes = (contents: JSONContent[]): SupportedFunctionType[] => {
-  const types: SupportedFunctionType[] = [];
-  for (const it of contents) {
-    if (types.length === SupportedFunctionTypes.length) break;
-
-    const type = generateFunctionType(it);
-    if (!types.includes(type)) types.push(type);
-  }
-
-  return types;
+  const uniqueTypes = new Set(contents.map(generateFunctionType));
+  return Array.from(uniqueTypes);
 };
