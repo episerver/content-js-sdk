@@ -1,45 +1,60 @@
 name: Vercel Production Deployment
+
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   OPTIMIZELY_GRAPH_SINGLE_KEY: ${{ secrets.OPTIMIZELY_GRAPH_SINGLE_KEY }}
   OPTIMIZELY_CMS_URL: ${{ secrets.OPTIMIZELY_CMS_URL }}
   OPTIMIZELY_GRAPH_GATEWAY: ${{ secrets.OPTIMIZELY_GRAPH_GATEWAY }}
+
 on:
   push:
     branches:
       - main
+
 jobs:
   Deploy-Production:
     runs-on: ubuntu-latest
     environment:
       name: Vercel production
-      url: ${{steps.vercel-deployment.outputs.site_url}}
+      url: ${{ steps.vercel-deployment.outputs.site_url }}
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup .npmrc file
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          registry-url: 'https://npm.pkg.github.com'
-          # Defaults to the user or organization that owns the workflow file
-          scope: '@episerver'
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
+          node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
       - name: Install Vercel CLI
         run: pnpm install --global vercel@latest
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - name: Install dependencies
+
+      - name: Install monorepo dependencies
         run: pnpm install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build packages
+
+      - name: Build Optimizely SDK packages
         run: pnpm build
-      - name: Build Project Artifacts
+
+      - name: Pull Vercel Environment Information
+        working-directory: ./templates/stride
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts (Vercel)
+        working-directory: ./templates/stride
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Deploy Project Artifacts to Vercel
         id: vercel-deployment
+        working-directory: ./templates/stride
         run: |
           echo "site_url=$(vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT

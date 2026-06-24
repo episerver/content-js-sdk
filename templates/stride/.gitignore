@@ -7,3 +7,5 @@
 
 .env*
 next-env.d.ts
+
+certificates

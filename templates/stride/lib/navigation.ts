@@ -51,10 +51,12 @@ export const getNavigationItems = cache(async () => {
     fragment NavigationItem on _IContent {
       fields: _metadata {
         key
-        container
         displayName
         url {
           default
+        }
+        ... on IInstanceMetadata {
+          container
         }
       }
     }`,
