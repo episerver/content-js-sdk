@@ -441,7 +441,7 @@ importers:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@22.13.14)(jiti@2.7.0)(jsdom@28.1.0)(lightningcss@1.32.0)(tsx@4.20.3)(yaml@2.8.0)
 
-  templates/alloy-template:
+  templates/alloy:
     dependencies:
       '@optimizely/cms-sdk':
         specifier: workspace:*
@@ -583,10 +583,6 @@ packages:
 
   '@babel/generator@7.29.7':
     resolution: {integrity: sha512-DkXD5OJQaAQIdZ1bt3UZdEnHAn9Imd3IVBdX03UFe+ony9Ojw5pzr9YVKGDY1jt+Gcn/FnGkNf8r+Vj5NOJWtQ==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/helper-compilation-targets@7.28.6':
-    resolution: {integrity: sha512-JYtls3hqi15fcx5GaSNL7SCTJ2MNmjrkHXg4FSpOA/grxK8KwyZ5bubHsCq8FXCkua6xhuaaBit+3b7+VZRfcA==}
     engines: {node: '>=6.9.0'}
 
   '@babel/helper-compilation-targets@7.29.7':
@@ -7224,10 +7220,6 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       jsesc: 3.1.0
 
-  '@babel/helper-annotate-as-pure@7.25.9':
-    dependencies:
-      '@babel/types': 7.29.7
-
   '@babel/helper-compilation-targets@7.29.7':
     dependencies:
       '@babel/compat-data': 7.29.7
@@ -7280,17 +7272,6 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.7
       '@babel/helper-plugin-utils': 7.29.7
-
-  '@babel/plugin-transform-react-jsx@7.25.9(@babel/core@7.29.7)':
-    dependencies:
-      '@babel/core': 7.29.7
-      '@babel/helper-annotate-as-pure': 7.25.9
-      '@babel/helper-module-imports': 7.29.7
-      '@babel/helper-plugin-utils': 7.29.7
-      '@babel/plugin-syntax-jsx': 7.29.7(@babel/core@7.29.7)
-      '@babel/types': 7.29.7
-    transitivePeerDependencies:
-      - supports-color
 
   '@babel/runtime@7.28.4': {}
 

@@ -19,6 +19,8 @@ jobs:
       url: ${{steps.vercel-deployment.outputs.site_url}}
     steps:
       - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
 
       - name: Setup .npmrc file
         uses: actions/setup-node@v4
