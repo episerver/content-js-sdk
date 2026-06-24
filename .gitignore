@@ -38,3 +38,5 @@ graphify-out/
 
 # Skill test/eval workspaces
 *-workspace/
+
+config.bat
