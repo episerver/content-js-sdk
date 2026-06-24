@@ -336,7 +336,8 @@ export class GraphClient {
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
     this.graphUrl = options.graphUrl || DEFAULT_GRAPH_URL;
-    this.maxFragmentThreshold = options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
+    this.maxFragmentThreshold =
+      options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
     this.expandContracts = options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS;
     this.host = options.host;
     this.cache = options.cache ?? true;
@@ -708,7 +709,7 @@ export class GraphClient {
 
       if (!contentTypeName) {
         throw new GraphResponseError(
-          `No content found for key [${params.key}]. Check that your CMS contains something there`,
+          `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
           { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
         );
       }

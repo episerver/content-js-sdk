@@ -111,12 +111,12 @@ export class GraphContentResponseError extends GraphHttpResponseError {
     let message =
       errors.length === 1 ?
         errors[0].message
-      : `${errors.length} errors in the GraphQL query. Check "errors" object`;
+      : `${errors.length} errors in the GraphQL query. Check "errors" object.`;
 
     if (message.startsWith('Unknown type') || message.startsWith('Cannot query field')) {
-      message += ` Ensure that the content types in the CMS are synced with the definitions in your app. You can use the "@optimizely/cms-cli" CLI app to sync them`;
+      message += ` Ensure your CMS content types are in sync with the types defined in your application, as inconsistencies may cause query issues. Use the "@optimizely/cms-cli" CLI to push or reconcile your local definitions with the CMS.`;
     } else if (message.startsWith('Syntax Error')) {
-      message += ' Try again later. If the error persists, contact Optimizely support';
+      message += ' Try again later. If the error persists, contact Optimizely support.';
     } else {
     }
 
