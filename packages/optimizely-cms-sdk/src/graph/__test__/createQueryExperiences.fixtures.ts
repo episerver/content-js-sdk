@@ -48,7 +48,7 @@ const ImageComponent = contentType({
   },
 });
 
-const HeroSection = contentType({
+export const HeroSection = contentType({
   baseType: '_section',
   key: 'HeroSection',
   displayName: 'Hero Section',
@@ -58,6 +58,40 @@ const HeroSection = contentType({
   },
 });
 
+export const CardSection = contentType({
+  baseType: '_section',
+  key: 'CardSection',
+  displayName: 'Card Section',
+  properties: {
+    title: { type: 'string' },
+    cards: {
+      type: 'array',
+      items: { type: 'content', allowedTypes: [CallToAction] },
+    },
+  },
+});
+
+export const EmptySection = contentType({
+  baseType: '_section',
+  key: 'EmptySection',
+  displayName: 'Empty Section',
+});
+
+export const SectionWithComponent = contentType({
+  baseType: '_section',
+  key: 'SectionWithComponent',
+  displayName: 'Section With Component',
+  properties: {
+    component: { type: 'component', contentType: ImageComponent },
+  },
+});
+
+export const SectionsOnlyExperience = contentType({
+  baseType: '_experience',
+  key: 'SectionsOnlyExperience',
+  displayName: 'Sections Only Experience',
+});
+
 export const allContentTypes = [
   MyExperience,
   CallToAction,
@@ -65,4 +99,8 @@ export const allContentTypes = [
   ExpSection,
   ImageComponent,
   HeroSection,
+  CardSection,
+  EmptySection,
+  SectionWithComponent,
+  SectionsOnlyExperience,
 ];
