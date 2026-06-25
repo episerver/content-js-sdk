@@ -48,10 +48,21 @@ const ImageComponent = contentType({
   },
 });
 
+const HeroSection = contentType({
+  baseType: '_section',
+  key: 'HeroSection',
+  displayName: 'Hero Section',
+  properties: {
+    heading: { type: 'string' },
+    backgroundImage: { type: 'contentReference', allowedTypes: ['_image'] },
+  },
+});
+
 export const allContentTypes = [
   MyExperience,
   CallToAction,
   CallToAction2,
   ExpSection,
   ImageComponent,
+  HeroSection,
 ];

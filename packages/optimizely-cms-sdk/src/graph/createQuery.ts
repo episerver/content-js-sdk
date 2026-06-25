@@ -25,6 +25,7 @@ import {
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
   isExperienceComponent,
+  isSection,
   FragmentOptions,
   convertProperty,
   getCachedContentTypes,
@@ -32,10 +33,7 @@ import {
   FragmentInfo,
 } from '../util/queryUtils.js';
 import { isContract } from '../model/index.js';
-import {
-  DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  DEFAULT_EXPAND_CONTRACTS,
-} from './constants.js';
+import { DEFAULT_MAX_FRAGMENT_THRESHOLD, DEFAULT_EXPAND_CONTRACTS } from './constants.js';
 
 // TYPE DEFINITIONS
 
@@ -60,21 +58,12 @@ export type ItemsResponse<T> = {
 
 // EXPERIENCE FRAGMENTS
 
-/**
- * Builds experience GraphQL fragments and their dependencies.
- * @param visited - Set of fragment names already visited to avoid cycles.
- * @param options - Fragment generation options.
- * @returns An object containing fragment strings and DAM usage flag.
- */
-const createExperienceFragments = (
+const buildFragmentsForKeys = (
+  keys: string[],
   visited: Set<string>,
-  options: FragmentOptions = {},
-): FragmentResult => {
-  const experienceNodeKeys = getCachedContentTypes()
-    .filter(isExperienceComponent)
-    .map(contentType => contentType.key);
-
-  const { fragments, includesDamAssetsFragments } = experienceNodeKeys
+  options: FragmentOptions,
+): FragmentResult =>
+  keys
     .filter(key => !visited.has(key))
     .flatMap(key =>
       createFragment(key, visited, '', { ...options, includeBaseFragments: true }),
@@ -88,12 +77,42 @@ const createExperienceFragments = (
       { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
     );
 
-  const nodeNames = experienceNodeKeys.map(key => `...${key}`).join(' ');
-  const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
+/**
+ * Builds experience GraphQL fragments and their dependencies.
+ * @param visited - Set of fragment names already visited to avoid cycles.
+ * @param options - Fragment generation options.
+ * @returns An object containing fragment strings and DAM usage flag.
+ */
+const createExperienceFragments = (
+  visited: Set<string>,
+  options: FragmentOptions = {},
+): FragmentResult => {
+  const cachedTypes = getCachedContentTypes();
+  const experienceNodeKeys = cachedTypes
+    .filter(isExperienceComponent)
+    .map(contentType => contentType.key);
+  const sectionKeys = cachedTypes.filter(isSection).map(contentType => contentType.key);
+
+  const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, options);
+  const sectionResult = buildFragmentsForKeys(sectionKeys, visited, options);
+
+  const componentNodeNames = experienceNodeKeys.map(key => `...${key}`).join(' ');
+  const sectionNodeNames = sectionKeys.map(key => `...${key}`).join(' ');
+
+  const componentFragment = `fragment _IComponent on _IComponent { __typename ${componentNodeNames} }`;
+  const sectionFragment = `fragment _ISection on _ISection { __typename ${sectionNodeNames} }`;
 
   return {
-    fragments: [...FIXED_FRAGMENTS, ...fragments, componentFragment],
-    includesDamAssetsFragments,
+    fragments: [
+      ...FIXED_FRAGMENTS,
+      ...experienceResult.fragments,
+      ...sectionResult.fragments,
+      componentFragment,
+      sectionFragment,
+    ],
+    includesDamAssetsFragments:
+      experienceResult.includesDamAssetsFragments ||
+      sectionResult.includesDamAssetsFragments,
   };
 };
 
@@ -116,7 +135,11 @@ const processUserTypeProperties = (
   visited: Set<string>,
   options: FragmentOptions,
 ): FragmentInfo => {
-  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD, expandContracts = DEFAULT_EXPAND_CONTRACTS } = options;
+  const {
+    damEnabled = false,
+    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
+  } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
   );
