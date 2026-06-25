@@ -90,7 +90,7 @@ const mockManifest: Manifest = {
 
 describe('generateContentCode', () => {
   it('should generate code for a contract', () => {
-    const result = generateContentCode(mockContract, mockManifest, false);
+    const result = generateContentCode(mockContract, mockManifest, false, new Map());
     expect(result).toMatchInlineSnapshot(`
       "import { contract } from '@optimizely/cms-sdk';
 
@@ -114,7 +114,7 @@ describe('generateContentCode', () => {
   });
 
   it('should generate code for a content type', () => {
-    const result = generateContentCode(mockContentType, mockManifest, false);
+    const result = generateContentCode(mockContentType, mockManifest, false, new Map());
     expect(result).toMatchInlineSnapshot(`
       "import { contentType } from '@optimizely/cms-sdk';
       import { HeroComponentCT } from './HeroComponentCT';
@@ -621,10 +621,82 @@ describe('generateManifestCode', () => {
       displayTemplates: [],
     };
 
-    // Should not throw and should generate code for both
     const result = generateManifestCode(manifest);
+
+    // Should use string literals for circular references
+    expect(result).toContain("allowedTypes: [\n        'ContentB'\n      ]");
+    expect(result).toContain("allowedTypes: [\n        'ContentA'\n      ]");
+
+    // Should NOT import each other
+    expect(result).not.toContain('import { ContentACT }');
+    expect(result).not.toContain('import { ContentBCT }');
+
+    // Should still generate both exports
     expect(result).toContain('export const ContentACT');
     expect(result).toContain('export const ContentBCT');
+  });
+
+  it('should use imports for non-circular references', () => {
+    const parent: ManifestContentType = {
+      key: 'ParentPage',
+      displayName: 'Parent Page',
+      baseType: '_page',
+      isContract: false,
+      mayContainTypes: ['ChildComponent'],
+      properties: {},
+    };
+
+    const child: ManifestContentType = {
+      key: 'ChildComponent',
+      displayName: 'Child Component',
+      baseType: '_component',
+      isContract: false,
+      properties: {},
+    };
+
+    const manifest: Manifest = {
+      contentTypes: [parent, child],
+      displayTemplates: [],
+    };
+
+    const result = generateManifestCode(manifest);
+
+    // Non-circular reference should use import (not string literal)
+    expect(result).toContain('mayContainTypes: [\n    ChildComponentCT\n  ]');
+  });
+
+  it('should handle transitive circular dependencies', () => {
+    const a: ManifestContentType = {
+      key: 'A',
+      displayName: 'A',
+      baseType: '_page',
+      isContract: false,
+      properties: { ref: { type: 'contentReference', allowedTypes: ['B'] } },
+    };
+
+    const b: ManifestContentType = {
+      key: 'B',
+      displayName: 'B',
+      baseType: '_page',
+      isContract: false,
+      properties: { ref: { type: 'contentReference', allowedTypes: ['C'] } },
+    };
+
+    const c: ManifestContentType = {
+      key: 'C',
+      displayName: 'C',
+      baseType: '_page',
+      isContract: false,
+      properties: { ref: { type: 'contentReference', allowedTypes: ['A'] } },
+    };
+
+    const manifest: Manifest = { contentTypes: [a, b, c], displayTemplates: [] };
+    const result = generateManifestCode(manifest);
+
+    // All references in the cycle should use strings
+    expect(result).toContain("allowedTypes: [\n        'B'\n      ]");
+    expect(result).toContain("allowedTypes: [\n        'C'\n      ]");
+    expect(result).toContain("allowedTypes: [\n        'A'\n      ]");
   });
 
   it('should include display templates in manifest', () => {

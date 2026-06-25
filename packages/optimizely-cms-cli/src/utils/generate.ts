@@ -5,8 +5,13 @@ import {
   JSONContent,
   Manifest,
   SupportedFunctionType,
-  SupportedFunctionTypes,
 } from './manifest.js';
+import {
+  buildCircularDependencyMap,
+  buildDependencyGraph,
+  isCircular,
+  type CircularDependencyMap,
+} from './dependency.js';
 
 // UTILITY FUNCTIONS
 
@@ -19,10 +24,11 @@ export const generateContentCode = (
   content: JSONContent,
   manifest: Manifest,
   useGrouping: boolean = false,
+  circularMap?: CircularDependencyMap,
 ) => {
   const group = useGrouping ? generateGroup(content) : undefined;
 
-  const argumentsWithImports = generateArguments(content);
+  const argumentsWithImports = generateArguments(content, circularMap);
   const importedComponents = findImportedComponents(manifest, argumentsWithImports);
   const argumentsString = removeImportMarkers(
     argumentsWithImports,
@@ -52,13 +58,15 @@ export const generateManifestCode = (manifest: Manifest) => {
     [...manifest.contentTypes, ...(manifest.displayTemplates || [])],
     manifest,
   );
+
+  const circularMap = buildCircularDependencyMap(contents, manifest);
   const contentTypes: SupportedFunctionType[] = findUsedContentTypes(contents);
 
   const code = `import { ${contentTypes.join(', ')} } from '@optimizely/cms-sdk';
 
   ${contents
     .map((content: JSONContent) => {
-      const argumentsWithImports = generateArguments(content);
+      const argumentsWithImports = generateArguments(content, circularMap);
       const importedComponents = findImportedComponents(manifest, argumentsWithImports);
       const argumentsString = removeImportMarkers(
         argumentsWithImports,
@@ -98,13 +106,20 @@ export const generateGroups = (contents: JSONContent[]) =>
 
 // ARGUMENT GENERATION
 
-const generateArguments = (content: JSONContent) => {
-  if (isContract(content)) return generateContractArguments(content);
-  if (isContentType(content)) return generateContentTypeArguments(content);
+/** Generates JSON-stringified arguments for contentType(), contract(), or displayTemplate() functions */
+export const generateArguments = (
+  content: JSONContent,
+  circularMap?: CircularDependencyMap,
+) => {
+  if (isContract(content)) return generateContractArguments(content, circularMap);
+  if (isContentType(content)) return generateContentTypeArguments(content, circularMap);
   return generateDisplayTemplateArguments(content);
 };
 
-const generateContentTypeArguments = (content: ManifestContentType) =>
+const generateContentTypeArguments = (
+  content: ManifestContentType,
+  circularMap?: CircularDependencyMap,
+) =>
   JSON.stringify(
     {
       key: content.key,
@@ -114,24 +129,31 @@ const generateContentTypeArguments = (content: ManifestContentType) =>
         content.compositionBehaviors?.length ? content.compositionBehaviors : undefined,
       mayContainTypes:
         content.mayContainTypes?.length ?
-          content.mayContainTypes.map(it => (isImportable(it) ? markForImport(it) : it))
+          content.mayContainTypes.map(it =>
+            isImportable(it) ? markForImport(it, content.key, circularMap) : it,
+          )
         : undefined,
       extends:
         content.contracts?.length ?
-          content.contracts.map(c => (isImportable(c) ? markForImport(c) : c))
+          content.contracts.map(c =>
+            isImportable(c) ? markForImport(c, content.key, circularMap) : c,
+          )
         : undefined,
-      properties: generateProperties(content),
+      properties: generateProperties(content, circularMap),
     },
     null,
     2,
   );
 
-const generateContractArguments = (content: ManifestContentType) =>
+const generateContractArguments = (
+  content: ManifestContentType,
+  circularMap?: CircularDependencyMap,
+) =>
   JSON.stringify(
     {
       key: content.key,
       displayName: content.displayName,
-      properties: generateProperties(content),
+      properties: generateProperties(content, circularMap),
     },
     null,
     2,
@@ -152,10 +174,13 @@ const generateDisplayTemplateArguments = (content: ManifestDisplayTemplate) =>
     2,
   );
 
-const generateProperties = (content: ManifestContentType) => {
+const generateProperties = (
+  content: ManifestContentType,
+  circularMap?: CircularDependencyMap,
+) => {
   if (!content.properties || Object.keys(content.properties).length === 0)
     return undefined;
-  return remakeObject(content.properties);
+  return remakeObject(content.properties, content.key, circularMap);
 };
 
 // NAME AND PATH GENERATION
@@ -197,7 +222,11 @@ const generateName = (content: JSONContent) => {
 
 // IMPORT HANDLING
 
-const findImportedComponents = (manifest: Manifest, contents: string): JSONContent[] =>
+/** Extracts content types marked for import and resolves them from the manifest */
+export const findImportedComponents = (
+  manifest: Manifest,
+  contents: string,
+): JSONContent[] =>
   extractMarkedImports(contents)
     .map(key => findContent(key, manifest))
     .filter((content): content is JSONContent => content !== null);
@@ -212,7 +241,11 @@ const extractMarkedImports = (content: string): string[] => {
   return unique(Array.from(matches, match => match[1]));
 };
 
-const markForImport = (item: string): string => `<|${item}|>`;
+const markForImport = (
+  item: string,
+  from: string,
+  circularMap?: CircularDependencyMap,
+): string => (isCircular(from, item, circularMap) ? item : `<|${item}|>`);
 
 const removeImportMarkers = (
   item: string,
@@ -231,35 +264,29 @@ const removeImportMarkers = (
     .replaceAll('<|', '')
     .replaceAll('|>', '');
 
-const addImports = (prop: string, value: any): any => {
+const addImports = (
+  prop: string,
+  value: any,
+  currentKey: string,
+  circularMap?: CircularDependencyMap,
+) => {
   if (!propertiesThatCanHoldImports.includes(prop)) return value;
 
   if (typeof value === 'string')
-    return isImportable(value) ? markForImport(value) : value;
-
+    return isImportable(value) ? markForImport(value, currentKey, circularMap) : value;
   if (Array.isArray(value))
-    return value.map(item => (isImportable(item) ? markForImport(item) : item));
-
+    return value.map(it =>
+      isImportable(it) ? markForImport(it, currentKey, circularMap) : it,
+    );
   return value;
 };
-
-const buildDependencyMap = (
-  contents: JSONContent[],
-  manifest: Manifest,
-): Map<string, Set<string>> =>
-  new Map(
-    contents.map(content => {
-      const args = generateArguments(content);
-      const dependencies = findImportedComponents(manifest, args);
-      return [content.key, new Set(dependencies.map(dependency => dependency.key))];
-    }),
-  );
 
 const sortByDependencies = (
   contents: JSONContent[],
   manifest: Manifest,
 ): JSONContent[] => {
-  const dependencyMap = buildDependencyMap(contents, manifest);
+  const dependencyMap = buildDependencyGraph(contents, manifest);
+
   const sorted: JSONContent[] = [];
   const visited = new Set<string>();
   const visiting = new Set<string>();
@@ -296,16 +323,20 @@ const isObject = (item: unknown): item is Record<string, unknown> =>
 
 // OBJECT TRANSFORMATION
 
-const remakeObject = (item: Record<string, unknown>): Record<string, unknown> =>
+const remakeObject = (
+  item: Record<string, unknown>,
+  currentKey: string,
+  circularMap?: CircularDependencyMap,
+): Record<string, unknown> =>
   Object.entries(item)
     .filter(([key, value]) => showProperty(key, value))
-    .reduce(
-      (acc, [key, value]) => ({
-        ...acc,
-        [key]: isObject(value) ? remakeObject(value) : addImports(key, value),
-      }),
-      {},
-    );
+    .reduce((acc, [key, value]) => {
+      const newValue =
+        isObject(value) ?
+          remakeObject(value, currentKey, circularMap)
+        : addImports(key, value, currentKey, circularMap);
+      return { ...acc, [key]: newValue };
+    }, {});
 
 const showProperty = (prop: string, value: any): boolean =>
   prop in skipPropertyConditions ? !skipPropertyConditions[prop](value) : true;
