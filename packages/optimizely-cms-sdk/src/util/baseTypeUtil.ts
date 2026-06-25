@@ -62,7 +62,7 @@ function buildNestedCompositionNodes(depth: number): string {
     return '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
   }
   const nested = buildNestedCompositionNodes(depth - 1);
-  return `__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } }`;
+  return `__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
 }
 
 // FRAGMENT CONSTANTS

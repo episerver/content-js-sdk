@@ -25,7 +25,6 @@ import {
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
   isExperienceComponent,
-  isSection,
   FragmentOptions,
   convertProperty,
   getCachedContentTypes,
@@ -82,29 +81,19 @@ const createExperienceFragments = (
   visited: Set<string>,
   options: FragmentOptions = {},
 ): FragmentResult => {
-  const { experienceNodeKeys, sectionKeys } = getCachedContentTypes().reduce(
-    (acc, ct) => {
-      if (isExperienceComponent(ct)) acc.experienceNodeKeys.push(ct.key);
-      if (isSection(ct)) acc.sectionKeys.push(ct.key);
-      return acc;
-    },
-    { experienceNodeKeys: [] as string[], sectionKeys: [] as string[] },
-  );
+  const experienceNodeKeys = getCachedContentTypes()
+    .filter(isExperienceComponent)
+    .map(ct => ct.key);
 
   const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, options);
-  const sectionResult = buildFragmentsForKeys(sectionKeys, visited, options);
 
   return {
     fragments: [
       ...FIXED_FRAGMENTS,
       ...experienceResult.fragments,
-      ...sectionResult.fragments,
       buildInterfaceFragment('_IComponent', experienceNodeKeys),
-      buildInterfaceFragment('_ISection', sectionKeys),
     ],
-    includesDamAssetsFragments:
-      experienceResult.includesDamAssetsFragments ||
-      sectionResult.includesDamAssetsFragments,
+    includesDamAssetsFragments: experienceResult.includesDamAssetsFragments,
   };
 };
 
