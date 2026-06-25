@@ -25,6 +25,7 @@ import {
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
   isExperienceComponent,
+  isSection,
   FragmentOptions,
   convertProperty,
   getCachedContentTypes,
@@ -32,10 +33,7 @@ import {
   FragmentInfo,
 } from '../util/queryUtils.js';
 import { isContract } from '../model/index.js';
-import {
-  DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  DEFAULT_EXPAND_CONTRACTS,
-} from './constants.js';
+import { DEFAULT_MAX_FRAGMENT_THRESHOLD, DEFAULT_EXPAND_CONTRACTS } from './constants.js';
 
 // TYPE DEFINITIONS
 
@@ -60,40 +58,53 @@ export type ItemsResponse<T> = {
 
 // EXPERIENCE FRAGMENTS
 
-/**
- * Builds experience GraphQL fragments and their dependencies.
- * @param visited - Set of fragment names already visited to avoid cycles.
- * @param options - Fragment generation options.
- * @returns An object containing fragment strings and DAM usage flag.
- */
+const buildFragmentsForKeys = (
+  keys: string[],
+  visited: Set<string>,
+  options: FragmentOptions,
+): FragmentResult => {
+  const results = keys
+    .filter(key => !visited.has(key))
+    .map(key => createFragment(key, visited, '', { ...options, includeBaseFragments: true }));
+
+  return {
+    fragments: results.flatMap(r => r.fragments),
+    includesDamAssetsFragments: results.some(r => r.includesDamAssetsFragments),
+  };
+};
+
+const buildInterfaceFragment = (typeName: string, keys: string[]): string => {
+  const nodeNames = keys.map(key => `...${key}`).join(' ');
+  return `fragment ${typeName} on ${typeName} { __typename ${nodeNames} }`;
+};
+
 const createExperienceFragments = (
   visited: Set<string>,
   options: FragmentOptions = {},
 ): FragmentResult => {
-  const experienceNodeKeys = getCachedContentTypes()
-    .filter(isExperienceComponent)
-    .map(contentType => contentType.key);
+  const { experienceNodeKeys, sectionKeys } = getCachedContentTypes().reduce(
+    (acc, ct) => {
+      if (isExperienceComponent(ct)) acc.experienceNodeKeys.push(ct.key);
+      if (isSection(ct)) acc.sectionKeys.push(ct.key);
+      return acc;
+    },
+    { experienceNodeKeys: [] as string[], sectionKeys: [] as string[] },
+  );
 
-  const { fragments, includesDamAssetsFragments } = experienceNodeKeys
-    .filter(key => !visited.has(key))
-    .flatMap(key =>
-      createFragment(key, visited, '', { ...options, includeBaseFragments: true }),
-    )
-    .reduce(
-      (acc, result) => ({
-        fragments: [...acc.fragments, ...result.fragments],
-        includesDamAssetsFragments:
-          acc.includesDamAssetsFragments || result.includesDamAssetsFragments,
-      }),
-      { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
-    );
-
-  const nodeNames = experienceNodeKeys.map(key => `...${key}`).join(' ');
-  const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
+  const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, options);
+  const sectionResult = buildFragmentsForKeys(sectionKeys, visited, options);
 
   return {
-    fragments: [...FIXED_FRAGMENTS, ...fragments, componentFragment],
-    includesDamAssetsFragments,
+    fragments: [
+      ...FIXED_FRAGMENTS,
+      ...experienceResult.fragments,
+      ...sectionResult.fragments,
+      buildInterfaceFragment('_IComponent', experienceNodeKeys),
+      buildInterfaceFragment('_ISection', sectionKeys),
+    ],
+    includesDamAssetsFragments:
+      experienceResult.includesDamAssetsFragments ||
+      sectionResult.includesDamAssetsFragments,
   };
 };
 
@@ -116,7 +127,11 @@ const processUserTypeProperties = (
   visited: Set<string>,
   options: FragmentOptions,
 ): FragmentInfo => {
-  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD, expandContracts = DEFAULT_EXPAND_CONTRACTS } = options;
+  const {
+    damEnabled = false,
+    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
+  } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
   );
