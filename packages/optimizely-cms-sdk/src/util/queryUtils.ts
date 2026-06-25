@@ -2,7 +2,6 @@ import {
   AnyContentType,
   PermittedTypes,
   MAIN_BASE_TYPES,
-  SectionContentType,
 } from '../model/contentTypes.js';
 import {
   getAllContentTypes,
@@ -104,12 +103,6 @@ export const isExperienceComponent = (contentType: RegistryEntry): boolean =>
   contentType.baseType === '_component' &&
   'compositionBehaviors' in contentType &&
   (contentType.compositionBehaviors?.length ?? 0) > 0;
-
-/**
- * Checks if a content type is a section.
- */
-export const isSection = (contentType: RegistryEntry): contentType is SectionContentType =>
-  'baseType' in contentType && contentType.baseType === '_section';
 
 // ALLOWED TYPES
 
