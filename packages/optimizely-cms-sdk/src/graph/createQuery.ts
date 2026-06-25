@@ -25,6 +25,7 @@ import {
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
   isExperienceComponent,
+  isSection,
   FragmentOptions,
   convertProperty,
   getCachedContentTypes,
@@ -32,6 +33,7 @@ import {
   FragmentInfo,
 } from '../util/queryUtils.js';
 import { isContract } from '../model/index.js';
+import { DEFAULT_MAX_FRAGMENT_THRESHOLD, DEFAULT_EXPAND_CONTRACTS } from './constants.js';
 
 // TYPE DEFINITIONS
 
@@ -56,40 +58,53 @@ export type ItemsResponse<T> = {
 
 // EXPERIENCE FRAGMENTS
 
-/**
- * Builds experience GraphQL fragments and their dependencies.
- * @param visited - Set of fragment names already visited to avoid cycles.
- * @param options - Fragment generation options.
- * @returns An object containing fragment strings and DAM usage flag.
- */
+const buildFragmentsForKeys = (
+  keys: string[],
+  visited: Set<string>,
+  options: FragmentOptions,
+): FragmentResult => {
+  const results = keys
+    .filter(key => !visited.has(key))
+    .map(key => createFragment(key, visited, '', { ...options, includeBaseFragments: true }));
+
+  return {
+    fragments: results.flatMap(r => r.fragments),
+    includesDamAssetsFragments: results.some(r => r.includesDamAssetsFragments),
+  };
+};
+
+const buildInterfaceFragment = (typeName: string, keys: string[]): string => {
+  const nodeNames = keys.map(key => `...${key}`).join(' ');
+  return `fragment ${typeName} on ${typeName} { __typename ${nodeNames} }`;
+};
+
 const createExperienceFragments = (
   visited: Set<string>,
   options: FragmentOptions = {},
 ): FragmentResult => {
-  const experienceNodeKeys = getCachedContentTypes()
-    .filter(isExperienceComponent)
-    .map(contentType => contentType.key);
+  const { experienceNodeKeys, sectionKeys } = getCachedContentTypes().reduce(
+    (acc, ct) => {
+      if (isExperienceComponent(ct)) acc.experienceNodeKeys.push(ct.key);
+      if (isSection(ct)) acc.sectionKeys.push(ct.key);
+      return acc;
+    },
+    { experienceNodeKeys: [] as string[], sectionKeys: [] as string[] },
+  );
 
-  const { fragments, includesDamAssetsFragments } = experienceNodeKeys
-    .filter(key => !visited.has(key))
-    .flatMap(key =>
-      createFragment(key, visited, '', { ...options, includeBaseFragments: true }),
-    )
-    .reduce(
-      (acc, result) => ({
-        fragments: [...acc.fragments, ...result.fragments],
-        includesDamAssetsFragments:
-          acc.includesDamAssetsFragments || result.includesDamAssetsFragments,
-      }),
-      { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
-    );
-
-  const nodeNames = experienceNodeKeys.map(key => `...${key}`).join(' ');
-  const componentFragment = `fragment _IComponent on _IComponent { __typename ${nodeNames} }`;
+  const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, options);
+  const sectionResult = buildFragmentsForKeys(sectionKeys, visited, options);
 
   return {
-    fragments: [...FIXED_FRAGMENTS, ...fragments, componentFragment],
-    includesDamAssetsFragments,
+    fragments: [
+      ...FIXED_FRAGMENTS,
+      ...experienceResult.fragments,
+      ...sectionResult.fragments,
+      buildInterfaceFragment('_IComponent', experienceNodeKeys),
+      buildInterfaceFragment('_ISection', sectionKeys),
+    ],
+    includesDamAssetsFragments:
+      experienceResult.includesDamAssetsFragments ||
+      sectionResult.includesDamAssetsFragments,
   };
 };
 
@@ -112,7 +127,11 @@ const processUserTypeProperties = (
   visited: Set<string>,
   options: FragmentOptions,
 ): FragmentInfo => {
-  const { damEnabled = false, maxFragmentThreshold = 100 } = options;
+  const {
+    damEnabled = false,
+    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
+  } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
   );
@@ -125,6 +144,7 @@ const processUserTypeProperties = (
     const result = convertProperty(propKey, prop, contentTypeName, suffix, visited, {
       damEnabled,
       maxFragmentThreshold,
+      expandContracts,
     });
 
     fields.push(...result.fields);
@@ -196,7 +216,8 @@ export const createFragment = (
 
   const {
     damEnabled = false,
-    maxFragmentThreshold = 100,
+    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
     includeBaseFragments = true,
   } = options;
   const fragmentName = `${contentTypeName}${suffix}`;
@@ -236,6 +257,7 @@ export const createFragment = (
       {
         damEnabled,
         maxFragmentThreshold,
+        expandContracts,
       },
     );
     fields.push(...propResult.fields);
@@ -252,6 +274,7 @@ export const createFragment = (
       const experienceResult = createExperienceFragments(visited, {
         damEnabled,
         maxFragmentThreshold,
+        expandContracts,
       });
       extraFragments.push(...experienceResult.fragments);
       includesDamAssetsFragments =
@@ -288,7 +311,8 @@ export const createFragment = (
 const generateSingleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
-  maxFragmentThreshold: number = 100,
+  maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): string => {
   const span = startSingleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -296,6 +320,7 @@ const generateSingleContentQuery = (
   const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
+    expandContracts,
     includeBaseFragments: true,
   });
   const fragments = result.fragments;
@@ -333,7 +358,8 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
  *
  * @param contentType - The key of the content type to query.
  * @param damEnabled - Whether DAM assets are enabled (default: false).
- * @param maxFragmentThreshold - Maximum fragment threshold for warnings (default: 100).
+ * @param maxFragmentThreshold - Maximum fragment threshold for warnings.
+ * @param expandContracts - Enable or disable contract expansion.
  * @returns A string representing the GraphQL query.
  */
 export const createSingleContentQuery = withQueryCaching(
@@ -344,7 +370,8 @@ export const createSingleContentQuery = withQueryCaching(
 const generateMultipleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
-  maxFragmentThreshold: number = 100,
+  maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): string => {
   const span = startMultipleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -352,6 +379,7 @@ const generateMultipleContentQuery = (
   const result = createFragment(contentType, new Set(), '', {
     damEnabled,
     maxFragmentThreshold,
+    expandContracts,
     includeBaseFragments: true,
   });
   const fragments = result.fragments;
@@ -390,7 +418,8 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
  *
  * @param contentType - The key of the content type to query.
  * @param damEnabled - Whether DAM assets are enabled (default: false).
- * @param maxFragmentThreshold - Maximum fragment threshold for warnings (default: 100).
+ * @param maxFragmentThreshold - Maximum fragment threshold for warnings.
+ * @param expandContracts - Enable or disable contract expansion.
  * @returns A string representing the GraphQL query.
  */
 export const createMultipleContentQuery = withQueryCaching(

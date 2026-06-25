@@ -205,8 +205,9 @@ describe('Fragment generation of contracts with experiences', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
-        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
+        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } }",
         "fragment _IComponent on _IComponent { __typename  }",
+        "fragment _ISection on _ISection { __typename  }",
         "fragment TestExperience on TestExperience { __typename ..._IContent ..._IExperience }",
       ]
     `);
@@ -284,10 +285,11 @@ describe('Fragment generation of contracts with experiences', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
-        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
+        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } }",
         "fragment ContentTypeA on ContentTypeA { __typename ContentTypeA__Category:Category ContentTypeA__Tags:Tags ContentTypeA__headingA:headingA ..._IContent }",
         "fragment ContentTypeB on ContentTypeB { __typename ContentTypeB__Category:Category ContentTypeB__Tags:Tags ContentTypeB__headingB:headingB ..._IContent }",
         "fragment _IComponent on _IComponent { __typename ...ContentTypeA ...ContentTypeB }",
+        "fragment _ISection on _ISection { __typename  }",
         "fragment TestExperience on TestExperience { __typename ..._IContent ..._IExperience }",
       ]
     `);
@@ -393,10 +395,269 @@ describe('Fragment generation of contracts with experiences', () => {
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ContentTypeC on ContentTypeC { __typename ContentTypeC__Category:Category ContentTypeC__Tags:Tags ContentTypeC__headingC:headingC ..._IContent }",
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
-        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
+        "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionSectionNode { nodeType section { ..._ISection } } }",
         "fragment _IComponent on _IComponent { __typename  }",
+        "fragment _ISection on _ISection { __typename  }",
         "fragment TestExperience on TestExperience { __typename TestExperience__main_area:main_area { __typename ...ContentTypeC } ..._IContent ..._IExperience }",
       ]
     `);
+  });
+});
+
+describe('Contract expansion in allowedTypes', () => {
+  it('should expand contracts to include implementing content types when expandContracts is true', async () => {
+    const CategorizableContract = contract({
+      key: 'Categorizable',
+      displayName: 'Categorizable',
+      properties: {
+        category: {
+          type: 'string',
+        },
+        tags: {
+          type: 'string',
+        },
+      },
+    });
+
+    const BlogArticleContentType = contentType({
+      key: 'BlogArticle',
+      displayName: 'Blog Article',
+      baseType: '_page',
+      extends: CategorizableContract,
+      properties: {
+        title: {
+          type: 'string',
+        },
+        body: {
+          type: 'richText',
+        },
+      },
+    });
+
+    const NewsArticleContentType = contentType({
+      key: 'NewsArticle',
+      displayName: 'News Article',
+      baseType: '_page',
+      extends: CategorizableContract,
+      properties: {
+        headline: {
+          type: 'string',
+        },
+        content: {
+          type: 'richText',
+        },
+      },
+    });
+
+    const LandingPageContentType = contentType({
+      key: 'LandingPage',
+      displayName: 'Landing Page',
+      baseType: '_page',
+      properties: {
+        featuredContent: {
+          type: 'content',
+          allowedTypes: [CategorizableContract],
+        },
+      },
+    });
+
+    initContentTypeRegistry([
+      CategorizableContract,
+      BlogArticleContentType,
+      NewsArticleContentType,
+      LandingPageContentType,
+    ]);
+
+    const result = await createFragment('LandingPage', undefined, undefined, {
+      expandContracts: true,
+    });
+
+    const fragmentString = result.fragments.join('\n');
+
+    expect(fragmentString).toContain('fragment Categorizable on ICategorizable');
+    expect(fragmentString).toContain('Categorizable__category:category');
+    expect(fragmentString).toContain('Categorizable__tags:tags');
+
+    expect(fragmentString).toContain('fragment BlogArticle on BlogArticle');
+    expect(fragmentString).toContain('BlogArticle__title:title');
+    expect(fragmentString).toContain('BlogArticle__body:body');
+
+    expect(fragmentString).toContain('fragment NewsArticle on NewsArticle');
+    expect(fragmentString).toContain('NewsArticle__headline:headline');
+    expect(fragmentString).toContain('NewsArticle__content:content');
+
+    expect(fragmentString).toContain('...Categorizable');
+    expect(fragmentString).toContain('...BlogArticle');
+    expect(fragmentString).toContain('...NewsArticle');
+  });
+
+  it('should NOT expand contracts when expandContracts is false', async () => {
+    const CategorizableContract = contract({
+      key: 'Categorizable',
+      displayName: 'Categorizable',
+      properties: {
+        category: {
+          type: 'string',
+        },
+        tags: {
+          type: 'string',
+        },
+      },
+    });
+
+    const BlogArticleContentType = contentType({
+      key: 'BlogArticle',
+      displayName: 'Blog Article',
+      baseType: '_page',
+      extends: CategorizableContract,
+      properties: {
+        title: {
+          type: 'string',
+        },
+        body: {
+          type: 'richText',
+        },
+      },
+    });
+
+    const NewsArticleContentType = contentType({
+      key: 'NewsArticle',
+      displayName: 'News Article',
+      baseType: '_page',
+      extends: CategorizableContract,
+      properties: {
+        headline: {
+          type: 'string',
+        },
+        content: {
+          type: 'richText',
+        },
+      },
+    });
+
+    const LandingPageContentType = contentType({
+      key: 'LandingPage',
+      displayName: 'Landing Page',
+      baseType: '_page',
+      properties: {
+        featuredContent: {
+          type: 'content',
+          allowedTypes: [CategorizableContract],
+        },
+      },
+    });
+
+    initContentTypeRegistry([
+      CategorizableContract,
+      BlogArticleContentType,
+      NewsArticleContentType,
+      LandingPageContentType,
+    ]);
+
+    const result = await createFragment('LandingPage', undefined, undefined, {
+      expandContracts: false,
+    });
+
+    const fragmentString = result.fragments.join('\n');
+
+    // Should include the contract
+    expect(fragmentString).toContain('fragment Categorizable on ICategorizable');
+    expect(fragmentString).toContain('Categorizable__category:category');
+    expect(fragmentString).toContain('Categorizable__tags:tags');
+
+    // Should NOT include implementing types
+    expect(fragmentString).not.toContain('fragment BlogArticle on BlogArticle');
+    expect(fragmentString).not.toContain('BlogArticle__title:title');
+    expect(fragmentString).not.toContain('fragment NewsArticle on NewsArticle');
+    expect(fragmentString).not.toContain('NewsArticle__headline:headline');
+  });
+
+  it('should NOT expand contracts by default (when expandContracts is not specified)', async () => {
+    const CategorizableContract = contract({
+      key: 'Categorizable',
+      displayName: 'Categorizable',
+      properties: {
+        category: {
+          type: 'string',
+        },
+      },
+    });
+
+    const BlogArticleContentType = contentType({
+      key: 'BlogArticle',
+      displayName: 'Blog Article',
+      baseType: '_page',
+      extends: CategorizableContract,
+      properties: {
+        title: {
+          type: 'string',
+        },
+      },
+    });
+
+    const LandingPageContentType = contentType({
+      key: 'LandingPage',
+      displayName: 'Landing Page',
+      baseType: '_page',
+      properties: {
+        featuredContent: {
+          type: 'content',
+          allowedTypes: [CategorizableContract],
+        },
+      },
+    });
+
+    initContentTypeRegistry([
+      CategorizableContract,
+      BlogArticleContentType,
+      LandingPageContentType,
+    ]);
+
+    // Call without expandContracts option to test default behavior
+    const result = await createFragment('LandingPage');
+
+    const fragmentString = result.fragments.join('\n');
+
+    // Should include the contract
+    expect(fragmentString).toContain('fragment Categorizable on ICategorizable');
+
+    // Should NOT include implementing type (default is false)
+    expect(fragmentString).not.toContain('fragment BlogArticle on BlogArticle');
+  });
+
+  it('should handle contracts with no implementing types', async () => {
+    const EmptyContract = contract({
+      key: 'EmptyContract',
+      displayName: 'Empty Contract',
+      properties: {
+        field: {
+          type: 'string',
+        },
+      },
+    });
+
+    const PageWithEmptyContract = contentType({
+      key: 'PageWithEmptyContract',
+      displayName: 'Page With Empty Contract',
+      baseType: '_page',
+      properties: {
+        content: {
+          type: 'content',
+          allowedTypes: [EmptyContract],
+        },
+      },
+    });
+
+    initContentTypeRegistry([EmptyContract, PageWithEmptyContract]);
+
+    const result = await createFragment('PageWithEmptyContract', undefined, undefined, {
+      expandContracts: true,
+    });
+
+    const fragmentString = result.fragments.join('\n');
+
+    // Should include the contract even when there are no implementing types
+    expect(fragmentString).toContain('fragment EmptyContract on IEmptyContract');
+    expect(fragmentString).toContain('EmptyContract__field:field');
   });
 });

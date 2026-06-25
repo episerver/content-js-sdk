@@ -18,10 +18,12 @@ jspm_packages/
 .env.production.local
 .env.local
 
+
 dist
 .vercel
 .DS_Store
 *-temp.json
+.vs
 .vscode
 .tanstack
 

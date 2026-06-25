@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { parseChildContentType } from '../utils/mapping.js';
+import { normalizeMayContainTypes } from '../utils/mapping.js';
 import { contentType } from '@optimizely/cms-sdk';
 
-describe('parseChildContentType', () => {
+describe('normalizeMayContainTypes', () => {
   it('should parse a content type with mayContainTypes', () => {
     const child1 = contentType({
       key: 'child1',
@@ -21,7 +21,7 @@ describe('parseChildContentType', () => {
       mayContainTypes: [child1, child2],
     });
 
-    expect(parseChildContentType(input)).toMatchInlineSnapshot(`
+    expect(normalizeMayContainTypes(input)).toMatchInlineSnapshot(`
       {
         "__type": "contentType",
         "baseType": "_component",
@@ -43,7 +43,7 @@ describe('parseChildContentType', () => {
       mayContainTypes: ['_self'],
     });
 
-    expect(parseChildContentType(input)).toMatchInlineSnapshot(`
+    expect(normalizeMayContainTypes(input)).toMatchInlineSnapshot(`
       {
         "__type": "contentType",
         "baseType": "_component",
@@ -63,7 +63,7 @@ describe('parseChildContentType', () => {
       baseType: '_component',
     });
 
-    expect(parseChildContentType(input)).toMatchInlineSnapshot(`
+    expect(normalizeMayContainTypes(input)).toMatchInlineSnapshot(`
       {
         "__type": "contentType",
         "baseType": "_component",
@@ -74,7 +74,7 @@ describe('parseChildContentType', () => {
   });
 });
 
-describe('parseChildContentType errors', () => {
+describe('normalizeMayContainTypes errors', () => {
   it('throws on duplicate entries in mayContainTypes', () => {
     const contentType = {
       key: 'Blog',
@@ -82,7 +82,7 @@ describe('parseChildContentType errors', () => {
     };
     const allowedKeys = new Set(['Article', 'Gallery']);
 
-    expect(() => parseChildContentType(contentType, allowedKeys)).toThrow(
+    expect(() => normalizeMayContainTypes(contentType, allowedKeys)).toThrow(
       '❌ [optimizely-cms-cli] Duplicate entries in mayContainTypes for content type "Blog": Article',
     );
   });
@@ -94,7 +94,7 @@ describe('parseChildContentType errors', () => {
     };
     const allowedKeys = new Set(['Valid']);
 
-    expect(() => parseChildContentType(contentType, allowedKeys)).toThrow(
+    expect(() => normalizeMayContainTypes(contentType, allowedKeys)).toThrow(
       '❌ [optimizely-cms-cli] Invalid mayContainTypes for content type "Blog". Unknown content types: Unknown',
     );
   });

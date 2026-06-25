@@ -5,7 +5,6 @@ import {
   JSONContent,
   Manifest,
   SupportedFunctionType,
-  SupportedFunctionTypes,
 } from './manifest.js';
 import {
   buildCircularDependencyMap,
@@ -13,6 +12,10 @@ import {
   isCircular,
   type CircularDependencyMap,
 } from './dependency.js';
+
+// UTILITY FUNCTIONS
+
+const unique = <T>(array: T[]): T[] => [...new Set(array)];
 
 // EXPORTS
 
@@ -55,7 +58,7 @@ export const generateManifestCode = (manifest: Manifest) => {
     [...manifest.contentTypes, ...(manifest.displayTemplates || [])],
     manifest,
   );
-  
+
   const circularMap = buildCircularDependencyMap(contents, manifest);
   const contentTypes: SupportedFunctionType[] = findUsedContentTypes(contents);
 
@@ -98,9 +101,8 @@ export const generateManifestFilePath = (outputDir: string) =>
   join(outputDir, 'manifest.ts');
 
 /** Returns unique group names from content array */
-export const generateGroups = (contents: JSONContent[]) => [
-  ...new Set(contents.map(generateGroup)),
-];
+export const generateGroups = (contents: JSONContent[]) =>
+  unique(contents.map(generateGroup));
 
 // ARGUMENT GENERATION
 
@@ -208,7 +210,6 @@ const generateImportPath = (
 
 const generateName = (content: JSONContent) => {
   const cleaned = cleanKey(content.key);
-
   if (commonKeyContents.some(it => cleaned.endsWith(it))) return cleaned;
 
   const nameSuffix =
@@ -227,8 +228,8 @@ export const findImportedComponents = (
   contents: string,
 ): JSONContent[] =>
   extractMarkedImports(contents)
-    .map(it => findContent(it, manifest))
-    .filter(it => it !== null);
+    .map(key => findContent(key, manifest))
+    .filter((content): content is JSONContent => content !== null);
 
 const generateComponentImport = (content: JSONContent, fromGroup?: string) => {
   const toGroup = fromGroup ? generateGroup(content) : undefined;
@@ -237,7 +238,7 @@ const generateComponentImport = (content: JSONContent, fromGroup?: string) => {
 
 const extractMarkedImports = (content: string): string[] => {
   const matches = content.matchAll(markedImportRegex);
-  return [...new Set(Array.from(matches, match => match[1]))];
+  return unique(Array.from(matches, match => match[1]));
 };
 
 const markForImport = (
@@ -250,13 +251,13 @@ const removeImportMarkers = (
   item: string,
   components: JSONContent[],
   currentKey: string,
-) =>
+): string =>
   components
     .reduce(
-      (acc, it) =>
+      (acc, component) =>
         acc.replaceAll(
-          `"<|${it.key}|>"`,
-          it.key === currentKey ? "'_self'" : generateName(it),
+          `"<|${component.key}|>"`,
+          component.key === currentKey ? "'_self'" : generateName(component),
         ),
       item,
     )
@@ -270,6 +271,7 @@ const addImports = (
   circularMap?: CircularDependencyMap,
 ) => {
   if (!propertiesThatCanHoldImports.includes(prop)) return value;
+
   if (typeof value === 'string')
     return isImportable(value) ? markForImport(value, currentKey, circularMap) : value;
   if (Array.isArray(value))
@@ -285,14 +287,12 @@ const sortByDependencies = (
 ): JSONContent[] => {
   const dependencyMap = buildDependencyGraph(contents, manifest);
 
-  // Topological sort
   const sorted: JSONContent[] = [];
   const visited = new Set<string>();
   const visiting = new Set<string>();
 
-  const visit = (key: string) => {
-    if (visited.has(key)) return;
-    if (visiting.has(key)) return; // Circular dependency, skip
+  const visit = (key: string): void => {
+    if (visited.has(key) || visiting.has(key)) return;
 
     visiting.add(key);
     const dependencies = dependencyMap.get(key) || new Set();
@@ -338,10 +338,8 @@ const remakeObject = (
       return { ...acc, [key]: newValue };
     }, {});
 
-const showProperty = (prop: string, value: any) => {
-  if (prop in skipPropertyConditions) return !skipPropertyConditions[prop](value);
-  return true;
-};
+const showProperty = (prop: string, value: any): boolean =>
+  prop in skipPropertyConditions ? !skipPropertyConditions[prop](value) : true;
 
 // STRING UTILITIES
 
@@ -399,13 +397,6 @@ const skipPropertyConditions: Record<string, (it: any) => boolean> = {
 };
 
 const findUsedContentTypes = (contents: JSONContent[]): SupportedFunctionType[] => {
-  const types: SupportedFunctionType[] = [];
-  for (const it of contents) {
-    if (types.length === SupportedFunctionTypes.length) break;
-
-    const type = generateFunctionType(it);
-    if (!types.includes(type)) types.push(type);
-  }
-
-  return types;
+  const uniqueTypes = new Set(contents.map(generateFunctionType));
+  return Array.from(uniqueTypes);
 };
