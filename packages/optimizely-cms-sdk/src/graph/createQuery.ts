@@ -62,53 +62,45 @@ const buildFragmentsForKeys = (
   keys: string[],
   visited: Set<string>,
   options: FragmentOptions,
-): FragmentResult =>
-  keys
+): FragmentResult => {
+  const results = keys
     .filter(key => !visited.has(key))
-    .flatMap(key =>
-      createFragment(key, visited, '', { ...options, includeBaseFragments: true }),
-    )
-    .reduce(
-      (acc, result) => ({
-        fragments: [...acc.fragments, ...result.fragments],
-        includesDamAssetsFragments:
-          acc.includesDamAssetsFragments || result.includesDamAssetsFragments,
-      }),
-      { fragments: [], includesDamAssetsFragments: false } as FragmentResult,
-    );
+    .map(key => createFragment(key, visited, '', { ...options, includeBaseFragments: true }));
 
-/**
- * Builds experience GraphQL fragments and their dependencies.
- * @param visited - Set of fragment names already visited to avoid cycles.
- * @param options - Fragment generation options.
- * @returns An object containing fragment strings and DAM usage flag.
- */
+  return {
+    fragments: results.flatMap(r => r.fragments),
+    includesDamAssetsFragments: results.some(r => r.includesDamAssetsFragments),
+  };
+};
+
+const buildInterfaceFragment = (typeName: string, keys: string[]): string => {
+  const nodeNames = keys.map(key => `...${key}`).join(' ');
+  return `fragment ${typeName} on ${typeName} { __typename ${nodeNames} }`;
+};
+
 const createExperienceFragments = (
   visited: Set<string>,
   options: FragmentOptions = {},
 ): FragmentResult => {
-  const cachedTypes = getCachedContentTypes();
-  const experienceNodeKeys = cachedTypes
-    .filter(isExperienceComponent)
-    .map(contentType => contentType.key);
-  const sectionKeys = cachedTypes.filter(isSection).map(contentType => contentType.key);
+  const { experienceNodeKeys, sectionKeys } = getCachedContentTypes().reduce(
+    (acc, ct) => {
+      if (isExperienceComponent(ct)) acc.experienceNodeKeys.push(ct.key);
+      if (isSection(ct)) acc.sectionKeys.push(ct.key);
+      return acc;
+    },
+    { experienceNodeKeys: [] as string[], sectionKeys: [] as string[] },
+  );
 
   const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, options);
   const sectionResult = buildFragmentsForKeys(sectionKeys, visited, options);
-
-  const componentNodeNames = experienceNodeKeys.map(key => `...${key}`).join(' ');
-  const sectionNodeNames = sectionKeys.map(key => `...${key}`).join(' ');
-
-  const componentFragment = `fragment _IComponent on _IComponent { __typename ${componentNodeNames} }`;
-  const sectionFragment = `fragment _ISection on _ISection { __typename ${sectionNodeNames} }`;
 
   return {
     fragments: [
       ...FIXED_FRAGMENTS,
       ...experienceResult.fragments,
       ...sectionResult.fragments,
-      componentFragment,
-      sectionFragment,
+      buildInterfaceFragment('_IComponent', experienceNodeKeys),
+      buildInterfaceFragment('_ISection', sectionKeys),
     ],
     includesDamAssetsFragments:
       experienceResult.includesDamAssetsFragments ||
