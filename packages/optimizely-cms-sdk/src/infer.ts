@@ -22,7 +22,7 @@ import {
   StringProperty,
   UrlProperty,
 } from './model/properties.js';
-import { AnyContentType, ExperienceContentType, SectionContentType } from './model/contentTypes.js';
+import { AnyContentType, ExperienceContentType, MediaContentType, SectionContentType } from './model/contentTypes.js';
 import { Node } from './components/richText/renderer.js';
 import { PublicImageAsset, PublicRawFileAsset, PublicVideoAsset } from './model/assets.js';
 import { DisplayTemplate } from './model/displayTemplates.js';
@@ -108,6 +108,17 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends ComponentProperty<infer E> ? ContentProps<E>
   : unknown
 
+export type InferredAssetMetadata = {
+  fileSize: number | null;
+  mimeType: string | null;
+  url: string | null;
+};
+
+export type InferredImageMetadata = {
+  width: number | null;
+  height: number | null;
+};
+
 /** Attributes included in the response from Graph in every content type */
 export type InferredBase = {
   _id: string;
@@ -187,9 +198,17 @@ type InferSection<T extends AnyContentType> =
     }
   : {};
 
+/** Adds `_assetMetadata` for media base types (`_image`, `_media`, `_video`) */
+type InferAssetMetadata<T extends AnyContentType> =
+  T extends MediaContentType ? { _assetMetadata: InferredAssetMetadata } : {};
+
+/** Adds `_imageMetadata` for image base types (`_image`) */
+type InferImageMetadata<T extends AnyContentType> =
+  T extends { baseType: '_image' } ? { _imageMetadata: InferredImageMetadata } : {};
+
 /** Infers the TypeScript type for a content type */
 type InferFromContentType<T extends AnyContentType> = Prettify<
-  InferredBase & InferProps<T> & InferExperience<T> & InferSection<T>
+  InferredBase & InferProps<T> & InferExperience<T> & InferSection<T> & InferAssetMetadata<T> & InferImageMetadata<T>
 >;
 
 /** Infers the TypeScript type for a display setting */
