@@ -1,6 +1,5 @@
 import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import { CmsField } from '../shared/CmsField';
 import Link from 'next/link';
 import { cn } from '../../lib/utils';
 
@@ -56,21 +55,19 @@ type ButtonComponentProps = {
 };
 
 export default function Button({ content, displaySettings }: ButtonComponentProps) {
-  const { pa } = getPreviewUtils(content);
   const variant = displaySettings?.variant ?? 'default';
 
   return (
-    <EditableField field={content.label}>
+    <CmsField content={content} field={c => c.label}>
       <Link
         href={content.link?.default ?? '#'}
         className={cn(
           'cursor-pointer box-border rounded-md inline-flex hover:-translate-y-0.5 hover:duration-100 items-center justify-center px-6 py-3 text-sm font-semibold transition-colors duration-200 uppercase tracking-wider mt-3',
           variants[variant],
         )}
-        {...pa('label')}
       >
         {content.label}
       </Link>
-    </EditableField>
+    </CmsField>
   );
 }

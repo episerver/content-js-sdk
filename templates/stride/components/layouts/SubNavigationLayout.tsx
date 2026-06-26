@@ -1,8 +1,8 @@
-import { Breadcrumbs } from './Breadcrumbs';
-import DecoGrid from './DecoGrid';
-import { Footer } from './Footer';
-import { Header } from './Header';
-import { SubNavigation } from './SubNavigation';
+import { Breadcrumbs } from './shared/Breadcrumbs';
+import DecoGrid from './shared/DecoGrid';
+import { Footer } from './shared/Footer';
+import { Header } from './shared/Header';
+import { SubNavigation } from './shared/SubNavigation';
 
 export default function SubNavigationLayout({
   children,

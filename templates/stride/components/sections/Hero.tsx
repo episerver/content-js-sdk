@@ -11,7 +11,7 @@ import {
   getDisplayStyle,
   SectionDisplayTemplate,
 } from './DisplayTemplates';
-import EditableField from '../EditableField';
+import { CmsField } from '../shared/CmsField';
 
 export const HeroSection = contentType({
   key: 'HeroSection',
@@ -99,7 +99,7 @@ export default function Hero({ content, displaySettings }: HeroSectionProps) {
   return (
     <section className={cn('p-1 pt-0', width, fadeOut)} {...pa(content)}>
       <div className='bg-cover bg-center relative bg-no-repeat rounded-lg overflow-x-clip box-border'>
-        <EditableField field={content.video}>
+        <CmsField content={content} field={c => c.video}>
           <video
             src={content.video?.url.default ?? ''}
             autoPlay
@@ -107,7 +107,7 @@ export default function Hero({ content, displaySettings }: HeroSectionProps) {
             muted
             className='md:opacity-90 opacity-50 absolute inset-0 w-full h-full object-cover rounded-lg'
           />
-        </EditableField>
+        </CmsField>
 
         {/* TODO: Remove this video when we've fixed the issue with missing section fragments. */}
         <video

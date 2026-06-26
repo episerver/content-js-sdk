@@ -1,9 +1,9 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
-import { getPreviewUtils, OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import EditableField from '../EditableField';
+import { bindCmsField } from '../shared/CmsField';
 import Eyebrow, { EyebrowComponent } from '../blocks/Eyebrow';
-import FullWidthLayout from '../layout/FullWidthLayout';
+import FullWidthLayout from '../layouts/FullWidthLayout';
+import { OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
 
 export const ProductPage = contentType({
   key: 'ProductPage',
@@ -57,7 +57,7 @@ type ProductPageProps = {
 };
 
 export default function Product({ content }: ProductPageProps) {
-  const { pa } = getPreviewUtils(content);
+  const CmsField = bindCmsField(content);
 
   const backgroundImage =
     content.backgroundImage?.url?.default ?
@@ -78,20 +78,18 @@ export default function Product({ content }: ProductPageProps) {
           <div className='relative z-10 container flex flex-col items-center text-center pt-50 pb-20'>
             {content.eyebrow && <Eyebrow content={content.eyebrow} />}
 
-            <h1
-              className='text-5xl md:text-7xl font-bold tracking-tight max-w-4xl mx-auto leading-tight! mb-8 drop-shadow-[white_0px_0px_25px]'
-              {...pa('heading')}
-            >
-              {content.heading ?? content._metadata.displayName}
-            </h1>
+            <CmsField field={c => c.heading}>
+              <h1 className='text-5xl md:text-7xl font-bold tracking-tight max-w-4xl mx-auto leading-tight! mb-8 drop-shadow-[white_0px_0px_25px]'>
+                {content.heading ?? content._metadata.displayName}
+              </h1>
+            </CmsField>
 
-            <EditableField field={content.intro}>
+            <CmsField field={c => c.intro}>
               <RichText
-                {...pa('intro')}
                 content={content.intro?.json}
                 className='text-lg leading-relaxed text-foreground mt-5 max-w-2xl mx-auto'
               />
-            </EditableField>
+            </CmsField>
           </div>
         </div>
       </section>
@@ -99,9 +97,9 @@ export default function Product({ content }: ProductPageProps) {
       <div className='container mx-auto py-20'>
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
           <div className='lg:col-span-8 space-y-12'>
-            <EditableField field={content.body}>
-              <RichText {...pa('body')} content={content.body?.json} className='prose' />
-            </EditableField>
+            <CmsField field={c => c.body}>
+              <RichText content={content.body?.json} className='prose' />
+            </CmsField>
           </div>
 
           <div className='lg:col-span-4'>

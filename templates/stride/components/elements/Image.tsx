@@ -1,6 +1,5 @@
 import { ContentProps, contentType } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import { CmsField } from '../shared/CmsField';
 
 export const ImageComponent = contentType({
   key: 'ImageElement',
@@ -28,15 +27,13 @@ type ImageComponentProps = {
 };
 
 export default function Image({ content }: ImageComponentProps) {
-  const { pa } = getPreviewUtils(content);
   return (
-    <EditableField field={content.image}>
+    <CmsField content={content} field={c => c.image}>
       <img
         src={content.image?.url.default ?? ''}
         alt={content.alternativeText ?? ''}
         className='object-cover object-top aspect-square'
-        {...pa('image')}
       />
-    </EditableField>
+    </CmsField>
   );
 }

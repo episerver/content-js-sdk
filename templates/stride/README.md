@@ -29,7 +29,7 @@ This will import all the pre-configured pages, components, and content structure
 3. Choose the existing start page from the imported content
 4. Click **Create Application**
 5. Navigate to **Hostnames**
-6. Add a primary hostname with value **localhost:3000** and choose all locales
+6. Add a primary hostname with value **localhost:3000**, secure connection, and choose all locales
 7. Save
 
 ## Run Template
@@ -60,4 +60,4 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [https://localhost:3000](https://localhost:3000) with your browser to see the result.

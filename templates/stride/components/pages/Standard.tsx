@@ -1,8 +1,7 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import EditableField from '../EditableField';
-import SubNavigationLayout from '../layout/SubNavigationLayout';
+import { bindCmsField } from '../shared/CmsField';
+import SubNavigationLayout from '../layouts/SubNavigationLayout';
 
 export const StandardPage = contentType({
   key: 'StandardPage',
@@ -43,27 +42,26 @@ type StandardPageProps = {
 };
 
 export default function Standard({ content }: StandardPageProps) {
-  const { pa } = getPreviewUtils(content);
+  const CmsField = bindCmsField(content);
+
   return (
     <SubNavigationLayout>
-      <h1
-        className='text-5xl md:text-7xl font-bold tracking-tight mb-12'
-        {...pa('heading')}
-      >
-        {content.heading ?? content._metadata.displayName}
-      </h1>
+      <CmsField field={c => c.heading} alwaysRender>
+        <h1 className='text-5xl md:text-7xl font-bold tracking-tight mb-12'>
+          {content.heading ?? content._metadata.displayName}
+        </h1>
+      </CmsField>
 
-      <EditableField field={content.intro}>
+      <CmsField field={c => c.intro}>
         <RichText
-          {...pa('intro')}
           content={content.intro?.json}
           className='leading-relaxed text-foreground mt-5 max-w-2xl mb-8 text-xl'
         />
-      </EditableField>
+      </CmsField>
 
-      <EditableField field={content.body}>
-        <RichText {...pa('body')} content={content.body?.json} className='prose' />
-      </EditableField>
+      <CmsField field={c => c.body}>
+        <RichText content={content.body?.json} className='prose' />
+      </CmsField>
     </SubNavigationLayout>
   );
 }

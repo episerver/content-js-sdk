@@ -1,6 +1,5 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import { CmsField } from '../shared/CmsField';
 import { Check, CheckCheck, Flag, Globe, Sparkles, Wallet } from 'lucide-react';
 
 export const EyebrowComponent = contentType({
@@ -48,20 +47,16 @@ const iconMap: Record<string, React.ElementType | null> = {
 };
 
 export default function Eyebrow({ content }: EyebrowComponentProps) {
-  const { pa } = getPreviewUtils(content);
   const IconComponent = content.icon ? iconMap[content.icon] : null;
 
   return (
-    <EditableField field={content.eyebrow}>
+    <CmsField content={content} field={c => c.eyebrow}>
       <div className='flex gap-2 items-center'>
         {IconComponent && <IconComponent size={16} />}
-        <p
-          className='text-xs uppercase font-semibold tracking-wider text-foreground letter-spacing-wider font-code '
-          {...pa('eyebrow')}
-        >
+        <p className='text-xs uppercase font-semibold tracking-wider text-foreground letter-spacing-wider font-code '>
           {content.eyebrow}
         </p>
       </div>
-    </EditableField>
+    </CmsField>
   );
 }

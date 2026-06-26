@@ -1,6 +1,6 @@
-import DecoGrid from './DecoGrid';
-import { Footer } from './Footer';
-import { Header } from './Header';
+import DecoGrid from './shared/DecoGrid';
+import { Footer } from './shared/Footer';
+import { Header } from './shared/Header';
 
 export default function FullWidthLayout({
   children,
