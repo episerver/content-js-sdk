@@ -1,6 +1,6 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import EditableField from '../shared/EditableField';
 import { Check, CheckCheck, Flag, Globe, Sparkles, Wallet } from 'lucide-react';
 
 export const EyebrowComponent = contentType({

@@ -11,7 +11,7 @@ import {
   getDisplayStyle,
   SectionDisplayTemplate,
 } from './DisplayTemplates';
-import EditableField from '../EditableField';
+import EditableField from '../shared/EditableField';
 
 export const HeroSection = contentType({
   key: 'HeroSection',

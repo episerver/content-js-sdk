@@ -1,9 +1,9 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils, OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import EditableField from '../EditableField';
+import EditableField from '../shared/EditableField';
 import Eyebrow, { EyebrowComponent } from '../blocks/Eyebrow';
-import FullWidthLayout from '../layout/FullWidthLayout';
+import FullWidthLayout from '../layouts/FullWidthLayout';
 
 export const ProductPage = contentType({
   key: 'ProductPage',

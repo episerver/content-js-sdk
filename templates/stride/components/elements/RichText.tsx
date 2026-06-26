@@ -1,7 +1,7 @@
 import { ContentProps, contentType } from '@optimizely/cms-sdk';
 import { RichText as OptiRichText } from '@optimizely/cms-sdk/react/richText';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import EditableField from '../shared/EditableField';
 
 export const RichTextComponent = contentType({
   key: 'RichTextElement',

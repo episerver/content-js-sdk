@@ -6,7 +6,7 @@ import { Search, Menu } from 'lucide-react';
 import { MobileMenu } from './MobileMenu';
 import { Logo } from './Logo';
 import { SearchModal } from './SearchModal';
-import type { NavigationItem } from '../../lib/navigation';
+import type { NavigationItem } from '../../../lib/navigation';
 
 export const HeaderClient = ({
   navigationItems,

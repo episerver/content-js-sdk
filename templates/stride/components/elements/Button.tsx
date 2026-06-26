@@ -1,6 +1,6 @@
 import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import EditableField from '../shared/EditableField';
 import Link from 'next/link';
 import { cn } from '../../lib/utils';
 

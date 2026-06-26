@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { cn } from '../../lib/utils';
-import { getNavigationItems, NavigationItem } from '../../lib/navigation';
+import { cn } from '../../../lib/utils';
+import { getNavigationItems, NavigationItem } from '../../../lib/navigation';
 
 export const SubNavigation = async () => {
   const navigationItems = await getNavigationItems();

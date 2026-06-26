@@ -1,8 +1,8 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import EditableField from '../EditableField';
-import SubNavigationLayout from '../layout/SubNavigationLayout';
+import EditableField from '../shared/EditableField';
+import SubNavigationLayout from '../layouts/SubNavigationLayout';
 
 export const StandardPage = contentType({
   key: 'StandardPage',

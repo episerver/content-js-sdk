@@ -1,7 +1,7 @@
 import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
 import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { Check, CheckCheck, Globe, Flag, Sparkles, Wallet } from 'lucide-react';
-import EditableField from '../EditableField';
+import EditableField from '../shared/EditableField';
 
 export const HeadingComponent = contentType({
   key: 'HeadingElement',
