@@ -1,0 +1,43 @@
+{
+  "name": "@optimizely/create-app",
+  "version": "2.0.0",
+  "description": "Create Optimizely CMS applications with one command",
+  "type": "module",
+  "bin": {
+    "create-opti-app": "./bin/create-opti-app.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsx scripts/prepare-templates.ts && tsc",
+    "clean": "rimraf dist templates/nextjs-starter templates/nextjs-alloy templates/tanstack-starter",
+    "test": "vitest --passWithNoTests"
+  },
+  "repository": {
+    "url": "https://github.com/episerver/content-js-sdk.git"
+  },
+  "keywords": [
+    "optimizely",
+    "cms",
+    "create-app",
+    "scaffolding",
+    "nextjs",
+    "tanstack"
+  ],
+  "author": "Optimizely",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.7.0",
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.1.1"
+  }
+}
