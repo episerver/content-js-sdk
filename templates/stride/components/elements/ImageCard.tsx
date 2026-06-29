@@ -1,6 +1,5 @@
 import { ContentProps, contentType } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import { bindCmsField } from '../shared/CmsField';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -77,7 +76,7 @@ const iconMap: Record<string, React.ElementType | null> = {
 };
 
 export default function ImageCard({ content }: ImageCardComponentProps) {
-  const { pa } = getPreviewUtils(content);
+  const CmsField = bindCmsField(content);
   const IconComponent = content.icon ? iconMap[content.icon] : null;
 
   return (
@@ -85,45 +84,36 @@ export default function ImageCard({ content }: ImageCardComponentProps) {
       href={content.link?.default ?? '#'}
       className='grow basis-0 group z-20 relative flex justify-between flex-col transition-all card hover:border-foreground/10!'
     >
-      <EditableField field={content.image}>
+      <CmsField field={c => c.image}>
         <div className='relative aspect-664/635 w-full -mb-40 rounded-3xl overflow-hidden -mt-12 mask-[linear-gradient(#000_50%,transparent_80%)]'>
           <img
             src={content.image?.url.default ?? ''}
             alt=''
             className='object-cover scale-115 object-top mt-24 group-hover:-translate-y-6 group-hover:scale-120 transition-transform'
-            {...pa('image')}
           />
         </div>
-      </EditableField>
+      </CmsField>
 
-      <EditableField field={[content.eyebrow, content.title]}>
-        <div className='p-8 flex flex-col justify-end min-h-55 z-30'>
-          <EditableField field={content.eyebrow}>
-            <div className='flex gap-2 items-center'>
-              {IconComponent && <IconComponent size={16} />}
-              <p
-                className='text-xs uppercase font-semibold tracking-wider text-foreground letter-spacing-wider font-code '
-                {...pa('eyebrow')}
-              >
-                {content.eyebrow}
-              </p>
-            </div>
-          </EditableField>
-          <EditableField field={content.title}>
-            <div className='flex flex-col mt-0'>
-              <h3
-                className='text-2xl md:text-2xl font-bold tracking-tight text-foreground mb-0'
-                {...pa('title')}
-              >
-                {content.title}
-              </h3>
-              <span className='text-foreground/50 group-hover:text-foreground absolute right-6 bottom-6 transition-all border border-foreground/5 group-hover:bg-background p-3 rounded-full'>
-                <ArrowRight size={16} />
-              </span>
-            </div>
-          </EditableField>
-        </div>
-      </EditableField>
+      <div className='p-8 flex flex-col justify-end min-h-55 z-30'>
+        <CmsField field={c => c.eyebrow}>
+          <div className='flex gap-2 items-center'>
+            {IconComponent && <IconComponent size={16} />}
+            <p className='text-xs uppercase font-semibold tracking-wider text-foreground letter-spacing-wider font-code '>
+              {content.eyebrow}
+            </p>
+          </div>
+        </CmsField>
+        <CmsField field={c => c.title}>
+          <div className='flex flex-col mt-0'>
+            <h3 className='text-2xl md:text-2xl font-bold tracking-tight text-foreground mb-0'>
+              {content.title}
+            </h3>
+            <span className='text-foreground/50 group-hover:text-foreground absolute right-6 bottom-6 transition-all border border-foreground/5 group-hover:bg-background p-3 rounded-full'>
+              <ArrowRight size={16} />
+            </span>
+          </div>
+        </CmsField>
+      </div>
     </Link>
   );
 }

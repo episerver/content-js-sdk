@@ -1,6 +1,5 @@
 import { ContentProps, contentType } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import { CmsField } from '../shared/CmsField';
 
 export const VideoComponent = contentType({
   key: 'VideoElement',
@@ -28,17 +27,15 @@ type VideoComponentProps = {
 };
 
 export default function Video({ content }: VideoComponentProps) {
-  const { pa } = getPreviewUtils(content);
   return (
-    <EditableField field={content.video}>
+    <CmsField content={content} field={c => c.video}>
       <video
         src={content.video?.url.default ?? ''}
         autoPlay={content.autoplay ?? false}
         loop
         muted
         className='absolute inset-0 w-full h-full object-cover rounded-lg'
-        {...pa('video')}
       />
-    </EditableField>
+    </CmsField>
   );
 }

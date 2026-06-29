@@ -1,7 +1,6 @@
 import { ContentProps, contentType } from '@optimizely/cms-sdk';
 import { RichText as OptiRichText } from '@optimizely/cms-sdk/react/richText';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-import EditableField from '../EditableField';
+import { CmsField } from '../shared/CmsField';
 
 export const RichTextComponent = contentType({
   key: 'RichTextElement',
@@ -27,15 +26,12 @@ type RichTextComponentProps = {
 };
 
 export default function RichText({ content }: RichTextComponentProps) {
-  const { pa } = getPreviewUtils(content);
-
   return (
-    <EditableField field={content.body}>
+    <CmsField content={content} field={c => c.body}>
       <OptiRichText
-        {...pa('body')}
         content={content.body?.json}
         className='text-lg leading-relaxed text-foreground max-w-2xl'
       />
-    </EditableField>
+    </CmsField>
   );
 }

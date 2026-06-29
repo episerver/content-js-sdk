@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { NavigationItem, getNavigationItems } from '../../lib/navigation';
+import { NavigationItem, getNavigationItems } from '../../../lib/navigation';
 import { getContext } from '@optimizely/cms-sdk/react/server';
 
 function findPath(items: NavigationItem[], targetKey: string): NavigationItem[] | null {

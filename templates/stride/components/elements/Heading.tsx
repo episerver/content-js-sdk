@@ -1,7 +1,6 @@
 import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
 import { Check, CheckCheck, Globe, Flag, Sparkles, Wallet } from 'lucide-react';
-import EditableField from '../EditableField';
+import { CmsField } from '../shared/CmsField';
 
 export const HeadingComponent = contentType({
   key: 'HeadingElement',
@@ -92,24 +91,18 @@ const stylesMap: Record<string, string> = {
 };
 
 export default function Heading({ content, displaySettings }: HeadingComponentProps) {
-  const { pa } = getPreviewUtils(content);
   const level = displaySettings?.level ? levelMap[displaySettings.level] : 'h2';
   const HeadingTag = level as React.ElementType;
   const IconComponent = displaySettings?.icon ? iconMap[displaySettings.icon] : null;
 
   return (
-    <EditableField field={content.heading}>
+    <CmsField content={content} field={c => c.heading}>
       {IconComponent ?
         <div className='flex gap-2'>
           <IconComponent size={iconSizeMap[level]} />
-          <HeadingTag className={stylesMap[level]} {...pa('heading')}>
-            {content.heading}
-          </HeadingTag>
+          <HeadingTag className={stylesMap[level]}>{content.heading}</HeadingTag>
         </div>
-      : <HeadingTag className={stylesMap[level]} {...pa('heading')}>
-          {content.heading}
-        </HeadingTag>
-      }
-    </EditableField>
+      : <HeadingTag className={stylesMap[level]}>{content.heading}</HeadingTag>}
+    </CmsField>
   );
 }
