@@ -310,7 +310,6 @@ export function OptimizelyComposition({
               __tag: tag,
             }}
             displaySettings={parsedDisplaySettings}
-            {...previewAttrs}
           />
         </Wrapper>
       );
@@ -413,7 +412,7 @@ export function OptimizelyGridSection({
             __tag: tag,
           }}
           displaySettings={parsedDisplaySettings}
-          {...previewAttrs}
+          {...(ComponentWrapper ? {} : previewAttrs)}
         />
       );
 
