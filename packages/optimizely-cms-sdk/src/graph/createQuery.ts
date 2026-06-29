@@ -5,7 +5,7 @@ import {
   toBaseTypeFragmentKey,
   DAM_ASSET_FRAGMENTS,
   FIXED_FRAGMENTS,
-  BASE_TYPE_FRAGMENTS,
+  getBaseTypeFragments,
 } from '../util/baseTypeUtil.js';
 import { withQueryCaching } from '../util/cache.js';
 import { SemanticAttributes } from '../telemetry/index.js';
@@ -231,8 +231,9 @@ export const createFragment = (
   let contentType: RegistryEntry | undefined;
 
   if (isBaseType(contentTypeName)) {
-    fields.push(...BASE_TYPE_FRAGMENTS.fields);
-    extraFragments.push(...BASE_TYPE_FRAGMENTS.extraFragments);
+    const baseFragments = getBaseTypeFragments(contentTypeName);
+    fields.push(...baseFragments.fields);
+    extraFragments.push(...baseFragments.extraFragments);
   } else {
     contentType = getContentType(contentTypeName);
     if (!contentType) throw new GraphMissingContentTypeError(contentTypeName);
@@ -254,8 +255,10 @@ export const createFragment = (
     includesDamAssetsFragments = propResult.includesDamAssetsFragments;
 
     if (includeBaseFragments) {
-      extraFragments.unshift(...BASE_TYPE_FRAGMENTS.extraFragments);
-      fields.push(...BASE_TYPE_FRAGMENTS.fields);
+      const baseType = 'baseType' in contentType ? (contentType as AnyContentType).baseType : undefined;
+      const baseFragments = getBaseTypeFragments(baseType ?? '');
+      extraFragments.unshift(...baseFragments.extraFragments);
+      fields.push(...baseFragments.fields);
     }
 
     if ('baseType' in contentType && contentType.baseType === '_experience') {

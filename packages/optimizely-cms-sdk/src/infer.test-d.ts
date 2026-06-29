@@ -1,5 +1,5 @@
 import { test, expectTypeOf } from 'vitest';
-import type { ContentProps } from './infer.js';
+import type { ContentProps, InferredAssetMetadata, InferredImageMetadata } from './infer.js';
 import { contentType } from './model/index.js';
 
 test('ContentProps works for non-content type', () => {
@@ -91,6 +91,57 @@ test('ContentProps works for component properties', () => {
   });
 
   expectTypeOf<ContentProps<typeof Article>>().toExtend<ExpectedType>();
+});
+
+test('ContentProps includes _imageMetadata and _assetMetadata for image base type', () => {
+  const ImageType = contentType({
+    key: 'ImageMedia',
+    displayName: 'Image Media',
+    baseType: '_image',
+    properties: {
+      altText: { type: 'string' },
+    },
+  });
+
+  type Result = ContentProps<typeof ImageType>;
+
+  expectTypeOf<Result>().toHaveProperty('_imageMetadata');
+  expectTypeOf<Result>().toHaveProperty('_assetMetadata');
+  expectTypeOf<Result['_imageMetadata']>().toEqualTypeOf<InferredImageMetadata>();
+  expectTypeOf<Result['_assetMetadata']>().toEqualTypeOf<InferredAssetMetadata>();
+});
+
+test('ContentProps includes _assetMetadata but not _imageMetadata for video base type', () => {
+  const VideoType = contentType({
+    key: 'VideoMedia',
+    displayName: 'Video Media',
+    baseType: '_video',
+    properties: {
+      duration: { type: 'integer' },
+    },
+  });
+
+  type Result = ContentProps<typeof VideoType>;
+
+  expectTypeOf<Result>().toHaveProperty('_assetMetadata');
+  expectTypeOf<Result['_assetMetadata']>().toEqualTypeOf<InferredAssetMetadata>();
+  expectTypeOf<Result>().not.toHaveProperty('_imageMetadata');
+});
+
+test('ContentProps does not include _assetMetadata or _imageMetadata for page base type', () => {
+  const PageType = contentType({
+    key: 'StartPage',
+    displayName: 'Start Page',
+    baseType: '_page',
+    properties: {
+      title: { type: 'string' },
+    },
+  });
+
+  type Result = ContentProps<typeof PageType>;
+
+  expectTypeOf<Result>().not.toHaveProperty('_imageMetadata');
+  expectTypeOf<Result>().not.toHaveProperty('_assetMetadata');
 });
 
 test('ContentProps works for disabled keys', () => {
