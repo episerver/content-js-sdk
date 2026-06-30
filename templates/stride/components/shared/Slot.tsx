@@ -1,3 +1,5 @@
+'use client';
+
 import { cloneElement, Fragment, isValidElement, type ReactNode } from 'react';
 
 type SlotProps = React.HTMLAttributes<HTMLElement> & {
