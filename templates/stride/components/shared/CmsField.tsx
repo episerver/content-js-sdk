@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement } from 'react';
 import { Slot } from './Slot';
 import { getContext } from '@optimizely/cms-sdk/react/server';
 
@@ -30,7 +30,7 @@ type CmsFieldProps<T> = {
   alwaysRender?: boolean;
   /** When `true`, checks the current CMS context and annotates the field with live preview attributes. Defaults to `true`. */
   editable?: boolean;
-  children: ReactNode;
+  children: ReactElement;
 };
 
 /**
@@ -74,7 +74,7 @@ type CmsFieldsProps<T> = {
   field: FieldAccessor<T>;
   /** When `true`, renders children even if the field value is `null` or `undefined`. Defaults to `false`. */
   alwaysRender?: boolean;
-  children: ReactNode;
+  children: ReactElement;
 };
 
 /**
