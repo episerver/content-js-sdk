@@ -50,3 +50,21 @@ export { ContentProps } from './infer.js';
 
 // Dam assets
 export { damAssets } from './render/assets.js';
+
+// Re-export types needed for declaration file generation in consuming libraries
+export type {
+  AnyContentType,
+  BaseTypes,
+  ComponentContentType,
+  ContentType,
+  Contract,
+  ExperienceContentType,
+  FolderContentType,
+  MediaContentType,
+  MediaStringTypes,
+  PageContentType,
+  PermittedTypes,
+  PropertiesRecord,
+  SectionContentType,
+  SuppliedContractValues,
+} from './model/contentTypes.js';

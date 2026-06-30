@@ -153,3 +153,21 @@ export {
   isContentTypeRegistered,
 } from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';
+
+// Re-export types needed for declaration file generation
+export type {
+  AnyContentType,
+  BaseTypes,
+  ComponentContentType,
+  ContentType,
+  Contract,
+  ExperienceContentType,
+  FolderContentType,
+  MediaContentType,
+  MediaStringTypes,
+  PageContentType,
+  PermittedTypes,
+  PropertiesRecord,
+  SectionContentType,
+  SuppliedContractValues,
+} from './contentTypes.js';
