@@ -54,6 +54,7 @@ export type ContentType = {
   key: string;
   displayName: string;
   contentType: string;
+  locale?: string;
 };
 
 export type BuildConfig = {

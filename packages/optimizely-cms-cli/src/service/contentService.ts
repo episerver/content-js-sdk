@@ -9,6 +9,7 @@ interface ContentConfig {
   key: string;
   displayName: string;
   contentType: string;
+  locale?: string;
 }
 
 // Root container is common for all CMS instances
@@ -55,7 +56,7 @@ async function createContent(
     container: ROOT_CONTAINER_KEY,
     initialVersion: {
       displayName: config.displayName,
-      locale: 'en',
+      locale: config.locale || 'en',
       properties: {},
     },
   };
