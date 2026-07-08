@@ -1,5 +1,11 @@
 # @optimizely/cms-cli
 
+## 2.2.0
+
+### Minor Changes
+
+- b87c027: Fix duplicate entry point content creation and application update detection
+
 ## 2.1.0
 
 ### Minor Changes
