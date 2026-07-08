@@ -85,6 +85,11 @@ export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
 }
 
+/** Returns the initialized React component registry */
+export function getReactComponentRegistry() {
+  return componentRegistry;
+}
+
 /** Content data from CMS */
 type OptimizelyContent = {
   /** Content type name */

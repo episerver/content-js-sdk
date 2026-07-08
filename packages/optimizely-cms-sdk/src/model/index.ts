@@ -150,6 +150,7 @@ export {
 } from './buildConfig.js';
 export {
   init as initContentTypeRegistry,
+  getContentType,
   isContentTypeRegistered,
 } from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';

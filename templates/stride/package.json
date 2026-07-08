@@ -10,6 +10,7 @@
     "config:push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
+    "@faker-js/faker": "^9",
     "@optimizely/cms-sdk": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",

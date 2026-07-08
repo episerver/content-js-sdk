@@ -7,6 +7,7 @@ export {
   isContentType,
   isContract,
   isDisplayTemplate,
+  getContentType,
   isContentTypeRegistered,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
