@@ -144,6 +144,10 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   damAssetType: __type(name: "cmp_Asset") {
     __typename
   }
+  # Check if "OptiFormsContainerData" type exists which indicates that Forms is enabled
+  formsContainerType: __type(name: "OptiFormsContainerData") {
+    __typename
+  }
 }
 `;
 
@@ -460,9 +464,11 @@ export class GraphClient {
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
     // Determine if DAM is enabled based on the presence of cmp_Asset type
     const damEnabled = data.damAssetType !== null;
+    // Determine if Forms is enabled based on the presence of OptiFormsContainerData type
+    const formsEnabled = data.formsContainerType !== null;
 
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled };
+      return { contentTypeName: null, damEnabled, formsEnabled };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -477,7 +483,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled };
+    return { contentTypeName, damEnabled, formsEnabled };
   }
 
   /**
@@ -504,7 +510,7 @@ export class GraphClient {
       const cacheEnabled = options?.cache ?? this.cache;
       const activeSlot = options?.slot ?? this.slot;
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         undefined,
         cacheEnabled,
@@ -524,6 +530,7 @@ export class GraphClient {
           damEnabled,
           this.maxFragmentThreshold,
           this.expandContracts,
+          formsEnabled,
         );
         const response = (await this.request(
           query,
@@ -700,7 +707,7 @@ export class GraphClient {
       const input = previewFilter(params);
       const activeSlot = options?.slot ?? this.slot;
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         params.preview_token,
         false,
@@ -731,6 +738,7 @@ export class GraphClient {
         damEnabled,
         this.maxFragmentThreshold,
         this.expandContracts,
+        formsEnabled,
       );
 
       const response = await this.request(
@@ -869,7 +877,7 @@ export class GraphClient {
         },
       };
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         previewToken,
         cacheEnabled,
@@ -889,6 +897,7 @@ export class GraphClient {
           damEnabled,
           this.maxFragmentThreshold,
           this.expandContracts,
+          formsEnabled,
         );
 
         const response = await this.request(

@@ -157,6 +157,7 @@ describe('GraphClient - Context Integration', () => {
               },
             },
             damAssetType: null,
+            formsContainerType: null,
           },
         }),
       });
@@ -235,6 +236,7 @@ describe('GraphClient - Context Integration', () => {
               },
             },
             damAssetType: null,
+            formsContainerType: null,
           },
         }),
       });

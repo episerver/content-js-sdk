@@ -313,8 +313,9 @@ const generateSingleContentQuery = (
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  formsEnabled: boolean = false,
 ): string => {
-  const span = startSingleQuerySpan(contentType, damEnabled);
+  const span = startSingleQuerySpan(contentType, damEnabled, formsEnabled);
   const startTime = span ? performance.now() : 0;
 
   const result = createFragment(contentType, new Set(), '', {
@@ -372,8 +373,9 @@ const generateMultipleContentQuery = (
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  formsEnabled: boolean = false,
 ): string => {
-  const span = startMultipleQuerySpan(contentType, damEnabled);
+  const span = startMultipleQuerySpan(contentType, damEnabled, formsEnabled);
   const startTime = span ? performance.now() : 0;
 
   const result = createFragment(contentType, new Set(), '', {

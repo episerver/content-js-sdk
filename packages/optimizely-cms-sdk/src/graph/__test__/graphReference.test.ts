@@ -210,6 +210,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       // Mock actual content response
       .mockResolvedValueOnce({
@@ -251,6 +252,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -291,6 +293,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -331,6 +334,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -379,6 +383,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -424,6 +429,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -468,6 +474,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
         },
       },
       damAssetType: null,
+        formsContainerType: null,
     });
 
     const result = await client.getContent({ key: 'nonexistent' });
@@ -486,6 +493,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -523,6 +531,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -557,6 +566,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -594,6 +604,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -628,6 +639,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -665,6 +677,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -704,6 +717,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -1135,6 +1149,7 @@ describe('GraphClient.getPreviewContent() query options', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -1178,6 +1193,7 @@ describe('GraphClient.getPreviewContent() query options', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {
@@ -1209,6 +1225,7 @@ describe('GraphClient.getPreviewContent() query options', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
       })
       .mockResolvedValueOnce({
         _Content: {

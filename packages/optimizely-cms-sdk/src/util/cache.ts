@@ -10,6 +10,7 @@ type QueryGenerator = (
   damEnabled?: boolean,
   maxFragmentThreshold?: number,
   expandContracts?: boolean,
+  formsEnabled?: boolean,
 ) => string;
 
 /**
@@ -25,15 +26,16 @@ export const withQueryCaching = (
     damEnabled: boolean = false,
     maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+    formsEnabled: boolean = false,
   ): string => {
-    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}`;
+    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}:${formsEnabled}`;
 
     const cached = queryCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts);
+    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts, formsEnabled);
     queryCache.set(cacheKey, query);
     return query;
   };

@@ -14,12 +14,14 @@ export function startFragmentSpan(
   damEnabled: boolean,
   threshold: number,
   suffix: string,
+  formsEnabled: boolean = false,
 ) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.fragment.create', {
     attributes: {
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+      [SemanticAttributes.OPTI_FORMS_ENABLED]: formsEnabled,
       [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: threshold,
       [SemanticAttributes.OPTI_FRAGMENT_SUFFIX]: suffix,
     },
@@ -30,13 +32,14 @@ export function startFragmentSpan(
  * Span for single content query generation.
  * Only created when queries are actually generated (not when cached).
  */
-export function startSingleQuerySpan(contentType: string, damEnabled: boolean) {
+export function startSingleQuerySpan(contentType: string, damEnabled: boolean, formsEnabled: boolean = false) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.query.create', {
     attributes: {
       [SemanticAttributes.OPTI_QUERY_TYPE]: 'single',
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+      [SemanticAttributes.OPTI_FORMS_ENABLED]: formsEnabled,
     },
   });
 }
@@ -45,13 +48,14 @@ export function startSingleQuerySpan(contentType: string, damEnabled: boolean) {
  * Span for multiple content query generation.
  * Only created when queries are actually generated (not when cached).
  */
-export function startMultipleQuerySpan(contentType: string, damEnabled: boolean) {
+export function startMultipleQuerySpan(contentType: string, damEnabled: boolean, formsEnabled: boolean = false) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.query.create', {
     attributes: {
       [SemanticAttributes.OPTI_QUERY_TYPE]: 'multiple',
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+      [SemanticAttributes.OPTI_FORMS_ENABLED]: formsEnabled,
     },
   });
 }
