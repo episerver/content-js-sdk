@@ -467,7 +467,6 @@ export class GraphClient {
     const damEnabled = data.damAssetType !== null;
     // Determine if Forms is enabled based on the presence of OptiFormsContainerData type
     const formsEnabled = data.formsContainerType !== null;
-    console.log(JSON.stringify(data, null, 2))
 
     if (!contentTypeName) {
       return { contentTypeName: null, damEnabled, formsEnabled };

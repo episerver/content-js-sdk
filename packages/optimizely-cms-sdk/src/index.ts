@@ -38,6 +38,21 @@ export {
   BlankExperienceContentType,
 } from './model/internalContentTypes.js';
 
+// Optimizely Forms content types
+export {
+  OptiFormsContainerDataContentType,
+  OptiFormsTextboxElementContentType,
+  OptiFormsTextareaElementContentType,
+  OptiFormsNumberElementContentType,
+  OptiFormsRangeElementContentType,
+  OptiFormsUrlElementContentType,
+  OptiFormsChoiceElementContentType,
+  OptiFormsSelectionElementContentType,
+  OptiFormsSubmitElementContentType,
+  OptiFormsResetElementContentType,
+  FormContentTypes,
+} from './model/formContentTypes.js';
+
 // Namespaces for errors, types, and utilities
 export * as GraphErrors from './graph/error.js';
 export * as ContentTypes from './model/contentTypes.js';
