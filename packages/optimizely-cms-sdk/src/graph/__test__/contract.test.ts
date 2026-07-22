@@ -466,7 +466,11 @@ describe('Contract expansion in allowedTypes', () => {
     ]);
 
     const result = await createFragment('LandingPage', undefined, undefined, {
+      damEnabled: false,
+      maxFragmentThreshold: 100,
       expandContracts: true,
+      formsEnabled: false,
+      includeBaseFragments: true,
     });
 
     const fragmentString = result.fragments.join('\n');
@@ -552,7 +556,11 @@ describe('Contract expansion in allowedTypes', () => {
     ]);
 
     const result = await createFragment('LandingPage', undefined, undefined, {
+      damEnabled: false,
+      maxFragmentThreshold: 100,
       expandContracts: false,
+      formsEnabled: false,
+      includeBaseFragments: true,
     });
 
     const fragmentString = result.fragments.join('\n');
@@ -648,7 +656,11 @@ describe('Contract expansion in allowedTypes', () => {
     initContentTypeRegistry([EmptyContract, PageWithEmptyContract]);
 
     const result = await createFragment('PageWithEmptyContract', undefined, undefined, {
+      damEnabled: false,
+      maxFragmentThreshold: 100,
       expandContracts: true,
+      formsEnabled: false,
+      includeBaseFragments: true,
     });
 
     const fragmentString = result.fragments.join('\n');

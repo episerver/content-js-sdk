@@ -2,6 +2,7 @@ import {
   createSingleContentQuery,
   ItemsResponse,
   createMultipleContentQuery,
+  DEFAUL_FRAGMENT_OPTIONS,
 } from './createQuery.js';
 import {
   GraphContentResponseError,
@@ -466,6 +467,7 @@ export class GraphClient {
     const damEnabled = data.damAssetType !== null;
     // Determine if Forms is enabled based on the presence of OptiFormsContainerData type
     const formsEnabled = data.formsContainerType !== null;
+    console.log(JSON.stringify(data, null, 2))
 
     if (!contentTypeName) {
       return { contentTypeName: null, damEnabled, formsEnabled };
@@ -525,13 +527,13 @@ export class GraphClient {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
       try {
-        const query = createMultipleContentQuery(
-          contentTypeName,
+        const query = createMultipleContentQuery(contentTypeName, {
+          ...DEFAUL_FRAGMENT_OPTIONS,
           damEnabled,
-          this.maxFragmentThreshold,
-          this.expandContracts,
+          maxFragmentThreshold: this.maxFragmentThreshold,
+          expandContracts: this.expandContracts,
           formsEnabled,
-        );
+        });
         const response = (await this.request(
           query,
           input,
@@ -733,13 +735,13 @@ export class GraphClient {
         mode: params.ctx,
       });
 
-      const query = createSingleContentQuery(
-        contentTypeName,
+      const query = createSingleContentQuery(contentTypeName, {
+        ...DEFAUL_FRAGMENT_OPTIONS,
         damEnabled,
-        this.maxFragmentThreshold,
-        this.expandContracts,
+        maxFragmentThreshold: this.maxFragmentThreshold,
+        expandContracts: this.expandContracts,
         formsEnabled,
-      );
+      });
 
       const response = await this.request(
         query,
@@ -892,13 +894,13 @@ export class GraphClient {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
       try {
-        const query = createSingleContentQuery(
-          contentTypeName,
+        const query = createSingleContentQuery(contentTypeName, {
+          ...DEFAUL_FRAGMENT_OPTIONS,
           damEnabled,
-          this.maxFragmentThreshold,
-          this.expandContracts,
+          maxFragmentThreshold: this.maxFragmentThreshold,
+          expandContracts: this.expandContracts,
           formsEnabled,
-        );
+        });
 
         const response = await this.request(
           query,
