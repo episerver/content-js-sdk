@@ -145,7 +145,11 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   damAssetType: __type(name: "cmp_Asset") {
     __typename
   }
-  # Check if "OptiFormsContainerData" type exists which indicates that Forms is enabled
+}
+`;
+
+const GET_FORMS_ENABLED_QUERY = `
+query GetFormsEnabled {
   formsContainerType: __type(name: "OptiFormsContainerData") {
     __typename
   }
@@ -454,19 +458,31 @@ export class GraphClient {
     cache?: boolean,
     slot?: GraphSlot,
   ) {
-    const data = await this.request(
-      GET_CONTENT_METADATA_QUERY,
-      input,
-      previewToken,
-      cache ?? this.cache,
-      slot ?? this.slot,
-    );
+    // TODO: this is suboptimal and I would like to merge the metadata queries back 
+    // into a single one but currenly when merged formsContainerType is always null 
+    // no matter whether forms are enabled or not in the CMS
+    const [data, formsData] = await Promise.all([
+      this.request(
+        GET_CONTENT_METADATA_QUERY,
+        input,
+        previewToken,
+        cache ?? this.cache,
+        slot ?? this.slot,
+      ),
+      this.request(
+        GET_FORMS_ENABLED_QUERY,
+        {},
+        previewToken,
+        cache ?? this.cache,
+        slot ?? this.slot,
+      ),
+    ]);
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
     // Determine if DAM is enabled based on the presence of cmp_Asset type
     const damEnabled = data.damAssetType !== null;
     // Determine if Forms is enabled based on the presence of OptiFormsContainerData type
-    const formsEnabled = data.formsContainerType !== null;
+    const formsEnabled = formsData.formsContainerType !== null;
 
     if (!contentTypeName) {
       return { contentTypeName: null, damEnabled, formsEnabled };
