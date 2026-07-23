@@ -1,5 +1,16 @@
 # @optimizely/cms-sdk
 
+## 2.2.0
+
+### Minor Changes
+
+- 53775b0: Improve typing for contentType function
+- b15e199: Fix displaySetting's 'editor' type issue and add 'selectOne'
+- c662175: Fix namespace (graph, globalcontracts) issue in GraphQL query/fragment
+  generation
+- c184559: Add support for language/locale in build config
+- 10a19be: Introduce the method toSchema for parsing data fetched from other GraphQL libs
+
 ## 2.1.0
 
 ### Minor Changes

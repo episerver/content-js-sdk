@@ -45,12 +45,20 @@ jobs:
         run: pnpm --filter "./packages/**" build
 
       # ==========================================
-      # PUBLISH TO NPM
+      # PUBLISH TO NPM + PUSH TAGS + GITHUB RELEASES
       # ==========================================
-      - name: Publish to NPM
-        run: bash ./scripts/publish.sh
+      # changesets/action runs publish.sh, parses the "New tag: pkg@version"
+      # lines that `changeset publish` emits, pushes those git tags, and creates
+      # a GitHub Release per package from the CHANGELOG entry. Auth for both the
+      # tag push and the release API comes from GITHUB_TOKEN below.
+      - name: Publish to NPM and create GitHub Releases
+        uses: changesets/action@v1
+        with:
+          publish: bash ./scripts/publish.sh
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          SKIP_JIRA: ${{ github.event.inputs.skip_jira }}
           JIRA_URL: ${{ secrets.JIRA_URL }}
           JIRA_BOT_USERNAME: ${{ secrets.JIRA_BOT_USERNAME }}
           JIRA_BOT_PASSWORD: ${{ secrets.JIRA_BOT_PASSWORD }}

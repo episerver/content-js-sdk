@@ -19,6 +19,7 @@ export const NewsContentType = contentType({
     image: {
       type: 'contentReference',
       displayName: 'Teaser Image',
+      allowedTypes: ['_image'],
     },
     title: {
       type: 'string',

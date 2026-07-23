@@ -37,6 +37,7 @@ export const ProductContentType = contentType({
       type: 'array',
       items: {
         type: 'content',
+        allowedTypes: ['*'],
       },
       displayName: 'Content Area',
       sortOrder: 5,

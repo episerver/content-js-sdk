@@ -1,5 +1,21 @@
 # @optimizely/cms-cli
 
+## 2.2.0
+
+### Minor Changes
+
+- b87c027: Fix duplicate entry point content creation and application update detection
+- c184559: Add support for language/locale in build config
+
+### Patch Changes
+
+- Updated dependencies [53775b0]
+- Updated dependencies [b15e199]
+- Updated dependencies [c662175]
+- Updated dependencies [c184559]
+- Updated dependencies [10a19be]
+  - @optimizely/cms-sdk@2.2.0
+
 ## 2.1.0
 
 ### Minor Changes

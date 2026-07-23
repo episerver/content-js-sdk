@@ -15,6 +15,7 @@ export const TeaserCardContract = contract({
     image: {
       type: 'contentReference',
       displayName: 'Teaser Image',
+      allowedTypes: ['_image'],
     },
   },
 });

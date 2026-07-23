@@ -17,11 +17,12 @@ export const TeaserCardComponent = contentType({
     image: {
       type: 'contentReference',
       displayName: 'Teaser Image',
+      allowedTypes: ['_image'],
     },
     link: {
       type: 'contentReference',
-      allowedTypes: ['_page', '_experience']
-    }
+      allowedTypes: ['_page', '_experience'],
+    },
   },
 });
 

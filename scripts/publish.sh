@@ -31,7 +31,9 @@ fi
 
 # Create or update Jira release (non-blocking - npm publish always succeeds)
 set +e  # Disable exit on error for Jira section
-if [ -n "$JIRA_BOT_PASSWORD" ]; then
+if [ "$SKIP_JIRA" = "true" ]; then
+  echo "⏭️  Skipping Jira (skip_jira=true)"
+elif [ -n "$JIRA_BOT_PASSWORD" ]; then
   # Check if this is a pre-release
   IS_PRERELEASE=false
   if [ -f .changeset/pre.json ]; then
