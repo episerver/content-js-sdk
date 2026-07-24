@@ -50,7 +50,12 @@ export {
   OptiFormsSelectionElementContentType,
   OptiFormsSubmitElementContentType,
   OptiFormsResetElementContentType,
+  OptiFormsDependencyRuleContentType,
+  OptiFormsConditionContentType,
   FormContentTypes,
+
+  // TODO: remove this when it becomes unneeded
+  OptiFormsContainerContentType
 } from './model/formContentTypes.js';
 
 // Namespaces for errors, types, and utilities

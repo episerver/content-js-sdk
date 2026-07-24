@@ -78,6 +78,9 @@ function buildNestedCompositionNodes(depth: number): string {
   return `__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
 }
 
+// Increase nesting depth to support deeper form structures (e.g., Forms with nested fields)
+const COMPOSITION_NESTING_DEPTH = 8;
+
 // FRAGMENT CONSTANTS
 
 export const CONTENT_URL_FRAGMENT =
@@ -94,7 +97,7 @@ export const FIXED_FRAGMENTS = [
   'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
   // This is a temporary workaround for Graph issue with @recursive directive. This will not be used once Graph properly supports @recursive.
   // Replace it with a simpler recursive fragment once Graph supports @recursive, e.g. 'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }':
-  `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(4)} }`,
+  `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(COMPOSITION_NESTING_DEPTH)} }`,
 ];
 
 const COMMON_FRAGMENTS = [

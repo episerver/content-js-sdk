@@ -4,6 +4,10 @@ import {
   BlankExperienceContentType,
   initContentTypeRegistry,
   config,
+  OptiFormsContainerDataContentType,
+  OptiFormsTextboxElementContentType,
+  OptiFormsDependencyRuleContentType,
+  OptiFormsConditionContentType
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
@@ -25,6 +29,8 @@ import StandardTeaser from '@/components/base/StandardTeaser';
 import NewsEventsList, {
   NewsEventsListContentType,
 } from '@/components/base/NewsEventsList';
+import FormContainer from '@/components/FormContainer';
+import FormInput from '@/components/FormInput';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -62,6 +68,10 @@ initContentTypeRegistry([
   ButtonContentType,
   TeaserCardContract,
   NewsEventsListContentType,
+  OptiFormsContainerDataContentType,
+  OptiFormsTextboxElementContentType,
+  OptiFormsDependencyRuleContentType,
+  OptiFormsConditionContentType,
 ]);
 
 initReactComponentRegistry({
@@ -83,6 +93,8 @@ initReactComponentRegistry({
     BlankSection,
     Button,
     NewsEventsList,
+    [OptiFormsContainerDataContentType.key]: FormContainer,
+    [OptiFormsTextboxElementContentType.key]: FormInput,
   },
 });
 

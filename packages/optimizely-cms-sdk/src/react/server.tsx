@@ -443,9 +443,10 @@ export function OptimizelyGridSection({
     // 2. Globally defined (in the registry)
     // 3. Fallback
     // 4. React.Fragment
+    const globalName = globalNames[nodeType];
     const Component =
       locallyDefined[nodeType] ??
-      componentRegistry.getComponent(globalNames[nodeType], { tag }) ??
+      (globalName ? componentRegistry.getComponent(globalName, { tag }) : undefined) ??
       fallbacks[nodeType] ??
       React.Fragment;
 

@@ -1,4 +1,5 @@
-import { contentType } from './index.js';
+import { ContentProps, ExperienceNode, ExperienceStructureNode } from '../infer.js';
+import { ComponentContentType, ContentType, contentType } from './index.js';
 
 export const OptiFormsTextboxElementContentType = contentType({
   key: 'OptiFormsTextboxElement',
@@ -164,6 +165,7 @@ export const OptiFormsDependencyRuleContentType = contentType({
   },
 });
 
+// TODO: this should be a section not a component, but currently section-related issue prevent this
 export const OptiFormsContainerDataContentType = contentType({
   key: 'OptiFormsContainerData',
   displayName: 'Form Container',
@@ -186,6 +188,11 @@ export const OptiFormsContainerDataContentType = contentType({
   },
 });
 
+// TODO: remove this when above is resolved
+export type OptiFormsContainerContentType = ContentProps<
+  typeof OptiFormsContainerDataContentType
+> & { nodes?: ExperienceNode[] };
+
 export const FormContentTypes = [
   OptiFormsContainerDataContentType,
   OptiFormsTextboxElementContentType,
@@ -197,4 +204,6 @@ export const FormContentTypes = [
   OptiFormsSelectionElementContentType,
   OptiFormsSubmitElementContentType,
   OptiFormsResetElementContentType,
+  OptiFormsDependencyRuleContentType,
+  OptiFormsConditionContentType,
 ];
