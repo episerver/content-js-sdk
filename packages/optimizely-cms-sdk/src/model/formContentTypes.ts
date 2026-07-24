@@ -1,20 +1,5 @@
 import { contentType } from './index.js';
 
-export const OptiFormsContainerDataContentType = contentType({
-  key: 'OptiFormsContainerData',
-  displayName: 'Form Container',
-  baseType: '_component',
-  compositionBehaviors: ['elementEnabled'],
-  properties: {
-    Title: { type: 'string' },
-    Description: { type: 'string' },
-    ShowSummaryMessageAfterSubmission: { type: 'boolean' },
-    SubmitConfirmationMessage: { type: 'string' },
-    ResetConfirmationMessage: { type: 'string' },
-    SubmitUrl: { type: 'url' },
-  },
-});
-
 export const OptiFormsTextboxElementContentType = contentType({
   key: 'OptiFormsTextboxElement',
   displayName: 'Textbox',
@@ -27,6 +12,7 @@ export const OptiFormsTextboxElementContentType = contentType({
     PredefinedValue: { type: 'string' },
     Validators: { type: 'json' },
     AutoComplete: { type: 'string' },
+    SubmissionFieldName: { type: 'string' },
   },
 });
 
@@ -42,6 +28,7 @@ export const OptiFormsTextareaElementContentType = contentType({
     PredefinedValue: { type: 'string' },
     Validators: { type: 'json' },
     AutoComplete: { type: 'string' },
+    SubmissionFieldName: { type: 'string' },
   },
 });
 
@@ -57,6 +44,7 @@ export const OptiFormsNumberElementContentType = contentType({
     PredefinedValue: { type: 'string' },
     Validators: { type: 'json' },
     AutoComplete: { type: 'string' },
+    SubmissionFieldName: { type: 'string' },
   },
 });
 
@@ -72,6 +60,7 @@ export const OptiFormsRangeElementContentType = contentType({
     Min: { type: 'integer' },
     Max: { type: 'integer' },
     Increment: { type: 'integer' },
+    SubmissionFieldName: { type: 'string' },
   },
 });
 
@@ -86,6 +75,7 @@ export const OptiFormsUrlElementContentType = contentType({
     Tooltip: { type: 'string' },
     PredefinedValue: { type: 'string' },
     Validators: { type: 'json' },
+    SubmissionFieldName: { type: 'string' },
   },
 });
 
@@ -100,6 +90,7 @@ export const OptiFormsChoiceElementContentType = contentType({
     Options: { type: 'json' },
     AllowMultiSelect: { type: 'boolean' },
     Validators: { type: 'json' },
+    SubmissionFieldName: { type: 'string' },
   },
 });
 
@@ -116,6 +107,7 @@ export const OptiFormsSelectionElementContentType = contentType({
     AllowMultiSelect: { type: 'boolean' },
     Validators: { type: 'json' },
     AutoComplete: { type: 'string' },
+    SubmissionFieldName: { type: 'string' },
   },
 });
 
@@ -172,6 +164,28 @@ export const OptiFormsDependencyRuleContentType = contentType({
   },
 });
 
+export const OptiFormsContainerDataContentType = contentType({
+  key: 'OptiFormsContainerData',
+  displayName: 'Form Container',
+  baseType: '_component',
+  compositionBehaviors: ['sectionEnabled'],
+  properties: {
+    Title: { type: 'string' },
+    Description: { type: 'string' },
+    ShowSummaryMessageAfterSubmission: { type: 'boolean' },
+    SubmitConfirmationMessage: { type: 'string' },
+    ResetConfirmationMessage: { type: 'string' },
+    SubmitUrl: { type: 'url' },
+    DependencyRules: {
+      type: 'array',
+      items: {
+        type: 'component',
+        contentType: OptiFormsDependencyRuleContentType,
+      },
+    },
+  },
+});
+
 export const FormContentTypes = [
   OptiFormsContainerDataContentType,
   OptiFormsTextboxElementContentType,
@@ -184,4 +198,3 @@ export const FormContentTypes = [
   OptiFormsSubmitElementContentType,
   OptiFormsResetElementContentType,
 ];
-
