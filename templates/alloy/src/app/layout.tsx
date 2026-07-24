@@ -7,7 +7,8 @@ import {
   OptiFormsContainerDataContentType,
   OptiFormsTextboxElementContentType,
   OptiFormsDependencyRuleContentType,
-  OptiFormsConditionContentType
+  OptiFormsConditionContentType,
+  OptiFormsSelectionElementContentType
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
@@ -31,6 +32,7 @@ import NewsEventsList, {
 } from '@/components/base/NewsEventsList';
 import FormContainer from '@/components/FormContainer';
 import FormInput from '@/components/FormInput';
+import FormSelection from '@/components/FormSelection';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -72,6 +74,7 @@ initContentTypeRegistry([
   OptiFormsTextboxElementContentType,
   OptiFormsDependencyRuleContentType,
   OptiFormsConditionContentType,
+  OptiFormsSelectionElementContentType,
 ]);
 
 initReactComponentRegistry({
@@ -95,6 +98,7 @@ initReactComponentRegistry({
     NewsEventsList,
     [OptiFormsContainerDataContentType.key]: FormContainer,
     [OptiFormsTextboxElementContentType.key]: FormInput,
+    [OptiFormsSelectionElementContentType.key]: FormSelection,
   },
 });
 

@@ -4,13 +4,8 @@ type FormSelectionProps = {
   content: ContentProps<typeof OptiFormsSelectionElementContentType>;
 };
 
-type SelectionOption = {
-  text: string;
-  value: string;
-};
-
 export default function FormSelection({ content }: FormSelectionProps) {
-  const options = Array.isArray(content.Options) ? content.Options : [];
+  console.log(JSON.stringify(content, null, 2))
 
   return (
     <div className='space-y-2 flex-1'>
@@ -19,7 +14,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
           {content.Label}
         </label>
       )}
-      <select
+      {/* <select
         title={content.Tooltip ?? ''}
         autoComplete={content.AutoComplete ?? 'off'}
         className='w-full px-4 py-2 rounded-md border border-input text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-key1 focus:border-transparent transition-colors duration-200 bg-white'
@@ -35,7 +30,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
       </select>
       {content.Tooltip && (
         <p className='text-xs text-muted-foreground'>{content.Tooltip}</p>
-      )}
+      )} */}
     </div>
   );
 }
