@@ -387,7 +387,7 @@ await client.getContentByPath('/contact', {
 
 #### `maxFragmentThreshold`
 
-Maximum number of GraphQL fragments before logging performance warnings. Prevents overly complex queries from unrestricted content types that could breach GraphQL limits or degrade performance.
+Hard limit on the number of GraphQL fragments generated for a single content area property. When a content area has no `allowedTypes` or `restrictedTypes` and fragment generation exceeds this limit, the SDK throws a `GraphFragmentThresholdError` to prevent overly complex queries that could breach GraphQL limits or degrade performance.
 
 - **Default**: `100`
 - **Example**: `150`
@@ -413,12 +413,41 @@ config({
 const client = getClient()
 ```
 
-When this threshold is exceeded, you'll see a warning like:
+When this limit is exceeded, the SDK throws:
 
-```sh
-⚠️ [optimizely-cms-sdk] Fragment "MyContentType" generated 200 inner fragments (limit: 150).
-→ Consider narrowing it using allowedTypes and restrictedTypes or reviewing schema references to reduce complexity.
 ```
+GraphFragmentThresholdError: Fragment generation for "MyContentType" produced 200 inner fragments,
+exceeding the configured limit of 150. Add "allowedTypes" or "restrictedTypes" to the content area
+property to narrow which content types are included, or increase "maxFragmentThreshold" in your
+graph configuration if this is intentional.
+```
+
+To fix this, either:
+1. Add `allowedTypes` or `restrictedTypes` to your content area properties to narrow the set of types
+2. Increase `maxFragmentThreshold` if the large fragment count is intentional
+
+> **Note:** The CLI also validates content area constraints at build time and warns about content areas missing `allowedTypes` or `restrictedTypes` before pushing to the CMS.
+
+#### `typeFilter`
+
+Optional filter to exclude content types from fragment generation. This is useful when you want to skip generating fragments for content types that have no registered component, reducing query size and improving performance.
+
+The filter receives a content type key and returns `true` to include the type or `false` to exclude it.
+
+```ts
+import { GraphClient } from '@optimizely/cms-sdk';
+
+const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
+  typeFilter: (contentTypeKey) => {
+    // Only generate fragments for types that have a registered component
+    return componentRegistry.hasComponent(contentTypeKey);
+  },
+});
+```
+
+When `typeFilter` is provided, query caching is bypassed since the filter function cannot be used as a cache key.
+
+> **Performance note:** `typeFilter` is applied after resolving allowed types but before generating fragments, so excluded types never enter the recursive fragment generation pipeline. This minimizes both build time and query size.
 
 ---
 

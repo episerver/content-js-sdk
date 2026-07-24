@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi, afterAll } from 'vitest';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createFragment } from '../createQuery.js';
+import { GraphFragmentThresholdError } from '../error.js';
+import { ComponentRegistry } from '../../render/componentRegistry.js';
 
-describe('createFragment > Fragment threshold warning', () => {
-  const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {}); // mocks the console.warn method
-  const originalEnv = process.env; // Store original environment variables
+describe('createFragment > Fragment threshold enforcement', () => {
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const originalEnv = process.env;
 
-  // Create a large number of child content types to trigger the fragment threshold warning
   const childTypes = Array.from({ length: 101 }).map((_, i) =>
     contentType({
       key: `Type${i}`,
@@ -20,7 +21,6 @@ describe('createFragment > Fragment threshold warning', () => {
     }),
   );
 
-  // Root content type that includes all child types in its content area
   const rootType = contentType({
     key: 'ExplodingType',
     baseType: '_page',
@@ -34,13 +34,10 @@ describe('createFragment > Fragment threshold warning', () => {
   });
 
   beforeAll(() => {
-    // Initialize the content type registry with the root and child types
     initContentTypeRegistry([rootType, ...childTypes]);
   });
 
   beforeEach(() => {
-    // Reset the environment variable to ensure the threshold is set for the test
-    // This simulates the environment where MAX_FRAGMENT_THRESHOLD is set to 100
     process.env = { ...originalEnv, MAX_FRAGMENT_THRESHOLD: '100' };
     warnSpy.mockClear();
   });
@@ -54,17 +51,24 @@ describe('createFragment > Fragment threshold warning', () => {
     warnSpy.mockRestore();
   });
 
-  it('should log a warning when fragment count exceeds threshold', () => {
-    const result = createFragment('ExplodingType');
-    expect(result.fragments).toBeInstanceOf(Array);
-    expect(warnSpy).toHaveBeenCalledOnce();
-    expect(warnSpy.mock.calls[0][0]).toMatch(String.raw`generated 107 inner fragments`);
-    expect(warnSpy.mock.calls[0][0]).toMatch(
-      /Excessive fragment depth may breach GraphQL limits or degrade performance./,
-    );
+  it('should throw GraphFragmentThresholdError when fragment count exceeds threshold', () => {
+    expect(() => createFragment('ExplodingType')).toThrow(GraphFragmentThresholdError);
   });
 
-  it('should not log a warning when fragment count is within threshold', () => {
+  it('should include correct metadata in the thrown error', () => {
+    try {
+      createFragment('ExplodingType');
+      expect.fail('Expected an error to be thrown');
+    } catch (error) {
+      expect(error).toBeInstanceOf(GraphFragmentThresholdError);
+      const e = error as GraphFragmentThresholdError;
+      expect(e.contentType).toBe('ExplodingType');
+      expect(e.fragmentCount).toBeGreaterThan(100);
+      expect(e.threshold).toBe(100);
+    }
+  });
+
+  it('should not throw when fragment count is within threshold', () => {
     const minimalType = contentType({
       key: 'SafeType',
       baseType: '_page',
@@ -78,8 +82,131 @@ describe('createFragment > Fragment threshold warning', () => {
     });
 
     initContentTypeRegistry([minimalType, childTypes[0]]);
-    const result = createFragment('SafeType');
+    expect(() => createFragment('SafeType')).not.toThrow();
+  });
+
+  it('should respect custom maxFragmentThreshold', () => {
+    initContentTypeRegistry([rootType, ...childTypes]);
+
+    expect(() =>
+      createFragment('ExplodingType', new Set(), '', { maxFragmentThreshold: 200 }),
+    ).not.toThrow();
+  });
+
+  it('should not throw for constrained content area even with many registered types', () => {
+    const constrainedType = contentType({
+      key: 'ConstrainedType',
+      baseType: '_page',
+      displayName: 'Constrained Type',
+      properties: {
+        section: {
+          type: 'content',
+          allowedTypes: [childTypes[0], childTypes[1]],
+        },
+      },
+    });
+
+    initContentTypeRegistry([constrainedType, ...childTypes]);
+    expect(() => createFragment('ConstrainedType')).not.toThrow();
+  });
+
+  it('should apply typeFilter to reduce fragment generation', () => {
+    const allowedKeys = new Set(['Type0', 'Type1', 'Type2']);
+    const typeFilter = (key: string) => allowedKeys.has(key);
+
+    initContentTypeRegistry([rootType, ...childTypes]);
+    const result = createFragment('ExplodingType', new Set(), '', { typeFilter });
+
     expect(result.fragments).toBeInstanceOf(Array);
-    expect(warnSpy).not.toHaveBeenCalled();
+    const fragmentNames = result.fragments
+      .map(f => f.match(/^fragment (\w+)/)?.[1])
+      .filter(Boolean);
+    const childFragments = fragmentNames.filter(name => name?.startsWith('Type'));
+    expect(childFragments.length).toBeLessThanOrEqual(3);
+  });
+});
+
+describe('createFragment > typeFilter with ComponentRegistry integration', () => {
+  const DummyComponent = () => null;
+
+  const allTypes = Array.from({ length: 50 }).map((_, i) =>
+    contentType({
+      key: `Widget${i}`,
+      baseType: '_component',
+      displayName: `Widget ${i}`,
+      properties: {
+        label: { type: 'string' },
+      },
+    }),
+  );
+
+  const pageType = contentType({
+    key: 'HomePage',
+    baseType: '_page',
+    displayName: 'Home Page',
+    properties: {
+      widgets: {
+        type: 'array',
+        items: {
+          type: 'content',
+          restrictedTypes: [],
+        },
+      },
+    },
+  });
+
+  beforeAll(() => {
+    initContentTypeRegistry([pageType, ...allTypes]);
+  });
+
+  it('should only generate fragments for types with a registered component', () => {
+    const registry = new ComponentRegistry<() => null>({
+      Widget0: DummyComponent,
+      Widget3: DummyComponent,
+      Widget7: DummyComponent,
+    });
+
+    const typeFilter = (key: string) => !!registry.getComponent(key);
+    const result = createFragment('HomePage', new Set(), '', { typeFilter });
+
+    const fragmentNames = result.fragments
+      .map(f => f.match(/^fragment (\w+)/)?.[1])
+      .filter(Boolean);
+    const widgetFragments = fragmentNames.filter(name => name?.startsWith('Widget'));
+
+    expect(widgetFragments).toEqual(
+      expect.arrayContaining(['Widget0', 'Widget3', 'Widget7']),
+    );
+    expect(widgetFragments).toHaveLength(3);
+  });
+
+  it('should generate zero child fragments when no components are registered', () => {
+    const registry = new ComponentRegistry<() => null>({});
+
+    const typeFilter = (key: string) => !!registry.getComponent(key);
+    const result = createFragment('HomePage', new Set(), '', { typeFilter });
+
+    const fragmentNames = result.fragments
+      .map(f => f.match(/^fragment (\w+)/)?.[1])
+      .filter(Boolean);
+    const widgetFragments = fragmentNames.filter(name => name?.startsWith('Widget'));
+
+    expect(widgetFragments).toHaveLength(0);
+  });
+
+  it('should not throw when typeFilter reduces count below threshold', () => {
+    const registry = new ComponentRegistry<() => null>({
+      Widget0: DummyComponent,
+      Widget1: DummyComponent,
+    });
+
+    const typeFilter = (key: string) => !!registry.getComponent(key);
+
+    expect(() =>
+      createFragment('HomePage', new Set(), '', {
+        typeFilter,
+        maxFragmentThreshold: 20,
+      }),
+    ).not.toThrow();
   });
 });

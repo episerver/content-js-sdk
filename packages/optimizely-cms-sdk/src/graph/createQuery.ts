@@ -121,6 +121,7 @@ const processUserTypeProperties = (
     damEnabled = false,
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts = DEFAULT_EXPAND_CONTRACTS,
+    typeFilter,
   } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
@@ -135,6 +136,7 @@ const processUserTypeProperties = (
       damEnabled,
       maxFragmentThreshold,
       expandContracts,
+      typeFilter,
     });
 
     fields.push(...result.fields);
@@ -214,6 +216,7 @@ export const createFragment = (
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts = DEFAULT_EXPAND_CONTRACTS,
     includeBaseFragments = true,
+    typeFilter,
   } = options;
   const fragmentName = `${stripSourcePrefix(contentTypeName)}${suffix}`;
 
@@ -254,6 +257,7 @@ export const createFragment = (
         damEnabled,
         maxFragmentThreshold,
         expandContracts,
+        typeFilter,
       },
     );
     fields.push(...propResult.fields);
@@ -275,6 +279,7 @@ export const createFragment = (
         damEnabled,
         maxFragmentThreshold,
         expandContracts,
+        typeFilter,
       });
       extraFragments.push(...experienceResult.fragments);
       includesDamAssetsFragments =
@@ -313,6 +318,7 @@ const generateSingleContentQuery = (
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  typeFilter?: (contentTypeKey: string) => boolean,
 ): string => {
   const span = startSingleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -322,6 +328,7 @@ const generateSingleContentQuery = (
     maxFragmentThreshold,
     expandContracts,
     includeBaseFragments: true,
+    typeFilter,
   });
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
@@ -372,6 +379,7 @@ const generateMultipleContentQuery = (
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  typeFilter?: (contentTypeKey: string) => boolean,
 ): string => {
   const span = startMultipleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -381,6 +389,7 @@ const generateMultipleContentQuery = (
     maxFragmentThreshold,
     expandContracts,
     includeBaseFragments: true,
+    typeFilter,
   });
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';

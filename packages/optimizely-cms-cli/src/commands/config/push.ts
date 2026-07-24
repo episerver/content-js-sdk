@@ -16,7 +16,7 @@ import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
 import { translateErrorMessage } from '../../utils/errors.js';
-import { contractToManifest } from '../../utils/mapping.js';
+import { contractToManifest, validateContentAreaConstraints } from '../../utils/mapping.js';
 import { syncLocales } from '../../service/localeService.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
@@ -78,6 +78,20 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       componentPaths,
       configPathDirectory,
     );
+
+    // Validate content area constraints
+    const { warnings: constraintWarnings } = validateContentAreaConstraints(contentTypes);
+    if (constraintWarnings.length > 0) {
+      console.warn(chalk.yellow('\nContent Area Warnings:'));
+      for (const warning of constraintWarnings) {
+        console.warn(chalk.yellow(`  ⚠ ${warning}`));
+      }
+      console.warn(
+        chalk.dim(
+          '  Tip: Add "allowedTypes" or "restrictedTypes" to avoid excessive fragment generation at runtime.\n',
+        ),
+      );
+    }
 
     // Validate and normalize property groups
     const normalizedPropertyGroups =

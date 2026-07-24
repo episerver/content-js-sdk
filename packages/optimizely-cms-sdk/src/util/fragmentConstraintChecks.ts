@@ -1,11 +1,7 @@
 import { AnyProperty } from '../model/properties.js';
 import { DEFAULT_MAX_FRAGMENT_THRESHOLD } from '../graph/constants.js';
+import { GraphFragmentThresholdError } from '../graph/error.js';
 
-/**
- * Checks if the `allowedTypes` or `restrictedTypes` of a property are undefined or empty.
- * @param property - The property definition to check.
- * @returns boolean - True if either `allowedTypes` or `restrictedTypes` are undefined or empty.
- */
 function arePropertyConstraintsMissing(property: AnyProperty): boolean {
   return (
     property.type === 'content' &&
@@ -16,11 +12,6 @@ function arePropertyConstraintsMissing(property: AnyProperty): boolean {
   );
 }
 
-/**
- * Checks if the `allowedTypes` or `restrictedTypes` of a property's items are undefined or empty.
- * @param property - The property definition to check.
- * @returns boolean - True if either `allowedTypes` or `restrictedTypes` in items are undefined or empty.
- */
 function areItemConstraintsMissing(property: AnyProperty): boolean {
   return (
     property.type === 'array' &&
@@ -32,13 +23,7 @@ function areItemConstraintsMissing(property: AnyProperty): boolean {
 }
 
 /**
- * Checks if a property or its items have missing or incomplete type constraints.
- * Specifically, it validates whether `allowedTypes` or `restrictedTypes` are undefined or empty.
- * @param rootName - The root content type name for tracing.
- * @param property - The property definition to check.
- * @param result - The conversion result containing fields and fragments.
- * @param maxFragmentThreshold - Maximum fragment threshold for this check.
- * @returns string | null - A warning message if type constraints are missing or incomplete, otherwise null.
+ * Throws if a content property has no type constraints and generated fragments exceed the threshold.
  */
 export function checkTypeConstraintIssues(
   rootName: string,
@@ -48,16 +33,15 @@ export function checkTypeConstraintIssues(
     extraFragments: string[];
   },
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-): string | null {
+): void {
   if (
     (arePropertyConstraintsMissing(property) || areItemConstraintsMissing(property)) &&
     result.extraFragments.length > maxFragmentThreshold
   ) {
-    return (
-      `\x1b[33m⚠️ [optimizely-cms-sdk] Fragment "${rootName}" generated ${result.extraFragments.length} inner fragments (limit: ${maxFragmentThreshold}). Excessive fragment depth may breach GraphQL limits or degrade performance.\x1b[0m\n` +
-      `\x1b[2m→ Consider narrowing it using \x1b[1mallowedTypes\x1b[22m and \x1b[1mrestrictedTypes\x1b[22m or reviewing \x1b[1mschema references\x1b[22m to reduce complexity.\x1b[0m`
+    throw new GraphFragmentThresholdError(
+      rootName,
+      result.extraFragments.length,
+      maxFragmentThreshold,
     );
   }
-
-  return null;
 }

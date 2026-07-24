@@ -144,6 +144,40 @@ const mapAllowedRestrictedTypes = (updatedValue: any, parentKey: string): any =>
   return value;
 };
 
+/**
+ * Validates that content area properties have `allowedTypes` or `restrictedTypes` defined.
+ * Returns warnings for properties that could cause excessive fragment generation at runtime.
+ */
+export const validateContentAreaConstraints = (
+  contentTypes: ContentTypes.AnyContentType[],
+): { warnings: string[] } => {
+  const warnings: string[] = [];
+
+  for (const ct of contentTypes) {
+    if (!ct.properties) continue;
+
+    for (const [propName, prop] of Object.entries(ct.properties)) {
+      const isUnconstrainedContent =
+        (prop.type === 'content' && !hasTypeConstraints(prop)) ||
+        (prop.type === 'array' && 'items' in prop && (prop as any).items?.type === 'content' && !hasTypeConstraints((prop as any).items));
+
+      if (isUnconstrainedContent) {
+        warnings.push(
+          `Content type "${ct.key}", property "${propName}": ` +
+            `content area has no "allowedTypes" or "restrictedTypes". ` +
+            `This may cause excessive GraphQL fragment generation at runtime.`,
+        );
+      }
+    }
+  }
+
+  return { warnings };
+};
+
+const hasTypeConstraints = (prop: any): boolean =>
+  (Array.isArray(prop.allowedTypes) && prop.allowedTypes.length > 0) ||
+  (Array.isArray(prop.restrictedTypes) && prop.restrictedTypes.length > 0);
+
 const BUILTIN_TYPES = ['BlankExperience', 'BlankSection'] as const;
 
 /**

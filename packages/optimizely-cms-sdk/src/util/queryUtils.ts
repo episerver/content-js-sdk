@@ -32,8 +32,8 @@ export type FragmentOptions = {
    */
   damEnabled?: boolean;
   /**
-   * Maximum number of fragments allowed before logging performance warnings.
-   * Helps prevent excessive GraphQL query complexity from unrestricted content types.
+   * Maximum number of fragments allowed before throwing an error.
+   * Prevents excessive GraphQL query complexity from unrestricted content types.
    */
   maxFragmentThreshold?: number;
   /**
@@ -48,6 +48,12 @@ export type FragmentOptions = {
    * @default true
    */
   includeBaseFragments?: boolean;
+  /**
+   * Optional filter to exclude content types from fragment generation.
+   * Return true to include a content type, false to exclude it.
+   * Useful for skipping content types that have no registered component.
+   */
+  typeFilter?: (contentTypeKey: string) => boolean;
 };
 
 export type FragmentInfo = {
@@ -223,13 +229,15 @@ const handleContentProperty: PropertyHandler = (
     damEnabled = false,
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts = DEFAULT_EXPAND_CONTRACTS,
+    typeFilter,
   } = options;
-  const allowed = resolveAllowedTypes(
+  const resolved = resolveAllowedTypes(
     (property as any).allowedTypes,
     (property as any).restrictedTypes,
     getCachedContentTypes(),
     expandContracts,
   );
+  const allowed = typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
 
@@ -241,6 +249,7 @@ const handleContentProperty: PropertyHandler = (
       maxFragmentThreshold,
       expandContracts,
       includeBaseFragments: true,
+      typeFilter,
     });
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
@@ -325,12 +334,16 @@ const handleArrayProperty: PropertyHandler = (
   visited: Set<string>,
   options: FragmentOptions,
 ) => {
-  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } =
-    options;
+  const {
+    damEnabled = false,
+    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    typeFilter,
+  } = options;
 
   return convertProperty(name, (property as any).items, rootName, suffix, visited, {
     damEnabled,
     maxFragmentThreshold,
+    typeFilter,
   });
 };
 
@@ -394,13 +407,7 @@ export const convertProperty: PropertyHandler = (
   const { maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } = options;
   const result = convertPropertyField(name, property, rootName, suffix, visited, options);
 
-  const warningMessage = checkTypeConstraintIssues(
-    rootName,
-    property,
-    result,
-    maxFragmentThreshold,
-  );
-  if (warningMessage) console.warn(warningMessage);
+  checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
 
   return result;
 };

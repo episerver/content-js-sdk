@@ -78,6 +78,30 @@ export class GraphQueryGenerationError extends OptimizelyGraphError {
   }
 }
 
+/**
+ * Thrown when fragment generation exceeds the configured threshold
+ * for a content area without type constraints.
+ */
+export class GraphFragmentThresholdError extends OptimizelyGraphError {
+  contentType: string;
+  fragmentCount: number;
+  threshold: number;
+
+  constructor(contentType: string, fragmentCount: number, threshold: number) {
+    super(
+      `Fragment generation for "${contentType}" produced ${fragmentCount} inner fragments, ` +
+        `exceeding the configured limit of ${threshold}. ` +
+        `Add "allowedTypes" or "restrictedTypes" to the content area property ` +
+        `to narrow which content types are included, ` +
+        `or increase "maxFragmentThreshold" in your graph configuration if this is intentional.`,
+    );
+    this.name = 'GraphFragmentThresholdError';
+    this.contentType = contentType;
+    this.fragmentCount = fragmentCount;
+    this.threshold = threshold;
+  }
+}
+
 /** Errors related to the response */
 export class GraphResponseError extends OptimizelyGraphError {
   request: GraphRequest;
