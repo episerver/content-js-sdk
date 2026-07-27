@@ -1,7 +1,7 @@
 # Optimizely CMS Agent Skills
 
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-Compatible-blue)](https://agentskills.io)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/episerver/content-js-sdk/blob/main/LICENSE)
 
 A collection of [Agent Skills](https://agentskills.io) that teach AI coding agents how to work with Optimizely CMS. Compatible with Claude Code, Cursor, GitHub Copilot, and others.
 
@@ -49,8 +49,8 @@ cp -r content-js-sdk/packages/optimizely-cms-skills/skills/* ~/.claude/skills/
 ## Documentation
 
 - **[Skills Documentation](./skills/README.md)** - Detailed information about each skill
-- **[Complete Guide](../../docs/13-agent-skills.md)** - Full guide with usage examples and workflows
-- **[Main SDK Documentation](../../README.md)** - Optimizely CMS JavaScript SDK
+- **[Complete Guide](https://github.com/episerver/content-js-sdk/blob/main/docs/13-agent-skills.md)** - Full guide with usage examples and workflows
+- **[Main SDK Documentation](https://github.com/episerver/content-js-sdk)** - Optimizely CMS JavaScript SDK
 
 ## Usage Example
 
@@ -80,4 +80,4 @@ Agent: [Uses optimizely-model-react skill]
 
 ## License
 
-Apache 2.0 - See [LICENSE](../../LICENSE) for details.
+Apache 2.0 - See [LICENSE](https://github.com/episerver/content-js-sdk/blob/main/LICENSE) for details.
