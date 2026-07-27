@@ -41,5 +41,6 @@ graphify-out/
 *-workspace/
 
 config.bat
-test-app
+test-app/
+# TypeScript incremental build cache
 *.tsbuildinfo

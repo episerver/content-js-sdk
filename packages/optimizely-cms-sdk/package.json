@@ -30,6 +30,11 @@
       "import": "./dist/esm/react/nextjs.js",
       "require": "./dist/cjs/react/nextjs.js"
     },
+    "./react/designSystem": {
+      "types": "./dist/cjs/react/designSystem.d.ts",
+      "import": "./dist/esm/react/designSystem.js",
+      "require": "./dist/cjs/react/designSystem.js"
+    },
     "./react/richText": {
       "types": "./dist/cjs/react/richText/index.d.ts",
       "import": "./dist/esm/react/richText/index.js",
