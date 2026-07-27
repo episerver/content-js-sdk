@@ -9,7 +9,7 @@ import {
   buildSampleContent,
   getDisplayTemplatesFor,
   isDesignSystemEnabled,
-} from '../designSystem.js';
+} from '../index.js';
 
 const Nested = contentType({
   key: 'NestedElement',

@@ -1,134 +1,24 @@
-import {
-  getContentType,
-  getContentTypeByBaseType,
-} from '../model/contentTypeRegistry.js';
-import { getAllDisplayTemplates } from '../model/displayTemplateRegistry.js';
-import type { DisplayTemplate } from '../model/displayTemplates.js';
+/**
+ * React UI for the design-system (Storybook-like) viewer. Framework-agnostic
+ * logic lives in `../designSystem`; this file only renders it.
+ */
+import { getContentType } from '../model/contentTypeRegistry.js';
 import type { AnyProperty } from '../model/properties.js';
+import {
+  buildSampleContent,
+  getComponentContentTypes,
+  getDisplayTemplatesFor,
+} from '../designSystem/index.js';
 import { OptimizelyComponent } from './server.js';
 
-/** A fixed sample date so generated content is deterministic. */
-const SAMPLE_DATE = '2026-01-01T00:00:00.000Z';
-
-// ponytail: depth cap 3, deepen if real nested-component previews need it
-const MAX_DEPTH = 3;
-
-/** Generate a placeholder value for a single property definition. */
-function sampleForProperty(name: string, prop: AnyProperty, depth: number): unknown {
-  const p = prop as any;
-  const firstEnum = p.enum?.[0]?.value;
-
-  switch (prop.type) {
-    case 'string':
-      return firstEnum ?? prop.displayName ?? `Sample ${name}`;
-    case 'boolean':
-      return true;
-    case 'integer':
-    case 'float':
-      return firstEnum ?? p.minimum ?? 1;
-    case 'dateTime':
-      return SAMPLE_DATE;
-    case 'richText':
-      return {
-        json: {
-          type: 'root',
-          children: [{ type: 'paragraph', children: [{ text: 'Sample rich text.' }] }],
-        },
-      };
-    case 'url':
-    case 'link':
-      return { default: '#' };
-    case 'array': {
-      if (depth >= MAX_DEPTH) return [];
-      const item = sampleForProperty(name, p.items, depth + 1);
-      // Never emit a null item — components often map arrays straight into
-      // OptimizelyComponent, which throws on null content.
-      return item == null ? [] : [item];
-    }
-    case 'component': {
-      const nestedKey = p.contentType?.key;
-      if (!nestedKey || depth >= MAX_DEPTH) return null;
-      return buildSampleContent(nestedKey, undefined, depth + 1);
-    }
-    case 'content': {
-      // Inline content: build a sample of the first allowed component type.
-      const inlineKey = p.allowedTypes?.find((t: any) => t?.key)?.key;
-      if (!inlineKey || depth >= MAX_DEPTH) return null;
-      return buildSampleContent(inlineKey, undefined, depth + 1);
-    }
-    // contentReference / binary / json → no meaningful placeholder
-    default:
-      return null;
-  }
-}
-
-/**
- * Coerces a string override into the shape a property expects. Non-string
- * values (already-typed JSON) pass through untouched. Lets flat query params
- * (e.g. `?link=https://…`) map onto typed properties.
- */
-function coerceOverride(prop: AnyProperty | undefined, value: unknown): unknown {
-  if (typeof value !== 'string' || !prop) return value;
-  switch (prop.type) {
-    case 'url':
-    case 'link':
-      return { default: value };
-    case 'boolean':
-      return value === 'true';
-    case 'integer':
-      return parseInt(value, 10);
-    case 'float':
-      return parseFloat(value);
-    default:
-      return value;
-  }
-}
-
-/**
- * Builds a renderable `content` object for a content type from its registered
- * property definitions, so a component can be previewed without real CMS data.
- *
- * Each property gets a type-appropriate placeholder value; caller-supplied
- * `overrides` replace placeholders per field (e.g. real data from CMS/App/AI agent).
- * String overrides are coerced to the property's expected shape.
- *
- * @param key Content type key (same as the component name).
- * @param overrides Optional field values that win over generated placeholders.
- */
-export function buildSampleContent(
-  key: string,
-  overrides?: Record<string, unknown>,
-  depth = 0,
-): Record<string, unknown> {
-  const contentType = getContentType(key);
-  const properties = (contentType?.properties ?? {}) as Record<string, AnyProperty>;
-
-  const result: Record<string, unknown> = {
-    __typename: key,
-    _metadata: { types: [key] },
-  };
-  for (const [name, prop] of Object.entries(properties)) {
-    result[name] = sampleForProperty(name, prop, depth);
-  }
-  if (overrides) {
-    for (const [name, value] of Object.entries(overrides)) {
-      result[name] = coerceOverride(properties[name], value);
-    }
-  }
-
-  return result;
-}
-
-/**
- * Whether the design-system route should be reachable. Always on outside
- * production; in production requires `OPTIMIZELY_DESIGN_SYSTEM=true`.
- */
-export function isDesignSystemEnabled(): boolean {
-  return (
-    process.env.NODE_ENV !== 'production' ||
-    process.env.OPTIMIZELY_DESIGN_SYSTEM === 'true'
-  );
-}
+// Re-export the core so `@optimizely/cms-sdk/react/designSystem` stays a
+// one-stop import for React apps.
+export {
+  buildSampleContent,
+  getComponentContentTypes,
+  getDisplayTemplatesFor,
+  isDesignSystemEnabled,
+} from '../designSystem/index.js';
 
 // --- Presentation (inline styles, matching the SDK's FallbackComponent approach) ---
 
@@ -155,7 +45,7 @@ const styles = {
 };
 
 function Catalog() {
-  const components = getContentTypeByBaseType('_component');
+  const components = getComponentContentTypes();
 
   return (
     <div style={styles.page}>
@@ -217,22 +107,6 @@ function PropsTable({ properties }: { properties: Record<string, AnyProperty> })
   );
 }
 
-/**
- * Finds display templates that apply to a content type. A template targets its
- * owner by exactly one of: `contentType` (this key), `baseType` (every type of
- * that base — the common case, since `contentType` is often empty), or
- * `nodeType` (structure nodes, ignored here).
- */
-export function getDisplayTemplatesFor(key: string): DisplayTemplate[] {
-  const baseType = (getContentType(key) as any)?.baseType;
-  return getAllDisplayTemplates().filter(dt => {
-    const d = dt as any;
-    if (d.contentType) return d.contentType === key;
-    if (d.baseType) return d.baseType === baseType;
-    return false; // nodeType or untargeted → not component-specific
-  });
-}
-
 function Variants({ contentTypeKey }: { contentTypeKey: string }) {
   const templates = getDisplayTemplatesFor(contentTypeKey);
   if (templates.length === 0) return null;
@@ -285,9 +159,7 @@ export async function DesignSystem({
   // Bare render: just the component, no page chrome.
   if (individual) {
     const content = buildSampleContent(contentTypeKey, props);
-    return (
-      <OptimizelyComponent content={content as any} displaySettings={displaySettings} />
-    );
+    return <OptimizelyComponent content={content as any} displaySettings={displaySettings} />;
   }
 
   const contentType = getContentType(contentTypeKey);
@@ -297,7 +169,7 @@ export async function DesignSystem({
         <p>
           Unknown content type: <b>{contentTypeKey}</b>
         </p>
-        <a style={styles.link} href='?'>
+        <a style={styles.link} href="?">
           ← Back to catalog
         </a>
       </div>
@@ -309,7 +181,7 @@ export async function DesignSystem({
 
   return (
     <div style={styles.page}>
-      <a style={styles.link} href='?'>
+      <a style={styles.link} href="?">
         ← Back to catalog
       </a>
       <h1>{contentType.displayName ?? contentTypeKey}</h1>
