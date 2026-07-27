@@ -1,5 +1,5 @@
-import { ContentProps, ExperienceNode, ExperienceStructureNode } from '../infer.js';
-import { ComponentContentType, ContentType, contentType } from './index.js';
+import { ContentProps, ExperienceNode } from '../infer.js';
+import { contentType } from './index.js';
 
 export const OptiFormsTextboxElementContentType = contentType({
   key: 'OptiFormsTextboxElement',
