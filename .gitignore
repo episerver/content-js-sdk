@@ -35,6 +35,7 @@ CLAUDE.md
 
 .agents/
 graphify-out/
+.graphify_detect.json
 
 # Skill test/eval workspaces
 *-workspace/
