@@ -11,7 +11,10 @@ type SelectionOption = {
 };
 
 export default function FormSelection({ content }: FormSelectionProps) {
-  const options = Array.isArray(content.Options) ? content.Options : [];
+  const options = (
+    Array.isArray(content.Options) ?
+      content.Options
+    : []) as SelectionOption[];
 
   return (
     <fieldset className='space-y-3 flex-1'>
@@ -19,7 +22,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
         <legend className='text-sm font-medium text-foreground'>{content.Label}</legend>
       )}
       <div className='grid grid-cols-2 gap-3'>
-        {options.map((option: SelectionOption) => (
+        {options.map(option => (
           <label
             key={option.value}
             className='flex items-center p-3 border border-input rounded-md cursor-pointer hover:bg-accent transition-colors'
