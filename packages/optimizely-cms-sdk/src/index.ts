@@ -54,9 +54,6 @@ export {
   OptiFormsResetElementContentType,
   OptiFormsDependencyRuleContentType,
   OptiFormsConditionContentType,
-  FormContentTypes,
-
-  // TODO: remove this when it becomes unneeded
   OptiFormsContainerContentType,
 } from './model/formContentTypes.js';
 

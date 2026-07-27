@@ -5,7 +5,7 @@ import {
 } from '../render/componentRegistry.js';
 import { JSX } from 'react';
 import { FormContentTypes } from '../model/formContentTypes.js';
-import { initContentTypeRegistry } from '../model/index.js';
+import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
 import {
   ExperienceStructureNode,
   ExperienceNode,
@@ -108,13 +108,14 @@ type InitOptions = {
  * ```
  */
 export function initReactComponentRegistry(options: InitOptions) {
-  if (typeof options.resolver === 'object') {
-    _componentMap = { ..._componentMap, ...options.resolver };
-    componentRegistry = new ComponentRegistry(_componentMap);
-  } else {
-    componentRegistry = new ComponentRegistry(options.resolver);
-  }
+  componentRegistry = new ComponentRegistry(options.resolver);
+  if (typeof options.resolver !== 'function') _componentMap = options.resolver;
 }
+
+const addToReactComponentRegistry = (components: Record<string, FormComponentEntry>) => {
+  _componentMap = { ..._componentMap, ...components };
+  componentRegistry = new ComponentRegistry(_componentMap);
+};
 
 /**
  * Initializes form content types and components in one call.
@@ -133,10 +134,8 @@ export function initReactComponentRegistry(options: InitOptions) {
  * ```
  */
 export function initForms(handlers: FormHandlers) {
-  initContentTypeRegistry(FormContentTypes);
-  initReactComponentRegistry({
-    resolver: mapFormHandlersToContentTypes(handlers),
-  });
+  addToContentTypeRegistry(FormContentTypes);
+  addToReactComponentRegistry(mapFormHandlersToContentTypes(handlers));
 }
 
 export const FORM_HANDLER_TO_CONTENT_TYPE: Record<FormHandlerKey, string> = {
