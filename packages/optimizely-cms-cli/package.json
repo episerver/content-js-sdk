@@ -47,7 +47,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^18",
+    "@types/node": "^22",
     "openapi-typescript": "^7.13.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.2",
