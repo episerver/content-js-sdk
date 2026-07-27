@@ -67,6 +67,12 @@ export * as Properties from './model/properties.js';
 
 // Type inference and asset utilities
 export { ContentProps } from './infer.js';
+export type {
+  JsonValue,
+  JsonObject,
+  JsonArray,
+  JsonPrimitive,
+} from './infer.js';
 
 // Dam assets
 export { damAssets } from './render/assets.js';
