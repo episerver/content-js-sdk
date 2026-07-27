@@ -10,6 +10,7 @@ import {
   OptiFormsConditionContentType,
   OptiFormsSelectionElementContentType,
   OptiFormsTextareaElementContentType,
+  OptiFormsSubmitElementContentType,
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
@@ -35,6 +36,7 @@ import FormContainer from '@/components/FormContainer';
 import FormInput from '@/components/FormInput';
 import FormSelection from '@/components/FormSelection';
 import FormTextarea from '@/components/FormTextarea';
+import FormSubmit from '@/components/FormSubmit';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -78,6 +80,7 @@ initContentTypeRegistry([
   OptiFormsConditionContentType,
   OptiFormsSelectionElementContentType,
   OptiFormsTextareaElementContentType,
+  OptiFormsSubmitElementContentType,
 ]);
 
 initReactComponentRegistry({
@@ -102,7 +105,8 @@ initReactComponentRegistry({
     [OptiFormsContainerDataContentType.key]: FormContainer,
     [OptiFormsTextboxElementContentType.key]: FormInput,
     [OptiFormsSelectionElementContentType.key]: FormSelection,
-    [OptiFormsTextareaElementContentType.key]: FormTextarea ,
+    [OptiFormsTextareaElementContentType.key]: FormTextarea,
+    [OptiFormsSubmitElementContentType.key]: FormSubmit,
   },
 });
 
