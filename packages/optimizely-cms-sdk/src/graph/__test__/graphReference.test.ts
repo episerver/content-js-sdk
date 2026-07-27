@@ -199,7 +199,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
   });
 
   test('fetches content by key only (latest published)', async () => {
-    // Mock getContentMetaData response
+    // Mock getContentMetaData response (GET_CONTENT_METADATA_QUERY)
     mockRequest
       .mockResolvedValueOnce({
         _Content: {
@@ -210,6 +210,10 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
+      })
+      // Mock getContentMetaData response (GET_FORMS_ENABLED_QUERY)
+      .mockResolvedValueOnce({
         formsContainerType: null,
       })
       // Mock actual content response
@@ -224,7 +228,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
 
     await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
-    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(mockRequest).toHaveBeenCalledTimes(3);
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
@@ -252,6 +256,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
@@ -296,6 +303,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -334,6 +344,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
@@ -386,6 +399,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -432,6 +448,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -445,7 +464,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
       { previewToken },
     );
 
-    // Both requests should include preview token
+    // All requests should include preview token
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
@@ -459,23 +478,35 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(String),
       expect.any(Object),
       previewToken,
+      false,
+      undefined,
+    );
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      3,
+      expect.any(String),
+      expect.any(Object),
+      previewToken,
       false, // Don't cache preview content
       undefined,
     );
   });
 
   test('returns null when content not found', async () => {
-    mockRequest.mockResolvedValueOnce({
-      _Content: {
-        item: {
-          _metadata: {
-            types: null,
+    mockRequest
+      .mockResolvedValueOnce({
+        _Content: {
+          item: {
+            _metadata: {
+              types: null,
+            },
           },
         },
-      },
-      damAssetType: null,
+        damAssetType: null,
         formsContainerType: null,
-    });
+      })
+      .mockResolvedValueOnce({
+        formsContainerType: null,
+      });
 
     const result = await client.getContent({ key: 'nonexistent' });
 
@@ -493,6 +524,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
           },
         },
         damAssetType: null,
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
@@ -534,6 +568,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -544,9 +581,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
 
     await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
-    // Second call should have cache = true (4th parameter)
+    // Third call (actual content) should have cache = true (4th parameter)
     expect(mockRequest).toHaveBeenNthCalledWith(
-      2,
+      3,
       expect.any(String),
       expect.any(Object),
       undefined,
@@ -569,6 +606,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -582,13 +622,29 @@ describe('GraphClient.getContent() with GraphReference', () => {
       { previewToken: 'preview-token' },
     );
 
-    // Second call should have cache = false (4th parameter)
+    // All calls should have cache = false (4th parameter)
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.any(Object),
+      'preview-token',
+      false, // Cache disabled for preview
+      undefined,
+    );
     expect(mockRequest).toHaveBeenNthCalledWith(
       2,
       expect.any(String),
       expect.any(Object),
       'preview-token',
-      false, // Cache disabled for preview
+      false,
+      undefined,
+    );
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      3,
+      expect.any(String),
+      expect.any(Object),
+      'preview-token',
+      false,
       undefined,
     );
   });
@@ -607,6 +663,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -619,7 +678,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
 
     // slot (6th parameter) should default to undefined
     expect(mockRequest).toHaveBeenNthCalledWith(
-      2,
+      3,
       expect.any(String),
       expect.any(Object),
       undefined,
@@ -642,6 +701,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -652,14 +714,30 @@ describe('GraphClient.getContent() with GraphReference', () => {
 
     await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' }, { slot: 'New' });
 
-    // slot (6th parameter) should be 'New' → sends cg-query-new header
+    // All requests should have slot = 'New'
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.any(Object),
+      undefined,
+      true,
+      'New', // slot set to New for smooth rebuild
+    );
     expect(mockRequest).toHaveBeenNthCalledWith(
       2,
       expect.any(String),
       expect.any(Object),
       undefined,
       true,
-      'New', // slot set to New for smooth rebuild
+      'New',
+    );
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      3,
+      expect.any(String),
+      expect.any(Object),
+      undefined,
+      true,
+      'New',
     );
   });
 
@@ -680,6 +758,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -690,8 +771,25 @@ describe('GraphClient.getContent() with GraphReference', () => {
 
     await customClient.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
 
+    // All requests should inherit slot = 'New' from global config
+    expect(customMockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.any(Object),
+      undefined,
+      true,
+      'New',
+    );
     expect(customMockRequest).toHaveBeenNthCalledWith(
       2,
+      expect.any(String),
+      expect.any(Object),
+      undefined,
+      true,
+      'New',
+    );
+    expect(customMockRequest).toHaveBeenNthCalledWith(
+      3,
       expect.any(String),
       expect.any(Object),
       undefined,
@@ -720,6 +818,9 @@ describe('GraphClient.getContent() with GraphReference', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -736,13 +837,30 @@ describe('GraphClient.getContent() with GraphReference', () => {
       },
     );
 
+    // All requests should have overridden options
     expect(customMockRequest).toHaveBeenNthCalledWith(
-      2,
+      1,
       expect.any(String),
       expect.any(Object),
       undefined,
       false, // cache overridden
       'New', // slot overridden
+    );
+    expect(customMockRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.any(String),
+      expect.any(Object),
+      undefined,
+      false,
+      'New',
+    );
+    expect(customMockRequest).toHaveBeenNthCalledWith(
+      3,
+      expect.any(String),
+      expect.any(Object),
+      undefined,
+      false,
+      'New',
     );
   });
 });
@@ -1152,6 +1270,9 @@ describe('GraphClient.getPreviewContent() query options', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -1162,7 +1283,7 @@ describe('GraphClient.getPreviewContent() query options', () => {
 
     await customClient.getPreviewContent(previewParams);
 
-    // Both calls should use global config: cache=false, slot='New'
+    // All calls should use global config: cache=false, slot='New'
     expect(customMockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
@@ -1173,6 +1294,14 @@ describe('GraphClient.getPreviewContent() query options', () => {
     );
     expect(customMockRequest).toHaveBeenNthCalledWith(
       2,
+      expect.any(String),
+      expect.any(Object),
+      'test-token',
+      false,
+      'New',
+    );
+    expect(customMockRequest).toHaveBeenNthCalledWith(
+      3,
       expect.any(String),
       expect.any(Object),
       'test-token',
@@ -1196,6 +1325,9 @@ describe('GraphClient.getPreviewContent() query options', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -1206,13 +1338,30 @@ describe('GraphClient.getPreviewContent() query options', () => {
 
     await customClient.getPreviewContent(previewParams, { slot: 'New' });
 
+    // All calls should have slot overridden to 'New'
+    expect(customMockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.any(Object),
+      'test-token',
+      false,
+      'New', // slot overridden
+    );
     expect(customMockRequest).toHaveBeenNthCalledWith(
       2,
       expect.any(String),
       expect.any(Object),
       'test-token',
       false,
-      'New', // slot overridden
+      'New',
+    );
+    expect(customMockRequest).toHaveBeenNthCalledWith(
+      3,
+      expect.any(String),
+      expect.any(Object),
+      'test-token',
+      false,
+      'New',
     );
   });
 
@@ -1228,6 +1377,9 @@ describe('GraphClient.getPreviewContent() query options', () => {
         formsContainerType: null,
       })
       .mockResolvedValueOnce({
+        formsContainerType: null,
+      })
+      .mockResolvedValueOnce({
         _Content: {
           item: {
             __typename: 'Page',
@@ -1238,13 +1390,29 @@ describe('GraphClient.getPreviewContent() query options', () => {
 
     await client.getPreviewContent(previewParams, { cache: true });
 
-    // cache should still be false regardless of options
+    // cache should always be false for all calls regardless of options
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.any(Object),
+      'test-token',
+      false, // always false for preview
+      undefined,
+    );
     expect(mockRequest).toHaveBeenNthCalledWith(
       2,
       expect.any(String),
       expect.any(Object),
       'test-token',
-      false, // always false for preview
+      false,
+      undefined,
+    );
+    expect(mockRequest).toHaveBeenNthCalledWith(
+      3,
+      expect.any(String),
+      expect.any(Object),
+      'test-token',
+      false,
       undefined,
     );
   });
