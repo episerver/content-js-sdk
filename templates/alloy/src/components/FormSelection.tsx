@@ -4,33 +4,41 @@ type FormSelectionProps = {
   content: ContentProps<typeof OptiFormsSelectionElementContentType>;
 };
 
+type SelectionOption = {
+  label: string;
+  value: string;
+  selected?: boolean;
+};
+
 export default function FormSelection({ content }: FormSelectionProps) {
-  console.log(JSON.stringify(content, null, 2))
+  const options = Array.isArray(content.Options) ? content.Options : [];
 
   return (
-    <div className='space-y-2 flex-1'>
+    <fieldset className='space-y-3 flex-1'>
       {content.Label && (
-        <label className='block text-sm font-medium text-foreground'>
-          {content.Label}
-        </label>
+        <legend className='text-sm font-medium text-foreground'>{content.Label}</legend>
       )}
-      {/* <select
-        title={content.Tooltip ?? ''}
-        autoComplete={content.AutoComplete ?? 'off'}
-        className='w-full px-4 py-2 rounded-md border border-input text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-key1 focus:border-transparent transition-colors duration-200 bg-white'
-      >
-        <option value=''>
-          {content.Placeholder ?? 'Select an option'}
-        </option>
+      <div className='grid grid-cols-2 gap-3'>
         {options.map((option: SelectionOption) => (
-          <option key={option.value} value={option.value}>
-            {option.text}
-          </option>
+          <label
+            key={option.value}
+            className='flex items-center p-3 border border-input rounded-md cursor-pointer hover:bg-accent transition-colors'
+          >
+            <input
+              type='radio'
+              name={content.Label || 'selection'}
+              value={option.value}
+              defaultChecked={option.selected}
+              title={content.Tooltip ?? ''}
+              className='w-4 h-4 cursor-pointer'
+            />
+            <span className='ml-3 text-sm text-foreground'>{option.label}</span>
+          </label>
         ))}
-      </select>
+      </div>
       {content.Tooltip && (
         <p className='text-xs text-muted-foreground'>{content.Tooltip}</p>
-      )} */}
-    </div>
+      )}
+    </fieldset>
   );
 }
