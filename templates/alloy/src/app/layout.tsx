@@ -4,13 +4,7 @@ import {
   BlankExperienceContentType,
   initContentTypeRegistry,
   config,
-  OptiFormsContainerDataContentType,
-  OptiFormsTextboxElementContentType,
-  OptiFormsDependencyRuleContentType,
-  OptiFormsConditionContentType,
-  OptiFormsSelectionElementContentType,
-  OptiFormsTextareaElementContentType,
-  OptiFormsSubmitElementContentType,
+  initForms,
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
@@ -74,13 +68,6 @@ initContentTypeRegistry([
   ButtonContentType,
   TeaserCardContract,
   NewsEventsListContentType,
-  OptiFormsContainerDataContentType,
-  OptiFormsTextboxElementContentType,
-  OptiFormsDependencyRuleContentType,
-  OptiFormsConditionContentType,
-  OptiFormsSelectionElementContentType,
-  OptiFormsTextareaElementContentType,
-  OptiFormsSubmitElementContentType,
 ]);
 
 initReactComponentRegistry({
@@ -102,12 +89,15 @@ initReactComponentRegistry({
     BlankSection,
     Button,
     NewsEventsList,
-    [OptiFormsContainerDataContentType.key]: FormContainer,
-    [OptiFormsTextboxElementContentType.key]: FormInput,
-    [OptiFormsSelectionElementContentType.key]: FormSelection,
-    [OptiFormsTextareaElementContentType.key]: FormTextarea,
-    [OptiFormsSubmitElementContentType.key]: FormSubmit,
   },
+});
+
+initForms({
+  container: FormContainer,
+  textbox: FormInput,
+  selection: FormSelection,
+  textarea: FormTextarea,
+  submit: FormSubmit,
 });
 
 export default async function RootLayout({

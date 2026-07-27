@@ -6,7 +6,7 @@ let _registry: RegistryEntry[] = [];
 
 /** Initializes the content type registry */
 export function init(registry: RegistryEntry[]) {
-  _registry = registry;
+  _registry.push(...registry)
 }
 
 /** Get the Component from a content type name */

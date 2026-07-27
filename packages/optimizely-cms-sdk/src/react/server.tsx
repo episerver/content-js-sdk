@@ -4,6 +4,8 @@ import {
   ComponentResolverOrObject,
 } from '../render/componentRegistry.js';
 import { JSX } from 'react';
+import { FormContentTypes } from '../model/formContentTypes.js';
+import { initContentTypeRegistry } from '../model/index.js';
 import {
   ExperienceStructureNode,
   ExperienceNode,
@@ -34,9 +36,33 @@ export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
 type ComponentType = React.ComponentType<any>;
 
+type FormComponentEntry =
+  | ComponentType
+  | {
+      default?: ComponentType;
+      tags: Record<string, ComponentType>;
+    };
+
+type FormHandlerKey =
+  | 'container'
+  | 'textbox'
+  | 'textarea'
+  | 'number'
+  | 'range'
+  | 'url'
+  | 'choice'
+  | 'selection'
+  | 'submit'
+  | 'reset'
+  | 'condition'
+  | 'rule';
+
+export type FormHandlers = Partial<Record<FormHandlerKey, FormComponentEntry>>;
+
 // Mapping content type names with Components.
 // This is a single global object used across the entire request
 let componentRegistry: ComponentRegistry<ComponentType>;
+let _componentMap: Record<string, FormComponentEntry> = {};
 
 type InitOptions = {
   resolver: ComponentResolverOrObject<ComponentType>;
@@ -82,8 +108,62 @@ type InitOptions = {
  * ```
  */
 export function initReactComponentRegistry(options: InitOptions) {
-  componentRegistry = new ComponentRegistry(options.resolver);
+  if (typeof options.resolver === 'object') {
+    _componentMap = { ..._componentMap, ...options.resolver };
+    componentRegistry = new ComponentRegistry(_componentMap);
+  } else {
+    componentRegistry = new ComponentRegistry(options.resolver);
+  }
 }
+
+/**
+ * Initializes form content types and components in one call.
+ * Automatically registers all Optimizely Forms content types and their React components.
+ *
+ * @param handlers Form component handlers mapped by display name
+ *
+ * @example
+ * ```ts
+ * initForms({
+ *   container: FormContainerComponent,
+ *   textbox: TextboxComponent,
+ *   textarea: TextareaComponent,
+ *   // ... other form element components
+ * });
+ * ```
+ */
+export function initForms(handlers: FormHandlers) {
+  initContentTypeRegistry(FormContentTypes);
+  initReactComponentRegistry({
+    resolver: mapFormHandlersToContentTypes(handlers),
+  });
+}
+
+export const FORM_HANDLER_TO_CONTENT_TYPE: Record<FormHandlerKey, string> = {
+  container: 'OptiFormsContainerData',
+  textbox: 'OptiFormsTextboxElement',
+  textarea: 'OptiFormsTextareaElement',
+  number: 'OptiFormsNumberElement',
+  range: 'OptiFormsRangeElement',
+  url: 'OptiFormsUrlElement',
+  choice: 'OptiFormsChoiceElement',
+  selection: 'OptiFormsSelectionElement',
+  submit: 'OptiFormsSubmitElement',
+  reset: 'OptiFormsResetElement',
+  condition: 'OptiFormsCondition',
+  rule: 'OptiFormsDependencyRule',
+};
+
+const mapFormHandlersToContentTypes = (
+  handlers: FormHandlers,
+): Record<string, FormComponentEntry> =>
+  Object.entries(handlers).reduce(
+    (acc, [handlerKey, component]) => {
+      const contentTypeKey = FORM_HANDLER_TO_CONTENT_TYPE[handlerKey as FormHandlerKey];
+      return contentTypeKey && component ? { ...acc, [contentTypeKey]: component } : acc;
+    },
+    {} as Record<string, FormComponentEntry>,
+  );
 
 /** Content data from CMS */
 type OptimizelyContent = {

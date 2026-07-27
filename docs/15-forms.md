@@ -63,6 +63,90 @@ import {
 } from '@optimizely/cms-sdk';
 ```
 
+## Setting Up Forms in Your React Application
+
+### Using `initForms` (Recommended)
+
+The `initForms` function provides a simplified way to initialize both the content type registry and React component registry for all Optimizely Forms types in a single call.
+
+In your application's entry point (e.g., `src/app/layout.tsx`):
+
+```tsx
+import { initForms } from '@optimizely/cms-sdk';
+import FormContainer from '@/components/forms/FormContainer';
+import FormInput from '@/components/forms/FormInput';
+import FormTextarea from '@/components/forms/FormTextarea';
+import FormSelection from '@/components/forms/FormSelection';
+import FormSubmit from '@/components/forms/FormSubmit';
+
+initForms({
+  container: FormContainer,
+  textbox: FormInput,
+  textarea: FormTextarea,
+  selection: FormSelection,
+  submitButton: FormSubmit,
+  // Add more form components as needed
+});
+```
+
+Available form handler keys:
+
+- `container` - Form container component
+- `textbox` - Single-line text input
+- `textarea` - Multi-line text input
+- `number` - Numeric input field
+- `range` - Range/slider input
+- `url` - URL input field
+- `choice` - Single/multiple choice selection
+- `selection` - Dropdown/select field
+- `submitButton` - Form submit button
+- `resetButton` - Form reset button
+- `condition` - Conditional display logic
+- `rule` - Field dependency rules
+
+#### Using Components with Tagged Variants
+
+You can provide different component variants using the tag system:
+
+```tsx
+initForms({
+  container: {
+    default: DefaultFormContainer,
+    tags: {
+      compact: CompactFormContainer,
+      modal: ModalFormContainer,
+    }
+  },
+  textbox: TextInputComponent,
+});
+```
+
+### Manual Setup (Advanced)
+
+If you need more control, you can use the existing functions separately:
+
+```tsx
+import {
+  initContentTypeRegistry,
+  FormContentTypes,
+} from '@optimizely/cms-sdk';
+import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+import FormContainer from '@/components/forms/FormContainer';
+import FormInput from '@/components/forms/FormInput';
+
+// Initialize content types
+initContentTypeRegistry(FormContentTypes);
+
+// Initialize React components
+initReactComponentRegistry({
+  resolver: {
+    OptiFormsContainerData: FormContainer,
+    OptiFormsTextboxElement: FormInput,
+    // ... other mappings
+  },
+});
+```
+
 ## Using Forms in Your Content Model
 
 You can include Forms content types in your custom content types:
