@@ -22,9 +22,11 @@ import RichText, { RichTextComponent } from '../components/elements/RichText';
 import Image, { ImageComponent } from '../components/elements/Image';
 import Video, { VideoComponent } from '../components/elements/Video';
 import Hero, { HeroSection } from '../components/sections/Hero';
+import HeroCentered from '../components/sections/HeroCentered';
 import {
   ColumnCardDisplayTemplate,
   ColumnDisplayTemplate,
+  HeroCenteredDisplayTemplate,
   RowDisplayTemplate,
   SectionDisplayTemplate,
 } from '../components/sections/DisplayTemplates';
@@ -83,7 +85,7 @@ export function initialize() {
       NewsEvents: NewsEventsList,
       TeaserCardComponent: TeaserCard,
       BlankSection,
-      HeroSection: Hero,
+      HeroSection: { default: Hero, tags: { Centered: HeroCentered } },
       ImageCardElement: ImageCard,
       ButtonElement: Button,
       HeadingElement: Heading,
@@ -103,5 +105,6 @@ export function initialize() {
     ColumnCardDisplayTemplate,
     ButtonDisplayTemplate,
     HeadingDisplayTemplate,
+    HeroCenteredDisplayTemplate,
   ]);
 }
