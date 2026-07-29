@@ -5,6 +5,7 @@
 import { getContentType } from '../model/contentTypeRegistry.js';
 import type { AnyProperty } from '../model/properties.js';
 import {
+  buildIndividualQuery,
   buildSampleContent,
   getComponentContentTypes,
   getDisplayTemplatesFor,
@@ -14,6 +15,7 @@ import { OptimizelyComponent } from './server.js';
 // Re-export the core so `@optimizely/cms-sdk/react/designSystem` stays a
 // one-stop import for React apps.
 export {
+  buildIndividualQuery,
   buildSampleContent,
   getComponentContentTypes,
   getDisplayTemplatesFor,
@@ -193,6 +195,14 @@ export async function DesignSystem({
       <div style={styles.frame}>
         <OptimizelyComponent content={content as any} displaySettings={displaySettings} />
       </div>
+      <p>
+        <a style={styles.link} href={buildIndividualQuery(contentTypeKey, props)}>
+          Open standalone ↗
+        </a>{' '}
+        <span style={styles.muted}>
+          renders only this component — edit the props in the URL
+        </span>
+      </p>
 
       <h3>Properties</h3>
       <PropsTable properties={properties} />

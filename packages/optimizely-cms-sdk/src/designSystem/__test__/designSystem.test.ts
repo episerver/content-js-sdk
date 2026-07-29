@@ -6,6 +6,7 @@ import {
   initDisplayTemplateRegistry,
 } from '../../index.js';
 import {
+  buildIndividualQuery,
   buildSampleContent,
   getDisplayTemplatesFor,
   isDesignSystemEnabled,
@@ -115,6 +116,50 @@ describe('buildSampleContent', () => {
       __typename: 'DoesNotExist',
       _metadata: { types: ['DoesNotExist'] },
     });
+  });
+});
+
+describe('buildIndividualQuery', () => {
+  beforeEach(() => {
+    initContentTypeRegistry([Sample, Nested]);
+  });
+
+  it('flattens simple props into query params', () => {
+    const q = new URLSearchParams(buildIndividualQuery('SampleElement'));
+    expect(q.has('individual')).toBe(true);
+    expect(q.get('key')).toBe('SampleElement');
+    expect(q.get('title')).toBe('Title');
+    expect(q.get('published')).toBe('true');
+    expect(q.get('count')).toBe('5');
+    expect(q.get('link')).toBe('#'); // url object flattened to its default
+  });
+
+  it('bakes in overrides and skips structured values', () => {
+    const q = new URLSearchParams(
+      buildIndividualQuery('SampleElement', {
+        title: 'Real title',
+        link: 'https://example.com',
+      }),
+    );
+    expect(q.get('title')).toBe('Real title');
+    expect(q.get('link')).toBe('https://example.com');
+    // richText / arrays / nested components are not URL-friendly
+    expect(q.has('body')).toBe(false);
+    expect(q.has('teasers')).toBe(false);
+    expect(q.has('child')).toBe(false);
+  });
+
+  it('round-trips back through buildSampleContent', () => {
+    const q = new URLSearchParams(
+      buildIndividualQuery('SampleElement', { link: 'https://example.com' }),
+    );
+    const flat = Object.fromEntries(q.entries());
+    delete flat.individual;
+    delete flat.key;
+    const c = buildSampleContent('SampleElement', flat);
+    expect(c.link).toEqual({ default: 'https://example.com' });
+    expect(c.published).toBe(true);
+    expect(c.count).toBe(5);
   });
 });
 

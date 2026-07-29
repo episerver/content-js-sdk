@@ -133,6 +133,48 @@ export function buildSampleContent(
 }
 
 /**
+ * Builds the query string for rendering a component on its own, with each
+ * simple property as a flat param (e.g. `individual&key=ButtonElement&label=…`).
+ *
+ * Only values that survive a round-trip through {@linkcode coerceOverride} are
+ * included — strings, numbers, booleans and `url`/`link` objects. Structured
+ * values (rich text, arrays, nested components) are left out so the link stays
+ * editable by hand; they fall back to generated samples on render.
+ *
+ * @param key Content type key.
+ * @param overrides Optional field values to bake into the link.
+ */
+export function buildIndividualQuery(
+  key: string,
+  overrides?: Record<string, unknown>,
+): string {
+  const content = buildSampleContent(key, overrides);
+  const params = new URLSearchParams();
+  params.set('individual', '');
+  params.set('key', key);
+
+  const properties = (getContentType(key)?.properties ?? {}) as Record<
+    string,
+    AnyProperty
+  >;
+  for (const [name, prop] of Object.entries(properties)) {
+    const value = content[name];
+    if (prop.type === 'url' || prop.type === 'link') {
+      const url = (value as any)?.default;
+      if (typeof url === 'string') params.set(name, url);
+    } else if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
+    ) {
+      params.set(name, String(value));
+    }
+  }
+
+  return `?${params.toString()}`;
+}
+
+/**
  * Finds display templates that apply to a content type. A template targets its
  * owner by exactly one of: `contentType` (this key), `baseType` (every type of
  * that base — the common case, since `contentType` is often empty), or
