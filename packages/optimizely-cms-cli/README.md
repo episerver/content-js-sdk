@@ -274,14 +274,14 @@ Guides and best practices:
 
 ### Getting Started
 
-- [Installation](../../docs/1-installation.md) - Set up your development environment
-- [Setup](../../docs/2-setup.md) - Configure the SDK and CLI
-- [Modelling](../../docs/3-modelling.md) - Define your content types with TypeScript
+- [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/1-installation.md) - Set up your development environment
+- [Setup](https://github.com/episerver/content-js-sdk/blob/main/docs/2-setup.md) - Configure the SDK and CLI
+- [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md) - Define your content types with TypeScript
 
 ### Workflow Guides
 
-- [Create Content](../../docs/4-create-content.md) - Add content in Optimizely CMS after syncing types
-- [Fetching Content](../../docs/5-fetching.md) - Use the SDK to retrieve typed content
+- [Create Content](https://github.com/episerver/content-js-sdk/blob/main/docs/4-create-content.md) - Add content in Optimizely CMS after syncing types
+- [Fetching Content](https://github.com/episerver/content-js-sdk/blob/main/docs/5-fetching.md) - Use the SDK to retrieve typed content
 
 ## Best Practices
 
@@ -313,4 +313,4 @@ Apache License 2.0
 
 ---
 
-**Built by the Optimizely CMS Team** | [Documentation](../../docs/) | [GitHub](https://github.com/episerver/content-js-sdk)
+**Built by the Optimizely CMS Team** | [Documentation](https://github.com/episerver/content-js-sdk/tree/main/docs) | [GitHub](https://github.com/episerver/content-js-sdk)

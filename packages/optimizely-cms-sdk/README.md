@@ -46,15 +46,15 @@ Full guides and documentation in the main repository:
 
 ### Getting Started
 
-- [Installation](../../docs/1-installation.md) - Set up your development environment
-- [Setup](../../docs/2-setup.md) - Configure the SDK and CLI
-- [Modelling](../../docs/3-modelling.md) - Define your content types with TypeScript
+- [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/1-installation.md) - Set up your development environment
+- [Setup](https://github.com/episerver/content-js-sdk/blob/main/docs/2-setup.md) - Configure the SDK and CLI
+- [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md) - Define your content types with TypeScript
 
 ### Core Features
 
-- [Fetching Content](../../docs/5-fetching.md) - Query and retrieve content in your app
-- [Rendering (React)](../../docs/6-rendering-react.md) - Display content in React components
-- [Live Preview](../../docs/7-live-preview.md) - Enable real-time content editing
+- [Fetching Content](https://github.com/episerver/content-js-sdk/blob/main/docs/5-fetching.md) - Query and retrieve content in your app
+- [Rendering (React)](https://github.com/episerver/content-js-sdk/blob/main/docs/6-rendering-react.md) - Display content in React components
+- [Live Preview](https://github.com/episerver/content-js-sdk/blob/main/docs/7-live-preview.md) - Enable real-time content editing
 
 ### Schema Validation
 
@@ -130,11 +130,11 @@ Top-level content properties (`p_string`, `p_xhtml`, etc.) are optional — `nul
 
 ### Advanced Features
 
-- [Experience](../../docs/8-experience.md) - Work with experiences and variations
-- [Display Settings](../../docs/9-display-settings.md) - Configure content display options
-- [RichText Component (React)](../../docs/10-richtext-component-react.md) - Render rich text content
-- [DAM Assets](../../docs/11-dam-assets.md) - Manage digital assets
-- [Client Utils](../../docs/12-client-utils.md) - Utility functions and helpers
+- [Experience](https://github.com/episerver/content-js-sdk/blob/main/docs/8-experience.md) - Work with experiences and variations
+- [Display Settings](https://github.com/episerver/content-js-sdk/blob/main/docs/9-display-settings.md) - Configure content display options
+- [RichText Component (React)](https://github.com/episerver/content-js-sdk/blob/main/docs/10-richtext-component-react.md) - Render rich text content
+- [DAM Assets](https://github.com/episerver/content-js-sdk/blob/main/docs/11-dam-assets.md) - Manage digital assets
+- [Client Utils](https://github.com/episerver/content-js-sdk/blob/main/docs/12-client-utils.md) - Utility functions and helpers
 
 ## Best Practices
 
@@ -157,4 +157,4 @@ Apache License 2.0
 
 ---
 
-**Built by the Optimizely CMS Team** | [Documentation](../../docs/) | [GitHub](https://github.com/episerver/content-js-sdk)
+**Built by the Optimizely CMS Team** | [Documentation](https://github.com/episerver/content-js-sdk/tree/main/docs) | [GitHub](https://github.com/episerver/content-js-sdk)

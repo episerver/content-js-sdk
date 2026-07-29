@@ -45,6 +45,7 @@ npx @optimizely/cms-create-app
 | Template | Description |
 |----------|-------------|
 | `nextjs-starter` | Minimal Next.js + Optimizely CMS |
+| `nextjs-stride` | Full demo site with Tailwind |
 | `nextjs-alloy` | Full demo site with Tailwind |
 | `tanstack-starter` | TanStack Start + Optimizely CMS |
 
@@ -52,7 +53,7 @@ npx @optimizely/cms-create-app
 
 | Option | Description |
 |--------|-------------|
-| `--template <name>` | Template to use (`nextjs-starter`, `nextjs-alloy`, `tanstack-starter`) |
+| `--template <name>` | Template to use (`nextjs-starter`, `nextjs-stride`, `nextjs-alloy`, `tanstack-starter`) |
 | `--pm <manager>` | Package manager (`npm`, `pnpm`, `yarn`) |
 | `--skip-install` | Skip dependency installation |
 | `-h, --help` | Show help |
@@ -147,4 +148,4 @@ Apache License 2.0
 
 ---
 
-**Built by the Optimizely CMS Team** | [Documentation](../../docs/) | [GitHub](https://github.com/episerver/content-js-sdk)
+**Built by the Optimizely CMS Team** | [Documentation](https://github.com/episerver/content-js-sdk/tree/main/docs) | [GitHub](https://github.com/episerver/content-js-sdk)
