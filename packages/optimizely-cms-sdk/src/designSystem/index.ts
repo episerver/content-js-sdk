@@ -21,6 +21,19 @@ const SAMPLE_DATE = '2026-01-01T00:00:00.000Z';
 // ponytail: depth cap 3, deepen if real nested-component previews need it
 const MAX_DEPTH = 3;
 
+/** Self-contained grey placeholder for image references (no network needed). */
+const PLACEHOLDER_IMAGE =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    // Small intrinsic size so an unconstrained <img> doesn't blow out the layout.
+    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 800 600">` +
+      `<rect width="800" height="600" fill="#e3e6ea"/>` +
+      `<path d="M0 470l230-190 150 125 130-105 290 240z" fill="#c8ced6"/>` +
+      `<circle cx="600" cy="150" r="60" fill="#c8ced6"/>` +
+      `<text x="400" y="560" font-family="sans-serif" font-size="28" fill="#5f6b7a" ` +
+      `text-anchor="middle">Sample image</text></svg>`,
+  );
+
 /** All registered content types that are `_component` (the catalog). */
 export function getComponentContentTypes(): AnyContentType[] {
   return getContentTypeByBaseType('_component');
@@ -51,6 +64,15 @@ function sampleForProperty(name: string, prop: AnyProperty, depth: number): unkn
     case 'url':
     case 'link':
       return { default: '#' };
+    case 'contentReference': {
+      // Only images have a meaningful stand-in. Inline SVG keeps the preview
+      // self-contained — no network request, works offline.
+      const allowed: unknown[] = p.allowedTypes ?? [];
+      const isImage = allowed.some(
+        (t: any) => t === '_image' || t?.baseType === '_image',
+      );
+      return isImage ? { url: { default: PLACEHOLDER_IMAGE } } : null;
+    }
     case 'array': {
       if (depth >= MAX_DEPTH) return [];
       const item = sampleForProperty(name, p.items, depth + 1);
@@ -86,6 +108,9 @@ function coerceOverride(prop: AnyProperty | undefined, value: unknown): unknown 
     case 'url':
     case 'link':
       return { default: value };
+    case 'contentReference':
+      // `?image=https://…` → the shape components read (`image.url.default`).
+      return { url: { default: value } };
     case 'boolean':
       return value === 'true';
     case 'integer':
@@ -162,6 +187,10 @@ export function buildIndividualQuery(
     if (prop.type === 'url' || prop.type === 'link') {
       const url = (value as any)?.default;
       if (typeof url === 'string') params.set(name, url);
+    } else if (prop.type === 'contentReference') {
+      const url = (value as any)?.url?.default;
+      // Skip the inline SVG placeholder — it would bloat the URL.
+      if (typeof url === 'string' && !url.startsWith('data:')) params.set(name, url);
     } else if (
       typeof value === 'string' ||
       typeof value === 'number' ||

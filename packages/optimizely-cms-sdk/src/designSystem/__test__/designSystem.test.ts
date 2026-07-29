@@ -42,6 +42,7 @@ const Sample = contentType({
     child: { type: 'component', contentType: Nested },
     teasers: { type: 'array', items: { type: 'content', allowedTypes: [Nested] } },
     refs: { type: 'array', items: { type: 'contentReference', allowedTypes: [] } },
+    image: { type: 'contentReference', allowedTypes: ['_image'] },
   },
 });
 
@@ -94,6 +95,17 @@ describe('buildSampleContent', () => {
     expect(c.title).toBe('Real title');
   });
 
+  it('gives image references an inline placeholder, other refs none', () => {
+    const c = buildSampleContent('SampleElement');
+    expect((c.image as any).url.default).toMatch(/^data:image\/svg\+xml/);
+    expect(c.refs).toEqual([]); // allowedTypes: [] → not an image
+  });
+
+  it('coerces a flat contentReference url string', () => {
+    const c = buildSampleContent('SampleElement', { image: 'https://x.test/a.jpg' });
+    expect(c.image).toEqual({ url: { default: 'https://x.test/a.jpg' } });
+  });
+
   it('coerces flat string overrides to the property shape', () => {
     const c = buildSampleContent('SampleElement', {
       link: 'https://example.com', // url → { default }
@@ -143,6 +155,8 @@ describe('buildIndividualQuery', () => {
     );
     expect(q.get('title')).toBe('Real title');
     expect(q.get('link')).toBe('https://example.com');
+    // the inline SVG placeholder would bloat the URL
+    expect(q.has('image')).toBe(false);
     // richText / arrays / nested components are not URL-friendly
     expect(q.has('body')).toBe(false);
     expect(q.has('teasers')).toBe(false);
