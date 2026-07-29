@@ -2,6 +2,7 @@ import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
 } from '../graph/constants.js';
+import { getAllContentTypes } from '../model/contentTypeRegistry.js';
 
 const queryCache = new Map<string, string>();
 
@@ -15,10 +16,17 @@ type QueryGenerator = (
   typeFilter?: TypeFilter,
 ) => string;
 
+const getFilterHash = (typeFilter: (key: string) => boolean): string => {
+  return getAllContentTypes()
+    .filter(ct => typeFilter('key' in ct ? ct.key : ''))
+    .map(ct => ('key' in ct ? ct.key : ''))
+    .sort()
+    .join(',');
+};
+
 /**
  * Higher-order function that wraps query generation with caching.
  * Returns cached query if available, otherwise generates and caches it.
- * When a typeFilter is provided, caching is bypassed since the filter is a function.
  */
 export const withQueryCaching = (
   queryType: 'single' | 'multiple',
@@ -31,18 +39,15 @@ export const withQueryCaching = (
     expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
     typeFilter?: TypeFilter,
   ): string => {
-    if (typeFilter) {
-      return generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts, typeFilter);
-    }
-
-    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}`;
+    const filterPart = typeFilter ? `:${getFilterHash(typeFilter)}` : '';
+    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}${filterPart}`;
 
     const cached = queryCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts);
+    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts, typeFilter);
     queryCache.set(cacheKey, query);
     return query;
   };
