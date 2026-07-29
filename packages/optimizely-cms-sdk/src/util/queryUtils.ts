@@ -100,9 +100,11 @@ const allPropertiesAreDisabled = (contentType: RegistryEntry): boolean => {
  */
 export const isExperienceComponent = (contentType: RegistryEntry): boolean =>
   'baseType' in contentType &&
-  contentType.baseType === '_component' &&
-  'compositionBehaviors' in contentType &&
-  (contentType.compositionBehaviors?.length ?? 0) > 0;
+  ((contentType.baseType === '_component' &&
+      'compositionBehaviors' in contentType &&
+      (contentType.compositionBehaviors?.length ?? 0) > 0)
+    || (contentType.baseType === '_section' &&
+     contentType.properties !== undefined));
 
 // ALLOWED TYPES
 
