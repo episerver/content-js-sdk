@@ -401,10 +401,13 @@ export function OptimizelyComposition({
       return <div>???</div>;
     }
 
+    const componentData = 'component' in node ? (node.component as object) : {};
+
     return (
       <OptimizelyComponent
         key={node.key}
         content={{
+          ...componentData,
           ...node,
           __typename: type,
           __tag: tag,

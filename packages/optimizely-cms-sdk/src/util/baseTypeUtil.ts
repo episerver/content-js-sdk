@@ -71,11 +71,14 @@ export const stripSourcePrefix = (key: string): string => key.replace(/^[a-z]+:/
  * This function will not be used once Graph properly supports @recursive.
  */
 function buildNestedCompositionNodes(depth: number): string {
+  const baseFields = '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
+
   if (depth === 0) {
-    return '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
+    return baseFields;
   }
+
   const nested = buildNestedCompositionNodes(depth - 1);
-  return `__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
+  return `${baseFields} ...on CompositionStructureNode { component { ..._IComponent } nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
 }
 
 // Increase nesting depth to support deeper form structures (e.g., Forms with nested fields)
