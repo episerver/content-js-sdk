@@ -69,13 +69,13 @@ test('compositionBehaviors allowed on component type', () => {
   });
 });
 
-test('content/contentReference require allowedTypes or restrictedTypes', () => {
+test('content/contentReference allowedTypes and restrictedTypes are optional', () => {
+  // Valid without allowedTypes or restrictedTypes
   contentType({
     key: 'page',
     displayName: 'Page',
     baseType: '_page',
     properties: {
-      // @ts-expect-error - contentReference requires either allowedTypes or restrictedTypes
       ref: { type: 'contentReference' },
     },
   });
@@ -85,7 +85,6 @@ test('content/contentReference require allowedTypes or restrictedTypes', () => {
     displayName: 'Page',
     baseType: '_page',
     properties: {
-      // @ts-expect-error - content requires either allowedTypes or restrictedTypes
       area: { type: 'content' },
     },
   });
