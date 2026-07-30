@@ -78,6 +78,15 @@ export const ColumnCardDisplayTemplate = displayTemplate({
   settings: {},
 });
 
+export const HeroCenteredDisplayTemplate = displayTemplate({
+  key: 'HeroCentered',
+  isDefault: false,
+  displayName: 'Hero Centered',
+  contentType: 'HeroSection',
+  tag: 'Centered',
+  settings: {},
+});
+
 export function getDisplayStyle(
   displaySettings: { key: string; value: string }[] | null | undefined,
   settingKey: string,

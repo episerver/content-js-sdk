@@ -1,4 +1,4 @@
-import { ContentProps, contentType } from '@optimizely/cms-sdk';
+import { ContentProps } from '@optimizely/cms-sdk';
 import {
   OptimizelyGridSection,
   getPreviewUtils,
@@ -11,22 +11,7 @@ import {
   getDisplayStyle,
   SectionDisplayTemplate,
 } from './DisplayTemplates';
-import { CmsField } from '../shared/CmsField';
-
-export const HeroSection = contentType({
-  key: 'HeroSection',
-  baseType: '_section',
-  displayName: 'Hero Section',
-  description: 'Hero section with support for video background',
-  properties: {
-    video: {
-      type: 'contentReference',
-      allowedTypes: ['_video'],
-      displayName: 'Video',
-      sortOrder: 1,
-    },
-  },
-});
+import { HeroSection } from './Hero';
 
 type HeroSectionProps = {
   content: ContentProps<typeof HeroSection>;
@@ -57,7 +42,7 @@ function RowWrapper({ children, node }: StructureContainerProps) {
   return (
     <div
       className={cn(
-        'h-[90vh] max-h-[900px] relative z-10  container px-5 mx-auto md:flex gap-12 items-center py-20',
+        'h-[90vh] max-h-[900px] relative z-10 container px-5 mx-auto flex flex-col items-center justify-center text-center py-20',
         verticalSpacing,
       )}
       {...pa(node)}
@@ -80,7 +65,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
   if (node.type === 'ImageElement') {
     return (
-      <div className='flex items-center mt-[18rem] invisible md:visible' {...pa(node)}>
+      <div className='flex items-center mt-8' {...pa(node)}>
         {children}
       </div>
     );
@@ -89,31 +74,17 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
   return <>{children}</>;
 }
 
-// Placeholder solution, while _section related issues remain
-const defaultVideoSrc =
-  'https://cdn.midjourney.com/video/12166248-0ad6-4ab9-a545-022e30eef2ee/3.mp4';
-
-export default function Hero({ content, displaySettings }: HeroSectionProps) {
+export default function HeroCentered({ content, displaySettings }: HeroSectionProps) {
   const { pa } = getPreviewUtils(content);
   const width = widthStyles[displaySettings?.width ?? 'default'];
   const fadeOut =
     displaySettings?.fadeOut ?
-          ' -mb-10 [mask-image:linear-gradient(#000_90%,transparent)]'
+      ' -mb-20 [mask-image:linear-gradient(#000_75%,transparent_100%)]'
     : null;
 
   return (
     <section className={cn('p-1 pt-0', width, fadeOut)} {...pa(content)}>
-      <div className='bg-cover bg-center relative bg-no-repeat rounded-lg overflow-x-clip box-border'>
-        <CmsField content={content} field={c => c.video || defaultVideoSrc}>
-          <video
-            src={content.video?.url.default ?? defaultVideoSrc}
-            autoPlay
-            loop
-            muted
-            className='md:opacity-90 opacity-50 absolute inset-0 w-full h-full object-cover rounded-lg'
-          />
-        </CmsField>
-
+      <div className='bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 rounded-lg overflow-x-clip'>
         <OptimizelyGridSection
           nodes={content.nodes}
           row={RowWrapper}
