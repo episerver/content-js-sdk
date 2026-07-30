@@ -4,6 +4,8 @@ import {
   ComponentResolverOrObject,
 } from '../render/componentRegistry.js';
 import { JSX } from 'react';
+import { FormContentTypes } from '../model/formContentTypes.js';
+import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
 import {
   ExperienceStructureNode,
   ExperienceNode,
@@ -34,9 +36,33 @@ export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
 type ComponentType = React.ComponentType<any>;
 
+type FormComponentEntry =
+  | ComponentType
+  | {
+      default?: ComponentType;
+      tags: Record<string, ComponentType>;
+    };
+
+type FormHandlerKey =
+  | 'container'
+  | 'textbox'
+  | 'textarea'
+  | 'number'
+  | 'range'
+  | 'url'
+  | 'choice'
+  | 'selection'
+  | 'submit'
+  | 'reset'
+  | 'condition'
+  | 'rule';
+
+export type FormHandlers = Partial<Record<FormHandlerKey, FormComponentEntry>>;
+
 // Mapping content type names with Components.
 // This is a single global object used across the entire request
 let componentRegistry: ComponentRegistry<ComponentType>;
+let _componentMap: Record<string, FormComponentEntry> = {};
 
 type InitOptions = {
   resolver: ComponentResolverOrObject<ComponentType>;
@@ -83,7 +109,60 @@ type InitOptions = {
  */
 export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
+  if (typeof options.resolver !== 'function') _componentMap = options.resolver;
 }
+
+const addToReactComponentRegistry = (components: Record<string, FormComponentEntry>) => {
+  _componentMap = { ..._componentMap, ...components };
+  componentRegistry = new ComponentRegistry(_componentMap);
+};
+
+/**
+ * Initializes form content types and components in one call.
+ * Automatically registers all Optimizely Forms content types and their React components.
+ *
+ * @param handlers Form component handlers mapped by display name
+ *
+ * @example
+ * ```ts
+ * initForms({
+ *   container: FormContainerComponent,
+ *   textbox: TextboxComponent,
+ *   textarea: TextareaComponent,
+ *   // ... other form element components
+ * });
+ * ```
+ */
+export function initForms(handlers: FormHandlers) {
+  addToContentTypeRegistry(FormContentTypes);
+  addToReactComponentRegistry(mapFormHandlersToContentTypes(handlers));
+}
+
+export const FORM_HANDLER_TO_CONTENT_TYPE: Record<FormHandlerKey, string> = {
+  container: 'OptiFormsContainerData',
+  textbox: 'OptiFormsTextboxElement',
+  textarea: 'OptiFormsTextareaElement',
+  number: 'OptiFormsNumberElement',
+  range: 'OptiFormsRangeElement',
+  url: 'OptiFormsUrlElement',
+  choice: 'OptiFormsChoiceElement',
+  selection: 'OptiFormsSelectionElement',
+  submit: 'OptiFormsSubmitElement',
+  reset: 'OptiFormsResetElement',
+  condition: 'OptiFormsCondition',
+  rule: 'OptiFormsDependencyRule',
+};
+
+const mapFormHandlersToContentTypes = (
+  handlers: FormHandlers,
+): Record<string, FormComponentEntry> =>
+  Object.entries(handlers).reduce(
+    (acc, [handlerKey, component]) => {
+      const contentTypeKey = FORM_HANDLER_TO_CONTENT_TYPE[handlerKey as FormHandlerKey];
+      return contentTypeKey && component ? { ...acc, [contentTypeKey]: component } : acc;
+    },
+    {} as Record<string, FormComponentEntry>,
+  );
 
 /** Content data from CMS */
 type OptimizelyContent = {
@@ -322,10 +401,13 @@ export function OptimizelyComposition({
       return <div>???</div>;
     }
 
+    const componentData = 'component' in node ? (node.component as object) : {};
+
     return (
       <OptimizelyComponent
         key={node.key}
         content={{
+          ...componentData,
           ...node,
           __typename: type,
           __tag: tag,
@@ -443,9 +525,10 @@ export function OptimizelyGridSection({
     // 2. Globally defined (in the registry)
     // 3. Fallback
     // 4. React.Fragment
+    const globalName = globalNames[nodeType];
     const Component =
       locallyDefined[nodeType] ??
-      componentRegistry.getComponent(globalNames[nodeType], { tag }) ??
+      (globalName ? componentRegistry.getComponent(globalName, { tag }) : undefined) ??
       fallbacks[nodeType] ??
       React.Fragment;
 

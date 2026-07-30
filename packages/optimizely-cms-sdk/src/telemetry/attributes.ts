@@ -25,6 +25,7 @@ export const SemanticAttributes = {
   OPTI_CACHE_ENABLED: 'optimizely.cache.enabled', // Whether server-side caching is enabled (boolean)
   OPTI_SLOT: 'optimizely.graph.slot', // Graph index slot ('Current' or 'New')
   OPTI_DAM_ENABLED: 'optimizely.dam.enabled', // Whether DAM assets are enabled (boolean)
+  OPTI_FORMS_ENABLED: 'optimizely.forms.enabled', // Whether Forms is enabled (boolean)
 
   // Fragment generation attributes
   OPTI_FRAGMENT_COUNT: 'optimizely.fragment.count', // Number of GraphQL fragments generated

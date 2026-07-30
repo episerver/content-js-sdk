@@ -105,7 +105,7 @@ export type FolderContentType = SkipCompositionBehaviors<
 /** Represents the "Component" type (also called "Block") in CMS */
 export type ComponentContentType = BaseContentType & {
   baseType: '_component';
-  compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[]; // Add "formsElementEnabled" here if when forms are supported in components
+  compositionBehaviors?: ('sectionEnabled' | 'elementEnabled' | 'formsElementEnabled')[];
   mayContainTypes?: Array<ContentType<ComponentContentType> | '_self' | string>;
 };
 
