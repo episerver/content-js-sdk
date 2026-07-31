@@ -94,7 +94,7 @@ config({
 #### config() Parameters
 
 - **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
-- **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`
+- **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`. If the URL does not include `/content/v2`, the SDK appends it automatically
 - **`host`** (optional): Default application host for path filtering. Useful for multi-site scenarios
 - **`maxFragmentThreshold`** (optional): Maximum number of GraphQL fragments before logging warnings. Defaults to `100`
 - **`cache`** (optional): Enable/disable server-side caching for all queries. Defaults to `true`
