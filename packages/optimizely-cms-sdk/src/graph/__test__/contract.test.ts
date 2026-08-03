@@ -392,10 +392,11 @@ describe('Fragment generation of contracts with experiences', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment ContentTypeC on ContentTypeC { __typename ContentTypeC__Category:Category ContentTypeC__Tags:Tags ContentTypeC__headingC:headingC ..._IContent }",
+        "fragment testContract on ItestContract { __typename testContract__Category:Category testContract__Tags:Tags ..._IContent }",
         "fragment _IExperience on _IExperience { composition {...ICompositionNode }}",
         "fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }",
         "fragment _IComponent on _IComponent { __typename  }",
-        "fragment TestExperience on TestExperience { __typename TestExperience__main_area:main_area { __typename ...ContentTypeC } ..._IContent ..._IExperience }",
+        "fragment TestExperience on TestExperience { __typename TestExperience__main_area:main_area { __typename ...ContentTypeC ...testContract } ..._IContent ..._IExperience }",
       ]
     `);
   });
@@ -656,5 +657,90 @@ describe('Contract expansion in allowedTypes', () => {
     // Should include the contract even when there are no implementing types
     expect(fragmentString).toContain('fragment EmptyContract on IEmptyContract');
     expect(fragmentString).toContain('EmptyContract__field:field');
+  });
+});
+
+describe('Content array with items implementing multiple contracts', () => {
+  it('should include all contracts when a content type implements multiple contracts in allowedTypes', () => {
+    const TeaserContract = contract({
+      key: 'TeaserContract',
+      displayName: 'Teaser Contract',
+      properties: {
+        teaserTitle: { type: 'string' },
+        teaserDescription: { type: 'string' },
+      },
+    });
+
+    const AnotherContract = contract({
+      key: 'AnotherContract',
+      displayName: 'Another Contract',
+      properties: {
+        anotherField: { type: 'string' },
+      },
+    });
+
+    const PageWithMultipleContracts = contentType({
+      baseType: '_page',
+      key: 'PageWithMultipleContracts',
+      displayName: 'Page With Multiple Contracts',
+      extends: [TeaserContract, AnotherContract],
+      properties: { title: { type: 'string' } },
+    });
+
+    const CardContentType = contentType({
+      baseType: '_page',
+      key: 'CardContentType',
+      displayName: 'Card Content Type',
+      properties: { cardTitle: { type: 'string' } },
+    });
+
+    const PageWithContentArray = contentType({
+      baseType: '_page',
+      key: 'PageWithContentArray',
+      displayName: 'Page With Content Array',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'content',
+            allowedTypes: [CardContentType, TeaserContract],
+          },
+        },
+      },
+    });
+
+    initContentTypeRegistry([
+      TeaserContract,
+      AnotherContract,
+      PageWithMultipleContracts,
+      CardContentType,
+      PageWithContentArray,
+    ]);
+
+    const result = createFragment('PageWithContentArray');
+    const fragmentString = result.fragments.join('\n');
+
+    // Should include TeaserContract from allowedTypes
+    expect(fragmentString).toContain('fragment TeaserContract on ITeaserContract');
+    expect(fragmentString).toContain('TeaserContract__teaserTitle:teaserTitle');
+    expect(fragmentString).toContain('TeaserContract__teaserDescription:teaserDescription');
+
+    // Should include CardContentType from allowedTypes
+    expect(fragmentString).toContain('fragment CardContentType on CardContentType');
+    expect(fragmentString).toContain('CardContentType__cardTitle:cardTitle');
+
+    // Should include AnotherContract because PageWithMultipleContracts implements it
+    expect(fragmentString).toContain('fragment AnotherContract on IAnotherContract');
+    expect(fragmentString).toContain('AnotherContract__anotherField:anotherField');
+
+    // The items field should include spreads for all three types
+    const itemsFieldMatch = fragmentString.match(
+      /PageWithContentArray__items:items\s*{\s*__typename([^}]*)\}/,
+    );
+    expect(itemsFieldMatch).toBeTruthy();
+    const itemsFieldContent = itemsFieldMatch ? itemsFieldMatch[0] : '';
+    expect(itemsFieldContent).toContain('...CardContentType');
+    expect(itemsFieldContent).toContain('...TeaserContract');
+    expect(itemsFieldContent).toContain('...AnotherContract');
   });
 });

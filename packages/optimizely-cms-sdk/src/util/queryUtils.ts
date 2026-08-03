@@ -9,7 +9,12 @@ import {
   getContentTypeByBaseType,
   RegistryEntry,
 } from '../model/contentTypeRegistry.js';
-import { CONTENT_URL_FRAGMENT, getKeyName, isBaseType, stripSourcePrefix } from './baseTypeUtil.js';
+import {
+  CONTENT_URL_FRAGMENT,
+  getKeyName,
+  isBaseType,
+  stripSourcePrefix,
+} from './baseTypeUtil.js';
 import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
 import { createFragment } from '../graph/createQuery.js';
@@ -18,6 +23,43 @@ import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
 } from '../graph/constants.js';
+
+const getImplementedContracts = (contentType: AnyContentType): RegistryEntry[] => {
+  if (!contentType.extends) return [];
+  return Array.isArray(contentType.extends) ? contentType.extends : [contentType.extends];
+};
+
+const collectContracts = (type: RegistryEntry): string[] =>
+  getImplementedContracts(type as AnyContentType)
+    .filter((c): c is RegistryEntry => isContract(c))
+    .map(c => c.key);
+
+const collectTypesAndContracts = (
+  allowed: (PermittedTypes | AnyContentType)[],
+  rootName: string,
+) => {
+  const typesToInclude = new Set(
+    allowed.map(type => (getKeyName(type) === '_self' ? rootName : getKeyName(type))),
+  );
+
+  const contractsToInclude = new Set<string>();
+
+  allowed.forEach(type => {
+    if (typeof type === 'object' && !isContract(type) && 'extends' in type) {
+      collectContracts(type).forEach(key => contractsToInclude.add(key));
+    } else if (isContract(type)) {
+      findExtendingContentTypes(type)
+        .flatMap(collectContracts)
+        .forEach(contractKey => {
+          if (contractKey !== type.key) {
+            contractsToInclude.add(contractKey);
+          }
+        });
+    }
+  });
+
+  return { typesToInclude, contractsToInclude };
+};
 
 // TYPE DEFINITIONS
 
@@ -241,9 +283,12 @@ const handleContentProperty: PropertyHandler = (
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
 
-  let includesDamAssetsFragments = false;
-  const extraFragments = allowed.flatMap(type => {
-    const key = getKeyName(type) === '_self' ? rootName : getKeyName(type);
+  const { typesToInclude, contractsToInclude } = collectTypesAndContracts(
+    allowed,
+    rootName,
+  );
+
+  const createFragmentFor = (key: string) => {
     const result = createFragment(key, visited, '', {
       damEnabled,
       maxFragmentThreshold,
@@ -251,16 +296,30 @@ const handleContentProperty: PropertyHandler = (
       includeBaseFragments: true,
       typeFilter,
     });
+    return result;
+  };
+
+  let includesDamAssetsFragments = false;
+  const extraFragments: string[] = [];
+  const subfields = ['__typename'];
+
+  typesToInclude.forEach(key => {
+    const result = createFragmentFor(key);
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
-    return result.fragments;
+    extraFragments.push(...result.fragments);
+    subfields.push(`...${stripSourcePrefix(key)}`);
   });
 
-  const subfields = allowed.map(type => {
-    const key = getKeyName(type);
-    return `...${key === '_self' ? rootName : stripSourcePrefix(key)}`;
+  contractsToInclude.forEach(contractKey => {
+    const result = createFragmentFor(contractKey);
+    includesDamAssetsFragments =
+      includesDamAssetsFragments || result.includesDamAssetsFragments;
+    extraFragments.push(...result.fragments);
+    subfields.push(`...${stripSourcePrefix(contractKey)}`);
   });
-  const uniqueSubfields = ['__typename', ...new Set(subfields)].join(' ');
+
+  const uniqueSubfields = [...new Set(subfields)].join(' ');
   const fields = [`${nameInFragment} { ${uniqueSubfields} }`];
 
   return { fields, extraFragments, includesDamAssetsFragments };
