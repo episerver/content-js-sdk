@@ -41,7 +41,7 @@ export type GraphOptions = {
   graphUrl?: string;
   /** Optional default host for path filtering */
   host?: string;
-  /** Default maximum fragment threshold for GraphQL queries */
+  /** Hard limit on generated fragments per content area. Throws GraphFragmentThresholdError when exceeded on unconstrained properties. */
   maxFragmentThreshold?: number;
   /**
    * Enable or disable contract expansion.
@@ -68,6 +68,12 @@ export type GraphOptions = {
    * @default 'OptimizelySDK/{version} (JS)'
    */
   userAgent?: string;
+  /**
+   * Optional filter to exclude content types from fragment generation.
+   * Return true to include a content type, false to exclude it.
+   * Useful for skipping content types that have no registered component.
+   */
+  typeFilter?: (contentTypeKey: string) => boolean;
 };
 
 // Global configuration for client factory
@@ -331,6 +337,7 @@ export class GraphClient {
   cache: boolean;
   slot?: GraphSlot;
   userAgent: string;
+  typeFilter?: (contentTypeKey: string) => boolean;
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
@@ -343,6 +350,7 @@ export class GraphClient {
     this.cache = options.cache ?? true;
     this.slot = options.slot;
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
+    this.typeFilter = options.typeFilter;
   }
 
   /** Perform a GraphQL query with variables */
@@ -524,6 +532,7 @@ export class GraphClient {
           damEnabled,
           this.maxFragmentThreshold,
           this.expandContracts,
+          this.typeFilter,
         );
         const response = (await this.request(
           query,
@@ -731,6 +740,7 @@ export class GraphClient {
         damEnabled,
         this.maxFragmentThreshold,
         this.expandContracts,
+        this.typeFilter,
       );
 
       const response = await this.request(
@@ -889,6 +899,7 @@ export class GraphClient {
           damEnabled,
           this.maxFragmentThreshold,
           this.expandContracts,
+          this.typeFilter,
         );
 
         const response = await this.request(
