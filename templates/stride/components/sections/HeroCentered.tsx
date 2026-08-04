@@ -42,7 +42,7 @@ function RowWrapper({ children, node }: StructureContainerProps) {
   return (
     <div
       className={cn(
-        'h-[90vh] max-h-[900px] relative z-10 container px-5 mx-auto flex flex-col items-center justify-center text-center py-20',
+        'h-[90vh] max-h-[900px] relative z-10 container px-5 mx-auto flex flex-col items-center justify-center text-center text-white py-20 overflow-hidden',
         verticalSpacing,
       )}
       {...pa(node)}
@@ -65,7 +65,7 @@ function ComponentWrapper({ children, node }: ComponentContainerProps) {
 
   if (node.type === 'ImageElement') {
     return (
-      <div className='flex items-center mt-8' {...pa(node)}>
+      <div className='flex items-center justify-center mt-8 max-w-xs mx-auto' {...pa(node)}>
         {children}
       </div>
     );
@@ -83,8 +83,8 @@ export default function HeroCentered({ content, displaySettings }: HeroSectionPr
     : null;
 
   return (
-    <section className={cn('p-1 pt-0', width, fadeOut)} {...pa(content)}>
-      <div className='bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 rounded-lg overflow-x-clip'>
+    <section data-hero-dark className={cn('p-1 pt-0', width, fadeOut)} {...pa(content)}>
+      <div className='bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 rounded-lg overflow-x-clip [--foreground:#fff] [--foreground-inverted:#000]'>
         <OptimizelyGridSection
           nodes={content.nodes}
           row={RowWrapper}
