@@ -20,7 +20,7 @@ export default function FormContainer({ content }: FormContainerProps) {
   const formState = (getContext() as any).formState;
 
   return (
-    <div className='max-w-7xl py-6 sm:py-8 md:py-10 lg:py-12'>
+    <div id='form-alert' className='max-w-7xl py-6 sm:py-8 md:py-10 lg:py-12'>
       <div className='space-y-6 sm:space-y-8'>
         <FormTitle title={content.Title ?? null} previewAttributes={pa} />
         <FormDescription
