@@ -29,6 +29,7 @@ export default function FormInput({ content }: FormInputProps) {
       )}
       <input
         type='text'
+        name={content.SubmissionFieldName || content.Label || ''}
         placeholder={content.Placeholder ?? ''}
         value={value}
         onChange={e => setValue(e.target.value)}

@@ -28,6 +28,7 @@ export default function FormTextarea({ content }: FormTextareaProps) {
         </label>
       )}
       <textarea
+        name={content.SubmissionFieldName || content.Label || ''}
         placeholder={content.Placeholder ?? ''}
         value={value}
         onChange={e => setValue(e.target.value)}

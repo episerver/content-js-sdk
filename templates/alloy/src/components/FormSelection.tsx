@@ -43,7 +43,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
           >
             <input
               type='radio'
-              name={content.Label || 'selection'}
+              name={content.SubmissionFieldName || content.Label || ''}
               value={option.value}
               checked={value === option.value}
               onChange={() => {
