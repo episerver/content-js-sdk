@@ -31,7 +31,6 @@ import FormInput from '@/components/FormInput';
 import FormSelection from '@/components/FormSelection';
 import FormTextarea from '@/components/FormTextarea';
 import FormSubmit from '@/components/FormSubmit';
-import FormReset from '@/components/FormReset';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -99,7 +98,6 @@ initForms({
   selection: FormSelection,
   textarea: FormTextarea,
   submit: FormSubmit,
-  reset: FormReset,
 });
 
 export default async function RootLayout({
