@@ -748,4 +748,56 @@ describe('generateManifestCode', () => {
     // Should handle missing SysContentFolder gracefully (either removed or kept as string)
     expect(result).not.toContain('<|SysContentFolder|>');
   });
+
+  it('should include empty allowedTypes in generated code', () => {
+    const contentTypeWithEmptyAllowedTypes: ManifestContentType = {
+      key: 'PageWithContent',
+      displayName: 'Page With Content',
+      baseType: '_page',
+      isContract: false,
+      properties: {
+        mainContent: {
+          type: 'content',
+          allowedTypes: [],
+        },
+        relatedItem: {
+          type: 'contentReference',
+          allowedTypes: [],
+        },
+      },
+    };
+
+    const result = generateContentCode(contentTypeWithEmptyAllowedTypes, {
+      contentTypes: [contentTypeWithEmptyAllowedTypes],
+    });
+
+    // Should include empty allowedTypes arrays
+    expect(result).toContain('allowedTypes: []');
+    expect(result.match(/allowedTypes: \[\]/g)).toHaveLength(2);
+  });
+
+  it('should include empty allowedTypes for unconstrained array items', () => {
+    const contentTypeWithArrayContent: ManifestContentType = {
+      key: 'PageWithSections',
+      displayName: 'Page With Sections',
+      baseType: '_page',
+      isContract: false,
+      properties: {
+        sections: {
+          type: 'array',
+          items: {
+            type: 'content',
+            allowedTypes: [],
+          },
+        },
+      },
+    };
+
+    const result = generateContentCode(contentTypeWithArrayContent, {
+      contentTypes: [contentTypeWithArrayContent],
+    });
+
+    // Should include empty allowedTypes for array items
+    expect(result).toContain('allowedTypes: []');
+  });
 });
