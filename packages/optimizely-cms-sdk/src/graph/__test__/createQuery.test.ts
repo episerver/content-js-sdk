@@ -393,6 +393,38 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
       ]
     `);
   });
+
+  test('wildcard allowedTypes', async () => {
+    const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
+    const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
+    const ct1 = contentType({
+      key: 'ct1',
+      displayName: 'CT1',
+      baseType: '_page',
+      properties: {
+        p1: {
+          type: 'content',
+          allowedTypes: ['*'],
+        },
+      },
+    });
+
+    initContentTypeRegistry([r1, r2, ct1]);
+    const result = await createFragment('ct1');
+    expect(result.fragments).toMatchInlineSnapshot(`
+      [
+        "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
+        "fragment ItemMetadata on ItemMetadata { changeset displayOption }",
+        "fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }",
+        "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
+        "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
+        "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
+        "fragment r1 on r1 { __typename ..._IContent }",
+        "fragment r2 on r2 { __typename ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r2 ...ct1 } ..._IContent }",
+      ]
+    `);
+  });
 });
 
 describe('createFragment() with self references', () => {

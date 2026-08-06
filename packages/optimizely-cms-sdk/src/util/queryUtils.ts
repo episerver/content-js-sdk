@@ -211,9 +211,10 @@ const resolveAllowedTypes = (
   cached: RegistryEntry[],
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
 ): (PermittedTypes | AnyContentType)[] => {
-  const baseline = allowed?.length ? allowed : cached;
+  const hasWildcard = allowed?.includes('*');
+  const baseline = hasWildcard || !allowed?.length ? cached : allowed;
   const skipSet = buildSkipSet(restricted);
-  const shouldExpandBaseTypes = !!allowed?.length;
+  const shouldExpandBaseTypes = !!allowed?.length && !hasWildcard;
 
   const seen = new Set<string>();
 
