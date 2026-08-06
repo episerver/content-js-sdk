@@ -62,6 +62,15 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<
       return;
     }
 
+    console.log();
+    console.log(chalk.yellow.bold('💡 Tip: Delete project types only'));
+    console.log(
+      chalk.dim(
+        'If you only want to delete types defined only in your project configuration,',
+      ),
+    );
+    console.log(chalk.dim(`use: ${chalk.cyan('optimizely-cms-cli config delete')}`));
+
     // Show what will be deleted
     console.log(chalk.yellow.bold('\nContent types that will be deleted:'));
     for (const type of deletableTypes) {
@@ -93,9 +102,19 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<
       });
 
       if (!r.response.ok) {
-        deleteSpinner.fail(chalk.red(`'${type.key}' cannot be deleted`));
+        deleteSpinner.fail(chalk.red(` '${type.key}' cannot be deleted`));
         if (r.error) {
-          console.error(chalk.dim(`  Error: ${r.error.title || 'Unknown error'}`));
+          console.error(chalk.dim(`\t  Error: ${r.error.title || 'Unknown error'}`));
+          if (r.response.status === 409 && r.error.code === 'DependencyConflict') {
+            console.error(
+              chalk.dim(
+                '\t  This type cannot be deleted because content instances of this type exist.',
+              ),
+            );
+            console.error(chalk.dim('\t  Delete the content items first, then retry.'));
+          } else if (r.error.detail) {
+            console.error(chalk.dim(`\t  Details: ${r.error.detail}`));
+          }
         }
         failureCount++;
       } else {
