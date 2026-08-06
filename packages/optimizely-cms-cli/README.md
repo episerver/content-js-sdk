@@ -131,7 +131,18 @@ optimizely-cms-cli config pull | grep -i "Article"
 
 # Include read-only system content types
 optimizely-cms-cli config pull --include-read-only
+
+# Delete content types defined in your project
+optimizely-cms-cli config delete
+
+# Delete with custom config file path
+optimizely-cms-cli config delete ./path/to/custom-config.mjs
+
+# With custom host
+optimizely-cms-cli config delete --host https://example.com
 ```
+
+> **Tip:** `config delete` only removes content types defined in your project configuration. If you need to delete ALL user-defined content types in the CMS (including types created by other systems), use `optimizely-cms-cli danger delete-all-content-types` instead.
 
 > **Tip:** If `--output` ends with `.ts` or `.tsx`, the CLI automatically uses single-file mode and writes to that exact file path. For example, `--output ./src/cms-types.ts` creates a single file at `./src/cms-types.ts`.
 
@@ -185,6 +196,8 @@ optimizely-cms-cli content delete ProductPage --host https://example.com
 # Delete ALL user-defined content types (interactive confirmation required)
 optimizely-cms-cli danger delete-all-content-types
 ```
+
+> **Tip:** If you only want to delete content types defined in your project configuration, use `optimizely-cms-cli config delete` instead. This is safer because it only removes types you've defined, not all custom types in the CMS.
 
 ### Get Help
 
