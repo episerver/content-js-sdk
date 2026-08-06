@@ -4,7 +4,9 @@ import { BaseCommand } from '../../baseCommand.js';
 import ora from 'ora';
 import { createApiClient } from '../../service/cmsRestClient.js';
 
-export default class DangerDeleteAllContentTypes extends BaseCommand<typeof DangerDeleteAllContentTypes> {
+export default class DangerDeleteAllContentTypes extends BaseCommand<
+  typeof DangerDeleteAllContentTypes
+> {
   static override args = {};
   static override description =
     '⚠️  [DANGER] Delete ALL user-defined content types from the CMS (excludes system types)';
@@ -40,9 +42,9 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<typeof Dang
       process.exit(1);
     }
 
-    const deletedTypes = contentTypes.filter(t => t.source !== 'system' && t.source !== 'serverModel');
+    const deletableTypes = contentTypes.filter(t => !Boolean(t.source));
 
-    if (deletedTypes.length === 0) {
+    if (deletableTypes.length === 0) {
       console.log(chalk.yellow('There are no user-defined content types in the CMS'));
       return;
     }
@@ -50,7 +52,7 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<typeof Dang
     // First confirmation
     const answer = await confirm({
       message: chalk.red.bold(
-        `⚠️  This will delete ALL ${deletedTypes.length} user-defined content types. Are you sure?`,
+        `⚠️  This will delete ALL ${deletableTypes.length} user-defined content types. Are you sure?`,
       ),
       default: false,
     });
@@ -62,13 +64,15 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<typeof Dang
 
     // Show what will be deleted
     console.log(chalk.yellow.bold('\nContent types that will be deleted:'));
-    for (const type of deletedTypes) {
+    for (const type of deletableTypes) {
       console.log(chalk.dim('  -'), chalk.yellow(`${type.displayName} (${type.key})`));
     }
 
     // Second confirmation
     const answer2 = await confirm({
-      message: chalk.red.bold('\n⚠️  This action cannot be undone. Proceed with deletion?'),
+      message: chalk.red.bold(
+        '\n⚠️  This action cannot be undone. Proceed with deletion?',
+      ),
       default: false,
     });
 
@@ -82,7 +86,7 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<typeof Dang
     let successCount = 0;
     let failureCount = 0;
 
-    for (const type of deletedTypes) {
+    for (const type of deletableTypes) {
       const deleteSpinner = ora(`Deleting ${type.key}...`).start();
       const r = await client.DELETE('/contenttypes/{key}', {
         params: { path: { key: type.key! } },
