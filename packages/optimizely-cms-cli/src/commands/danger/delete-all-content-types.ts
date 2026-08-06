@@ -102,18 +102,18 @@ export default class DangerDeleteAllContentTypes extends BaseCommand<
       });
 
       if (!r.response.ok) {
-        deleteSpinner.fail(chalk.red(` '${type.key}' cannot be deleted`));
+        deleteSpinner.fail(chalk.red(`'${type.key}' cannot be deleted`));
         if (r.error) {
-          console.error(chalk.dim(`\t  Error: ${r.error.title || 'Unknown error'}`));
+          console.error(chalk.dim(`  Error: ${r.error.title || 'Unknown error'}`));
           if (r.response.status === 409 && r.error.code === 'DependencyConflict') {
             console.error(
               chalk.dim(
-                '\t  This type cannot be deleted because content instances of this type exist.',
+                '  This type cannot be deleted because content instances of this type exist.',
               ),
             );
-            console.error(chalk.dim('\t  Delete the content items first, then retry.'));
+            console.error(chalk.dim('  Delete the content items first, then retry.'));
           } else if (r.error.detail) {
-            console.error(chalk.dim(`\t  Details: ${r.error.detail}`));
+            console.error(chalk.dim(`  Details: ${r.error.detail}`));
           }
         }
         failureCount++;

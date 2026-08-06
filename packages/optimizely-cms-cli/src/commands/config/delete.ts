@@ -102,11 +102,12 @@ export default class ConfigDelete extends BaseCommand<typeof ConfigDelete> {
       type => !Boolean(type.source) && projectKeys.has(type.key!),
     );
 
+    const foundKeys = new Set(projectDefinedInCms.map(t => t.key!));
+    const missingInCms = Array.from(projectKeys).filter(k => !foundKeys.has(k));
+    const typeWord = projectDefinedInCms.length === 1 ? 'type' : 'types';
+
     if (projectDefinedInCms.length === 0) {
       console.log(chalk.yellow('No project-defined content types found in the CMS'));
-
-      const cmsKeys = new Set(allCmsTypes.map(t => t.key!));
-      const missingInCms = Array.from(projectKeys).filter(k => !cmsKeys.has(k));
 
       if (missingInCms.length > 0) {
         console.log(chalk.dim('\nNote: The following project types are not in the CMS:'));
@@ -117,18 +118,11 @@ export default class ConfigDelete extends BaseCommand<typeof ConfigDelete> {
       return;
     }
 
-    console.log(
-      chalk.yellow.bold(
-        `\nFound ${projectDefinedInCms.length} project-defined content type${projectDefinedInCms.length !== 1 ? 's' : ''} in the CMS:`,
-      ),
-    );
+    console.log(chalk.yellow.bold(`\nFound ${projectDefinedInCms.length} project-defined content ${typeWord} in the CMS:`));
 
     for (const type of projectDefinedInCms) {
       console.log(chalk.dim('  -'), chalk.yellow(`${type.displayName} (${type.key})`));
     }
-
-    const cmsKeys = new Set(projectDefinedInCms.map(t => t.key!));
-    const missingInCms = Array.from(projectKeys).filter(k => !cmsKeys.has(k));
 
     if (missingInCms.length > 0) {
       console.log(chalk.dim('\nNote: The following project types are not in the CMS:'));
@@ -136,11 +130,8 @@ export default class ConfigDelete extends BaseCommand<typeof ConfigDelete> {
         console.log(chalk.dim(`  - ${key}`));
       }
     }
-
     const confirmed = await confirm({
-      message: chalk.red.bold(
-        `\n⚠️  Delete ${projectDefinedInCms.length} content type${projectDefinedInCms.length !== 1 ? 's' : ''}? This action cannot be undone.`,
-      ),
+      message: chalk.red.bold(`\n⚠️  Delete ${projectDefinedInCms.length} content ${typeWord}? This action cannot be undone.`),
       default: false,
     });
 
