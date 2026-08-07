@@ -141,10 +141,15 @@ type InferProps<T extends AnyContentType> =
     {
       properties: Record<string, AnyProperty>;
     }
-  ) ?
-    {
-      [Key in EnabledKeys<T['properties']>]: InferFromProperty<T['properties'][Key]> | null;
-    }
+  ) ? T extends SectionContentType
+      ? {
+        component: {
+          [Key in EnabledKeys<T['properties']>]: InferFromProperty<T['properties'][Key]> | null
+        };
+      } :
+      {
+        [Key in EnabledKeys<T['properties']>]: InferFromProperty<T['properties'][Key]> | null;
+      }
   : {};
 
 // Special fields for Experience
