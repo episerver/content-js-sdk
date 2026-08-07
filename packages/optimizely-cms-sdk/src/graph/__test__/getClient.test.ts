@@ -148,6 +148,42 @@ describe('getClient - Critical Edge Cases', () => {
     });
   });
 
+  describe('CRITICAL: graphUrl normalization (issue #468)', () => {
+    test('should append /content/v2 when graphUrl is just the gateway base URL', () => {
+      config({ apiKey: 'test-key', graphUrl: 'https://cg.optimizely.com' });
+      const client = getClient();
+
+      expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
+    });
+
+    test('should append /content/v2 when graphUrl has trailing slash', () => {
+      config({ apiKey: 'test-key', graphUrl: 'https://cg.optimizely.com/' });
+      const client = getClient();
+
+      expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
+    });
+
+    test('should not double-append when graphUrl already has /content/v2', () => {
+      config({ apiKey: 'test-key', graphUrl: 'https://cg.optimizely.com/content/v2' });
+      const client = getClient();
+
+      expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
+    });
+
+    test('should work with staging gateway URL', () => {
+      config({ apiKey: 'test-key', graphUrl: 'https://cg.staging.optimizely.com' });
+      const client = getClient();
+
+      expect(client.graphUrl).toBe('https://cg.staging.optimizely.com/content/v2');
+    });
+
+    test('should normalize via GraphClient constructor directly', () => {
+      const client = new GraphClient('test-key', { graphUrl: 'https://cg.optimizely.com' });
+
+      expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
+    });
+  });
+
   describe('Default values', () => {
     test('should use all defaults when only key is provided', () => {
       config({ apiKey: 'minimal-key' });

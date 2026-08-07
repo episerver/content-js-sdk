@@ -31,6 +31,7 @@ import {
   DEFAULT_USER_AGENT,
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
+  GRAPH_PATH,
 } from './constants.js';
 
 /** Configuration for initializing the Optimizely Graph Client */
@@ -328,6 +329,14 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
   return obj;
 }
 
+function normalizeGraphUrl(url: string): string {
+  const parsed = new URL(url);
+  if (parsed.pathname === '/' || parsed.pathname === '') {
+    parsed.pathname = GRAPH_PATH;
+  }
+  return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+}
+
 export class GraphClient {
   apiKey: string;
   graphUrl: string;
@@ -342,7 +351,7 @@ export class GraphClient {
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
-    this.graphUrl = options.graphUrl || DEFAULT_GRAPH_URL;
+    this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
     this.maxFragmentThreshold =
       options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
     this.expandContracts = options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS;
