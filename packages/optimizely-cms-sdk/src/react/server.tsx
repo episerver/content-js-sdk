@@ -20,6 +20,7 @@ import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
 import { withReactComponentSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
+import { renderDesignSystemSlot } from './designSystemSlot.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
   getContext,
@@ -184,6 +185,13 @@ export async function OptimizelyComponent({
     throw new OptimizelyReactError(
       'OptimizelyComponent requires a valid content prop. Received null or undefined.',
     );
+  }
+
+  // Sample content from the design-system viewer renders itself, before the
+  // registry lookup: apps never register its reserved type.
+  const designSystemSlot = renderDesignSystemSlot(content);
+  if (designSystemSlot) {
+    return designSystemSlot;
   }
 
   if (!componentRegistry) {

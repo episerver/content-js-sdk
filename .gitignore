@@ -44,3 +44,6 @@ config.bat
 test-app/
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+
+test-app
