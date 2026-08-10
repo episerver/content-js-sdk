@@ -130,3 +130,8 @@ export const getHtmlValidationAttributes = (validators?: Validator[]): Record<st
 
   return attrs;
 };
+
+export const getFieldName = (
+  submissionFieldName: string | null | undefined,
+  label: string | null | undefined,
+): string => submissionFieldName || label || '';

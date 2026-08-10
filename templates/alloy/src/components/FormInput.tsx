@@ -7,6 +7,7 @@ import {
   getErrorMessages,
   isFieldRequired,
   getHtmlValidationAttributes,
+  getFieldName,
 } from '../utils/formValidation';
 import { useFormValidation } from './FormValidationContext';
 
@@ -19,7 +20,7 @@ export default function FormInput({ content }: FormInputProps) {
   const [isTouched, setIsTouched] = useState(false);
   const { attemptedSubmit, registerField, unregisterField, setFieldError } = useFormValidation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const fieldName = content.SubmissionFieldName || content.Label || '';
+  const fieldName = getFieldName(content.SubmissionFieldName, content.Label);
 
   const validators = (Array.isArray(content.Validators) ? content.Validators : []) as any[];
   const errors = validateField(value, validators);

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ContentProps, OptiFormsTextareaElementContentType } from '@optimizely/cms-sdk';
-import { validateField, getErrorMessages, isFieldRequired } from '../utils/formValidation';
+import { validateField, getErrorMessages, isFieldRequired, getFieldName } from '../utils/formValidation';
 import { useFormValidation } from './FormValidationContext';
 
 type FormTextareaProps = {
@@ -14,7 +14,7 @@ export default function FormTextarea({ content }: FormTextareaProps) {
   const [isTouched, setIsTouched] = useState(false);
   const { attemptedSubmit, registerField, unregisterField, setFieldError } = useFormValidation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fieldName = content.SubmissionFieldName || content.Label || '';
+  const fieldName = getFieldName(content.SubmissionFieldName, content.Label);
 
   const validators = (Array.isArray(content.Validators) ? content.Validators : []) as any[];
   const errors = validateField(value, validators);

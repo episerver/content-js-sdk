@@ -19,7 +19,6 @@ type FormContainerProps = {
 export default function FormContainer({ content }: FormContainerProps) {
   const { pa } = getPreviewUtils(content);
   const formState = (getContext() as any).formState;
-  console.log(JSON.stringify(content, null, 2))
 
   return (
     <div id='form-alert' className='max-w-7xl py-6 sm:py-8 md:py-10 lg:py-12'>

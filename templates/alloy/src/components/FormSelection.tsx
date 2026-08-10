@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ContentProps, OptiFormsSelectionElementContentType } from '@optimizely/cms-sdk';
-import { validateField, getErrorMessages, isFieldRequired } from '../utils/formValidation';
+import { validateField, getErrorMessages, isFieldRequired, getFieldName } from '../utils/formValidation';
 import { useFormValidation } from './FormValidationContext';
 
 type FormSelectionProps = {
@@ -25,7 +25,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
   const [isTouched, setIsTouched] = useState(false);
   const { attemptedSubmit, registerField, unregisterField, setFieldError } = useFormValidation();
   const fieldsetRef = useRef<HTMLFieldSetElement>(null);
-  const fieldName = content.SubmissionFieldName || content.Label || '';
+  const fieldName = getFieldName(content.SubmissionFieldName, content.Label);
 
   const validators = (Array.isArray(content.Validators) ? content.Validators : []) as any[];
   const errors = validateField(value, validators);
