@@ -322,13 +322,14 @@ export function OptimizelyComposition({
       return <div>???</div>;
     }
 
+    // Merge user-defined properties from `_section` nodes
+    const componentData = 'component' in node ? (node.component as object) : {};
+
     return (
       <OptimizelyComponent
         key={node.key}
         content={{
-          // `node.component` contains the section's user-defined properties. Spread first so
-          // node fields (`key`, `nodes`, ...) win, and properties are accessible flat.
-          ...node.component,
+          ...componentData,
           ...node,
           __typename: type,
           __tag: tag,
