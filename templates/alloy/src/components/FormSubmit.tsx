@@ -1,8 +1,7 @@
 'use client';
 
 import { ContentProps, OptiFormsSubmitElementContentType } from '@optimizely/cms-sdk';
-import { useFormValidation } from './FormValidationContext';
-import { useFormStatus } from './FormStatusProvider';
+import { useFormValidation, useFormStatus } from '@optimizely/cms-sdk/forms/react';
 
 type FormSubmitProps = {
   content: ContentProps<typeof OptiFormsSubmitElementContentType>;

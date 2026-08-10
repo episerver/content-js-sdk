@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormStatus } from './FormStatusProvider';
+import { useFormStatus } from '@optimizely/cms-sdk/forms/react';
 import FormSuccessAlert from './FormSuccessAlert';
 import FormErrorAlert from './FormErrorAlert';
 

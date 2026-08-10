@@ -2,14 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ContentProps, OptiFormsTextboxElementContentType } from '@optimizely/cms-sdk';
-import {
-  validateField,
-  getErrorMessages,
-  isFieldRequired,
-  getHtmlValidationAttributes,
-  getFieldName,
-} from '../utils/formValidation';
-import { useFormValidation } from './FormValidationContext';
+import { validateField, getErrorMessages, isFieldRequired, getHtmlValidationAttributes, getFieldName } from '@optimizely/cms-sdk/forms/validation';
+import { useFormValidation } from '@optimizely/cms-sdk/forms/react';
 
 type FormInputProps = {
   content: ContentProps<typeof OptiFormsTextboxElementContentType>;
@@ -20,7 +14,7 @@ export default function FormInput({ content }: FormInputProps) {
   const [isTouched, setIsTouched] = useState(false);
   const { attemptedSubmit, registerField, unregisterField, setFieldError } = useFormValidation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const fieldName = getFieldName(content.SubmissionFieldName, content.Label);
+  const fieldName = getFieldName(content);
 
   const validators = (Array.isArray(content.Validators) ? content.Validators : []) as any[];
   const errors = validateField(value, validators);

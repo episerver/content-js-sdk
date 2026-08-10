@@ -1,9 +1,9 @@
 import { OptiFormsContainerContentType } from '@optimizely/cms-sdk';
 import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
+import { FormStatusProvider } from '@optimizely/cms-sdk/forms/react';
 import FormTitle from './FormTitle';
 import FormDescription from './FormDescription';
 import FormWrapper from './FormWrapper';
-import { FormStatusProvider } from './FormStatusProvider';
 import FormAlerts from './FormAlerts';
 import GridRow from './GridRow';
 import GridColumn from './GridColumn';

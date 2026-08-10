@@ -4,9 +4,8 @@ import {
   BlankExperienceContentType,
   initContentTypeRegistry,
   config,
-  initForms,
 } from '@optimizely/cms-sdk';
-import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+import { initReactComponentRegistry, initForms } from '@optimizely/cms-sdk/react/server';
 
 import './globals.css';
 import Teaser, { TeaserContentType } from '@/components/base/Teaser';
