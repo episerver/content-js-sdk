@@ -41,3 +41,5 @@ graphify-out/
 *-workspace/
 
 config.bat
+test-app
+*.tsbuildinfo

@@ -322,10 +322,14 @@ export function OptimizelyComposition({
       return <div>???</div>;
     }
 
+    // Merge user-defined properties from `_section` nodes
+    const componentData = 'component' in node ? (node.component as object) : {};
+
     return (
       <OptimizelyComponent
         key={node.key}
         content={{
+          ...componentData,
           ...node,
           __typename: type,
           __tag: tag,
