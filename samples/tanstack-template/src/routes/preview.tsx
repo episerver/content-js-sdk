@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { type PreviewParams } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import { PreviewComponent } from '@optimizely/cms-sdk/react/client';
@@ -36,7 +36,6 @@ async function Page({ search }: Props) {
           ).href
         }
       ></script>
-      <PreviewComponent />
       <OptimizelyComponent content={content} />
     </>
   );
@@ -61,5 +60,20 @@ export const Route = createFileRoute('/preview')({
 
 function Preview() {
   const { Renderable } = Route.useLoaderData();
-  return <>{Renderable}</>;
+  const router = useRouter();
+
+  return (
+    <>
+      <PreviewComponent
+        onNavigate={(url, isSameUrl) => {
+          // `invalidate` re-runs the loader, which re-renders the page on the server.
+          // It returns a promise, so the loading indicator tracks the real round-trip.
+          if (isSameUrl) return router.invalidate();
+          const parsed = new URL(url);
+          return router.navigate({ href: parsed.pathname + parsed.search });
+        }}
+      />
+      {Renderable}
+    </>
+  );
 }
