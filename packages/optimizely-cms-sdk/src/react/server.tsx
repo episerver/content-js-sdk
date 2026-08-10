@@ -326,6 +326,9 @@ export function OptimizelyComposition({
       <OptimizelyComponent
         key={node.key}
         content={{
+          // `node.component` contains the section's user-defined properties. Spread first so
+          // node fields (`key`, `nodes`, ...) win, and properties are accessible flat.
+          ...node.component,
           ...node,
           __typename: type,
           __tag: tag,

@@ -141,15 +141,10 @@ type InferProps<T extends AnyContentType> =
     {
       properties: Record<string, AnyProperty>;
     }
-  ) ? T extends SectionContentType
-      ? {
-        component: {
-          [Key in EnabledKeys<T['properties']>]: InferFromProperty<T['properties'][Key]> | null
-        };
-      } :
-      {
-        [Key in EnabledKeys<T['properties']>]: InferFromProperty<T['properties'][Key]> | null;
-      }
+  ) ?
+    {
+      [Key in EnabledKeys<T['properties']>]: InferFromProperty<T['properties'][Key]> | null;
+    }
   : {};
 
 // Special fields for Experience
@@ -179,6 +174,9 @@ export type ExperienceStructureNode = ExperienceCompositionNode & {
   /** "row", "column", etc. */
   nodeType: string;
   nodes?: ExperienceNode[];
+
+  /** User-defined properties of a section. `null` for rows, columns, etc. */
+  component?: Record<string, unknown> | null;
 };
 export type ExperienceComponentNode = ExperienceCompositionNode & {
   nodeType: 'component';
