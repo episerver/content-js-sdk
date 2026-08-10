@@ -9,14 +9,10 @@ type Props = {
   params: Promise<{
     slug: string[];
   }>;
-  searchParams: Promise<{
-    formState?: 'success' | 'fail';
-  }>;
 };
 
-export async function Page({ params, searchParams }: Props) {
-  const { slug, ...rest } = await params;
-  const resolvedSearchParams = await searchParams;
+export async function Page({ params }: Props) {
+  const { slug } = await params;
 
   const client = getClient();
   const path = `/${slug.join('/')}/`;
@@ -33,7 +29,6 @@ export async function Page({ params, searchParams }: Props) {
     locale: content[0]?._metadata?.locale,
     type: content[0]?.__typename,
     key: content[0]?._metadata?.key,
-    ...resolvedSearchParams,
   });
 
   return (

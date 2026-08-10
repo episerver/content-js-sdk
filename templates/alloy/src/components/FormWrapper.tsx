@@ -2,6 +2,7 @@
 
 import { ReactNode, useRef } from 'react';
 import { FormValidationProvider, useFormValidation } from './FormValidationContext';
+import { useFormStatus } from './FormStatusProvider';
 
 type FormWrapperProps = {
   action: string;
@@ -10,9 +11,10 @@ type FormWrapperProps = {
 
 function FormWrapperContent({ action, children }: FormWrapperProps) {
   const { setAttemptedSubmit, validateAllFields, getFieldRef } = useFormValidation();
+  const { setFormSuccess, setFormError, setIsSubmitting } = useFormStatus();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setAttemptedSubmit(true);
@@ -37,11 +39,35 @@ function FormWrapperContent({ action, children }: FormWrapperProps) {
     }
 
     setAttemptedSubmit(false);
-    formRef.current?.submit();
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData(formRef.current!);
+      const response = await fetch(action, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        setFormSuccess(true);
+        formRef.current?.reset();
+        setAttemptedSubmit(false);
+        const alertElement = document.getElementById('form-alert');
+        if (alertElement) {
+          alertElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } else {
+        setFormError(true);
+      }
+    } catch (error) {
+      setFormError(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <form ref={formRef} method='POST' action={action} onSubmit={handleSubmit}>
+    <form ref={formRef} onSubmit={handleSubmit}>
       {children}
     </form>
   );

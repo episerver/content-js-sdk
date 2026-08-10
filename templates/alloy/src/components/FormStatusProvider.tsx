@@ -1,30 +1,46 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 type FormStatusContextType = {
   formSuccess: boolean;
   formError: boolean;
+  isSubmitting: boolean;
+  setFormSuccess: (value: boolean) => void;
+  setFormError: (value: boolean) => void;
+  setIsSubmitting: (value: boolean) => void;
 };
 
-const FormStatusContext = createContext<FormStatusContextType>({
-  formSuccess: false,
-  formError: false,
-});
+const FormStatusContext = createContext<FormStatusContextType | undefined>(undefined);
 
 export function useFormStatus() {
-  return useContext(FormStatusContext);
+  const context = useContext(FormStatusContext);
+  if (!context) {
+    throw new Error('useFormStatus must be used within a FormStatusProvider');
+  }
+  return context;
 }
 
 type FormStatusProviderProps = {
-  formSuccess: boolean;
-  formError: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
-export function FormStatusProvider({ formSuccess, formError, children }: FormStatusProviderProps) {
+export function FormStatusProvider({ children }: FormStatusProviderProps) {
+  const [formSuccess, setFormSuccess] = useState(false);
+  const [formError, setFormError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   return (
-    <FormStatusContext.Provider value={{ formSuccess, formError }}>
+    <FormStatusContext.Provider
+      value={{
+        formSuccess,
+        formError,
+        isSubmitting,
+        setFormSuccess,
+        setFormError,
+        setIsSubmitting,
+      }}
+    >
       {children}
     </FormStatusContext.Provider>
   );
