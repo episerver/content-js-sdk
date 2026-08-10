@@ -6,14 +6,13 @@ export async function POST(request: NextRequest) {
     const data = Object.fromEntries(formData);
     console.log('Form submission from CMS:', data);
 
-    const referer = request.headers.get('referer') || '/';
-    const redirectUrl = new URL('?formState=success', referer);
-    redirectUrl.hash = 'form-alert';
-    return NextResponse.redirect(redirectUrl, { status: 303 });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error processing form submission:', error);
-    const redirectUrl = new URL('?formState=fail', request.headers.get('referer') || '/');
-    redirectUrl.hash = 'form-alert';
-    return NextResponse.redirect(redirectUrl, { status: 303 });
+
+    return NextResponse.json(
+      { error: 'Failed to process form submission' },
+      { status: 500 },
+    );
   }
 }
