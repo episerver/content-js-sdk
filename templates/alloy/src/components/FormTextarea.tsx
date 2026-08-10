@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ContentProps, OptiFormsTextareaElementContentType } from '@optimizely/cms-sdk';
 import { validateField, getErrorMessages, isFieldRequired } from '../utils/formValidation';
+import { useFormValidation } from './FormValidationContext';
 
 type FormTextareaProps = {
   content: ContentProps<typeof OptiFormsTextareaElementContentType>;
@@ -11,16 +12,26 @@ type FormTextareaProps = {
 export default function FormTextarea({ content }: FormTextareaProps) {
   const [value, setValue] = useState(content.PredefinedValue ?? '');
   const [isTouched, setIsTouched] = useState(false);
+  const { attemptedSubmit, registerField, unregisterField, setFieldError } = useFormValidation();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fieldName = content.SubmissionFieldName || content.Label || '';
 
-  const validators = (content.Validators as any) ?? [];
+  const validators = (Array.isArray(content.Validators) ? content.Validators : []) as any[];
   const errors = validateField(value, validators);
   const errorMessages = getErrorMessages(errors);
   const hasErrors = errorMessages.length > 0;
-  const showErrors = isTouched && hasErrors;
+  const showErrors = (isTouched || attemptedSubmit) && hasErrors;
   const required = isFieldRequired(validators);
 
+  useEffect(() => {
+    const validate = () => !hasErrors;
+    registerField(fieldName, textareaRef.current, validate);
+    setFieldError(fieldName, hasErrors);
+    return () => unregisterField(fieldName);
+  }, [hasErrors, fieldName, registerField, unregisterField, setFieldError]);
+
   return (
-    <div className='space-y-2 flex-1'>
+    <div className='space-y-2 flex-1' data-field-name={fieldName}>
       {content.Label && (
         <label className='block text-sm font-medium text-foreground'>
           {content.Label}
@@ -28,7 +39,8 @@ export default function FormTextarea({ content }: FormTextareaProps) {
         </label>
       )}
       <textarea
-        name={content.SubmissionFieldName || content.Label || ''}
+        ref={textareaRef}
+        name={fieldName}
         placeholder={content.Placeholder ?? ''}
         value={value}
         onChange={e => setValue(e.target.value)}
@@ -36,12 +48,15 @@ export default function FormTextarea({ content }: FormTextareaProps) {
         title={content.Tooltip ?? ''}
         autoComplete={content.AutoComplete ?? 'off'}
         rows={4}
+        required={required}
+        aria-invalid={showErrors}
+        aria-describedby={showErrors ? `${fieldName}-error` : undefined}
         className={`w-full px-4 py-2 rounded-md border text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-200 resize-vertical ${
           showErrors ? 'border-red-500 focus:ring-red-500' : 'border-input focus:ring-key1'
         }`}
       />
       {showErrors && (
-        <div className='space-y-1'>
+        <div className='space-y-1' id={`${fieldName}-error`} role='alert'>
           {errorMessages.map(message => (
             <p key={message} className='text-xs text-red-600'>
               {message}

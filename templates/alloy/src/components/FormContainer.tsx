@@ -8,6 +8,7 @@ import FormTitle from './FormTitle';
 import FormDescription from './FormDescription';
 import FormSuccessAlert from './FormSuccessAlert';
 import FormErrorAlert from './FormErrorAlert';
+import FormWrapper from './FormWrapper';
 import GridRow from './GridRow';
 import GridColumn from './GridColumn';
 
@@ -18,6 +19,7 @@ type FormContainerProps = {
 export default function FormContainer({ content }: FormContainerProps) {
   const { pa } = getPreviewUtils(content);
   const formState = (getContext() as any).formState;
+  console.log(JSON.stringify(content, null, 2))
 
   return (
     <div id='form-alert' className='max-w-7xl py-6 sm:py-8 md:py-10 lg:py-12'>
@@ -33,13 +35,13 @@ export default function FormContainer({ content }: FormContainerProps) {
         />
         <FormErrorAlert show={formState === 'fail'} />
 
-        <form method='POST' action={content.SubmitUrl?.default ?? ''}>
+        <FormWrapper action={content.SubmitUrl?.default ?? ''}>
           <OptimizelyGridSection
             nodes={content.nodes ?? []}
             row={GridRow}
             column={GridColumn}
           />
-        </form>
+        </FormWrapper>
       </div>
     </div>
   );
