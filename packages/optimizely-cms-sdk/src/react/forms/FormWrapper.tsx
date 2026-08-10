@@ -11,6 +11,14 @@ type FormWrapperProps = {
   scrollToOnError?: string | false;
 };
 
+function scrollToElement(elementId: string | false | undefined) {
+  if (elementId) {
+    document
+      .getElementById(elementId)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 function FormWrapperContent({
   action,
   children,
@@ -18,7 +26,7 @@ function FormWrapperContent({
   scrollToOnError,
 }: FormWrapperProps) {
   const { setAttemptedSubmit, validateAllFields, getFieldRef } = useFormValidation();
-  const { setFormSuccess, setFormError, setIsSubmitting } = useFormStatus();
+  const { setStatus } = useFormStatus();
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -42,18 +50,12 @@ function FormWrapperContent({
         if (input instanceof HTMLElement) input.focus();
       }
 
-      if (scrollToOnError) {
-        const errorElement = document.getElementById(scrollToOnError);
-        if (errorElement) {
-          errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-
+      scrollToElement(scrollToOnError);
       return;
     }
 
     setAttemptedSubmit(false);
-    setIsSubmitting(true);
+    setStatus('submitting');
 
     try {
       const formData = new FormData(formRef.current!);
@@ -63,37 +65,17 @@ function FormWrapperContent({
       });
 
       if (response.ok) {
-        setFormSuccess(true);
+        setStatus('success');
         formRef.current?.reset();
         setAttemptedSubmit(false);
-
-        if (scrollToOnSuccess) {
-          const alertElement = document.getElementById(scrollToOnSuccess);
-          if (alertElement) {
-            alertElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }
+        scrollToElement(scrollToOnSuccess);
       } else {
-        setFormError(true);
-
-        if (scrollToOnError) {
-          const errorElement = document.getElementById(scrollToOnError);
-          if (errorElement) {
-            errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }
+        setStatus('error');
+        scrollToElement(scrollToOnError);
       }
     } catch (error) {
-      setFormError(true);
-
-      if (scrollToOnError) {
-        const errorElement = document.getElementById(scrollToOnError);
-        if (errorElement) {
-          errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    } finally {
-      setIsSubmitting(false);
+      setStatus('error');
+      scrollToElement(scrollToOnError);
     }
   };
 
@@ -111,3 +93,4 @@ export default function FormWrapper(props: FormWrapperProps) {
     </FormValidationProvider>
   );
 }
+

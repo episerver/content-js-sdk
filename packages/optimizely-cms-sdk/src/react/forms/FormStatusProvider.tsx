@@ -2,13 +2,14 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
+type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
+
 type FormStatusContextType = {
+  status: FormStatus;
+  setStatus: (status: FormStatus) => void;
   formSuccess: boolean;
   formError: boolean;
   isSubmitting: boolean;
-  setFormSuccess: (value: boolean) => void;
-  setFormError: (value: boolean) => void;
-  setIsSubmitting: (value: boolean) => void;
 };
 
 const FormStatusContext = createContext<FormStatusContextType | undefined>(undefined);
@@ -26,19 +27,16 @@ type FormStatusProviderProps = {
 };
 
 export function FormStatusProvider({ children }: FormStatusProviderProps) {
-  const [formSuccess, setFormSuccess] = useState(false);
-  const [formError, setFormError] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<FormStatus>('idle');
 
   return (
     <FormStatusContext.Provider
       value={{
-        formSuccess,
-        formError,
-        isSubmitting,
-        setFormSuccess,
-        setFormError,
-        setIsSubmitting,
+        status,
+        setStatus,
+        formSuccess: status === 'success',
+        formError: status === 'error',
+        isSubmitting: status === 'submitting',
       }}
     >
       {children}

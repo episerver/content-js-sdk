@@ -33,6 +33,13 @@ export type FormFieldError = {
   isValid: boolean;
 };
 
+const VALIDATION_PATTERNS = {
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  integer: /^-?\d+$/,
+  positiveInteger: /^\d+$/,
+  decimal: /^-?\d+(\.\d+)?$/,
+};
+
 const isSimplifiedValidator = (validator: Validator): validator is SimplifiedValidator =>
   'errorMessage' in validator;
 
@@ -61,48 +68,43 @@ export const validateField = (value: string, validators?: Validator[]): FormFiel
         break;
 
       case 'emailvalidator':
-        isValid = value.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        isValid = value.length === 0 || VALIDATION_PATTERNS.email.test(value);
         break;
 
       case 'integervalidator':
-        isValid = value.length === 0 || /^-?\d+$/.test(value);
+        isValid = value.length === 0 || VALIDATION_PATTERNS.integer.test(value);
         break;
 
       case 'positiveintegervalidator':
-        isValid = value.length === 0 || /^\d+$/.test(value);
+        isValid = value.length === 0 || VALIDATION_PATTERNS.positiveInteger.test(value);
         break;
 
       case 'decimalvalidator':
-        isValid = value.length === 0 || /^-?\d+(\.\d+)?$/.test(value);
+        isValid = value.length === 0 || VALIDATION_PATTERNS.decimal.test(value);
         break;
 
       case 'urlvalidator':
-        if (value.length === 0) {
-          isValid = true;
-        } else {
+        isValid = value.length === 0 || (() => {
           try {
             new URL(value);
-            isValid = true;
+            return true;
           } catch {
-            isValid = false;
+            return false;
           }
-        }
+        })();
         break;
 
       case 'regularexpressionvalidator':
-        if (value.length === 0) {
-          isValid = true;
-        } else if (isBaseValidator(validator) && (validator.jsPattern || validator.pattern)) {
-          const pattern = validator.jsPattern || validator.pattern;
-          if (pattern) {
-            try {
-              const regex = new RegExp(pattern);
-              isValid = regex.test(value);
-            } catch {
-              isValid = false;
-            }
+        isValid = value.length === 0 || (() => {
+          if (!isBaseValidator(validator)) return true;
+          const pattern = validator.jsPattern ?? validator.pattern;
+          if (!pattern) return true;
+          try {
+            return new RegExp(pattern).test(value);
+          } catch {
+            return false;
           }
-        }
+        })();
         break;
 
       default:
@@ -123,18 +125,24 @@ export const getHtmlValidationAttributes = (validators?: Validator[]): Record<st
   if (!validators) return {};
 
   const attrs: Record<string, string | boolean> = {};
+  const typeMap: Record<ValidatorType, (v: Validator) => Record<string, string | boolean> | null> = {
+    requirevalidator: () => ({ required: true }),
+    emailvalidator: () => ({ type: 'email' }),
+    integervalidator: () => ({}),
+    positiveintegervalidator: () => ({}),
+    decimalvalidator: () => ({}),
+    urlvalidator: () => ({}),
+    regularexpressionvalidator: v => {
+      if (!isBaseValidator(v)) return null;
+      const pattern = v.jsPattern ?? v.pattern;
+      return pattern ? { pattern } : null;
+    },
+  };
 
   validators.forEach(validator => {
     const type = extractValidatorType(validator);
-
-    if (type === 'requirevalidator') {
-      attrs.required = true;
-    } else if (type === 'emailvalidator') {
-      attrs.type = 'email';
-    } else if (type === 'regularexpressionvalidator' && isBaseValidator(validator)) {
-      const pattern = validator.jsPattern ?? validator.pattern;
-      if (pattern) attrs.pattern = pattern;
-    }
+    const typeAttrs = typeMap[type]?.(validator);
+    if (typeAttrs) Object.assign(attrs, typeAttrs);
   });
 
   return attrs;

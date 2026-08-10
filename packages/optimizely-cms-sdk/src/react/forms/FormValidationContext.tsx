@@ -20,30 +20,38 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
   const [fieldsWithErrors, setFieldsWithErrors] = useState<Set<string>>(new Set());
   const fieldsRef = useRef<Map<string, { ref: HTMLElement | null; validate: () => boolean }>>(new Map());
 
+  const updateFieldsWithErrors = useCallback(
+    (mutate: (set: Set<string>) => void) => {
+      setFieldsWithErrors(prev => {
+        const next = new Set(prev);
+        mutate(next);
+        return next;
+      });
+    },
+    [],
+  );
+
   const registerField = useCallback((name: string, ref: HTMLElement | null, validate: () => boolean) => {
     fieldsRef.current.set(name, { ref, validate });
   }, []);
 
-  const unregisterField = useCallback((name: string) => {
-    fieldsRef.current.delete(name);
-    setFieldsWithErrors(prev => {
-      const next = new Set(prev);
-      next.delete(name);
-      return next;
-    });
-  }, []);
+  const unregisterField = useCallback(
+    (name: string) => {
+      fieldsRef.current.delete(name);
+      updateFieldsWithErrors(set => set.delete(name));
+    },
+    [updateFieldsWithErrors],
+  );
 
-  const setFieldError = useCallback((name: string, hasError: boolean) => {
-    setFieldsWithErrors(prev => {
-      const next = new Set(prev);
-      if (hasError) {
-        next.add(name);
-      } else {
-        next.delete(name);
-      }
-      return next;
-    });
-  }, []);
+  const setFieldError = useCallback(
+    (name: string, hasError: boolean) => {
+      updateFieldsWithErrors(set => {
+        if (hasError) set.add(name);
+        else set.delete(name);
+      });
+    },
+    [updateFieldsWithErrors],
+  );
 
   const getFieldRef = useCallback((name: string): HTMLElement | null => {
     return fieldsRef.current.get(name)?.ref ?? null;
