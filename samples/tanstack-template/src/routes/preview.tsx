@@ -49,7 +49,11 @@ const getPreviewPage = createServerFn().handler(async ({ data: { search } }: any
 });
 
 export const Route = createFileRoute('/preview')({
-  loader: async ({ location: { search } }) => {
+  // The match id is `routeId + path + hash(loaderDeps)`. Without this the id is the
+  // same for every `ver`, so navigating to a new version reuses the existing match
+  // and the loader never re-runs.
+  loaderDeps: ({ search }) => search,
+  loader: async ({ deps: search }) => {
     const { Renderable } = await getPreviewPage({
       data: { search },
     } as any);
