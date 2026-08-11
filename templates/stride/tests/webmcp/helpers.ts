@@ -12,8 +12,9 @@ import type { Page } from '@playwright/test';
  * Required integration hooks (implemented by issue 0001's StoreProvider —
  * see docs/storefront-v2/integration-notes-0002.md §3):
  *   - window.__strideBridgeFailNext
- *   - data-testid attributes: stride-error-notice, store-empty-state,
- *     product-card (+ data-product-id), compare-view, cart-drawer
+ *   - data-testid attributes (as implemented by issue 0001):
+ *     store-error-notice, store-empty, product-card-<id> (prefix match),
+ *     store-compare, cart-drawer (+ data-open)
  *     (+ data-open="true"), cart-count.
  */
 
@@ -76,16 +77,16 @@ export async function callTool(
         url: location.href,
         pathname: location.pathname,
         search: location.search,
-        productCards: Array.from(document.querySelectorAll('[data-testid="product-card"]')).map((e) =>
+        productCards: Array.from(document.querySelectorAll('[data-testid^="product-card-"]')).map((e) =>
           e.getAttribute('data-product-id'),
         ),
-        emptyState: !!document.querySelector('[data-testid="store-empty-state"]'),
-        compareView: !!document.querySelector('[data-testid="compare-view"]'),
+        emptyState: !!document.querySelector('[data-testid="store-empty"]'),
+        compareView: !!document.querySelector('[data-testid="store-compare"]'),
         drawerOpen: !!document.querySelector('[data-testid="cart-drawer"][data-open="true"]'),
         cartCount:
           document.querySelector('[data-testid="cart-count"]')?.textContent?.trim() ?? null,
         noticeText:
-          document.querySelector('[data-testid="stride-error-notice"]')?.textContent ?? null,
+          document.querySelector('[data-testid="store-error-notice"]')?.textContent ?? null,
       });
       if (failNextBridge) (window as any).__strideBridgeFailNext = true;
       const env = await (document as any).modelContext.callTool(name, args);

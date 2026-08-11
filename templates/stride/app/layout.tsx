@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Geist, Geist_Mono, Inter } from 'next/font/google';
 import './globals.css';
 import { initialize } from '../lib/initialization';
@@ -40,6 +41,7 @@ export default function RootLayout({
     >
       <body>
         <StoreProvider>{children}</StoreProvider>
+        <Script src="/webmcp-tools.js" strategy="afterInteractive" />
       </body>
     </html>
   );

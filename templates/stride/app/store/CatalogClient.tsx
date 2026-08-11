@@ -333,6 +333,7 @@ function ProductCard({
     <article
       className='card group flex flex-col overflow-hidden bg-white/80 transition-shadow hover:shadow-lg'
       data-testid={`product-card-${product.id}`}
+      data-product-id={product.id}
     >
       <Link href={`/store/products/${product.id}`} className='block'>
         <ProductArt product={product} className='h-44 w-full' iconSize={72} />

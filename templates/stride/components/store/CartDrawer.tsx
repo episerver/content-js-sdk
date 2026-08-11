@@ -46,7 +46,7 @@ export function CartDrawer() {
   };
 
   return (
-    <div className='fixed inset-0 z-[60]' data-testid='cart-drawer'>
+    <div className='fixed inset-0 z-[60]' data-testid='cart-drawer' data-open='true'>
       <button
         aria-label='Close cart'
         className='absolute inset-0 bg-black/30 backdrop-blur-[2px]'

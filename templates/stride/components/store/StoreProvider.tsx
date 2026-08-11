@@ -198,7 +198,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // --- window.strideStoreBridge (§4) ---------------------------------------
   const bridge = useMemo<StrideStoreBridge>(() => {
+    // Test hook (enforcement suite, integration-notes-0002): when
+    // window.__strideBridgeFailNext is true, the NEXT sync call clears the
+    // flag and rejects once WITHOUT touching the UI. showErrorNotice and
+    // telemetry are unaffected.
+    const consumeFailHook = (): boolean => {
+      const w = window as unknown as { __strideBridgeFailNext?: boolean };
+      if (w.__strideBridgeFailNext) {
+        w.__strideBridgeFailNext = false;
+        return true;
+      }
+      return false;
+    };
     const showSearch = (result: SearchResult): Promise<void> => {
+      if (consumeFailHook()) return Promise.reject(new Error('test hook: simulated bridge sync failure'));
       const params = argsToParams(result.args);
       const qs = params.toString();
       const done = deliver('search', result);
@@ -206,6 +219,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return done;
     };
     const showComparison = (comparison: Comparison): Promise<void> => {
+      if (consumeFailHook()) return Promise.reject(new Error('test hook: simulated bridge sync failure'));
       const params = new URLSearchParams();
       params.set('ids', comparison.products.map(p => p.id).join(','));
       if (comparison.riderHeightCm !== undefined) {
@@ -216,6 +230,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return done;
     };
     const showCart = (nextCart: Cart, surface: 'drawer' | 'page'): Promise<void> => {
+      if (consumeFailHook()) return Promise.reject(new Error('test hook: simulated bridge sync failure'));
       if (surface === 'drawer') {
         return commit(() => {
           setCartState(nextCart);
