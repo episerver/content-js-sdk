@@ -4,10 +4,17 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --experimental-https",
-    "build": "next build",
+    "dev": "node scripts/store-validate.mjs && node scripts/webmcp-build.mjs && next dev --experimental-https",
+    "prebuild": "node scripts/store-validate.mjs",
+    "build": "node scripts/webmcp-build.mjs && next build",
     "start": "next start",
-    "config:push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
+    "test": "vitest run",
+    "store:validate": "node scripts/store-validate.mjs",
+    "webmcp:build": "node scripts/store-validate.mjs && node scripts/webmcp-build.mjs",
+    "webmcp:harness": "node scripts/webmcp-harness.mjs",
+    "test:webmcp": "playwright test -c tests/webmcp/playwright.config.ts",
+    "config:push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs",
+    "test:g1": "playwright test -c tests/demo/playwright.config.ts"
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:*",
@@ -20,6 +27,7 @@
   },
   "devDependencies": {
     "@optimizely/cms-cli": "workspace:*",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
@@ -27,6 +35,8 @@
     "@types/react-dom": "^19",
     "prettier": "3.8.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.12",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
