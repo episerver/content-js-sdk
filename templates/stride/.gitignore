@@ -11,3 +11,13 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 
 certificates
+
+# agent worktrees
+/.claude/
+
+# test artifacts and local-only files
+test-results/
+/test-results/
+
+# local-only planning docs, intentionally not tracked upstream
+docs/
