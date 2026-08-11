@@ -72,7 +72,7 @@ export function requireIdempotencyKey(req: NextRequest): string {
     throw new StoreErrorException(
       'IDEMPOTENCY_KEY_REQUIRED',
       'mutations require the Idempotency-Key header',
-      'send Idempotency-Key (8–32 chars of A-Za-z0-9._-) and reuse it verbatim on retry',
+      'send Idempotency-Key (8–64 chars of A-Za-z0-9._-, e.g. a UUID) and reuse it verbatim on retry',
     );
   }
   return key;

@@ -8,6 +8,7 @@ import {
   worstCaseState,
 } from '../codec';
 import { resetSession } from '../domain';
+import { IDEMPOTENCY_KEY_MAX } from '../engine';
 
 const SECRET = process.env.STRIDE_COOKIE_SECRET!;
 
@@ -72,7 +73,12 @@ describe('cookie codec (contracts §2)', () => {
     expect(worst.cart.items).toHaveLength(20);
     expect(worst.ledger).toHaveLength(20);
     expect(worst.cart.items.every(i => i.productId.length === 24 && i.quantity === 9)).toBe(true);
-    expect(worst.ledger.every(e => e.key.length === 32 && e.argsHash.length === 8)).toBe(true);
+    // keys are built at the normative maximum, whatever that maximum is —
+    // the budget must hold at the bound, not at a hard-coded past value
+    expect(IDEMPOTENCY_KEY_MAX).toBeGreaterThanOrEqual(36); // a plain UUID must fit
+    expect(
+      worst.ledger.every(e => e.key.length === IDEMPOTENCY_KEY_MAX && e.argsHash.length === 8),
+    ).toBe(true);
     const value = encodeState(worst, SECRET);
     expect(Buffer.byteLength(value, 'utf8')).toBeLessThanOrEqual(MAX_COOKIE_BYTES);
     expect(decodeState(value, SECRET)).toEqual(worst); // still a valid wire state

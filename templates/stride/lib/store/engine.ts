@@ -33,7 +33,7 @@ export interface StoreState {
   v: 1;
   sessionId: string; // EXACTLY 16 base64url chars, minted server-side
   cart: { items: { productId: ProductId; frameSize?: FrameSize; quantity: number }[] };
-  ledger: { key: string; argsHash: string }[]; // key 8–32 chars; argsHash = digest8
+  ledger: { key: string; argsHash: string }[]; // key 8–64 chars; argsHash = digest8
 }
 
 export const CART_MAX_DISTINCT_ITEMS = 20;
@@ -41,7 +41,7 @@ export const CART_MAX_QUANTITY = 9;
 export const LEDGER_MAX_KEYS = 20;
 export const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._-]+$/;
 export const IDEMPOTENCY_KEY_MIN = 8;
-export const IDEMPOTENCY_KEY_MAX = 32;
+export const IDEMPOTENCY_KEY_MAX = 64;
 
 // ---------------------------------------------------------------------------
 // Errors (contracts §2)
@@ -589,7 +589,7 @@ function validateIdempotencyKey(key: unknown): asserts key is string {
     fail(
       'IDEMPOTENCY_KEY_REQUIRED',
       'mutations require a caller-supplied idempotency key',
-      'send the Idempotency-Key header (8–32 chars of A-Za-z0-9._-) and reuse it verbatim on retry',
+      'send the Idempotency-Key header (8–64 chars of A-Za-z0-9._-, e.g. a UUID) and reuse it verbatim on retry',
     );
   }
   if (
@@ -599,7 +599,7 @@ function validateIdempotencyKey(key: unknown): asserts key is string {
   ) {
     invalidArg(
       `invalid idempotency key "${key}"`,
-      'keys are 8–32 chars matching ^[A-Za-z0-9._-]+$',
+      'keys are 8–64 chars matching ^[A-Za-z0-9._-]+$ (a UUID fits; strip nothing on retry)',
     );
   }
 }

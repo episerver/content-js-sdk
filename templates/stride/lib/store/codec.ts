@@ -175,7 +175,7 @@ export function worstCaseState(): StoreState {
     quantity: CART_MAX_QUANTITY,
   }));
   const ledger = Array.from({ length: LEDGER_MAX_KEYS }, (_, i) => ({
-    key: `K${String(i).padStart(2, '0')}${'x'.repeat(IDEMPOTENCY_KEY_MAX - 3)}`, // 32 chars
+    key: `K${String(i).padStart(2, '0')}${'x'.repeat(IDEMPOTENCY_KEY_MAX - 3)}`, // IDEMPOTENCY_KEY_MAX chars
     argsHash: 'A1b2C3d4'.slice(0, 8),
   }));
   return { v: 1, sessionId: mintSessionId(), cart: { items }, ledger };

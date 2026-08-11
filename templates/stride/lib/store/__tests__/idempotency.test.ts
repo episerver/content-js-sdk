@@ -54,6 +54,24 @@ describe('idempotency (acceptance 7, ADR 0002)', () => {
     expect(codeOf(() => addToCart(s0, { productId: 'bastion-chain-lock' }, 'has spaces!!'))).toBe(
       'INVALID_ARGS',
     );
+    expect(codeOf(() => addToCart(s0, { productId: 'bastion-chain-lock' }, 'k'.repeat(65)))).toBe(
+      'INVALID_ARGS',
+    );
+  });
+
+  // Live-run regression (2026-08-11): an agent minted a plain UUID and the
+  // former 32-char ceiling rejected it. UUIDs are the most likely
+  // agent-generated key shape, so the domain must accept them unchanged.
+  it('accepts a plain 36-char UUID key and dedupes on it verbatim', () => {
+    const uuid = '3f2b9c18-7a41-4d6e-9b02-8c5ad1e47f60';
+    const s0 = resetSession();
+    const first = addToCart(s0, { productId: 'bastion-chain-lock' }, uuid);
+    expect(first.result.replayed).toBe(false);
+    expect(first.state.ledger[0].key).toBe(uuid);
+
+    const replay = addToCart(first.state, { productId: 'bastion-chain-lock' }, uuid);
+    expect(replay.result.replayed).toBe(true);
+    expect(replay.result.cart.itemCount).toBe(1);
   });
 
   it('same key + different args → IDEMPOTENCY_CONFLICT', () => {

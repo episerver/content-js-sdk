@@ -29,7 +29,7 @@
  *      `annotations: { readOnlyHint: true }` literals, missing the exact
  *      `required:` literals that make idempotencyKey mandatory on all three
  *      mutations, or missing the bounded-field literals (ProductId pattern
- *      3-24 kebab-case, idempotencyKey pattern 8-32).
+ *      3-24 kebab-case, idempotencyKey pattern 8-64).
  *  8.  Missing IIFE + 'use strict' framing, or missing the two EXACT
  *      class-specific partial_failure warning strings from contracts §5.
  *
@@ -172,7 +172,7 @@ export function validateToolsSource(src) {
     "pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'", // ProductId
     "pattern: '^[A-Za-z0-9._-]+$'", // idempotencyKey
     'minLength: 8',
-    'maxLength: 32',
+    'maxLength: 64', // idempotencyKey — must fit a plain UUID (36 chars)
     'minLength: 3',
     'maxLength: 24',
     'maxLength: 27', // cartItemId

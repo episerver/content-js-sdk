@@ -138,9 +138,10 @@
   function hintFor(name, schema) {
     if (name === 'idempotencyKey') {
       return (
-        'supply a caller-generated idempotencyKey of 8-32 chars matching ' +
-        '^[A-Za-z0-9._-]+$; use a NEW key for each distinct mutation and ' +
-        'reuse the SAME key verbatim when retrying'
+        'supply a caller-generated idempotencyKey of 8-64 chars matching ' +
+        '^[A-Za-z0-9._-]+$ (a UUID such as ' +
+        '3f2b9c18-7a41-4d6e-9b02-8c5ad1e47f60 fits); use a NEW key for each ' +
+        'distinct mutation and reuse the SAME key verbatim when retrying'
       );
     }
     if (name === 'productId' || name === 'compatibleWithProductId' || name === 'ids') {
@@ -298,7 +299,7 @@
       type: 'string',
       pattern: '^[A-Za-z0-9._-]+$',
       minLength: 8,
-      maxLength: 32,
+      maxLength: 64,
       description: description
     };
   }
@@ -316,7 +317,8 @@
   var FRAME_SIZES = ['48', '50', '52', '54', '56', '58', '60', '62'];
 
   var IDEMPOTENCY_KEY_DESC =
-    'Caller-generated retry key, 8-32 chars of A-Za-z0-9._- . Use a NEW ' +
+    'Caller-generated retry key, 8-64 chars of A-Za-z0-9._- (a plain UUID ' +
+    'fits; do not add other punctuation). Use a NEW ' +
     'unique key per distinct mutation; when retrying the SAME mutation ' +
     '(timeout, partial_failure), reuse the SAME key verbatim so the store ' +
     'deduplicates it. Never reuse a key for a different mutation.';

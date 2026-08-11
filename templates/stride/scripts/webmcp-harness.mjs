@@ -308,6 +308,21 @@ async function main() {
     env = await mc.callTool('add_to_cart', { productId: 'traverse-gravel-sl', idempotencyKey: 'short' });
     check('idempotencyKey shorter than 8 → INVALID_ARGS', env.ok === false && env.error.code === 'INVALID_ARGS');
 
+    // Live-run regression (2026-08-11): the ceiling must still bite, but only
+    // above 64 — see the UUID block below for the accepted side of the bound.
+    env = await mc.callTool('add_to_cart', {
+      productId: 'traverse-gravel-sl',
+      idempotencyKey: 'k'.repeat(65)
+    });
+    check(
+      'idempotencyKey longer than 64 → INVALID_ARGS, no fetch',
+      env.ok === false && env.error.code === 'INVALID_ARGS' && fetchImpl.calls.length === 0
+    );
+    check(
+      'over-long idempotencyKey hint states the 8-64 bound',
+      /8-64 chars/.test(env.error.hint)
+    );
+
     env = await mc.callTool('compare_bikes', { ids: ['only-one-bike'] });
     check('compare_bikes with 1 id → INVALID_ARGS (minItems 2)', env.ok === false && env.error.code === 'INVALID_ARGS');
 
@@ -329,6 +344,27 @@ async function main() {
           (e) => e.outcome === 'INVALID_ARGS' && JSON.stringify(Object.keys(e).sort()) === JSON.stringify(['durationMs', 'outcome', 'sessionId', 'tool'])
         )
     );
+  }
+
+  console.log('— idempotencyKey bound accepts an agent-minted UUID —');
+  {
+    // Live-run regression (2026-08-11): an agent minted a plain UUID (36 chars)
+    // and the old 32-char ceiling rejected it with INVALID_ARGS. A UUID is the
+    // single most likely agent-generated key, so it MUST pass and reach the
+    // API header verbatim (never rewritten, never truncated — ADR 0002).
+    const bridge = makeBridge();
+    const fetchImpl = makeFetch(() => ({ status: 200, body: sampleMutation(false) }));
+    const { mc } = await boot({ bridge, fetchImpl });
+    const uuid = '3f2b9c18-7a41-4d6e-9b02-8c5ad1e47f60';
+
+    const env = await mc.callTool('add_to_cart', {
+      productId: 'traverse-gravel-sl',
+      frameSize: '56',
+      idempotencyKey: uuid
+    });
+    check('36-char UUID idempotencyKey → ok:true', env.ok === true);
+    check('36-char UUID reached the API as Idempotency-Key verbatim',
+      fetchImpl.calls.length === 1 && fetchImpl.calls[0].options.headers['Idempotency-Key'] === uuid);
   }
 
   console.log('— happy paths, envelope + bridge + telemetry —');

@@ -53,6 +53,40 @@ test.describe('(d) idempotency', () => {
     expect(await apiCart(page)).toEqual(before); // schema rejection: no fetch, no state
   });
 
+  // Live-run regression (2026-08-11): an agent minted a plain UUID and the
+  // former 32-char ceiling rejected it schema-side. End-to-end proof that a
+  // UUID now survives tool schema → API header → cookie ledger unchanged.
+  test('an agent-minted UUID key is accepted end-to-end and replays verbatim', async ({ page }) => {
+    const acc = await findAccessory(page);
+    const uuid = '3f2b9c18-7a41-4d6e-9b02-8c5ad1e47f60'; // 36 chars
+    const args = { productId: acc.product.id, idempotencyKey: uuid };
+
+    const first = await callTool(page, 'add_to_cart', args);
+    expectEnvelope(first.env);
+    expect(first.env.ok).toBe(true);
+
+    const second = await callTool(page, 'add_to_cart', args);
+    expect(second.env.ok).toBe(true);
+    expect(second.env.replayed).toBe(true);
+
+    const cart = await apiCart(page);
+    expect(cart.items).toHaveLength(1);
+    expect(cart.itemCount).toBe(1); // deduped on the UUID, applied exactly once
+  });
+
+  test('an over-long key (65 chars) is rejected schema-side with no state change', async ({ page }) => {
+    const acc = await findAccessory(page);
+    const before = await apiCart(page);
+    const { env } = await callTool(page, 'add_to_cart', {
+      productId: acc.product.id,
+      idempotencyKey: 'k'.repeat(65),
+    });
+    expect(env.ok).toBe(false);
+    expect(env.error.code).toBe('INVALID_ARGS');
+    expect(env.error.hint).toContain('8-64 chars');
+    expect(await apiCart(page)).toEqual(before);
+  });
+
   test('same key + different args → IDEMPOTENCY_CONFLICT, no state change', async ({ page }) => {
     const acc = await findAccessory(page);
     await callTool(page, 'add_to_cart', { productId: acc.product.id, idempotencyKey: 'conflict-key-01' });
