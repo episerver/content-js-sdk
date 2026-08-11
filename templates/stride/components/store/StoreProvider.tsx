@@ -148,13 +148,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const navigate = useCallback(
     (url: string, basePath: string) => {
       if (typeof window !== 'undefined' && window.location.pathname === basePath) {
-        router.replace(url, { scroll: false });
+        // Same-path URL update: native replaceState commits the URL
+        // SYNCHRONOUSLY, and the App Router integrates it with
+        // useSearchParams. router.replace() is deliberately avoided here —
+        // after a client navigation out of the CMS notFound boundary, Next
+        // swallows same-route replace() transitions (observed: it re-commits
+        // the old URL). The surface receives its payload via deliver(), so
+        // no server round-trip is lost.
+        window.history.replaceState(window.history.state, '', url);
       } else {
         router.push(url);
       }
     },
     [router],
   );
+
+  // ADR 0002 rule 2: a bridge promise resolves only after the URL half of
+  // the visible state is committed too. Surface acks cover the DOM; this
+  // covers location — same-page router.replace() lands asynchronously, so
+  // poll until the exact target URL is current (reject on timeout so the
+  // tool goes partial_failure rather than falsely reporting ok).
+  const awaitUrl = useCallback((targetUrl: string): Promise<void> => {
+    return new Promise<void>((resolve, reject) => {
+      const matches = () =>
+        window.location.pathname + window.location.search === targetUrl;
+      if (matches()) return resolve();
+      const start = Date.now();
+      const tick = () => {
+        if (matches()) return resolve();
+        if (Date.now() - start > 1800) {
+          return reject(new Error(`URL did not commit to ${targetUrl}`));
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }, []);
 
   // --- shared UI actions ----------------------------------------------------
   const setCart = useCallback((next: Cart) => setCartState(next), []);
@@ -214,9 +243,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (consumeFailHook()) return Promise.reject(new Error('test hook: simulated bridge sync failure'));
       const params = argsToParams(result.args);
       const qs = params.toString();
+      const target = qs ? `/store?${qs}` : '/store';
       const done = deliver('search', result);
-      navigate(qs ? `/store?${qs}` : '/store', '/store');
-      return done;
+      navigate(target, '/store');
+      return Promise.all([done, awaitUrl(target)]).then(() => undefined);
     };
     const showComparison = (comparison: Comparison): Promise<void> => {
       if (consumeFailHook()) return Promise.reject(new Error('test hook: simulated bridge sync failure'));
@@ -225,9 +255,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (comparison.riderHeightCm !== undefined) {
         params.set('riderHeightCm', String(comparison.riderHeightCm));
       }
+      const target = `/store/compare?${params.toString()}`;
       const done = deliver('compare', comparison);
-      navigate(`/store/compare?${params.toString()}`, '/store/compare');
-      return done;
+      navigate(target, '/store/compare');
+      return Promise.all([done, awaitUrl(target)]).then(() => undefined);
     };
     const showCart = (nextCart: Cart, surface: 'drawer' | 'page'): Promise<void> => {
       if (consumeFailHook()) return Promise.reject(new Error('test hook: simulated bridge sync failure'));
@@ -240,7 +271,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const done = deliver('cart-page', nextCart);
       setCartState(nextCart);
       navigate('/store/cart', '/store/cart');
-      return done;
+      return Promise.all([done, awaitUrl('/store/cart')]).then(() => undefined);
     };
     const showErrorNotice = (error: StoreError): Promise<void> => {
       return commit(() => setErrorNotice(error));
