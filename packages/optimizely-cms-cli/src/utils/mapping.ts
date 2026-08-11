@@ -130,15 +130,27 @@ const mapAllowedRestrictedTypes = (updatedValue: any, parentKey: string): any =>
     value.items = mapAllowedRestrictedTypes(value.items, parentKey);
 
   if (['contentReference', 'content'].includes(value.type)) {
-    if (Array.isArray(value.allowedTypes))
-      value.allowedTypes = value.allowedTypes.map((input: any) =>
-        extractKeyName(input, parentKey),
-      );
+    if (Array.isArray(value.allowedTypes)) {
+      const mappedTypes = value.allowedTypes
+        .map((input: any) => extractKeyName(input, parentKey))
+        .filter((key: string) => key !== '*');
+      if (mappedTypes.length > 0) {
+        value.allowedTypes = mappedTypes;
+      } else {
+        delete value.allowedTypes;
+      }
+    }
 
-    if (Array.isArray(value.restrictedTypes))
-      value.restrictedTypes = value.restrictedTypes.map((input: any) =>
-        extractKeyName(input, parentKey),
-      );
+    if (Array.isArray(value.restrictedTypes)) {
+      const mappedTypes = value.restrictedTypes
+        .map((input: any) => extractKeyName(input, parentKey))
+        .filter((key: string) => key !== '*');
+      if (mappedTypes.length > 0) {
+        value.restrictedTypes = mappedTypes;
+      } else {
+        delete value.restrictedTypes;
+      }
+    }
   }
 
   return value;

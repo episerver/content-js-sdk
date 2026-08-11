@@ -101,7 +101,7 @@ const createExperienceFragments = (
 // VALIDATION
 
 const validateContentTypeName = (contentTypeName: string, visited: Set<string>): void => {
-  if (!contentTypeName || contentTypeName === 'undefined')
+  if (!contentTypeName || contentTypeName === 'undefined' || contentTypeName === '*')
     throw new GraphQueryGenerationError({
       contentType: contentTypeName,
       parentContentType: visited.values().next().value,
