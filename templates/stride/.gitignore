@@ -6,6 +6,8 @@
 /build
 
 .env*
+!.env.example
 next-env.d.ts
+tsconfig.tsbuildinfo
 
 certificates
