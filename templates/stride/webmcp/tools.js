@@ -41,9 +41,10 @@
     /* native context may reject expando properties; continue */
   }
 
-  var BRIDGE_WAIT_MS = 2000; /* max wait for window.strideStoreBridge to exist */
+  var BRIDGE_WAIT_MS = 2000; /* pre-fetch guard: max wait for window.strideStoreBridge */
   var BRIDGE_CALL_TIMEOUT_MS = 2000; /* max wait for a single bridge call */
   var BRIDGE_POLL_MS = 50;
+  var BRIDGE_NOTICE_WAIT_MS = 250; /* brief wait when only an error notice is at stake */
 
   /* Exact class-specific partial_failure warnings (contracts §5). */
   var WARNING_MUTATION =
@@ -85,13 +86,14 @@
     });
   }
 
-  function waitForBridge() {
+  function waitForBridge(maxMs) {
+    var limit = typeof maxMs === 'number' ? maxMs : BRIDGE_WAIT_MS;
     return new Promise(function (resolve) {
       var start = Date.now();
       (function poll() {
         var bridge = window.strideStoreBridge;
         if (bridge) return resolve(bridge);
-        if (Date.now() - start >= BRIDGE_WAIT_MS) return resolve(null);
+        if (Date.now() - start >= limit) return resolve(null);
         setTimeout(poll, BRIDGE_POLL_MS);
       })();
     });
@@ -321,21 +323,25 @@
 
   /* ── Per-tool wiring: route request + bridge sync + re-sync class ────── */
 
-  function bridgeUnavailableError(readOnly) {
+  /* BRIDGE_UNAVAILABLE = pre-fetch guard: the page bridge is missing or
+     unusable, so NO API call is made and no state can have changed.
+     API_UNAVAILABLE = network-level fetch failure (no HTTP response).
+     A completed 2xx followed by any bridge rejection/timeout/disappearance
+     is partial_failure + class recovery, never ok:false. */
+  function bridgeUnavailableError() {
     return {
       code: 'BRIDGE_UNAVAILABLE',
       message:
         'window.strideStoreBridge did not appear within ' + BRIDGE_WAIT_MS +
-        'ms, so the page UI could not be synchronized',
-      hint: readOnly
-        ? 'no cart state changed; reload the page and retry this call'
-        : 'the store operation may already be applied — call get_cart to verify, and if retrying reuse the SAME idempotencyKey'
+        'ms; the store API was NOT called and no state changed',
+      hint:
+        'ensure the Stride storefront page is fully loaded in the browser, then retry this call unchanged'
     };
   }
 
   function apiUnreachableError(readOnly) {
     return {
-      code: 'BRIDGE_UNAVAILABLE',
+      code: 'API_UNAVAILABLE',
       message: 'the same-origin store API could not be reached (network failure)',
       hint: readOnly
         ? 'safe to retry this read-only call; if it persists, reload the page'
@@ -477,8 +483,22 @@
     return withTimeout(attempt, BRIDGE_CALL_TIMEOUT_MS).catch(noop);
   }
 
-  /* The normative pipeline (contracts §5): validate -> fetch /api/store/* ->
-     on 2xx await bridge commit -> envelope -> telemetry. */
+  /* Best-effort synchronized error notice via a known bridge reference. */
+  function showNotice(bridge, error) {
+    if (!bridge) return Promise.resolve();
+    return withTimeout(
+      Promise.resolve().then(function () {
+        return bridge.showErrorNotice(error);
+      }),
+      BRIDGE_CALL_TIMEOUT_MS
+    ).catch(noop);
+  }
+
+  /* The normative pipeline (contracts §5): validate -> wait for the bridge
+     (pre-fetch guard: absent bridge means NO API call) -> fetch
+     /api/store/* using that bridge reference -> on 2xx await bridge commit
+     -> envelope -> telemetry. Any bridge trouble AFTER a 2xx is
+     partial_failure + class recovery, never ok:false. */
   function runTool(toolName, args) {
     var impl = TOOL_IMPL[toolName];
     var t0 = Date.now();
@@ -486,60 +506,48 @@
 
     var invalid = validateArgs(args, TOOL_SCHEMAS[toolName]);
     if (invalid) {
-      /* No fetch, no state change. Best-effort error notice if the bridge is
-         already present (no 2s wait for a pure schema rejection). */
-      var bridgeNow = window.strideStoreBridge;
-      var notice = bridgeNow
-        ? withTimeout(
-            Promise.resolve().then(function () {
-              return bridgeNow.showErrorNotice(invalid);
-            }),
-            BRIDGE_CALL_TIMEOUT_MS
-          ).catch(noop)
-        : Promise.resolve();
-      return notice.then(function () {
-        recordTelemetry(bridgeNow, toolName, invalid.code, t0);
-        return finish({ ok: false, error: invalid });
+      /* No fetch, no state change. Attempt the synchronized notice with a
+         brief bridge wait (not the full 2s) for execute-time validation
+         errors. */
+      return waitForBridge(BRIDGE_NOTICE_WAIT_MS).then(function (bridgeNow) {
+        return showNotice(bridgeNow, invalid).then(function () {
+          recordTelemetry(bridgeNow, toolName, invalid.code, t0);
+          return finish({ ok: false, error: invalid });
+        });
       });
     }
 
-    var req = impl.request(args);
-    return storeFetch(req.path, req.options).then(
-      function (res) {
-        if (!res.ok) {
-          var error =
-            res.body && res.body.error
-              ? res.body.error
-              : {
-                  code: 'INVALID_ARGS',
-                  message: 'store API returned HTTP ' + res.status + ' without a structured error',
-                  hint: 'retry the call; if the problem persists, reload the page'
-                };
-          /* Failure dual-output: await the synchronized error notice, then
-             resolve ok:false. No state changed; read-only failures never
-             show the cart drawer (no showCart on this path). */
-          return waitForBridge().then(function (bridge) {
-            var shown = bridge
-              ? withTimeout(
-                  Promise.resolve().then(function () {
-                    return bridge.showErrorNotice(error);
-                  }),
-                  BRIDGE_CALL_TIMEOUT_MS
-                ).catch(noop)
-              : Promise.resolve();
-            return shown.then(function () {
+    /* Pre-fetch guard: require the bridge BEFORE touching the API so the
+       dual-output invariant can never strand a completed mutation. */
+    return waitForBridge().then(function (bridge) {
+      if (!bridge) {
+        var guard = bridgeUnavailableError();
+        recordTelemetry(null, toolName, guard.code, t0);
+        return finish({ ok: false, error: guard });
+      }
+
+      var req = impl.request(args);
+      return storeFetch(req.path, req.options).then(
+        function (res) {
+          if (!res.ok) {
+            var error =
+              res.body && res.body.error
+                ? res.body.error
+                : {
+                    code: 'INVALID_ARGS',
+                    message: 'store API returned HTTP ' + res.status + ' without a structured error',
+                    hint: 'retry the call; if the problem persists, reload the page'
+                  };
+            /* Failure dual-output: await the synchronized error notice, then
+               resolve ok:false. No state changed; read-only failures never
+               show the cart drawer (no showCart on this path). */
+            return showNotice(bridge, error).then(function () {
               recordTelemetry(bridge, toolName, error.code, t0);
               return finish({ ok: false, error: error });
             });
-          });
-        }
-
-        var data = res.body;
-        return waitForBridge().then(function (bridge) {
-          if (!bridge) {
-            /* Bridge never appeared within BRIDGE_WAIT_MS. */
-            return finish({ ok: false, error: bridgeUnavailableError(impl.readOnly) });
           }
+
+          var data = res.body;
           return withTimeout(
             Promise.resolve().then(function () {
               return impl.sync(bridge, data);
@@ -553,9 +561,10 @@
               return finish(env);
             },
             function () {
-              /* 2xx but bridge sync failed/timed out: re-sync own surface
-                 once, then resolve partial_failure with the class warning.
-                 Never hang, never double-apply. */
+              /* 2xx but bridge sync rejected/timed out/disappeared: re-sync
+                 own surface once, then resolve partial_failure with the
+                 class warning. A completed API operation is NEVER
+                 downgraded to ok:false. Never hang, never double-apply. */
               return resyncOnce(bridge, impl, data).then(function () {
                 recordTelemetry(bridge, toolName, 'partial_failure', t0);
                 return finish({
@@ -566,26 +575,20 @@
               });
             }
           );
-        });
-      },
-      function () {
-        /* Network-level fetch failure: state unknown, never bare-reject. */
-        var error = apiUnreachableError(impl.readOnly);
-        var bridgeNow = window.strideStoreBridge;
-        var shown = bridgeNow
-          ? withTimeout(
-              Promise.resolve().then(function () {
-                return bridgeNow.showErrorNotice(error);
-              }),
-              BRIDGE_CALL_TIMEOUT_MS
-            ).catch(noop)
-          : Promise.resolve();
-        return shown.then(function () {
-          recordTelemetry(bridgeNow, toolName, error.code, t0);
-          return finish({ ok: false, error: error });
-        });
-      }
-    );
+        },
+        function () {
+          /* Network-level fetch failure: no HTTP response. Mutations are
+             ambiguous -> retry with the SAME idempotencyKey; reads are safe
+             to retry. Bridge exists (pre-fetch guard), so the notice is
+             synchronized. */
+          var error = apiUnreachableError(impl.readOnly);
+          return showNotice(bridge, error).then(function () {
+            recordTelemetry(bridge, toolName, error.code, t0);
+            return finish({ ok: false, error: error });
+          });
+        }
+      );
+    });
   }
 
   function makeExecute(toolName) {

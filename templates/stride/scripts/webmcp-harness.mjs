@@ -404,15 +404,35 @@ async function main() {
     check('read-only failure: notice only, never the drawer', env2.ok === false && bridge._calls.every((c) => c.name === 'showErrorNotice'));
   }
 
-  console.log('— BRIDGE_UNAVAILABLE (real 2s wait) —');
+  console.log('— BRIDGE_UNAVAILABLE pre-fetch guard (real 2s wait) —');
   {
     const fetchImpl = makeFetch(() => ({ status: 200, body: sampleSearchResult }));
     const { mc } = await boot({ bridge: null, fetchImpl });
     const t0 = Date.now();
     const env = await mc.callTool('search_products', {});
     const waited = Date.now() - t0;
-    check('no bridge after 2xx → ok:false BRIDGE_UNAVAILABLE', env.ok === false && env.error.code === 'BRIDGE_UNAVAILABLE' && isPureEnvelope(env));
+    check('no bridge → ok:false BRIDGE_UNAVAILABLE (pre-fetch guard)', env.ok === false && env.error.code === 'BRIDGE_UNAVAILABLE' && isPureEnvelope(env));
+    check('guard fired BEFORE the API: zero fetches performed', fetchImpl.calls.length === 0);
+    check('guard message states no state changed', /NOT called|no state changed/i.test(env.error.message));
     check('waited ~2000ms then resolved (no hang)', waited >= 1900 && waited < 4000, `${waited}ms`);
+
+    // mutations are guarded identically: no bridge -> no API call, ever
+    const env2 = await mc.callTool('add_to_cart', { productId: 'traverse-gravel-sl', frameSize: '56', idempotencyKey: 'guard-key-001' });
+    check('mutation with no bridge → BRIDGE_UNAVAILABLE, zero fetches', env2.ok === false && env2.error.code === 'BRIDGE_UNAVAILABLE' && fetchImpl.calls.length === 0);
+  }
+
+  console.log('— API_UNAVAILABLE (network-level fetch failure) —');
+  {
+    const bridge = makeBridge();
+    const fetchImpl = makeFetch(() => { throw new Error('network down'); });
+    const { mc } = await boot({ bridge, fetchImpl });
+    const env = await mc.callTool('add_to_cart', { productId: 'traverse-gravel-sl', frameSize: '56', idempotencyKey: 'net-fail-001' });
+    check('mutation network failure → ok:false API_UNAVAILABLE (never BRIDGE_UNAVAILABLE)', env.ok === false && env.error.code === 'API_UNAVAILABLE' && isPureEnvelope(env));
+    check('mutation network hint: retry with the SAME idempotencyKey', /SAME idempotencyKey/.test(env.error.hint) && /never a new one/.test(env.error.hint));
+    check('network failure showed the synchronized error notice', bridge._calls.some((c) => c.name === 'showErrorNotice' && c.args[0].code === 'API_UNAVAILABLE'));
+
+    const env2 = await mc.callTool('search_products', { discipline: 'gravel' });
+    check('read network failure → API_UNAVAILABLE with safe-to-retry hint', env2.ok === false && env2.error.code === 'API_UNAVAILABLE' && /safe to retry/i.test(env2.error.hint));
   }
 
   console.log('— partial_failure per class —');
