@@ -1,14 +1,39 @@
 'use client';
 
-import { ReactNode, useRef } from 'react';
+import {
+  ReactNode,
+  useRef,
+  useState,
+  useCallback,
+  createContext,
+  useContext,
+} from 'react';
 import { FormValidationProvider, useFormValidation } from './FormValidationContext.js';
 import { useFormStatus } from './FormStatusProvider.js';
+import { ExperienceNode } from '../../infer.js';
+
+type FormStepsContextType = {
+  currentStepIndex: number;
+  nextStep: () => void;
+  prevStep: () => void;
+};
+
+const FormStepsContext = createContext<FormStepsContextType | undefined>(undefined);
+
+export function useFormSteps() {
+  const context = useContext(FormStepsContext);
+  if (!context) {
+    return { currentStepIndex: 0, nextStep: () => {}, prevStep: () => {} };
+  }
+  return context;
+}
 
 type FormWrapperProps = {
   action: string;
   children: ReactNode;
   scrollToOnSuccess?: string | false;
   scrollToOnError?: string | false;
+  steps?: ExperienceNode[];
 };
 
 function scrollToElement(elementId: string | false | undefined) {
@@ -24,7 +49,18 @@ function FormWrapperContent({
   children,
   scrollToOnSuccess = 'form-alert',
   scrollToOnError,
+  steps = [],
 }: FormWrapperProps) {
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+  const nextStep = useCallback(() => {
+    setCurrentStepIndex(prev => Math.min(steps.length, prev + 1));
+  }, []);
+
+  const prevStep = useCallback(() => {
+    setCurrentStepIndex(prev => Math.max(0, prev - 1));
+  }, []);
+
   const { setAttemptedSubmit, validateAllFields, getFieldRef } = useFormValidation();
   const { setStatus } = useFormStatus();
   const formRef = useRef<HTMLFormElement>(null);
@@ -80,9 +116,11 @@ function FormWrapperContent({
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit}>
-      {children}
-    </form>
+    <FormStepsContext.Provider value={{ currentStepIndex, nextStep, prevStep }}>
+      <form ref={formRef} onSubmit={handleSubmit}>
+        {children}
+      </form>
+    </FormStepsContext.Provider>
   );
 }
 
@@ -93,4 +131,3 @@ export default function FormWrapper(props: FormWrapperProps) {
     </FormValidationProvider>
   );
 }
-

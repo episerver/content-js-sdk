@@ -565,4 +565,107 @@ This hook eliminates the need to manually:
 - Manage error display logic
 
 Perfect for building reusable, type-safe form field components.
+
+## Multi-Step Forms
+
+The SDK provides built-in support for multi-step forms through the `FormWrapper` component's `steps` prop and the `useFormStep` hook.
+
+### How It Works
+
+1. **Define steps** - Define multiple form steps in the CMS
+2. **Track visibility** - Use `FormStepContainer` to conditionally render each step
+3. **Navigate between steps** - Use the `useFormStep` hook to access `nextStep` and `prevStep` functions
+
+### Step Navigation
+
+Each field component automatically works with the step system:
+
+```tsx
+'use client';
+
+import { useFormStep } from '@optimizely/cms-sdk/forms/react';
+
+function NavigationButton({ label }) {
+  const { nextStep, prevStep, currentStepIndex } = useFormStep();
+  
+  if (label?.toLowerCase() === 'next') {
+    return <button onClick={nextStep}>Next</button>;
+  }
+  
+  if (label?.toLowerCase() === 'previous') {
+    return <button onClick={prevStep}>Previous</button>;
+  }
+  
+  return <button type="submit">{label || 'Submit'}</button>;
+}
 ```
+
+### Key Components
+
+**`useFormStep()`** - Access step state and navigation:
+
+```ts
+const { 
+  currentStepIndex,  // Current step (0-based)
+  nextStep,          // Function: move to next step
+  prevStep,          // Function: move to previous step
+} = useFormStep();
+```
+
+**`FormStepContainer`** - Wrap a step's content to control visibility:
+
+```tsx
+<FormStepContainer index={0}>
+  <YourFormFieldsHere />
+</FormStepContainer>
+<FormStepContainer index={1}>
+  <MoreFormFieldsHere />
+</FormStepContainer>
+```
+
+**`FormStepTracker`** - Show visual progress indicator:
+
+```tsx
+<FormStepTracker steps={3} />
+```
+
+### Example: Multi-Step Contact Form
+
+```tsx
+'use client';
+
+import {
+  FormWrapper,
+  FormStepContainer,
+  FormStepTracker,
+} from '@optimizely/cms-sdk/forms/react';
+import FormInput from './FormInput';
+import FormTextarea from './FormTextarea';
+import FormSubmit from './FormSubmit';
+
+export default function MultiStepForm({ stepNodes, buttonNodes }) {
+  return (
+    <FormWrapper
+      action="/api/forms/submit"
+      steps={stepNodes}
+      scrollToOnSuccess="success-alert"
+    >
+      <FormStepTracker steps={stepNodes.length} />
+      
+      {stepNodes.map((step, index) => (
+        <FormStepContainer key={index} index={index}>
+          <OptimizelyGridSection nodes={[step]} row={GridRow} column={GridColumn} />
+        </FormStepContainer>
+      ))}
+      
+      <div className='mt-8 flex items-center gap-4'>
+        <OptimizelyGridSection nodes={buttonNodes} row={GridRow} column={GridColumn} />
+      </div>
+    </FormWrapper>
+  );
+}
+```
+
+### Validation Across Steps
+
+All fields remain in the DOM when hidden (using CSS `display: none`), so validation runs on all steps before submission. This ensures that when users navigate back or submit, they can't bypass validation on earlier steps.

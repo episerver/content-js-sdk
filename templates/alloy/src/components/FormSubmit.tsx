@@ -1,7 +1,7 @@
 'use client';
 
 import { ContentProps, OptiFormsSubmitElementContentType } from '@optimizely/cms-sdk';
-import { useFormValidation, useFormStatus } from '@optimizely/cms-sdk/forms/react';
+import { useFormValidation, useFormStatus, useFormStep as useFormSteps } from '@optimizely/cms-sdk/forms/react';
 
 type FormSubmitProps = {
   content: ContentProps<typeof OptiFormsSubmitElementContentType>;
@@ -10,17 +10,26 @@ type FormSubmitProps = {
 export default function FormSubmit({ content }: FormSubmitProps) {
   const { hasAnyErrors } = useFormValidation();
   const { isSubmitting } = useFormStatus();
-  const isDisabled = hasAnyErrors || isSubmitting;
+  const { nextStep, prevStep } = useFormSteps();
+  const label = content.Label?.toLowerCase() ?? '';
+  const isNext = label === 'next';
+  const isPrev = label === 'previous';
+  const isDisabled = (isNext || isPrev ? false : hasAnyErrors) || isSubmitting;
 
   return (
     <button
-      type='submit'
+      type={isNext || isPrev ? 'button' : 'submit'}
+      onClick={isNext ? nextStep : isPrev ? prevStep : undefined}
       disabled={isDisabled}
       title={content.Tooltip ?? ''}
-      className={`px-6 py-3 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 w-fit flex items-center gap-2 ${
+      className={`px-6 py-3 mt-4 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 ${
+        !isPrev ? 'ml-auto' : '-'
+      } ${
         isDisabled
           ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-          : 'bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700'
+          : isPrev
+            ? 'bg-gray-200 text-slate-700 hover:bg-gray-300 focus:ring-gray-300'
+            : 'bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700'
       }`}
     >
       {isSubmitting && (
