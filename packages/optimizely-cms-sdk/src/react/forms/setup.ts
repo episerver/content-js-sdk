@@ -20,7 +20,6 @@ type FormHandlerKey =
   | 'selection'
   | 'submit'
   | 'reset'
-  | 'condition'
   | 'rule';
 
 export type FormHandlers = Partial<Record<FormHandlerKey, FormComponentEntry>>;
@@ -36,8 +35,7 @@ export const FORM_HANDLER_TO_CONTENT_TYPE: Record<FormHandlerKey, string> = {
   selection: 'OptiFormsSelectionElement',
   submit: 'OptiFormsSubmitElement',
   reset: 'OptiFormsResetElement',
-  condition: 'OptiFormsCondition',
-  rule: 'OptiFormsDependencyRule',
+  rule: 'OptiFormsDependencyRuleProperty',
 };
 
 export const mapFormHandlersToContentTypes = (
