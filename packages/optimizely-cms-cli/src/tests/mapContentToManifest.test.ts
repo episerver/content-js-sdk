@@ -168,4 +168,51 @@ describe('mapContentToManifest', () => {
       expect.stringContaining('Duplicate content type keys found: HeroComponent'),
     );
   });
+
+  it('should handle allowedTypes with wildcard by removing it', () => {
+    const pageType: AnyContentType = {
+      key: 'QAContentAreaPage',
+      displayName: 'QA Content Area Page',
+      baseType: '_page',
+      properties: {
+        anyContent: {
+          type: 'content',
+          allowedTypes: ['*'],
+        },
+      },
+    };
+
+    const result = mapContentToManifest([pageType]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].key).toBe('QAContentAreaPage');
+    // Wildcard should be removed, leaving no allowedTypes property
+    expect(result[0].properties?.anyContent).toEqual({
+      type: 'content',
+    });
+    expect(result[0].properties?.anyContent).not.toHaveProperty('allowedTypes');
+  });
+
+  it('should filter out wildcard when mixed with other allowed types', () => {
+    const pageType: AnyContentType = {
+      key: 'MixedPage',
+      displayName: 'Mixed Page',
+      baseType: '_page',
+      properties: {
+        components: {
+          type: 'content',
+          allowedTypes: ['*', HeroComponentType, 'BannerComponent'],
+        },
+      },
+    };
+
+    const result = mapContentToManifest([pageType]);
+
+    expect(result).toHaveLength(1);
+    // Wildcard should be filtered out, leaving only other types
+    expect(result[0].properties?.components?.allowedTypes).toEqual([
+      'HeroComponent',
+      'BannerComponent',
+    ]);
+  });
 });

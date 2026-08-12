@@ -130,4 +130,58 @@ describe('Testing transformProperties', () => {
       }
     `);
   });
+
+  it('should remove wildcard from allowedTypes', () => {
+    const properties = {
+      anyContent: {
+        type: 'content' as const,
+        allowedTypes: ['*'],
+      },
+    };
+    const result = transformProperties(properties, 'QAContentAreaPage');
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "anyContent": {
+          "type": "content",
+        },
+      }
+    `);
+  });
+
+  it('should remove wildcard from restrictedTypes', () => {
+    const properties = {
+      someContent: {
+        type: 'contentReference' as const,
+        restrictedTypes: ['*'],
+      },
+    };
+    const result = transformProperties(properties, 'TestPage');
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "someContent": {
+          "type": "contentReference",
+        },
+      }
+    `);
+  });
+
+  it('should filter out wildcard when mixed with other types in allowedTypes', () => {
+    const properties = {
+      mixedContent: {
+        type: 'content' as const,
+        allowedTypes: ['*', 'HeroComponent'],
+      },
+    };
+    const result = transformProperties(properties, 'TestPage');
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "mixedContent": {
+          "allowedTypes": [
+            "HeroComponent",
+          ],
+          "type": "content",
+        },
+      }
+    `);
+  });
 });
