@@ -669,3 +669,184 @@ export default function MultiStepForm({ stepNodes, buttonNodes }) {
 ### Validation Across Steps
 
 All fields remain in the DOM when hidden (using CSS `display: none`), so validation runs on all steps before submission. This ensures that when users navigate back or submit, they can't bypass validation on earlier steps.
+
+## Form Dependency Rules
+
+Form dependency rules enable conditional visibility of fields based on the values of other fields. You can configure rules in the CMS to show or hide form elements dynamically based on user input.
+
+### Overview
+
+Dependency rules are defined in the CMS and passed to the form through the `rules` prop of `FormWrapper`. The SDK evaluates these rules in real-time as users fill out the form, automatically showing or hiding fields based on their conditions.
+
+### Setting Up Rules
+
+Pass dependency rules to `FormWrapper` via the `rules` prop:
+
+```tsx
+'use client';
+
+import { FormWrapper } from '@optimizely/cms-sdk/forms/react';
+import FormContainer from './FormContainer';
+
+export default function MyForm({ content }) {
+  return (
+    <FormWrapper
+      action="/api/forms/submit"
+      rules={content.DependencyRules}
+    >
+      <FormContainer content={content} />
+    </FormWrapper>
+  );
+}
+```
+
+### Using `FormElement` Wrapper
+
+Wrap form field components with `FormElement` to enable conditional rendering based on rules. The wrapper automatically handles visibility logic:
+
+```tsx
+'use client';
+
+import { FormElement } from '@optimizely/cms-sdk/forms/react';
+import FormInput from './FormInput';
+
+export default function MyInput({ content }) {
+  return (
+    <FormElement content={content}>
+      <FormInput content={content} />
+    </FormElement>
+  );
+}
+```
+
+The `FormElement` wrapper:
+
+- Extracts the field's unique ID from the content
+- Checks if the field should be visible based on dependency rules
+- Returns `null` (hiding the field) if visibility conditions aren't met
+- Renders children if the field should be visible
+
+### Tracking Field Values for Rules
+
+For rules to evaluate conditions, field components must track their values. Use the `useFormRules` hook in field components to register value changes:
+
+```tsx
+'use client';
+
+import { useFormRules } from '@optimizely/cms-sdk/forms/react';
+import { getElementId } from '@optimizely/cms-sdk/forms/react';
+import { useEffect, useState } from 'react';
+
+function FormSelectionField({ content }) {
+  const [value, setValue] = useState('');
+  const { setFieldValue } = useFormRules();
+  const elementId = getElementId(content);
+
+  useEffect(() => {
+    if (elementId) {
+      setFieldValue(elementId, value);
+    }
+  }, [value, elementId, setFieldValue]);
+
+  return (
+    <select value={value} onChange={e => setValue(e.target.value)}>
+      {/* options */}
+    </select>
+  );
+}
+```
+
+### Rule Conditions
+
+The CMS supports several condition types for evaluating field visibility:
+
+- **Equals** - Field value matches a specific value
+- **NotEquals** - Field value does not match a specific value
+- **Contains** - Field value contains a substring
+- **NotContains** - Field value does not contain a substring
+
+### Rule Operators
+
+Rules can combine multiple conditions using:
+
+- **All** - All conditions must be true for the field to be visible
+- **Any** - At least one condition must be true for the field to be visible
+
+### Example: Conditional Visibility
+
+Suppose you have a form where a "Specify Other" text field only appears when a user selects "Other" from a choice field:
+
+1. **In the CMS:**
+   - Create a choice field with options (Standard, Premium, Other)
+   - Create a text field for "Please specify"
+   - Add a dependency rule: Show "Please specify" when choice field = "Other"
+
+2. **In your component:**
+
+```tsx
+'use client';
+
+import { FormElement, useFormRules } from '@optimizely/cms-sdk/forms/react';
+import { useEffect, useState } from 'react';
+
+function ServiceChoice({ content }) {
+  const [value, setValue] = useState('');
+  const { setFieldValue } = useFormRules();
+  const elementId = getElementId(content);
+
+  useEffect(() => {
+    if (elementId) {
+      setFieldValue(elementId, value);
+    }
+  }, [value, elementId, setFieldValue]);
+
+  return (
+    <div>
+      <label>{content.Label}</label>
+      <select value={value} onChange={e => setValue(e.target.value)}>
+        <option value="">Select...</option>
+        <option value="Standard">Standard Service</option>
+        <option value="Premium">Premium Service</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+  );
+}
+
+function SpecifyOtherField({ content }) {
+  // This field will automatically hide/show based on the rule
+  return (
+    <FormElement content={content}>
+      <FormInput content={content} />
+    </FormElement>
+  );
+}
+
+export default function ServiceForm({ content }) {
+  return (
+    <FormWrapper action="/api/forms/submit" rules={content.DependencyRules}>
+      <ServiceChoice content={content.serviceType} />
+      <SpecifyOtherField content={content.specifyOther} />
+      <button type="submit">Submit</button>
+    </FormWrapper>
+  );
+}
+```
+
+### Advanced: Custom `useFormRules` Usage
+
+For more control over rule evaluation, use the `useFormRules` hook directly:
+
+```ts
+const { 
+  rules,              // The configured dependency rules
+  fieldValues,        // Map of field IDs to their current values
+  setFieldValue,      // Function to update a field's value
+  isElementVisible,   // Function to check if an element should be visible
+} = useFormRules();
+
+// Check if a specific element is visible
+const shouldShowField = isElementVisible(elementId);
+```
+
+This allows you to build custom conditional rendering logic beyond the standard `FormElement` wrapper.

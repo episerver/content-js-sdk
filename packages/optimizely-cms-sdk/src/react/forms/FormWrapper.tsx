@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { FormValidationProvider, useFormValidation } from './FormValidationContext.js';
 import { useFormStatus } from './FormStatusProvider.js';
+import { FormRulesProvider } from './FormRulesContext.js';
 import { ExperienceNode } from '../../infer.js';
 
 type FormStepsContextType = {
@@ -28,12 +29,24 @@ export function useFormSteps() {
   return context;
 }
 
+export type DependencyRule = {
+  TargetElement: string | null;
+  SatisfiedAction: string | null;
+  ConditionCombination: string | null;
+  Conditions: Array<{
+    DependsOnField: string | null;
+    ComparisonOperator: string | null;
+    ComparisonValue: string | null;
+  }> | null;
+};
+
 type FormWrapperProps = {
   action: string;
   children: ReactNode;
   scrollToOnSuccess?: string | false;
   scrollToOnError?: string | false;
   steps?: ExperienceNode[];
+  rules?: unknown;
 };
 
 function scrollToElement(elementId: string | false | undefined) {
@@ -50,6 +63,7 @@ function FormWrapperContent({
   scrollToOnSuccess = 'form-alert',
   scrollToOnError,
   steps = [],
+  rules,
 }: FormWrapperProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
@@ -116,11 +130,13 @@ function FormWrapperContent({
   };
 
   return (
-    <FormStepsContext.Provider value={{ currentStepIndex, nextStep, prevStep }}>
-      <form ref={formRef} onSubmit={handleSubmit}>
-        {children}
-      </form>
-    </FormStepsContext.Provider>
+    <FormRulesProvider rules={Array.isArray(rules) ? rules : undefined}>
+      <FormStepsContext.Provider value={{ currentStepIndex, nextStep, prevStep }}>
+        <form ref={formRef} onSubmit={handleSubmit}>
+          {children}
+        </form>
+      </FormStepsContext.Provider>
+    </FormRulesProvider>
   );
 }
 

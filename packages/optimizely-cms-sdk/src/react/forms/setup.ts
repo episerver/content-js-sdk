@@ -1,8 +1,8 @@
 import React from 'react';
 
-type ComponentType = React.ComponentType<any>;
+export type ComponentType = React.ComponentType<any>;
 
-type FormComponentEntry =
+export type FormComponentEntry =
   | ComponentType
   | {
       default?: ComponentType;
@@ -19,8 +19,7 @@ type FormHandlerKey =
   | 'choice'
   | 'selection'
   | 'submit'
-  | 'reset'
-  | 'rule';
+  | 'reset';
 
 export type FormHandlers = Partial<Record<FormHandlerKey, FormComponentEntry>>;
 
@@ -35,16 +34,17 @@ export const FORM_HANDLER_TO_CONTENT_TYPE: Record<FormHandlerKey, string> = {
   selection: 'OptiFormsSelectionElement',
   submit: 'OptiFormsSubmitElement',
   reset: 'OptiFormsResetElement',
-  rule: 'OptiFormsDependencyRuleProperty',
 };
 
 export const mapFormHandlersToContentTypes = (
   handlers: FormHandlers,
 ): Record<string, FormComponentEntry> =>
-  Object.entries(handlers).reduce(
-    (acc, [handlerKey, component]) => {
-      const contentTypeKey = FORM_HANDLER_TO_CONTENT_TYPE[handlerKey as FormHandlerKey];
-      return contentTypeKey && component ? { ...acc, [contentTypeKey]: component } : acc;
-    },
-    {} as Record<string, FormComponentEntry>,
-  );
+  Object.entries(handlers)
+    .filter(([, component]) => component)
+    .reduce(
+      (acc, [handlerKey, component]) => ({
+        ...acc,
+        [FORM_HANDLER_TO_CONTENT_TYPE[handlerKey as FormHandlerKey]]: component,
+      }),
+      {} as Record<string, FormComponentEntry>,
+    );

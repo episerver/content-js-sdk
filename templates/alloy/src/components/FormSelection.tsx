@@ -2,8 +2,17 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ContentProps, OptiFormsSelectionElementContentType } from '@optimizely/cms-sdk';
-import { validateField, getErrorMessages, isFieldRequired, getFieldName } from '@optimizely/cms-sdk/forms/validation';
-import { useFormValidation } from '@optimizely/cms-sdk/forms/react';
+import {
+  validateField,
+  getErrorMessages,
+  isFieldRequired,
+  getFieldName,
+} from '@optimizely/cms-sdk/forms/validation';
+import {
+  useFormValidation,
+  useFormRules,
+  getElementId,
+} from '@optimizely/cms-sdk/forms/react';
 
 type FormSelectionProps = {
   content: ContentProps<typeof OptiFormsSelectionElementContentType>;
@@ -23,11 +32,17 @@ export default function FormSelection({ content }: FormSelectionProps) {
 
   const [value, setValue] = useState(options.find(opt => opt.selected)?.value ?? '');
   const [isTouched, setIsTouched] = useState(false);
-  const { attemptedSubmit, registerField, unregisterField, setFieldError } = useFormValidation();
+  const { attemptedSubmit, registerField, unregisterField, setFieldError } =
+    useFormValidation();
+  const { setFieldValue } = useFormRules();
   const fieldsetRef = useRef<HTMLFieldSetElement>(null);
   const fieldName = getFieldName(content);
+  const elementId = getElementId(content);
 
-  const validators = (Array.isArray(content.Validators) ? content.Validators : []) as any[];
+  const validators = (
+    Array.isArray(content.Validators) ?
+      content.Validators
+    : []) as any[];
   const errors = validateField(value, validators);
   const errorMessages = getErrorMessages(errors);
   const hasErrors = errorMessages.length > 0;
@@ -38,8 +53,19 @@ export default function FormSelection({ content }: FormSelectionProps) {
     const validate = () => !hasErrors;
     registerField(fieldName, fieldsetRef.current, validate);
     setFieldError(fieldName, hasErrors);
+    if (elementId) setFieldValue(elementId, value);
+
     return () => unregisterField(fieldName);
-  }, [hasErrors, fieldName, registerField, unregisterField, setFieldError]);
+  }, [
+    hasErrors,
+    fieldName,
+    registerField,
+    unregisterField,
+    setFieldError,
+    elementId,
+    value,
+    setFieldValue,
+  ]);
 
   return (
     <fieldset ref={fieldsetRef} className='space-y-3 flex-1' data-field-name={fieldName}>

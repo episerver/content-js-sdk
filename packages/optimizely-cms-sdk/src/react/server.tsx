@@ -7,15 +7,7 @@ import { JSX } from 'react';
 import { FormContentTypes } from '../model/formContentTypes.js';
 import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
 import { mapFormHandlersToContentTypes } from './forms/setup.js';
-import type { FormHandlers } from './forms/setup.js';
-
-type ComponentType = React.ComponentType<any>;
-type FormComponentEntry =
-  | ComponentType
-  | {
-      default?: ComponentType;
-      tags: Record<string, ComponentType>;
-    };
+import type { FormHandlers, ComponentType, FormComponentEntry } from './forms/setup.js';
 
 let componentRegistry: ComponentRegistry<ComponentType>;
 let _componentMap: Record<string, FormComponentEntry> = {};

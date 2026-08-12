@@ -37,6 +37,7 @@ export default function FormContainer({ content }: FormContainerProps) {
             scrollToOnError={false}
             action={content.SubmitUrl?.default ?? ''}
             steps={stepNodes}
+            rules={content.DependencyRules}
           >
             <FormStepTracker steps={stepNodes.length} />
             {stepNodes.map((node, index) => (
