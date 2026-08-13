@@ -151,7 +151,7 @@ const createExperienceFragments = (
 // VALIDATION
 
 const validateContentTypeName = (contentTypeName: string, visited: Set<string>): void => {
-  if (!contentTypeName || contentTypeName === 'undefined')
+  if (!contentTypeName || contentTypeName === 'undefined' || contentTypeName === '*')
     throw new GraphQueryGenerationError({
       contentType: contentTypeName,
       parentContentType: visited.values().next().value,
@@ -171,6 +171,7 @@ const processUserTypeProperties = (
     damEnabled = false,
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts = DEFAULT_EXPAND_CONTRACTS,
+    typeFilter,
   } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
@@ -181,14 +182,12 @@ const processUserTypeProperties = (
   let includesDamAssetsFragments = false;
 
   for (const [propKey, prop] of props) {
-    const result = convertProperty(
-      propKey,
-      prop,
-      contentTypeName,
-      suffix,
-      visited,
-      options,
-    );
+    const result = convertProperty(propKey, prop, contentTypeName, suffix, visited, {
+      damEnabled,
+      maxFragmentThreshold,
+      expandContracts,
+      typeFilter,
+    });
 
     fields.push(...result.fields);
     extraFragments.push(...result.extraFragments);
@@ -258,9 +257,18 @@ export const createFragment = (
   contentTypeName: string,
   visited: Set<string> = new Set(),
   suffix: string = '',
-  options: FragmentOptions = DEFAUL_FRAGMENT_OPTIONS,
+  options: FragmentOptions = {},
 ): FragmentResult => {
   validateContentTypeName(contentTypeName, visited);
+
+  const {
+    damEnabled = false,
+    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
+    includeBaseFragments = true,
+    typeFilter,
+  } = options;
+
   const fragmentName = `${stripSourcePrefix(contentTypeName)}${suffix}`;
 
   if (visited.has(fragmentName))
@@ -273,12 +281,7 @@ export const createFragment = (
   const isRootCall = visited.size === 1;
   const span =
     isRootCall ?
-      startFragmentSpan(
-        contentTypeName,
-        options.damEnabled,
-        options.maxFragmentThreshold,
-        suffix,
-      )
+      startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix)
     : undefined;
   const startTime = isRootCall ? performance.now() : 0;
 
@@ -301,7 +304,12 @@ export const createFragment = (
       contentTypeName,
       suffix,
       visited,
-      options,
+      {
+        damEnabled,
+        maxFragmentThreshold,
+        expandContracts,
+        typeFilter,
+      },
     );
     fields.push(...propResult.fields);
     extraFragments.push(...propResult.extraFragments);
@@ -309,7 +317,7 @@ export const createFragment = (
 
     // Namespaced external types don't implement _IContent — skip CMS base/content fragments.
     const isNamespaced = stripSourcePrefix(contentTypeName) !== contentTypeName;
-    if (options.includeBaseFragments && !isNamespaced) {
+    if (includeBaseFragments && !isNamespaced) {
       const baseType =
         'baseType' in contentType ? (contentType as AnyContentType).baseType : undefined;
       const baseFragments = getBaseTypeFragments(baseType ?? '', contentTypeName);
@@ -319,7 +327,12 @@ export const createFragment = (
 
     if ('baseType' in contentType && contentType.baseType === '_experience') {
       fields.push('..._IExperience');
-      const experienceResult = createExperienceFragments(visited, options);
+      const experienceResult = createExperienceFragments(visited, {
+        damEnabled,
+        maxFragmentThreshold,
+        expandContracts,
+        typeFilter,
+      });
       extraFragments.push(...experienceResult.fragments);
       includesDamAssetsFragments =
         includesDamAssetsFragments || experienceResult.includesDamAssetsFragments;
@@ -366,7 +379,7 @@ const generateSingleContentQuery = (
 ): string => {
   const span = startSingleQuerySpan(
     contentType,
-    options.damEnabled,
+    options.damEnabled ?? false,
     options.formsEnabled,
   );
   const startTime = span ? performance.now() : 0;
@@ -420,7 +433,7 @@ const generateMultipleContentQuery = (
 ): string => {
   const span = startMultipleQuerySpan(
     contentType,
-    options.damEnabled,
+    options.damEnabled ?? false,
     options.formsEnabled,
   );
   const startTime = span ? performance.now() : 0;

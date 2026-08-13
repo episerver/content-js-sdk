@@ -1,6 +1,6 @@
 import { GraphClient, type PreviewParams } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
-import { PreviewComponent } from '@optimizely/cms-sdk/react/client';
+import { NextPreviewComponent } from '@optimizely/cms-sdk/react/nextjs';
 import Script from 'next/script';
 
 type Props = {
@@ -37,7 +37,7 @@ export default async function Page({ searchParams }: Props) {
           ).href
         }
       ></Script>
-      <PreviewComponent />
+      <NextPreviewComponent />
       <OptimizelyComponent content={response} />
     </>
   );

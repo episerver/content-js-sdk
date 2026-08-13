@@ -98,7 +98,7 @@ export default function Hero({ content, displaySettings }: HeroSectionProps) {
   const width = widthStyles[displaySettings?.width ?? 'default'];
   const fadeOut =
     displaySettings?.fadeOut ?
-      ' -mb-20 [mask-image:linear-gradient(#000_60%,transparent_70%)]'
+          ' -mb-10 [mask-image:linear-gradient(#000_90%,transparent)]'
     : null;
 
   return (

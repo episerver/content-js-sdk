@@ -5,6 +5,8 @@ import { SDK_VERSION } from '../generated/version.js';
  */
 export const DEFAULT_GRAPH_URL = 'https://cg.optimizely.com/content/v2';
 
+export const GRAPH_PATH = '/content/v2';
+
 /**
  * Default User-Agent string for HTTP requests to Graph API.
  */

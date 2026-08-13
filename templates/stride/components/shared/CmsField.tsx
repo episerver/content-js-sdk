@@ -1,5 +1,4 @@
-import type { ReactElement } from 'react';
-import { Slot } from './Slot';
+import { cloneElement, type ReactElement } from 'react';
 import { getContext } from '@optimizely/cms-sdk/react/server';
 
 type FieldAccessor<T> = (content: T) => unknown;
@@ -66,7 +65,7 @@ export function CmsField<T>({
 
   const fieldPath = getFieldPath(field);
 
-  return <Slot data-epi-edit={fieldPath}>{children}</Slot>;
+  return cloneElement(children as ReactElement<Record<string, unknown>>, { 'data-epi-edit': fieldPath });
 }
 
 type CmsFieldsProps<T> = {

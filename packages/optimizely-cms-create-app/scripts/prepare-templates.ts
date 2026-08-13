@@ -9,6 +9,7 @@ const MONOREPO_ROOT = path.resolve(ROOT, '..', '..');
 
 const EXCLUDE = new Set([
   'node_modules',
+  '__test__',
   '.next',
   '.tanstack',
   'certificates',
