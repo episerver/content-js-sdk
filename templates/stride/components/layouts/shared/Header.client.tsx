@@ -40,7 +40,6 @@ export const HeaderClient = ({
   return (
     <>
       <header
-        data-scrolled={scrolled ? '' : undefined}
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${headerBg}`}
       >
         <div className='container mx-auto flex items-center justify-between md:py-5 py-6'>

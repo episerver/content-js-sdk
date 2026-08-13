@@ -56,11 +56,6 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-body:has([data-hero-dark]) header:not([data-scrolled]) {
-  --foreground: #fff;
-  color: #fff;
-}
-
 html {
   scroll-behavior: auto !important;
 }
