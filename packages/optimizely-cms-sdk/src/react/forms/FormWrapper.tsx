@@ -29,17 +29,6 @@ export function useFormSteps() {
   return context;
 }
 
-export type DependencyRule = {
-  TargetElement: string | null;
-  SatisfiedAction: string | null;
-  ConditionCombination: string | null;
-  Conditions: Array<{
-    DependsOnField: string | null;
-    ComparisonOperator: string | null;
-    ComparisonValue: string | null;
-  }> | null;
-};
-
 type FormWrapperProps = {
   action: string;
   children: ReactNode;

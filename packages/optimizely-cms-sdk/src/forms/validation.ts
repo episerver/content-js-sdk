@@ -33,12 +33,12 @@ export type FormFieldError = {
   isValid: boolean;
 };
 
-const VALIDATION_PATTERNS = {
+export const VALIDATION_PATTERNS = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   integer: /^-?\d+$/,
   positiveInteger: /^\d+$/,
   decimal: /^-?\d+(\.\d+)?$/,
-};
+} as const;
 
 const isSimplifiedValidator = (validator: Validator): validator is SimplifiedValidator =>
   'errorMessage' in validator;

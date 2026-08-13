@@ -165,7 +165,6 @@ export const OptiFormsDependencyRuleContentType = contentType({
   },
 });
 
-// TODO: this should be a section not a component, but currently section-related issue prevent this
 export const OptiFormsContainerDataContentType = contentType({
   key: 'OptiFormsContainerData',
   displayName: 'Form Container',

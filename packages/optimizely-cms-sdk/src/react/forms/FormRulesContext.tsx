@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
-type DependencyRule = {
+export type DependencyRule = {
   TargetElement: string | null;
   SatisfiedAction: string | null;
   ConditionCombination: string | null;

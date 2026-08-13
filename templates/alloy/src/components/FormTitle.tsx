@@ -11,7 +11,7 @@ export default function FormTitle({ title, previewAttributes }: FormTitleProps) 
   return (
     <div className='space-y-3 sm:space-y-4'>
       <h1
-        {...previewAttributes('heading')}
+        {...previewAttributes('Title')}
         className='text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-5xl'
       >
         {title}

@@ -3,690 +3,225 @@
 The Optimizely CMS JavaScript SDK includes built-in support for Optimizely Forms, enabling you to model, fetch, and render forms in your headless applications.
 
 > [!IMPORTANT]
-> Forms support requires that Optimizely Forms is enabled in your CMS instance. See [Enabling Forms in the CMS](#enabling-forms-in-the-cms) below.
+> Forms support requires that Optimizely Forms is enabled in your CMS instance. Log in to the CMS, navigate to **Settings > Forms Settings**, and click **Activate**.
 
-## Enabling Forms in the CMS
+## Contents
 
-To use Optimizely Forms in your CMS instance:
+- [Quick Start](#quick-start) - Get running in 5 minutes
+- [Form Validation](#form-validation) - Using `useFormField` hook
+- [Form Dependency Rules](#form-dependency-rules) - Conditional field visibility
+- [Multi-Step Forms](#multi-step-forms) - Step-by-step forms
+- [Advanced Topics](#advanced-topics) - API reference and advanced usage
+- [Troubleshooting](#troubleshooting) - Common issues
 
-1. Log in to the Optimizely CMS UI
-2. Navigate to **Settings > Forms Settings**
-3. Click the **Activate** button
-4. Wait for the CMS to complete the activation
+## Quick Start
 
-Once activated, Forms-related content types become available in your GraphQL schema, and the SDK will automatically detect that Forms is enabled.
+### 1. Set up form components
 
-## Available Forms Content Types
-
-The SDK exports pre-defined content type definitions for Optimizely Forms field types. These are ready to use in your content models:
-
-### Container & Structure
-
-- `OptiFormsContainerDataContentType` - The main form container that holds all form fields
-
-### Input Fields
-
-- `OptiFormsTextboxElementContentType` - Single-line text input
-- `OptiFormsTextareaElementContentType` - Multi-line text input
-- `OptiFormsNumberElementContentType` - Numeric input field
-- `OptiFormsUrlElementContentType` - URL input field
-
-### Selection Fields
-
-- `OptiFormsChoiceElementContentType` - Single or multiple choice selection
-- `OptiFormsSelectionElementContentType` - Dropdown/select field with autocomplete support
-
-### Special Input Fields
-
-- `OptiFormsRangeElementContentType` - Slider or range input
-
-### Actions
-
-- `OptiFormsSubmitElementContentType` - Form submit button
-- `OptiFormsResetElementContentType` - Form reset button
-
-### Advanced
-
-- `OptiFormsConditionContentType` - Conditional display logic
-- `OptiFormsDependencyRuleContentType` - Field dependency rules
-
-## Importing Forms Content Types
-
-Import the pre-defined Forms content types from the SDK:
-
-```ts
-import {
-  OptiFormsContainerDataContentType,
-  OptiFormsTextboxElementContentType,
-  OptiFormsSubmitElementContentType,
-  FormContentTypes, // Exports all form types in an array
-} from '@optimizely/cms-sdk';
-```
-
-## Setting Up Forms in Your React Application
-
-### Using `initForms` (Recommended)
-
-The `initForms` function provides a simplified way to initialize both the content type registry and React component registry for all Optimizely Forms types in a single call.
-
-In your application's entry point (e.g., `src/app/layout.tsx`):
+Register your form components with the SDK so the CMS can render them:
 
 ```tsx
+// src/app/layout.tsx
 import { initForms } from '@optimizely/cms-sdk/react/server';
 import FormContainer from '@/components/forms/FormContainer';
 import FormInput from '@/components/forms/FormInput';
-import FormTextarea from '@/components/forms/FormTextarea';
-import FormSelection from '@/components/forms/FormSelection';
 import FormSubmit from '@/components/forms/FormSubmit';
 
 initForms({
   container: FormContainer,
   textbox: FormInput,
-  textarea: FormTextarea,
-  selection: FormSelection,
-  submitButton: FormSubmit,
-  // Add more form components as needed
+  submit: FormSubmit,
 });
 ```
 
-Available form handler keys:
+### 2. Create FormContainer component
 
-- `container` - Form container component
-- `textbox` - Single-line text input
-- `textarea` - Multi-line text input
-- `number` - Numeric input field
-- `range` - Range/slider input
-- `url` - URL input field
-- `choice` - Single/multiple choice selection
-- `selection` - Dropdown/select field
-- `submitButton` - Form submit button
-- `resetButton` - Form reset button
-- `condition` - Conditional display logic
-- `rule` - Field dependency rules
-
-#### Using Components with Tagged Variants
-
-You can provide different component variants using the tag system:
+The FormContainer is the root component that wraps all form content. It uses `FormStatusProvider` to manage submission state, and `FormWrapper` to orchestrate validation and submission:
 
 ```tsx
-initForms({
-  container: {
-    default: DefaultFormContainer,
-    tags: {
-      compact: CompactFormContainer,
-      modal: ModalFormContainer,
-    }
-  },
-  textbox: TextInputComponent,
-});
-```
+// src/components/forms/FormContainer.tsx
+import { OptiFormsContainerContentType } from '@optimizely/cms-sdk';
+import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
+import { FormStatusProvider, FormWrapper } from '@optimizely/cms-sdk/forms/react';
+import FormAlerts from './FormAlerts';
+import GridRow from './GridRow';
+import GridColumn from './GridColumn';
 
-### Manual Setup (Advanced)
+export default function FormContainer({ content }: { content: OptiFormsContainerContentType }) {
+  const { pa } = getPreviewUtils(content);
+  const nodes = content.nodes ?? [];
 
-If you need more control, you can use the existing functions separately:
+  return (
+    <FormStatusProvider>
+      <div className="max-w-7xl py-6 space-y-6">
+        {content.Title && <h2>{content.Title}</h2>}
+        {content.Description && <p>{content.Description}</p>}
+        
+        <FormAlerts submitConfirmationMessage={content.SubmitConfirmationMessage} />
 
-```tsx
-import {
-  initContentTypeRegistry,
-  FormContentTypes,
-} from '@optimizely/cms-sdk';
-import { initReactComponentRegistry, FORM_HANDLER_TO_CONTENT_TYPE } from '@optimizely/cms-sdk/react/server';
-import FormContainer from '@/components/forms/FormContainer';
-import FormInput from '@/components/forms/FormInput';
-
-// Initialize content types
-initContentTypeRegistry(FormContentTypes);
-
-// Initialize React components
-initReactComponentRegistry({
-  resolver: {
-    OptiFormsContainerData: FormContainer,
-    OptiFormsTextboxElement: FormInput,
-    // ... other mappings
-  },
-});
-```
-
-## Using Forms in Your Content Model
-
-You can include Forms content types in your custom content types:
-
-```ts
-import { contentType } from '@optimizely/cms-sdk';
-import { OptiFormsContainerDataContentType } from '@optimizely/cms-sdk';
-
-export const PageWithFormContentType = contentType({
-  key: 'PageWithForm',
-  baseType: '_page',
-  properties: {
-    title: {
-      type: 'string',
-      displayName: 'Page Title',
-    },
-    form: {
-      type: 'component',
-      displayName: 'Contact Form',
-      contentType: OptiFormsContainerDataContentType,
-    },
-  },
-});
-```
-
-## Client-Side Form Validation
-
-The SDK provides built-in client-side validation utilities that understand Optimizely Forms validation rules from the CMS. This enables real-time validation feedback without server round-trips.
-
-**Quick Start:** For most use cases, use the `useFormField` hook which handles validation, error tracking, and field registration automatically. See the [Using `useFormField` Hook (Simplified)](#using-useformfield-hook-simplified) section for a minimal example.
-
-### Validation Utilities
-
-The SDK exports validation functions that work with validator data from the CMS:
-
-```ts
-import {
-  validateField,
-  getErrorMessages,
-  isFieldRequired,
-  getHtmlValidationAttributes,
-  extractErrorMessage,
-  extractValidatorType,
-  getFieldName,
-  type ValidatorType,
-  type Validator,
-} from '@optimizely/cms-sdk/forms/validation';
-```
-
-#### `validateField(value, validators)`
-
-Validates a field value against an array of validators from the CMS.
-
-```ts
-import { validateField, extractErrorMessage } from '@optimizely/cms-sdk/forms/validation';
-
-const validators = fieldContent.Validators; // From CMS
-const value = inputElement.value;
-const errors = validateField(value, validators);
-
-if (errors.length > 0) {
-  // Field has validation errors
-  errors.forEach(({ validator, isValid }) => {
-    if (!isValid) {
-      console.log(extractErrorMessage(validator)); // Show error message
-    }
-  });
+        <FormWrapper
+          scrollToOnSuccess="form-alert"
+          scrollToOnError={false}
+          action={content.SubmitUrl?.default ?? ''}
+          rules={content.DependencyRules}
+        >
+          <OptimizelyGridSection nodes={nodes} row={GridRow} column={GridColumn} />
+        </FormWrapper>
+      </div>
+    </FormStatusProvider>
+  );
 }
 ```
 
-#### Supported Validator Types
+### 3. Create field components
 
-The SDK supports all Optimizely Forms validator types:
-
-- **`requirevalidator`** - Field is required (non-empty)
-- **`emailvalidator`** - Valid email format
-- **`integervalidator`** - Integer value (negative allowed)
-- **`positiveintegervalidator`** - Positive integer only
-- **`decimalvalidator`** - Decimal number format
-- **`urlvalidator`** - Valid URL format
-- **`regularexpressionvalidator`** - Matches regex pattern from CMS
-
-#### Helper Functions
-
-**`getErrorMessages(errors)`** - Extract all error messages from validation results:
-
-```ts
-const errors = validateField(value, validators);
-const messages = getErrorMessages(errors);
-// ["Email is invalid", "This field is required"]
-```
-
-**`isFieldRequired(validators)`** - Check if a field has a require validator:
-
-```ts
-const required = isFieldRequired(validators);
-// true if field must be filled
-```
-
-**`getHtmlValidationAttributes(validators)`** - Generate HTML5 validation attributes:
-
-```ts
-const attrs = getHtmlValidationAttributes(validators);
-// { required: true, type: 'email', pattern: '...' }
-
-<input {...attrs} />
-```
-
-**`extractErrorMessage(validator)`** - Get error message from a single validator:
-
-```ts
-const message = extractErrorMessage(validator);
-// "Please enter a valid email address"
-```
-
-**`extractValidatorType(validator)`** - Get normalized validator type:
-
-```ts
-const validatorType = extractValidatorType(validator);
-// 'emailvalidator' (normalized to lowercase)
-```
-
-**`getFieldName(field)`** - Get display name for a field:
-
-```ts
-const name = getFieldName(field);
-// 'email_field' or 'Email' (prefers submission name)
-```
-
-## Form Components and Hooks
-
-The SDK provides ready-to-use components for managing form state and validation:
-
-### `FormWrapper`
-
-Orchestrates form submission with built-in validation. Handles client-side validation, prevents submission of invalid forms, and provides scroll behavior.
+Field components render individual form inputs with validation and error display. Use the `useFormField` hook to handle state, validation, and rules tracking automatically:
 
 ```tsx
+// src/components/forms/FormInput.tsx
 'use client';
 
-import { FormWrapper } from '@optimizely/cms-sdk/forms/react';
-import FormInput from './FormInput';
-import FormSubmit from './FormSubmit';
-
-export default function MyForm() {
-  return (
-    <FormWrapper
-      action="/api/forms/submit"
-      scrollToOnSuccess="success-message"
-      scrollToOnError="error-message"
-    >
-      <FormInput name="email" />
-      <FormSubmit />
-    </FormWrapper>
-  );
-}
-```
-
-**Props:**
-
-- **`action`** - Form submission endpoint URL
-- **`scrollToOnSuccess`** - Element ID to scroll to on successful submission (or `false` to disable)
-- **`scrollToOnError`** - Element ID to scroll to on validation error (or `false` to disable)
-
-### `FormValidationProvider` & `useFormValidation`
-
-Manages field registration, validation state, and error tracking. Use `useFormValidation` in field components to register with the validation system.
-
-```tsx
-'use client';
-
-import { useFormValidation } from '@optimizely/cms-sdk/forms/react';
-import { validateField } from '@optimizely/cms-sdk/forms/validation';
-import { useEffect, useRef, useState } from 'react';
-
-function FormInput({ name, validators }) {
-  const [value, setValue] = useState('');
-  const [showErrors, setShowErrors] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { registerField, unregisterField, setFieldError, attemptedSubmit } = useFormValidation();
-
-  useEffect(() => {
-    const errors = validateField(value, validators);
-    const hasErrors = errors.length > 0;
-    
-    setFieldError(name, hasErrors);
-    setShowErrors((attemptedSubmit || false) && hasErrors);
-
-    const validate = () => !hasErrors;
-    registerField(name, inputRef.current, validate);
-
-    return () => unregisterField(name);
-  }, [value, validators, name, registerField, unregisterField, setFieldError, attemptedSubmit]);
-
-  return (
-    <input
-      ref={inputRef}
-      value={value}
-      onChange={e => setValue(e.target.value)}
-      // ...
-    />
-  );
-}
-```
-
-### `FormStatusProvider` & `useFormStatus`
-
-Manages form submission state (submitting, success, error). Use in components that need to respond to submission status.
-
-```tsx
-'use client';
-
-import { useFormStatus } from '@optimizely/cms-sdk/forms/react';
-
-function FormSubmit() {
-  const { isSubmitting } = useFormStatus();
-
-  return (
-    <button disabled={isSubmitting}>
-      {isSubmitting ? 'Submitting...' : 'Submit'}
-    </button>
-  );
-}
-
-function FormAlerts() {
-  const { formSuccess, formError } = useFormStatus();
-
-  return (
-    <>
-      {formSuccess && <div className="alert-success">Form submitted!</div>}
-      {formError && <div className="alert-error">Submission failed</div>}
-    </>
-  );
-}
-```
-
-## Complete Example
-
-A minimal form with validation, submission, and user feedback:
-
-```tsx
-'use client';
-
-import { FormWrapper, useFormValidation, useFormStatus } from '@optimizely/cms-sdk/forms/react';
-import { validateField, getErrorMessages } from '@optimizely/cms-sdk/forms/validation';
-import { useState, useRef, useEffect } from 'react';
-
-// Field component with real-time validation
-function TextField({ name, label, validators }) {
-  const [value, setValue] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { registerField, unregisterField, setFieldError, attemptedSubmit } = useFormValidation();
-  
-  const errors = validateField(value, validators);
-  const showErrors = (attemptedSubmit || false) && errors.length > 0;
-
-  useEffect(() => {
-    const validate = () => errors.length === 0;
-    registerField(name, inputRef.current, validate);
-    setFieldError(name, !validate());
-    return () => unregisterField(name);
-  }, [errors, name, registerField, unregisterField, setFieldError, attemptedSubmit]);
-
-  return (
-    <div>
-      <label>{label}</label>
-      <input
-        ref={inputRef}
-        value={value}
-        onChange={e => setValue(e.target.value)}
-        name={name}
-      />
-      {showErrors && (
-        <div className="error">
-          {getErrorMessages(errors).map(msg => (
-            <p key={msg}>{msg}</p>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Submit button with loading state
-function SubmitButton() {
-  const { isSubmitting } = useFormStatus();
-  return (
-    <button disabled={isSubmitting} type="submit">
-      {isSubmitting ? 'Submitting...' : 'Submit'}
-    </button>
-  );
-}
-
-// Success/error alerts
-function FormAlerts() {
-  const { formSuccess, formError } = useFormStatus();
-  return (
-    <div id="form-alerts">
-      {formSuccess && (
-        <div style={{ color: 'green' }}>
-          Thank you! Your form has been submitted.
-        </div>
-      )}
-      {formError && (
-        <div style={{ color: 'red' }}>
-          Sorry, there was an error submitting your form. Please try again.
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Main form component
-export default function ContactForm({ form }) {
-  return (
-    <div>
-      <FormWrapper action="/api/forms/submit" scrollToOnSuccess="form-alerts">
-        <TextField
-          name="email"
-          label="Email"
-          validators={form.email?.Validators}
-        />
-        <TextField
-          name="message"
-          label="Message"
-          validators={form.message?.Validators}
-        />
-        <SubmitButton />
-      </FormWrapper>
-      <FormAlerts />
-    </div>
-  );
-}
-```
-
-## Using `useFormField` Hook (Simplified)
-
-The `useFormField` hook encapsulates all common field setup logic and is the recommended approach for most form fields. It handles validation, error tracking, registration, and provides all necessary props.
-
-```tsx
-'use client';
-
-import { FormWrapper, useFormField } from '@optimizely/cms-sdk/forms/react';
+import { useFormField } from '@optimizely/cms-sdk/forms/react';
 import { getHtmlValidationAttributes } from '@optimizely/cms-sdk/forms/validation';
 
-// Minimal field component
-function EmailField({ validators, label }) {
+export default function FormInput({ content }) {
   const { value, setValue, inputRef, errors, showErrors, isRequired } = useFormField({
-    name: 'email',
-    validators,
+    name: content.SubmissionFieldName || content.Label,
+    validators: content.Validators,
+    content,
   });
 
   return (
     <div>
       <label>
-        {label}
+        {content.Label}
         {isRequired && <span className="text-red-600">*</span>}
       </label>
       <input
         ref={inputRef}
-        type="email"
-        name="email"
+        name={content.SubmissionFieldName || content.Label}
         value={value}
         onChange={e => setValue(e.target.value)}
-        {...getHtmlValidationAttributes(validators)}
+        placeholder={content.Placeholder}
+        {...getHtmlValidationAttributes(content.Validators)}
       />
-      {showErrors && (
-        <div className="text-red-600">
-          {errors.map(err => <p key={err}>{err}</p>)}
-        </div>
-      )}
+      {showErrors && <div className="text-red-600">{errors.map(e => <p key={e}>{e}</p>)}</div>}
     </div>
   );
 }
+```
 
-// Usage
-export default function SimpleForm({ form }) {
+### 4. Create alerts component
+
+The alerts component shows success or error messages based on form submission state:
+
+```tsx
+// src/components/forms/FormAlerts.tsx
+'use client';
+
+import { useFormStatus } from '@optimizely/cms-sdk/forms/react';
+
+export default function FormAlerts({ submitConfirmationMessage }) {
+  const { formSuccess, formError } = useFormStatus();
+  if (!formSuccess && !formError) return null;
+
   return (
-    <FormWrapper action="/api/submit" scrollToOnSuccess="alerts">
-      <EmailField 
-        validators={form.email?.Validators} 
-        label="Email"
+    <>
+      {formSuccess && (
+        <div className="bg-green-100 text-green-800 p-4 rounded">
+          {submitConfirmationMessage || 'Thank you! Your form has been submitted.'}
+        </div>
+      )}
+      {formError && (
+        <div className="bg-red-100 text-red-800 p-4 rounded">
+          Sorry, there was an error. Please try again.
+        </div>
+      )}
+    </>
+  );
+}
+```
+
+### 5. Add forms in the CMS
+
+1. Create a shared block of type **Form Container**
+2. Configure title, description, and submission URL
+3. Add form fields to the container
+4. (optional) Set up validation rules and dependency rules
+5. Add the Form Container block to any page
+
+That's it! Forms now render and validate automatically.
+
+---
+
+## Form Validation
+
+The `useFormField` hook handles validation, error tracking, and field registration automatically:
+
+```tsx
+'use client';
+
+import { useFormField } from '@optimizely/cms-sdk/forms/react';
+import { getHtmlValidationAttributes } from '@optimizely/cms-sdk/forms/validation';
+
+function EmailField({ content }) {
+  const { value, setValue, inputRef, errors, showErrors, isRequired } = useFormField({
+    name: content.SubmissionFieldName || content.Label,
+    validators: content.Validators,
+    content,  // Auto-tracks for dependency rules
+  });
+
+  return (
+    <div>
+      <label>
+        {content.Label}
+        {isRequired && <span>*</span>}
+      </label>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        {...getHtmlValidationAttributes(content.Validators)}
       />
-      <button type="submit">Submit</button>
-      <div id="alerts">Success or error messages here</div>
-    </FormWrapper>
+      {showErrors && <div>{errors.map(e => <p key={e}>{e}</p>)}</div>}
+    </div>
   );
 }
 ```
 
-### `useFormField` Hook API
+### Supported Validators
 
-Returns an object with all field state and handlers:
+- `requirevalidator` - Field is required
+- `emailvalidator` - Valid email format
+- `integervalidator` - Integer (with negatives)
+- `positiveintegervalidator` - Positive integers only
+- `decimalvalidator` - Decimal numbers
+- `urlvalidator` - Valid URL
+- `regularexpressionvalidator` - Custom regex pattern
+
+### Validation Patterns
+
+Reuse the SDK's built-in validation patterns:
 
 ```ts
-const {
-  value,           // Current input value
-  setValue,        // Update input value
-  inputRef,        // Ref to attach to input element
-  errors,          // Array of error messages
-  showErrors,      // Boolean: show errors if touched or attempted submit
-  hasErrors,       // Boolean: field has validation errors
-  isRequired,      // Boolean: field has a require validator
-} = useFormField({
-  name: 'fieldName',
-  validators: fieldContent.Validators,
-  defaultValue: '' // optional
-});
-```
+import { VALIDATION_PATTERNS } from '@optimizely/cms-sdk/forms/validation';
 
-This hook eliminates the need to manually:
-
-- Call `validateField()`, `getErrorMessages()`, etc.
-- Register/unregister with the validation context
-- Track touched/attempted submit state
-- Manage error display logic
-
-Perfect for building reusable, type-safe form field components.
-
-## Multi-Step Forms
-
-The SDK provides built-in support for multi-step forms through the `FormWrapper` component's `steps` prop and the `useFormStep` hook.
-
-### How It Works
-
-1. **Define steps** - Define multiple form steps in the CMS
-2. **Track visibility** - Use `FormStepContainer` to conditionally render each step
-3. **Navigate between steps** - Use the `useFormStep` hook to access `nextStep` and `prevStep` functions
-
-### Step Navigation
-
-Each field component automatically works with the step system:
-
-```tsx
-'use client';
-
-import { useFormStep } from '@optimizely/cms-sdk/forms/react';
-
-function NavigationButton({ label }) {
-  const { nextStep, prevStep, currentStepIndex } = useFormStep();
-  
-  if (label?.toLowerCase() === 'next') {
-    return <button onClick={nextStep}>Next</button>;
-  }
-  
-  if (label?.toLowerCase() === 'previous') {
-    return <button onClick={prevStep}>Previous</button>;
-  }
-  
-  return <button type="submit">{label || 'Submit'}</button>;
+// Available: email, integer, positiveInteger, decimal
+if (VALIDATION_PATTERNS.email.test(value)) {
+  // Valid email
 }
 ```
 
-### Key Components
-
-**`useFormStep()`** - Access step state and navigation:
-
-```ts
-const { 
-  currentStepIndex,  // Current step (0-based)
-  nextStep,          // Function: move to next step
-  prevStep,          // Function: move to previous step
-} = useFormStep();
-```
-
-**`FormStepContainer`** - Wrap a step's content to control visibility:
-
-```tsx
-<FormStepContainer index={0}>
-  <YourFormFieldsHere />
-</FormStepContainer>
-<FormStepContainer index={1}>
-  <MoreFormFieldsHere />
-</FormStepContainer>
-```
-
-**`FormStepTracker`** - Show visual progress indicator:
-
-```tsx
-<FormStepTracker steps={3} />
-```
-
-### Example: Multi-Step Contact Form
-
-```tsx
-'use client';
-
-import {
-  FormWrapper,
-  FormStepContainer,
-  FormStepTracker,
-} from '@optimizely/cms-sdk/forms/react';
-import FormInput from './FormInput';
-import FormTextarea from './FormTextarea';
-import FormSubmit from './FormSubmit';
-
-export default function MultiStepForm({ stepNodes, buttonNodes }) {
-  return (
-    <FormWrapper
-      action="/api/forms/submit"
-      steps={stepNodes}
-      scrollToOnSuccess="success-alert"
-    >
-      <FormStepTracker steps={stepNodes.length} />
-      
-      {stepNodes.map((step, index) => (
-        <FormStepContainer key={index} index={index}>
-          <OptimizelyGridSection nodes={[step]} row={GridRow} column={GridColumn} />
-        </FormStepContainer>
-      ))}
-      
-      <div className='mt-8 flex items-center gap-4'>
-        <OptimizelyGridSection nodes={buttonNodes} row={GridRow} column={GridColumn} />
-      </div>
-    </FormWrapper>
-  );
-}
-```
-
-### Validation Across Steps
-
-All fields remain in the DOM when hidden (using CSS `display: none`), so validation runs on all steps before submission. This ensures that when users navigate back or submit, they can't bypass validation on earlier steps.
+---
 
 ## Form Dependency Rules
 
-Form dependency rules enable conditional visibility of fields based on the values of other fields. You can configure rules in the CMS to show or hide form elements dynamically based on user input.
-
-### Overview
-
-Dependency rules are defined in the CMS and passed to the form through the `rules` prop of `FormWrapper`. The SDK evaluates these rules in real-time as users fill out the form, automatically showing or hiding fields based on their conditions.
-
-### Setting Up Rules
-
-Pass dependency rules to `FormWrapper` via the `rules` prop:
+Show/hide fields based on other field values:
 
 ```tsx
 'use client';
 
-import { FormWrapper } from '@optimizely/cms-sdk/forms/react';
-import FormContainer from './FormContainer';
+import { FormWrapper, FormElement } from '@optimizely/cms-sdk/forms/react';
 
 export default function MyForm({ content }) {
   return (
@@ -700,16 +235,9 @@ export default function MyForm({ content }) {
 }
 ```
 
-### Using `FormElement` Wrapper
-
-Wrap form field components with `FormElement` to enable conditional rendering based on rules. The wrapper automatically handles visibility logic:
+Wrap fields with `FormElement` to enable conditional rendering. Your field components should pass `content` to `useFormField` to automatically track values for rule evaluation:
 
 ```tsx
-'use client';
-
-import { FormElement } from '@optimizely/cms-sdk/forms/react';
-import FormInput from './FormInput';
-
 export default function MyInput({ content }) {
   return (
     <FormElement content={content}>
@@ -719,134 +247,251 @@ export default function MyInput({ content }) {
 }
 ```
 
-The `FormElement` wrapper:
-
-- Extracts the field's unique ID from the content
-- Checks if the field should be visible based on dependency rules
-- Returns `null` (hiding the field) if visibility conditions aren't met
-- Renders children if the field should be visible
-
-### Tracking Field Values for Rules
-
-For rules to evaluate conditions, field components must track their values. Use the `useFormRules` hook in field components to register value changes:
+Inside FormInput, the hook automatically tracks field values:
 
 ```tsx
-'use client';
-
-import { useFormRules } from '@optimizely/cms-sdk/forms/react';
-import { getElementId } from '@optimizely/cms-sdk/forms/react';
-import { useEffect, useState } from 'react';
-
-function FormSelectionField({ content }) {
-  const [value, setValue] = useState('');
-  const { setFieldValue } = useFormRules();
-  const elementId = getElementId(content);
-
-  useEffect(() => {
-    if (elementId) {
-      setFieldValue(elementId, value);
-    }
-  }, [value, elementId, setFieldValue]);
-
-  return (
-    <select value={value} onChange={e => setValue(e.target.value)}>
-      {/* options */}
-    </select>
-  );
+export default function FormInput({ content }) {
+  const { value, setValue, inputRef, errors, showErrors } = useFormField({
+    name: content.SubmissionFieldName || content.Label,
+    validators: content.Validators,
+    content,  // Automatically tracks for rule evaluation
+  });
+  // ...
 }
 ```
 
+No manual `setFieldValue()` calls needed—the hook handles it all.
+
 ### Rule Conditions
 
-The CMS supports several condition types for evaluating field visibility:
+Supported conditions: `Equals`, `NotEquals`, `Contains`, `NotContains`
 
-- **Equals** - Field value matches a specific value
-- **NotEquals** - Field value does not match a specific value
-- **Contains** - Field value contains a substring
-- **NotContains** - Field value does not contain a substring
+Supported operators: `All` (AND), `Any` (OR)
 
-### Rule Operators
+---
 
-Rules can combine multiple conditions using:
+## Multi-Step Forms
 
-- **All** - All conditions must be true for the field to be visible
-- **Any** - At least one condition must be true for the field to be visible
-
-### Example: Conditional Visibility
-
-Suppose you have a form where a "Specify Other" text field only appears when a user selects "Other" from a choice field:
-
-1. **In the CMS:**
-   - Create a choice field with options (Standard, Premium, Other)
-   - Create a text field for "Please specify"
-   - Add a dependency rule: Show "Please specify" when choice field = "Other"
-
-2. **In your component:**
+Use `FormStep` to conditionally render steps:
 
 ```tsx
 'use client';
 
-import { FormElement, useFormRules } from '@optimizely/cms-sdk/forms/react';
-import { useEffect, useState } from 'react';
+import { FormWrapper, FormStep } from '@optimizely/cms-sdk/forms/react';
 
-function ServiceChoice({ content }) {
-  const [value, setValue] = useState('');
-  const { setFieldValue } = useFormRules();
-  const elementId = getElementId(content);
-
-  useEffect(() => {
-    if (elementId) {
-      setFieldValue(elementId, value);
-    }
-  }, [value, elementId, setFieldValue]);
-
+export default function MultiStepForm({ stepNodes }) {
   return (
-    <div>
-      <label>{content.Label}</label>
-      <select value={value} onChange={e => setValue(e.target.value)}>
-        <option value="">Select...</option>
-        <option value="Standard">Standard Service</option>
-        <option value="Premium">Premium Service</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-  );
-}
-
-function SpecifyOtherField({ content }) {
-  // This field will automatically hide/show based on the rule
-  return (
-    <FormElement content={content}>
-      <FormInput content={content} />
-    </FormElement>
-  );
-}
-
-export default function ServiceForm({ content }) {
-  return (
-    <FormWrapper action="/api/forms/submit" rules={content.DependencyRules}>
-      <ServiceChoice content={content.serviceType} />
-      <SpecifyOtherField content={content.specifyOther} />
-      <button type="submit">Submit</button>
+    <FormWrapper action="/api/forms/submit" steps={stepNodes}>
+      {stepNodes.map((step, i) => (
+        <FormStep key={i} index={i}>
+          <div className="mb-8">
+            <h2>Step {i + 1}</h2>
+            <OptimizelyGridSection nodes={[step]} row={GridRow} column={GridColumn} />
+          </div>
+        </FormStep>
+      ))}
     </FormWrapper>
   );
 }
 ```
 
-### Advanced: Custom `useFormRules` Usage
+All fields validate across steps before submission (fields remain in DOM while hidden).
 
-For more control over rule evaluation, use the `useFormRules` hook directly:
+---
+
+## Advanced Topics
+
+### Available Content Types
 
 ```ts
-const { 
-  rules,              // The configured dependency rules
-  fieldValues,        // Map of field IDs to their current values
-  setFieldValue,      // Function to update a field's value
-  isElementVisible,   // Function to check if an element should be visible
-} = useFormRules();
+import { FormContentTypes } from '@optimizely/cms-sdk';
 
-// Check if a specific element is visible
-const shouldShowField = isElementVisible(elementId);
+// Includes:
+// - OptiFormsContainerDataContentType
+// - OptiFormsTextboxElementContentType
+// - OptiFormsTextareaElementContentType
+// - OptiFormsNumberElementContentType
+// - OptiFormsRangeElementContentType
+// - OptiFormsUrlElementContentType
+// - OptiFormsChoiceElementContentType
+// - OptiFormsSelectionElementContentType
+// - OptiFormsSubmitElementContentType
+// - OptiFormsResetElementContentType
+// - OptiFormsDependencyRuleContentType
+// - OptiFormsConditionContentType
 ```
 
-This allows you to build custom conditional rendering logic beyond the standard `FormElement` wrapper.
+### Using Forms in Content Models
+
+```ts
+import { contentType } from '@optimizely/cms-sdk';
+import { OptiFormsContainerDataContentType } from '@optimizely/cms-sdk';
+
+export const PageWithFormContentType = contentType({
+  key: 'PageWithForm',
+  baseType: '_page',
+  properties: {
+    title: { type: 'string', displayName: 'Page Title' },
+    form: {
+      type: 'component',
+      displayName: 'Contact Form',
+      contentType: OptiFormsContainerDataContentType,
+    },
+  },
+});
+```
+
+### FormWrapper Props
+
+```tsx
+<FormWrapper
+  action="/api/submit"                    // Required: submission endpoint
+  scrollToOnSuccess="element-id"          // Optional: scroll on success
+  scrollToOnError="element-id"            // Optional: scroll on error
+  steps={stepNodes}                       // Optional: multi-step form nodes
+  rules={dependencyRules}                 // Optional: visibility rules
+>
+  {children}
+</FormWrapper>
+```
+
+### useFormField API
+
+```ts
+const {
+  value,        // Current input value
+  setValue,     // Update value
+  inputRef,     // Attach to input element
+  errors,       // Array of error messages
+  showErrors,   // Boolean: show errors on attempted submit
+  hasErrors,    // Boolean: field has validation errors
+  isRequired,   // Boolean: field is required
+} = useFormField({
+  name: 'fieldName',
+  validators: fieldContent.Validators,
+  content: fieldContent,  // Optional: auto-track for rules
+  defaultValue: '',       // Optional: initial value
+});
+```
+
+### Validation Utilities
+
+```ts
+import {
+  validateField,              // Validate value against validators
+  getErrorMessages,           // Extract error messages
+  isFieldRequired,            // Check if field is required
+  getHtmlValidationAttributes, // Generate HTML5 attributes
+  extractErrorMessage,        // Get single validator message
+  extractValidatorType,       // Get normalized validator type
+  getFieldName,              // Get field display name
+  VALIDATION_PATTERNS,       // Regex patterns: email, integer, etc.
+} from '@optimizely/cms-sdk/forms/validation';
+```
+
+### Advanced: Custom Rule Evaluation
+
+```ts
+import { useFormRules } from '@optimizely/cms-sdk/forms/react';
+
+const { rules, fieldValues, setFieldValue, isElementVisible } = useFormRules();
+
+// Check if element should be visible
+const visible = isElementVisible(elementId);
+```
+
+### Component Setup Options
+
+```tsx
+// Simple setup (recommended)
+initForms({
+  container: FormContainer,
+  textbox: FormInput,
+  submit: FormSubmit,
+});
+
+// With tagged variants
+initForms({
+  container: {
+    default: DefaultContainer,
+    tags: { compact: CompactContainer },
+  },
+});
+
+// Manual setup for complete control
+import { initContentTypeRegistry, initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+
+initContentTypeRegistry(FormContentTypes);
+initReactComponentRegistry({
+  resolver: {
+    OptiFormsContainerData: FormContainer,
+    OptiFormsTextboxElement: FormInput,
+    // ...
+  },
+});
+```
+
+---
+
+## Troubleshooting
+
+### Validation isn't working
+
+1. Ensure `FormWrapper` wraps your form (provides `FormValidationProvider`)
+2. Check that `useFormField` uses the correct `validators` prop
+3. Verify field names match between content and components
+
+### Rules aren't evaluating
+
+1. Ensure `FormWrapper` receives the `rules` prop
+2. Pass `content` to `useFormField` to auto-track values
+3. Verify element IDs are correct with `getElementId(content)`
+
+### Fields not showing
+
+1. Verify `initForms()` was called with all components
+2. Check content types are registered correctly
+3. Ensure components are marked `'use client'`
+4. Check browser console for resolution errors
+
+### Form won't submit
+
+1. Verify `action` prop points to valid API endpoint
+2. Check fields pass validation (no error messages)
+3. Ensure form component is `'use client'`
+4. Check network tab for POST request failures
+
+---
+
+## API Reference
+
+### Core Exports
+
+**From `@optimizely/cms-sdk/forms/react`:**
+
+- `FormWrapper` - Main form orchestrator
+- `useFormField` - Field setup hook (recommended for most fields)
+- `FormValidationProvider` / `useFormValidation` - Manual validation control
+- `FormStatusProvider` / `useFormStatus` - Submission state
+- `FormRulesProvider` / `useFormRules` - Rule evaluation
+- `FormElement` - Conditional field visibility wrapper
+- `FormStep` - Multi-step conditional renderer
+- `useFormStep` - Step navigation hook
+- `getElementId` - Extract element ID from content
+
+**From `@optimizely/cms-sdk/forms/validation`:**
+
+- `validateField` - Validate against validators
+- `getErrorMessages` - Extract error array
+- `isFieldRequired` - Check required status
+- `getHtmlValidationAttributes` - Generate HTML5 attrs
+- `extractErrorMessage` - Get validator message
+- `extractValidatorType` - Normalize validator type
+- `getFieldName` - Get display name
+- `VALIDATION_PATTERNS` - Reusable regex patterns
+
+**From `@optimizely/cms-sdk`:**
+
+- `FormContentTypes` - All form content type definitions
+- `OptiFormsContainerDataContentType` - Form container type
+- Individual field types (textbox, textarea, etc.)
