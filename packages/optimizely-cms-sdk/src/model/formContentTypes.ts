@@ -187,7 +187,6 @@ export const OptiFormsContainerDataContentType = contentType({
   },
 });
 
-// TODO: remove this when above is resolved
 export type OptiFormsContainerContentType = ContentProps<
   typeof OptiFormsContainerDataContentType
 > & { nodes?: ExperienceNode[] };
