@@ -62,22 +62,6 @@ export const toBaseTypeFragmentKey = (key: string): string =>
  */
 export const stripSourcePrefix = (key: string): string => key.replace(/^[a-z]+:/i, '');
 
-/**
- * Generates nested composition node structure for given depth.
- * @param depth - Current nesting level (0 = deepest).
- * @returns Nested fragment string.
- *
- * NOTE: Temporary workaround for Graph issue with @recursive directive.
- * This function will not be used once Graph properly supports @recursive.
- */
-function buildNestedCompositionNodes(depth: number): string {
-  if (depth === 0) {
-    return '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
-  }
-  const nested = buildNestedCompositionNodes(depth - 1);
-  return `__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { component { ..._IComponent } nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
-}
-
 // FRAGMENT CONSTANTS
 
 export const CONTENT_URL_FRAGMENT =
@@ -92,9 +76,7 @@ export const DAM_ASSET_FRAGMENTS = [
 
 export const FIXED_FRAGMENTS = [
   'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
-  // This is a temporary workaround for Graph issue with @recursive directive. This will not be used once Graph properly supports @recursive.
-  // Replace it with a simpler recursive fragment once Graph supports @recursive, e.g. 'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }':
-  `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(4)} }`,
+  'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }',
 ];
 
 const COMMON_FRAGMENTS = [
