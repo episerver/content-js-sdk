@@ -320,9 +320,9 @@ function validateProperty(value: unknown, property: AnyProperty, path: string[],
       validateContent(value, path, errors);
       break;
     case 'component': {
-      const resolved = typeof property.contentType === 'string'
-        ? getContentType(property.contentType)
-        : property.contentType;
+      // ponytail: typed as AnyContentType, but a content type key string can arrive at runtime
+      const ct: AnyContentType | string = property.contentType;
+      const resolved = typeof ct === 'string' ? getContentType(ct) : ct;
       if (resolved && 'baseType' in resolved && resolved.baseType) {
         validateComponent(value, resolved as AnyContentType, path, errors, new Set(visited));
       }
