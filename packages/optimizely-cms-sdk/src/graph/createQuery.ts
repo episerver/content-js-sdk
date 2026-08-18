@@ -122,6 +122,7 @@ const processUserTypeProperties = (
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts = DEFAULT_EXPAND_CONTRACTS,
     typeFilter,
+    ancestors,
   } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
@@ -137,6 +138,7 @@ const processUserTypeProperties = (
       maxFragmentThreshold,
       expandContracts,
       typeFilter,
+      ancestors,
     });
 
     fields.push(...result.fields);
@@ -218,6 +220,7 @@ export const createFragment = (
     includeBaseFragments = true,
     typeFilter,
   } = options;
+  const ancestors = options.ancestors ?? new Set<string>();
   const fragmentName = `${stripSourcePrefix(contentTypeName)}${suffix}`;
 
   if (visited.has(fragmentName))
@@ -225,6 +228,7 @@ export const createFragment = (
 
   if (visited.size === 0) refreshCache();
   visited.add(fragmentName);
+  ancestors.add(fragmentName);
 
   // Create telemetry span only at root level (not for recursive calls)
   const isRootCall = visited.size === 1;
@@ -258,6 +262,7 @@ export const createFragment = (
         maxFragmentThreshold,
         expandContracts,
         typeFilter,
+        ancestors,
       },
     );
     fields.push(...propResult.fields);
@@ -280,6 +285,7 @@ export const createFragment = (
         maxFragmentThreshold,
         expandContracts,
         typeFilter,
+        ancestors,
       });
       extraFragments.push(...experienceResult.fragments);
       includesDamAssetsFragments =
@@ -308,6 +314,7 @@ export const createFragment = (
     span.end();
   }
 
+  ancestors.delete(fragmentName);
   return result;
 };
 
