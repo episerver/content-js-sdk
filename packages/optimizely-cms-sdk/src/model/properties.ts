@@ -74,7 +74,7 @@ export type FloatProperty = BaseProperty & {
   maximum?: number;
 } & WithEnum<number>;
 
-/** Represents the content type property "ContentReference" */
+/** Represents type constraints for "content" and "contentReference" properties */
 type ContentAndRefBlock =
   | {
       contentType: AnyContentType | string;

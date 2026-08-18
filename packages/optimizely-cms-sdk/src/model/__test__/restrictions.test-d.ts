@@ -75,7 +75,7 @@ test('content/contentReference require allowedTypes or restrictedTypes', () => {
     displayName: 'Page',
     baseType: '_page',
     properties: {
-      //@ts-expect-error - contentReference requires either allowedTypes or restrictedTypes
+      // @ts-expect-error - contentReference requires either allowedTypes or restrictedTypes
       ref: { type: 'contentReference' },
     },
   });
