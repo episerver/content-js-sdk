@@ -399,12 +399,14 @@ const handleArrayProperty: PropertyHandler = (
   const {
     damEnabled = false,
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+    expandContracts = DEFAULT_EXPAND_CONTRACTS,
     typeFilter,
   } = options;
 
   return convertProperty(name, (property as any).items, rootName, suffix, visited, {
     damEnabled,
     maxFragmentThreshold,
+    expandContracts,
     typeFilter,
   });
 };
