@@ -234,8 +234,6 @@ const content = await client.getContent(
 - If only `locale` is specified, fetches latest published version in that locale
 - If neither specified, fetches latest published version
 
-> **Note:** `getContent()` always returns published content. To fetch draft content, use `getPreviewContent()` with a preview token instead.
-
 **Returns:** Content item or null if not found
 
 ---
