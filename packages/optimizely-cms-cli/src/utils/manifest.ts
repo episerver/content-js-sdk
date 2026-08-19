@@ -67,6 +67,7 @@ export namespace ContentTypeProperties {
     group?: string;
     sortOrder?: number;
     indexingType?: string;
+    displayMode?: string;
   };
 
   // Enum wrapper type supporting multiple formats:

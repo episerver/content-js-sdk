@@ -387,6 +387,7 @@ const skipPropertyConditions: Record<string, (it: any) => boolean> = {
   isLocalized: (it: any) => it === false,
   isRequired: (it: any) => it === false,
   sortOrder: (it: any) => it === 0,
+  displayMode: (it: any) => it === 'available',
   mayContainTypes: (it: any) => it?.length === 0,
   extends: (it: any) => it?.length === 0,
   contentType: (it: any) => it === undefined,

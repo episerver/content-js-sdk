@@ -8,6 +8,9 @@ export type INDEX_TYPE = 'disabled' | 'queryable' | 'searchable';
 
 export type RICHTEXT_PRESET = 'default' | 'expanded' | 'standard' | 'minimal';
 
+/** How a property is displayed in the editing interface. Defaults to `available`. */
+export type DISPLAY_MODE = 'available' | 'hidden';
+
 /** A "Base" content type property that includes all common attributes for all content type properties */
 type BaseProperty = {
   format?: string;
@@ -18,6 +21,7 @@ type BaseProperty = {
   group?: PropertyGroupKey;
   sortOrder?: number;
   indexingType?: INDEX_TYPE;
+  displayMode?: DISPLAY_MODE;
 };
 
 type WithEnum<T> = {

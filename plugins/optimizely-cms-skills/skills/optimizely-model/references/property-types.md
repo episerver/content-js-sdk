@@ -387,6 +387,7 @@ All property types support these common metadata fields:
 | `isRequired` | boolean | Whether property must have a value | `true`, `false` |
 | `isLocalized` | boolean | Whether property has different values per language/culture | `true`, `false` |
 | `indexingType` | string | How property is indexed for search | `'searchable'`, `'queryable'` |
+| `displayMode` | string | How property is displayed in the editing interface | `'available'`, `'hidden'` |
 
 **Complete example with all metadata:**
 
@@ -418,6 +419,7 @@ title: {
 | "searchable", "indexed for search" | `indexingType` | `'searchable'` |
 | "queryable", "filterable" | `indexingType` | `'queryable'` |
 | "required", "mandatory", "must have value" | `isRequired` | `true` |
+| "hidden", "hide from editors", "not editable" | `displayMode` | `'hidden'` |
 
 **Example mappings:**
 
