@@ -22,15 +22,10 @@ export const HeaderClient = ({
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Code-defined nav entry for the code-first store (ADR 0001: the global nav
-  // gains exactly one Store entry; CMS navigation data stays untouched).
-  const storeNavItem: NavigationItem = {
-    key: 'stride-store-code-nav',
-    displayName: 'Store',
-    url: '/store',
-    isActive: false,
-    items: null,
-  };
+  // The code-first store ships unlisted for now: /store and its subroutes stay
+  // reachable by direct URL (and to the WebMCP tools), but the global nav gets
+  // no Store entry until the feature is announced. Restoring it means adding a
+  // single code-defined NavigationItem back into the arrays below (ADR 0001).
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,7 +53,7 @@ export const HeaderClient = ({
           </Link>
           <div className='flex gap-6'>
             <nav className='hidden lg:flex gap-6 translate-y-0.5'>
-              {[...navigationItems, storeNavItem].map(item => {
+              {navigationItems.map(item => {
                 return (
                   <Link
                     key={item.key}
@@ -95,7 +90,7 @@ export const HeaderClient = ({
       <MobileMenu
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
-        navigationItems={[...mobileNavItems, storeNavItem]}
+        navigationItems={mobileNavItems}
       />
 
       <SearchModal
