@@ -181,7 +181,7 @@ Array properties support:
 - All item types except `array` (no nested arrays)
 
 > [!IMPORTANT]
-> When using `type: 'content'` or `type: 'contentReference'` within array items, always specify `allowedTypes` or `restrictedTypes`. Without these constraints, the SDK will generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
+> When using `type: 'content'` or `type: 'contentReference'` within array items, always specify `allowedTypes` or `restrictedTypes`. Without these constraints, the SDK will generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries. See [Content Relationships](#content-relationships) — `opti-cms config push` rejects unconstrained array items.
 >
 > [!TIP]
 > You can use contracts in `allowedTypes` to allow all content types that extend a specific contract. See the [Content Relationships](#content-relationships) section for examples.
@@ -302,7 +302,27 @@ const BlogPageContentType = contentType({
 **`restrictedTypes`** - Blacklist of content types that cannot be selected. Uses the same format as `allowedTypes`.
 
 > [!IMPORTANT]
-> Always specify either `allowedTypes` or `restrictedTypes` for `content` and `contentReference` properties. Without these constraints, the SDK will generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
+> Every `content` and `contentReference` property must declare exactly one form of constraint: either a single `contentType`, or a non-empty `allowedTypes`/`restrictedTypes`. Never both, and never an empty list. `opti-cms config push` fails before uploading anything when a property breaks this. Unconstrained properties make the SDK generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
+
+#### Migrating existing content types
+
+Content types written before this rule was enforced may have `content` or `contentReference` properties with no constraints, or with an empty `allowedTypes`/`restrictedTypes`. `opti-cms config push` now reports each one and exits without uploading. Add the constraint that matches your intent:
+
+```ts
+// Before - unconstrained, queries every content type
+properties: {
+  featuredArticle: { type: 'content' },
+  hero: { type: 'contentReference', allowedTypes: [] },
+}
+
+// After - pick one form of constraint per property
+properties: {
+  featuredArticle: { type: 'contentReference', allowedTypes: [ArticleContentType] },
+  hero: { type: 'content', contentType: HeroContentType },
+}
+```
+
+If a property really should accept a wide range, use `restrictedTypes` to exclude what it cannot hold (for example `restrictedTypes: [SomeContentType]`) instead of leaving it open. Run `opti-cms config push --dryRun` to list every remaining violation before pushing.
 
 ## Container Types with mayContainTypes
 

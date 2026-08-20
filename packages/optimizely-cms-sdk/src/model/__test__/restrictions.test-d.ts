@@ -116,7 +116,11 @@ test('content/contentReference require allowedTypes or restrictedTypes', () => {
     displayName: 'Page',
     baseType: '_page',
     properties: {
-      ref: { type: 'contentReference', allowedTypes: ['_component'], restrictedTypes: ['other'] },
+      ref: {
+        type: 'contentReference',
+        allowedTypes: ['_component'],
+        restrictedTypes: ['other'],
+      },
     },
   });
 });

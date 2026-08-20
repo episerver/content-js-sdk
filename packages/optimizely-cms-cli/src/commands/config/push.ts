@@ -16,7 +16,10 @@ import { mapContentToManifest } from '../../mapper/contentToPackage.js';
 import { pathToFileURL } from 'node:url';
 import { constants } from 'node:fs';
 import { translateErrorMessage } from '../../utils/errors.js';
-import { contractToManifest, validateContentAreaConstraints } from '../../utils/mapping.js';
+import {
+  contractToManifest,
+  validateContentAreaConstraints,
+} from '../../utils/mapping.js';
 import { syncLocales } from '../../service/localeService.js';
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
@@ -80,17 +83,22 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     );
 
     // Validate content area constraints
-    const { warnings: constraintWarnings } = validateContentAreaConstraints(contentTypes);
-    if (constraintWarnings.length > 0) {
-      console.warn(chalk.yellow('\nContent Area Warnings:'));
-      for (const warning of constraintWarnings) {
-        console.warn(chalk.yellow(`  ⚠ ${warning}`));
-      }
-      console.warn(
-        chalk.dim(
-          '  Tip: Add "allowedTypes" or "restrictedTypes" to avoid excessive fragment generation at runtime.\n',
+    const { errors: constraintErrors } = validateContentAreaConstraints(contentTypes);
+    if (constraintErrors.length > 0) {
+      console.error(
+        chalk.red(
+          `\nInvalid content type configuration (${constraintErrors.length} ${constraintErrors.length === 1 ? 'issue' : 'issues'} found):`,
         ),
       );
+      for (const error of constraintErrors) {
+        console.error(chalk.red(`  ✖ ${error}`));
+      }
+      console.error(
+        chalk.dim(
+          '\n  Resolve the issues above and run the command again. Nothing was pushed to the CMS.\n',
+        ),
+      );
+      process.exit(1);
     }
 
     // Validate and normalize property groups

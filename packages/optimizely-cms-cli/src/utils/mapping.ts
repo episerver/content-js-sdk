@@ -157,33 +157,52 @@ const mapAllowedRestrictedTypes = (updatedValue: any, parentKey: string): any =>
 };
 
 /**
- * Validates that content area properties have `allowedTypes` or `restrictedTypes` defined.
- * Returns warnings for properties that could cause excessive fragment generation at runtime.
+ * Validates `content` and `contentReference` properties (including array items).
+ *
+ * Every such property must declare exactly one form of type constraint: either
+ * `contentType`, or a non-empty `allowedTypes`/`restrictedTypes`. Declaring both is a
+ * conflict, declaring neither leaves the property unbounded and causes excessive GraphQL
+ * fragment generation at runtime.
  */
 export const validateContentAreaConstraints = (
   contentTypes: ContentTypes.AnyContentType[],
-): { warnings: string[] } => {
-  const warnings: string[] = [];
+): { errors: string[] } => {
+  const errors: string[] = [];
 
   for (const ct of contentTypes) {
     if (!ct.properties) continue;
 
     for (const [propName, prop] of Object.entries(ct.properties)) {
-      const isUnconstrainedContent =
-        (prop.type === 'content' && !hasTypeConstraints(prop)) ||
-        (prop.type === 'array' && 'items' in prop && (prop as any).items?.type === 'content' && !hasTypeConstraints((prop as any).items));
+      // an array delegates its constraints to `items`
+      const target: any = prop.type === 'array' ? (prop as any).items : prop;
+      if (!target || !['content', 'contentReference'].includes(target.type)) continue;
 
-      if (isUnconstrainedContent) {
-        warnings.push(
-          `Content type "${ct.key}", property "${propName}": ` +
-            `content area has no "allowedTypes" or "restrictedTypes". ` +
-            `This may cause excessive GraphQL fragment generation at runtime.`,
+      const location = `Content type "${ct.key}", property "${propName}" (${target.type})`;
+      const hasConstraints = hasTypeConstraints(target);
+      const emptyLists = ['allowedTypes', 'restrictedTypes'].filter(
+        name => Array.isArray(target[name]) && target[name].length === 0,
+      );
+
+      if (emptyLists.length > 0) {
+        errors.push(
+          `${location}: empty type constraints. ` +
+            `${emptyLists.map(name => `"${name}"`).join(' and ')} must list at least one content type, or be removed.`,
+        );
+      } else if (target.contentType && hasConstraints) {
+        errors.push(
+          `${location}: conflicting type constraints. ` +
+            `"contentType" cannot be combined with "allowedTypes" or "restrictedTypes", declare only one of them.`,
+        );
+      } else if (!target.contentType && !hasConstraints) {
+        errors.push(
+          `${location}: missing type constraints. ` +
+            `Declare "contentType", or "allowedTypes"/"restrictedTypes", to define which content types are permitted.`,
         );
       }
     }
   }
 
-  return { warnings };
+  return { errors };
 };
 
 const hasTypeConstraints = (prop: any): boolean =>
