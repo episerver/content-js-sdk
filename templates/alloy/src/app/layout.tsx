@@ -5,7 +5,7 @@ import {
   initContentTypeRegistry,
   config,
 } from '@optimizely/cms-sdk';
-import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+import { initReactComponentRegistry, initForms } from '@optimizely/cms-sdk/react/server';
 
 import './globals.css';
 import Teaser, { TeaserContentType } from '@/components/base/Teaser';
@@ -25,6 +25,11 @@ import StandardTeaser from '@/components/base/StandardTeaser';
 import NewsEventsList, {
   NewsEventsListContentType,
 } from '@/components/base/NewsEventsList';
+import FormContainer from '@/components/FormContainer';
+import FormInput from '@/components/FormInput';
+import FormSelection from '@/components/FormSelection';
+import FormTextarea from '@/components/FormTextarea';
+import FormSubmit from '@/components/FormSubmit';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -84,6 +89,14 @@ initReactComponentRegistry({
     Button,
     NewsEventsList,
   },
+});
+
+initForms({
+  container: FormContainer,
+  textbox: FormInput,
+  selection: FormSelection,
+  textarea: FormTextarea,
+  submit: FormSubmit,
 });
 
 export default async function RootLayout({

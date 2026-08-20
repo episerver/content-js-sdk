@@ -17,7 +17,7 @@ import {
 } from './baseTypeUtil.js';
 import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
-import { createFragment } from '../graph/createQuery.js';
+import { createFragment, DEFAUL_FRAGMENT_OPTIONS } from '../graph/createQuery.js';
 import { isContract, findExtendingContentTypes } from '../model/index.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
@@ -64,12 +64,12 @@ const collectTypesAndContracts = (
 // TYPE DEFINITIONS
 
 /**
- * Options for controlling GraphQL fragment generation behavior.
+ * Options for controlling GraphQL fragment and query generation behavior.
  */
 export type FragmentOptions = {
   /**
    * Enable Digital Asset Management (DAM) support for contentReference properties.
-   * When true, includes specialized fragments for DAM assets (images, videos, files).
+   * Auto-detected from GraphQL schema introspection.
    * @default false
    */
   damEnabled?: boolean;
@@ -82,8 +82,15 @@ export type FragmentOptions = {
    * Enable or disable contract expansion.
    * When true, contracts are expanded to include all implementing types.
    * When false, only the contract itself is included without expansion.
+   * @default false
    */
   expandContracts?: boolean;
+  /**
+   * Enable Optimizely Forms support.
+   * Auto-detected from GraphQL schema introspection.
+   * @default false
+   */
+  formsEnabled?: boolean;
   /**
    * Whether to include CMS base type fragments (e.g., _IContent, _IPage) in generated fragments.
    * Set to false for component property fragments that don't need base metadata.
@@ -250,6 +257,7 @@ const handleComponentProperty: PropertyHandler = (
   const fragmentName = `${stripSourcePrefix(key)}Property`;
   const fields = [`${nameInFragment} { ...${fragmentName} }`];
   const result = createFragment(key, visited, 'Property', {
+    ...DEFAUL_FRAGMENT_OPTIONS,
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: false,
@@ -293,6 +301,7 @@ const handleContentProperty: PropertyHandler = (
 
   const createFragmentFor = (key: string) => {
     const result = createFragment(key, visited, '', {
+      ...DEFAUL_FRAGMENT_OPTIONS,
       damEnabled,
       maxFragmentThreshold,
       expandContracts,
@@ -404,6 +413,7 @@ const handleArrayProperty: PropertyHandler = (
   } = options;
 
   return convertProperty(name, (property as any).items, rootName, suffix, visited, {
+    ...DEFAUL_FRAGMENT_OPTIONS,
     damEnabled,
     maxFragmentThreshold,
     expandContracts,
@@ -442,7 +452,7 @@ const convertPropertyField: PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions = {},
+  options: FragmentOptions = DEFAUL_FRAGMENT_OPTIONS,
 ) => {
   const handler = PROPERTY_HANDLERS[property.type] ?? handleScalarProperty;
 
@@ -463,7 +473,7 @@ export const convertProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions = {},
+  options: FragmentOptions = DEFAUL_FRAGMENT_OPTIONS,
 ) => {
   // Remove the namespace prefix (e.g. `graph:`) from rootName so field aliases
   // (`{rootName}__{field}`) match the GraphQL __typename, which has no prefix.

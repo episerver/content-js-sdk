@@ -4,6 +4,19 @@ import {
   ComponentResolverOrObject,
 } from '../render/componentRegistry.js';
 import { JSX } from 'react';
+import { FormContentTypes } from '../model/formContentTypes.js';
+import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
+import { mapFormHandlersToContentTypes } from './forms/setup.js';
+import type { FormHandlers, ComponentType, FormComponentEntry } from './forms/setup.js';
+
+let componentRegistry: ComponentRegistry<ComponentType>;
+let _componentMap: Record<string, FormComponentEntry> = {};
+
+const addToReactComponentRegistry = (components: Record<string, FormComponentEntry>) => {
+  _componentMap = { ..._componentMap, ...components };
+  componentRegistry = new ComponentRegistry(_componentMap);
+};
+
 import {
   ExperienceStructureNode,
   ExperienceNode,
@@ -32,11 +45,26 @@ export {
 export { ReactContextAdapter } from '../context/reactContextAdapter.js';
 export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
-type ComponentType = React.ComponentType<any>;
-
-// Mapping content type names with Components.
-// This is a single global object used across the entire request
-let componentRegistry: ComponentRegistry<ComponentType>;
+/**
+ * Initializes form content types and components in one call.
+ * Automatically registers all Optimizely Forms content types and their React components.
+ *
+ * @param handlers Form component handlers mapped by display name
+ *
+ * @example
+ * ```ts
+ * initForms({
+ *   container: FormContainerComponent,
+ *   textbox: TextboxComponent,
+ *   textarea: TextareaComponent,
+ *   // ... other form element components
+ * });
+ * ```
+ */
+export function initForms(handlers: FormHandlers) {
+  addToContentTypeRegistry(FormContentTypes);
+  addToReactComponentRegistry(mapFormHandlersToContentTypes(handlers));
+}
 
 type InitOptions = {
   resolver: ComponentResolverOrObject<ComponentType>;
@@ -83,6 +111,7 @@ type InitOptions = {
  */
 export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
+  if (typeof options.resolver !== 'function') _componentMap = options.resolver;
 }
 
 /** Content data from CMS */
@@ -322,7 +351,6 @@ export function OptimizelyComposition({
       return <div>???</div>;
     }
 
-    // Merge user-defined properties from `_section` nodes
     const componentData = 'component' in node ? (node.component as object) : {};
 
     return (
@@ -447,9 +475,10 @@ export function OptimizelyGridSection({
     // 2. Globally defined (in the registry)
     // 3. Fallback
     // 4. React.Fragment
+    const globalName = globalNames[nodeType];
     const Component =
       locallyDefined[nodeType] ??
-      componentRegistry.getComponent(globalNames[nodeType], { tag }) ??
+      (globalName ? componentRegistry.getComponent(globalName, { tag }) : undefined) ??
       fallbacks[nodeType] ??
       React.Fragment;
 

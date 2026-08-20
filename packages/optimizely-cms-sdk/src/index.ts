@@ -13,6 +13,8 @@ export {
   PropertyGroupType,
 } from './model/index.js';
 
+export { initForms } from './react/server.js';
+
 // GraphQL
 export {
   GraphClient,
@@ -38,6 +40,23 @@ export {
   BlankExperienceContentType,
 } from './model/internalContentTypes.js';
 
+// Optimizely Forms content types
+export {
+  OptiFormsContainerDataContentType,
+  OptiFormsTextboxElementContentType,
+  OptiFormsTextareaElementContentType,
+  OptiFormsNumberElementContentType,
+  OptiFormsRangeElementContentType,
+  OptiFormsUrlElementContentType,
+  OptiFormsChoiceElementContentType,
+  OptiFormsSelectionElementContentType,
+  OptiFormsSubmitElementContentType,
+  OptiFormsResetElementContentType,
+  OptiFormsDependencyRuleContentType,
+  OptiFormsConditionContentType,
+  OptiFormsContainerContentType,
+} from './model/formContentTypes.js';
+
 // Namespaces for errors, types, and utilities
 export * as GraphErrors from './graph/error.js';
 export * as ContentTypes from './model/contentTypes.js';
@@ -47,6 +66,7 @@ export * as Properties from './model/properties.js';
 
 // Type inference and asset utilities
 export { ContentProps } from './infer.js';
+export type { JsonValue, JsonObject, JsonArray, JsonPrimitive } from './infer.js';
 
 // Dam assets
 export { damAssets } from './render/assets.js';

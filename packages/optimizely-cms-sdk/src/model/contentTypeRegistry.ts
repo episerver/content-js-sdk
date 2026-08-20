@@ -9,6 +9,12 @@ export function init(registry: RegistryEntry[]) {
   _registry = registry;
 }
 
+/** Adds content types to the registry without replacing existing entries (internal use only) */
+export const addToContentTypeRegistry = (types: AnyContentType[]) => {
+  _registry.push(...types);
+}
+
+
 /** Get the Component from a content type name */
 export function getContentType(name: string) {
   return _registry.find(c => c.key === name);

@@ -599,6 +599,35 @@ When `tag="card"` is passed, the component registry looks for `Article:card` fir
 
 For details on component registration and rendering, see [Rendering](./6-rendering-react.md).
 
+## Using Optimizely Forms
+
+If Optimizely Forms is enabled in your CMS instance, you can include form fields in your content types. The SDK provides pre-defined content types for all Forms field types.
+
+To use Forms in your content model, import the Forms content types and reference them:
+
+```ts
+import { contentType } from '@optimizely/cms-sdk';
+import { OptiFormsContainerDataContentType } from '@optimizely/cms-sdk';
+
+export const PageWithFormContentType = contentType({
+  key: 'PageWithForm',
+  baseType: '_page',
+  properties: {
+    title: { type: 'string' },
+    contactForm: {
+      type: 'component',
+      displayName: 'Contact Form',
+      contentType: OptiFormsContainerDataContentType,
+    },
+  },
+});
+```
+
+Forms support includes validation, conditional visibility, field dependencies, and more. For a complete list of available Forms content types and detailed documentation, see [Working with Optimizely Forms](./15-forms.md).
+
+> [!NOTE]
+> Forms support is automatic. If Forms is enabled in your CMS, the SDK will detect it and make Forms content types available. See [Enabling Forms in the CMS](./15-forms.md#enabling-forms-in-the-cms) for setup instructions.
+
 ## Step 2. Sync content types to the CMS
 
 After defining your content types and contracts, sync them to the CMS by running the following command:

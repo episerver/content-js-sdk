@@ -1,6 +1,12 @@
 import { AnyContentType, PermittedTypes } from './contentTypes.js';
 import { PropertyGroupKey } from './buildConfig.js';
 
+/** JSON type definitions */
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonObject = { [key: string]: JsonValue };
+export type JsonArray = JsonValue[];
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
 /** All possible content type properties */
 export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
@@ -51,7 +57,11 @@ export type StringProperty = BaseProperty & {
 
 export type BooleanProperty = BaseProperty & { type: 'boolean' };
 export type BinaryProperty = BaseProperty & { type: 'binary' };
-export type JsonProperty = BaseProperty & { type: 'json' };
+export type JsonProperty<TSchema = JsonValue> = BaseProperty & {
+  type: 'json';
+  /** @internal used for type inference only - not a runtime property */
+  readonly __schema?: TSchema;
+};
 export type DateTimeProperty = BaseProperty & {
   type: 'dateTime';
   minimum?: string;

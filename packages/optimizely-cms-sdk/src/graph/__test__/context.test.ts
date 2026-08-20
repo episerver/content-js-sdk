@@ -135,7 +135,15 @@ describe('GraphClient - Context Integration', () => {
 
     // Mock fetch globally
     originalFetch = global.fetch;
-    global.fetch = vi.fn();
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: () => Promise.resolve(''),
+        json: () => Promise.resolve({}),
+      } as any),
+    );
   });
 
   afterEach(() => {
@@ -157,6 +165,7 @@ describe('GraphClient - Context Integration', () => {
               },
             },
             damAssetType: null,
+            formsContainerType: null,
           },
         }),
       });
@@ -235,6 +244,7 @@ describe('GraphClient - Context Integration', () => {
               },
             },
             damAssetType: null,
+            formsContainerType: null,
           },
         }),
       });

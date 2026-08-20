@@ -159,7 +159,19 @@ test('ContentProps works for disabled keys', () => {
     },
   });
 
-  type X = ContentProps<typeof c1>;
-
   expectTypeOf<ContentProps<typeof c1>>().toExtend<ExpectedType>();
+});
+
+test('ContentProps infers JsonValue for JSON properties', () => {
+  const c1 = contentType({
+    key: 'c1',
+    displayName: 'C1',
+    baseType: '_component',
+    properties: {
+      settings: { type: 'json' },
+    },
+  });
+
+  type Result = ContentProps<typeof c1>;
+  expectTypeOf<Result['settings']>().not.toBeAny();
 });

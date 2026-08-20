@@ -2,6 +2,7 @@ import {
   createSingleContentQuery,
   ItemsResponse,
   createMultipleContentQuery,
+  DEFAUL_FRAGMENT_OPTIONS,
 } from './createQuery.js';
 import {
   GraphContentResponseError,
@@ -149,6 +150,14 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   }
   # Check if "cmp_Asset" type exists which indicates that DAM is enabled
   damAssetType: __type(name: "cmp_Asset") {
+    __typename
+  }
+}
+`;
+
+const GET_FORMS_ENABLED_QUERY = `
+query GetFormsEnabled {
+  formsContainerType: __type(name: "OptiFormsContainerData") {
     __typename
   }
 }
@@ -466,20 +475,34 @@ export class GraphClient {
     cache?: boolean,
     slot?: GraphSlot,
   ) {
-    const data = await this.request(
-      GET_CONTENT_METADATA_QUERY,
-      input,
-      previewToken,
-      cache ?? this.cache,
-      slot ?? this.slot,
-    );
+    // TODO: this is suboptimal and I would like to merge the metadata queries back 
+    // into a single one but currenly when merged formsContainerType is always null 
+    // no matter whether forms are enabled or not in the CMS
+    const [data, formsData] = await Promise.all([
+      this.request(
+        GET_CONTENT_METADATA_QUERY,
+        input,
+        previewToken,
+        cache ?? this.cache,
+        slot ?? this.slot,
+      ),
+      this.request(
+        GET_FORMS_ENABLED_QUERY,
+        {},
+        previewToken,
+        cache ?? this.cache,
+        slot ?? this.slot,
+      ),
+    ]);
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
     // Determine if DAM is enabled based on the presence of cmp_Asset type
     const damEnabled = data.damAssetType !== null;
+    // Determine if Forms is enabled based on the presence of OptiFormsContainerData type
+    const formsEnabled = formsData.formsContainerType !== null;
 
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled };
+      return { contentTypeName: null, damEnabled, formsEnabled };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -494,7 +517,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled };
+    return { contentTypeName, damEnabled, formsEnabled };
   }
 
   /**
@@ -521,7 +544,7 @@ export class GraphClient {
       const cacheEnabled = options?.cache ?? this.cache;
       const activeSlot = options?.slot ?? this.slot;
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         undefined,
         cacheEnabled,
@@ -536,13 +559,13 @@ export class GraphClient {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
       try {
-        const query = createMultipleContentQuery(
-          contentTypeName,
+        const query = createMultipleContentQuery(contentTypeName, {
+          ...DEFAUL_FRAGMENT_OPTIONS,
           damEnabled,
-          this.maxFragmentThreshold,
-          this.expandContracts,
-          this.typeFilter,
-        );
+          maxFragmentThreshold: this.maxFragmentThreshold,
+          expandContracts: this.expandContracts,
+          formsEnabled,
+        });
         const response = (await this.request(
           query,
           input,
@@ -718,7 +741,7 @@ export class GraphClient {
       const input = previewFilter(params);
       const activeSlot = options?.slot ?? this.slot;
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         params.preview_token,
         false,
@@ -744,13 +767,13 @@ export class GraphClient {
         mode: params.ctx,
       });
 
-      const query = createSingleContentQuery(
-        contentTypeName,
+      const query = createSingleContentQuery(contentTypeName, {
+        ...DEFAUL_FRAGMENT_OPTIONS,
         damEnabled,
-        this.maxFragmentThreshold,
-        this.expandContracts,
-        this.typeFilter,
-      );
+        maxFragmentThreshold: this.maxFragmentThreshold,
+        expandContracts: this.expandContracts,
+        formsEnabled,
+      });
 
       const response = await this.request(
         query,
@@ -888,7 +911,7 @@ export class GraphClient {
         },
       };
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         previewToken,
         cacheEnabled,
@@ -903,13 +926,13 @@ export class GraphClient {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
       try {
-        const query = createSingleContentQuery(
-          contentTypeName,
+        const query = createSingleContentQuery(contentTypeName, {
+          ...DEFAUL_FRAGMENT_OPTIONS,
           damEnabled,
-          this.maxFragmentThreshold,
-          this.expandContracts,
-          this.typeFilter,
-        );
+          maxFragmentThreshold: this.maxFragmentThreshold,
+          expandContracts: this.expandContracts,
+          formsEnabled,
+        });
 
         const response = await this.request(
           query,
