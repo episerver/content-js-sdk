@@ -393,6 +393,39 @@ export class GraphClient {
           headers['cg-query-new'] = 'true';
         }
 
+        // ============ QUERY LOGGER START ============
+        // Log GraphQL query to file for debugging
+        if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+          try {
+            const fs = require('fs');
+            const path = require('path');
+            const logsDir = path.join(process.cwd(), 'logs');
+ 
+            if (!fs.existsSync(logsDir)) {
+              fs.mkdirSync(logsDir, { recursive: true });
+            }
+ 
+            const logFile = path.join(logsDir, `graphql-queries-${Date.now()}.log`);
+            const timestamp = new Date().toISOString();
+ 
+            let logContent = `\n${'━'.repeat(80)}\n`;
+            logContent += `[${timestamp}] GraphQL Request\n`;
+            logContent += `${'━'.repeat(80)}\n`;
+            logContent += `URL: ${url}\n\n`;
+            logContent += `QUERY:\n${'-'.repeat(80)}\n${query}\n${'-'.repeat(80)}\n\n`;
+ 
+            if (variables && Object.keys(variables).length > 0) {
+              logContent += `VARIABLES:\n${'-'.repeat(80)}\n${JSON.stringify(variables, null, 2)}\n${'-'.repeat(80)}\n\n`;
+            }
+ 
+            fs.appendFileSync(logFile, logContent);
+            console.log(`📝 GraphQL query logged to: ${logFile}`);
+          } catch (err) {
+            // Ignore logging errors
+          }
+        }
+        // ============ QUERY LOGGER END ============
+
         const response = await fetch(url, {
           method: 'POST',
           headers,
@@ -435,6 +468,7 @@ export class GraphClient {
           }
 
           if (json.errors) {
+            console.error('[GraphQL Errors]', JSON.stringify(json.errors, null, 2));
             throw new GraphContentResponseError(json.errors, {
               status: response.status,
               request: { query, variables },
