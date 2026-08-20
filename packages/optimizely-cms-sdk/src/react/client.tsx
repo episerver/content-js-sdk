@@ -40,8 +40,9 @@ export interface PreviewComponentProps {
 
   /**
    * Delay in ms before triggering navigation. False to disable.
-   * Useful for debouncing rapid saves.
-   * @default 300
+   * Coalesces the burst of events the CMS emits for a single save (page plus each
+   * nested block), which land within a few ms of each other.
+   * @default 50
    */
   refreshTimeout?: number | false;
 
@@ -49,20 +50,34 @@ export interface PreviewComponentProps {
    * Optional loading indicator shown during refresh delay.
    */
   children?: ReactNode;
+
+  /**
+   * Keeps the loading indicator visible while the caller is still navigating.
+   * Needed because router APIs like Next.js `router.refresh()` return `void`,
+   * so `onNavigate` resolving does not mean the new content has arrived.
+   */
+  busy?: boolean;
 }
 
 /**
  * Listens for Optimizely CMS content saved events and triggers navigation/refresh.
- * Deduplication prevents duplicate refreshes.
+ * Rapid saves are coalesced into a single refresh.
  */
 export const PreviewComponent: FunctionComponent<
   PropsWithChildren<PreviewComponentProps>
-> = ({ onNavigate, refreshTimeout = 300, children }) => {
+> = ({ onNavigate, refreshTimeout = 50, children, busy = false }) => {
   const [showMask, setShowMask] = useState<boolean>(false);
   const reloadDelay = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastProcessedRef = useRef<{ contentLink: string; timestamp: number } | null>(
     null,
   );
+
+  // Read through a ref so the listener effect never re-runs. Callers pass an inline
+  // arrow for `onNavigate`, and re-subscribing would clearTimeout a pending refresh.
+  const optionsRef = useRef({ onNavigate, refreshTimeout });
+  useEffect(() => {
+    optionsRef.current = { onNavigate, refreshTimeout };
+  });
 
   useEffect(() => {
     const normalizeUrl = (url: string): string => {
@@ -72,18 +87,21 @@ export const PreviewComponent: FunctionComponent<
     };
 
     const handleContentSaved = (eventData: ContentSavedEvent) => {
-      const now = Date.now();
+      const { onNavigate, refreshTimeout } = optionsRef.current;
 
-      // Ignore same contentLink within 50ms (deduplication for dual events)
-      if (
-        lastProcessedRef.current &&
-        lastProcessedRef.current.contentLink === eventData.contentLink &&
-        now - lastProcessedRef.current.timestamp < 50
-      ) {
-        return;
+      // With debouncing on, the timer already coalesces repeats. Only the
+      // `refreshTimeout={false}` path needs an explicit dupe guard.
+      if (!refreshTimeout) {
+        const now = Date.now();
+        if (
+          lastProcessedRef.current &&
+          lastProcessedRef.current.contentLink === eventData.contentLink &&
+          now - lastProcessedRef.current.timestamp < 50
+        ) {
+          return;
+        }
+        lastProcessedRef.current = { contentLink: eventData.contentLink, timestamp: now };
       }
-
-      lastProcessedRef.current = { contentLink: eventData.contentLink, timestamp: now };
 
       const currentUrl = window.location.href;
 
@@ -128,7 +146,7 @@ export const PreviewComponent: FunctionComponent<
       window.removeEventListener('optimizely:cms:contentSaved', customEventListener);
       if (reloadDelay.current) clearTimeout(reloadDelay.current);
     };
-  }, [onNavigate, refreshTimeout]);
+  }, []);
 
-  return showMask && children ? <>{children}</> : null;
+  return (showMask || busy) && children ? <>{children}</> : null;
 };

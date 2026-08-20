@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh issue *)",
+      "Bash(gh pr *)",
+      "Bash(gh api *)",
+      "Bash(git fetch *)",
+      "Bash(git log *)",
+      "mcp__atlassian__getVisibleJiraProjects",
+      "mcp__atlassian__createJiraIssue",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:optimizely-ext.atlassian.net)",
+      "Bash(npx vitest *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx tsc *)",
+      "Bash(git push *)",
+      "Bash(specify --version)",
+      "Bash(uv tool *)",
+      "Bash(specify init *)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/setup-plan.ps1 -Json)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/setup-tasks.ps1 -Json)"
+    ],
+    "additionalDirectories": [
+      "e:\\content-js-sdk\\specs"
+    ]
+  }
+}
