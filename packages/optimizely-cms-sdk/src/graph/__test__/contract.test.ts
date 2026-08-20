@@ -660,6 +660,76 @@ describe('Contract expansion in allowedTypes', () => {
   });
 });
 
+describe('Contract expansion through array properties', () => {
+  it('should pass expandContracts through handleArrayProperty to resolve concrete types', () => {
+    const CommonCardContract = contract({
+      key: 'POC_CommonCardContract',
+      displayName: 'Common Card Contract',
+    });
+
+    const CardComponentA = contentType({
+      baseType: '_component',
+      key: 'POC_CardComponentA',
+      displayName: 'Card Component A',
+      extends: [CommonCardContract],
+      properties: {
+        cardTitle: { type: 'string' },
+        cardDescription: { type: 'string' },
+      },
+    });
+
+    const CardComponentB = contentType({
+      baseType: '_component',
+      key: 'POC_CardComponentB',
+      displayName: 'Card Component B',
+      extends: [CommonCardContract],
+      properties: {
+        cardTitle: { type: 'string' },
+        cardImage: { type: 'string' },
+      },
+    });
+
+    const CardContainer = contentType({
+      baseType: '_component',
+      key: 'POC_CardContainer',
+      displayName: 'Card Container',
+      properties: {
+        cards: {
+          type: 'array',
+          items: {
+            type: 'content',
+            allowedTypes: [CommonCardContract],
+          },
+        },
+      },
+    });
+
+    initContentTypeRegistry([CommonCardContract, CardComponentA, CardComponentB, CardContainer]);
+
+    const result = createFragment('POC_CardContainer', undefined, undefined, {
+      expandContracts: true,
+    });
+    const fragmentString = result.fragments.join('\n');
+
+    expect(fragmentString).toContain('fragment POC_CommonCardContract on IPOC_CommonCardContract');
+    expect(fragmentString).toContain('fragment POC_CardComponentA on POC_CardComponentA');
+    expect(fragmentString).toContain('POC_CardComponentA__cardTitle:cardTitle');
+    expect(fragmentString).toContain('POC_CardComponentA__cardDescription:cardDescription');
+    expect(fragmentString).toContain('fragment POC_CardComponentB on POC_CardComponentB');
+    expect(fragmentString).toContain('POC_CardComponentB__cardTitle:cardTitle');
+    expect(fragmentString).toContain('POC_CardComponentB__cardImage:cardImage');
+
+    const cardsFieldMatch = fragmentString.match(
+      /POC_CardContainer__cards:cards\s*{\s*__typename([^}]*)\}/,
+    );
+    expect(cardsFieldMatch).toBeTruthy();
+    const cardsFieldContent = cardsFieldMatch ? cardsFieldMatch[0] : '';
+    expect(cardsFieldContent).toContain('...POC_CommonCardContract');
+    expect(cardsFieldContent).toContain('...POC_CardComponentA');
+    expect(cardsFieldContent).toContain('...POC_CardComponentB');
+  });
+});
+
 describe('Content array with items implementing multiple contracts', () => {
   it('should include all contracts when a content type implements multiple contracts in allowedTypes', () => {
     const TeaserContract = contract({
