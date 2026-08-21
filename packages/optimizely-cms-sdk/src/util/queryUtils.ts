@@ -96,6 +96,7 @@ export type FragmentOptions = {
    * Useful for skipping content types that have no registered component.
    */
   typeFilter?: (contentTypeKey: string) => boolean;
+  ancestors?: Set<string>;
 };
 
 export type FragmentInfo = {
@@ -242,7 +243,7 @@ const handleComponentProperty: PropertyHandler = (
   visited: Set<string>,
   options: FragmentOptions,
 ) => {
-  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } =
+  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD, ancestors } =
     options;
   const key = (property as any).contentType.key;
 
@@ -253,6 +254,7 @@ const handleComponentProperty: PropertyHandler = (
     damEnabled,
     maxFragmentThreshold,
     includeBaseFragments: false,
+    ancestors,
   });
 
   return {
@@ -275,6 +277,7 @@ const handleContentProperty: PropertyHandler = (
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts = DEFAULT_EXPAND_CONTRACTS,
     typeFilter,
+    ancestors,
   } = options;
   const resolved = resolveAllowedTypes(
     (property as any).allowedTypes,
@@ -298,6 +301,7 @@ const handleContentProperty: PropertyHandler = (
       expandContracts,
       includeBaseFragments: true,
       typeFilter,
+      ancestors,
     });
     return result;
   };
@@ -307,19 +311,25 @@ const handleContentProperty: PropertyHandler = (
   const subfields = ['__typename'];
 
   typesToInclude.forEach(key => {
+    const strippedKey = stripSourcePrefix(key);
     const result = createFragmentFor(key);
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
     extraFragments.push(...result.fragments);
-    subfields.push(`...${stripSourcePrefix(key)}`);
+    if (!ancestors?.has(strippedKey)) {
+      subfields.push(`...${strippedKey}`);
+    }
   });
 
   contractsToInclude.forEach(contractKey => {
+    const strippedKey = stripSourcePrefix(contractKey);
     const result = createFragmentFor(contractKey);
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
     extraFragments.push(...result.fragments);
-    subfields.push(`...${stripSourcePrefix(contractKey)}`);
+    if (!ancestors?.has(strippedKey)) {
+      subfields.push(`...${strippedKey}`);
+    }
   });
 
   const uniqueSubfields = [...new Set(subfields)].join(' ');
@@ -401,6 +411,7 @@ const handleArrayProperty: PropertyHandler = (
     maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts = DEFAULT_EXPAND_CONTRACTS,
     typeFilter,
+    ancestors,
   } = options;
 
   return convertProperty(name, (property as any).items, rootName, suffix, visited, {
@@ -408,6 +419,7 @@ const handleArrayProperty: PropertyHandler = (
     maxFragmentThreshold,
     expandContracts,
     typeFilter,
+    ancestors,
   });
 };
 
