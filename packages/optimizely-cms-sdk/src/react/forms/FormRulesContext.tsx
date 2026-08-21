@@ -89,15 +89,15 @@ export function FormRulesProvider({ children, rules = [] }: FormRulesProviderPro
   );
 }
 
+// Stable identity so consumers with `setFieldValue`/`isElementVisible` in effect
+// deps don't re-run on every render when no provider is present.
+const NO_RULES: FormRulesContextType = {
+  rules: [],
+  fieldValues: new Map(),
+  setFieldValue: () => {},
+  isElementVisible: () => true,
+};
+
 export function useFormRules() {
-  const context = useContext(FormRulesContext);
-  if (!context) {
-    return {
-      rules: [],
-      fieldValues: new Map(),
-      setFieldValue: () => {},
-      isElementVisible: () => true,
-    };
-  }
-  return context;
+  return useContext(FormRulesContext) ?? NO_RULES;
 }

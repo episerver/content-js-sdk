@@ -1,18 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import { ContentProps, OptiFormsSelectionElementContentType } from '@optimizely/cms-sdk';
+import { getFieldName, type Validator } from '@optimizely/cms-sdk/forms/validation';
+import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
 import {
-  validateField,
-  getErrorMessages,
-  isFieldRequired,
-  getFieldName,
-} from '@optimizely/cms-sdk/forms/validation';
-import {
-  useFormValidation,
-  useFormRules,
-  getElementId,
-} from '@optimizely/cms-sdk/forms/react';
+  errorTextClass,
+  helpTextClass,
+  labelClass,
+  requiredMarkClass,
+} from './formStyles';
 
 type FormSelectionProps = {
   content: ContentProps<typeof OptiFormsSelectionElementContentType>;
@@ -25,94 +21,72 @@ type SelectionOption = {
 };
 
 export default function FormSelection({ content }: FormSelectionProps) {
-  const options = (
-    Array.isArray(content.Options) ?
-      content.Options
-    : []) as SelectionOption[];
-
-  const [value, setValue] = useState(options.find(opt => opt.selected)?.value ?? '');
-  const [isTouched, setIsTouched] = useState(false);
-  const { attemptedSubmit, registerField, unregisterField, setFieldError } =
-    useFormValidation();
-  const { setFieldValue } = useFormRules();
-  const fieldsetRef = useRef<HTMLFieldSetElement>(null);
+  const options = (Array.isArray(content.Options) ? content.Options : []) as SelectionOption[];
+  const validators = (Array.isArray(content.Validators) ? content.Validators : []) as Validator[];
   const fieldName = getFieldName(content);
-  const elementId = getElementId(content);
 
-  const validators = (
-    Array.isArray(content.Validators) ?
-      content.Validators
-    : []) as any[];
-  const errors = validateField(value, validators);
-  const errorMessages = getErrorMessages(errors);
-  const hasErrors = errorMessages.length > 0;
-  const showErrors = (isTouched || attemptedSubmit) && hasErrors;
-  const required = isFieldRequired(validators);
-
-  useEffect(() => {
-    const validate = () => !hasErrors;
-    registerField(fieldName, fieldsetRef.current, validate);
-    setFieldError(fieldName, hasErrors);
-    if (elementId) setFieldValue(elementId, value);
-
-    return () => unregisterField(fieldName);
-  }, [
-    hasErrors,
-    fieldName,
-    registerField,
-    unregisterField,
-    setFieldError,
-    elementId,
-    value,
-    setFieldValue,
-  ]);
+  const { value, setValue, inputRef, onBlur, errors, showErrors, isRequired } =
+    useFormField<HTMLFieldSetElement>({
+      name: fieldName,
+      validators,
+      defaultValue: options.find(opt => opt.selected)?.value ?? '',
+      content,
+    });
 
   return (
-    <fieldset ref={fieldsetRef} className='space-y-3 flex-1' data-field-name={fieldName}>
-      {content.Label && (
-        <legend className='text-sm font-medium text-foreground'>
-          {content.Label}
-          {required && <span className='text-red-600 ml-1'>*</span>}
-        </legend>
-      )}
-      <div className='grid grid-cols-2 gap-3'>
-        {options.map(option => (
-          <label
-            key={option.value}
-            className={`flex items-center p-3 border rounded-md cursor-pointer hover:bg-accent transition-colors ${
-              showErrors ? 'border-red-500' : 'border-input'
-            }`}
-          >
-            <input
-              type='radio'
-              name={fieldName}
-              value={option.value}
-              checked={value === option.value}
-              onChange={() => {
-                setValue(option.value);
-                setIsTouched(true);
-              }}
-              title={content.Tooltip ?? ''}
-              aria-invalid={showErrors}
-              aria-describedby={showErrors ? `${fieldName}-error` : undefined}
-              className='w-4 h-4 cursor-pointer'
-            />
-            <span className='ml-3 text-sm text-foreground'>{option.label}</span>
-          </label>
-        ))}
-      </div>
-      {showErrors && (
-        <div className='space-y-1' id={`${fieldName}-error`} role='alert'>
-          {errorMessages.map(message => (
-            <p key={message} className='text-xs text-red-600'>
-              {message}
-            </p>
-          ))}
+    <FormElement content={content}>
+      <fieldset ref={inputRef} className='flex-1 space-y-2'>
+        {content.Label && (
+          <legend className={labelClass}>
+            {content.Label}
+            {isRequired && <span className={requiredMarkClass}>*</span>}
+          </legend>
+        )}
+        <div className='grid gap-2 sm:grid-cols-2'>
+          {options.map(option => {
+            const isSelected = value === option.value;
+
+            return (
+              <label
+                key={option.value}
+                className={`flex cursor-pointer items-center rounded-md border bg-white px-3.5 py-2.5 transition-colors ${
+                  showErrors ? 'border-red-500'
+                  : isSelected ? 'border-teal-500 ring-1 ring-teal-500/30'
+                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type='radio'
+                  name={fieldName}
+                  value={option.value}
+                  checked={isSelected}
+                  onChange={() => {
+                    setValue(option.value);
+                    onBlur();
+                  }}
+                  title={content.Tooltip ?? ''}
+                  aria-invalid={showErrors}
+                  aria-describedby={showErrors ? `${fieldName}-error` : undefined}
+                  className='h-4 w-4 cursor-pointer accent-teal-500'
+                />
+                <span className='ml-3 text-sm text-gray-900'>{option.label}</span>
+              </label>
+            );
+          })}
         </div>
-      )}
-      {!showErrors && content.Tooltip && (
-        <p className='text-xs text-muted-foreground'>{content.Tooltip}</p>
-      )}
-    </fieldset>
+        {showErrors && (
+          <div className='space-y-1' id={`${fieldName}-error`} role='alert'>
+            {errors.map(message => (
+              <p key={message} className={errorTextClass}>
+                {message}
+              </p>
+            ))}
+          </div>
+        )}
+        {!showErrors && content.Tooltip && (
+          <p className={helpTextClass}>{content.Tooltip}</p>
+        )}
+      </fieldset>
+    </FormElement>
   );
 }

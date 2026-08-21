@@ -1,43 +1,58 @@
 'use client';
 
 import { ContentProps, OptiFormsSubmitElementContentType } from '@optimizely/cms-sdk';
-import { useFormValidation, useFormStatus, useFormStep as useFormSteps } from '@optimizely/cms-sdk/forms/react';
+import { useFormStatus, useFormStep as useFormSteps } from '@optimizely/cms-sdk/forms/react';
 
 type FormSubmitProps = {
   content: ContentProps<typeof OptiFormsSubmitElementContentType>;
 };
 
+// `w-fit` matters: a button dropped straight into a grid column is a flex item and
+// would otherwise stretch to the full column width.
+const baseClass =
+  'inline-flex w-fit items-center justify-center gap-2 rounded-md px-6 py-2.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed';
+
+const variantClass = {
+  primary: 'bg-teal-500 text-white hover:bg-teal-600 focus:ring-teal-500',
+  secondary:
+    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-300',
+};
+
 export default function FormSubmit({ content }: FormSubmitProps) {
-  const { hasAnyErrors } = useFormValidation();
   const { isSubmitting } = useFormStatus();
   const { nextStep, prevStep } = useFormSteps();
+
+  // Optimizely Forms models step navigation as ordinary buttons, so the label is
+  // the only thing distinguishing "go back" from "submit the form".
   const label = content.Label?.toLowerCase() ?? '';
   const isNext = label === 'next';
   const isPrev = label === 'previous';
-  const isDisabled = (isNext || isPrev ? false : hasAnyErrors) || isSubmitting;
+  const isStepButton = isNext || isPrev;
+
+  // Only disabled while the request is in flight, to stop a double submit. Greying
+  // the button out because a field the visitor has not reached yet is empty tells
+  // them nothing; clicking runs validation and jumps to the offending field.
+  const variant = isPrev ? 'secondary' : 'primary';
 
   return (
     <button
-      type={isNext || isPrev ? 'button' : 'submit'}
-      onClick={isNext ? nextStep : isPrev ? prevStep : undefined}
-      disabled={isDisabled}
+      type={isStepButton ? 'button' : 'submit'}
+      onClick={
+        isNext ? nextStep
+        : isPrev ? prevStep
+        : undefined
+      }
+      disabled={isSubmitting}
       title={content.Tooltip ?? ''}
-      className={`px-6 py-3 mt-4 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center gap-2 ${
-        !isPrev ? 'ml-auto' : '-'
-      } ${
-        isDisabled
-          ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-          : isPrev
-            ? 'bg-gray-200 text-slate-700 hover:bg-gray-300 focus:ring-gray-300'
-            : 'bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700'
-      }`}
+      className={`${baseClass} ${variantClass[variant]} ${isPrev ? '' : 'ml-auto'} disabled:opacity-60`}
     >
       {isSubmitting && (
         <svg
-          className='animate-spin h-4 w-4'
+          className='h-4 w-4 animate-spin'
           xmlns='http://www.w3.org/2000/svg'
           fill='none'
           viewBox='0 0 24 24'
+          aria-hidden='true'
         >
           <circle
             className='opacity-25'
@@ -54,7 +69,7 @@ export default function FormSubmit({ content }: FormSubmitProps) {
           />
         </svg>
       )}
-      <span>{isSubmitting ? 'Submitting...' : content.Label ?? 'Submit'}</span>
+      <span>{isSubmitting ? 'Submitting…' : (content.Label ?? 'Submit')}</span>
     </button>
   );
 }

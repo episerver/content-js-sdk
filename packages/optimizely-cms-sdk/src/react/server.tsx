@@ -479,8 +479,24 @@ export function OptimizelyGridSection({
     const Component =
       locallyDefined[nodeType] ??
       (globalName ? componentRegistry.getComponent(globalName, { tag }) : undefined) ??
-      fallbacks[nodeType] ??
-      React.Fragment;
+      fallbacks[nodeType];
+
+    const childNodes = (
+      <OptimizelyGridSection
+        row={row}
+        column={column}
+        ComponentWrapper={ComponentWrapper}
+        nodes={node.nodes ?? []}
+        {...previewAttrs}
+      />
+    );
+
+    // Structure nodes other than rows and columns (form steps, for example) have no
+    // container to render into. A fragment accepts only `key`, `ref` and `children`,
+    // so the node props have to be dropped rather than spread onto it.
+    if (!Component) {
+      return <React.Fragment key={node.key}>{childNodes}</React.Fragment>;
+    }
 
     return (
       <Component
@@ -489,13 +505,7 @@ export function OptimizelyGridSection({
         key={node.key}
         displaySettings={parsedDisplaySettings}
       >
-        <OptimizelyGridSection
-          row={row}
-          column={column}
-          ComponentWrapper={ComponentWrapper}
-          nodes={node.nodes ?? []}
-          {...previewAttrs}
-        />
+        {childNodes}
       </Component>
     );
   });

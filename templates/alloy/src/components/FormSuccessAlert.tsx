@@ -8,7 +8,7 @@ export default function FormSuccessAlert({ show, message }: FormSuccessAlertProp
 
   return (
     <div
-      className='p-4 mb-6 rounded-lg bg-emerald-50 border border-emerald-200'
+      className='p-4 rounded-lg bg-emerald-50 border border-emerald-200'
       role='alert'
     >
       <div className='flex items-start'>

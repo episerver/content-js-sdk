@@ -9,7 +9,7 @@ type GridColumnProps = {
 export default function GridColumn({ node, children }: GridColumnProps) {
   const { pa } = getPreviewUtils(node);
   return (
-    <div className='flex-1 min-w-0 flex gap-4' {...pa(node)}>
+    <div className='flex min-w-0 flex-1 flex-col gap-4' {...pa(node)}>
       {children}
     </div>
   );

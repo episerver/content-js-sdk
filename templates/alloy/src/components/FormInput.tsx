@@ -1,86 +1,74 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import { ContentProps, OptiFormsTextboxElementContentType } from '@optimizely/cms-sdk';
 import {
-  validateField,
-  getErrorMessages,
-  isFieldRequired,
   getHtmlValidationAttributes,
   getFieldName,
+  type Validator,
 } from '@optimizely/cms-sdk/forms/validation';
-import { FormElement, useFormValidation } from '@optimizely/cms-sdk/forms/react';
+import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
+import {
+  controlClass,
+  errorTextClass,
+  helpTextClass,
+  labelClass,
+  requiredMarkClass,
+} from './formStyles';
 
 type FormInputProps = {
   content: ContentProps<typeof OptiFormsTextboxElementContentType>;
 };
 
 export default function FormInput({ content }: FormInputProps) {
-  const [value, setValue] = useState(content.PredefinedValue ?? '');
-  const [isTouched, setIsTouched] = useState(false);
-  const { attemptedSubmit, registerField, unregisterField, setFieldError } =
-    useFormValidation();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const validators = (Array.isArray(content.Validators) ? content.Validators : []) as Validator[];
   const fieldName = getFieldName(content);
 
-  const validators = (
-    Array.isArray(content.Validators) ?
-      content.Validators
-    : []) as any[];
-  const errors = validateField(value, validators);
-  const errorMessages = getErrorMessages(errors);
-  const hasErrors = errorMessages.length > 0;
-  const showErrors = (isTouched || attemptedSubmit) && hasErrors;
-  const required = isFieldRequired(validators);
-  const htmlAttrs = getHtmlValidationAttributes(validators);
+  const { value, setValue, inputRef, onBlur, errors, showErrors, isRequired } = useFormField({
+    name: fieldName,
+    validators,
+    defaultValue: content.PredefinedValue ?? '',
+    content,
+  });
 
-  useEffect(() => {
-    const validate = () => !hasErrors;
-    registerField(fieldName, inputRef.current, validate);
-    setFieldError(fieldName, hasErrors);
-    return () => unregisterField(fieldName);
-  }, [hasErrors, fieldName, registerField, unregisterField, setFieldError]);
+  const htmlAttrs = getHtmlValidationAttributes(validators);
 
   return (
     <FormElement content={content}>
-      <div className='space-y-2 flex-1' data-field-name={fieldName}>
+      <div className='flex-1 space-y-1.5'>
         {content.Label && (
-          <label className='block text-sm font-medium text-foreground'>
+          <label htmlFor={fieldName} className={labelClass}>
             {content.Label}
-            {required && <span className='text-red-600 ml-1'>*</span>}
+            {isRequired && <span className={requiredMarkClass}>*</span>}
           </label>
         )}
         <input
           ref={inputRef}
+          id={fieldName}
           type={(htmlAttrs.type as string) ?? 'text'}
           name={fieldName}
           placeholder={content.Placeholder ?? ''}
           value={value}
           onChange={e => setValue(e.target.value)}
-          onBlur={() => setIsTouched(true)}
+          onBlur={onBlur}
           title={content.Tooltip ?? ''}
           autoComplete={content.AutoComplete ?? 'off'}
           required={htmlAttrs.required === true}
           pattern={htmlAttrs.pattern as string | undefined}
           aria-invalid={showErrors}
           aria-describedby={showErrors ? `${fieldName}-error` : undefined}
-          className={`w-full px-4 py-2 rounded-md border text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-200 ${
-            showErrors ?
-              'border-red-500 focus:ring-red-500'
-            : 'border-input focus:ring-key1'
-          }`}
+          className={controlClass(showErrors)}
         />
         {showErrors && (
           <div className='space-y-1' id={`${fieldName}-error`} role='alert'>
-            {errorMessages.map(message => (
-              <p key={message} className='text-xs text-red-600'>
+            {errors.map(message => (
+              <p key={message} className={errorTextClass}>
                 {message}
               </p>
             ))}
           </div>
         )}
         {!showErrors && content.Tooltip && (
-          <p className='text-xs text-muted-foreground'>{content.Tooltip}</p>
+          <p className={helpTextClass}>{content.Tooltip}</p>
         )}
       </div>
     </FormElement>

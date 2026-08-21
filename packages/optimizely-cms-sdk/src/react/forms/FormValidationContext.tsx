@@ -5,11 +5,24 @@ import { createContext, useContext, useState, useCallback, useRef, ReactNode } f
 export type FormValidationContextType = {
   attemptedSubmit: boolean;
   setAttemptedSubmit: (value: boolean) => void;
-  registerField: (name: string, ref: HTMLElement | null, validate: () => boolean) => void;
+  registerField: (
+    name: string,
+    ref: HTMLElement | null,
+    validate: () => boolean,
+    stepIndex?: number,
+  ) => void;
   unregisterField: (name: string) => void;
   setFieldError: (name: string, hasError: boolean) => void;
   getFieldRef: (name: string) => HTMLElement | null;
-  validateAllFields: () => boolean;
+  /**
+   * Runs the registered fields' validators.
+   *
+   * @param options.stepIndex Validate only the fields on this step. Omit to
+   *   validate the whole form, including steps that are not on screen.
+   * @returns The names of the fields that failed, in registration order.
+   *   Empty means everything validated passed.
+   */
+  validateAllFields: (options?: { stepIndex?: number }) => string[];
   hasAnyErrors: boolean;
 };
 
@@ -18,7 +31,9 @@ const FormValidationContext = createContext<FormValidationContextType | undefine
 export function FormValidationProvider({ children }: { children: ReactNode }) {
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [fieldsWithErrors, setFieldsWithErrors] = useState<Set<string>>(new Set());
-  const fieldsRef = useRef<Map<string, { ref: HTMLElement | null; validate: () => boolean }>>(new Map());
+  const fieldsRef = useRef<
+    Map<string, { ref: HTMLElement | null; validate: () => boolean; stepIndex?: number }>
+  >(new Map());
 
   const updateFieldsWithErrors = useCallback(
     (mutate: (set: Set<string>) => void) => {
@@ -31,9 +46,12 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const registerField = useCallback((name: string, ref: HTMLElement | null, validate: () => boolean) => {
-    fieldsRef.current.set(name, { ref, validate });
-  }, []);
+  const registerField = useCallback(
+    (name: string, ref: HTMLElement | null, validate: () => boolean, stepIndex?: number) => {
+      fieldsRef.current.set(name, { ref, validate, stepIndex });
+    },
+    [],
+  );
 
   const unregisterField = useCallback(
     (name: string) => {
@@ -57,15 +75,17 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
     return fieldsRef.current.get(name)?.ref ?? null;
   }, []);
 
-  const validateAllFields = useCallback((): boolean => {
-    let allValid = true;
-    fieldsRef.current.forEach(({ validate }) => {
-      if (!validate()) {
-        allValid = false;
-      }
-    });
-    return allValid;
-  }, []);
+  const validateAllFields = useCallback(
+    ({ stepIndex }: { stepIndex?: number } = {}): string[] => {
+      const invalid: string[] = [];
+      fieldsRef.current.forEach((field, name) => {
+        if (stepIndex !== undefined && field.stepIndex !== stepIndex) return;
+        if (!field.validate()) invalid.push(name);
+      });
+      return invalid;
+    },
+    [],
+  );
 
   return (
     <FormValidationContext.Provider

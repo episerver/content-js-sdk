@@ -1,5 +1,3 @@
-import { getPreviewUtils } from '@optimizely/cms-sdk/react/server';
-
 type FormTitleProps = {
   title: string | null;
   previewAttributes: any;
@@ -8,14 +6,13 @@ type FormTitleProps = {
 export default function FormTitle({ title, previewAttributes }: FormTitleProps) {
   if (!title) return null;
 
+  // `h2`, not `h1` — the form is a block on a page that already has a heading.
   return (
-    <div className='space-y-3 sm:space-y-4'>
-      <h1
-        {...previewAttributes('Title')}
-        className='text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-5xl'
-      >
-        {title}
-      </h1>
-    </div>
+    <h2
+      {...previewAttributes('Title')}
+      className='text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl'
+    >
+      {title}
+    </h2>
   );
 }

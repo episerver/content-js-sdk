@@ -55,40 +55,57 @@ function FormWrapperContent({
   rules,
 }: FormWrapperProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-
-  const nextStep = useCallback(() => {
-    setCurrentStepIndex(prev => Math.min(steps.length, prev + 1));
-  }, []);
-
-  const prevStep = useCallback(() => {
-    setCurrentStepIndex(prev => Math.max(0, prev - 1));
-  }, []);
-
   const { setAttemptedSubmit, validateAllFields, getFieldRef } = useFormValidation();
   const { setStatus } = useFormStatus();
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Fields register in render order, so the first entry is the earliest one on the page.
+  const revealFirstInvalid = useCallback(
+    (invalidFieldNames: string[]) => {
+      const field = getFieldRef(invalidFieldNames[0]);
+      field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      field?.focus();
+    },
+    [getFieldRef],
+  );
+
+  const lastStepIndex = Math.max(0, steps.length - 1);
+
+  const nextStep = useCallback(() => {
+    // Only the current step is on screen, so only its fields can be corrected here.
+    // Later steps are validated when the form is finally submitted.
+    setAttemptedSubmit(true);
+    const invalid = validateAllFields({ stepIndex: currentStepIndex });
+
+    if (invalid.length > 0) {
+      revealFirstInvalid(invalid);
+      return;
+    }
+
+    setAttemptedSubmit(false);
+    setCurrentStepIndex(prev => Math.min(lastStepIndex, prev + 1));
+  }, [
+    currentStepIndex,
+    lastStepIndex,
+    setAttemptedSubmit,
+    validateAllFields,
+    revealFirstInvalid,
+  ]);
+
+  const prevStep = useCallback(() => {
+    setAttemptedSubmit(false);
+    setCurrentStepIndex(prev => Math.max(0, prev - 1));
+  }, [setAttemptedSubmit]);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setAttemptedSubmit(true);
 
-    const allFieldsValid = validateAllFields();
+    const invalid = validateAllFields();
 
-    if (!allFieldsValid) {
-      const firstInvalidField = Array.from(
-        formRef.current?.querySelectorAll('[data-field-name]') ?? [],
-      ).find(field => {
-        const fieldName = field.getAttribute('data-field-name');
-        return fieldName && !getFieldRef(fieldName);
-      });
-
-      if (firstInvalidField && firstInvalidField instanceof HTMLElement) {
-        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        const input = firstInvalidField.querySelector('input, textarea, [role="radio"]');
-        if (input instanceof HTMLElement) input.focus();
-      }
-
+    if (invalid.length > 0) {
+      revealFirstInvalid(invalid);
       scrollToElement(scrollToOnError);
       return;
     }
@@ -112,7 +129,7 @@ function FormWrapperContent({
         setStatus('error');
         scrollToElement(scrollToOnError);
       }
-    } catch (error) {
+    } catch {
       setStatus('error');
       scrollToElement(scrollToOnError);
     }

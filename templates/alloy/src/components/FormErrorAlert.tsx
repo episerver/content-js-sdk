@@ -6,7 +6,7 @@ export default function FormErrorAlert({ show }: FormErrorAlertProps) {
   if (!show) return null;
 
   return (
-    <div className='p-4 mb-6 rounded-lg bg-red-50 border border-red-200' role='alert'>
+    <div className='p-4 rounded-lg bg-red-50 border border-red-200' role='alert'>
       <div className='flex items-start'>
         <div className='flex-shrink-0'>
           <svg className='h-5 w-5 text-red-600' viewBox='0 0 20 20' fill='currentColor'>
