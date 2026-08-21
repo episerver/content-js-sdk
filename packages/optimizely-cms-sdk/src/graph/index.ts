@@ -11,12 +11,16 @@ import {
   OptimizelyGraphError,
 } from './error.js';
 import {
-  ContentInput as GraphVariables,
-  pathFilter,
-  previewFilter,
   GraphVariationInput,
-  localeFilter,
-  referenceFilter,
+  type FilterShape,
+  type ScalarFilter,
+  pathScalarFilter,
+  previewScalarFilter,
+  referenceScalarFilter,
+  getFilterVarDecls,
+  getFilterWhereClause,
+  getVariationMode,
+  getVariationVariables,
 } from './filters.js';
 import { setContext } from '../context/config.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
@@ -112,6 +116,14 @@ export type GraphQueryOptions = {
    */
   cache?: boolean;
   /**
+   * Enable or disable server-side stored query registration for this request.
+   * When true (default), appends `stored=true` to the endpoint URL, allowing
+   * the server to reuse query plans for identical query strings.
+   * Set to false to bypass stored queries (useful for debugging schema changes).
+   * @default true
+   */
+  stored?: boolean;
+  /**
    * Select which Graph index to query against.
    * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
    * - `'Current'`: Query the current active index (default)
@@ -137,9 +149,7 @@ export type GraphGetItemOptions = GraphQueryOptions & {
 
 export { GraphVariationInput };
 
-const GET_CONTENT_METADATA_QUERY = `
-query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
+const METADATA_QUERY_BODY = `{
     item {
       _metadata {
         types
@@ -150,13 +160,29 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   # Check if "cmp_Asset" type exists which indicates that DAM is enabled
   damAssetType: __type(name: "cmp_Asset") {
     __typename
-  }
+  }`;
+
+const METADATA_OP_NAMES: Record<FilterShape, string> = {
+  'by-key': 'GetContentMetadata',
+  'by-key-version': 'GetContentMetadataByVersion',
+  'by-key-locale': 'GetContentMetadataByLocale',
+  'by-path': 'GetContentMetadataByPath',
+  'by-path-host': 'GetContentMetadataByPathWithHost',
+  'by-preview': 'GetPreviewContentMetadata',
+};
+
+function getMetadataQuery(shape: FilterShape): string {
+  const varDecls = getFilterVarDecls(shape);
+  const whereClause = getFilterWhereClause(shape);
+  const variationClause = shape === 'by-preview' ? ', variation: ALL' : '';
+  return `
+query ${METADATA_OP_NAMES[shape]}(${varDecls}) {
+  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
 }
 `;
+}
 
-const GET_PATH_QUERY = `
-query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
-  _Content(where: $where, locale: $locale) {
+const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     item {
       _id
       _metadata {
@@ -164,7 +190,7 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
           path
         }
       }
-      _link(type: PATH) {
+      _link(type: ${linkType}) {
         _Page {
           items {
             _metadata {
@@ -183,40 +209,34 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
         }
       }
     }
-  }
-}`;
+  }`;
 
-const GET_ITEMS_QUERY = `
-query GetItems($where: _ContentWhereInput, $locale: [Locales]) {
-  _Content(where: $where, locale: $locale) {
-    item {
-      _id
-      _metadata {
-        ...on InstanceMetadata {
-          path
-        }
-      }
-      _link(type: ITEMS) {
-        _Page {
-          items {
-            _metadata {
-              key
-              sortOrder
-              displayName
-              locale
-              types
-              url {
-                base
-                hierarchical
-                default
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+function getLinksQuery(
+  opName: string,
+  shape: FilterShape,
+): string {
+  const filterVars = getFilterVarDecls(shape);
+  const whereClause = getFilterWhereClause(shape);
+  const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
+  return `
+query ${opName}(${allVars}) {
+  _Content(${whereClause}, locale: $locale) ${LINKS_BODY('PATH')}
 }`;
+}
+
+function getItemsQuery(
+  opName: string,
+  shape: FilterShape,
+): string {
+  const filterVars = getFilterVarDecls(shape);
+  const whereClause = getFilterWhereClause(shape);
+  const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
+  return `
+query ${opName}(${allVars}) {
+  _Content(${whereClause}, locale: $locale) ${LINKS_BODY('ITEMS')}
+}`;
+}
+
 
 type GetLinksResponse = {
   _Content: {
@@ -369,6 +389,7 @@ export class GraphClient {
     previewToken?: string,
     cache: boolean = true,
     slot?: GraphSlot,
+    stored: boolean = true,
   ): Promise<any> {
     return withRequestSpan(
       this.graphUrl,
@@ -381,6 +402,10 @@ export class GraphClient {
 
         // Append cache parameter to control caching behavior
         url.searchParams.append('cache', cache.toString());
+
+        if (stored) {
+          url.searchParams.append('stored', 'true');
+        }
 
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -461,21 +486,24 @@ export class GraphClient {
    * @returns A promise that resolves to the first content type metadata object
    */
   private async getContentMetaData(
-    input: GraphVariables,
+    filterShape: FilterShape,
+    variables: Record<string, any>,
     previewToken?: string,
     cache?: boolean,
     slot?: GraphSlot,
+    stored?: boolean,
   ) {
+    const query = getMetadataQuery(filterShape);
     const data = await this.request(
-      GET_CONTENT_METADATA_QUERY,
-      input,
+      query,
+      variables,
       previewToken,
       cache ?? this.cache,
       slot ?? this.slot,
+      stored ?? true,
     );
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
-    // Determine if DAM is enabled based on the presence of cmp_Asset type
     const damEnabled = data.damAssetType !== null;
 
     if (!contentTypeName) {
@@ -487,8 +515,8 @@ export class GraphClient {
         "Returned type is not 'string'. This might be a bug in the SDK. Try again later. If the error persists, contact Optimizely support",
         {
           request: {
-            query: GET_CONTENT_METADATA_QUERY,
-            variables: input,
+            query,
+            variables,
           },
         },
       );
@@ -513,19 +541,23 @@ export class GraphClient {
    */
   async getContentByPath<T = any>(path: string, options?: GraphGetContentOptions) {
     return withGetContentByPathSpan(path, options?.cache ?? this.cache, async span => {
-      const input: GraphVariables = {
-        ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
-        variation: options?.variation,
-      };
+      const host = options?.host ?? this.host;
+      const filter = pathScalarFilter(path, host);
+      const varMode = getVariationMode(options?.variation);
+      const variationVars = getVariationVariables(options?.variation);
+      const variables = { ...filter.variables, ...variationVars };
 
       const cacheEnabled = options?.cache ?? this.cache;
+      const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
 
       const { contentTypeName, damEnabled } = await this.getContentMetaData(
-        input,
+        filter.filterShape,
+        filter.variables,
         undefined,
         cacheEnabled,
         activeSlot,
+        storedEnabled,
       );
 
       if (!contentTypeName) {
@@ -542,18 +574,20 @@ export class GraphClient {
           this.maxFragmentThreshold,
           this.expandContracts,
           this.typeFilter,
+          filter.filterShape,
+          varMode,
         );
         const response = (await this.request(
           query,
-          input,
+          variables,
           undefined,
           cacheEnabled,
           activeSlot,
+          storedEnabled,
         )) as ItemsResponse<T>;
 
         return response?._Content?.items.map(removeTypePrefix);
       } catch (error) {
-        // If content type is not registered, return empty array instead of throwing
         if (error instanceof GraphMissingContentTypeError) {
           return [];
         }
@@ -587,39 +621,37 @@ export class GraphClient {
    * ```
    */
   async getPath(reference: string | GraphReference, options?: GraphGetLinksOptions) {
-    let filter: GraphVariables;
+    let filter: ScalarFilter;
+    let locales: string[] | undefined;
+
     if (typeof reference === 'string' && reference.startsWith('graph://')) {
       const ref = this.parseGraphReference(reference);
-      filter = {
-        ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
-      };
+      filter = referenceScalarFilter(ref);
+      locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
     } else if (typeof reference === 'string') {
-      filter = {
-        ...pathFilter(reference, options?.host ?? this.host),
-        ...localeFilter(options?.locales),
-      };
+      filter = pathScalarFilter(reference, options?.host ?? this.host);
+      locales = options?.locales;
     } else {
-      filter = {
-        ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
-        ),
-      };
+      filter = referenceScalarFilter(reference);
+      locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
     }
 
+    const variables = { ...filter.variables, locale: locales };
+    const query = getLinksQuery('GetPath', filter.filterShape);
+
     const cacheEnabled = options?.cache ?? this.cache;
+    const storedEnabled = options?.stored ?? true;
     const activeSlot = options?.slot ?? this.slot;
 
     const data = (await this.request(
-      GET_PATH_QUERY,
-      filter,
+      query,
+      variables,
       undefined,
       cacheEnabled,
       activeSlot,
+      storedEnabled,
     )) as GetLinksResponse;
 
-    // Check if the page itself exist.
     if (!data._Content.item._id) {
       return null;
     }
@@ -628,19 +660,17 @@ export class GraphClient {
     const sortedKeys = data._Content.item._metadata.path;
 
     if (!sortedKeys) {
-      // This is an error
       throw new GraphResponseError(
         'The `_metadata` does not contain any `path` field. Ensure that the path you requested is an actual page and not a block. If the problem persists, contact Optimizely support',
         {
           request: {
-            query: GET_PATH_QUERY,
-            variables: filter,
+            query,
+            variables,
           },
         },
       );
     }
 
-    // Return sorted by the "sortedKeys"
     const linkMap = new Map(links.map(link => [link._metadata?.key, link]));
     return sortedKeys.map(key => linkMap.get(key)).filter(item => item !== undefined);
   }
@@ -670,71 +700,68 @@ export class GraphClient {
    * ```
    */
   async getItems(reference: string | GraphReference, options?: GraphGetLinksOptions) {
-    let filter: GraphVariables;
+    let filter: ScalarFilter;
+    let locales: string[] | undefined;
+
     if (typeof reference === 'string' && reference.startsWith('graph://')) {
       const ref = this.parseGraphReference(reference);
-      filter = {
-        ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
-      };
+      filter = referenceScalarFilter(ref);
+      locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
     } else if (typeof reference === 'string') {
-      filter = {
-        ...pathFilter(reference, options?.host ?? this.host),
-        ...localeFilter(options?.locales),
-      };
+      filter = pathScalarFilter(reference, options?.host ?? this.host);
+      locales = options?.locales;
     } else {
-      filter = {
-        ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
-        ),
-      };
+      filter = referenceScalarFilter(reference);
+      locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
     }
 
+    const variables = { ...filter.variables, locale: locales };
+    const query = getItemsQuery('GetItems', filter.filterShape);
+
     const cacheEnabled = options?.cache ?? this.cache;
+    const storedEnabled = options?.stored ?? true;
     const activeSlot = options?.slot ?? this.slot;
 
     const data = (await this.request(
-      GET_ITEMS_QUERY,
-      filter,
+      query,
+      variables,
       undefined,
       cacheEnabled,
       activeSlot,
+      storedEnabled,
     )) as GetLinksResponse;
 
-    // Check if the page itself exist.
     if (!data._Content.item._id) {
       return null;
     }
 
-    const links = data?._Content?.item._link._Page.items;
-
-    return links;
+    return data?._Content?.item._link._Page.items;
   }
 
-  /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
     return withGetPreviewContentSpan(params, async span => {
-      const input = previewFilter(params);
+      const filter = previewScalarFilter(params);
+      const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
 
       const { contentTypeName, damEnabled } = await this.getContentMetaData(
-        input,
+        filter.filterShape,
+        filter.variables,
         params.preview_token,
         false,
         activeSlot,
+        storedEnabled,
       );
 
       if (!contentTypeName) {
         throw new GraphResponseError(
           `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
-          { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
+          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape) } },
         );
       }
 
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
-      // Auto-populate context with preview parameters
       setContext({
         previewToken: params.preview_token,
         version: params.ver,
@@ -750,14 +777,17 @@ export class GraphClient {
         this.maxFragmentThreshold,
         this.expandContracts,
         this.typeFilter,
+        filter.filterShape,
+        'all',
       );
 
       const response = await this.request(
         query,
-        input,
+        filter.variables,
         params.preview_token,
         false,
         activeSlot,
+        storedEnabled,
       );
 
       return decorateWithContext(removeTypePrefix(response?._Content?.item), params);
@@ -875,24 +905,18 @@ export class GraphClient {
       const previewToken = options?.previewToken;
 
       const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
+      const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
 
-      const input: GraphVariables = {
-        where: {
-          _metadata: {
-            key: { eq: ref.key },
-            ...(ref.version ? { version: { eq: ref.version } }
-            : ref.locale ? { locale: { eq: ref.locale } }
-            : {}),
-          },
-        },
-      };
+      const filter = referenceScalarFilter(ref);
 
       const { contentTypeName, damEnabled } = await this.getContentMetaData(
-        input,
+        filter.filterShape,
+        filter.variables,
         previewToken,
         cacheEnabled,
         activeSlot,
+        storedEnabled,
       );
 
       if (!contentTypeName) {
@@ -909,14 +933,16 @@ export class GraphClient {
           this.maxFragmentThreshold,
           this.expandContracts,
           this.typeFilter,
+          filter.filterShape,
         );
 
         const response = await this.request(
           query,
-          input,
+          filter.variables,
           previewToken,
           cacheEnabled,
           activeSlot,
+          storedEnabled,
         );
 
         return removeTypePrefix(response?._Content?.item);

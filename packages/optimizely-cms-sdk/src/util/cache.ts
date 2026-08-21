@@ -3,6 +3,7 @@ import {
   DEFAULT_EXPAND_CONTRACTS,
 } from '../graph/constants.js';
 import { getAllContentTypes } from '../model/contentTypeRegistry.js';
+import type { FilterShape, VariationMode } from '../graph/filters.js';
 
 const queryCache = new Map<string, string>();
 
@@ -14,6 +15,8 @@ type QueryGenerator = (
   maxFragmentThreshold?: number,
   expandContracts?: boolean,
   typeFilter?: TypeFilter,
+  filterShape?: FilterShape,
+  variationMode?: VariationMode,
 ) => string;
 
 const getFilterHash = (typeFilter: (key: string) => boolean): string => {
@@ -22,6 +25,12 @@ const getFilterHash = (typeFilter: (key: string) => boolean): string => {
     .map(ct => ('key' in ct ? ct.key : ''))
     .sort()
     .join(',');
+};
+
+const getVariationModeKey = (mode?: VariationMode): string => {
+  if (!mode || mode === 'none') return 'none';
+  if (mode === 'all') return 'all';
+  return `some-${mode.count}`;
 };
 
 /**
@@ -38,16 +47,20 @@ export const withQueryCaching = (
     maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
     expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
     typeFilter?: TypeFilter,
+    filterShape?: FilterShape,
+    variationMode?: VariationMode,
   ): string => {
     const filterPart = typeFilter ? `:${getFilterHash(typeFilter)}` : '';
-    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}${filterPart}`;
+    const shapePart = filterShape ? `:${filterShape}` : '';
+    const variationPart = `:${getVariationModeKey(variationMode)}`;
+    const cacheKey = `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}${filterPart}${shapePart}${variationPart}`;
 
     const cached = queryCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts, typeFilter);
+    const query = generateQuery(contentType, damEnabled, maxFragmentThreshold, expandContracts, typeFilter, filterShape, variationMode);
     queryCache.set(cacheKey, query);
     return query;
   };
