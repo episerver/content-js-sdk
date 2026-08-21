@@ -1,7 +1,7 @@
 'use client';
 
 import { ContentProps, OptiFormsSelectionElementContentType } from '@optimizely/cms-sdk';
-import { getFieldName, type Validator } from '@optimizely/cms-sdk/forms/validation';
+import { getSelectionOptions } from '@optimizely/cms-sdk/forms/validation';
 import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
 import {
   errorTextClass,
@@ -14,23 +14,15 @@ type FormSelectionProps = {
   content: ContentProps<typeof OptiFormsSelectionElementContentType>;
 };
 
-type SelectionOption = {
-  label: string;
-  value: string;
-  selected?: boolean;
-};
-
 export default function FormSelection({ content }: FormSelectionProps) {
-  const options = (Array.isArray(content.Options) ? content.Options : []) as SelectionOption[];
-  const validators = (Array.isArray(content.Validators) ? content.Validators : []) as Validator[];
-  const fieldName = getFieldName(content);
+  const options = getSelectionOptions(content);
 
-  const { value, setValue, inputRef, onBlur, errors, showErrors, isRequired } =
+  // A radio group can't take `fieldProps`: the name and change handler belong on
+  // each radio, and the ref goes on the fieldset that wraps them.
+  const { value, setValue, inputRef, onBlur, errorId, errorProps, errors, showErrors, isRequired } =
     useFormField<HTMLFieldSetElement>({
-      name: fieldName,
-      validators,
-      defaultValue: options.find(opt => opt.selected)?.value ?? '',
       content,
+      defaultValue: options.find(option => option.selected)?.value ?? '',
     });
 
   return (
@@ -57,7 +49,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
               >
                 <input
                   type='radio'
-                  name={fieldName}
+                  name={content.SubmissionFieldName ?? content.Label ?? ''}
                   value={option.value}
                   checked={isSelected}
                   onChange={() => {
@@ -66,7 +58,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
                   }}
                   title={content.Tooltip ?? ''}
                   aria-invalid={showErrors}
-                  aria-describedby={showErrors ? `${fieldName}-error` : undefined}
+                  aria-describedby={errorId}
                   className='h-4 w-4 cursor-pointer accent-teal-500'
                 />
                 <span className='ml-3 text-sm text-gray-900'>{option.label}</span>
@@ -75,7 +67,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
           })}
         </div>
         {showErrors && (
-          <div className='space-y-1' id={`${fieldName}-error`} role='alert'>
+          <div {...errorProps} className='space-y-1'>
             {errors.map(message => (
               <p key={message} className={errorTextClass}>
                 {message}

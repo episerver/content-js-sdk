@@ -1,7 +1,6 @@
 'use client';
 
 import { ContentProps, OptiFormsTextareaElementContentType } from '@optimizely/cms-sdk';
-import { getFieldName, type Validator } from '@optimizely/cms-sdk/forms/validation';
 import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
 import {
   controlClass,
@@ -16,44 +15,28 @@ type FormTextareaProps = {
 };
 
 export default function FormTextarea({ content }: FormTextareaProps) {
-  const validators = (Array.isArray(content.Validators) ? content.Validators : []) as Validator[];
-  const fieldName = getFieldName(content);
-
-  const { value, setValue, inputRef, onBlur, errors, showErrors, isRequired } =
-    useFormField<HTMLTextAreaElement>({
-      name: fieldName,
-      validators,
-      defaultValue: content.PredefinedValue ?? '',
-      content,
-    });
+  const { fieldProps, errorProps, errors, showErrors, isRequired } =
+    useFormField<HTMLTextAreaElement>({ content });
 
   return (
     <FormElement content={content}>
       <div className='flex-1 space-y-1.5'>
         {content.Label && (
-          <label htmlFor={fieldName} className={labelClass}>
+          <label htmlFor={fieldProps.id} className={labelClass}>
             {content.Label}
             {isRequired && <span className={requiredMarkClass}>*</span>}
           </label>
         )}
         <textarea
-          ref={inputRef}
-          id={fieldName}
-          name={fieldName}
+          {...fieldProps}
+          rows={4}
           placeholder={content.Placeholder ?? ''}
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          onBlur={onBlur}
           title={content.Tooltip ?? ''}
           autoComplete={content.AutoComplete ?? 'off'}
-          rows={4}
-          required={isRequired}
-          aria-invalid={showErrors}
-          aria-describedby={showErrors ? `${fieldName}-error` : undefined}
           className={`${controlClass(showErrors)} resize-y`}
         />
         {showErrors && (
-          <div className='space-y-1' id={`${fieldName}-error`} role='alert'>
+          <div {...errorProps} className='space-y-1'>
             {errors.map(message => (
               <p key={message} className={errorTextClass}>
                 {message}

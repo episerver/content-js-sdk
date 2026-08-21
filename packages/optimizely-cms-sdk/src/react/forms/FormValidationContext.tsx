@@ -14,6 +14,8 @@ export type FormValidationContextType = {
   unregisterField: (name: string) => void;
   setFieldError: (name: string, hasError: boolean) => void;
   getFieldRef: (name: string) => HTMLElement | null;
+  /** The step a field was registered on, or `undefined` if it is not in a step. */
+  getFieldStepIndex: (name: string) => number | undefined;
   /**
    * Runs the registered fields' validators.
    *
@@ -24,12 +26,20 @@ export type FormValidationContextType = {
    */
   validateAllFields: (options?: { stepIndex?: number }) => string[];
   hasAnyErrors: boolean;
+  /**
+   * Increments when the form is reset. Fields watch it and return to their
+   * initial value: the inputs are controlled, so `form.reset()` clears the DOM
+   * but leaves React state holding the old values.
+   */
+  resetToken: number;
+  resetFields: () => void;
 };
 
 const FormValidationContext = createContext<FormValidationContextType | undefined>(undefined);
 
 export function FormValidationProvider({ children }: { children: ReactNode }) {
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [resetToken, setResetToken] = useState(0);
   const [fieldsWithErrors, setFieldsWithErrors] = useState<Set<string>>(new Set());
   const fieldsRef = useRef<
     Map<string, { ref: HTMLElement | null; validate: () => boolean; stepIndex?: number }>
@@ -46,8 +56,17 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  // Page order, remembered separately from the field map. A field re-registers
+  // every time its validity flips, and the cleanup deletes it first, so map
+  // insertion order drifts away from the order the fields appear in.
+  const fieldOrderRef = useRef<Map<string, number>>(new Map());
+  const nextOrderRef = useRef(0);
+
   const registerField = useCallback(
     (name: string, ref: HTMLElement | null, validate: () => boolean, stepIndex?: number) => {
+      if (!fieldOrderRef.current.has(name)) {
+        fieldOrderRef.current.set(name, nextOrderRef.current++);
+      }
       fieldsRef.current.set(name, { ref, validate, stepIndex });
     },
     [],
@@ -75,6 +94,12 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
     return fieldsRef.current.get(name)?.ref ?? null;
   }, []);
 
+  const getFieldStepIndex = useCallback((name: string): number | undefined => {
+    return fieldsRef.current.get(name)?.stepIndex;
+  }, []);
+
+  const resetFields = useCallback(() => setResetToken(token => token + 1), []);
+
   const validateAllFields = useCallback(
     ({ stepIndex }: { stepIndex?: number } = {}): string[] => {
       const invalid: string[] = [];
@@ -82,7 +107,9 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
         if (stepIndex !== undefined && field.stepIndex !== stepIndex) return;
         if (!field.validate()) invalid.push(name);
       });
-      return invalid;
+
+      const orderOf = (name: string) => fieldOrderRef.current.get(name) ?? 0;
+      return invalid.sort((a, b) => orderOf(a) - orderOf(b));
     },
     [],
   );
@@ -96,8 +123,11 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
         unregisterField,
         setFieldError,
         getFieldRef,
+        getFieldStepIndex,
         validateAllFields,
         hasAnyErrors: fieldsWithErrors.size > 0,
+        resetToken,
+        resetFields,
       }}
     >
       {children}

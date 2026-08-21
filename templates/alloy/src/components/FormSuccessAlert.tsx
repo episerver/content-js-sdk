@@ -4,7 +4,10 @@ type FormSuccessAlertProps = {
 };
 
 export default function FormSuccessAlert({ show, message }: FormSuccessAlertProps) {
-  if (!show || !message) return null;
+  // A confirmation message is optional in the CMS. Without a fallback, a
+  // successful submit renders nothing at all and looks like it did not work.
+  if (!show) return null;
+  const text = message || 'Thank you. Your form has been submitted.';
 
   return (
     <div
@@ -26,7 +29,7 @@ export default function FormSuccessAlert({ show, message }: FormSuccessAlertProp
           </svg>
         </div>
         <div className='ml-3'>
-          <p className='text-sm font-medium text-emerald-800'>{message}</p>
+          <p className='text-sm font-medium text-emerald-800'>{text}</p>
         </div>
       </div>
     </div>

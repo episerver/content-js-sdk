@@ -3,8 +3,7 @@
 import { ContentProps, OptiFormsTextboxElementContentType } from '@optimizely/cms-sdk';
 import {
   getHtmlValidationAttributes,
-  getFieldName,
-  type Validator,
+  toValidators,
 } from '@optimizely/cms-sdk/forms/validation';
 import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
 import {
@@ -20,46 +19,32 @@ type FormInputProps = {
 };
 
 export default function FormInput({ content }: FormInputProps) {
-  const validators = (Array.isArray(content.Validators) ? content.Validators : []) as Validator[];
-  const fieldName = getFieldName(content);
-
-  const { value, setValue, inputRef, onBlur, errors, showErrors, isRequired } = useFormField({
-    name: fieldName,
-    validators,
-    defaultValue: content.PredefinedValue ?? '',
+  const { fieldProps, errorProps, errors, showErrors, isRequired } = useFormField({
     content,
   });
 
-  const htmlAttrs = getHtmlValidationAttributes(validators);
+  const htmlAttrs = getHtmlValidationAttributes(toValidators(content.Validators));
 
   return (
     <FormElement content={content}>
       <div className='flex-1 space-y-1.5'>
         {content.Label && (
-          <label htmlFor={fieldName} className={labelClass}>
+          <label htmlFor={fieldProps.id} className={labelClass}>
             {content.Label}
             {isRequired && <span className={requiredMarkClass}>*</span>}
           </label>
         )}
         <input
-          ref={inputRef}
-          id={fieldName}
+          {...fieldProps}
           type={(htmlAttrs.type as string) ?? 'text'}
-          name={fieldName}
           placeholder={content.Placeholder ?? ''}
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          onBlur={onBlur}
           title={content.Tooltip ?? ''}
           autoComplete={content.AutoComplete ?? 'off'}
-          required={htmlAttrs.required === true}
           pattern={htmlAttrs.pattern as string | undefined}
-          aria-invalid={showErrors}
-          aria-describedby={showErrors ? `${fieldName}-error` : undefined}
           className={controlClass(showErrors)}
         />
         {showErrors && (
-          <div className='space-y-1' id={`${fieldName}-error`} role='alert'>
+          <div {...errorProps} className='space-y-1'>
             {errors.map(message => (
               <p key={message} className={errorTextClass}>
                 {message}

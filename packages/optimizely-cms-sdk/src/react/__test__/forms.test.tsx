@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeAll } from 'vitest';
+import { describe, expect, test, beforeAll, vi } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import FormWrapper, { useFormSteps } from '../forms/FormWrapper.js';
 import { FormStep } from '../forms/FormStep.js';
@@ -56,6 +56,7 @@ function Probe() {
       <button type='button' onClick={nextStep}>
         Next
       </button>
+      <button type='submit'>Submit</button>
     </>
   );
 }
@@ -189,5 +190,90 @@ describe('step navigation', () => {
 
     expect(step()).toBe('1');
     expect((screen.getByLabelText('step0') as HTMLInputElement).value).toBe('typed');
+  });
+});
+
+describe('submitting', () => {
+  const type = (label: string, value: string) =>
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+
+  const clickSubmit = () => act(() => screen.getByText('Submit').click());
+
+  const twoStepForm = () => (
+    <>
+      <FormStep index={0}>
+        <Field name='step0' />
+      </FormStep>
+      <FormStep index={1}>
+        <Field name='step1' />
+      </FormStep>
+      <Probe />
+    </>
+  );
+
+  // Submitting checks every step, so the blocking field can be on one that is
+  // hidden. Without jumping to it, the form just refuses to send and nothing
+  // on screen explains why.
+  test('jumps to the step holding the first invalid field', () => {
+    renderForm(twoStepForm());
+
+    type('step0', 'filled');
+    clickNext();
+    expect(step()).toBe('1');
+
+    // Empty the first step again while standing on the second, then submit.
+    type('step0', '');
+    clickSubmit();
+
+    expect(step()).toBe('0');
+  });
+
+  test('stays put when the invalid field is already on screen', () => {
+    renderForm(twoStepForm());
+
+    type('step0', 'filled');
+    clickNext();
+    clickSubmit();
+
+    expect(step()).toBe('1');
+  });
+
+  test('does not post while a field is invalid', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderForm(twoStepForm());
+    clickSubmit();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  test('posts to the action and clears the fields once it succeeds', async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => {
+      return { ok: true } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderForm(twoStepForm());
+
+    type('step0', 'filled');
+    clickNext();
+    type('step1', 'also filled');
+
+    await act(async () => {
+      screen.getByText('Submit').click();
+    });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe('/submit');
+
+    // Controlled inputs keep their value through `form.reset()`, so a form that
+    // submitted fine still looks untouched unless the fields are reset too.
+    expect((screen.getByLabelText('step0') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('step1') as HTMLInputElement).value).toBe('');
+    expect(step()).toBe('0');
+
+    vi.unstubAllGlobals();
   });
 });

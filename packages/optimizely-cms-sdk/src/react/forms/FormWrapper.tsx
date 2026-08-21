@@ -4,6 +4,7 @@ import {
   ReactNode,
   useRef,
   useState,
+  useEffect,
   useCallback,
   createContext,
   useContext,
@@ -55,19 +56,42 @@ function FormWrapperContent({
   rules,
 }: FormWrapperProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const { setAttemptedSubmit, validateAllFields, getFieldRef } = useFormValidation();
+  const [fieldToReveal, setFieldToReveal] = useState<string | null>(null);
+  const {
+    setAttemptedSubmit,
+    validateAllFields,
+    getFieldRef,
+    getFieldStepIndex,
+    resetFields,
+  } = useFormValidation();
   const { setStatus } = useFormStatus();
   const formRef = useRef<HTMLFormElement>(null);
 
   // Fields register in render order, so the first entry is the earliest one on the page.
   const revealFirstInvalid = useCallback(
     (invalidFieldNames: string[]) => {
-      const field = getFieldRef(invalidFieldNames[0]);
-      field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      field?.focus();
+      const name = invalidFieldNames[0];
+
+      // Submitting validates every step, so the offending field may be on one
+      // that isn't showing. Scrolling to a `display: none` element does nothing,
+      // which leaves the visitor on a form that silently refuses to send.
+      const step = getFieldStepIndex(name);
+      if (step !== undefined) setCurrentStepIndex(step);
+
+      setFieldToReveal(name);
     },
-    [getFieldRef],
+    [getFieldStepIndex],
   );
+
+  // Deferred to an effect so the step above has been shown before we scroll.
+  useEffect(() => {
+    if (fieldToReveal === null) return;
+
+    const field = getFieldRef(fieldToReveal);
+    field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    field?.focus();
+    setFieldToReveal(null);
+  }, [fieldToReveal, getFieldRef]);
 
   const lastStepIndex = Math.max(0, steps.length - 1);
 
@@ -122,8 +146,12 @@ function FormWrapperContent({
 
       if (response.ok) {
         setStatus('success');
+        // `form.reset()` only clears uncontrolled inputs; fields driven by
+        // `useFormField` hold their value in React state and need the token.
         formRef.current?.reset();
+        resetFields();
         setAttemptedSubmit(false);
+        setCurrentStepIndex(0);
         scrollToElement(scrollToOnSuccess);
       } else {
         setStatus('error');

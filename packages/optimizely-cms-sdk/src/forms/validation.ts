@@ -152,3 +152,23 @@ export const getFieldName = (field: {
   SubmissionFieldName?: string | null;
   Label?: string | null;
 }): string => field.SubmissionFieldName || field.Label || '';
+
+/**
+ * Reads a `Validators` property.
+ *
+ * The CMS models it as free-form JSON, so it arrives as `unknown` and every
+ * caller would otherwise repeat the same unchecked cast.
+ */
+export const toValidators = (value: unknown): Validator[] =>
+  Array.isArray(value) ? (value as Validator[]) : [];
+
+/** One choice in a choice or selection element. */
+export type SelectionOption = {
+  label: string;
+  value: string;
+  selected?: boolean;
+};
+
+/** Reads the `Options` property of a choice or selection element. */
+export const getSelectionOptions = (field: { Options?: unknown }): SelectionOption[] =>
+  Array.isArray(field.Options) ? (field.Options as SelectionOption[]) : [];
