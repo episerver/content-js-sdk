@@ -5,7 +5,7 @@ import { FormStep } from '../forms/FormStep.js';
 import { FormElement } from '../forms/FormElement.js';
 import { useFormField } from '../forms/useFormField.js';
 import { useFormValidation } from '../forms/FormValidationContext.js';
-import { FormStatusProvider } from '../forms/FormStatusProvider.js';
+import { FormSubmissionProvider } from '../forms/FormSubmissionProvider.js';
 import type { DependencyRule } from '../forms/FormRulesContext.js';
 import type { Validator } from '../../forms/validation.js';
 
@@ -63,11 +63,11 @@ function Probe() {
 
 const renderForm = (children: React.ReactNode, rules?: DependencyRule[]) =>
   render(
-    <FormStatusProvider>
+    <FormSubmissionProvider>
       <FormWrapper action='/submit' steps={[{}, {}] as never} rules={rules}>
         {children}
       </FormWrapper>
-    </FormStatusProvider>,
+    </FormSubmissionProvider>,
   );
 
 const clickNext = () => act(() => screen.getByText('Next').click());

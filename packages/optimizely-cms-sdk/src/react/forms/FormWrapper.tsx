@@ -10,7 +10,7 @@ import {
   useContext,
 } from 'react';
 import { FormValidationProvider, useFormValidation } from './FormValidationContext.js';
-import { useFormStatus } from './FormStatusProvider.js';
+import { useFormSubmission } from './FormSubmissionProvider.js';
 import { FormRulesProvider } from './FormRulesContext.js';
 import { ExperienceNode } from '../../infer.js';
 
@@ -64,7 +64,7 @@ function FormWrapperContent({
     getFieldStepIndex,
     resetFields,
   } = useFormValidation();
-  const { setStatus } = useFormStatus();
+  const { setStatus } = useFormSubmission();
   const formRef = useRef<HTMLFormElement>(null);
 
   // Fields register in render order, so the first entry is the earliest one on the page.

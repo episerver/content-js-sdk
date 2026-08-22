@@ -15,10 +15,14 @@ describe('pathFilter', () => {
       _metadata: { url: { default: { eq: '/en/blog/my-article' }, base: undefined } },
     });
     expect(conditions[2]).toEqual({
-      _metadata: { url: { hierarchical: { eq: '/en/blog/my-article/' }, base: undefined } },
+      _metadata: {
+        url: { hierarchical: { eq: '/en/blog/my-article/' }, base: undefined },
+      },
     });
     expect(conditions[3]).toEqual({
-      _metadata: { url: { hierarchical: { eq: '/en/blog/my-article' }, base: undefined } },
+      _metadata: {
+        url: { hierarchical: { eq: '/en/blog/my-article' }, base: undefined },
+      },
     });
   });
 

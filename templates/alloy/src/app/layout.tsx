@@ -25,11 +25,11 @@ import StandardTeaser from '@/components/base/StandardTeaser';
 import NewsEventsList, {
   NewsEventsListContentType,
 } from '@/components/base/NewsEventsList';
-import FormContainer from '@/components/FormContainer';
-import FormInput from '@/components/FormInput';
-import FormSelection from '@/components/FormSelection';
-import FormTextarea from '@/components/FormTextarea';
-import FormSubmit from '@/components/FormSubmit';
+import FormContainer from '@/components/forms/FormContainer';
+import FormInput from '@/components/forms/FormInput';
+import FormSelection from '@/components/forms/FormSelection';
+import FormTextarea from '@/components/forms/FormTextarea';
+import FormSubmit from '@/components/forms/FormSubmit';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

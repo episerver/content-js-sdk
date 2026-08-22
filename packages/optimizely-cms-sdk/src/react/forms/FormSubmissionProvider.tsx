@@ -4,7 +4,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
-type FormStatusContextType = {
+type FormSubmissionContextType = {
   status: FormStatus;
   setStatus: (status: FormStatus) => void;
   formSuccess: boolean;
@@ -12,25 +12,25 @@ type FormStatusContextType = {
   isSubmitting: boolean;
 };
 
-const FormStatusContext = createContext<FormStatusContextType | undefined>(undefined);
+const FormSubmissionContext = createContext<FormSubmissionContextType | undefined>(undefined);
 
-export function useFormStatus() {
-  const context = useContext(FormStatusContext);
+export function useFormSubmission() {
+  const context = useContext(FormSubmissionContext);
   if (!context) {
-    throw new Error('useFormStatus must be used within a FormStatusProvider');
+    throw new Error('useFormSubmission must be used within a FormSubmissionProvider');
   }
   return context;
 }
 
-type FormStatusProviderProps = {
+type FormSubmissionProviderProps = {
   children: ReactNode;
 };
 
-export function FormStatusProvider({ children }: FormStatusProviderProps) {
+export function FormSubmissionProvider({ children }: FormSubmissionProviderProps) {
   const [status, setStatus] = useState<FormStatus>('idle');
 
   return (
-    <FormStatusContext.Provider
+    <FormSubmissionContext.Provider
       value={{
         status,
         setStatus,
@@ -40,6 +40,6 @@ export function FormStatusProvider({ children }: FormStatusProviderProps) {
       }}
     >
       {children}
-    </FormStatusContext.Provider>
+    </FormSubmissionContext.Provider>
   );
 }

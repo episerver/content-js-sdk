@@ -1,31 +1,16 @@
 import {
-  DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  DEFAULT_EXPAND_CONTRACTS,
-} from '../graph/constants.js';
-import { DEFAUL_FRAGMENT_OPTIONS } from '../graph/createQuery.js';
-import type { FragmentOptions } from './queryUtils.js';
+  createQueryContext,
+  type FragmentOptions,
+  type QueryContext,
+} from './queryUtils.js';
 import { getAllContentTypes } from '../model/contentTypeRegistry.js';
 
 const queryCache = new Map<string, string>();
 
-type TypeFilter = ((contentTypeKey: string) => boolean) | undefined;
+/** The lenient option bag the query builders accept. */
+type QueryOptions = Partial<QueryContext> & FragmentOptions;
 
-type QueryGenerator = (contentType: string, options?: FragmentOptions) => string;
-
-function createCacheKey(
-  queryType: 'single' | 'multiple',
-  contentType: string,
-  options: FragmentOptions = DEFAUL_FRAGMENT_OPTIONS,
-): string {
-  const {
-    damEnabled = false,
-    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-    expandContracts = DEFAULT_EXPAND_CONTRACTS,
-    formsEnabled = false,
-  } = options;
-  const filterPart = options?.typeFilter ? `:${getFilterHash(options.typeFilter)}` : '';
-  return `${queryType}:${contentType}:${damEnabled}:${maxFragmentThreshold}:${expandContracts}:${formsEnabled}${filterPart}`;
-}
+type QueryGenerator = (contentType: string, options?: QueryOptions) => string;
 
 const getFilterHash = (typeFilter: (key: string) => boolean): string => {
   return getAllContentTypes()
@@ -36,6 +21,37 @@ const getFilterHash = (typeFilter: (key: string) => boolean): string => {
 };
 
 /**
+ * Builds the cache key from every setting that can change the generated query.
+ *
+ * Defaults come from `createQueryContext`, the same helper the generator uses,
+ * so a key and the query it points at cannot disagree about what a missing
+ * option means.
+ */
+function createCacheKey(
+  queryType: 'single' | 'multiple',
+  contentType: string,
+  options: QueryOptions = {},
+): string {
+  const { damEnabled, maxFragmentThreshold, expandContracts, formsEnabled, typeFilter } =
+    createQueryContext(options);
+  const { includeBaseFragments = true } = options;
+
+  const filterPart = typeFilter ? `:${getFilterHash(typeFilter)}` : '';
+
+  return (
+    [
+      queryType,
+      contentType,
+      damEnabled,
+      maxFragmentThreshold,
+      expandContracts,
+      formsEnabled,
+      includeBaseFragments,
+    ].join(':') + filterPart
+  );
+}
+
+/**
  * Higher-order function that wraps query generation with caching.
  * Returns cached query if available, otherwise generates and caches it.
  */
@@ -43,7 +59,7 @@ export const withQueryCaching = (
   queryType: 'single' | 'multiple',
   generateQuery: QueryGenerator,
 ): QueryGenerator => {
-  return (contentType: string, options?: FragmentOptions): string => {
+  return (contentType: string, options?: QueryOptions): string => {
     const cacheKey = createCacheKey(queryType, contentType, options);
     const cached = queryCache.get(cacheKey);
     if (cached) return cached;

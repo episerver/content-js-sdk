@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormStatus } from './FormStatusProvider.js';
+import { useFormSubmission } from './FormSubmissionProvider.js';
 import { useFormSteps } from './FormWrapper.js';
 
 export type FormButtonRole = 'next' | 'previous' | 'submit';
@@ -40,7 +40,7 @@ export function useFormButton(
   content: FormButtonContent,
   options: UseFormButtonOptions = {},
 ) {
-  const { isSubmitting } = useFormStatus();
+  const { isSubmitting } = useFormSubmission();
   const { nextStep, prevStep } = useFormSteps();
 
   const label = content.Label?.trim().toLowerCase() ?? '';

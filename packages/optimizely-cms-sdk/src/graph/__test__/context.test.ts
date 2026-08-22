@@ -1,6 +1,10 @@
 import { describe, expect, test, beforeEach, vi, afterEach } from 'vitest';
 import { removeTypePrefix, GraphClient } from '../index.js';
-import { configureAdapter, getContext, initializeRequestContext } from '../../context/config.js';
+import {
+  configureAdapter,
+  getContext,
+  initializeRequestContext,
+} from '../../context/config.js';
 import type { ContextAdapter, ContextData } from '../../context/baseContext.js';
 import { contentType, initContentTypeRegistry } from '../../index.js';
 
@@ -272,7 +276,9 @@ describe('GraphClient - Context Integration', () => {
       };
 
       // Should throw when trying to populate context with broken adapter
-      await expect(testClient.getPreviewContent(previewParams)).rejects.toThrow('Adapter error');
+      await expect(testClient.getPreviewContent(previewParams)).rejects.toThrow(
+        'Adapter error',
+      );
     });
   });
 });

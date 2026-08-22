@@ -81,8 +81,15 @@ function buildNestedCompositionNodes(depth: number): string {
   return `${baseFields} ...on CompositionStructureNode { component { ..._IComponent } nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
 }
 
-// Increase nesting depth to support deeper form structures (e.g., Forms with nested fields)
-const COMPOSITION_NESTING_DEPTH = 8;
+/** Nesting depth that covers ordinary experience compositions. */
+const COMPOSITION_NESTING_DEPTH = 4;
+
+/**
+ * Forms nest deeper than an ordinary composition — steps hold rows, which hold
+ * columns, which hold elements — so they need more levels. Applied only when
+ * Forms is enabled, because every extra level lengthens every query.
+ */
+const FORMS_COMPOSITION_NESTING_DEPTH = 8;
 
 // FRAGMENT CONSTANTS
 
@@ -96,11 +103,18 @@ export const DAM_ASSET_FRAGMENTS = [
   'fragment ContentReferenceItem on ContentReference { item { __typename ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }',
 ];
 
-export const FIXED_FRAGMENTS = [
+/**
+ * Fragments included in every experience query.
+ *
+ * @param formsEnabled Use the deeper composition nesting that Forms requires.
+ */
+export const getFixedFragments = (formsEnabled = false) => [
   'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
   // This is a temporary workaround for Graph issue with @recursive directive. This will not be used once Graph properly supports @recursive.
   // Replace it with a simpler recursive fragment once Graph supports @recursive, e.g. 'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }':
-  `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(COMPOSITION_NESTING_DEPTH)} }`,
+  `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(
+    formsEnabled ? FORMS_COMPOSITION_NESTING_DEPTH : COMPOSITION_NESTING_DEPTH,
+  )} }`,
 ];
 
 const COMMON_FRAGMENTS = [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormStatus } from '@optimizely/cms-sdk/forms/react';
+import { useFormSubmission } from '@optimizely/cms-sdk/forms/react';
 import FormSuccessAlert from './FormSuccessAlert';
 import FormErrorAlert from './FormErrorAlert';
 
@@ -9,7 +9,7 @@ type FormAlertsProps = {
 };
 
 export default function FormAlerts({ submitConfirmationMessage }: FormAlertsProps) {
-  const { formSuccess, formError } = useFormStatus();
+  const { formSuccess, formError } = useFormSubmission();
 
   return (
     <>

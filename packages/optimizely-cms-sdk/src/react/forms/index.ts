@@ -1,6 +1,6 @@
 export { FormValidationProvider, useFormValidation } from './FormValidationContext.js';
 export type { FormValidationContextType } from './FormValidationContext.js';
-export { FormStatusProvider, useFormStatus } from './FormStatusProvider.js';
+export { FormSubmissionProvider, useFormSubmission } from './FormSubmissionProvider.js';
 export { default as FormWrapper, useFormSteps as useFormStep } from './FormWrapper.js';
 export type { DependencyRule } from './FormRulesContext.js';
 export { FormStep } from './FormStep.js';

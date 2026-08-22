@@ -3,7 +3,10 @@
 The Optimizely CMS JavaScript SDK includes built-in support for Optimizely Forms, enabling you to model, fetch, and render forms in your headless applications.
 
 > [!IMPORTANT]
-> Forms support requires that Optimizely Forms is enabled in your CMS instance. Log in to the CMS, navigate to **Settings > Forms Settings**, and click **Activate**.
+> Forms support requires that Optimizely Forms is enabled in your CMS instance. Log in to the CMS, navigate to **Settings > Forms Settings**, and click **Activate**. The SDK detects this automatically — there is no configuration flag.
+
+> [!WARNING]
+> **The SDK does not submit form entries to Optimizely.** `FormWrapper` POSTs the form's `FormData` to whatever URL the editor put in the container's **Submit URL** field, and treats any `response.ok` as success. You are responsible for the endpoint that receives it and for storing or forwarding the data. The route in the Alloy template only logs the submission.
 
 ## Contents
 
@@ -36,80 +39,114 @@ initForms({
 
 ### 2. Create FormContainer component
 
-The FormContainer is the root component that wraps all form content. It uses `FormStatusProvider` to manage submission state, and `FormWrapper` to orchestrate validation and submission:
+The FormContainer is the root component that wraps all form content. It uses `FormSubmissionProvider` to manage submission state, and `FormWrapper` to orchestrate validation and submission:
 
 ```tsx
 // src/components/forms/FormContainer.tsx
 import { OptiFormsContainerContentType } from '@optimizely/cms-sdk';
-import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
-import { FormStatusProvider, FormWrapper } from '@optimizely/cms-sdk/forms/react';
+import { OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
+import {
+  FormSubmissionProvider,
+  FormStep,
+  FormWrapper,
+  isFormButtonNode,
+  partitionFormNodes,
+} from '@optimizely/cms-sdk/forms/react';
 import FormAlerts from './FormAlerts';
 import GridRow from './GridRow';
 import GridColumn from './GridColumn';
 
 export default function FormContainer({ content }: { content: OptiFormsContainerContentType }) {
-  const { pa } = getPreviewUtils(content);
   const nodes = content.nodes ?? [];
+  const stepNodes = nodes.filter(node => !isFormButtonNode(node));
 
   return (
-    <FormStatusProvider>
-      <div className="max-w-7xl py-6 space-y-6">
+    <FormSubmissionProvider>
+      <div id="form-alert" className="max-w-2xl space-y-5">
         {content.Title && <h2>{content.Title}</h2>}
         {content.Description && <p>{content.Description}</p>}
-        
+
         <FormAlerts submitConfirmationMessage={content.SubmitConfirmationMessage} />
 
         <FormWrapper
           scrollToOnSuccess="form-alert"
           scrollToOnError={false}
           action={content.SubmitUrl?.default ?? ''}
+          steps={stepNodes}
           rules={content.DependencyRules}
         >
-          <OptimizelyGridSection nodes={nodes} row={GridRow} column={GridColumn} />
+          {stepNodes.map((node, index) => {
+            // Editors place Next, Previous and Submit wherever they like, often
+            // each in its own row. Lifting them out lets you lay them out as one
+            // footer regardless of how the form was authored.
+            const step = partitionFormNodes([node]);
+
+            return (
+              <FormStep key={node.key} index={index}>
+                <OptimizelyGridSection nodes={step.content} row={GridRow} column={GridColumn} />
+                {step.buttons.length > 0 && (
+                  <div className="mt-6 flex items-center gap-3">
+                    <OptimizelyGridSection nodes={step.buttons} row={GridRow} column={GridColumn} />
+                  </div>
+                )}
+              </FormStep>
+            );
+          })}
         </FormWrapper>
       </div>
-    </FormStatusProvider>
+    </FormSubmissionProvider>
   );
 }
 ```
 
 ### 3. Create field components
 
-Field components render individual form inputs with validation and error display. Use the `useFormField` hook to handle state, validation, and rules tracking automatically:
+Field components render individual form inputs with validation and error display. Pass the element's `content` to `useFormField` and it derives the field name, validators and initial value for you, and hands back the props to spread:
 
 ```tsx
 // src/components/forms/FormInput.tsx
 'use client';
 
-import { useFormField } from '@optimizely/cms-sdk/forms/react';
-import { getHtmlValidationAttributes } from '@optimizely/cms-sdk/forms/validation';
+import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
+import {
+  getHtmlValidationAttributes,
+  toValidators,
+} from '@optimizely/cms-sdk/forms/validation';
 
 export default function FormInput({ content }) {
-  const { value, setValue, inputRef, errors, showErrors, isRequired } = useFormField({
-    name: content.SubmissionFieldName || content.Label,
-    validators: content.Validators,
+  const { fieldProps, errorProps, errors, showErrors, isRequired } = useFormField({
     content,
   });
 
+  const htmlAttrs = getHtmlValidationAttributes(toValidators(content.Validators));
+
   return (
-    <div>
-      <label>
-        {content.Label}
-        {isRequired && <span className="text-red-600">*</span>}
-      </label>
-      <input
-        ref={inputRef}
-        name={content.SubmissionFieldName || content.Label}
-        value={value}
-        onChange={e => setValue(e.target.value)}
-        placeholder={content.Placeholder}
-        {...getHtmlValidationAttributes(content.Validators)}
-      />
-      {showErrors && <div className="text-red-600">{errors.map(e => <p key={e}>{e}</p>)}</div>}
-    </div>
+    // Hides the field while a dependency rule turns it off.
+    <FormElement content={content}>
+      <div>
+        <label htmlFor={fieldProps.id}>
+          {content.Label}
+          {isRequired && <span className="text-red-600">*</span>}
+        </label>
+        <input
+          {...fieldProps}
+          type={(htmlAttrs.type as string) ?? 'text'}
+          placeholder={content.Placeholder ?? ''}
+        />
+        {showErrors && (
+          <div {...errorProps} className="text-red-600">
+            {errors.map(e => <p key={e}>{e}</p>)}
+          </div>
+        )}
+      </div>
+    </FormElement>
   );
 }
 ```
+
+`fieldProps` carries the ref, `id`, `name`, `value`, `required`, `aria-invalid`, `aria-describedby`, `onChange` and `onBlur`. `errorProps` carries the matching `id` and `role="alert"`. Spreading both keeps the accessibility wiring consistent across every field type.
+
+For a control that cannot take those directly — a radio group, where the name and change handler belong on each radio and the ref on the fieldset — use `inputRef`, `value`, `setValue`, `onBlur` and `errorId` instead.
 
 ### 4. Create alerts component
 
@@ -119,10 +156,10 @@ The alerts component shows success or error messages based on form submission st
 // src/components/forms/FormAlerts.tsx
 'use client';
 
-import { useFormStatus } from '@optimizely/cms-sdk/forms/react';
+import { useFormSubmission } from '@optimizely/cms-sdk/forms/react';
 
 export default function FormAlerts({ submitConfirmationMessage }) {
-  const { formSuccess, formError } = useFormStatus();
+  const { formSuccess, formError } = useFormSubmission();
   if (!formSuccess && !formError) return null;
 
   return (
@@ -162,32 +199,31 @@ The `useFormField` hook handles validation, error tracking, and field registrati
 'use client';
 
 import { useFormField } from '@optimizely/cms-sdk/forms/react';
-import { getHtmlValidationAttributes } from '@optimizely/cms-sdk/forms/validation';
+import {
+  getHtmlValidationAttributes,
+  toValidators,
+} from '@optimizely/cms-sdk/forms/validation';
 
 function EmailField({ content }) {
-  const { value, setValue, inputRef, errors, showErrors, isRequired } = useFormField({
-    name: content.SubmissionFieldName || content.Label,
-    validators: content.Validators,
-    content,  // Auto-tracks for dependency rules
+  // Name, validators and initial value all come from `content`.
+  const { fieldProps, errorProps, errors, showErrors, isRequired } = useFormField({
+    content,
   });
 
   return (
     <div>
-      <label>
+      <label htmlFor={fieldProps.id}>
         {content.Label}
         {isRequired && <span>*</span>}
       </label>
-      <input
-        ref={inputRef}
-        value={value}
-        onChange={e => setValue(e.target.value)}
-        {...getHtmlValidationAttributes(content.Validators)}
-      />
-      {showErrors && <div>{errors.map(e => <p key={e}>{e}</p>)}</div>}
+      <input {...fieldProps} {...getHtmlValidationAttributes(toValidators(content.Validators))} />
+      {showErrors && <div {...errorProps}>{errors.map(e => <p key={e}>{e}</p>)}</div>}
     </div>
   );
 }
 ```
+
+Errors appear once the field has been blurred or the form has been submitted, so a visitor is not told a field is invalid before they have had a chance to fill it in.
 
 ### Supported Validators
 
@@ -216,51 +252,31 @@ if (VALIDATION_PATTERNS.email.test(value)) {
 
 ## Form Dependency Rules
 
-Show/hide fields based on other field values:
+Show and hide fields based on other fields' values. Rules come from the container and are passed to `FormWrapper` once, as shown in the Quick Start:
 
 ```tsx
-'use client';
-
-import { FormWrapper, FormElement } from '@optimizely/cms-sdk/forms/react';
-
-export default function MyForm({ content }) {
-  return (
-    <FormWrapper
-      action="/api/forms/submit"
-      rules={content.DependencyRules}
-    >
-      <FormContainer content={content} />
-    </FormWrapper>
-  );
-}
+<FormWrapper action={...} rules={content.DependencyRules}>
 ```
 
-Wrap fields with `FormElement` to enable conditional rendering. Your field components should pass `content` to `useFormField` to automatically track values for rule evaluation:
+Each field component then needs two things:
+
+1. Wrap its markup in `FormElement`, which renders nothing while a rule hides the field.
+2. Pass `content` to `useFormField`, which reports the field's value so rules that depend on it can be evaluated. No manual `setFieldValue()` calls are needed.
 
 ```tsx
-export default function MyInput({ content }) {
+export default function FormInput({ content }) {
+  const { fieldProps } = useFormField({ content });
+
   return (
     <FormElement content={content}>
-      <FormInput content={content} />
+      <input {...fieldProps} />
     </FormElement>
   );
 }
 ```
 
-Inside FormInput, the hook automatically tracks field values:
-
-```tsx
-export default function FormInput({ content }) {
-  const { value, setValue, inputRef, errors, showErrors } = useFormField({
-    name: content.SubmissionFieldName || content.Label,
-    validators: content.Validators,
-    content,  // Automatically tracks for rule evaluation
-  });
-  // ...
-}
-```
-
-No manual `setFieldValue()` calls needed—the hook handles it all.
+> [!IMPORTANT]
+> `FormElement` must wrap the markup **inside** the field component, not the component itself. A field hidden by a rule is excluded from validation, and `useFormField` can only do that from inside the component. Wrapping from the outside would leave a hidden required field registered, blocking submission with no visible error.
 
 ### Rule Conditions
 
@@ -272,30 +288,42 @@ Supported operators: `All` (AND), `Any` (OR)
 
 ## Multi-Step Forms
 
-Use `FormStep` to conditionally render steps:
+Use `FormStep` to render one step at a time, as shown in the Quick Start container. Inactive steps stay mounted behind `display: none`, so values survive stepping back and forth and submitting validates every step, not just the visible one.
+
+Advancing validates only the current step. Submitting validates all of them, and jumps to the step holding the first invalid field so the visitor can see what is blocking them.
+
+### Step buttons
+
+Optimizely Forms has no property marking a button as step navigation: Next, Previous and Submit are all the same element type, distinguished **only by their label**. `useFormButton` resolves the role and wires it up:
 
 ```tsx
 'use client';
 
-import { FormWrapper, FormStep } from '@optimizely/cms-sdk/forms/react';
+import { useFormButton } from '@optimizely/cms-sdk/forms/react';
 
-export default function MultiStepForm({ stepNodes }) {
+export default function FormSubmit({ content }) {
+  const { role, label, isSubmitting, buttonProps } = useFormButton(content);
+
   return (
-    <FormWrapper action="/api/forms/submit" steps={stepNodes}>
-      {stepNodes.map((step, i) => (
-        <FormStep key={i} index={i}>
-          <div className="mb-8">
-            <h2>Step {i + 1}</h2>
-            <OptimizelyGridSection nodes={[step]} row={GridRow} column={GridColumn} />
-          </div>
-        </FormStep>
-      ))}
-    </FormWrapper>
+    <button {...buttonProps} className={role === 'previous' ? 'secondary' : 'primary'}>
+      {isSubmitting ? 'Submitting…' : label}
+    </button>
   );
 }
 ```
 
-All fields validate across steps before submission (fields remain in DOM while hidden).
+`role` is `'next'`, `'previous'` or `'submit'`. `buttonProps` sets the right `type`, the click handler, `disabled` while the request is in flight, and the tooltip.
+
+> [!IMPORTANT]
+> Label your CMS buttons exactly **Next** and **Previous** (matching ignores case and surrounding spaces). Any other label is treated as a submit button, so a step button would submit the half-filled form instead of navigating. For a form authored in another language, pass your own labels:
+>
+> ```tsx
+> useFormButton(content, { labels: { next: ['nästa'], previous: ['tillbaka'] } });
+> ```
+
+### After a successful submit
+
+The fields are cleared and the form returns to the first step. Because the inputs are controlled by `useFormField`, this is driven by the SDK rather than by `form.reset()`, which only clears uncontrolled inputs.
 
 ---
 
@@ -303,10 +331,12 @@ All fields validate across steps before submission (fields remain in DOM while h
 
 ### Available Content Types
 
-```ts
-import { FormContentTypes } from '@optimizely/cms-sdk';
+`initForms` registers all of these for you. Import them individually only if you need to reference one in your own content model:
 
-// Includes:
+```ts
+import { OptiFormsContainerDataContentType } from '@optimizely/cms-sdk';
+
+// Available:
 // - OptiFormsContainerDataContentType
 // - OptiFormsTextboxElementContentType
 // - OptiFormsTextareaElementContentType
@@ -359,19 +389,30 @@ export const PageWithFormContentType = contentType({
 
 ```ts
 const {
+  fieldProps,   // Spread onto an <input> or <textarea>
+  errorProps,   // Spread onto the element listing the messages
   value,        // Current input value
   setValue,     // Update value
-  inputRef,     // Attach to input element
+  inputRef,     // Attach to the element to scroll to and focus
+  onBlur,       // Marks the field touched, so errors can show
+  errorId,      // id of the error element, or undefined when not showing
   errors,       // Array of error messages
-  showErrors,   // Boolean: show errors on attempted submit
+  showErrors,   // Boolean: errors should be displayed now
   hasErrors,    // Boolean: field has validation errors
   isRequired,   // Boolean: field is required
+  isVisible,    // Boolean: false while a dependency rule hides the field
 } = useFormField({
-  name: 'fieldName',
-  validators: fieldContent.Validators,
-  content: fieldContent,  // Optional: auto-track for rules
-  defaultValue: '',       // Optional: initial value
+  content: fieldContent,  // Name, validators and initial value are read from this
+  name: 'fieldName',      // Optional: overrides SubmissionFieldName / Label
+  validators: [...],      // Optional: overrides the Validators property
+  defaultValue: '',       // Optional: overrides PredefinedValue
 });
+```
+
+Pass a type parameter when the ref is not an `<input>`:
+
+```ts
+useFormField<HTMLTextAreaElement>({ content });
 ```
 
 ### Validation Utilities
@@ -417,19 +458,11 @@ initForms({
     tags: { compact: CompactContainer },
   },
 });
-
-// Manual setup for complete control
-import { initContentTypeRegistry, initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
-
-initContentTypeRegistry(FormContentTypes);
-initReactComponentRegistry({
-  resolver: {
-    OptiFormsContainerData: FormContainer,
-    OptiFormsTextboxElement: FormInput,
-    // ...
-  },
-});
 ```
+
+`initForms` registers the form content types and their components. It can be called before or after `initContentTypeRegistry` and `initReactComponentRegistry`, works alongside a resolver function as well as a component map, and is safe to call more than once — a hot reload will not register anything twice.
+
+Handlers you leave out render a development-only placeholder, so you can add field types as you need them. The available keys are `container`, `textbox`, `textarea`, `number`, `range`, `url`, `choice`, `selection`, `submit` and `reset`.
 
 ---
 
@@ -471,11 +504,14 @@ initReactComponentRegistry({
 
 - `FormWrapper` - Main form orchestrator
 - `useFormField` - Field setup hook (recommended for most fields)
+- `useFormButton` - Resolves a button to next / previous / submit and wires it
+- `DEFAULT_STEP_BUTTON_LABELS` - The labels `useFormButton` treats as navigation
+- `partitionFormNodes` / `isFormButtonNode` - Separate a form's buttons from its fields
 - `FormValidationProvider` / `useFormValidation` - Manual validation control
-- `FormStatusProvider` / `useFormStatus` - Submission state
+- `FormSubmissionProvider` / `useFormSubmission` - Submission state
 - `FormRulesProvider` / `useFormRules` - Rule evaluation
 - `FormElement` - Conditional field visibility wrapper
-- `FormStep` - Multi-step conditional renderer
+- `FormStep` - Multi-step renderer; inactive steps stay mounted and hidden
 - `useFormStep` - Step navigation hook
 - `getElementId` - Extract element ID from content
 
@@ -488,10 +524,11 @@ initReactComponentRegistry({
 - `extractErrorMessage` - Get validator message
 - `extractValidatorType` - Normalize validator type
 - `getFieldName` - Get display name
+- `toValidators` - Safely read a `Validators` property
+- `getSelectionOptions` - Safely read an `Options` property
 - `VALIDATION_PATTERNS` - Reusable regex patterns
 
 **From `@optimizely/cms-sdk`:**
 
-- `FormContentTypes` - All form content type definitions
 - `OptiFormsContainerDataContentType` - Form container type
 - Individual field types (textbox, textarea, etc.)

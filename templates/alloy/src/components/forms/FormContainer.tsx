@@ -1,7 +1,7 @@
 import { OptiFormsContainerContentType } from '@optimizely/cms-sdk';
 import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
 import {
-  FormStatusProvider,
+  FormSubmissionProvider,
   FormStep,
   FormWrapper,
   isFormButtonNode,
@@ -36,7 +36,7 @@ export default function FormContainer({ content }: FormContainerProps) {
   const stepNodes = nodes.filter(node => !isFormButtonNode(node));
 
   return (
-    <FormStatusProvider>
+    <FormSubmissionProvider>
       {/* Forms read better narrow. Long lines make a field look like a text block. */}
       <div id='form-alert' className='max-w-2xl space-y-5'>
         <div className='space-y-2'>
@@ -80,6 +80,6 @@ export default function FormContainer({ content }: FormContainerProps) {
           </div>
         </FormWrapper>
       </div>
-    </FormStatusProvider>
+    </FormSubmissionProvider>
   );
 }

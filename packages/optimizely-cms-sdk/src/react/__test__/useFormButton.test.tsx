@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import FormWrapper, { useFormSteps } from '../forms/FormWrapper.js';
-import { FormStatusProvider } from '../forms/FormStatusProvider.js';
+import { FormSubmissionProvider } from '../forms/FormSubmissionProvider.js';
 import { useFormButton } from '../forms/useFormButton.js';
 
 function Button({
@@ -29,12 +29,12 @@ function StepReadout() {
 
 const renderButtons = (children: React.ReactNode) =>
   render(
-    <FormStatusProvider>
+    <FormSubmissionProvider>
       <FormWrapper action='/submit' steps={[{}, {}] as never}>
         {children}
         <StepReadout />
       </FormWrapper>
-    </FormStatusProvider>,
+    </FormSubmissionProvider>,
   );
 
 const roleOf = (label: string) => screen.getByTestId(label).getAttribute('data-role');

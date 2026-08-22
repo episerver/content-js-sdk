@@ -9,13 +9,36 @@ import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
 import { mapFormHandlersToContentTypes } from './forms/setup.js';
 import type { FormHandlers, ComponentType, FormComponentEntry } from './forms/setup.js';
 
+/** Components registered by the application, through `initReactComponentRegistry`. */
 let componentRegistry: ComponentRegistry<ComponentType>;
-let _componentMap: Record<string, FormComponentEntry> = {};
+
+/**
+ * Components registered for Optimizely Forms elements, through `initForms`.
+ *
+ * Held in a registry of its own rather than merged into `componentRegistry`, so
+ * that the two `init` calls can happen in either order, and so that an
+ * application using a resolver *function* keeps it. Merging meant reading the
+ * application's components out of its resolver, which is only possible when the
+ * resolver is a plain object.
+ */
+let formComponentRegistry: ComponentRegistry<ComponentType> | undefined;
+let formComponents: Record<string, FormComponentEntry> = {};
 
 const addToReactComponentRegistry = (components: Record<string, FormComponentEntry>) => {
-  _componentMap = { ..._componentMap, ...components };
-  componentRegistry = new ComponentRegistry(_componentMap);
+  formComponents = { ...formComponents, ...components };
+  formComponentRegistry = new ComponentRegistry(formComponents);
 };
+
+/** Looks a component up in the application's registry, then in the forms one. */
+function resolveComponent(
+  contentType: string,
+  options: { tag?: string } = {},
+): ComponentType | undefined {
+  return (
+    componentRegistry?.getComponent(contentType, options) ??
+    formComponentRegistry?.getComponent(contentType, options)
+  );
+}
 
 import {
   ExperienceStructureNode,
@@ -111,7 +134,6 @@ type InitOptions = {
  */
 export function initReactComponentRegistry(options: InitOptions) {
   componentRegistry = new ComponentRegistry(options.resolver);
-  if (typeof options.resolver !== 'function') _componentMap = options.resolver;
 }
 
 /** Content data from CMS */
@@ -191,15 +213,14 @@ function findComponent(
   const types = content._metadata?.types;
   if (Array.isArray(types)) {
     for (const typename of types) {
-      const component = componentRegistry.getComponent(typename, options);
+      const component = resolveComponent(typename, options);
       if (component) return { component, typename };
     }
   }
 
   // Fallback to __typename
   const typename = content.__typename;
-  const component =
-    typename ? componentRegistry.getComponent(typename, options) : undefined;
+  const component = typename ? resolveComponent(typename, options) : undefined;
   return { component, typename };
 }
 
@@ -215,7 +236,8 @@ export async function OptimizelyComponent({
     );
   }
 
-  if (!componentRegistry) {
+  // A forms-only application is legitimate, so either registry will do.
+  if (!componentRegistry && !formComponentRegistry) {
     throw new OptimizelyReactError(
       'The component registry is not initialized. Call `initReactComponentRegistry` in the application entry point.',
     );
@@ -478,7 +500,7 @@ export function OptimizelyGridSection({
     const globalName = globalNames[nodeType];
     const Component =
       locallyDefined[nodeType] ??
-      (globalName ? componentRegistry.getComponent(globalName, { tag }) : undefined) ??
+      (globalName ? resolveComponent(globalName, { tag }) : undefined) ??
       fallbacks[nodeType];
 
     const childNodes = (

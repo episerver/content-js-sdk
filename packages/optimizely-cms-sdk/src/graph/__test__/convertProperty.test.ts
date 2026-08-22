@@ -1,4 +1,14 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  beforeEach,
+  afterEach,
+  vi,
+  afterAll,
+} from 'vitest';
+import { createQueryContext } from '../../util/queryUtils.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createFragment } from '../createQuery.js';
 import { GraphFragmentThresholdError } from '../error.js';
@@ -89,7 +99,12 @@ describe('createFragment > Fragment threshold enforcement', () => {
     initContentTypeRegistry([rootType, ...childTypes]);
 
     expect(() =>
-      createFragment('ExplodingType', new Set(), '', { maxFragmentThreshold: 200 }),
+      createFragment(
+        'ExplodingType',
+        new Set(),
+        '',
+        createQueryContext({ maxFragmentThreshold: 200 }),
+      ),
     ).not.toThrow();
   });
 
@@ -115,7 +130,12 @@ describe('createFragment > Fragment threshold enforcement', () => {
     const typeFilter = (key: string) => allowedKeys.has(key);
 
     initContentTypeRegistry([rootType, ...childTypes]);
-    const result = createFragment('ExplodingType', new Set(), '', { typeFilter });
+    const result = createFragment(
+      'ExplodingType',
+      new Set(),
+      '',
+      createQueryContext({ typeFilter }),
+    );
 
     expect(result.fragments).toBeInstanceOf(Array);
     const fragmentNames = result.fragments
@@ -167,7 +187,12 @@ describe('createFragment > typeFilter with ComponentRegistry integration', () =>
     });
 
     const typeFilter = (key: string) => !!registry.getComponent(key);
-    const result = createFragment('HomePage', new Set(), '', { typeFilter });
+    const result = createFragment(
+      'HomePage',
+      new Set(),
+      '',
+      createQueryContext({ typeFilter }),
+    );
 
     const fragmentNames = result.fragments
       .map(f => f.match(/^fragment (\w+)/)?.[1])
@@ -184,7 +209,12 @@ describe('createFragment > typeFilter with ComponentRegistry integration', () =>
     const registry = new ComponentRegistry<() => null>({});
 
     const typeFilter = (key: string) => !!registry.getComponent(key);
-    const result = createFragment('HomePage', new Set(), '', { typeFilter });
+    const result = createFragment(
+      'HomePage',
+      new Set(),
+      '',
+      createQueryContext({ typeFilter }),
+    );
 
     const fragmentNames = result.fragments
       .map(f => f.match(/^fragment (\w+)/)?.[1])
@@ -203,10 +233,12 @@ describe('createFragment > typeFilter with ComponentRegistry integration', () =>
     const typeFilter = (key: string) => !!registry.getComponent(key);
 
     expect(() =>
-      createFragment('HomePage', new Set(), '', {
-        typeFilter,
-        maxFragmentThreshold: 20,
-      }),
+      createFragment(
+        'HomePage',
+        new Set(),
+        '',
+        createQueryContext({ typeFilter, maxFragmentThreshold: 20 }),
+      ),
     ).not.toThrow();
   });
 });
