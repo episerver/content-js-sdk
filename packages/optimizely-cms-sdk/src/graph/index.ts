@@ -19,6 +19,7 @@ import {
   referenceFilter,
 } from './filters.js';
 import { setContext } from '../context/config.js';
+import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -155,20 +156,44 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
 `;
 
 /**
- * Checks whether Optimizely Forms is enabled, by looking for its container type.
+ * The metadata query, plus a probe for whether this page contains a form.
  *
- * This deliberately stays out of `GET_CONTENT_METADATA_QUERY`. Graph returns
- * null for this alias whenever the document also selects `_Content`, even
- * though `damAssetType` in the very same document resolves. The result is
- * memoized per client, so it costs one request rather than one per render.
+ * Form fragments are large, so they're only fetched for pages that actually
+ * have one. `composition.nodes.type` matches top-level sections, where a form
+ * container always sits, and works whether or not Forms is enabled.
  */
-const GET_FORMS_ENABLED_QUERY = `
-query GetFormsEnabled {
-  formsContainerType: __type(name: "OptiFormsContainerData") {
+const GET_CONTENT_METADATA_WITH_FORMS_QUERY = `
+query GetContentMetadata(
+  $where: _ContentWhereInput
+  $formsWhere: _ExperienceWhereInput
+  $variation: VariationInput
+) {
+  _Content(where: $where, variation: $variation) {
+    item {
+      _metadata {
+        types
+        variation
+      }
+    }
+  }
+  # Check if "cmp_Asset" type exists which indicates that DAM is enabled
+  damAssetType: __type(name: "cmp_Asset") {
     __typename
+  }
+  # Non-zero when this page has a form container as a top-level section
+  formsOnPage: _Experience(where: $formsWhere) {
+    total
   }
 }
 `;
+
+/** Content type key of the section Optimizely Forms uses for a form. */
+const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
+
+/** Narrows a content filter to "the same content, and it contains a form". */
+const formsOnPageFilter = (where: unknown) => ({
+  _and: [where, { composition: { nodes: { type: { eq: FORM_CONTAINER_TYPE } } } }],
+});
 
 const GET_PATH_QUERY = `
 query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
@@ -364,14 +389,6 @@ export class GraphClient {
   userAgent: string;
   typeFilter?: (contentTypeKey: string) => boolean;
 
-  /**
-   * Whether Optimizely Forms is enabled, resolved at most once per client.
-   *
-   * The answer describes the schema rather than any particular content, so it
-   * does not vary by preview token, slot or path.
-   */
-  private formsEnabled?: Promise<boolean>;
-
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
@@ -478,39 +495,14 @@ export class GraphClient {
   }
 
   /**
-   * Resolves whether Optimizely Forms is enabled, reusing the in-flight or
-   * completed lookup so it costs one request per client rather than one per
-   * rendered page.
-   */
-  private isFormsEnabled(
-    previewToken?: string,
-    cache?: boolean,
-    slot?: GraphSlot,
-  ): Promise<boolean> {
-    this.formsEnabled ??= this.request(
-      GET_FORMS_ENABLED_QUERY,
-      {},
-      previewToken,
-      cache ?? this.cache,
-      slot ?? this.slot,
-    )
-      .then(data => data.formsContainerType !== null)
-      .catch((error: unknown) => {
-        // Don't memoize a failure, or a transient error would disable forms for
-        // the lifetime of the client.
-        this.formsEnabled = undefined;
-        throw error;
-      });
-
-    return this.formsEnabled;
-  }
-
-  /**
    * Fetches the content type metadata for a given content input.
    *
    * @param input - The content input used to query the content type.
    * @param previewToken - Optional preview token for fetching preview content.
-   * @returns A promise that resolves to the first content type metadata object
+   * @returns The content type, whether DAM is enabled, and whether this page
+   *   needs the Optimizely Forms fragments. The last is page-scoped, not
+   *   instance-scoped: Forms can be enabled in the CMS while this page has no
+   *   form on it, in which case the fragments are left out.
    */
   private async getContentMetaData(
     input: GraphVariables,
@@ -518,23 +510,28 @@ export class GraphClient {
     cache?: boolean,
     slot?: GraphSlot,
   ) {
-    const [data, formsEnabled] = await Promise.all([
-      this.request(
-        GET_CONTENT_METADATA_QUERY,
-        input,
-        previewToken,
-        cache ?? this.cache,
-        slot ?? this.slot,
-      ),
-      this.isFormsEnabled(previewToken, cache, slot),
-    ]);
+    // Only worth asking when the application registered the form types; without
+    // them there is nothing to leave out. This is a local registry lookup, so it
+    // costs no round trip and needs no cached schema state.
+    const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
+
+    const data = await this.request(
+      mayRenderForms ? GET_CONTENT_METADATA_WITH_FORMS_QUERY : GET_CONTENT_METADATA_QUERY,
+      mayRenderForms ? { ...input, formsWhere: formsOnPageFilter(input.where) } : input,
+      previewToken,
+      cache ?? this.cache,
+      slot ?? this.slot,
+    );
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
     // Determine if DAM is enabled based on the presence of cmp_Asset type
     const damEnabled = data.damAssetType !== null;
 
+    // Form fragments are only worth their size on pages that contain a form.
+    const formsOnPage = mayRenderForms && (data.formsOnPage?.total ?? 0) > 0;
+
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled, formsEnabled };
+      return { contentTypeName: null, damEnabled, formsEnabled: formsOnPage };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -549,7 +546,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled, formsEnabled };
+    return { contentTypeName, damEnabled, formsEnabled: formsOnPage };
   }
 
   /**
@@ -597,6 +594,8 @@ export class GraphClient {
           expandContracts: this.expandContracts,
           formsEnabled,
         });
+        console.log('query', query);
+
         const response = (await this.request(
           query,
           input,

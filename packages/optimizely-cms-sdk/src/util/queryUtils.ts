@@ -20,6 +20,7 @@ import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
 import { createFragment } from '../graph/createQuery.js';
 import { isContract, findExtendingContentTypes } from '../model/index.js';
+import { isFormContentType } from '../model/formContentTypes.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
@@ -252,11 +253,18 @@ const resolveAllowedTypes = (
   restricted: PermittedTypes[] | undefined,
   cached: RegistryEntry[],
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  includeFormTypes: boolean = true,
 ): (PermittedTypes | AnyContentType)[] => {
   const hasWildcard = allowed?.includes('*');
   const baseline = hasWildcard || !allowed?.length ? cached : allowed;
   const skipSet = buildSkipSet(restricted);
   const shouldExpandBaseTypes = !!allowed?.length && !hasWildcard;
+
+  // Types the content model names outright, as opposed to ones pulled in by a
+  // wildcard or a base type. Asking for a form by name always wins.
+  const namedKeys = new Set(
+    (allowed ?? []).filter(entry => entry !== '*').map(entry => getKeyName(entry)),
+  );
 
   const seen = new Set<string>();
 
@@ -266,6 +274,10 @@ const resolveAllowedTypes = (
     .filter(contentType => {
       const key = getKeyName(contentType);
       if (seen.has(key)) return false;
+      // A content area of `['*']` or `['_component']` would otherwise drag every
+      // form type into the query on pages that have no form.
+      if (!includeFormTypes && !namedKeys.has(key) && isFormContentType(key))
+        return false;
       if (!shouldIncludeContentType(contentType, skipSet)) return false;
       seen.add(key);
       return true;
@@ -312,6 +324,7 @@ const handleContentProperty: PropertyHandler = (
     (property as any).restrictedTypes,
     getCachedContentTypes(),
     expandContracts,
+    ctx.formsEnabled,
   );
   const allowed =
     typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;

@@ -205,3 +205,17 @@ export const FormContentTypes = [
   OptiFormsDependencyRuleContentType,
   OptiFormsConditionContentType,
 ];
+
+const FORM_CONTENT_TYPE_KEYS: ReadonlySet<string> = new Set(
+  FormContentTypes.map(type => type.key),
+);
+
+/**
+ * True for the content types `initForms` registers.
+ *
+ * Used to keep the form fragments out of queries for pages that have no form on
+ * them. They are registered globally, so without this every experience query
+ * would carry them.
+ */
+export const isFormContentType = (key: string): boolean =>
+  FORM_CONTENT_TYPE_KEYS.has(key);

@@ -35,6 +35,16 @@ export default function FormContainer({ content }: FormContainerProps) {
   const buttonNodes = nodes.filter(isFormButtonNode);
   const stepNodes = nodes.filter(node => !isFormButtonNode(node));
 
+  // Empty nodes usually mean this container isn't a top-level section, so the
+  // SDK didn't fetch its fields, and the form would render as an empty shell.
+  if (process.env.NODE_ENV !== 'production' && nodes.length === 0) {
+    console.warn(
+      `Form "${content.Title ?? content._metadata?.key}" rendered with no nodes. ` +
+        'Its fields were not fetched, which happens when the form container is not ' +
+        'a top-level section of the composition.',
+    );
+  }
+
   return (
     <FormSubmissionProvider>
       {/* Forms read better narrow. Long lines make a field look like a text block. */}

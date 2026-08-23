@@ -35,6 +35,7 @@ import {
   FragmentInfo,
 } from '../util/queryUtils.js';
 import { isContract } from '../model/index.js';
+import { isFormContentType } from '../model/formContentTypes.js';
 import { DEFAULT_MAX_FRAGMENT_THRESHOLD, DEFAULT_EXPAND_CONTRACTS } from './constants.js';
 
 // TYPE DEFINITIONS
@@ -86,6 +87,8 @@ const createExperienceFragments = (
 ): FragmentResult => {
   const experienceNodeKeys = getCachedContentTypes()
     .filter(isExperienceComponent)
+    // `initForms` registers form types globally. Only include when forms are enabled.
+    .filter(ct => ctx.formsEnabled || !isFormContentType(ct.key))
     .map(ct => ct.key);
 
   const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, ctx);
