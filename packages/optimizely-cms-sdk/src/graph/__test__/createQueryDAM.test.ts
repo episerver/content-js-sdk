@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { createQueryContext } from '../../util/queryUtils.js';
 import {
   createFragment,
   createSingleContentQuery,
@@ -19,10 +20,18 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1]);
 
     // DAM disabled
-    const result = await createFragment('ct1', new Set(), '', {
-      damEnabled: false,
-      includeBaseFragments: true,
-    });
+    const result = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: false,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     // Should not include ContentReferenceItem fragments
     expect(result.fragments.some(line => line.includes('PublicImageAsset'))).toBe(false);
@@ -60,10 +69,18 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1]);
 
     // DAM enabled
-    const result = await createFragment('ct1', new Set(), '', {
-      damEnabled: true,
-      includeBaseFragments: true,
-    });
+    const result = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: true,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     // Should include all ContentReferenceItem fragments
     expect(result.fragments.some(line => line.includes('PublicImageAsset'))).toBe(true);
@@ -96,16 +113,27 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       displayName: 'CT1',
       baseType: '_page',
       properties: {
-        images: { type: 'array', items: { type: 'contentReference', allowedTypes: ['*'] } },
+        images: {
+          type: 'array',
+          items: { type: 'contentReference', allowedTypes: ['*'] },
+        },
       },
     });
     initContentTypeRegistry([ct1]);
 
     // DAM disabled
-    const result = await createFragment('ct1', new Set(), '', {
-      damEnabled: false,
-      includeBaseFragments: true,
-    });
+    const result = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: false,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
       false,
@@ -129,15 +157,26 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       displayName: 'CT1',
       baseType: '_page',
       properties: {
-        images: { type: 'array', items: { type: 'contentReference', allowedTypes: ['*'] } },
+        images: {
+          type: 'array',
+          items: { type: 'contentReference', allowedTypes: ['*'] },
+        },
       },
     });
     initContentTypeRegistry([ct1]);
 
-    const result = await createFragment('ct1', new Set(), '', {
-      damEnabled: true,
-      includeBaseFragments: true,
-    });
+    const result = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: true,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
       true,
@@ -179,19 +218,35 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1, ctBlock]);
 
     // Test with damEnabled = false
-    const resultDisabled = await createFragment('ct1', new Set(), '', {
-      damEnabled: false,
-      includeBaseFragments: true,
-    });
+    const resultDisabled = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: false,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
     expect(
       resultDisabled.fragments.some(line => line.includes('ContentReferenceItem')),
     ).toBe(false);
 
     // Test with damEnabled = true
-    const resultEnabled = await createFragment('ct1', new Set(), '', {
-      damEnabled: true,
-      includeBaseFragments: true,
-    });
+    const resultEnabled = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: true,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
     expect(
       resultEnabled.fragments.some(line => line.includes('ContentReferenceItem')),
     ).toBe(true);
@@ -233,10 +288,18 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1, ctRef]);
 
     // Test with damEnabled = true
-    const result = await createFragment('ct1', new Set(), '', {
-      damEnabled: true,
-      includeBaseFragments: true,
-    });
+    const result = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: true,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
     expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
       true,
     );
@@ -272,10 +335,18 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1]);
 
     // DAM enabled but no contentReference properties
-    const result = await createFragment('ct1', new Set(), '', {
-      damEnabled: true,
-      includeBaseFragments: true,
-    });
+    const result = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: true,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     // Should NOT include DAM fragments
     expect(result.fragments.some(line => line.includes('PublicImageAsset'))).toBe(false);
@@ -322,10 +393,18 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     initContentTypeRegistry([ct1, ctBlock]);
 
-    const result = await createFragment('ct1', new Set(), '', {
-      damEnabled: true,
-      includeBaseFragments: true,
-    });
+    const result = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({
+        damEnabled: true,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     // Should NOT include DAM fragments since no contentReference anywhere
     expect(result.fragments.some(line => line.includes('ContentReferenceItem'))).toBe(
@@ -347,7 +426,13 @@ describe('createSingleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createSingleContentQuery('ct1', false);
+    const query = await createSingleContentQuery('ct1', {
+      damEnabled: false,
+      maxFragmentThreshold: 100,
+      expandContracts: false,
+      formsEnabled: false,
+      includeBaseFragments: true,
+    });
 
     expect(query.includes('PublicImageAsset')).toBe(false);
     expect(query.includes('ContentReferenceItem')).toBe(false);
@@ -365,7 +450,13 @@ describe('createSingleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createSingleContentQuery('ct1', true);
+    const query = await createSingleContentQuery('ct1', {
+      damEnabled: true,
+      maxFragmentThreshold: 100,
+      expandContracts: false,
+      formsEnabled: false,
+      includeBaseFragments: true,
+    });
 
     expect(query.includes('PublicImageAsset')).toBe(true);
     expect(query.includes('PublicVideoAsset')).toBe(true);
@@ -389,7 +480,13 @@ describe('createMultipleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createMultipleContentQuery('ct1', false);
+    const query = await createMultipleContentQuery('ct1', {
+      damEnabled: false,
+      maxFragmentThreshold: 100,
+      expandContracts: false,
+      formsEnabled: false,
+      includeBaseFragments: true,
+    });
 
     expect(query.includes('PublicImageAsset')).toBe(false);
     expect(query.includes('ContentReferenceItem')).toBe(false);
@@ -406,7 +503,13 @@ describe('createMultipleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createMultipleContentQuery('ct1', true);
+    const query = await createMultipleContentQuery('ct1', {
+      damEnabled: true,
+      maxFragmentThreshold: 100,
+      expandContracts: false,
+      formsEnabled: false,
+      includeBaseFragments: true,
+    });
 
     expect(query.includes('PublicImageAsset')).toBe(true);
     expect(query.includes('PublicVideoAsset')).toBe(true);

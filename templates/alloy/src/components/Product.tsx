@@ -7,6 +7,7 @@ import {
   OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { SEOContentType } from './base/SEO';
+import { NoticeContentType } from './base/Notice';
 
 export const ProductContentType = contentType({
   key: 'Product',
@@ -37,7 +38,7 @@ export const ProductContentType = contentType({
       type: 'array',
       items: {
         type: 'content',
-        allowedTypes: ['*'],
+        allowedTypes: [NoticeContentType],
       },
       displayName: 'Content Area',
       sortOrder: 5,

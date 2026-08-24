@@ -71,12 +71,26 @@ export const stripSourcePrefix = (key: string): string => key.replace(/^[a-z]+:/
  * This function will not be used once Graph properly supports @recursive.
  */
 function buildNestedCompositionNodes(depth: number): string {
+  const baseFields =
+    '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
+
   if (depth === 0) {
-    return '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
+    return baseFields;
   }
+
   const nested = buildNestedCompositionNodes(depth - 1);
-  return `__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { component { ..._IComponent } nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
+  return `${baseFields} ...on CompositionStructureNode { component { ..._IComponent } nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
 }
+
+/** Nesting depth that covers ordinary experience compositions. */
+const COMPOSITION_NESTING_DEPTH = 4;
+
+/**
+ * Forms nest deeper than an ordinary composition — steps hold rows, which hold
+ * columns, which hold elements — so they need more levels. Applied only when
+ * Forms is enabled, because every extra level lengthens every query.
+ */
+const FORMS_COMPOSITION_NESTING_DEPTH = 8;
 
 // FRAGMENT CONSTANTS
 
@@ -90,11 +104,26 @@ export const DAM_ASSET_FRAGMENTS = [
   'fragment ContentReferenceItem on ContentReference { item { __typename ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }',
 ];
 
-export const FIXED_FRAGMENTS = [
-  'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
+/**
+ * Fragments included in every query that walks a composition.
+ *
+ * @param formsEnabled Use the deeper composition nesting that Forms requires.
+ * @param includeExperienceFragment Emit `_IExperience` too. A section reads its
+ *   `composition` field directly rather than spreading that fragment, and
+ *   GraphQL rejects a document containing a fragment nothing uses.
+ */
+export const getFixedFragments = (
+  formsEnabled = false,
+  includeExperienceFragment = true,
+) => [
+  ...(includeExperienceFragment ?
+    ['fragment _IExperience on _IExperience { composition {...ICompositionNode }}']
+  : []),
   // This is a temporary workaround for Graph issue with @recursive directive. This will not be used once Graph properly supports @recursive.
   // Replace it with a simpler recursive fragment once Graph supports @recursive, e.g. 'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }':
-  `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(4)} }`,
+  `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(
+    formsEnabled ? FORMS_COMPOSITION_NESTING_DEPTH : COMPOSITION_NESTING_DEPTH,
+  )} }`,
 ];
 
 const COMMON_FRAGMENTS = [
@@ -108,18 +137,29 @@ const COMMON_FRAGMENTS = [
 
 const COMMON_FIELDS = '..._IContent';
 
-export function getBaseTypeFragments(baseType: string, contentTypeName?: string): BaseTypeFragments {
-  const prefix = contentTypeName && !isBaseType(contentTypeName) ? `${contentTypeName}__` : '';
+export function getBaseTypeFragments(
+  baseType: string,
+  contentTypeName?: string,
+): BaseTypeFragments {
+  const prefix =
+    contentTypeName && !isBaseType(contentTypeName) ? `${contentTypeName}__` : '';
 
   if (baseType === '_image') {
     return {
-      fields: [COMMON_FIELDS, `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`, `${prefix}imageMetadata:_imageMetadata { width height }`],
+      fields: [
+        COMMON_FIELDS,
+        `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
+        `${prefix}imageMetadata:_imageMetadata { width height }`,
+      ],
       extraFragments: [...COMMON_FRAGMENTS],
     };
   }
   if (isBaseMediaType(baseType)) {
     return {
-      fields: [COMMON_FIELDS, `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`],
+      fields: [
+        COMMON_FIELDS,
+        `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
+      ],
       extraFragments: [...COMMON_FRAGMENTS],
     };
   }

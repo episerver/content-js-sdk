@@ -7,6 +7,7 @@ import {
   getAllContentTypes,
   getContentType,
   getContentTypeByBaseType,
+  getRegistryVersion,
   RegistryEntry,
 } from '../model/contentTypeRegistry.js';
 import {
@@ -19,6 +20,7 @@ import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
 import { createFragment } from '../graph/createQuery.js';
 import { isContract, findExtendingContentTypes } from '../model/index.js';
+import { isFormContentType } from '../model/formContentTypes.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
@@ -64,32 +66,40 @@ const collectTypesAndContracts = (
 // TYPE DEFINITIONS
 
 /**
- * Options for controlling GraphQL fragment generation behavior.
+ * Settings that are fixed for a whole query.
+ *
+ * These must hold identically everywhere in one document. Shared fragments such
+ * as `ICompositionNode` are emitted once per experience under a single global
+ * name, so a value that differed between two levels of recursion would produce
+ * two conflicting definitions and Graph would reject the query.
+ *
+ * Every field is **required** on purpose. Recursion passes this object through
+ * unchanged rather than rebuilding it, and required fields mean a site that
+ * rebuilds it and forgets one fails to compile instead of silently falling back
+ * to a default.
  */
-export type FragmentOptions = {
+export type QueryContext = {
   /**
    * Enable Digital Asset Management (DAM) support for contentReference properties.
-   * When true, includes specialized fragments for DAM assets (images, videos, files).
-   * @default false
+   * Auto-detected from GraphQL schema introspection.
    */
-  damEnabled?: boolean;
+  damEnabled: boolean;
   /**
    * Maximum number of fragments allowed before throwing an error.
    * Prevents excessive GraphQL query complexity from unrestricted content types.
    */
-  maxFragmentThreshold?: number;
+  maxFragmentThreshold: number;
   /**
    * Enable or disable contract expansion.
    * When true, contracts are expanded to include all implementing types.
    * When false, only the contract itself is included without expansion.
    */
-  expandContracts?: boolean;
+  expandContracts: boolean;
   /**
-   * Whether to include CMS base type fragments (e.g., _IContent, _IPage) in generated fragments.
-   * Set to false for component property fragments that don't need base metadata.
-   * @default true
+   * Enable Optimizely Forms support.
+   * Auto-detected from GraphQL schema introspection.
    */
-  includeBaseFragments?: boolean;
+  formsEnabled: boolean;
   /**
    * Optional filter to exclude content types from fragment generation.
    * Return true to include a content type, false to exclude it.
@@ -97,6 +107,32 @@ export type FragmentOptions = {
    */
   typeFilter?: (contentTypeKey: string) => boolean;
 };
+
+/**
+ * Settings that legitimately differ between one fragment and the next.
+ *
+ * Kept apart from {@linkcode QueryContext} so it stays obvious which values may
+ * vary per call and which may not.
+ */
+export type FragmentOptions = {
+  /**
+   * Whether to include CMS base type fragments (e.g., _IContent, _IPage) in generated fragments.
+   * Set to false for component property fragments that don't need base metadata.
+   * @default true
+   */
+  includeBaseFragments?: boolean;
+};
+
+/** Fills in the defaults for the settings a caller may leave out. */
+export const createQueryContext = (
+  options: Partial<QueryContext> = {},
+): QueryContext => ({
+  damEnabled: options.damEnabled ?? false,
+  maxFragmentThreshold: options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  expandContracts: options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS,
+  formsEnabled: options.formsEnabled ?? false,
+  typeFilter: options.typeFilter,
+});
 
 export type FragmentInfo = {
   fields: string[];
@@ -110,18 +146,23 @@ export type PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions,
+  ctx: QueryContext,
 ) => FragmentInfo;
 
 // CACHING
 
 let allContentTypes: RegistryEntry[] = [];
+let cachedVersion = -1;
 
 /**
  * Retrieves cached content type definitions.
+ *
+ * Keyed on the registry version rather than on the cache being empty: the
+ * registry can be added to (by `initForms`) or replaced (by
+ * `initContentTypeRegistry`) after the first query has already been generated.
  */
 export const getCachedContentTypes = (): RegistryEntry[] => {
-  if (allContentTypes.length === 0) allContentTypes = getAllContentTypes();
+  if (cachedVersion !== getRegistryVersion()) refreshCache();
   return allContentTypes;
 };
 
@@ -130,6 +171,7 @@ export const getCachedContentTypes = (): RegistryEntry[] => {
  */
 export const refreshCache = () => {
   allContentTypes = getAllContentTypes();
+  cachedVersion = getRegistryVersion();
 };
 
 // CONTENT TYPE UTILITIES
@@ -149,10 +191,9 @@ const allPropertiesAreDisabled = (contentType: RegistryEntry): boolean => {
 export const isExperienceComponent = (contentType: RegistryEntry): boolean =>
   'baseType' in contentType &&
   ((contentType.baseType === '_component' &&
-      'compositionBehaviors' in contentType &&
-      (contentType.compositionBehaviors?.length ?? 0) > 0)
-    || (contentType.baseType === '_section' &&
-     contentType.properties !== undefined));
+    'compositionBehaviors' in contentType &&
+    (contentType.compositionBehaviors?.length ?? 0) > 0) ||
+    (contentType.baseType === '_section' && contentType.properties !== undefined));
 
 // ALLOWED TYPES
 
@@ -212,11 +253,18 @@ const resolveAllowedTypes = (
   restricted: PermittedTypes[] | undefined,
   cached: RegistryEntry[],
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  includeFormTypes: boolean = true,
 ): (PermittedTypes | AnyContentType)[] => {
   const hasWildcard = allowed?.includes('*');
   const baseline = hasWildcard || !allowed?.length ? cached : allowed;
   const skipSet = buildSkipSet(restricted);
   const shouldExpandBaseTypes = !!allowed?.length && !hasWildcard;
+
+  // Types the content model names outright, as opposed to ones pulled in by a
+  // wildcard or a base type. Asking for a form by name always wins.
+  const namedKeys = new Set(
+    (allowed ?? []).filter(entry => entry !== '*').map(entry => getKeyName(entry)),
+  );
 
   const seen = new Set<string>();
 
@@ -226,6 +274,10 @@ const resolveAllowedTypes = (
     .filter(contentType => {
       const key = getKeyName(contentType);
       if (seen.has(key)) return false;
+      // A content area of `['*']` or `['_component']` would otherwise drag every
+      // form type into the query on pages that have no form.
+      if (!includeFormTypes && !namedKeys.has(key) && isFormContentType(key))
+        return false;
       if (!shouldIncludeContentType(contentType, skipSet)) return false;
       seen.add(key);
       return true;
@@ -240,18 +292,14 @@ const handleComponentProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions,
+  ctx: QueryContext,
 ) => {
-  const { damEnabled = false, maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } =
-    options;
   const key = (property as any).contentType.key;
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
   const fragmentName = `${stripSourcePrefix(key)}Property`;
   const fields = [`${nameInFragment} { ...${fragmentName} }`];
-  const result = createFragment(key, visited, 'Property', {
-    damEnabled,
-    maxFragmentThreshold,
+  const result = createFragment(key, visited, 'Property', ctx, {
     includeBaseFragments: false,
   });
 
@@ -268,21 +316,18 @@ const handleContentProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions,
+  ctx: QueryContext,
 ) => {
-  const {
-    damEnabled = false,
-    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-    expandContracts = DEFAULT_EXPAND_CONTRACTS,
-    typeFilter,
-  } = options;
+  const { expandContracts, typeFilter } = ctx;
   const resolved = resolveAllowedTypes(
     (property as any).allowedTypes,
     (property as any).restrictedTypes,
     getCachedContentTypes(),
     expandContracts,
+    ctx.formsEnabled,
   );
-  const allowed = typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
+  const allowed =
+    typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
 
   const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
 
@@ -292,14 +337,7 @@ const handleContentProperty: PropertyHandler = (
   );
 
   const createFragmentFor = (key: string) => {
-    const result = createFragment(key, visited, '', {
-      damEnabled,
-      maxFragmentThreshold,
-      expandContracts,
-      includeBaseFragments: true,
-      typeFilter,
-    });
-    return result;
+    return createFragment(key, visited, '', ctx, { includeBaseFragments: true });
   };
 
   let includesDamAssetsFragments = false;
@@ -334,7 +372,7 @@ const handleRichTextProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   _visited: Set<string>,
-  _options: FragmentOptions,
+  _ctx: QueryContext,
 ) => ({
   fields: [`${rootName}${suffix}__${name}:${name} { html, json }`],
   extraFragments: [],
@@ -347,7 +385,7 @@ const handleUrlProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   _visited: Set<string>,
-  _options: FragmentOptions,
+  _ctx: QueryContext,
 ) => ({
   fields: [`${rootName}${suffix}__${name}:${name} { ...ContentUrl }`],
   extraFragments: [CONTENT_URL_FRAGMENT],
@@ -360,7 +398,7 @@ const handleLinkProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   _visited: Set<string>,
-  _options: FragmentOptions,
+  _ctx: QueryContext,
 ) => ({
   fields: [
     `${rootName}${suffix}__${name}:${name} { text title target url { ...ContentUrl }}`,
@@ -375,9 +413,9 @@ const handleContentReferenceProperty: PropertyHandler = (
   _rootName: string,
   _suffix: string,
   _visited: Set<string>,
-  options: FragmentOptions,
+  ctx: QueryContext,
 ) => {
-  const { damEnabled = false } = options;
+  const { damEnabled } = ctx;
 
   const itemFragment = damEnabled ? ' ...ContentReferenceItem' : '';
 
@@ -394,21 +432,11 @@ const handleArrayProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions,
+  ctx: QueryContext,
 ) => {
-  const {
-    damEnabled = false,
-    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-    expandContracts = DEFAULT_EXPAND_CONTRACTS,
-    typeFilter,
-  } = options;
-
-  return convertProperty(name, (property as any).items, rootName, suffix, visited, {
-    damEnabled,
-    maxFragmentThreshold,
-    expandContracts,
-    typeFilter,
-  });
+  // Forwards the whole context, which covers main's fix for `expandContracts`
+  // being dropped here (CMS-54935) along with every other query-wide setting.
+  return convertProperty(name, (property as any).items, rootName, suffix, visited, ctx);
 };
 
 const handleScalarProperty: PropertyHandler = (
@@ -417,7 +445,7 @@ const handleScalarProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   _visited: Set<string>,
-  _options: FragmentOptions,
+  _ctx: QueryContext,
 ) => ({
   fields: [`${rootName}${suffix}__${name}:${name}`],
   extraFragments: [],
@@ -442,11 +470,11 @@ const convertPropertyField: PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions = {},
+  ctx: QueryContext = createQueryContext(),
 ) => {
   const handler = PROPERTY_HANDLERS[property.type] ?? handleScalarProperty;
 
-  const result = handler(name, property, rootName, suffix, visited, options);
+  const result = handler(name, property, rootName, suffix, visited, ctx);
 
   return {
     ...result,
@@ -463,13 +491,13 @@ export const convertProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions = {},
+  ctx: QueryContext = createQueryContext(),
 ) => {
   // Remove the namespace prefix (e.g. `graph:`) from rootName so field aliases
   // (`{rootName}__{field}`) match the GraphQL __typename, which has no prefix.
   rootName = stripSourcePrefix(rootName);
-  const { maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD } = options;
-  const result = convertPropertyField(name, property, rootName, suffix, visited, options);
+  const { maxFragmentThreshold } = ctx;
+  const result = convertPropertyField(name, property, rootName, suffix, visited, ctx);
 
   checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
 

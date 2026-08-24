@@ -17,6 +17,7 @@ import {
   FloatProperty,
   IntegerProperty,
   JsonProperty,
+  JsonValue,
   LinkProperty,
   RichTextProperty,
   StringProperty,
@@ -96,7 +97,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends BinaryProperty  ? unknown
   : T extends StringProperty ? string
   : T extends DateTimeProperty ? string
-  : T extends JsonProperty ? any
+  : T extends JsonProperty<infer TSchema> ? unknown extends TSchema ? JsonValue : TSchema
   : T extends RichTextProperty ? InferredRichText
   : T extends UrlProperty ? InferredUrl
   : T extends LinkProperty ? { text: string | null, title: string | null, target: string | null, url: InferredUrl }
@@ -242,3 +243,5 @@ export type ContentProps<T> =
   : T extends AnyContentType ? InferFromContentType<T>
   : T extends AnyProperty ? InferFromProperty<T>
   : unknown;
+
+export type { JsonValue, JsonObject, JsonArray, JsonPrimitive } from './model/properties.js';

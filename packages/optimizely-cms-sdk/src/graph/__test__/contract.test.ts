@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { createQueryContext } from '../../util/queryUtils.js';
 import { contract, contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createFragment } from '../createQuery.js';
 
@@ -466,9 +467,18 @@ describe('Contract expansion in allowedTypes', () => {
       LandingPageContentType,
     ]);
 
-    const result = await createFragment('LandingPage', undefined, undefined, {
-      expandContracts: true,
-    });
+    const result = await createFragment(
+      'LandingPage',
+      undefined,
+      undefined,
+      createQueryContext({
+        damEnabled: false,
+        maxFragmentThreshold: 100,
+        expandContracts: true,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     const fragmentString = result.fragments.join('\n');
 
@@ -552,9 +562,18 @@ describe('Contract expansion in allowedTypes', () => {
       LandingPageContentType,
     ]);
 
-    const result = await createFragment('LandingPage', undefined, undefined, {
-      expandContracts: false,
-    });
+    const result = await createFragment(
+      'LandingPage',
+      undefined,
+      undefined,
+      createQueryContext({
+        damEnabled: false,
+        maxFragmentThreshold: 100,
+        expandContracts: false,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     const fragmentString = result.fragments.join('\n');
 
@@ -648,9 +667,18 @@ describe('Contract expansion in allowedTypes', () => {
 
     initContentTypeRegistry([EmptyContract, PageWithEmptyContract]);
 
-    const result = await createFragment('PageWithEmptyContract', undefined, undefined, {
-      expandContracts: true,
-    });
+    const result = await createFragment(
+      'PageWithEmptyContract',
+      undefined,
+      undefined,
+      createQueryContext({
+        damEnabled: false,
+        maxFragmentThreshold: 100,
+        expandContracts: true,
+        formsEnabled: false,
+      }),
+      { includeBaseFragments: true },
+    );
 
     const fragmentString = result.fragments.join('\n');
 
@@ -706,9 +734,12 @@ describe('Contract expansion through array properties', () => {
 
     initContentTypeRegistry([CommonCardContract, CardComponentA, CardComponentB, CardContainer]);
 
-    const result = createFragment('POC_CardContainer', undefined, undefined, {
-      expandContracts: true,
-    });
+    const result = createFragment(
+      'POC_CardContainer',
+      undefined,
+      undefined,
+      createQueryContext({ expandContracts: true }),
+    );
     const fragmentString = result.fragments.join('\n');
 
     expect(fragmentString).toContain('fragment POC_CommonCardContract on IPOC_CommonCardContract');
@@ -793,7 +824,9 @@ describe('Content array with items implementing multiple contracts', () => {
     // Should include TeaserContract from allowedTypes
     expect(fragmentString).toContain('fragment TeaserContract on ITeaserContract');
     expect(fragmentString).toContain('TeaserContract__teaserTitle:teaserTitle');
-    expect(fragmentString).toContain('TeaserContract__teaserDescription:teaserDescription');
+    expect(fragmentString).toContain(
+      'TeaserContract__teaserDescription:teaserDescription',
+    );
 
     // Should include CardContentType from allowedTypes
     expect(fragmentString).toContain('fragment CardContentType on CardContentType');

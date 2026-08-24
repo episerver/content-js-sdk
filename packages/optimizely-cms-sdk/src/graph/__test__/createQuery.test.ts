@@ -663,9 +663,13 @@ describe('createFragment() with string key references', () => {
 
     initContentTypeRegistry([ctA, ctB]);
     const result = await createFragment('ctB');
-    const ctBFragment = result.fragments.find((f: string) => f.startsWith('fragment ctB '));
+    const ctBFragment = result.fragments.find((f: string) =>
+      f.startsWith('fragment ctB '),
+    );
     expect(ctBFragment).toContain('...ctA');
-    const ctAFragment = result.fragments.find((f: string) => f.startsWith('fragment ctA '));
+    const ctAFragment = result.fragments.find((f: string) =>
+      f.startsWith('fragment ctA '),
+    );
     expect(ctAFragment).toBeDefined();
   });
 
@@ -689,8 +693,12 @@ describe('createFragment() with string key references', () => {
 
     initContentTypeRegistry([ctA, ctB]);
     const result = await createFragment('ctA');
-    const ctAFragment = result.fragments.find((f: string) => f.startsWith('fragment ctA '));
-    const ctBFragment = result.fragments.find((f: string) => f.startsWith('fragment ctB '));
+    const ctAFragment = result.fragments.find((f: string) =>
+      f.startsWith('fragment ctA '),
+    );
+    const ctBFragment = result.fragments.find((f: string) =>
+      f.startsWith('fragment ctB '),
+    );
     expect(ctAFragment).toContain('...ctB');
     expect(ctBFragment).toContain('...ctA');
   });
@@ -719,7 +727,9 @@ describe('createFragment() with string key references', () => {
 
     initContentTypeRegistry([ctA, ctB, ctC]);
     const result = await createFragment('ctC');
-    const ctCFragment = result.fragments.find((f: string) => f.startsWith('fragment ctC '));
+    const ctCFragment = result.fragments.find((f: string) =>
+      f.startsWith('fragment ctC '),
+    );
     expect(ctCFragment).toContain('...ctA');
     expect(ctCFragment).toContain('...ctB');
   });

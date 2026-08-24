@@ -19,6 +19,8 @@ import {
   referenceFilter,
 } from './filters.js';
 import { setContext } from '../context/config.js';
+import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
+import { isFormContentType } from '../model/formContentTypes.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -153,6 +155,46 @@ query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput)
   }
 }
 `;
+
+/**
+ * The metadata query, plus a probe for whether this page contains a form.
+ *
+ * Form fragments are large, so they're only fetched for pages that actually
+ * have one. `composition.nodes.type` matches top-level sections, where a form
+ * container always sits, and works whether or not Forms is enabled.
+ */
+const GET_CONTENT_METADATA_WITH_FORMS_QUERY = `
+query GetContentMetadata(
+  $where: _ContentWhereInput
+  $formsWhere: _ExperienceWhereInput
+  $variation: VariationInput
+) {
+  _Content(where: $where, variation: $variation) {
+    item {
+      _metadata {
+        types
+        variation
+      }
+    }
+  }
+  # Check if "cmp_Asset" type exists which indicates that DAM is enabled
+  damAssetType: __type(name: "cmp_Asset") {
+    __typename
+  }
+  # Non-zero when this page has a form container as a top-level section
+  formsOnPage: _Experience(where: $formsWhere) {
+    total
+  }
+}
+`;
+
+/** Content type key of the section Optimizely Forms uses for a form. */
+const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
+
+/** Narrows a content filter to "the same content, and it contains a form". */
+const formsOnPageFilter = (where: unknown) => ({
+  _and: [where, { composition: { nodes: { type: { eq: FORM_CONTAINER_TYPE } } } }],
+});
 
 const GET_PATH_QUERY = `
 query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
@@ -310,6 +352,27 @@ export function removeTypePrefix(obj: any): any {
   return obj;
 }
 
+/**
+ * Puts a section's child nodes where the renderer looks for them.
+ *
+ * Inside an experience, a section's children arrive as `content.nodes`. On
+ * their own (e.g. previewing a shared block, or a section within a form),
+ * they arrive as `composition.nodes` instead, though `InferSection` expects
+ * `nodes` either way. An experience also has a `composition`, so we only lift
+ * when the root node is itself a section.
+ */
+function liftSectionNodes(item: any): any {
+  if (typeof item !== 'object' || item === null) return item;
+  if (Array.isArray(item.nodes)) return item;
+
+  const composition = item.composition;
+  if (composition?.nodeType !== 'section' || !Array.isArray(composition.nodes)) {
+    return item;
+  }
+
+  return { ...item, nodes: composition.nodes };
+}
+
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
@@ -458,7 +521,10 @@ export class GraphClient {
    *
    * @param input - The content input used to query the content type.
    * @param previewToken - Optional preview token for fetching preview content.
-   * @returns A promise that resolves to the first content type metadata object
+   * @returns The content type, whether DAM is enabled, and whether this page
+   *   needs the Optimizely Forms fragments. The last is page-scoped, not
+   *   instance-scoped: Forms can be enabled in the CMS while this page has no
+   *   form on it, in which case the fragments are left out.
    */
   private async getContentMetaData(
     input: GraphVariables,
@@ -466,9 +532,14 @@ export class GraphClient {
     cache?: boolean,
     slot?: GraphSlot,
   ) {
+    // Only worth asking when the application registered the form types; without
+    // them there is nothing to leave out. This is a local registry lookup, so it
+    // costs no round trip and needs no cached schema state.
+    const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
+
     const data = await this.request(
-      GET_CONTENT_METADATA_QUERY,
-      input,
+      mayRenderForms ? GET_CONTENT_METADATA_WITH_FORMS_QUERY : GET_CONTENT_METADATA_QUERY,
+      mayRenderForms ? { ...input, formsWhere: formsOnPageFilter(input.where) } : input,
       previewToken,
       cache ?? this.cache,
       slot ?? this.slot,
@@ -478,8 +549,18 @@ export class GraphClient {
     // Determine if DAM is enabled based on the presence of cmp_Asset type
     const damEnabled = data.damAssetType !== null;
 
+    // Form fragments are only worth their size on pages that contain a form.
+    // The probe asks `_Experience`, so it reports nothing for a form container
+    // requested on its own — previewing the shared block from the CMS. Its own
+    // type gives that away, and form elements only ever live under a container,
+    // so nothing else needs covering.
+    const needsForms =
+      mayRenderForms &&
+      ((data.formsOnPage?.total ?? 0) > 0 ||
+        (typeof contentTypeName === 'string' && isFormContentType(contentTypeName)));
+
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled };
+      return { contentTypeName: null, damEnabled, formsEnabled: needsForms };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -494,7 +575,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled };
+    return { contentTypeName, damEnabled, formsEnabled: needsForms };
   }
 
   /**
@@ -521,7 +602,7 @@ export class GraphClient {
       const cacheEnabled = options?.cache ?? this.cache;
       const activeSlot = options?.slot ?? this.slot;
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         undefined,
         cacheEnabled,
@@ -536,13 +617,13 @@ export class GraphClient {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
       try {
-        const query = createMultipleContentQuery(
-          contentTypeName,
+        const query = createMultipleContentQuery(contentTypeName, {
           damEnabled,
-          this.maxFragmentThreshold,
-          this.expandContracts,
-          this.typeFilter,
-        );
+          maxFragmentThreshold: this.maxFragmentThreshold,
+          expandContracts: this.expandContracts,
+          formsEnabled,
+        });
+
         const response = (await this.request(
           query,
           input,
@@ -551,7 +632,9 @@ export class GraphClient {
           activeSlot,
         )) as ItemsResponse<T>;
 
-        return response?._Content?.items.map(removeTypePrefix);
+        return response?._Content?.items.map((item: unknown) =>
+          liftSectionNodes(removeTypePrefix(item)),
+        );
       } catch (error) {
         // If content type is not registered, return empty array instead of throwing
         if (error instanceof GraphMissingContentTypeError) {
@@ -718,7 +801,7 @@ export class GraphClient {
       const input = previewFilter(params);
       const activeSlot = options?.slot ?? this.slot;
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         params.preview_token,
         false,
@@ -744,13 +827,12 @@ export class GraphClient {
         mode: params.ctx,
       });
 
-      const query = createSingleContentQuery(
-        contentTypeName,
+      const query = createSingleContentQuery(contentTypeName, {
         damEnabled,
-        this.maxFragmentThreshold,
-        this.expandContracts,
-        this.typeFilter,
-      );
+        maxFragmentThreshold: this.maxFragmentThreshold,
+        expandContracts: this.expandContracts,
+        formsEnabled,
+      });
 
       const response = await this.request(
         query,
@@ -760,7 +842,10 @@ export class GraphClient {
         activeSlot,
       );
 
-      return decorateWithContext(removeTypePrefix(response?._Content?.item), params);
+      return decorateWithContext(
+        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+        params,
+      );
     });
   }
 
@@ -888,7 +973,7 @@ export class GraphClient {
         },
       };
 
-      const { contentTypeName, damEnabled } = await this.getContentMetaData(
+      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         previewToken,
         cacheEnabled,
@@ -903,13 +988,12 @@ export class GraphClient {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
       try {
-        const query = createSingleContentQuery(
-          contentTypeName,
+        const query = createSingleContentQuery(contentTypeName, {
           damEnabled,
-          this.maxFragmentThreshold,
-          this.expandContracts,
-          this.typeFilter,
-        );
+          maxFragmentThreshold: this.maxFragmentThreshold,
+          expandContracts: this.expandContracts,
+          formsEnabled,
+        });
 
         const response = await this.request(
           query,
@@ -919,7 +1003,7 @@ export class GraphClient {
           activeSlot,
         );
 
-        return removeTypePrefix(response?._Content?.item);
+        return liftSectionNodes(removeTypePrefix(response?._Content?.item));
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {
           return null;

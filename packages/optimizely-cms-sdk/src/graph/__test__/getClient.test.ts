@@ -178,7 +178,9 @@ describe('getClient - Critical Edge Cases', () => {
     });
 
     test('should normalize via GraphClient constructor directly', () => {
-      const client = new GraphClient('test-key', { graphUrl: 'https://cg.optimizely.com' });
+      const client = new GraphClient('test-key', {
+        graphUrl: 'https://cg.optimizely.com',
+      });
 
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
     });

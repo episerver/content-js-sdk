@@ -4,19 +4,21 @@ import {
   ComponentResolverOrObject,
 } from '../render/componentRegistry.js';
 import { JSX } from 'react';
+import { FormContentTypes } from '../model/formContentTypes.js';
+import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
+import { mapFormHandlersToContentTypes } from './forms/setup.js';
+import type { FormHandlers, ComponentType, FormComponentEntry } from './forms/setup.js';
 import {
   ExperienceStructureNode,
   ExperienceNode,
   ExperienceComponentNode,
   DisplaySettingsType,
   ExperienceCompositionNode,
-  InferredContentReference,
 } from '../infer.js';
 import { isComponentNode } from '../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
-import { appendToken } from '../util/preview.js';
 import { OptimizelyReactError } from './error.js';
 import { withReactComponentSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
@@ -30,13 +32,61 @@ export {
   getAdapter,
 } from '../context/config.js';
 export { ReactContextAdapter } from '../context/reactContextAdapter.js';
+import { getPreviewUtils } from './previewUtils.js';
+export { getPreviewUtils };
 export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
-type ComponentType = React.ComponentType<any>;
-
-// Mapping content type names with Components.
-// This is a single global object used across the entire request
+/** Components registered by the application, through `initReactComponentRegistry`. */
 let componentRegistry: ComponentRegistry<ComponentType>;
+
+/**
+ * Components registered for Optimizely Forms elements, through `initForms`.
+ *
+ * Held in a registry of its own rather than merged into `componentRegistry`, so
+ * that the two `init` calls can happen in either order, and so that an
+ * application using a resolver *function* keeps it. Merging meant reading the
+ * application's components out of its resolver, which is only possible when the
+ * resolver is a plain object.
+ */
+let formComponentRegistry: ComponentRegistry<ComponentType> | undefined;
+let formComponents: Record<string, FormComponentEntry> = {};
+
+const addToReactComponentRegistry = (components: Record<string, FormComponentEntry>) => {
+  formComponents = { ...formComponents, ...components };
+  formComponentRegistry = new ComponentRegistry(formComponents);
+};
+
+/** Looks a component up in the application's registry, then in the forms one. */
+function resolveComponent(
+  contentType: string,
+  options: { tag?: string } = {},
+): ComponentType | undefined {
+  return (
+    componentRegistry?.getComponent(contentType, options) ??
+    formComponentRegistry?.getComponent(contentType, options)
+  );
+}
+
+/**
+ * Initializes form content types and components in one call.
+ * Automatically registers all Optimizely Forms content types and their React components.
+ *
+ * @param handlers Form component handlers mapped by display name
+ *
+ * @example
+ * ```ts
+ * initForms({
+ *   container: FormContainerComponent,
+ *   textbox: TextboxComponent,
+ *   textarea: TextareaComponent,
+ *   // ... other form element components
+ * });
+ * ```
+ */
+export function initForms(handlers: FormHandlers) {
+  addToContentTypeRegistry(FormContentTypes);
+  addToReactComponentRegistry(mapFormHandlersToContentTypes(handlers));
+}
 
 type InitOptions = {
   resolver: ComponentResolverOrObject<ComponentType>;
@@ -162,15 +212,14 @@ function findComponent(
   const types = content._metadata?.types;
   if (Array.isArray(types)) {
     for (const typename of types) {
-      const component = componentRegistry.getComponent(typename, options);
+      const component = resolveComponent(typename, options);
       if (component) return { component, typename };
     }
   }
 
   // Fallback to __typename
   const typename = content.__typename;
-  const component =
-    typename ? componentRegistry.getComponent(typename, options) : undefined;
+  const component = typename ? resolveComponent(typename, options) : undefined;
   return { component, typename };
 }
 
@@ -186,7 +235,8 @@ export async function OptimizelyComponent({
     );
   }
 
-  if (!componentRegistry) {
+  // A forms-only application is legitimate, so either registry will do.
+  if (!componentRegistry && !formComponentRegistry) {
     throw new OptimizelyReactError(
       'The component registry is not initialized. Call `initReactComponentRegistry` in the application entry point.',
     );
@@ -322,7 +372,6 @@ export function OptimizelyComposition({
       return <div>???</div>;
     }
 
-    // Merge user-defined properties from `_section` nodes
     const componentData = 'component' in node ? (node.component as object) : {};
 
     return (
@@ -447,11 +496,28 @@ export function OptimizelyGridSection({
     // 2. Globally defined (in the registry)
     // 3. Fallback
     // 4. React.Fragment
+    const globalName = globalNames[nodeType];
     const Component =
       locallyDefined[nodeType] ??
-      componentRegistry.getComponent(globalNames[nodeType], { tag }) ??
-      fallbacks[nodeType] ??
-      React.Fragment;
+      (globalName ? resolveComponent(globalName, { tag }) : undefined) ??
+      fallbacks[nodeType];
+
+    const childNodes = (
+      <OptimizelyGridSection
+        row={row}
+        column={column}
+        ComponentWrapper={ComponentWrapper}
+        nodes={node.nodes ?? []}
+        {...previewAttrs}
+      />
+    );
+
+    // Structure nodes other than rows and columns (form steps, for example) have no
+    // container to render into. A fragment accepts only `key`, `ref` and `children`,
+    // so the node props have to be dropped rather than spread onto it.
+    if (!Component) {
+      return <React.Fragment key={node.key}>{childNodes}</React.Fragment>;
+    }
 
     return (
       <Component
@@ -460,74 +526,8 @@ export function OptimizelyGridSection({
         key={node.key}
         displaySettings={parsedDisplaySettings}
       >
-        <OptimizelyGridSection
-          row={row}
-          column={column}
-          ComponentWrapper={ComponentWrapper}
-          nodes={node.nodes ?? []}
-          {...previewAttrs}
-        />
+        {childNodes}
       </Component>
     );
   });
-}
-
-/** Get context-aware functions for preview */
-export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
-  return {
-    /** Get the HTML data attributes required for a property */
-    pa(property?: string | { key: string }) {
-      if (content.__context?.edit) {
-        if (typeof property === 'string') {
-          return {
-            'data-epi-edit': property,
-          };
-        } else if (property) {
-          return {
-            'data-epi-block-id': property.key,
-          };
-        }
-
-        return {};
-      } else {
-        return {};
-      }
-    },
-
-    /**
-     * Appends preview token to a ContentReference's Image assets.
-     * Adds the preview token to the main URL and all rendition URLs when in preview mode.
-     *
-     * @param input - ContentReference from a DAM asset
-     * @returns ContentReference with preview tokens appended to all URLs, or the original if not in preview mode
-     *
-     * @example
-     * ```tsx
-     * const { src } = getPreviewUtils(content);
-     *
-     * <img
-     *   src={src(content.image)}
-     * />
-     * ```
-     */
-    src(input: InferredContentReference | string | null | undefined): string | undefined {
-      const previewToken = content.__context?.preview_token;
-
-      // if input is an object with a URL
-      if (typeof input === 'object' && input) {
-        // if dam asset is selected the default URL is in input.url.default will be null
-        const url = input.url?.default ?? input.item?.Url;
-        if (url) {
-          return appendToken(url, previewToken);
-        }
-      }
-
-      // if input is a string URL
-      if (typeof input === 'string') {
-        return appendToken(input, previewToken);
-      }
-
-      return undefined;
-    },
-  };
 }

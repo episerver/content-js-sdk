@@ -48,6 +48,16 @@
       "types": "./dist/cjs/schema/index.d.ts",
       "import": "./dist/esm/schema/index.js",
       "require": "./dist/cjs/schema/index.js"
+    },
+    "./forms/validation": {
+      "types": "./dist/cjs/forms/validation.d.ts",
+      "import": "./dist/esm/forms/validation.js",
+      "require": "./dist/cjs/forms/validation.js"
+    },
+    "./forms/react": {
+      "types": "./dist/cjs/react/forms/index.d.ts",
+      "import": "./dist/esm/react/forms/index.js",
+      "require": "./dist/cjs/react/forms/index.js"
     }
   },
   "repository": {

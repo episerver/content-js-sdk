@@ -5,7 +5,7 @@ import {
   toBaseTypeFragmentKey,
   stripSourcePrefix,
   DAM_ASSET_FRAGMENTS,
-  FIXED_FRAGMENTS,
+  getFixedFragments,
   getBaseTypeFragments,
 } from '../util/baseTypeUtil.js';
 import { withQueryCaching } from '../util/cache.js';
@@ -27,12 +27,15 @@ import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error
 import {
   isExperienceComponent,
   FragmentOptions,
+  QueryContext,
+  createQueryContext,
   convertProperty,
   getCachedContentTypes,
   refreshCache,
   FragmentInfo,
 } from '../util/queryUtils.js';
 import { isContract } from '../model/index.js';
+import { isFormContentType } from '../model/formContentTypes.js';
 import { DEFAULT_MAX_FRAGMENT_THRESHOLD, DEFAULT_EXPAND_CONTRACTS } from './constants.js';
 
 // TYPE DEFINITIONS
@@ -61,11 +64,11 @@ export type ItemsResponse<T> = {
 const buildFragmentsForKeys = (
   keys: string[],
   visited: Set<string>,
-  options: FragmentOptions,
+  ctx: QueryContext,
 ): FragmentResult => {
   const results = keys
     .filter(key => !visited.has(key))
-    .map(key => createFragment(key, visited, '', { ...options, includeBaseFragments: true }));
+    .map(key => createFragment(key, visited, '', ctx, { includeBaseFragments: true }));
 
   return {
     fragments: results.flatMap(r => r.fragments),
@@ -80,22 +83,40 @@ const buildInterfaceFragment = (typeName: string, keys: string[]): string => {
 
 const createExperienceFragments = (
   visited: Set<string>,
-  options: FragmentOptions = {},
+  ctx: QueryContext,
+  { includeExperienceFragment = true } = {},
 ): FragmentResult => {
   const experienceNodeKeys = getCachedContentTypes()
     .filter(isExperienceComponent)
+    // `initForms` registers form types globally. Only include when forms are enabled.
+    .filter(ct => ctx.formsEnabled || !isFormContentType(ct.key))
     .map(ct => ct.key);
 
-  const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, options);
-
+  const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, ctx);
   return {
     fragments: [
-      ...FIXED_FRAGMENTS,
+      ...getFixedFragments(ctx.formsEnabled, includeExperienceFragment),
       ...experienceResult.fragments,
       buildInterfaceFragment('_IComponent', experienceNodeKeys),
     ],
     includesDamAssetsFragments: experienceResult.includesDamAssetsFragments,
   };
+};
+
+/**
+ * True for content types that hold a composition of their own.
+ *
+ * In Graph every `_Section` exposes a `composition` field, and a section-enabled
+ * component is indexed as one — the Optimizely Forms container declares
+ * `_component` with `sectionEnabled`, yet reports `_Section` among its types.
+ */
+const holdsComposition = (contentType: RegistryEntry): boolean => {
+  if (!('baseType' in contentType)) return false;
+  if (contentType.baseType === '_section') return true;
+
+  if (!('compositionBehaviors' in contentType)) return false;
+  const behaviors = contentType.compositionBehaviors;
+  return Array.isArray(behaviors) && behaviors.includes('sectionEnabled');
 };
 
 // VALIDATION
@@ -115,14 +136,8 @@ const processUserTypeProperties = (
   contentTypeName: string,
   suffix: string,
   visited: Set<string>,
-  options: FragmentOptions,
+  ctx: QueryContext,
 ): FragmentInfo => {
-  const {
-    damEnabled = false,
-    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-    expandContracts = DEFAULT_EXPAND_CONTRACTS,
-    typeFilter,
-  } = options;
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
   );
@@ -132,12 +147,7 @@ const processUserTypeProperties = (
   let includesDamAssetsFragments = false;
 
   for (const [propKey, prop] of props) {
-    const result = convertProperty(propKey, prop, contentTypeName, suffix, visited, {
-      damEnabled,
-      maxFragmentThreshold,
-      expandContracts,
-      typeFilter,
-    });
+    const result = convertProperty(propKey, prop, contentTypeName, suffix, visited, ctx);
 
     fields.push(...result.fields);
     extraFragments.push(...result.extraFragments);
@@ -200,24 +210,23 @@ const assembleFragment = (
  * @param contentTypeName Name/key of the content-type to expand.
  * @param visited Set of fragment names already on the stack.
  * @param suffix Optional suffix for the fragment name.
- * @param options Fragment generation options (damEnabled, maxFragmentThreshold, includeBaseFragments).
+ * @param ctx Settings fixed for the whole query. Passed through recursion
+ *   unchanged, so every fragment in the document agrees.
+ * @param options Settings that may differ between one fragment and the next.
  * @returns Fragment result containing fragments array and DAM flag.
  */
 export const createFragment = (
   contentTypeName: string,
   visited: Set<string> = new Set(),
   suffix: string = '',
+  ctx: QueryContext = createQueryContext(),
   options: FragmentOptions = {},
 ): FragmentResult => {
   validateContentTypeName(contentTypeName, visited);
 
-  const {
-    damEnabled = false,
-    maxFragmentThreshold = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-    expandContracts = DEFAULT_EXPAND_CONTRACTS,
-    includeBaseFragments = true,
-    typeFilter,
-  } = options;
+  const { damEnabled, maxFragmentThreshold } = ctx;
+  const { includeBaseFragments = true } = options;
+
   const fragmentName = `${stripSourcePrefix(contentTypeName)}${suffix}`;
 
   if (visited.has(fragmentName))
@@ -253,12 +262,7 @@ export const createFragment = (
       contentTypeName,
       suffix,
       visited,
-      {
-        damEnabled,
-        maxFragmentThreshold,
-        expandContracts,
-        typeFilter,
-      },
+      ctx,
     );
     fields.push(...propResult.fields);
     extraFragments.push(...propResult.extraFragments);
@@ -267,19 +271,30 @@ export const createFragment = (
     // Namespaced external types don't implement _IContent — skip CMS base/content fragments.
     const isNamespaced = stripSourcePrefix(contentTypeName) !== contentTypeName;
     if (includeBaseFragments && !isNamespaced) {
-      const baseType = 'baseType' in contentType ? (contentType as AnyContentType).baseType : undefined;
+      const baseType =
+        'baseType' in contentType ? (contentType as AnyContentType).baseType : undefined;
       const baseFragments = getBaseTypeFragments(baseType ?? '', contentTypeName);
       extraFragments.unshift(...baseFragments.extraFragments);
       fields.push(...baseFragments.fields);
     }
 
-    if ('baseType' in contentType && contentType.baseType === '_experience') {
-      fields.push('..._IExperience');
-      const experienceResult = createExperienceFragments(visited, {
-        damEnabled,
-        maxFragmentThreshold,
-        expandContracts,
-        typeFilter,
+    const isExperience =
+      'baseType' in contentType && contentType.baseType === '_experience';
+
+    // A section only fetches its own composition when queried directly;
+    // nested in an experience, it already arrives via that composition tree.
+    const isStandaloneSection =
+      isRootCall && !isExperience && holdsComposition(contentType);
+
+    if (isExperience || isStandaloneSection) {
+      // `_IExperience` is an interface a section does not implement, so the
+      // section reads the field directly instead of spreading the fragment.
+      fields.push(
+        isExperience ? '..._IExperience' : 'composition { ...ICompositionNode }',
+      );
+
+      const experienceResult = createExperienceFragments(visited, ctx, {
+        includeExperienceFragment: isExperience,
       });
       extraFragments.push(...experienceResult.fragments);
       includesDamAssetsFragments =
@@ -313,23 +328,22 @@ export const createFragment = (
 
 // QUERY BUILDERS
 
+/**
+ * The public shape callers pass to the query builders: every field optional, so
+ * a caller only states what it cares about. It is turned into a strict
+ * {@linkcode QueryContext} once, at the boundary, and never rebuilt after that.
+ */
+export type QueryOptions = Partial<QueryContext> & FragmentOptions;
+
 const generateSingleContentQuery = (
   contentType: string,
-  damEnabled: boolean = false,
-  maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
-  typeFilter?: (contentTypeKey: string) => boolean,
+  options: QueryOptions = {},
 ): string => {
-  const span = startSingleQuerySpan(contentType, damEnabled);
+  const ctx = createQueryContext(options);
+  const span = startSingleQuerySpan(contentType, ctx.damEnabled, ctx.formsEnabled);
   const startTime = span ? performance.now() : 0;
 
-  const result = createFragment(contentType, new Set(), '', {
-    damEnabled,
-    maxFragmentThreshold,
-    expandContracts,
-    includeBaseFragments: true,
-    typeFilter,
-  });
+  const result = createFragment(contentType, new Set(), '', ctx, options);
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
@@ -352,7 +366,7 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
     recordMetrics(queryGenerationDuration, queryGenerationCount, startTime, {
       [SemanticAttributes.OPTI_QUERY_TYPE]: QueryType.SINGLE,
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
-      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: ctx.damEnabled,
     });
     span.end();
   }
@@ -364,9 +378,7 @@ query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
  * Generates a complete GraphQL query for fetching one item.
  *
  * @param contentType - The key of the content type to query.
- * @param damEnabled - Whether DAM assets are enabled (default: false).
- * @param maxFragmentThreshold - Maximum fragment threshold for warnings.
- * @param expandContracts - Enable or disable contract expansion.
+ * @param options - Query metadata options controlling fragment and DAM behavior.
  * @returns A string representing the GraphQL query.
  */
 export const createSingleContentQuery = withQueryCaching(
@@ -376,21 +388,13 @@ export const createSingleContentQuery = withQueryCaching(
 
 const generateMultipleContentQuery = (
   contentType: string,
-  damEnabled: boolean = false,
-  maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
-  expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
-  typeFilter?: (contentTypeKey: string) => boolean,
+  options: QueryOptions = {},
 ): string => {
-  const span = startMultipleQuerySpan(contentType, damEnabled);
+  const ctx = createQueryContext(options);
+  const span = startMultipleQuerySpan(contentType, ctx.damEnabled, ctx.formsEnabled);
   const startTime = span ? performance.now() : 0;
 
-  const result = createFragment(contentType, new Set(), '', {
-    damEnabled,
-    maxFragmentThreshold,
-    expandContracts,
-    includeBaseFragments: true,
-    typeFilter,
-  });
+  const result = createFragment(contentType, new Set(), '', ctx, options);
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
@@ -413,7 +417,7 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
     recordMetrics(queryGenerationDuration, queryGenerationCount, startTime, {
       [SemanticAttributes.OPTI_QUERY_TYPE]: QueryType.MULTIPLE,
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentType,
-      [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
+      [SemanticAttributes.OPTI_DAM_ENABLED]: ctx.damEnabled,
     });
     span.end();
   }
@@ -423,12 +427,10 @@ query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
 
 /**
  * Generates a complete GraphQL query for fetching multiple items.
- * All items must have the same content type
+ * All items must have the same content type.
  *
  * @param contentType - The key of the content type to query.
- * @param damEnabled - Whether DAM assets are enabled (default: false).
- * @param maxFragmentThreshold - Maximum fragment threshold for warnings.
- * @param expandContracts - Enable or disable contract expansion.
+ * @param options - Query metadata options controlling fragment and DAM behavior.
  * @returns A string representing the GraphQL query.
  */
 export const createMultipleContentQuery = withQueryCaching(
