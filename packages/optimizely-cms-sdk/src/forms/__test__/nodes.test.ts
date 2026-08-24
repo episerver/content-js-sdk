@@ -114,3 +114,18 @@ describe('partitionFormNodes', () => {
     expect(content).toEqual(tree);
   });
 });
+
+describe('getFormButtonRole', () => {
+  // A server component needs this to align a button footer, so it must work
+  // without React. `useFormButton` is a client hook and cannot be called there.
+  test('reads the role from a label without any React involvement', async () => {
+    const { getFormButtonRole } = await import('../buttonRole.js');
+
+    expect(getFormButtonRole({ Label: 'Next' })).toBe('next');
+    expect(getFormButtonRole({ Label: '  PREVIOUS ' })).toBe('previous');
+    expect(getFormButtonRole({ Label: 'Send' })).toBe('submit');
+    expect(getFormButtonRole({ Label: 'Tillbaka' }, { labels: { previous: ['tillbaka'] } })).toBe(
+      'previous',
+    );
+  });
+});

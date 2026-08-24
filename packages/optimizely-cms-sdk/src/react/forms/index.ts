@@ -11,8 +11,10 @@ export { getElementId } from './getElementId.js';
 // from `react/server`, which pulls in async server components.
 export { getPreviewUtils } from '../previewUtils.js';
 export { useFormField } from './useFormField.js';
-export { useFormButton, DEFAULT_STEP_BUTTON_LABELS } from './useFormButton.js';
-export type { FormButtonRole } from './useFormButton.js';
+export { useFormButton } from './useFormButton.js';
+// Role detection without React, so a server component can align a button footer.
+export { getFormButtonRole, DEFAULT_STEP_BUTTON_LABELS } from '../../forms/buttonRole.js';
+export type { FormButtonRole } from '../../forms/buttonRole.js';
 export { isFormButtonNode, partitionFormNodes } from '../../forms/nodes.js';
 export { FORM_HANDLER_TO_CONTENT_TYPE, mapFormHandlersToContentTypes } from './setup.js';
 export type { FormHandlers } from './setup.js';

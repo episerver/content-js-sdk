@@ -2,33 +2,17 @@
 
 import { useFormSubmission } from './FormSubmissionProvider.js';
 import { useFormSteps } from './FormWrapper.js';
+import {
+  getFormButtonRole,
+  type FormButtonContent,
+  type FormButtonLabelOptions,
+} from '../../forms/buttonRole.js';
 
-export type FormButtonRole = 'next' | 'previous' | 'submit';
-
-/**
- * Optimizely Forms has no property marking a button as step navigation: Next,
- * Previous and Submit are all the same element type, told apart only by their
- * label. Override these when the form is authored in another language, or the
- * step buttons will submit instead of navigating.
- *
- * Matching is case-insensitive.
- */
-export const DEFAULT_STEP_BUTTON_LABELS: Record<'next' | 'previous', string[]> = {
-  next: ['next'],
-  previous: ['previous', 'back'],
-};
-
-type FormButtonContent = {
-  Label?: string | null;
-  Tooltip?: string | null;
-};
-
-type UseFormButtonOptions = {
-  labels?: { next?: string[]; previous?: string[] };
-};
-
-const matches = (label: string, candidates: string[]) =>
-  candidates.some(candidate => candidate.toLowerCase() === label);
+export type { FormButtonRole } from '../../forms/buttonRole.js';
+export {
+  getFormButtonRole,
+  DEFAULT_STEP_BUTTON_LABELS,
+} from '../../forms/buttonRole.js';
 
 /**
  * Works out what a form button does and wires it up.
@@ -38,19 +22,12 @@ const matches = (label: string, candidates: string[]) =>
  */
 export function useFormButton(
   content: FormButtonContent,
-  options: UseFormButtonOptions = {},
+  options: FormButtonLabelOptions = {},
 ) {
   const { isSubmitting } = useFormSubmission();
   const { nextStep, prevStep } = useFormSteps();
 
-  const label = content.Label?.trim().toLowerCase() ?? '';
-  const nextLabels = options.labels?.next ?? DEFAULT_STEP_BUTTON_LABELS.next;
-  const previousLabels = options.labels?.previous ?? DEFAULT_STEP_BUTTON_LABELS.previous;
-
-  const role: FormButtonRole =
-    matches(label, nextLabels) ? 'next'
-    : matches(label, previousLabels) ? 'previous'
-    : 'submit';
+  const role = getFormButtonRole(content, options);
 
   return {
     role,
