@@ -14,6 +14,7 @@ The Optimizely CMS JavaScript SDK includes built-in support for Optimizely Forms
 - [Form Validation](#form-validation) - Using `useFormField` hook
 - [Form Dependency Rules](#form-dependency-rules) - Conditional field visibility
 - [Multi-Step Forms](#multi-step-forms) - Step-by-step forms
+- [Editing in the CMS](#editing-in-the-cms) - Preview attributes and edit-mode behaviour
 - [Advanced Topics](#advanced-topics) - API reference and advanced usage
 - [Troubleshooting](#troubleshooting) - Common issues
 
@@ -82,10 +83,11 @@ export default function FormContainer({ content }: { content: OptiFormsContainer
             const step = partitionFormNodes([node]);
 
             return (
-              <FormStep key={node.key} index={index}>
+              // `node` makes the step selectable in the CMS editor.
+              <FormStep key={node.key} index={index} node={node}>
                 <OptimizelyGridSection nodes={step.content} row={GridRow} column={GridColumn} />
                 {step.buttons.length > 0 && (
-                  <div className="mt-6 flex items-center gap-3">
+                  <div className="mt-6 flex items-center justify-end gap-3">
                     <OptimizelyGridSection nodes={step.buttons} row={GridRow} column={GridColumn} />
                   </div>
                 )}
@@ -145,6 +147,8 @@ export default function FormInput({ content }) {
 ```
 
 `fieldProps` carries the ref, `id`, `name`, `value`, `required`, `aria-invalid`, `aria-describedby`, `onChange` and `onBlur`. `errorProps` carries the matching `id` and `role="alert"`. Spreading both keeps the accessibility wiring consistent across every field type.
+
+To let editors click a label or placeholder and edit it in the CMS, add preview attributes — see [Editing in the CMS](#editing-in-the-cms). The footer above aligns its buttons with `justify-end`, which is deliberate: aligning them individually with `ml-auto` works for a visitor but not in edit mode, for the reason explained in the same section.
 
 For a control that cannot take those directly — a radio group, where the name and change handler belong on each radio and the ref on the fieldset — use `inputRef`, `value`, `setValue`, `onBlur` and `errorId` instead.
 
@@ -260,7 +264,7 @@ Show and hide fields based on other fields' values. Rules come from the containe
 
 Each field component then needs two things:
 
-1. Wrap its markup in `FormElement`, which renders nothing while a rule hides the field.
+1. Wrap its markup in `FormElement`, which renders nothing for a visitor while a rule hides the field.
 2. Pass `content` to `useFormField`, which reports the field's value so rules that depend on it can be evaluated. No manual `setFieldValue()` calls are needed.
 
 ```tsx
@@ -277,6 +281,8 @@ export default function FormInput({ content }) {
 
 > [!IMPORTANT]
 > `FormElement` must wrap the markup **inside** the field component, not the component itself. A field hidden by a rule is excluded from validation, and `useFormField` can only do that from inside the component. Wrapping from the outside would leave a hidden required field registered, blocking submission with no visible error.
+
+A hidden field is rendered anyway while editing in the CMS. A rule describes what a visitor sees, and an editor still has to be able to find the field to change it — otherwise the CMS shows an empty, selectable block with no indication of what it is.
 
 ### Rule Conditions
 
@@ -327,6 +333,58 @@ The fields are cleared and the form returns to the first step. Because the input
 
 ---
 
+## Editing in the CMS
+
+### Selecting a block
+
+Every component the SDK renders is wrapped in a `data-epi-block-id` marker while in edit mode, so form elements, rows and columns are selectable without you doing anything. Pass the step's node to `FormStep` to make the step selectable too:
+
+```tsx
+<FormStep index={index} node={node}>
+```
+
+### Editing a property
+
+Property markers are yours to add, because only your component knows which element shows which property. Field components run on the client, so import the helper from `forms/react` — `react/server` pulls in server components and cannot be imported from a `'use client'` file:
+
+```tsx
+'use client';
+
+import { getPreviewUtils, useFormField } from '@optimizely/cms-sdk/forms/react';
+
+export default function FormInput({ content }) {
+  const { fieldProps } = useFormField({ content });
+  const { pa } = getPreviewUtils(content);
+
+  return (
+    <label htmlFor={fieldProps.id} {...pa('Label')}>
+      {content.Label}
+    </label>
+  );
+}
+```
+
+`pa` returns an empty object outside edit mode, so it is safe to spread unconditionally.
+
+> [!WARNING]
+> **CSS that depends on a component being a direct child breaks in edit mode.** The marker div sits between the parent and your component, so it becomes the flex or grid item instead. `ml-auto` on a button will align it while a visitor views the page and do nothing while an editor does. The same applies to `first:`, `last:`, `space-x-*` and sibling selectors.
+>
+> Let the container decide the layout. For a row of buttons, choose `justify-between` or `justify-end` on the wrapper rather than pushing individual buttons with a margin. `getFormButtonRole` answers "is one of these a back button" without React, so a server component can make that decision:
+>
+> ```tsx
+> import { getFormButtonRole } from '@optimizely/cms-sdk/forms/react';
+>
+> const goesBack = nodes.some(n => getFormButtonRole(n.component ?? {}) === 'previous');
+> ```
+
+### Previewing a form on its own
+
+A form container is a shared block, so the CMS can preview it outside any page. That works the same way as a page: the SDK fetches the section's own composition, and its steps arrive on `content.nodes` exactly as they do when the form sits on a page. No separate code path is needed in your container component.
+
+If a form renders with its title but no fields, the container's nodes were not fetched. That happens when the container is not a top-level section of the composition — see the note under [Available Content Types](#available-content-types).
+
+---
+
 ## Advanced Topics
 
 ### Available Content Types
@@ -350,6 +408,16 @@ import { OptiFormsContainerDataContentType } from '@optimizely/cms-sdk';
 // - OptiFormsDependencyRuleContentType
 // - OptiFormsConditionContentType
 ```
+
+`initForms` can be called before or after `initContentTypeRegistry` and `initReactComponentRegistry`, works with a resolver function as well as a component map, and is safe to call more than once — a hot reload will not register anything twice.
+
+### How form fragments are fetched
+
+These types add a substantial amount to a query — on a site with fifteen components they more than double an experience query — so they are only requested for pages that actually contain a form. The content metadata request the SDK already sends for each page also asks whether that page's composition holds a form container, which costs no extra round trip.
+
+This relies on a form container being a **top-level section** of the composition, which is where the CMS puts one: a container is a section, and sections do not nest. If a future CMS release allows a section inside a section, a form nested that way would not be detected and would render with no fields. The Alloy template logs a development warning when a container renders with no nodes, which is what that would look like.
+
+Nothing about this is configurable, and nothing in your components needs to account for it.
 
 ### Using Forms in Content Models
 
@@ -487,12 +555,22 @@ Handlers you leave out render a development-only placeholder, so you can add fie
 3. Ensure components are marked `'use client'`
 4. Check browser console for resolution errors
 
+### The form renders its title but no fields
+
+The container's nodes were not fetched. Its fields are only requested when the SDK can tell the page holds a form, which it does by looking for a form container among the composition's top-level sections. A container nested deeper than that is not found. See [How form fragments are fetched](#how-form-fragments-are-fetched).
+
 ### Form won't submit
 
 1. Verify `action` prop points to valid API endpoint
 2. Check fields pass validation (no error messages)
 3. Ensure form component is `'use client'`
 4. Check network tab for POST request failures
+
+If nothing at all happens, the blocking field may be on a step that is not showing. Submitting validates every step and moves to the one holding the first invalid field, so check that your field components render their error messages — a field that validates but shows nothing looks identical to a form that ignores the button.
+
+### Buttons sit in the wrong place while editing
+
+Layout that depends on a component being a direct child of its parent breaks in edit mode, because the CMS marker div sits in between. See the warning under [Editing in the CMS](#editing-in-the-cms).
 
 ---
 
@@ -505,7 +583,8 @@ Handlers you leave out render a development-only placeholder, so you can add fie
 - `FormWrapper` - Main form orchestrator
 - `useFormField` - Field setup hook (recommended for most fields)
 - `useFormButton` - Resolves a button to next / previous / submit and wires it
-- `DEFAULT_STEP_BUTTON_LABELS` - The labels `useFormButton` treats as navigation
+- `getFormButtonRole` - The same role, without React, for use in a server component
+- `DEFAULT_STEP_BUTTON_LABELS` - The labels treated as step navigation
 - `partitionFormNodes` / `isFormButtonNode` - Separate a form's buttons from its fields
 - `FormValidationProvider` / `useFormValidation` - Manual validation control
 - `FormSubmissionProvider` / `useFormSubmission` - Submission state
@@ -514,6 +593,7 @@ Handlers you leave out render a development-only placeholder, so you can add fie
 - `FormStep` - Multi-step renderer; inactive steps stay mounted and hidden
 - `useFormStep` - Step navigation hook
 - `getElementId` - Extract element ID from content
+- `getPreviewUtils` - Edit-mode attributes, importable from a client component
 
 **From `@optimizely/cms-sdk/forms/validation`:**
 
