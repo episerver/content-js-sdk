@@ -434,6 +434,8 @@ const handleArrayProperty: PropertyHandler = (
   visited: Set<string>,
   ctx: QueryContext,
 ) => {
+  // Forwards the whole context, which covers main's fix for `expandContracts`
+  // being dropped here (CMS-54935) along with every other query-wide setting.
   return convertProperty(name, (property as any).items, rootName, suffix, visited, ctx);
 };
 

@@ -183,12 +183,19 @@ describe('generateContentCode', () => {
       baseType: '_page',
       isContract: false,
       properties: {
-        title: { type: 'string', isLocalized: false, isRequired: false, sortOrder: 0 },
+        title: {
+          type: 'string',
+          isLocalized: false,
+          isRequired: false,
+          sortOrder: 0,
+          displayMode: 'available',
+        },
         description: {
           type: 'string',
           isLocalized: true,
           isRequired: true,
           sortOrder: 1,
+          displayMode: 'hidden',
         },
       },
     };
@@ -197,9 +204,11 @@ describe('generateContentCode', () => {
     expect(result).toContain('isLocalized: true');
     expect(result).toContain('isRequired: true');
     expect(result).toContain('sortOrder: 1');
+    expect(result).toContain("displayMode: 'hidden'");
     expect(result).not.toContain('isLocalized: false');
     expect(result).not.toContain('isRequired: false');
     expect(result).not.toContain('sortOrder: 0');
+    expect(result).not.toContain('displayMode: \'available\'');
   });
 });
 

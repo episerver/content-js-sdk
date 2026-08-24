@@ -240,6 +240,25 @@ properties: {
 }
 ```
 
+### Display Mode
+
+The `displayMode` field controls how the property is shown in the editing interface:
+
+- **`'available'`** (default) - The property is available for editing
+- **`'hidden'`** - The property is not shown in the editing interface
+
+The value is still stored and queryable; only the editing UI is affected.
+
+```ts
+properties: {
+  title: { type: 'string' },
+  internalId: {
+    type: 'string',
+    displayMode: 'hidden', // Set by code, not by editors
+  },
+}
+```
+
 ### Content Relationships
 
 For `content` and `contentReference` properties, use `allowedTypes` and `restrictedTypes` to control which content types can be referenced:

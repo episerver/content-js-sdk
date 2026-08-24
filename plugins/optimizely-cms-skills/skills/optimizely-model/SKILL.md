@@ -98,6 +98,7 @@ See `references/property-types.md` for the complete list with examples.
 | `isRequired` | Must have a value | `true`, `false` |
 | `isLocalized` | Different value per language | `true`, `false` |
 | `indexingType` | Search indexing behavior | `'searchable'`, `'queryable'` |
+| `displayMode` | Visibility in editing UI | `'available'`, `'hidden'` |
 
 **When user says** → **Use this field**:
 - "display name", "label" → `displayName`
@@ -106,6 +107,7 @@ See `references/property-types.md` for the complete list with examples.
 - "sort order", "sort index", "order" → `sortOrder`
 - "group", "tab" → `group`
 - "searchable" → `indexingType: 'searchable'`
+- "hidden", "hide from editors", "not editable" → `displayMode: 'hidden'`
 - "required", "mandatory" → `isRequired: true`
 
 **Example with metadata:**
