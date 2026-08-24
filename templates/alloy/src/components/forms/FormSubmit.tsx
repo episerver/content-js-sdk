@@ -1,7 +1,7 @@
 'use client';
 
 import { ContentProps, OptiFormsSubmitElementContentType } from '@optimizely/cms-sdk';
-import { useFormButton } from '@optimizely/cms-sdk/forms/react';
+import { getPreviewUtils, useFormButton } from '@optimizely/cms-sdk/forms/react';
 
 type FormSubmitProps = {
   content: ContentProps<typeof OptiFormsSubmitElementContentType>;
@@ -21,6 +21,7 @@ const roleClass = {
 
 export default function FormSubmit({ content }: FormSubmitProps) {
   const { role, label, isSubmitting, buttonProps } = useFormButton(content);
+  const { pa } = getPreviewUtils(content);
 
   return (
     <button {...buttonProps} className={`${baseClass} ${roleClass[role]}`}>
@@ -47,7 +48,7 @@ export default function FormSubmit({ content }: FormSubmitProps) {
           />
         </svg>
       )}
-      <span>{isSubmitting ? 'Submitting…' : label}</span>
+      <span {...pa('Label')}>{isSubmitting ? 'Submitting…' : label}</span>
     </button>
   );
 }

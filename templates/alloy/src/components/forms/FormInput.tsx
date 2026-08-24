@@ -5,7 +5,11 @@ import {
   getHtmlValidationAttributes,
   toValidators,
 } from '@optimizely/cms-sdk/forms/validation';
-import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
+import {
+  FormElement,
+  getPreviewUtils,
+  useFormField,
+} from '@optimizely/cms-sdk/forms/react';
 import {
   controlClass,
   errorTextClass,
@@ -24,12 +28,13 @@ export default function FormInput({ content }: FormInputProps) {
   });
 
   const htmlAttrs = getHtmlValidationAttributes(toValidators(content.Validators));
+  const { pa } = getPreviewUtils(content);
 
   return (
     <FormElement content={content}>
       <div className='flex-1 space-y-1.5'>
         {content.Label && (
-          <label htmlFor={fieldProps.id} className={labelClass}>
+          <label htmlFor={fieldProps.id} className={labelClass} {...pa('Label')}>
             {content.Label}
             {isRequired && <span className={requiredMarkClass}>*</span>}
           </label>
@@ -39,6 +44,7 @@ export default function FormInput({ content }: FormInputProps) {
           type={(htmlAttrs.type as string) ?? 'text'}
           placeholder={content.Placeholder ?? ''}
           title={content.Tooltip ?? ''}
+          {...pa('Placeholder')}
           autoComplete={content.AutoComplete ?? 'off'}
           pattern={htmlAttrs.pattern as string | undefined}
           className={controlClass(showErrors)}

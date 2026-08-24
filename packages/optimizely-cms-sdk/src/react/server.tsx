@@ -8,6 +8,33 @@ import { FormContentTypes } from '../model/formContentTypes.js';
 import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
 import { mapFormHandlersToContentTypes } from './forms/setup.js';
 import type { FormHandlers, ComponentType, FormComponentEntry } from './forms/setup.js';
+import {
+  ExperienceStructureNode,
+  ExperienceNode,
+  ExperienceComponentNode,
+  DisplaySettingsType,
+  ExperienceCompositionNode,
+} from '../infer.js';
+import { isComponentNode } from '../util/baseTypeUtil.js';
+import { parseDisplaySettings } from '../model/displayTemplates.js';
+import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
+import { isDev } from '../util/environment.js';
+import { OptimizelyReactError } from './error.js';
+import { withReactComponentSpan } from '../telemetry/spans.js';
+import { SemanticAttributes } from '../telemetry/index.js';
+export { withAppContext } from './context/contextWrapper.js';
+export {
+  getContext,
+  setContext,
+  getContextData,
+  setContextData,
+  configureAdapter,
+  getAdapter,
+} from '../context/config.js';
+export { ReactContextAdapter } from '../context/reactContextAdapter.js';
+import { getPreviewUtils } from './previewUtils.js';
+export { getPreviewUtils };
+export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
 /** Components registered by the application, through `initReactComponentRegistry`. */
 let componentRegistry: ComponentRegistry<ComponentType>;
@@ -39,34 +66,6 @@ function resolveComponent(
     formComponentRegistry?.getComponent(contentType, options)
   );
 }
-
-import {
-  ExperienceStructureNode,
-  ExperienceNode,
-  ExperienceComponentNode,
-  DisplaySettingsType,
-  ExperienceCompositionNode,
-  InferredContentReference,
-} from '../infer.js';
-import { isComponentNode } from '../util/baseTypeUtil.js';
-import { parseDisplaySettings } from '../model/displayTemplates.js';
-import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
-import { isDev } from '../util/environment.js';
-import { appendToken } from '../util/preview.js';
-import { OptimizelyReactError } from './error.js';
-import { withReactComponentSpan } from '../telemetry/spans.js';
-import { SemanticAttributes } from '../telemetry/index.js';
-export { withAppContext } from './context/contextWrapper.js';
-export {
-  getContext,
-  setContext,
-  getContextData,
-  setContextData,
-  configureAdapter,
-  getAdapter,
-} from '../context/config.js';
-export { ReactContextAdapter } from '../context/reactContextAdapter.js';
-export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
 /**
  * Initializes form content types and components in one call.
@@ -531,64 +530,4 @@ export function OptimizelyGridSection({
       </Component>
     );
   });
-}
-
-/** Get context-aware functions for preview */
-export function getPreviewUtils(content: OptimizelyComponentProps['content']) {
-  return {
-    /** Get the HTML data attributes required for a property */
-    pa(property?: string | { key: string }) {
-      if (content.__context?.edit) {
-        if (typeof property === 'string') {
-          return {
-            'data-epi-edit': property,
-          };
-        } else if (property) {
-          return {
-            'data-epi-block-id': property.key,
-          };
-        }
-
-        return {};
-      } else {
-        return {};
-      }
-    },
-
-    /**
-     * Appends preview token to a ContentReference's Image assets.
-     * Adds the preview token to the main URL and all rendition URLs when in preview mode.
-     *
-     * @param input - ContentReference from a DAM asset
-     * @returns ContentReference with preview tokens appended to all URLs, or the original if not in preview mode
-     *
-     * @example
-     * ```tsx
-     * const { src } = getPreviewUtils(content);
-     *
-     * <img
-     *   src={src(content.image)}
-     * />
-     * ```
-     */
-    src(input: InferredContentReference | string | null | undefined): string | undefined {
-      const previewToken = content.__context?.preview_token;
-
-      // if input is an object with a URL
-      if (typeof input === 'object' && input) {
-        // if dam asset is selected the default URL is in input.url.default will be null
-        const url = input.url?.default ?? input.item?.Url;
-        if (url) {
-          return appendToken(url, previewToken);
-        }
-      }
-
-      // if input is a string URL
-      if (typeof input === 'string') {
-        return appendToken(input, previewToken);
-      }
-
-      return undefined;
-    },
-  };
 }

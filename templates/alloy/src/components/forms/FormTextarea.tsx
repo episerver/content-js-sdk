@@ -1,7 +1,11 @@
 'use client';
 
 import { ContentProps, OptiFormsTextareaElementContentType } from '@optimizely/cms-sdk';
-import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
+import {
+  FormElement,
+  getPreviewUtils,
+  useFormField,
+} from '@optimizely/cms-sdk/forms/react';
 import {
   controlClass,
   errorTextClass,
@@ -18,11 +22,13 @@ export default function FormTextarea({ content }: FormTextareaProps) {
   const { fieldProps, errorProps, errors, showErrors, isRequired } =
     useFormField<HTMLTextAreaElement>({ content });
 
+  const { pa } = getPreviewUtils(content);
+
   return (
     <FormElement content={content}>
       <div className='flex-1 space-y-1.5'>
         {content.Label && (
-          <label htmlFor={fieldProps.id} className={labelClass}>
+          <label htmlFor={fieldProps.id} className={labelClass} {...pa('Label')}>
             {content.Label}
             {isRequired && <span className={requiredMarkClass}>*</span>}
           </label>

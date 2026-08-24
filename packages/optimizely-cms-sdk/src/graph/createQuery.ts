@@ -84,6 +84,7 @@ const buildInterfaceFragment = (typeName: string, keys: string[]): string => {
 const createExperienceFragments = (
   visited: Set<string>,
   ctx: QueryContext,
+  { includeExperienceFragment = true } = {},
 ): FragmentResult => {
   const experienceNodeKeys = getCachedContentTypes()
     .filter(isExperienceComponent)
@@ -94,12 +95,28 @@ const createExperienceFragments = (
   const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, ctx);
   return {
     fragments: [
-      ...getFixedFragments(ctx.formsEnabled),
+      ...getFixedFragments(ctx.formsEnabled, includeExperienceFragment),
       ...experienceResult.fragments,
       buildInterfaceFragment('_IComponent', experienceNodeKeys),
     ],
     includesDamAssetsFragments: experienceResult.includesDamAssetsFragments,
   };
+};
+
+/**
+ * True for content types that hold a composition of their own.
+ *
+ * In Graph every `_Section` exposes a `composition` field, and a section-enabled
+ * component is indexed as one — the Optimizely Forms container declares
+ * `_component` with `sectionEnabled`, yet reports `_Section` among its types.
+ */
+const holdsComposition = (contentType: RegistryEntry): boolean => {
+  if (!('baseType' in contentType)) return false;
+  if (contentType.baseType === '_section') return true;
+
+  if (!('compositionBehaviors' in contentType)) return false;
+  const behaviors = contentType.compositionBehaviors;
+  return Array.isArray(behaviors) && behaviors.includes('sectionEnabled');
 };
 
 // VALIDATION
@@ -261,9 +278,24 @@ export const createFragment = (
       fields.push(...baseFragments.fields);
     }
 
-    if ('baseType' in contentType && contentType.baseType === '_experience') {
-      fields.push('..._IExperience');
-      const experienceResult = createExperienceFragments(visited, ctx);
+    const isExperience =
+      'baseType' in contentType && contentType.baseType === '_experience';
+
+    // A section only fetches its own composition when queried directly;
+    // nested in an experience, it already arrives via that composition tree.
+    const isStandaloneSection =
+      isRootCall && !isExperience && holdsComposition(contentType);
+
+    if (isExperience || isStandaloneSection) {
+      // `_IExperience` is an interface a section does not implement, so the
+      // section reads the field directly instead of spreading the fragment.
+      fields.push(
+        isExperience ? '..._IExperience' : 'composition { ...ICompositionNode }',
+      );
+
+      const experienceResult = createExperienceFragments(visited, ctx, {
+        includeExperienceFragment: isExperience,
+      });
       extraFragments.push(...experienceResult.fragments);
       includesDamAssetsFragments =
         includesDamAssetsFragments || experienceResult.includesDamAssetsFragments;

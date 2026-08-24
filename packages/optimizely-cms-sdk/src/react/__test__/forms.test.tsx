@@ -277,3 +277,51 @@ describe('submitting', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('a field hidden by a rule', () => {
+  const hideRule: DependencyRule[] = [
+    {
+      TargetElement: 'hidden-field',
+      SatisfiedAction: 'Hide',
+      ConditionCombination: 'Any',
+      Conditions: null,
+    },
+  ];
+
+  /** Like `Field`, but able to carry the CMS edit context. */
+  function EditableField({ editing }: { editing: boolean }) {
+    const content = {
+      _id: 'hidden-field',
+      ...(editing ? { __context: { edit: true, preview_token: 't' } } : {}),
+    };
+    const { value, setValue, inputRef } = useFormField({
+      name: 'hidden',
+      validators: [],
+      content,
+    });
+
+    return (
+      <FormElement content={content}>
+        <input
+          ref={inputRef}
+          aria-label='hidden'
+          value={value}
+          onChange={e => setValue(e.target.value)}
+        />
+      </FormElement>
+    );
+  }
+
+  test('is hidden from a visitor', () => {
+    renderForm(<EditableField editing={false} />, hideRule);
+
+    expect(screen.queryByLabelText('hidden')).toBeNull();
+  });
+
+  // Otherwise the CMS shows an empty, selectable block where the field should be.
+  test('is still rendered for an editor', () => {
+    renderForm(<EditableField editing={true} />, hideRule);
+
+    expect(screen.getByLabelText('hidden')).toBeTruthy();
+  });
+});

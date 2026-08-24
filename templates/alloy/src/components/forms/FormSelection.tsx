@@ -2,7 +2,11 @@
 
 import { ContentProps, OptiFormsSelectionElementContentType } from '@optimizely/cms-sdk';
 import { getSelectionOptions } from '@optimizely/cms-sdk/forms/validation';
-import { FormElement, useFormField } from '@optimizely/cms-sdk/forms/react';
+import {
+  FormElement,
+  getPreviewUtils,
+  useFormField,
+} from '@optimizely/cms-sdk/forms/react';
 import {
   errorTextClass,
   helpTextClass,
@@ -25,16 +29,18 @@ export default function FormSelection({ content }: FormSelectionProps) {
       defaultValue: options.find(option => option.selected)?.value ?? '',
     });
 
+  const { pa } = getPreviewUtils(content);
+
   return (
     <FormElement content={content}>
       <fieldset ref={inputRef} className='flex-1 space-y-2'>
         {content.Label && (
-          <legend className={labelClass}>
+          <legend className={labelClass} {...pa('Label')}>
             {content.Label}
             {isRequired && <span className={requiredMarkClass}>*</span>}
           </legend>
         )}
-        <div className='grid gap-2 sm:grid-cols-2'>
+        <div className='grid gap-2 sm:grid-cols-2' {...pa('Options')}>
           {options.map(option => {
             const isSelected = value === option.value;
 

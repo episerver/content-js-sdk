@@ -20,6 +20,7 @@ import {
 } from './filters.js';
 import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
+import { isFormContentType } from '../model/formContentTypes.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -351,6 +352,27 @@ export function removeTypePrefix(obj: any): any {
   return obj;
 }
 
+/**
+ * Puts a section's child nodes where the renderer looks for them.
+ *
+ * Inside an experience, a section's children arrive as `content.nodes`. On
+ * their own (e.g. previewing a shared block, or a section within a form),
+ * they arrive as `composition.nodes` instead, though `InferSection` expects
+ * `nodes` either way. An experience also has a `composition`, so we only lift
+ * when the root node is itself a section.
+ */
+function liftSectionNodes(item: any): any {
+  if (typeof item !== 'object' || item === null) return item;
+  if (Array.isArray(item.nodes)) return item;
+
+  const composition = item.composition;
+  if (composition?.nodeType !== 'section' || !Array.isArray(composition.nodes)) {
+    return item;
+  }
+
+  return { ...item, nodes: composition.nodes };
+}
+
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
@@ -528,10 +550,17 @@ export class GraphClient {
     const damEnabled = data.damAssetType !== null;
 
     // Form fragments are only worth their size on pages that contain a form.
-    const formsOnPage = mayRenderForms && (data.formsOnPage?.total ?? 0) > 0;
+    // The probe asks `_Experience`, so it reports nothing for a form container
+    // requested on its own — previewing the shared block from the CMS. Its own
+    // type gives that away, and form elements only ever live under a container,
+    // so nothing else needs covering.
+    const needsForms =
+      mayRenderForms &&
+      ((data.formsOnPage?.total ?? 0) > 0 ||
+        (typeof contentTypeName === 'string' && isFormContentType(contentTypeName)));
 
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled, formsEnabled: formsOnPage };
+      return { contentTypeName: null, damEnabled, formsEnabled: needsForms };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -546,7 +575,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled, formsEnabled: formsOnPage };
+    return { contentTypeName, damEnabled, formsEnabled: needsForms };
   }
 
   /**
@@ -594,7 +623,6 @@ export class GraphClient {
           expandContracts: this.expandContracts,
           formsEnabled,
         });
-        console.log('query', query);
 
         const response = (await this.request(
           query,
@@ -604,7 +632,9 @@ export class GraphClient {
           activeSlot,
         )) as ItemsResponse<T>;
 
-        return response?._Content?.items.map(removeTypePrefix);
+        return response?._Content?.items.map((item: unknown) =>
+          liftSectionNodes(removeTypePrefix(item)),
+        );
       } catch (error) {
         // If content type is not registered, return empty array instead of throwing
         if (error instanceof GraphMissingContentTypeError) {
@@ -804,6 +834,8 @@ export class GraphClient {
         formsEnabled,
       });
 
+      console.log('query', query);
+
       const response = await this.request(
         query,
         input,
@@ -812,7 +844,10 @@ export class GraphClient {
         activeSlot,
       );
 
-      return decorateWithContext(removeTypePrefix(response?._Content?.item), params);
+      return decorateWithContext(
+        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+        params,
+      );
     });
   }
 
@@ -970,7 +1005,7 @@ export class GraphClient {
           activeSlot,
         );
 
-        return removeTypePrefix(response?._Content?.item);
+        return liftSectionNodes(removeTypePrefix(response?._Content?.item));
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {
           return null;

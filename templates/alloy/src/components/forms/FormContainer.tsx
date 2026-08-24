@@ -31,6 +31,7 @@ function FormActions({ nodes }: { nodes: Node[] }) {
 
 export default function FormContainer({ content }: FormContainerProps) {
   const { pa } = getPreviewUtils(content);
+  const isEditing = content.__context?.edit === true;
   const nodes = (content.nodes ?? []) as Node[];
   const buttonNodes = nodes.filter(isFormButtonNode);
   const stepNodes = nodes.filter(node => !isFormButtonNode(node));
@@ -72,10 +73,16 @@ export default function FormContainer({ content }: FormContainerProps) {
             <FormStepTracker steps={stepNodes.length} />
 
             {stepNodes.map((node, index) => {
-              const step = partitionFormNodes([node]);
+              // Hoisting the buttons into a footer drops the rows and columns they
+              // were authored in, and with them the markers the CMS uses to select
+              // those nodes. While editing, keep the structure the editor built.
+              const step =
+                isEditing ?
+                  { content: [node], buttons: [] as Node[] }
+                : partitionFormNodes([node]);
 
               return (
-                <FormStep key={node.key} index={index}>
+                <FormStep key={node.key} index={index} node={node as { key: string }}>
                   <OptimizelyGridSection
                     nodes={step.content}
                     row={GridRow}

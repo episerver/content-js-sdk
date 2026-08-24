@@ -71,7 +71,8 @@ export const stripSourcePrefix = (key: string): string => key.replace(/^[a-z]+:/
  * This function will not be used once Graph properly supports @recursive.
  */
 function buildNestedCompositionNodes(depth: number): string {
-  const baseFields = '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
+  const baseFields =
+    '__typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value}';
 
   if (depth === 0) {
     return baseFields;
@@ -104,12 +105,20 @@ export const DAM_ASSET_FRAGMENTS = [
 ];
 
 /**
- * Fragments included in every experience query.
+ * Fragments included in every query that walks a composition.
  *
  * @param formsEnabled Use the deeper composition nesting that Forms requires.
+ * @param includeExperienceFragment Emit `_IExperience` too. A section reads its
+ *   `composition` field directly rather than spreading that fragment, and
+ *   GraphQL rejects a document containing a fragment nothing uses.
  */
-export const getFixedFragments = (formsEnabled = false) => [
-  'fragment _IExperience on _IExperience { composition {...ICompositionNode }}',
+export const getFixedFragments = (
+  formsEnabled = false,
+  includeExperienceFragment = true,
+) => [
+  ...(includeExperienceFragment ?
+    ['fragment _IExperience on _IExperience { composition {...ICompositionNode }}']
+  : []),
   // This is a temporary workaround for Graph issue with @recursive directive. This will not be used once Graph properly supports @recursive.
   // Replace it with a simpler recursive fragment once Graph supports @recursive, e.g. 'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }':
   `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(
@@ -128,18 +137,29 @@ const COMMON_FRAGMENTS = [
 
 const COMMON_FIELDS = '..._IContent';
 
-export function getBaseTypeFragments(baseType: string, contentTypeName?: string): BaseTypeFragments {
-  const prefix = contentTypeName && !isBaseType(contentTypeName) ? `${contentTypeName}__` : '';
+export function getBaseTypeFragments(
+  baseType: string,
+  contentTypeName?: string,
+): BaseTypeFragments {
+  const prefix =
+    contentTypeName && !isBaseType(contentTypeName) ? `${contentTypeName}__` : '';
 
   if (baseType === '_image') {
     return {
-      fields: [COMMON_FIELDS, `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`, `${prefix}imageMetadata:_imageMetadata { width height }`],
+      fields: [
+        COMMON_FIELDS,
+        `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
+        `${prefix}imageMetadata:_imageMetadata { width height }`,
+      ],
       extraFragments: [...COMMON_FRAGMENTS],
     };
   }
   if (isBaseMediaType(baseType)) {
     return {
-      fields: [COMMON_FIELDS, `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`],
+      fields: [
+        COMMON_FIELDS,
+        `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
+      ],
       extraFragments: [...COMMON_FRAGMENTS],
     };
   }
