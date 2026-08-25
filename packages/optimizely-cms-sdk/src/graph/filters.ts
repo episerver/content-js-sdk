@@ -103,15 +103,6 @@ export function previewFilter(params: {
   };
 }
 
-export function variationFilter(value: string): ContentInput {
-  return {
-    variation: {
-      include: 'SOME',
-      value: [value],
-    },
-  };
-}
-
 export function localeFilter(locale?: string[]): ContentInput {
   return {
     locale,

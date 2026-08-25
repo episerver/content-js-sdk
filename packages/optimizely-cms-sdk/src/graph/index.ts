@@ -180,7 +180,7 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
 }`;
 
 const GET_ITEMS_QUERY = `
-query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
+query GetItems($where: _ContentWhereInput, $locale: [Locales]) {
   _Content(where: $where, locale: $locale) {
     item {
       _id
