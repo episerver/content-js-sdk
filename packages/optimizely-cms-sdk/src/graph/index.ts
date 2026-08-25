@@ -14,6 +14,7 @@ import {
   GraphVariationInput,
   type FilterShape,
   type ScalarFilter,
+  type VariationMode,
   pathScalarFilter,
   previewScalarFilter,
   referenceScalarFilter,
@@ -21,6 +22,8 @@ import {
   getFilterWhereClause,
   getVariationMode,
   getVariationVariables,
+  getVariationVarDecls,
+  getVariationClause,
 } from './filters.js';
 import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
@@ -204,19 +207,19 @@ const METADATA_QUERY_BODY = `{
 
 const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContentMetadata',
-  'by-key-version': 'GetContentMetadataByVersion',
-  'by-key-locale': 'GetContentMetadataByLocale',
   'by-path': 'GetContentMetadataByPath',
-  'by-path-host': 'GetContentMetadataByPathWithHost',
-  'by-preview': 'GetPreviewContentMetadata',
 };
 
-function getMetadataQuery(shape: FilterShape): string {
+function getMetadataQuery(shape: FilterShape, variationMode: VariationMode = 'none'): string {
   const varDecls = getFilterVarDecls(shape);
+  const variationVars = getVariationVarDecls(variationMode);
+  const allVars = [varDecls, variationVars, '$formsWhere: _ExperienceWhereInput', '$withForms: Boolean!']
+    .filter(Boolean)
+    .join(', ');
   const whereClause = getFilterWhereClause(shape);
-  const variationClause = shape === 'by-preview' ? ', variation: ALL' : '';
+  const variationClause = getVariationClause(variationMode);
   return `
-query ${METADATA_OP_NAMES[shape]}(${varDecls}, $formsWhere: _ExperienceWhereInput, $withForms: Boolean!) {
+query ${METADATA_OP_NAMES[shape]}(${allVars}) {
   _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
 }
 `;
@@ -280,32 +283,23 @@ const formsOnPageFilter = (where: unknown) => ({
 function buildWhereObject(filter: ScalarFilter): Record<string, unknown> {
   const v = filter.variables;
   switch (filter.filterShape) {
-    case 'by-key':
-      return { _metadata: { key: { eq: v.key } } };
-    case 'by-key-version':
-      return { _metadata: { key: { eq: v.key }, version: { eq: v.version } } };
-    case 'by-key-locale':
-      return { _metadata: { key: { eq: v.key }, locale: { eq: v.metadataLocale } } };
-    case 'by-path':
+    case 'by-key': {
+      const meta: Record<string, unknown> = { key: { eq: v.key } };
+      if (v.version) meta.version = { eq: v.version };
+      if (v.metadataLocale) meta.locale = { eq: v.metadataLocale };
+      return { _metadata: meta };
+    }
+    case 'by-path': {
+      const base = v.host ? { base: { eq: v.host } } : {};
       return {
         _or: [
-          { _metadata: { url: { default: { eq: v.path } } } },
-          { _metadata: { url: { default: { eq: v.pathNoSlash } } } },
-          { _metadata: { url: { hierarchical: { eq: v.path } } } },
-          { _metadata: { url: { hierarchical: { eq: v.pathNoSlash } } } },
+          { _metadata: { url: { ...base, default: { eq: v.path } } } },
+          { _metadata: { url: { ...base, default: { eq: v.pathNoSlash } } } },
+          { _metadata: { url: { ...base, hierarchical: { eq: v.path } } } },
+          { _metadata: { url: { ...base, hierarchical: { eq: v.pathNoSlash } } } },
         ],
       };
-    case 'by-path-host':
-      return {
-        _or: [
-          { _metadata: { url: { base: { eq: v.host }, default: { eq: v.path } } } },
-          { _metadata: { url: { base: { eq: v.host }, default: { eq: v.pathNoSlash } } } },
-          { _metadata: { url: { base: { eq: v.host }, hierarchical: { eq: v.path } } } },
-          { _metadata: { url: { base: { eq: v.host }, hierarchical: { eq: v.pathNoSlash } } } },
-        ],
-      };
-    case 'by-preview':
-      return { _metadata: { key: { eq: v.key }, locale: { eq: v.locale }, version: { eq: v.version } } };
+    }
   }
 }
 
@@ -788,12 +782,13 @@ export class GraphClient {
     cache?: boolean,
     slot?: GraphSlot,
     stored?: boolean,
+    variationMode: VariationMode = 'none',
     damMode: DamMode = 'automatic',
   ) {
     // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-    const query = getMetadataQuery(filter.filterShape);
+    const query = getMetadataQuery(filter.filterShape, variationMode);
     const variables = {
       ...filter.variables,
       withForms: mayRenderForms,
@@ -888,6 +883,7 @@ export class GraphClient {
           cacheEnabled,
           activeSlot,
           storedEnabled,
+          varMode,
           damMode,
         );
 
@@ -1093,13 +1089,14 @@ export class GraphClient {
           false,
           activeSlot,
           storedEnabled,
+          'all',
           damMode,
         );
 
       if (!contentTypeName) {
         throw new GraphResponseError(
           `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
-          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape) } },
+          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape, 'all') } },
         );
       }
 
@@ -1273,6 +1270,7 @@ export class GraphClient {
           cacheEnabled,
           activeSlot,
           storedEnabled,
+          'none',
           damMode,
         );
 

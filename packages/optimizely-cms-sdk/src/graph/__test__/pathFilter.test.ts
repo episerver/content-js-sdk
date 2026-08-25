@@ -12,10 +12,10 @@ describe('pathScalarFilter', () => {
     });
   });
 
-  it('should return by-path-host shape when host is provided', () => {
+  it('should return by-path shape when host is provided', () => {
     const filter = pathScalarFilter('/my-article', 'https://example.com');
 
-    expect(filter.filterShape).toBe('by-path-host');
+    expect(filter.filterShape).toBe('by-path');
     expect(filter.variables).toEqual({
       path: '/my-article/',
       pathNoSlash: '/my-article',

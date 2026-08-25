@@ -362,11 +362,7 @@ export type QueryOptions = Partial<QueryContext> & FragmentOptions & {
 
 const SINGLE_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContent',
-  'by-key-version': 'GetContentByVersion',
-  'by-key-locale': 'GetContentByLocale',
   'by-path': 'GetContentByPath',
-  'by-path-host': 'GetContentByPathWithHost',
-  'by-preview': 'GetPreviewContent',
 };
 
 const generateSingleContentQuery = (
@@ -387,7 +383,7 @@ const generateSingleContentQuery = (
   const variationVars = getVariationVarDecls(variationMode);
   const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
   const whereClause = getFilterWhereClause(filterShape);
-  const variationClause = filterShape === 'by-preview' ? ', variation: ALL' : getVariationClause(variationMode);
+  const variationClause = getVariationClause(variationMode);
 
   const query = `
 ${fragments.join('\n')}
@@ -430,11 +426,7 @@ export const createSingleContentQuery = withQueryCaching(
 
 const MULTIPLE_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'ListContent',
-  'by-key-version': 'ListContentByVersion',
-  'by-key-locale': 'ListContentByLocale',
   'by-path': 'GetContentByPath',
-  'by-path-host': 'GetContentByPathWithHost',
-  'by-preview': 'ListPreviewContent',
 };
 
 const generateMultipleContentQuery = (
