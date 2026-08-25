@@ -25,6 +25,14 @@ import {
 } from '../telemetry/metrics.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
+  type FilterShape,
+  type VariationMode,
+  getFilterVarDecls,
+  getFilterWhereClause,
+  getVariationVarDecls,
+  getVariationClause,
+} from './filters.js';
+import {
   isExperienceComponent,
   FragmentOptions,
   convertProperty,
@@ -308,11 +316,22 @@ export const createFragment = (
 
 // QUERY BUILDERS
 
+const SINGLE_OP_NAMES: Record<FilterShape, string> = {
+  'by-key': 'GetContent',
+  'by-key-version': 'GetContentByVersion',
+  'by-key-locale': 'GetContentByLocale',
+  'by-path': 'GetContentByPath',
+  'by-path-host': 'GetContentByPathWithHost',
+  'by-preview': 'GetPreviewContent',
+};
+
 const generateSingleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  filterShape: FilterShape = 'by-key',
+  variationMode: VariationMode = 'none',
 ): string => {
   const span = startSingleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -326,10 +345,16 @@ const generateSingleContentQuery = (
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
+  const filterVars = getFilterVarDecls(filterShape);
+  const variationVars = getVariationVarDecls(variationMode);
+  const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
+  const whereClause = getFilterWhereClause(filterShape);
+  const variationClause = filterShape === 'by-preview' ? ', variation: ALL' : getVariationClause(variationMode);
+
   const query = `
 ${fragments.join('\n')}
-query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
+query ${SINGLE_OP_NAMES[filterShape]}(${allVars}) {
+  _Content(${whereClause}${variationClause}) {
     item {
       __typename
       ${fragmentName}
@@ -367,11 +392,22 @@ export const createSingleContentQuery = withQueryCaching(
   generateSingleContentQuery,
 );
 
+const MULTIPLE_OP_NAMES: Record<FilterShape, string> = {
+  'by-key': 'ListContent',
+  'by-key-version': 'ListContentByVersion',
+  'by-key-locale': 'ListContentByLocale',
+  'by-path': 'GetContentByPath',
+  'by-path-host': 'GetContentByPathWithHost',
+  'by-preview': 'ListPreviewContent',
+};
+
 const generateMultipleContentQuery = (
   contentType: string,
   damEnabled: boolean = false,
   maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: boolean = DEFAULT_EXPAND_CONTRACTS,
+  filterShape: FilterShape = 'by-path',
+  variationMode: VariationMode = 'none',
 ): string => {
   const span = startMultipleQuerySpan(contentType, damEnabled);
   const startTime = span ? performance.now() : 0;
@@ -385,10 +421,16 @@ const generateMultipleContentQuery = (
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
+  const filterVars = getFilterVarDecls(filterShape);
+  const variationVars = getVariationVarDecls(variationMode);
+  const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
+  const whereClause = getFilterWhereClause(filterShape);
+  const variationClause = getVariationClause(variationMode);
+
   const query = `
 ${fragments.join('\n')}
-query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
+query ${MULTIPLE_OP_NAMES[filterShape]}(${allVars}) {
+  _Content(${whereClause}${variationClause}) {
     items {
       __typename
       ${fragmentName}
