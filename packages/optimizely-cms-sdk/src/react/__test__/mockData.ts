@@ -183,3 +183,20 @@ export const markedTextContent = {
     },
   ] as Node[],
 };
+
+// Element node with CMS "decoration" attribute (GitHub issue #495)
+export const styledSpanContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'span',
+          decoration: 'underline',
+          children: [{ text: 'Hello world' }],
+        },
+      ],
+    },
+  ] as Node[],
+};
