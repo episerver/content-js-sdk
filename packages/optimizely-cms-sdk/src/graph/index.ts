@@ -21,6 +21,7 @@ import {
 import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
+import { contentTypeCanHoldForms } from '../util/queryUtils.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -578,14 +579,20 @@ export class GraphClient {
       : data.damAssetType !== null;
 
     // Form fragments are only worth their size on pages that contain a form.
-    // The probe asks `_Experience`, so it reports nothing for a form container
-    // requested on its own — previewing the shared block from the CMS. Its own
-    // type gives that away, and form elements only ever live under a container,
-    // so nothing else needs covering.
+    // The probe asks `_Experience`, so it covers a form placed in a
+    // composition, and nothing else. Two cases fall outside it:
+    //  - the form container requested on its own, previewing the shared block
+    //    from the CMS, which its own type gives away;
+    //  - a form dropped into a content area of an ordinary page, which Graph
+    //    cannot be asked about and the content model answers instead.
+    // Form elements only ever live under a container, so nothing else needs
+    // covering.
     const needsForms =
       mayRenderForms &&
       ((data.formsOnPage?.total ?? 0) > 0 ||
-        (typeof contentTypeName === 'string' && isFormContentType(contentTypeName)));
+        (typeof contentTypeName === 'string' &&
+          (isFormContentType(contentTypeName) ||
+            contentTypeCanHoldForms(contentTypeName))));
 
     if (!contentTypeName) {
       return { contentTypeName: null, damEnabled, formsEnabled: needsForms };
@@ -865,6 +872,8 @@ export class GraphClient {
         expandContracts: this.expandContracts,
         formsEnabled,
       });
+
+      console.log('query', query);
 
       const response = await this.request(
         query,

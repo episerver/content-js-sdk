@@ -45,7 +45,7 @@ The FormContainer is the root component that wraps all form content. It uses `Fo
 ```tsx
 // src/components/forms/FormContainer.tsx
 import { OptiFormsContainerContentType } from '@optimizely/cms-sdk';
-import { OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
+import { getFormNodes, OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
 import {
   FormSubmissionProvider,
   FormStep,
@@ -57,8 +57,8 @@ import FormAlerts from './FormAlerts';
 import GridRow from './GridRow';
 import GridColumn from './GridColumn';
 
-export default function FormContainer({ content }: { content: OptiFormsContainerContentType }) {
-  const nodes = content.nodes ?? [];
+export default async function FormContainer({ content }: { content: OptiFormsContainerContentType }) {
+  const nodes = await getFormNodes(content);
   const stepNodes = nodes.filter(node => !isFormButtonNode(node));
 
   return (
@@ -381,7 +381,7 @@ export default function FormInput({ content }) {
 
 A form container is a shared block, so the CMS can preview it outside any page. That works the same way as a page: the SDK fetches the section's own composition, and its steps arrive on `content.nodes` exactly as they do when the form sits on a page. No separate code path is needed in your container component.
 
-If a form renders with its title but no fields, the container's nodes were not fetched. That happens when the container is not a top-level section of the composition — see the note under [Available Content Types](#available-content-types).
+If a form renders with its title but no fields, the container's nodes were not fetched. See [Reading a form's steps](#reading-a-forms-steps).
 
 ---
 
@@ -415,9 +415,43 @@ import { OptiFormsContainerDataContentType } from '@optimizely/cms-sdk';
 
 These types add a substantial amount to a query — on a site with fifteen components they more than double an experience query — so they are only requested for pages that actually contain a form. The content metadata request the SDK already sends for each page also asks whether that page's composition holds a form container, which costs no extra round trip.
 
-This relies on a form container being a **top-level section** of the composition, which is where the CMS puts one: a container is a section, and sections do not nest. If a future CMS release allows a section inside a section, a form nested that way would not be detected and would render with no fields. The Alloy template logs a development warning when a container renders with no nodes, which is what that would look like.
+A form placed in a **content area** rather than a composition is not visible to that probe, because a content area is an ordinary reference and `_ContentWhereInput` has no field to filter on it. The SDK falls back to the content model: if the page's type permits a form container in one of its content properties, the fragments are included. That errs towards including them, so a page type that allows a form pays for the fragments even when the particular page has none.
 
-Nothing about this is configurable, and nothing in your components needs to account for it.
+For that to work the content area has to admit the container. It is declared `_component` with `sectionEnabled`, and base-type expansion matches on the declared base type, so `_section` on its own reaches nothing:
+
+```ts
+extras: {
+  type: 'array',
+  items: {
+    type: 'content',
+    // Any of these work. `['_section']` alone does not.
+    allowedTypes: ['_component'],
+  },
+},
+```
+
+Detection relies on a form container being a **top-level section** of a composition, or a direct entry in a content area. A container nested deeper than that would render with no fields; the templates log a development warning when that happens.
+
+This applies to form containers only. `composition` comes from Graph's `_ISection` interface, and an application component declaring `sectionEnabled` is not necessarily given that interface — asking one for `composition` fails the whole query. A section-enabled component of your own placed in a content area still renders only its own fields.
+
+Nothing about this is configurable. The one thing your components need is `getFormNodes`, described below.
+
+### Reading a form's steps
+
+Graph resolves a section's `composition` only when that section is asked for directly. Reached through a content area, the container arrives with `composition` empty, so reading `content.nodes` yields nothing and the form renders as a bare title.
+
+`getFormNodes` covers both cases:
+
+```tsx
+import { getFormNodes } from '@optimizely/cms-sdk/react/server';
+
+export default async function FormContainer({ content }) {
+  const nodes = await getFormNodes(content);
+  // ...
+}
+```
+
+It returns `content.nodes` unchanged when the page query already brought them — a form in an experience composition, or previewed on its own — and fetches the container by key when it did not. Only the content-area case costs an extra Graph request. It is exported from `react/server` rather than `forms/react`, since it reaches Graph and must not end up in a client bundle.
 
 ### Using Forms in Content Models
 
@@ -557,7 +591,10 @@ Handlers you leave out render a development-only placeholder, so you can add fie
 
 ### The form renders its title but no fields
 
-The container's nodes were not fetched. Its fields are only requested when the SDK can tell the page holds a form, which it does by looking for a form container among the composition's top-level sections. A container nested deeper than that is not found. See [How form fragments are fetched](#how-form-fragments-are-fetched).
+The container's nodes were not fetched. Two things to check:
+
+1. The container component reads its steps with `await getFormNodes(content)`, not `content.nodes`. Graph returns an empty `composition` for a form in a content area, and only `getFormNodes` fetches it. See [Reading a form's steps](#reading-a-forms-steps).
+2. The container is a top-level section of the composition, or a direct entry in a content area. A container nested deeper is not detected, so the form fragments are left out of the query. See [How form fragments are fetched](#how-form-fragments-are-fetched).
 
 ### Form won't submit
 

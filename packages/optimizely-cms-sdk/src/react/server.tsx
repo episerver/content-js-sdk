@@ -34,6 +34,9 @@ export {
 export { ReactContextAdapter } from '../context/reactContextAdapter.js';
 import { getPreviewUtils } from './previewUtils.js';
 export { getPreviewUtils };
+// Exported here (not from `forms/react`) to avoid pulling Graph, and thus
+// the client bundle, into client components.
+export { getFormNodes } from './forms/getFormNodes.js';
 export type { ContextAdapter, ContextData } from '../context/baseContext.js';
 
 /** Components registered by the application, through `initReactComponentRegistry`. */

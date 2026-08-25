@@ -37,6 +37,19 @@ const Experience = contentType({
   properties: {},
 });
 
+/** An ordinary page with a content area — no composition of its own. */
+const Page = contentType({
+  key: 'HostPage',
+  displayName: 'Host Page',
+  baseType: '_page',
+  properties: {
+    extras: {
+      type: 'array',
+      items: { type: 'content', allowedTypes: ['_component', '_section'] },
+    },
+  },
+});
+
 const fragmentsFor = (key: string): string[] =>
   createFragment(key, new Set(), '', createQueryContext({ maxFragmentThreshold: 100 }))
     .fragments;
@@ -45,7 +58,7 @@ const sectionFragment = (fragments: string[]) =>
   fragments.find(f => f.startsWith('fragment PlainSection on')) ?? '';
 
 beforeEach(() => {
-  initContentTypeRegistry([Experience, Section, Element]);
+  initContentTypeRegistry([Experience, Page, Section, Element]);
   refreshCache();
 });
 
@@ -81,6 +94,18 @@ describe('a section reached through an experience', () => {
     const fragments = fragmentsFor('HostExperience');
 
     expect(fragments.some(f => f.startsWith('fragment _IExperience'))).toBe(true);
+  });
+});
+
+describe('a section-enabled component reached through a content area', () => {
+  // Declaring `sectionEnabled` does not make Graph give the type `_ISection`,
+  // and asking a type without it for `composition` fails the whole query with
+  // `Cannot query field "composition"`. Only the forms container is known to
+  // have the field, and it is handled in formsOnPage.test.ts.
+  test('is not asked for a composition', () => {
+    const fragments = fragmentsFor('HostPage');
+
+    expect(sectionFragment(fragments)).not.toContain('composition');
   });
 });
 

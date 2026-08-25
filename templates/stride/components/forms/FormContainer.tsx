@@ -12,12 +12,10 @@ import {
   isFormButtonNode,
   partitionFormNodes,
 } from '@optimizely/cms-sdk/forms/react';
-import FormTitle from './FormTitle';
-import FormDescription from './FormDescription';
+import { cn } from '../../lib/utils';
 import FormAlerts from './FormAlerts';
 import FormStepTracker from './FormStepTracker';
-import GridRow from './GridRow';
-import GridColumn from './GridColumn';
+import { GridColumn, GridRow } from './Grid';
 
 type FormContainerProps = {
   content: OptiFormsContainerContentType;
@@ -38,9 +36,10 @@ function FormActions({ nodes }: { nodes: Node[] }) {
 
   return (
     <div
-      className={`mt-6 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-5 ${
-        nodes.some(goesBack) ? 'justify-between' : 'justify-end'
-      }`}
+      className={cn(
+        'mt-6 flex flex-wrap items-center gap-3 border-t border-foreground/10 pt-5',
+        nodes.some(goesBack) ? 'justify-between' : 'justify-end',
+      )}
     >
       <OptimizelyGridSection nodes={nodes} row={GridRow} column={GridColumn} />
     </div>
@@ -66,11 +65,20 @@ export default async function FormContainer({ content }: FormContainerProps) {
       {/* Forms read better narrow. Long lines make a field look like a text block. */}
       <div id='form-alert' className='max-w-2xl space-y-5'>
         <div className='space-y-2'>
-          <FormTitle title={content.Title ?? null} previewAttributes={pa} />
-          <FormDescription
-            description={content.Description ?? null}
-            previewAttributes={pa}
-          />
+          {/* `h2`, not `h1` — the form is a block on a page that already has a heading. */}
+          {content.Title && (
+            <h2
+              {...pa('Title')}
+              className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'
+            >
+              {content.Title}
+            </h2>
+          )}
+          {content.Description && (
+            <p {...pa('Description')} className='text-base leading-relaxed text-foreground2'>
+              {content.Description}
+            </p>
+          )}
         </div>
 
         <FormAlerts
@@ -84,7 +92,7 @@ export default async function FormContainer({ content }: FormContainerProps) {
           steps={stepNodes}
           rules={content.DependencyRules}
         >
-          <div className='space-y-6 rounded-lg border border-gray-200 bg-white p-6 sm:p-8'>
+          <div className='card space-y-6 p-6 sm:p-8'>
             <FormStepTracker steps={stepNodes.length} />
 
             {stepNodes.map((node, index) => {

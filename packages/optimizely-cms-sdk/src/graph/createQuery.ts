@@ -68,7 +68,12 @@ const buildFragmentsForKeys = (
 ): FragmentResult => {
   const results = keys
     .filter(key => !visited.has(key))
-    .map(key => createFragment(key, visited, '', ctx, { includeBaseFragments: true }));
+    .map(key =>
+      createFragment(key, visited, '', ctx, {
+        includeBaseFragments: true,
+        insideComposition: true,
+      }),
+    );
 
   return {
     fragments: results.flatMap(r => r.fragments),
@@ -106,9 +111,11 @@ const createExperienceFragments = (
 /**
  * True for content types that hold a composition of their own.
  *
- * In Graph every `_Section` exposes a `composition` field, and a section-enabled
- * component is indexed as one — the Optimizely Forms container declares
- * `_component` with `sectionEnabled`, yet reports `_Section` among its types.
+ * `composition` comes from Graph's `_ISection` interface. Declaring
+ * `sectionEnabled` locally is not enough to be given it — Optimizely Forms'
+ * container implements `_ISection`, while an application component with the
+ * same declaration may not — so this is only a reliable answer for a type the
+ * caller already knows Graph treats as a section.
  */
 const holdsComposition = (contentType: RegistryEntry): boolean => {
   if (!('baseType' in contentType)) return false;
@@ -225,7 +232,7 @@ export const createFragment = (
   validateContentTypeName(contentTypeName, visited);
 
   const { damEnabled, maxFragmentThreshold } = ctx;
-  const { includeBaseFragments = true } = options;
+  const { includeBaseFragments = true, insideComposition = false } = options;
 
   const fragmentName = `${stripSourcePrefix(contentTypeName)}${suffix}`;
 
@@ -281,10 +288,19 @@ export const createFragment = (
     const isExperience =
       'baseType' in contentType && contentType.baseType === '_experience';
 
-    // A section only fetches its own composition when queried directly;
-    // nested in an experience, it already arrives via that composition tree.
+    // A section fetches its own composition unless it sits in one already, in
+    // which case its children arrive through that tree. Reached as the query
+    // root or through a content property, there is no such tree, and without
+    // this the section renders as an empty shell.
+    //
+    // Off the root, this is limited to form containers. An application type
+    // declaring `sectionEnabled` need not implement Graph's `_ISection`, and
+    // asking such a type for `composition` fails the whole query; only the
+    // forms container is known to have the field. Lifting the restriction
+    // needs the schema, which the query builder does not have.
+    const canBeAsked = isRootCall || isFormContentType(contentTypeName);
     const isStandaloneSection =
-      isRootCall && !isExperience && holdsComposition(contentType);
+      canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 
     if (isExperience || isStandaloneSection) {
       // `_IExperience` is an interface a section does not implement, so the

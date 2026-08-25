@@ -39,7 +39,7 @@ export const StandardPage = contentType({
       type: 'array',
       items: {
         type: 'content',
-        allowedTypes: ['_component', '_experience'],
+        allowedTypes: ['_component', '_experience', '_section'],
       },
     },
   },
