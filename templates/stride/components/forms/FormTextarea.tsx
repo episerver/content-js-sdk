@@ -38,6 +38,7 @@ export default function FormTextarea({ content }: FormTextareaProps) {
           rows={4}
           placeholder={content.Placeholder ?? ''}
           title={content.Tooltip ?? ''}
+          {...pa('Placeholder')}
           autoComplete={content.AutoComplete ?? 'off'}
           className={`${controlClass(showErrors)} resize-y`}
         />
@@ -51,7 +52,9 @@ export default function FormTextarea({ content }: FormTextareaProps) {
           </div>
         )}
         {!showErrors && content.Tooltip && (
-          <p className={helpTextClass}>{content.Tooltip}</p>
+          <p className={helpTextClass} {...pa('Tooltip')}>
+            {content.Tooltip}
+          </p>
         )}
       </div>
     </FormElement>

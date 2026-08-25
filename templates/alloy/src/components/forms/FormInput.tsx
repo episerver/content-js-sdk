@@ -59,7 +59,9 @@ export default function FormInput({ content }: FormInputProps) {
           </div>
         )}
         {!showErrors && content.Tooltip && (
-          <p className={helpTextClass}>{content.Tooltip}</p>
+          <p className={helpTextClass} {...pa('Tooltip')}>
+            {content.Tooltip}
+          </p>
         )}
       </div>
     </FormElement>

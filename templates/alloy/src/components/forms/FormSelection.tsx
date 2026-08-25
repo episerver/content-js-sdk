@@ -82,7 +82,9 @@ export default function FormSelection({ content }: FormSelectionProps) {
           </div>
         )}
         {!showErrors && content.Tooltip && (
-          <p className={helpTextClass}>{content.Tooltip}</p>
+          <p className={helpTextClass} {...pa('Tooltip')}>
+            {content.Tooltip}
+          </p>
         )}
       </fieldset>
     </FormElement>
