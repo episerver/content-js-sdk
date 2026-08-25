@@ -33,13 +33,7 @@ export type GraphVariationInput =
 
 // --- Scalar filter types for query caching ---
 
-export type FilterShape =
-  | 'by-key'
-  | 'by-key-version'
-  | 'by-key-locale'
-  | 'by-path'
-  | 'by-path-host'
-  | 'by-preview';
+export type FilterShape = 'by-key' | 'by-path';
 
 export type ScalarFilter = {
   filterShape: FilterShape;
@@ -51,7 +45,7 @@ export type VariationMode = 'none' | 'all' | { count: number };
 export function pathScalarFilter(path: string, host?: string): ScalarFilter {
   const { pathWithTrailingSlash, pathWithoutTrailingSlash } = normalizePath(path);
   return {
-    filterShape: host ? 'by-path-host' : 'by-path',
+    filterShape: 'by-path',
     variables: {
       path: pathWithTrailingSlash,
       pathNoSlash: pathWithoutTrailingSlash,
@@ -66,11 +60,11 @@ export function previewScalarFilter(params: {
   loc: string;
 }): ScalarFilter {
   return {
-    filterShape: 'by-preview',
+    filterShape: 'by-key',
     variables: {
       key: params.key,
       version: params.ver,
-      locale: params.loc,
+      metadataLocale: params.loc,
     },
   };
 }
@@ -80,21 +74,13 @@ export function referenceScalarFilter(reference: {
   locale?: string;
   version?: string;
 }): ScalarFilter {
-  if (reference.version) {
-    return {
-      filterShape: 'by-key-version',
-      variables: { key: reference.key, version: reference.version },
-    };
-  }
-  if (reference.locale) {
-    return {
-      filterShape: 'by-key-locale',
-      variables: { key: reference.key, metadataLocale: reference.locale },
-    };
-  }
   return {
     filterShape: 'by-key',
-    variables: { key: reference.key },
+    variables: {
+      key: reference.key,
+      ...(reference.version ? { version: reference.version } : {}),
+      ...(reference.locale ? { metadataLocale: reference.locale } : {}),
+    },
   };
 }
 
@@ -115,34 +101,21 @@ export function getVariationVariables(
   return vars;
 }
 
-const PATH_WHERE = `where: { _or: [{ _metadata: { url: { default: { eq: $path } } } }, { _metadata: { url: { default: { eq: $pathNoSlash } } } }, { _metadata: { url: { hierarchical: { eq: $path } } } }, { _metadata: { url: { hierarchical: { eq: $pathNoSlash } } } }] }`;
-const PATH_HOST_WHERE = `where: { _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }`;
+const PATH_WHERE = `where: { _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }`;
 
 export function getFilterVarDecls(shape: FilterShape): string {
   switch (shape) {
-    case 'by-key': return '$key: String';
-    case 'by-key-version': return '$key: String, $version: String';
-    case 'by-key-locale': return '$key: String, $metadataLocale: String';
-    case 'by-path': return '$path: String, $pathNoSlash: String';
-    case 'by-path-host': return '$host: String, $path: String, $pathNoSlash: String';
-    case 'by-preview': return '$key: String, $locale: String, $version: String';
+    case 'by-key': return '$key: String, $version: String, $metadataLocale: String';
+    case 'by-path': return '$host: String, $path: String, $pathNoSlash: String';
   }
 }
 
 export function getFilterWhereClause(shape: FilterShape): string {
   switch (shape) {
     case 'by-key':
-      return 'where: { _metadata: { key: { eq: $key } } }';
-    case 'by-key-version':
-      return 'where: { _metadata: { key: { eq: $key }, version: { eq: $version } } }';
-    case 'by-key-locale':
-      return 'where: { _metadata: { key: { eq: $key }, locale: { eq: $metadataLocale } } }';
+      return 'where: { _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }';
     case 'by-path':
       return PATH_WHERE;
-    case 'by-path-host':
-      return PATH_HOST_WHERE;
-    case 'by-preview':
-      return 'where: { _metadata: { key: { eq: $key }, locale: { eq: $locale }, version: { eq: $version } } }';
   }
 }
 

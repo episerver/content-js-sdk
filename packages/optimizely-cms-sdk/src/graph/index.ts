@@ -14,6 +14,7 @@ import {
   GraphVariationInput,
   type FilterShape,
   type ScalarFilter,
+  type VariationMode,
   pathScalarFilter,
   previewScalarFilter,
   referenceScalarFilter,
@@ -21,6 +22,8 @@ import {
   getFilterWhereClause,
   getVariationMode,
   getVariationVariables,
+  getVariationVarDecls,
+  getVariationClause,
 } from './filters.js';
 import { setContext } from '../context/config.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
@@ -157,19 +160,17 @@ const METADATA_QUERY_BODY = `{
 
 const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContentMetadata',
-  'by-key-version': 'GetContentMetadataByVersion',
-  'by-key-locale': 'GetContentMetadataByLocale',
   'by-path': 'GetContentMetadataByPath',
-  'by-path-host': 'GetContentMetadataByPathWithHost',
-  'by-preview': 'GetPreviewContentMetadata',
 };
 
-function getMetadataQuery(shape: FilterShape): string {
+function getMetadataQuery(shape: FilterShape, variationMode: VariationMode = 'none'): string {
   const varDecls = getFilterVarDecls(shape);
+  const variationVars = getVariationVarDecls(variationMode);
+  const allVars = [varDecls, variationVars].filter(Boolean).join(', ');
   const whereClause = getFilterWhereClause(shape);
-  const variationClause = shape === 'by-preview' ? ', variation: ALL' : '';
+  const variationClause = getVariationClause(variationMode);
   return `
-query ${METADATA_OP_NAMES[shape]}(${varDecls}) {
+query ${METADATA_OP_NAMES[shape]}(${allVars}) {
   _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
 }
 `;
@@ -475,8 +476,9 @@ export class GraphClient {
     cache?: boolean,
     slot?: GraphSlot,
     stored?: boolean,
+    variationMode: VariationMode = 'none',
   ) {
-    const query = getMetadataQuery(filter.filterShape);
+    const query = getMetadataQuery(filter.filterShape, variationMode);
     const variables = filter.variables;
 
     const data = await this.request(
@@ -734,12 +736,13 @@ export class GraphClient {
         false,
         activeSlot,
         storedEnabled,
+        'all',
       );
 
       if (!contentTypeName) {
         throw new GraphResponseError(
           `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
-          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape) } },
+          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape, 'all') } },
         );
       }
 

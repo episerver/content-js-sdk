@@ -26,7 +26,7 @@ describe('GraphReference type and filters', () => {
         locale: 'en',
       });
       expect(result).toEqual({
-        filterShape: 'by-key-locale',
+        filterShape: 'by-key',
         variables: {
           key: '880777d5a2824399b07e93e3ca70668e',
           metadataLocale: 'en',
@@ -40,7 +40,7 @@ describe('GraphReference type and filters', () => {
         version: '123',
       });
       expect(result).toEqual({
-        filterShape: 'by-key-version',
+        filterShape: 'by-key',
         variables: {
           key: '880777d5a2824399b07e93e3ca70668e',
           version: '123',
@@ -48,14 +48,18 @@ describe('GraphReference type and filters', () => {
       });
     });
 
-    test('version takes priority over locale', () => {
+    test('includes both version and locale when both are provided', () => {
       const result = referenceScalarFilter({
         key: '880777d5a2824399b07e93e3ca70668e',
         locale: 'en',
         version: '123',
       });
-      expect(result.filterShape).toBe('by-key-version');
-      expect(result.variables).not.toHaveProperty('metadataLocale');
+      expect(result.filterShape).toBe('by-key');
+      expect(result.variables).toEqual({
+        key: '880777d5a2824399b07e93e3ca70668e',
+        version: '123',
+        metadataLocale: 'en',
+      });
     });
   });
 });
@@ -299,7 +303,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
     );
   });
 
-  test('version has priority over locale', async () => {
+  test('includes both version and locale when both provided', async () => {
     mockRequest
       .mockResolvedValueOnce({
         _Content: {
@@ -326,22 +330,19 @@ describe('GraphClient.getContent() with GraphReference', () => {
       version: '123',
     });
 
-    // Should only have version in the filter, not locale
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
       {
         key: '880777d5a2824399b07e93e3ca70668e',
         version: '123',
+        metadataLocale: 'en',
       },
       undefined,
       true,
       undefined,
       true,
     );
-
-    const variables = mockRequest.mock.calls[0][1];
-    expect(variables).not.toHaveProperty('metadataLocale');
   });
 
   test('supports string format (graph://)', async () => {
@@ -369,13 +370,13 @@ describe('GraphClient.getContent() with GraphReference', () => {
       'graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123',
     );
 
-    // Should parse the string and use version (not locale due to priority)
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
       {
         key: '880777d5a2824399b07e93e3ca70668e',
         version: '123',
+        metadataLocale: 'en',
       },
       undefined,
       true,
