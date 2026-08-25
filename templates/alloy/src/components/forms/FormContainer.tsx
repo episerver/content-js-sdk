@@ -1,9 +1,5 @@
 import { OptiFormsContainerContentType } from '@optimizely/cms-sdk';
-import {
-  getFormNodes,
-  getPreviewUtils,
-  OptimizelyGridSection,
-} from '@optimizely/cms-sdk/react/server';
+import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
 import {
   FormSubmissionProvider,
   FormStep,
@@ -47,11 +43,9 @@ function FormActions({ nodes }: { nodes: Node[] }) {
   );
 }
 
-export default async function FormContainer({ content }: FormContainerProps) {
+export default function FormContainer({ content }: FormContainerProps) {
   const { pa } = getPreviewUtils(content);
-  // Graph leaves `composition` empty for a form placed in a content area, so
-  // the steps are fetched separately when the page query didn't bring them.
-  const nodes = (await getFormNodes<Node>(content)) ?? [];
+  const nodes = (content.nodes ?? []) as Node[];
   const buttonNodes = nodes.filter(isFormButtonNode);
   const stepNodes = nodes.filter(node => !isFormButtonNode(node));
 

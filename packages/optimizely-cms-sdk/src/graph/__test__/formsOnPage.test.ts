@@ -166,9 +166,9 @@ describe('a form in a content area rather than a composition', () => {
   });
 
   // Graph resolves a section's composition only when asked for that section, so
-  // the field comes back empty here and `getFormNodes` fetches it separately.
-  // The field still has to be in the query: it is how an empty one is told from
-  // a form that simply has no steps.
+  // the field comes back empty here and the client fetches it separately. The
+  // field still has to be in the query: it is how an empty one is told from a
+  // form that simply has no steps.
   test('asks the container for its own composition', async () => {
     stubPage('Standard');
 

@@ -394,6 +394,37 @@ function liftSectionNodes(item: any): any {
   return { ...item, nodes: composition.nodes };
 }
 
+/** True for a form container anywhere in a response. */
+const isFormContainer = (value: any): boolean =>
+  value?.__typename === FORM_CONTAINER_TYPE ||
+  value?._metadata?.types?.includes?.(FORM_CONTAINER_TYPE) === true;
+
+/**
+ * Collects the form containers in a response whose steps did not arrive.
+ *
+ * Graph resolves a section's `composition` only when that section is the
+ * content being asked for. Reached through a content area the field comes back
+ * empty, so `liftSectionNodes` finds nothing to lift and the container is left
+ * with no `nodes` at all — which is what tells the two cases apart. A form that
+ * genuinely has no steps still gets `nodes: []` and is not collected here.
+ */
+function findUnresolvedForms(value: any, found: any[] = [], seen = new Set()): any[] {
+  if (typeof value !== 'object' || value === null || seen.has(value)) return found;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    value.forEach(entry => findUnresolvedForms(entry, found, seen));
+    return found;
+  }
+
+  if (isFormContainer(value) && !Array.isArray(value.nodes) && value._metadata?.key) {
+    found.push(value);
+  }
+
+  Object.values(value).forEach(entry => findUnresolvedForms(entry, found, seen));
+  return found;
+}
+
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
@@ -432,6 +463,13 @@ export class GraphClient {
   userAgent: string;
   typeFilter?: (contentTypeKey: string) => boolean;
   dam: DamMode;
+
+  /**
+   * Form containers currently being resolved, to stop a container that comes
+   * back still unresolved from being fetched forever. Filling in a form calls
+   * `getContent`, which resolves forms in its own response in turn.
+   */
+  private resolvingForms = new Set<string>();
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
@@ -537,6 +575,47 @@ export class GraphClient {
         return json.data;
       },
     );
+  }
+
+  /**
+   * Fills in the steps of any form the response left unresolved.
+   *
+   * A form reached through a content area arrives without them, for the reason
+   * given on {@linkcode findUnresolvedForms}, and the only way to get them is to
+   * ask for that container on its own. Costs one extra fetch per such form, and
+   * nothing at all for a form in a composition or one previewed by itself.
+   *
+   * Mutates in place. Safe because `removeTypePrefix` has already rebuilt every
+   * object, so nothing here is shared with a cached response.
+   */
+  private async resolveFormNodes<T>(item: T, previewToken?: string): Promise<T> {
+    const unresolved = findUnresolvedForms(item).filter(
+      form => !this.resolvingForms.has(form._metadata.key),
+    );
+    if (unresolved.length === 0) return item;
+
+    await Promise.all(
+      unresolved.map(async form => {
+        const { key, version, locale } = form._metadata;
+        this.resolvingForms.add(key);
+
+        try {
+          // The version pins the draft being previewed. Without it Graph answers
+          // with the published container, which is the wrong content behind a
+          // preview token.
+          const container = (await this.getContent(
+            { key, ...(version ? { version } : locale ? { locale } : {}) },
+            previewToken ? { previewToken } : undefined,
+          )) as { nodes?: unknown[] } | null;
+
+          form.nodes = container?.nodes ?? [];
+        } finally {
+          this.resolvingForms.delete(key);
+        }
+      }),
+    );
+
+    return item;
   }
 
   /**
@@ -669,8 +748,10 @@ export class GraphClient {
           activeSlot,
         )) as ItemsResponse<T>;
 
-        return response?._Content?.items.map((item: unknown) =>
-          liftSectionNodes(removeTypePrefix(item)),
+        return Promise.all(
+          response?._Content?.items.map((item: unknown) =>
+            this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item))),
+          ) ?? [],
         );
       } catch (error) {
         // If content type is not registered, return empty array instead of throwing
@@ -882,7 +963,10 @@ export class GraphClient {
       );
 
       return decorateWithContext(
-        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+        await this.resolveFormNodes(
+          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+          params.preview_token,
+        ),
         params,
       );
     });
@@ -1044,7 +1128,10 @@ export class GraphClient {
           activeSlot,
         );
 
-        return liftSectionNodes(removeTypePrefix(response?._Content?.item));
+        return this.resolveFormNodes(
+          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+          previewToken,
+        );
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {
           return null;

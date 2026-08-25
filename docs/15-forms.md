@@ -54,7 +54,7 @@ validation and submission:
 ```tsx
 // src/components/forms/FormContainer.tsx
 import { OptiFormsContainerContentType } from '@optimizely/cms-sdk';
-import { getFormNodes, OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
+import { OptimizelyGridSection } from '@optimizely/cms-sdk/react/server';
 import {
   FormSubmissionProvider,
   FormStep,
@@ -66,12 +66,12 @@ import FormAlerts from './FormAlerts';
 import GridRow from './GridRow';
 import GridColumn from './GridColumn';
 
-export default async function FormContainer({
+export default function FormContainer({
   content,
 }: {
   content: OptiFormsContainerContentType;
 }) {
-  const nodes = await getFormNodes(content);
+  const nodes = content.nodes ?? [];
   const stepNodes = nodes.filter(node => !isFormButtonNode(node));
 
   return (
@@ -244,7 +244,7 @@ Form Container          the shared block
             └── Textbox / Selection / Submit button / ...
 ```
 
-This is the shape `FormStep`, `partitionFormNodes` and `getFormNodes` work with, and it is
+This is the shape `FormStep` and `partitionFormNodes` work with, and it is
 why a single-step form still has a step in it. A container with no step, or fields placed
 outside one, renders as a title with no fields.
 
@@ -463,7 +463,7 @@ arrive on `content.nodes` exactly as they do when the form sits on a page. No se
 code path is needed in your container component.
 
 If a form renders with its title but no fields, the container's nodes were not fetched.
-See [Reading a form's steps](#reading-a-forms-steps).
+See [How form fragments are fetched](#how-form-fragments-are-fetched).
 
 ---
 
@@ -514,29 +514,6 @@ extras: {
 A container has to be a top-level section of a composition, or a direct entry in a content
 area. Nested deeper it is not detected and renders with no fields; the templates log a
 development warning when that happens.
-
-### Reading a form's steps
-
-Graph resolves a section's `composition` only when that section is asked for directly.
-Reached through a content area, the container arrives with `composition` empty, so reading
-`content.nodes` yields nothing and the form renders as a bare title.
-
-`getFormNodes` covers both cases:
-
-```tsx
-import { getFormNodes } from '@optimizely/cms-sdk/react/server';
-
-export default async function FormContainer({ content }) {
-  const nodes = await getFormNodes(content);
-  // ...
-}
-```
-
-It returns `content.nodes` unchanged when the page query already brought them — a form in
-an experience composition, or previewed on its own — and fetches the container by key when
-it did not. Only the content-area case costs an extra Graph request. It is exported from
-`react/server` rather than `forms/react`, since it reaches Graph and must not end up in a
-client bundle.
 
 ### Using Forms in Content Models
 
@@ -698,7 +675,7 @@ as you need them. The available keys are `container`, `textbox`, `textarea`, `nu
 
 | Symptom                             | Likely cause                                                                                                                                                                                              |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Title renders, no fields**        | The container reads `content.nodes` instead of `await getFormNodes(content)`, or it is nested deeper than a top-level section / content area entry. See [Reading a form's steps](#reading-a-forms-steps). |
+| **Title renders, no fields** | The container is nested deeper than a top-level section or a direct content area entry, so it is not detected. See [How form fragments are fetched](#how-form-fragments-are-fetched). |
 | **Nothing renders at all**          | A component is missing from `initForms`, or a field component is missing `'use client'`. Check the browser console for resolution errors.                                                                 |
 | **Validation never fires**          | `FormWrapper` is not wrapping the form, so there is no validation context.                                                                                                                                |
 | **Rules never fire**                | `FormWrapper` did not get the `rules` prop, or a field component does not pass `content` to `useFormField`.                                                                                               |
