@@ -873,8 +873,6 @@ export class GraphClient {
         formsEnabled,
       });
 
-      console.log('query', query);
-
       const response = await this.request(
         query,
         input,
