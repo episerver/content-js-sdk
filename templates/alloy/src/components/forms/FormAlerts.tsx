@@ -9,12 +9,12 @@ type FormAlertsProps = {
 };
 
 export default function FormAlerts({ submitConfirmationMessage }: FormAlertsProps) {
-  const { formSuccess, formError } = useFormSubmission();
+  const { formSuccess, formError, errorMessage } = useFormSubmission();
 
   return (
     <>
       <FormSuccessAlert show={formSuccess} message={submitConfirmationMessage} />
-      <FormErrorAlert show={formError} />
+      <FormErrorAlert show={formError} message={errorMessage} />
     </>
   );
 }

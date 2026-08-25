@@ -6,11 +6,12 @@ The Optimizely CMS JavaScript SDK includes built-in support for Optimizely Forms
 > Forms support requires that Optimizely Forms is enabled in your CMS instance. Log in to the CMS, navigate to **Settings > Forms Settings**, and click **Activate**. The SDK detects this automatically — there is no configuration flag.
 
 > [!WARNING]
-> **The SDK does not submit form entries to Optimizely.** `FormWrapper` POSTs the form's `FormData` to whatever URL the editor put in the container's **Submit URL** field, and treats any `response.ok` as success. You are responsible for the endpoint that receives it and for storing or forwarding the data. The route in the Alloy template only logs the submission.
+> **The SDK does not submit form entries to Optimizely.** By default `FormWrapper` POSTs the form's `FormData` to whatever URL the editor put in the container's **Submit URL** field, and treats any `response.ok` as success. You are responsible for the endpoint that receives it and for storing or forwarding the data. The route in the Alloy template only logs the submission. To send it yourself instead — a server action, JSON, a third-party SDK — see [Submitting from code](#submitting-from-code).
 
 ## Contents
 
 - [Quick Start](#quick-start) - Get running in 5 minutes
+- [Creating a form in the CMS](#creating-a-form-in-the-cms) - Authoring forms and multi-step forms
 - [Form Validation](#form-validation) - Using `useFormField` hook
 - [Form Dependency Rules](#form-dependency-rules) - Conditional field visibility
 - [Multi-Step Forms](#multi-step-forms) - Step-by-step forms
@@ -19,6 +20,16 @@ The Optimizely CMS JavaScript SDK includes built-in support for Optimizely Forms
 - [Troubleshooting](#troubleshooting) - Common issues
 
 ## Quick Start
+
+Rendering forms takes two things, done once each:
+
+1. **In code** — write a component for the container and for each field type, then register
+   them with `initForms`. Steps 1 to 4 below.
+2. **In the CMS** — editors author each form and place it on a page. No further code is
+   needed per form. See [Creating a form in the CMS](#creating-a-form-in-the-cms).
+
+If you are using the Alloy or Stride template, step 1 is already done and you can go straight
+to the CMS.
 
 ### 1. Set up form components
 
@@ -185,13 +196,57 @@ export default function FormAlerts({ submitConfirmationMessage }) {
 
 ### 5. Add forms in the CMS
 
-1. Create a shared block of type **Form Container**
-2. Configure title, description, and submission URL
-3. Add form fields to the container
-4. (optional) Set up validation rules and dependency rules
-5. Add the Form Container block to any page
+With the components registered, everything else happens in the CMS — no further code is
+needed for each new form. See [Creating a form in the CMS](#creating-a-form-in-the-cms).
 
-That's it! Forms now render and validate automatically.
+---
+
+## Creating a form in the CMS
+
+Once the components above are registered, editors author forms in the CMS and your
+application renders them automatically — you do not write code for each new form. This
+section covers only what affects the SDK; for the editor interface itself, see the
+Optimizely Forms product documentation.
+
+### How a form is structured
+
+A form is a **shared block** of type *Form Container*, laid out like a section: the container
+holds one or more **steps**, each step holds **rows** and **columns**, and the elements sit
+inside the columns.
+
+```
+Form Container          the shared block
+└── Form Step           at least one, even in a single-step form
+    └── Row
+        └── Column
+            └── Textbox / Selection / Submit button / ...
+```
+
+This is the shape `FormStep`, `partitionFormNodes` and `getFormNodes` work with, and it is
+why a single-step form still has a step in it. A container with no step, or fields placed
+outside one, renders as a title with no fields.
+
+### What to get right
+
+Five things trip people up, because none of them fail loudly:
+
+| | |
+| --- | --- |
+| **Submit URL** | Leave it empty and the form posts to its own page, which answers `405`. Point it at your endpoint, or send the form yourself — see [Submitting from code](#submitting-from-code). |
+| **Submission field name** | The key the field uses in the submitted data. Falls back to the label, so set it when your endpoint expects a particular name. |
+| **Validators combine** | An email validator alone accepts an empty field; it only checks what was typed. Add a required validator too. |
+| **Step button labels** | Label them exactly `Next` and `Previous` — matching ignores case and spacing. Any other label is treated as submit, so a mislabelled button sends a half-filled form. |
+| **Where you place it** | A content area's `allowedTypes` must admit the container, or its fields are never fetched — see [How form fragments are fetched](#how-form-fragments-are-fetched). A composition works with no extra setup. |
+
+### Adding steps
+
+Add a second **Form Step** and the SDK shows one at a time, keeping values entered on the
+others. Each step carries its own navigation buttons: `Next` on the first, `Previous` and
+`Next` in the middle, `Previous` plus a submit button on the last.
+
+Advancing validates only the step on screen. Submitting validates every step and jumps to the
+one holding the first invalid field. For the rendering side, see
+[Multi-Step Forms](#multi-step-forms).
 
 ---
 
@@ -293,6 +348,10 @@ Supported operators: `All` (AND), `Any` (OR)
 ---
 
 ## Multi-Step Forms
+
+This section covers the rendering side. For authoring one in the CMS — adding steps and
+labelling their buttons — see
+[Adding steps](#adding-steps).
 
 Use `FormStep` to render one step at a time, as shown in the Quick Start container. Inactive steps stay mounted behind `display: none`, so values survive stepping back and forth and submitting validates every step, not just the visible one.
 
@@ -477,7 +536,8 @@ export const PageWithFormContentType = contentType({
 
 ```tsx
 <FormWrapper
-  action="/api/submit"                    // Required: submission endpoint
+  action="/api/submit"                    // Optional: endpoint for the built-in POST
+  submitHandler={sendLead}                // Optional: send it yourself instead
   scrollToOnSuccess="element-id"          // Optional: scroll on success
   scrollToOnError="element-id"            // Optional: scroll on error
   steps={stepNodes}                       // Optional: multi-step form nodes
@@ -486,6 +546,67 @@ export const PageWithFormContentType = contentType({
   {children}
 </FormWrapper>
 ```
+
+One of `action` or `submitHandler` is needed. With neither, the form posts to the page it is
+on, which answers `405`; the SDK logs a development warning when that happens.
+
+### Submitting from code
+
+`submitHandler` replaces the built-in POST. Everything around it is unchanged: the form still
+validates before it sends, still shows the submitting state, and on success still clears the
+fields, returns to the first step and scrolls.
+
+The contract is plain JavaScript — **resolve means success, throw means failure**:
+
+```tsx
+'use server';
+export async function saveLead(formData: FormData) { /* ... */ }
+```
+
+```tsx
+<FormWrapper
+  submitHandler={async formData => {
+    await saveLead(formData);
+  }}
+  steps={stepNodes}
+>
+```
+
+A thrown `Error`'s message reaches `useFormSubmission().errorMessage`, so an API can explain
+itself rather than the visitor seeing a generic failure:
+
+```tsx
+submitHandler={async formData => {
+  const response = await fetch('/api/leads', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.fromEntries(formData)),
+  });
+
+  // A 200 carrying a rejection is still a failure.
+  const result = await response.json();
+  if (!result.ok) throw new Error(result.message);
+}}
+```
+
+Both template alert components already prefer `errorMessage` and fall back to their own
+wording, so this works without further changes.
+
+The handler receives the container's Submit URL as `context.action`, which lets one handler
+be shared across forms that differ in destination:
+
+```tsx
+submitHandler={async (formData, { action }) => { /* ... */ }}
+```
+
+> [!WARNING]
+> `submitHandler` runs in the **browser** — `FormWrapper` is a client component. Anything
+> needing a credential belongs in a server action or a route handler called from the handler.
+> An API key used directly inside it is shipped to every visitor.
+
+`errorMessage` is only set when a `submitHandler` throws. A failed built-in POST leaves it
+undefined on purpose, so a template that renders it cannot put `Failed to fetch` or a bare
+status code in front of a visitor.
 
 ### useFormField API
 

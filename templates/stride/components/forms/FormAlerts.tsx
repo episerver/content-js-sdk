@@ -24,7 +24,7 @@ function Alert({ tone, children }: { tone: 'success' | 'error'; children: string
 }
 
 export default function FormAlerts({ submitConfirmationMessage }: FormAlertsProps) {
-  const { formSuccess, formError } = useFormSubmission();
+  const { formSuccess, formError, errorMessage } = useFormSubmission();
 
   return (
     <>
@@ -35,7 +35,12 @@ export default function FormAlerts({ submitConfirmationMessage }: FormAlertsProp
           {submitConfirmationMessage || 'Thank you. Your form has been submitted.'}
         </Alert>
       )}
-      {formError && <Alert tone='error'>Failed to submit form. Please try again.</Alert>}
+      {/* A `submitHandler` can explain the failure; the built-in POST cannot. */}
+      {formError && (
+        <Alert tone='error'>
+          {errorMessage || 'Failed to submit form. Please try again.'}
+        </Alert>
+      )}
     </>
   );
 }
