@@ -673,12 +673,12 @@ as you need them. The available keys are `container`, `textbox`, `textarea`, `nu
 
 ## Troubleshooting
 
-| Symptom                             | Likely cause                                                                                                                                                                                              |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Title renders, no fields** | The container is nested deeper than a top-level section or a direct content area entry, so it is not detected. See [How form fragments are fetched](#how-form-fragments-are-fetched). |
-| **Nothing renders at all**          | A component is missing from `initForms`, or a field component is missing `'use client'`. Check the browser console for resolution errors.                                                                 |
-| **Validation never fires**          | `FormWrapper` is not wrapping the form, so there is no validation context.                                                                                                                                |
-| **Rules never fire**                | `FormWrapper` did not get the `rules` prop, or a field component does not pass `content` to `useFormField`.                                                                                               |
-| **Submit does nothing**             | The blocking field is on a step that is not showing. The form moves to it — check your field components actually render their error messages.                                                             |
-| **Submit always fails**             | Empty Submit URL posts to the page and gets a `405`. Check the network tab.                                                                                                                               |
-| **Buttons misplaced while editing** | Layout depending on a direct-child relationship; the CMS marker div sits in between. See [Editing in the CMS](#editing-in-the-cms).                                                                       |
+| Symptom                             | Likely cause                                                                                                                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title renders, no fields**        | The container is nested deeper than a top-level section or a direct content area entry, so it is not detected. See [How form fragments are fetched](#how-form-fragments-are-fetched). |
+| **Nothing renders at all**          | A component is missing from `initForms`, or a field component is missing `'use client'`. Check the browser console for resolution errors.                                             |
+| **Validation never fires**          | `FormWrapper` is not wrapping the form, so there is no validation context.                                                                                                            |
+| **Rules never fire**                | `FormWrapper` did not get the `rules` prop, or a field component does not pass `content` to `useFormField`.                                                                           |
+| **Submit does nothing**             | The blocking field is on a step that is not showing. The form moves to it — check your field components actually render their error messages.                                         |
+| **Submit always fails**             | Empty Submit URL posts to the page and gets a `405`. Check the network tab.                                                                                                           |
+| **Buttons misplaced while editing** | Layout depending on a direct-child relationship; the CMS marker div sits in between. See [Editing in the CMS](#editing-in-the-cms).                                                   |
