@@ -11,12 +11,16 @@ import {
   OptimizelyGraphError,
 } from './error.js';
 import {
-  ContentInput as GraphVariables,
-  pathFilter,
-  previewFilter,
   GraphVariationInput,
-  localeFilter,
-  referenceFilter,
+  type FilterShape,
+  type ScalarFilter,
+  pathScalarFilter,
+  previewScalarFilter,
+  referenceScalarFilter,
+  getFilterVarDecls,
+  getFilterWhereClause,
+  getVariationMode,
+  getVariationVariables,
 } from './filters.js';
 import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
@@ -130,6 +134,14 @@ export type GraphQueryOptions = {
    */
   cache?: boolean;
   /**
+   * Enable or disable server-side stored query registration for this request.
+   * When true (default), appends `stored=true` to the endpoint URL, allowing
+   * the server to reuse query plans for identical query strings.
+   * Set to false to bypass stored queries (useful for debugging schema changes).
+   * @default true
+   */
+  stored?: boolean;
+  /**
    * Select which Graph index to query against.
    * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
    * - `'Current'`: Query the current active index (default)
@@ -166,20 +178,14 @@ export { GraphVariationInput };
  *
  * Form fragments are large, so they are only fetched for pages that actually
  * have one. The probe is skipped with `@include` rather than living in a second
- * query, so the two cannot drift apart. It costs nothing when excluded.
+ * query, so the two cannot drift apart, and the query text stays identical
+ * whether or not forms apply — one stored query template instead of two.
  *
  * `composition.nodes.type` matches top-level sections, where a form container
  * always sits, and is an ordinary string field — so the probe is valid whether
  * or not Optimizely Forms is enabled on the instance.
  */
-const GET_CONTENT_METADATA_QUERY = `
-query GetContentMetadata(
-  $where: _ContentWhereInput
-  $formsWhere: _ExperienceWhereInput
-  $withForms: Boolean!
-  $variation: VariationInput
-) {
-  _Content(where: $where, variation: $variation) {
+const METADATA_QUERY_BODY = `{
     item {
       _metadata {
         types
@@ -194,9 +200,27 @@ query GetContentMetadata(
   # Non-zero when this page has a form container as a top-level section
   formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
     total
-  }
+  }`;
+
+const METADATA_OP_NAMES: Record<FilterShape, string> = {
+  'by-key': 'GetContentMetadata',
+  'by-key-version': 'GetContentMetadataByVersion',
+  'by-key-locale': 'GetContentMetadataByLocale',
+  'by-path': 'GetContentMetadataByPath',
+  'by-path-host': 'GetContentMetadataByPathWithHost',
+  'by-preview': 'GetPreviewContentMetadata',
+};
+
+function getMetadataQuery(shape: FilterShape): string {
+  const varDecls = getFilterVarDecls(shape);
+  const whereClause = getFilterWhereClause(shape);
+  const variationClause = shape === 'by-preview' ? ', variation: ALL' : '';
+  return `
+query ${METADATA_OP_NAMES[shape]}(${varDecls}, $formsWhere: _ExperienceWhereInput, $withForms: Boolean!) {
+  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
 }
 `;
+}
 
 /**
  * The content types that really own a `composition` field.
@@ -252,41 +276,40 @@ const formsOnPageFilter = (where: unknown) => ({
   _and: [where, { composition: { nodes: { type: { eq: FORM_CONTAINER_TYPE } } } }],
 });
 
-const GET_PATH_QUERY = `
-query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
-  _Content(where: $where, locale: $locale) {
-    item {
-      _id
-      _metadata {
-        ...on InstanceMetadata {
-          path
-        }
-      }
-      _link(type: PATH) {
-        _Page {
-          items {
-            _metadata {
-              key
-              sortOrder
-              displayName
-              locale
-              types
-              url {
-                base
-                hierarchical
-                default
-              }
-            }
-          }
-        }
-      }
-    }
+/** Reconstructs a where object from scalar filter variables (for the forms probe). */
+function buildWhereObject(filter: ScalarFilter): Record<string, unknown> {
+  const v = filter.variables;
+  switch (filter.filterShape) {
+    case 'by-key':
+      return { _metadata: { key: { eq: v.key } } };
+    case 'by-key-version':
+      return { _metadata: { key: { eq: v.key }, version: { eq: v.version } } };
+    case 'by-key-locale':
+      return { _metadata: { key: { eq: v.key }, locale: { eq: v.metadataLocale } } };
+    case 'by-path':
+      return {
+        _or: [
+          { _metadata: { url: { default: { eq: v.path } } } },
+          { _metadata: { url: { default: { eq: v.pathNoSlash } } } },
+          { _metadata: { url: { hierarchical: { eq: v.path } } } },
+          { _metadata: { url: { hierarchical: { eq: v.pathNoSlash } } } },
+        ],
+      };
+    case 'by-path-host':
+      return {
+        _or: [
+          { _metadata: { url: { base: { eq: v.host }, default: { eq: v.path } } } },
+          { _metadata: { url: { base: { eq: v.host }, default: { eq: v.pathNoSlash } } } },
+          { _metadata: { url: { base: { eq: v.host }, hierarchical: { eq: v.path } } } },
+          { _metadata: { url: { base: { eq: v.host }, hierarchical: { eq: v.pathNoSlash } } } },
+        ],
+      };
+    case 'by-preview':
+      return { _metadata: { key: { eq: v.key }, locale: { eq: v.locale }, version: { eq: v.version } } };
   }
-}`;
+}
 
-const GET_ITEMS_QUERY = `
-query GetItems($where: _ContentWhereInput, $locale: [Locales]) {
-  _Content(where: $where, locale: $locale) {
+const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     item {
       _id
       _metadata {
@@ -294,7 +317,7 @@ query GetItems($where: _ContentWhereInput, $locale: [Locales]) {
           path
         }
       }
-      _link(type: ITEMS) {
+      _link(type: ${linkType}) {
         _Page {
           items {
             _metadata {
@@ -313,8 +336,34 @@ query GetItems($where: _ContentWhereInput, $locale: [Locales]) {
         }
       }
     }
-  }
+  }`;
+
+function getLinksQuery(
+  opName: string,
+  shape: FilterShape,
+): string {
+  const filterVars = getFilterVarDecls(shape);
+  const whereClause = getFilterWhereClause(shape);
+  const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
+  return `
+query ${opName}(${allVars}) {
+  _Content(${whereClause}, locale: $locale) ${LINKS_BODY('PATH')}
 }`;
+}
+
+function getItemsQuery(
+  opName: string,
+  shape: FilterShape,
+): string {
+  const filterVars = getFilterVarDecls(shape);
+  const whereClause = getFilterWhereClause(shape);
+  const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
+  return `
+query ${opName}(${allVars}) {
+  _Content(${whereClause}, locale: $locale) ${LINKS_BODY('ITEMS')}
+}`;
+}
+
 
 type GetLinksResponse = {
   _Content: {
@@ -521,6 +570,7 @@ export class GraphClient {
     previewToken?: string,
     cache: boolean = true,
     slot?: GraphSlot,
+    stored: boolean = true,
   ): Promise<any> {
     return withRequestSpan(
       this.graphUrl,
@@ -533,6 +583,10 @@ export class GraphClient {
 
         // Append cache parameter to control caching behavior
         url.searchParams.append('cache', cache.toString());
+
+        if (stored) {
+          url.searchParams.append('stored', 'true');
+        }
 
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -674,30 +728,35 @@ export class GraphClient {
     }
     if (byKey.size === 0) return item;
 
-    // Built here rather than delegating to `getContent`, which would spend a
-    // metadata round trip rediscovering a content type we already know.
-    const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
-      damEnabled: options.damEnabled,
-      maxFragmentThreshold: this.maxFragmentThreshold,
-      expandContracts: this.expandContracts,
-      formsEnabled: true,
-      sectionTypes: options.sectionTypes,
-    });
-
     await Promise.all(
       [...byKey].map(async ([key, forms]) => {
         const { version, locale } = forms[0]._metadata;
 
         // Version pins the previewed draft; otherwise Graph returns the
-        // published container.
+        // published container. Key-only, key+version and key+locale are
+        // distinct query shapes now, so the query is built per group rather
+        // than once — `withQueryCaching` makes repeats free.
+        const filter = referenceScalarFilter({
+          key,
+          ...(version ? { version }
+          : locale ? { locale }
+          : {}),
+        });
+
+        // Built here rather than delegating to `getContent`, which would spend a
+        // metadata round trip rediscovering a content type we already know.
+        const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
+          damEnabled: options.damEnabled,
+          maxFragmentThreshold: this.maxFragmentThreshold,
+          expandContracts: this.expandContracts,
+          formsEnabled: true,
+          sectionTypes: options.sectionTypes,
+          filterShape: filter.filterShape,
+        });
+
         const response = await this.request(
           query,
-          referenceFilter({
-            key,
-            ...(version ? { version }
-            : locale ? { locale }
-            : {}),
-          }),
+          filter.variables,
           options.previewToken,
           options.cache ?? this.cache,
           options.slot ?? this.slot,
@@ -717,34 +776,38 @@ export class GraphClient {
   /**
    * Fetches the content type metadata for a given content input.
    *
-   * @param input - The content input used to query the content type.
+   * @param filterShape - The shape of the scalar filter.
+   * @param variables - The scalar variables for the query.
    * @param previewToken - Optional preview token for fetching preview content.
    * @returns The content type, whether DAM is enabled, and whether this page
-   *   needs the Optimizely Forms fragments. The last is page-scoped, not
-   *   instance-scoped: Forms can be enabled in the CMS while this page has no
-   *   form on it, in which case the fragments are left out.
+   *   needs the Optimizely Forms fragments.
    */
   private async getContentMetaData(
-    input: GraphVariables,
+    filter: ScalarFilter,
     previewToken?: string,
     cache?: boolean,
     slot?: GraphSlot,
+    stored?: boolean,
     damMode: DamMode = 'automatic',
   ) {
     // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
+    const query = getMetadataQuery(filter.filterShape);
+    const variables = {
+      ...filter.variables,
+      withForms: mayRenderForms,
+      formsWhere: mayRenderForms ? formsOnPageFilter(buildWhereObject(filter)) : null,
+    };
+
     const [data, sectionTypes] = await Promise.all([
       this.request(
-        GET_CONTENT_METADATA_QUERY,
-        {
-          ...input,
-          withForms: mayRenderForms,
-          formsWhere: mayRenderForms ? formsOnPageFilter(input.where) : null,
-        },
+        query,
+        variables,
         previewToken,
         cache ?? this.cache,
         slot ?? this.slot,
+        stored ?? true,
       ),
       this.getSectionTypes(),
     ]);
@@ -781,8 +844,8 @@ export class GraphClient {
         "Returned type is not 'string'. This might be a bug in the SDK. Try again later. If the error persists, contact Optimizely support",
         {
           request: {
-            query: GET_CONTENT_METADATA_QUERY,
-            variables: input,
+            query,
+            variables,
           },
         },
       );
@@ -807,21 +870,24 @@ export class GraphClient {
    */
   async getContentByPath<T = any>(path: string, options?: GraphGetContentOptions) {
     return withGetContentByPathSpan(path, options?.cache ?? this.cache, async span => {
-      const input: GraphVariables = {
-        ...pathFilter(path, options?.host ?? this.host), // Backwards compatibility: if host is not provided in options, use the client's default host
-        variation: options?.variation,
-      };
+      const host = options?.host ?? this.host;
+      const filter = pathScalarFilter(path, host);
+      const varMode = getVariationMode(options?.variation);
+      const variationVars = getVariationVariables(options?.variation);
+      const variables = { ...filter.variables, ...variationVars };
 
       const cacheEnabled = options?.cache ?? this.cache;
+      const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
       const damMode = options?.dam ?? this.dam;
 
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
         await this.getContentMetaData(
-          input,
+          filter,
           undefined,
           cacheEnabled,
           activeSlot,
+          storedEnabled,
           damMode,
         );
 
@@ -839,14 +905,17 @@ export class GraphClient {
           expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,
+          filterShape: filter.filterShape,
+          variationMode: varMode,
         });
 
         const response = (await this.request(
           query,
-          input,
+          variables,
           undefined,
           cacheEnabled,
           activeSlot,
+          storedEnabled,
         )) as ItemsResponse<T>;
 
         return Promise.all(
@@ -860,7 +929,6 @@ export class GraphClient {
           ) ?? [],
         );
       } catch (error) {
-        // If content type is not registered, return empty array instead of throwing
         if (error instanceof GraphMissingContentTypeError) {
           return [];
         }
@@ -894,39 +962,37 @@ export class GraphClient {
    * ```
    */
   async getPath(reference: string | GraphReference, options?: GraphGetLinksOptions) {
-    let filter: GraphVariables;
+    let filter: ScalarFilter;
+    let locales: string[] | undefined;
+
     if (typeof reference === 'string' && reference.startsWith('graph://')) {
       const ref = this.parseGraphReference(reference);
-      filter = {
-        ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
-      };
+      filter = referenceScalarFilter(ref);
+      locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
     } else if (typeof reference === 'string') {
-      filter = {
-        ...pathFilter(reference, options?.host ?? this.host),
-        ...localeFilter(options?.locales),
-      };
+      filter = pathScalarFilter(reference, options?.host ?? this.host);
+      locales = options?.locales;
     } else {
-      filter = {
-        ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
-        ),
-      };
+      filter = referenceScalarFilter(reference);
+      locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
     }
 
+    const variables = { ...filter.variables, locale: locales };
+    const query = getLinksQuery('GetPath', filter.filterShape);
+
     const cacheEnabled = options?.cache ?? this.cache;
+    const storedEnabled = options?.stored ?? true;
     const activeSlot = options?.slot ?? this.slot;
 
     const data = (await this.request(
-      GET_PATH_QUERY,
-      filter,
+      query,
+      variables,
       undefined,
       cacheEnabled,
       activeSlot,
+      storedEnabled,
     )) as GetLinksResponse;
 
-    // Check if the page itself exist.
     if (!data._Content.item._id) {
       return null;
     }
@@ -935,19 +1001,17 @@ export class GraphClient {
     const sortedKeys = data._Content.item._metadata.path;
 
     if (!sortedKeys) {
-      // This is an error
       throw new GraphResponseError(
         'The `_metadata` does not contain any `path` field. Ensure that the path you requested is an actual page and not a block. If the problem persists, contact Optimizely support',
         {
           request: {
-            query: GET_PATH_QUERY,
-            variables: filter,
+            query,
+            variables,
           },
         },
       );
     }
 
-    // Return sorted by the "sortedKeys"
     const linkMap = new Map(links.map(link => [link._metadata?.key, link]));
     return sortedKeys.map(key => linkMap.get(key)).filter(item => item !== undefined);
   }
@@ -977,74 +1041,70 @@ export class GraphClient {
    * ```
    */
   async getItems(reference: string | GraphReference, options?: GraphGetLinksOptions) {
-    let filter: GraphVariables;
+    let filter: ScalarFilter;
+    let locales: string[] | undefined;
+
     if (typeof reference === 'string' && reference.startsWith('graph://')) {
       const ref = this.parseGraphReference(reference);
-      filter = {
-        ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
-      };
+      filter = referenceScalarFilter(ref);
+      locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
     } else if (typeof reference === 'string') {
-      filter = {
-        ...pathFilter(reference, options?.host ?? this.host),
-        ...localeFilter(options?.locales),
-      };
+      filter = pathScalarFilter(reference, options?.host ?? this.host);
+      locales = options?.locales;
     } else {
-      filter = {
-        ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
-        ),
-      };
+      filter = referenceScalarFilter(reference);
+      locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
     }
 
+    const variables = { ...filter.variables, locale: locales };
+    const query = getItemsQuery('GetItems', filter.filterShape);
+
     const cacheEnabled = options?.cache ?? this.cache;
+    const storedEnabled = options?.stored ?? true;
     const activeSlot = options?.slot ?? this.slot;
 
     const data = (await this.request(
-      GET_ITEMS_QUERY,
-      filter,
+      query,
+      variables,
       undefined,
       cacheEnabled,
       activeSlot,
+      storedEnabled,
     )) as GetLinksResponse;
 
-    // Check if the page itself exist.
     if (!data._Content.item._id) {
       return null;
     }
 
-    const links = data?._Content?.item._link._Page.items;
-
-    return links;
+    return data?._Content?.item._link._Page.items;
   }
 
-  /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */
   async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
     return withGetPreviewContentSpan(params, async span => {
-      const input = previewFilter(params);
+      const filter = previewScalarFilter(params);
+      const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
       const damMode = options?.dam ?? this.dam;
 
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
         await this.getContentMetaData(
-          input,
+          filter,
           params.preview_token,
           false,
           activeSlot,
+          storedEnabled,
           damMode,
         );
 
       if (!contentTypeName) {
         throw new GraphResponseError(
           `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
-          { request: { variables: input, query: GET_CONTENT_METADATA_QUERY } },
+          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape) } },
         );
       }
 
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
-      // Auto-populate context with preview parameters
       setContext({
         previewToken: params.preview_token,
         version: params.ver,
@@ -1060,14 +1120,17 @@ export class GraphClient {
         expandContracts: this.expandContracts,
         formsEnabled,
         sectionTypes,
+        filterShape: filter.filterShape,
+        variationMode: 'all',
       });
 
       const response = await this.request(
         query,
-        input,
+        filter.variables,
         params.preview_token,
         false,
         activeSlot,
+        storedEnabled,
       );
 
       return decorateWithContext(
@@ -1197,26 +1260,19 @@ export class GraphClient {
       const previewToken = options?.previewToken;
 
       const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
+      const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
       const damMode = options?.dam ?? this.dam;
 
-      const input: GraphVariables = {
-        where: {
-          _metadata: {
-            key: { eq: ref.key },
-            ...(ref.version ? { version: { eq: ref.version } }
-            : ref.locale ? { locale: { eq: ref.locale } }
-            : {}),
-          },
-        },
-      };
+      const filter = referenceScalarFilter(ref);
 
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
         await this.getContentMetaData(
-          input,
+          filter,
           previewToken,
           cacheEnabled,
           activeSlot,
+          storedEnabled,
           damMode,
         );
 
@@ -1234,14 +1290,16 @@ export class GraphClient {
           expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,
+          filterShape: filter.filterShape,
         });
 
         const response = await this.request(
           query,
-          input,
+          filter.variables,
           previewToken,
           cacheEnabled,
           activeSlot,
+          storedEnabled,
         );
 
         return this.resolveFormNodes(

@@ -25,6 +25,14 @@ import {
 } from '../telemetry/metrics.js';
 import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error.js';
 import {
+  type FilterShape,
+  type VariationMode,
+  getFilterVarDecls,
+  getFilterWhereClause,
+  getVariationVarDecls,
+  getVariationClause,
+} from './filters.js';
+import {
   isExperienceComponent,
   FragmentOptions,
   QueryContext,
@@ -347,13 +355,27 @@ export const createFragment = (
  * a caller only states what it cares about. It is turned into a strict
  * {@linkcode QueryContext} once, at the boundary, and never rebuilt after that.
  */
-export type QueryOptions = Partial<QueryContext> & FragmentOptions;
+export type QueryOptions = Partial<QueryContext> & FragmentOptions & {
+  filterShape?: FilterShape;
+  variationMode?: VariationMode;
+};
+
+const SINGLE_OP_NAMES: Record<FilterShape, string> = {
+  'by-key': 'GetContent',
+  'by-key-version': 'GetContentByVersion',
+  'by-key-locale': 'GetContentByLocale',
+  'by-path': 'GetContentByPath',
+  'by-path-host': 'GetContentByPathWithHost',
+  'by-preview': 'GetPreviewContent',
+};
 
 const generateSingleContentQuery = (
   contentType: string,
   options: QueryOptions = {},
 ): string => {
   const ctx = createQueryContext(options);
+  const filterShape = options.filterShape ?? 'by-key';
+  const variationMode = options.variationMode ?? 'none';
   const span = startSingleQuerySpan(contentType, ctx.damEnabled, ctx.formsEnabled);
   const startTime = span ? performance.now() : 0;
 
@@ -361,10 +383,16 @@ const generateSingleContentQuery = (
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
+  const filterVars = getFilterVarDecls(filterShape);
+  const variationVars = getVariationVarDecls(variationMode);
+  const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
+  const whereClause = getFilterWhereClause(filterShape);
+  const variationClause = filterShape === 'by-preview' ? ', variation: ALL' : getVariationClause(variationMode);
+
   const query = `
 ${fragments.join('\n')}
-query GetContent($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
+query ${SINGLE_OP_NAMES[filterShape]}(${allVars}) {
+  _Content(${whereClause}${variationClause}) {
     item {
       __typename
       ${fragmentName}
@@ -400,11 +428,22 @@ export const createSingleContentQuery = withQueryCaching(
   generateSingleContentQuery,
 );
 
+const MULTIPLE_OP_NAMES: Record<FilterShape, string> = {
+  'by-key': 'ListContent',
+  'by-key-version': 'ListContentByVersion',
+  'by-key-locale': 'ListContentByLocale',
+  'by-path': 'GetContentByPath',
+  'by-path-host': 'GetContentByPathWithHost',
+  'by-preview': 'ListPreviewContent',
+};
+
 const generateMultipleContentQuery = (
   contentType: string,
   options: QueryOptions = {},
 ): string => {
   const ctx = createQueryContext(options);
+  const filterShape = options.filterShape ?? 'by-path';
+  const variationMode = options.variationMode ?? 'none';
   const span = startMultipleQuerySpan(contentType, ctx.damEnabled, ctx.formsEnabled);
   const startTime = span ? performance.now() : 0;
 
@@ -412,10 +451,16 @@ const generateMultipleContentQuery = (
   const fragments = result.fragments;
   const fragmentName = fragments.length > 0 ? '...' + contentType : '';
 
+  const filterVars = getFilterVarDecls(filterShape);
+  const variationVars = getVariationVarDecls(variationMode);
+  const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
+  const whereClause = getFilterWhereClause(filterShape);
+  const variationClause = getVariationClause(variationMode);
+
   const query = `
 ${fragments.join('\n')}
-query ListContent($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
+query ${MULTIPLE_OP_NAMES[filterShape]}(${allVars}) {
+  _Content(${whereClause}${variationClause}) {
     items {
       __typename
       ${fragmentName}
