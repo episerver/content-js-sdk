@@ -17,7 +17,7 @@ type StartPageProps = {
 export default function Start({ content }: StartPageProps) {
   return (
     <FullWidthLayout>
-      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
+      <OptimizelyComposition nodes={content.composition?.nodes ?? []} />
     </FullWidthLayout>
   );
 }

@@ -108,7 +108,7 @@ export default function Product({ content }: ProductPageProps) {
         </div>
       </div>
 
-      <OptimizelyComposition nodes={content.composition.nodes ?? []} />
+      <OptimizelyComposition nodes={content.composition?.nodes ?? []} />
     </FullWidthLayout>
   );
 }

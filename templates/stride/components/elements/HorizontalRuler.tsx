@@ -31,7 +31,7 @@ export default function HorizontalRuler({ content }: HorizontalRulerComponentPro
   const CmsField = bindCmsField(content, { editable: false });
 
   return (
-    <div className='h-9 font-code text-xs uppercase font-bold tracking-wide border-b-4 mb-6 border-foreground'>
+    <div className='h-9 font-code text-xs uppercase font-bold tracking-wide border-b-4 mb-6 border-foreground min-w-[50vw]'>
       <CmsField field={c => c.topLabel}>
         <span className='absolute text-background2 bg-foreground px-1'>
           {content.topLabel}

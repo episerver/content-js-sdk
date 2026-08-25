@@ -122,7 +122,7 @@ export default function Hero({ content, displaySettings }: HeroSectionProps) {
         />
 
         <OptimizelyGridSection
-          nodes={content.nodes}
+          nodes={content.nodes ?? []}
           row={RowWrapper}
           column={ColumnWrapper}
           ComponentWrapper={ComponentWrapper}
