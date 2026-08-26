@@ -226,11 +226,11 @@ describe('getClient - Critical Edge Cases', () => {
       } as any);
     });
 
-    test('should include stored=true in URL by default', async () => {
+    test('should omit stored from URL by default for request()', async () => {
       await client.request('query { test }', {});
 
       const url = new URL(mockFetch.mock.calls[0][0].toString());
-      expect(url.searchParams.get('stored')).toBe('true');
+      expect(url.searchParams.has('stored')).toBe(false);
       mockFetch.mockRestore();
     });
 

@@ -564,7 +564,7 @@ export class GraphClient {
     previewToken?: string,
     cache: boolean = true,
     slot?: GraphSlot,
-    stored: boolean = true,
+    stored: boolean = false,
   ): Promise<any> {
     return withRequestSpan(
       this.graphUrl,
