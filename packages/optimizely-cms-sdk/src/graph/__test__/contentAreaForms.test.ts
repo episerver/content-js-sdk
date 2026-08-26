@@ -112,6 +112,84 @@ describe('a form reached through a content area', () => {
   });
 });
 
+describe('a form dropped into a composition as a shared block', () => {
+  // Created inline it is a section node and its steps come down with the page.
+  // Inserted as an existing shared block Graph reports a component node, and
+  // `nodes` is only selected inside `...on CompositionStructureNode`, so the
+  // steps are absent from the response entirely.
+  const ExperienceType = contentType({
+    key: 'Product',
+    displayName: 'Product',
+    baseType: '_experience',
+    properties: {},
+  });
+
+  beforeEach(() => {
+    initContentTypeRegistry([ExperienceType, ...FormContentTypes]);
+    refreshCache();
+
+    request = vi
+      .spyOn(client, 'request')
+      .mockImplementation(async (query: string, vars: any) => {
+        const askedForTheForm = JSON.stringify(vars?.where ?? {}).includes('form-1');
+
+        if (query.includes('GetContentMetadata')) {
+          return {
+            _Content: {
+              item: {
+                _metadata: {
+                  types: askedForTheForm ? ['OptiFormsContainerData'] : ['Product'],
+                },
+              },
+            },
+            damAssetType: null,
+            formsOnPage: { total: 1 },
+          };
+        }
+
+        if (askedForTheForm) {
+          return {
+            _Content: {
+              item: {
+                __typename: 'OptiFormsContainerData',
+                _metadata: { key: 'form-1' },
+                composition: { nodeType: 'section', key: 'form-1', nodes: STEPS },
+              },
+            },
+          };
+        }
+
+        return {
+          _Content: {
+            item: {
+              __typename: 'Product',
+              composition: {
+                nodeType: 'experience',
+                nodes: [
+                  {
+                    __typename: 'CompositionComponentNode',
+                    nodeType: 'component',
+                    type: 'OptiFormsContainerData',
+                    key: 'node-1',
+                    component: {
+                      __typename: 'OptiFormsContainerData',
+                      _metadata: { key: 'form-1', locale: 'en' },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        };
+      });
+  });
+
+  test('has its steps filled in', async () => {
+    const page: any = await client.getContent({ key: 'page-1' });
+
+    expect(page.composition.nodes[0].component.nodes).toEqual(STEPS);
+  });
+});
 describe('the same shared form referenced twice', () => {
   // One shared form placed in two content areas arrives as two objects with
   // the same key. Fetching per object would double the round trips.
