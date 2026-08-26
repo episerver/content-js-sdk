@@ -112,6 +112,71 @@ describe('a form reached through a content area', () => {
   });
 });
 
+describe('the same shared form referenced twice', () => {
+  // One shared form placed in two content areas arrives as two objects with
+  // the same key. Fetching per object would double the round trips.
+  const stubTwice = () =>
+    vi.spyOn(client, 'request').mockImplementation(async (query: string, vars: any) => {
+      const askedForTheForm = JSON.stringify(vars?.where ?? {}).includes('form-1');
+
+      if (query.includes('GetContentMetadata')) {
+        return {
+          _Content: {
+            item: {
+              _metadata: {
+                types: askedForTheForm ? ['OptiFormsContainerData'] : ['Standard'],
+              },
+            },
+          },
+          damAssetType: null,
+          formsOnPage: { total: 0 },
+        };
+      }
+
+      if (askedForTheForm) {
+        return {
+          _Content: {
+            item: {
+              __typename: 'OptiFormsContainerData',
+              _metadata: { key: 'form-1' },
+              composition: { nodeType: 'section', key: 'form-1', nodes: STEPS },
+            },
+          },
+        };
+      }
+
+      return {
+        _Content: {
+          item: {
+            __typename: 'Standard',
+            Standard__extras: [nestedForm(), nestedForm()],
+          },
+        },
+      };
+    });
+
+  test('is fetched once, not once per reference', async () => {
+    request = stubTwice();
+
+    await client.getContent({ key: 'page-1' });
+
+    const formFetches = request.mock.calls.filter(
+      (call: any[]) =>
+        JSON.stringify(call[1]?.where ?? {}).includes('form-1') &&
+        !String(call[0]).includes('GetContentMetadata'),
+    );
+    expect(formFetches).toHaveLength(1);
+  });
+
+  test('still fills in every reference', async () => {
+    request = stubTwice();
+
+    const page: any = await client.getContent({ key: 'page-1' });
+
+    expect(page.extras[0].nodes).toEqual(STEPS);
+    expect(page.extras[1].nodes).toEqual(STEPS);
+  });
+});
 describe('a form whose steps already arrived', () => {
   // A container queried on its own, or one inside an experience composition,
   // is complete already. Re-fetching it would double every form's cost.

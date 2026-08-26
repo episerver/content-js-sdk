@@ -576,6 +576,8 @@ seeing a generic failure.
   }}
   steps={stepNodes}
 >
+  {children}
+</FormWrapper>
 ```
 
 A server action works the same way: `submitHandler={saveLead}`. The handler also receives

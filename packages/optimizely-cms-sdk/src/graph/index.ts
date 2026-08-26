@@ -589,26 +589,35 @@ export class GraphClient {
    * object, so nothing here is shared with a cached response.
    */
   private async resolveFormNodes<T>(item: T, previewToken?: string): Promise<T> {
-    const unresolved = findUnresolvedForms(item).filter(
-      form => !this.resolvingForms.has(form._metadata.key),
-    );
-    if (unresolved.length === 0) return item;
+    // Grouped by key: one shared form placed twice on a page arrives as two
+    // objects, and fetching it once per object would double the round trips.
+    const byKey = new Map<string, any[]>();
+    for (const form of findUnresolvedForms(item)) {
+      const key = form._metadata.key;
+      if (this.resolvingForms.has(key)) continue;
+      const group = byKey.get(key);
+      if (group) group.push(form);
+      else byKey.set(key, [form]);
+    }
+    if (byKey.size === 0) return item;
 
     await Promise.all(
-      unresolved.map(async form => {
-        const { key, version, locale } = form._metadata;
+      [...byKey].map(async ([key, forms]) => {
+        const { version, locale } = forms[0]._metadata;
         this.resolvingForms.add(key);
 
         try {
-          // The version pins the draft being previewed. Without it Graph answers
-          // with the published container, which is the wrong content behind a
-          // preview token.
+          // Version pins the previewed draft; otherwise Graph returns the
+          // published container.
           const container = (await this.getContent(
             { key, ...(version ? { version } : locale ? { locale } : {}) },
             previewToken ? { previewToken } : undefined,
           )) as { nodes?: unknown[] } | null;
 
-          form.nodes = container?.nodes ?? [];
+          const nodes = container?.nodes ?? [];
+          forms.forEach(form => {
+            form.nodes = nodes;
+          });
         } finally {
           this.resolvingForms.delete(key);
         }
@@ -635,9 +644,7 @@ export class GraphClient {
     slot?: GraphSlot,
     damMode: DamMode = 'automatic',
   ) {
-    // Only worth asking when the application registered the form types; without
-    // them there is nothing to leave out. This is a local registry lookup, so it
-    // costs no round trip and needs no cached schema state.
+    // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
     const data = await this.request(
@@ -657,15 +664,8 @@ export class GraphClient {
       : damMode === 'off' ? false
       : data.damAssetType !== null;
 
-    // Form fragments are only worth their size on pages that contain a form.
-    // The probe asks `_Experience`, so it covers a form placed in a
-    // composition, and nothing else. Two cases fall outside it:
-    //  - the form container requested on its own, previewing the shared block
-    //    from the CMS, which its own type gives away;
-    //  - a form dropped into a content area of an ordinary page, which Graph
-    //    cannot be asked about and the content model answers instead.
-    // Form elements only ever live under a container, so nothing else needs
-    // covering.
+    // The probe covers a form in a composition. Content type checks cover
+    // the form container itself and forms in content areas.
     const needsForms =
       mayRenderForms &&
       ((data.formsOnPage?.total ?? 0) > 0 ||
