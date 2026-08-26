@@ -12,7 +12,7 @@ export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
 
 export type INDEX_TYPE = 'disabled' | 'queryable' | 'searchable';
 
-export type RICHTEXT_PRESET = 'default' | 'expanded' | 'standard' | 'minimal';
+export type RICHTEXT_PRESET = 'default' | 'expanded' | 'minimal';
 
 /** How a property is displayed in the editing interface. Defaults to `available`. */
 export type DISPLAY_MODE = 'available' | 'hidden';
@@ -143,4 +143,5 @@ export type ComponentProperty<T extends AnyContentType> = BaseProperty & {
 // - In the GUI is called
 export type LinkProperty = BaseProperty & {
   type: 'link';
+
 };
