@@ -199,10 +199,6 @@ export type RendererConfig<TElement = unknown, TText = unknown> = {
   decodeHtmlEntities?: boolean;
 };
 
-const CMS_ATTRIBUTE_ALIASES: Record<string, string> = {
-  decoration: 'text-decoration',
-};
-
 // Reserved props that should not be passed as HTML attributes
 export const RESERVED_PROPS = new Set(['url', 'children', 'type', 'internal', 'base']);
 
@@ -212,11 +208,9 @@ export const RESERVED_PROPS = new Set(['url', 'children', 'type', 'internal', 'b
 export function mapAttributes(node: Element): Record<string, unknown> {
   const nodeProps: Record<string, unknown> = {};
 
-  // Copy non-reserved props verbatim, normalizing CMS shorthand keys
   Object.keys(node).forEach(k => {
     if (!RESERVED_PROPS.has(k)) {
-      const key = CMS_ATTRIBUTE_ALIASES[k] ?? k;
-      nodeProps[key] = node[k as keyof Element];
+      nodeProps[k] = node[k as keyof Element];
     }
   });
 
