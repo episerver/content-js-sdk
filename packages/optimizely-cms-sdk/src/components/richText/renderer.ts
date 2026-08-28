@@ -208,7 +208,6 @@ export const RESERVED_PROPS = new Set(['url', 'children', 'type', 'internal', 'b
 export function mapAttributes(node: Element): Record<string, unknown> {
   const nodeProps: Record<string, unknown> = {};
 
-  // Copy non-reserved props verbatim
   Object.keys(node).forEach(k => {
     if (!RESERVED_PROPS.has(k)) {
       nodeProps[k] = node[k as keyof Element];

@@ -10,6 +10,8 @@ import {
   htmlEntitiesContent,
   unknownElementContent,
   markedTextContent,
+  styledSpanContent,
+  styledSpanKebabCaseContent,
 } from './mockData.js';
 
 describe('RichText Component', () => {
@@ -55,5 +57,19 @@ describe('RichText Component', () => {
     expect(screen.getByText('underlined text').tagName.toLowerCase()).toBe('u');
     expect(screen.getByText('code text').tagName.toLowerCase()).toBe('code'); // Fixed: now correctly renders as <code>
     expect(screen.getByText('strikethrough text').tagName.toLowerCase()).toBe('s');
+  });
+
+  it('should render styled span with decoration as text-decoration style (old format)', () => {
+    render(<RichText content={styledSpanContent} />);
+    const el = screen.getByText('Hello world');
+    expect(el.tagName.toLowerCase()).toBe('span');
+    expect(el).toHaveStyle('text-decoration: underline');
+  });
+
+  it('should render styled span with text-decoration as text-decoration style (new kebab-case format)', () => {
+    render(<RichText content={styledSpanKebabCaseContent} />);
+    const el = screen.getByText('Hello world');
+    expect(el.tagName.toLowerCase()).toBe('span');
+    expect(el).toHaveStyle('text-decoration: underline');
   });
 });

@@ -421,9 +421,15 @@ export function toReactProps(attributes: Record<string, unknown>, elementType?: 
       }
     }
 
-    // Handle other CSS properties - move them to style object
-    if (CSS_PROPERTIES.has(key.toLowerCase())) {
-      const camelKey = kebabToCamelCase(key);
+    // Handle CSS properties - move them to style object.
+    // Also resolve old CMS shorthand keys missing the "text-" prefix
+    // (e.g. "decoration" -> "text-decoration").
+    const lowerKey = key.toLowerCase();
+    const cssKey = CSS_PROPERTIES.has(lowerKey) ? lowerKey
+      : CSS_PROPERTIES.has(`text-${lowerKey}`) ? `text-${lowerKey}`
+      : undefined;
+    if (cssKey) {
+      const camelKey = kebabToCamelCase(cssKey);
       styleProps[camelKey] = String(value);
       continue;
     }

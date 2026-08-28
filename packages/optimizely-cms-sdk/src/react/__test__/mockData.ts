@@ -183,3 +183,37 @@ export const markedTextContent = {
     },
   ] as Node[],
 };
+
+// Element node with CMS "decoration" attribute - old format without prefix (GitHub issue #495)
+export const styledSpanContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'span',
+          decoration: 'underline',
+          children: [{ text: 'Hello world' }],
+        },
+      ],
+    },
+  ] as Node[],
+};
+
+// Element node with CMS "text-decoration" attribute - new kebab-case format (GitHub issue #495)
+export const styledSpanKebabCaseContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'span',
+          'text-decoration': 'underline',
+          children: [{ text: 'Hello world' }],
+        },
+      ],
+    },
+  ] as Node[],
+};
