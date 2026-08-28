@@ -587,6 +587,24 @@ different destinations.
 Note that `submitHandler` runs in the browser, so anything needing a credential belongs in
 a server action or a route handler called from it.
 
+### useFormSubmission API
+
+```ts
+const {
+  formSuccess, // Boolean: the last submit succeeded
+  formError, // Boolean: the last submit failed
+  isSubmitting, // Boolean: a submit is in flight
+  errorMessage, // Message from a throwing `submitHandler`, else undefined
+  error, // Whatever that handler threw
+  status, // 'idle' | 'submitting' | 'success' | 'error'
+  setStatus, // Drive the state yourself: setStatus(status, error?)
+} = useFormSubmission();
+```
+
+The three booleans cover most components. `status` is the same state as one value, useful
+for a switch. `setStatus` is there for a container that submits outside `FormWrapper` —
+pass an `Error` alongside `'error'` to surface its message as `errorMessage`.
+
 ### useFormField API
 
 ```ts
