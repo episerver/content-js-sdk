@@ -1,6 +1,7 @@
 import { BuildConfig } from './buildConfig.js';
 import {
   AnyContentType,
+  AnyContract,
   ContentType,
   Contract,
   PropertiesRecord,
@@ -69,7 +70,9 @@ export function contentType<T extends AnyContentType>(options: T): ContentType<T
  * });
  * ```
  */
-export function contract<P extends PropertiesRecord>(
+// `= {}` avoids falling back to `PropertiesRecord`'s index signature, which
+// would swallow other properties once merged
+export function contract<P extends PropertiesRecord = {}>(
   options: SuppliedContractValues<P>,
 ): Contract<P> {
   return { ...options, __type: 'contract', isContract: true };
@@ -105,7 +108,7 @@ export function isContentType(obj: unknown): obj is AnyContentType {
 /**
  * Checks if `obj` is a contract.
  */
-export function isContract(obj: unknown): obj is Contract {
+export function isContract(obj: unknown): obj is AnyContract {
   return (
     typeof obj === 'object' &&
     obj !== null &&
@@ -134,7 +137,7 @@ export function isDisplayTemplate(obj: unknown): obj is DisplayTemplate {
  * @param contract - The contract to search for
  * @returns Array of content types that extend the contract
  */
-export const findExtendingContentTypes = (contract: Contract): AnyContentType[] =>
+export const findExtendingContentTypes = (contract: AnyContract): AnyContentType[] =>
   getAllContentTypes().filter((entry): entry is AnyContentType => {
     if (!isContentType(entry)) return false;
 
@@ -157,6 +160,7 @@ export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.j
 // Re-export types needed for declaration file generation
 export type {
   AnyContentType,
+  AnyContract,
   BaseTypes,
   ComponentContentType,
   ContentType,

@@ -30,7 +30,7 @@ export type PropertiesRecord = Record<string, AnyProperty>;
 type BaseContentType = {
   key: string;
   displayName: string;
-  extends?: Contract | Array<Contract>;
+  extends?: AnyContract | Array<AnyContract>;
   properties?: PropertiesRecord;
 };
 
@@ -42,14 +42,24 @@ export type SuppliedContractValues<P extends PropertiesRecord = PropertiesRecord
   baseType?: never;
 };
 
-type InnerContractValues = {
+type InnerContractValues<P extends PropertiesRecord = PropertiesRecord> = {
   isContract: true;
   __type: 'contract';
+
+  /**
+   * Phantom property, never set at runtime. It makes `P` invariant, which stops
+   * TypeScript from subtype-reducing a union of contracts (as inferred from
+   * `extends: [A, B]`) down to the one with the fewest properties.
+   */
+  readonly __properties?: (properties: P) => P;
 };
 
 /** Represents the Contract type in CMS */
 export type Contract<P extends PropertiesRecord = PropertiesRecord> =
-  SuppliedContractValues<P> & InnerContractValues;
+  SuppliedContractValues<P> & InnerContractValues<P>;
+
+/** A contract with any properties. Use this when passing a contract around. */
+export type AnyContract = SuppliedContractValues & InnerContractValues<any>;
 
 /** Convert union to intersection type */
 type UnionToIntersection<U> =
@@ -142,7 +152,7 @@ export type ContentType<T extends AnyContentType = AnyContentType> = Omit<
 
 /** All possible content types for allowed and restricted fields */
 export type PermittedTypes =
-  | Contract
+  | AnyContract
   | ContentType
   | AnyContentType['baseType']
   | '_self'
