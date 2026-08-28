@@ -21,7 +21,7 @@ import {
 import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
-import { contentTypeCanHoldForms } from '../util/queryUtils.js';
+import { contentTypeCanHoldForms, getCachedContentTypes } from '../util/queryUtils.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -197,6 +197,52 @@ query GetContentMetadata(
   }
 }
 `;
+
+/**
+ * The content types that really own a `composition` field.
+ *
+ * Kept in its own document on purpose. Graph truncates `possibleTypes` to just
+ * `_Section` when this introspection shares a query with a data field, which
+ * silently produces the opposite of the intended answer.
+ */
+const GET_SECTION_TYPES_QUERY = `
+query GetSectionTypes {
+  sectionTypes: __type(name: "_ISection") {
+    possibleTypes {
+      name
+    }
+  }
+}
+`;
+
+/**
+ * One schema lookup per endpoint for the lifetime of the process.
+ *
+ * The answer is a property of the schema, not of the content being fetched, so
+ * it cannot vary by page, preview token or slot. Held at module scope rather
+ * than on the client because `getClient()` returns a new client per call, and
+ * the in-flight promise is shared so concurrent first requests make one lookup.
+ */
+const sectionTypesByEndpoint = new Map<
+  string,
+  Promise<ReadonlySet<string> | undefined>
+>();
+
+/**
+ * Whether the application registered a section of its own.
+ *
+ * The schema lookup only changes the outcome for such a type: a form container
+ * is handled by the fallback, and everything else is not a section either way.
+ */
+const hasOwnSectionTypes = (): boolean =>
+  getCachedContentTypes().some(
+    contentType =>
+      'baseType' in contentType &&
+      (contentType.baseType === '_section' ||
+        ('compositionBehaviors' in contentType &&
+          (contentType.compositionBehaviors?.includes('sectionEnabled') ?? false))) &&
+      !isFormContentType(contentType.key),
+  );
 
 /** Content type key of the section Optimizely Forms uses for a form. */
 const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
@@ -453,13 +499,6 @@ export class GraphClient {
   typeFilter?: (contentTypeKey: string) => boolean;
   dam: DamMode;
 
-  /**
-   * Form containers currently being resolved, to stop a container that comes
-   * back still unresolved from being fetched forever. Filling in a form calls
-   * `getContent`, which resolves forms in its own response in turn.
-   */
-  private resolvingForms = new Set<string>();
-
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
@@ -577,39 +616,98 @@ export class GraphClient {
    * Mutates in place. Safe because `removeTypePrefix` has already rebuilt every
    * object, so nothing here is shared with a cached response.
    */
-  private async resolveFormNodes<T>(item: T, previewToken?: string): Promise<T> {
+  /**
+   * Which content types Graph gives a `composition` field.
+   *
+   * Costs one request the first time this process talks to an endpoint, and
+   * nothing afterwards. Runs alongside the metadata request rather than before
+   * it, so even that first call adds no latency.
+   *
+   * A failed lookup resolves to `undefined` and is not cached, so rendering
+   * falls back to assuming only the forms container has the field and a later
+   * request can try again.
+   */
+  private getSectionTypes(): Promise<ReadonlySet<string> | undefined> {
+    // Nothing to learn unless the application has a type whose answer could
+    // differ from the default. Forms are covered by the fallback, so an app
+    // with no sections of its own never pays for this.
+    if (!hasOwnSectionTypes()) return Promise.resolve(undefined);
+
+    const endpoint = `${this.graphUrl}::${this.apiKey}`;
+    const cached = sectionTypesByEndpoint.get(endpoint);
+    if (cached) return cached;
+
+    const pending = this.request(GET_SECTION_TYPES_QUERY, {}, undefined, true, this.slot)
+      .then((data: any) => {
+        const types = data?.sectionTypes?.possibleTypes;
+        if (!Array.isArray(types)) return undefined;
+        return new Set((types as { name: string }[]).map(type => type.name));
+      })
+      .catch(() => {
+        // A schema lookup must never stop a page rendering.
+        sectionTypesByEndpoint.delete(endpoint);
+        return undefined;
+      });
+
+    sectionTypesByEndpoint.set(endpoint, pending);
+    return pending;
+  }
+
+  private async resolveFormNodes<T>(
+    item: T,
+    options: {
+      damEnabled: boolean;
+      sectionTypes?: ReadonlySet<string>;
+      previewToken?: string;
+      cache?: boolean;
+      slot?: GraphSlot;
+    },
+  ): Promise<T> {
     // Grouped by key: one shared form placed twice on a page arrives as two
     // objects, and fetching it once per object would double the round trips.
     const byKey = new Map<string, any[]>();
     for (const form of findUnresolvedForms(item)) {
       const key = form._metadata.key;
-      if (this.resolvingForms.has(key)) continue;
       const group = byKey.get(key);
       if (group) group.push(form);
       else byKey.set(key, [form]);
     }
     if (byKey.size === 0) return item;
 
+    // Built here rather than delegating to `getContent`, which would spend a
+    // metadata round trip rediscovering a content type we already know.
+    const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
+      damEnabled: options.damEnabled,
+      maxFragmentThreshold: this.maxFragmentThreshold,
+      expandContracts: this.expandContracts,
+      formsEnabled: true,
+      sectionTypes: options.sectionTypes,
+    });
+
     await Promise.all(
       [...byKey].map(async ([key, forms]) => {
         const { version, locale } = forms[0]._metadata;
-        this.resolvingForms.add(key);
 
-        try {
-          // Version pins the previewed draft; otherwise Graph returns the
-          // published container.
-          const container = (await this.getContent(
-            { key, ...(version ? { version } : locale ? { locale } : {}) },
-            previewToken ? { previewToken } : undefined,
-          )) as { nodes?: unknown[] } | null;
+        // Version pins the previewed draft; otherwise Graph returns the
+        // published container.
+        const response = await this.request(
+          query,
+          referenceFilter({
+            key,
+            ...(version ? { version }
+            : locale ? { locale }
+            : {}),
+          }),
+          options.previewToken,
+          options.cache ?? this.cache,
+          options.slot ?? this.slot,
+        );
 
-          const nodes = container?.nodes ?? [];
-          forms.forEach(form => {
-            form.nodes = nodes;
-          });
-        } finally {
-          this.resolvingForms.delete(key);
-        }
+        const container = liftSectionNodes(removeTypePrefix(response?._Content?.item));
+        const nodes = container?.nodes ?? [];
+        forms.forEach(form => {
+          form.nodes = nodes;
+        });
       }),
     );
 
@@ -636,17 +734,20 @@ export class GraphClient {
     // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-    const data = await this.request(
-      GET_CONTENT_METADATA_QUERY,
-      {
-        ...input,
-        withForms: mayRenderForms,
-        formsWhere: mayRenderForms ? formsOnPageFilter(input.where) : null,
-      },
-      previewToken,
-      cache ?? this.cache,
-      slot ?? this.slot,
-    );
+    const [data, sectionTypes] = await Promise.all([
+      this.request(
+        GET_CONTENT_METADATA_QUERY,
+        {
+          ...input,
+          withForms: mayRenderForms,
+          formsWhere: mayRenderForms ? formsOnPageFilter(input.where) : null,
+        },
+        previewToken,
+        cache ?? this.cache,
+        slot ?? this.slot,
+      ),
+      this.getSectionTypes(),
+    ]);
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
 
@@ -667,7 +768,12 @@ export class GraphClient {
             contentTypeCanHoldForms(contentTypeName))));
 
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled, formsEnabled: needsForms };
+      return {
+        contentTypeName: null,
+        damEnabled,
+        formsEnabled: needsForms,
+        sectionTypes,
+      };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -682,7 +788,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled, formsEnabled: needsForms };
+    return { contentTypeName, damEnabled, formsEnabled: needsForms, sectionTypes };
   }
 
   /**
@@ -710,13 +816,14 @@ export class GraphClient {
       const activeSlot = options?.slot ?? this.slot;
       const damMode = options?.dam ?? this.dam;
 
-      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
-        input,
-        undefined,
-        cacheEnabled,
-        activeSlot,
-        damMode,
-      );
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(
+          input,
+          undefined,
+          cacheEnabled,
+          activeSlot,
+          damMode,
+        );
 
       if (!contentTypeName) {
         span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -731,6 +838,7 @@ export class GraphClient {
           maxFragmentThreshold: this.maxFragmentThreshold,
           expandContracts: this.expandContracts,
           formsEnabled,
+          sectionTypes,
         });
 
         const response = (await this.request(
@@ -743,7 +851,12 @@ export class GraphClient {
 
         return Promise.all(
           response?._Content?.items.map((item: unknown) =>
-            this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item))),
+            this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item)), {
+              damEnabled,
+              sectionTypes,
+              cache: cacheEnabled,
+              slot: activeSlot,
+            }),
           ) ?? [],
         );
       } catch (error) {
@@ -913,13 +1026,14 @@ export class GraphClient {
       const activeSlot = options?.slot ?? this.slot;
       const damMode = options?.dam ?? this.dam;
 
-      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
-        input,
-        params.preview_token,
-        false,
-        activeSlot,
-        damMode,
-      );
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(
+          input,
+          params.preview_token,
+          false,
+          activeSlot,
+          damMode,
+        );
 
       if (!contentTypeName) {
         throw new GraphResponseError(
@@ -945,6 +1059,7 @@ export class GraphClient {
         maxFragmentThreshold: this.maxFragmentThreshold,
         expandContracts: this.expandContracts,
         formsEnabled,
+        sectionTypes,
       });
 
       const response = await this.request(
@@ -958,7 +1073,13 @@ export class GraphClient {
       return decorateWithContext(
         await this.resolveFormNodes(
           liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-          params.preview_token,
+          {
+            damEnabled,
+            sectionTypes,
+            previewToken: params.preview_token,
+            cache: false,
+            slot: activeSlot,
+          },
         ),
         params,
       );
@@ -1090,13 +1211,14 @@ export class GraphClient {
         },
       };
 
-      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
-        input,
-        previewToken,
-        cacheEnabled,
-        activeSlot,
-        damMode,
-      );
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(
+          input,
+          previewToken,
+          cacheEnabled,
+          activeSlot,
+          damMode,
+        );
 
       if (!contentTypeName) {
         span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -1111,6 +1233,7 @@ export class GraphClient {
           maxFragmentThreshold: this.maxFragmentThreshold,
           expandContracts: this.expandContracts,
           formsEnabled,
+          sectionTypes,
         });
 
         const response = await this.request(
@@ -1123,7 +1246,13 @@ export class GraphClient {
 
         return this.resolveFormNodes(
           liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-          previewToken,
+          {
+            damEnabled,
+            sectionTypes,
+            previewToken,
+            cache: cacheEnabled,
+            slot: activeSlot,
+          },
         );
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {

@@ -32,11 +32,19 @@ function createCacheKey(
   contentType: string,
   options: QueryOptions = {},
 ): string {
-  const { damEnabled, maxFragmentThreshold, expandContracts, formsEnabled, typeFilter } =
-    createQueryContext(options);
+  const {
+    damEnabled,
+    maxFragmentThreshold,
+    expandContracts,
+    formsEnabled,
+    typeFilter,
+    sectionTypes,
+  } = createQueryContext(options);
   const { includeBaseFragments = true } = options;
 
   const filterPart = typeFilter ? `:${getFilterHash(typeFilter)}` : '';
+  // Which types own a `composition` changes the query, and differs per endpoint.
+  const sectionPart = sectionTypes ? `:${[...sectionTypes].sort().join(',')}` : '';
 
   return (
     [
@@ -47,7 +55,9 @@ function createCacheKey(
       expandContracts,
       formsEnabled,
       includeBaseFragments,
-    ].join(':') + filterPart
+    ].join(':') +
+    filterPart +
+    sectionPart
   );
 }
 

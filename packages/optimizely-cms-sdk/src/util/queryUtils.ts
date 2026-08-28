@@ -106,6 +106,17 @@ export type QueryContext = {
    * Useful for skipping content types that have no registered component.
    */
   typeFilter?: (contentTypeKey: string) => boolean;
+  /**
+   * The content types Graph reports as implementing `_ISection`, and so the
+   * ones that actually have a `composition` field.
+   *
+   * Declaring `sectionEnabled` locally does not guarantee it — asking a type
+   * without the interface for `composition` fails the whole query. Read from
+   * the metadata response, which costs no extra round trip. Absent means the
+   * caller could not find out, and only the forms container is assumed to
+   * have the field.
+   */
+  sectionTypes?: ReadonlySet<string>;
 };
 
 /**
@@ -146,6 +157,7 @@ export const createQueryContext = (
   expandContracts: options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS,
   formsEnabled: options.formsEnabled ?? false,
   typeFilter: options.typeFilter,
+  sectionTypes: options.sectionTypes,
 });
 
 export type FragmentInfo = {

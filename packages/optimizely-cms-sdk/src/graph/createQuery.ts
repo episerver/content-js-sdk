@@ -288,17 +288,15 @@ export const createFragment = (
     const isExperience =
       'baseType' in contentType && contentType.baseType === '_experience';
 
-    // A section fetches its own composition unless it sits in one already, in
-    // which case its children arrive through that tree. Reached as the query
-    // root or through a content property, there is no such tree, and without
-    // this the section renders as an empty shell.
-    //
-    // Off the root, this is limited to form containers. An application type
-    // declaring `sectionEnabled` need not implement Graph's `_ISection`, and
-    // asking such a type for `composition` fails the whole query; only the
-    // forms container is known to have the field. Lifting the restriction
-    // needs the schema, which the query builder does not have.
-    const canBeAsked = isRootCall || isFormContentType(contentTypeName);
+    // Sections fetch their own composition unless nested in one already.
+    // Standalone sections need composition to render properly. The field
+    // must be known to exist; use caller's schema list if available,
+    // otherwise fall back to the forms container.
+    const canBeAsked =
+      isRootCall ||
+      (ctx.sectionTypes ?
+        ctx.sectionTypes.has(stripSourcePrefix(contentTypeName))
+      : isFormContentType(contentTypeName));
     const isStandaloneSection =
       canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 
