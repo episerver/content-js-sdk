@@ -160,34 +160,23 @@ export type GraphGetItemOptions = GraphQueryOptions & {
 
 export { GraphVariationInput };
 
-const GET_CONTENT_METADATA_QUERY = `
-query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
-    item {
-      _metadata {
-        types
-        variation
-      }
-    }
-  }
-  # Check if "cmp_Asset" type exists which indicates that DAM is enabled
-  damAssetType: __type(name: "cmp_Asset") {
-    __typename
-  }
-}
-`;
-
 /**
- * The metadata query, plus a probe for whether this page contains a form.
+ * Content type and DAM detection, plus an optional probe for whether this page
+ * contains a form.
  *
- * Form fragments are large, so they're only fetched for pages that actually
- * have one. `composition.nodes.type` matches top-level sections, where a form
- * container always sits, and works whether or not Forms is enabled.
+ * Form fragments are large, so they are only fetched for pages that actually
+ * have one. The probe is skipped with `@include` rather than living in a second
+ * query, so the two cannot drift apart. It costs nothing when excluded.
+ *
+ * `composition.nodes.type` matches top-level sections, where a form container
+ * always sits, and is an ordinary string field — so the probe is valid whether
+ * or not Optimizely Forms is enabled on the instance.
  */
-const GET_CONTENT_METADATA_WITH_FORMS_QUERY = `
+const GET_CONTENT_METADATA_QUERY = `
 query GetContentMetadata(
   $where: _ContentWhereInput
   $formsWhere: _ExperienceWhereInput
+  $withForms: Boolean!
   $variation: VariationInput
 ) {
   _Content(where: $where, variation: $variation) {
@@ -203,7 +192,7 @@ query GetContentMetadata(
     __typename
   }
   # Non-zero when this page has a form container as a top-level section
-  formsOnPage: _Experience(where: $formsWhere) {
+  formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
     total
   }
 }
@@ -648,8 +637,12 @@ export class GraphClient {
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
     const data = await this.request(
-      mayRenderForms ? GET_CONTENT_METADATA_WITH_FORMS_QUERY : GET_CONTENT_METADATA_QUERY,
-      mayRenderForms ? { ...input, formsWhere: formsOnPageFilter(input.where) } : input,
+      GET_CONTENT_METADATA_QUERY,
+      {
+        ...input,
+        withForms: mayRenderForms,
+        formsWhere: mayRenderForms ? formsOnPageFilter(input.where) : null,
+      },
       previewToken,
       cache ?? this.cache,
       slot ?? this.slot,

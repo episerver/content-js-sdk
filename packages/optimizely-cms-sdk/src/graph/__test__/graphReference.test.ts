@@ -227,13 +227,13 @@ describe('GraphClient.getContent() with GraphReference', () => {
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
-      {
+      expect.objectContaining({
         where: {
           _metadata: {
             key: { eq: '880777d5a2824399b07e93e3ca70668e' },
           },
         },
-      },
+      }),
       undefined,
       true,
       undefined,
@@ -266,14 +266,14 @@ describe('GraphClient.getContent() with GraphReference', () => {
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
-      {
+      expect.objectContaining({
         where: {
           _metadata: {
             key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             locale: { eq: 'en' },
           },
         },
-      },
+      }),
       undefined,
       true,
       undefined,
@@ -306,14 +306,14 @@ describe('GraphClient.getContent() with GraphReference', () => {
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
-      {
+      expect.objectContaining({
         where: {
           _metadata: {
             key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             version: { eq: '123' },
           },
         },
-      },
+      }),
       undefined,
       true,
       undefined,
@@ -351,14 +351,14 @@ describe('GraphClient.getContent() with GraphReference', () => {
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
-      {
+      expect.objectContaining({
         where: {
           _metadata: {
             key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             version: { eq: '123' },
           },
         },
-      },
+      }),
       undefined,
       true,
       undefined,
@@ -397,14 +397,14 @@ describe('GraphClient.getContent() with GraphReference', () => {
     expect(mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.any(String),
-      {
+      expect.objectContaining({
         where: {
           _metadata: {
             key: { eq: '880777d5a2824399b07e93e3ca70668e' },
             version: { eq: '123' },
           },
         },
-      },
+      }),
       undefined,
       true,
       undefined,

@@ -99,7 +99,9 @@ describe('probing whether a page has a form', () => {
 
     await client.getContent({ key: 'a' });
 
-    expect(metadataCalls()[0][0]).not.toContain('formsOnPage');
+    // The probe lives in the one metadata query and is switched off with
+    // `@include`, so what matters is the flag, not the query text.
+    expect((metadataCalls()[0][1] as { withForms: boolean }).withForms).toBe(false);
     expect(contentQuery()).not.toContain('OptiForms');
   });
 
