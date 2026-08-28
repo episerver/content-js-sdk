@@ -45,7 +45,9 @@ export type ParseResult<T> = ParseSuccess<T> | ParseFailure;
  */
 export class SchemaValidationError extends Error {
   constructor(public readonly errors: ValidationError[]) {
-    super(`Validation failed with ${errors.length} error(s):\n${errors.map(e => `  [${e.path.join('.')}] ${e.message}`).join('\n')}`);
+    super(
+      `Validation failed with ${errors.length} error(s):\n${errors.map(e => `  [${e.path.join('.')}] ${e.message}`).join('\n')}`,
+    );
     this.name = 'SchemaValidationError';
   }
 }
@@ -107,8 +109,19 @@ export class Schema<T = unknown> {
   }
 }
 
-function addError(errors: ValidationError[], path: string[], message: string, expected?: string, received?: string) {
-  errors.push({ path, message, ...(expected !== undefined && { expected }), ...(received !== undefined && { received }) });
+function addError(
+  errors: ValidationError[],
+  path: string[],
+  message: string,
+  expected?: string,
+  received?: string,
+) {
+  errors.push({
+    path,
+    message,
+    ...(expected !== undefined && { expected }),
+    ...(received !== undefined && { received }),
+  });
 }
 
 function typeOf(value: unknown): string {
@@ -117,9 +130,20 @@ function typeOf(value: unknown): string {
   return typeof value;
 }
 
-function validateString(value: unknown, property: StringProperty, path: string[], errors: ValidationError[]) {
+function validateString(
+  value: unknown,
+  property: StringProperty,
+  path: string[],
+  errors: ValidationError[],
+) {
   if (typeof value !== 'string') {
-    addError(errors, path, `Expected string, received ${typeOf(value)}`, 'string', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected string, received ${typeOf(value)}`,
+      'string',
+      typeOf(value),
+    );
     return;
   }
 
@@ -145,9 +169,20 @@ function validateString(value: unknown, property: StringProperty, path: string[]
   }
 }
 
-function validateInteger(value: unknown, property: IntegerProperty, path: string[], errors: ValidationError[]) {
+function validateInteger(
+  value: unknown,
+  property: IntegerProperty,
+  path: string[],
+  errors: ValidationError[],
+) {
   if (typeof value !== 'number') {
-    addError(errors, path, `Expected integer, received ${typeOf(value)}`, 'integer', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected integer, received ${typeOf(value)}`,
+      'integer',
+      typeOf(value),
+    );
     return;
   }
   if (!Number.isInteger(value)) {
@@ -171,9 +206,20 @@ function validateInteger(value: unknown, property: IntegerProperty, path: string
   }
 }
 
-function validateFloat(value: unknown, property: FloatProperty, path: string[], errors: ValidationError[]) {
+function validateFloat(
+  value: unknown,
+  property: FloatProperty,
+  path: string[],
+  errors: ValidationError[],
+) {
   if (typeof value !== 'number') {
-    addError(errors, path, `Expected number, received ${typeOf(value)}`, 'number', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected number, received ${typeOf(value)}`,
+      'number',
+      typeOf(value),
+    );
     return;
   }
 
@@ -195,58 +241,134 @@ function validateFloat(value: unknown, property: FloatProperty, path: string[], 
 
 function validateUrl(value: unknown, path: string[], errors: ValidationError[]) {
   if (typeof value !== 'object' || value === null) {
-    addError(errors, path, `Expected url object, received ${typeOf(value)}`, 'object', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected url object, received ${typeOf(value)}`,
+      'object',
+      typeOf(value),
+    );
   }
 }
 
 function validateRichText(value: unknown, path: string[], errors: ValidationError[]) {
   if (typeof value !== 'object' || value === null) {
-    addError(errors, path, `Expected richText object, received ${typeOf(value)}`, 'object', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected richText object, received ${typeOf(value)}`,
+      'object',
+      typeOf(value),
+    );
     return;
   }
   const obj = value as Record<string, unknown>;
   if (obj.html != null && typeof obj.html !== 'string') {
-    addError(errors, [...path, 'html'], `Expected string or null, received ${typeOf(obj.html)}`, 'string', typeOf(obj.html));
+    addError(
+      errors,
+      [...path, 'html'],
+      `Expected string or null, received ${typeOf(obj.html)}`,
+      'string',
+      typeOf(obj.html),
+    );
   }
   if (obj.json != null && typeof obj.json !== 'object') {
-    addError(errors, [...path, 'json'], `Expected object or null, received ${typeOf(obj.json)}`, 'object', typeOf(obj.json));
+    addError(
+      errors,
+      [...path, 'json'],
+      `Expected object or null, received ${typeOf(obj.json)}`,
+      'object',
+      typeOf(obj.json),
+    );
   }
 }
 
 function validateLink(value: unknown, path: string[], errors: ValidationError[]) {
   if (typeof value !== 'object' || value === null) {
-    addError(errors, path, `Expected link object, received ${typeOf(value)}`, 'object', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected link object, received ${typeOf(value)}`,
+      'object',
+      typeOf(value),
+    );
   }
 }
 
-function validateContentReference(value: unknown, path: string[], errors: ValidationError[]) {
+function validateContentReference(
+  value: unknown,
+  path: string[],
+  errors: ValidationError[],
+) {
   if (typeof value !== 'object' || value === null) {
-    addError(errors, path, `Expected contentReference object, received ${typeOf(value)}`, 'object', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected contentReference object, received ${typeOf(value)}`,
+      'object',
+      typeOf(value),
+    );
     return;
   }
   const obj = value as Record<string, unknown>;
   if (obj.key != null && typeof obj.key !== 'string') {
-    addError(errors, [...path, 'key'], `Expected string or null, received ${typeOf(obj.key)}`, 'string', typeOf(obj.key));
+    addError(
+      errors,
+      [...path, 'key'],
+      `Expected string or null, received ${typeOf(obj.key)}`,
+      'string',
+      typeOf(obj.key),
+    );
   }
 }
 
 function validateContent(value: unknown, path: string[], errors: ValidationError[]) {
   if (typeof value !== 'object' || value === null) {
-    addError(errors, path, `Expected content object, received ${typeOf(value)}`, 'object', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected content object, received ${typeOf(value)}`,
+      'object',
+      typeOf(value),
+    );
     return;
   }
   const obj = value as Record<string, unknown>;
   if (obj.__typename != null && typeof obj.__typename !== 'string') {
-    addError(errors, [...path, '__typename'], `Expected string or null, received ${typeOf(obj.__typename)}`, 'string', typeOf(obj.__typename));
+    addError(
+      errors,
+      [...path, '__typename'],
+      `Expected string or null, received ${typeOf(obj.__typename)}`,
+      'string',
+      typeOf(obj.__typename),
+    );
   }
   if (obj.__viewname != null && typeof obj.__viewname !== 'string') {
-    addError(errors, [...path, '__viewname'], `Expected string or null, received ${typeOf(obj.__viewname)}`, 'string', typeOf(obj.__viewname));
+    addError(
+      errors,
+      [...path, '__viewname'],
+      `Expected string or null, received ${typeOf(obj.__viewname)}`,
+      'string',
+      typeOf(obj.__viewname),
+    );
   }
 }
 
-function validateComponent(value: unknown, ct: AnyContentType, path: string[], errors: ValidationError[], visited: Set<string>) {
+function validateComponent(
+  value: unknown,
+  ct: AnyContentType,
+  path: string[],
+  errors: ValidationError[],
+  visited: Set<string>,
+) {
   if (typeof value !== 'object' || value === null) {
-    addError(errors, path, `Expected component object, received ${typeOf(value)}`, 'object', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected component object, received ${typeOf(value)}`,
+      'object',
+      typeOf(value),
+    );
     return;
   }
   if (visited.has(ct.key)) return;
@@ -262,9 +384,21 @@ function validateComponent(value: unknown, ct: AnyContentType, path: string[], e
   }
 }
 
-function validateArray(value: unknown, property: ArrayProperty<ArrayItems>, path: string[], errors: ValidationError[], visited: Set<string>) {
+function validateArray(
+  value: unknown,
+  property: ArrayProperty<ArrayItems>,
+  path: string[],
+  errors: ValidationError[],
+  visited: Set<string>,
+) {
   if (!Array.isArray(value)) {
-    addError(errors, path, `Expected array, received ${typeOf(value)}`, 'array', typeOf(value));
+    addError(
+      errors,
+      path,
+      `Expected array, received ${typeOf(value)}`,
+      'array',
+      typeOf(value),
+    );
     return;
   }
   if (property.minItems !== undefined && value.length < property.minItems) {
@@ -278,7 +412,13 @@ function validateArray(value: unknown, property: ArrayProperty<ArrayItems>, path
   }
 }
 
-function validateProperty(value: unknown, property: AnyProperty, path: string[], errors: ValidationError[], visited: Set<string>) {
+function validateProperty(
+  value: unknown,
+  property: AnyProperty,
+  path: string[],
+  errors: ValidationError[],
+  visited: Set<string>,
+) {
   if (value === null || value === undefined) return;
 
   switch (property.type) {
@@ -287,7 +427,13 @@ function validateProperty(value: unknown, property: AnyProperty, path: string[],
       break;
     case 'boolean':
       if (typeof value !== 'boolean') {
-        addError(errors, path, `Expected boolean, received ${typeOf(value)}`, 'boolean', typeOf(value));
+        addError(
+          errors,
+          path,
+          `Expected boolean, received ${typeOf(value)}`,
+          'boolean',
+          typeOf(value),
+        );
       }
       break;
     case 'integer':
@@ -298,7 +444,13 @@ function validateProperty(value: unknown, property: AnyProperty, path: string[],
       break;
     case 'dateTime':
       if (typeof value !== 'string') {
-        addError(errors, path, `Expected dateTime string, received ${typeOf(value)}`, 'string', typeOf(value));
+        addError(
+          errors,
+          path,
+          `Expected dateTime string, received ${typeOf(value)}`,
+          'string',
+          typeOf(value),
+        );
       }
       break;
     case 'binary':
@@ -320,11 +472,16 @@ function validateProperty(value: unknown, property: AnyProperty, path: string[],
       validateContent(value, path, errors);
       break;
     case 'component': {
-      const resolved = typeof property.contentType === 'string'
-        ? getContentType(property.contentType)
-        : property.contentType;
+      const ct: AnyContentType | string = property.contentType;
+      const resolved = typeof ct === 'string' ? getContentType(ct) : ct;
       if (resolved && 'baseType' in resolved && resolved.baseType) {
-        validateComponent(value, resolved as AnyContentType, path, errors, new Set(visited));
+        validateComponent(
+          value,
+          resolved as AnyContentType,
+          path,
+          errors,
+          new Set(visited),
+        );
       }
       break;
     }
