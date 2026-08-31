@@ -14,8 +14,10 @@ type Props = {
 
 const defaultSlug = ['en'];
 
-const getContentBySlug = cache(async (slug: String[]) => {
-  const path = `/${slug.join('/')}`;
+// Keyed on the path string, not the slug array: `cache()` compares arguments by
+// identity, and `generateMetadata` and `Page` each await `params` separately, so an
+// array argument yields two cache entries and fetches the page twice.
+const getContentByPath = cache(async (path: string) => {
   const result = await getClient().getContentByPath(path);
 
   if (result.length === 0) {
@@ -24,6 +26,8 @@ const getContentBySlug = cache(async (slug: String[]) => {
 
   return result[0];
 });
+
+const getContentBySlug = (slug: string[]) => getContentByPath(`/${slug.join('/')}`);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

@@ -24,11 +24,8 @@ type RawNavigationItem = {
 
 const fetchChildItems = async (
   parentKey: string,
-  parentUrl: string,
   locale: string,
   activeKey: string,
-  isRoot: boolean = false,
-  skipOverview: boolean = true,
 ): Promise<NavigationItem[]> => {
   const items = await getClient().getItems({ key: parentKey, locale });
 
@@ -39,17 +36,10 @@ const fetchChildItems = async (
       item._metadata && !item._metadata.types.includes('BlankExperience'),
   );
 
-  const childItems = await Promise.all(
+  return Promise.all(
     filteredItems.map(async (item: RawNavigationItem) => {
       const metadata = item._metadata!;
-      const grandchildItems = await fetchChildItems(
-        metadata.key,
-        metadata.url?.default || '',
-        locale,
-        activeKey,
-        false,
-        skipOverview,
-      );
+      const grandchildItems = await fetchChildItems(metadata.key, locale, activeKey);
 
       return {
         key: metadata.key,
@@ -60,24 +50,38 @@ const fetchChildItems = async (
       };
     }),
   );
-
-  if (!isRoot && childItems.length > 0 && !skipOverview) {
-    return [
-      {
-        key: parentKey,
-        displayName: 'Overview',
-        url: parentUrl,
-        isActive: parentKey === activeKey,
-        items: null,
-      },
-      ...childItems,
-    ];
-  }
-
-  return childItems;
 };
 
-export const getNavigationItems = cache(async (skipOverview: boolean = true) => {
+/**
+ * Prepends an "Overview" entry linking to the parent itself, for every node that
+ * has children. A pure reshape of an already-fetched tree - keeping it out of the
+ * fetch is what lets desktop and mobile share one set of requests.
+ */
+const withOverviewEntries = (items: NavigationItem[]): NavigationItem[] =>
+  items.map(item =>
+    item.items?.length ?
+      {
+        ...item,
+        items: [
+          {
+            key: item.key,
+            displayName: 'Overview',
+            url: item.url,
+            isActive: item.isActive,
+            items: null,
+          },
+          ...withOverviewEntries(item.items),
+        ],
+      }
+    : item,
+  );
+
+/**
+ * The navigation tree, fetched once per request. Takes no arguments so that every
+ * caller - desktop nav, mobile nav, breadcrumbs, footer, search - shares a single
+ * React `cache()` entry and therefore a single walk of the tree.
+ */
+const getNavigationTree = cache(async (): Promise<NavigationItem[]> => {
   const context = getContext();
 
   if (!context?.key || !context?.locale) {
@@ -87,18 +91,16 @@ export const getNavigationItems = cache(async (skipOverview: boolean = true) => 
   const path = await getClient().getPath({ key: context.key, locale: context.locale });
   if (!path?.length) return [];
 
-  const rootUrl = path[0]._metadata?.url?.default || '';
   const rootKey = path[0]._metadata?.key;
+  const rootUrl = path[0]._metadata?.url?.default || '';
   if (!rootKey || !rootUrl) return [];
 
-  return fetchChildItems(
-    rootKey,
-    rootUrl,
-    context.locale,
-    context.key,
-    true,
-    skipOverview,
-  );
+  return fetchChildItems(rootKey, context.locale, context.key);
 });
 
-export const getMobileNavigationItems = cache(() => getNavigationItems(false));
+export const getNavigationItems = async (skipOverview: boolean = true) => {
+  const tree = await getNavigationTree();
+  return skipOverview ? tree : withOverviewEntries(tree);
+};
+
+export const getMobileNavigationItems = () => getNavigationItems(false);
