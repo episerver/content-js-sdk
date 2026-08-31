@@ -77,6 +77,12 @@ export type GraphOptions = {
    * Useful for skipping content types that have no registered component.
    */
   typeFilter?: (contentTypeKey: string) => boolean;
+  /**
+   * Control DAM asset fragment inclusion for all queries.
+   * Can be overridden per request.
+   * @default 'automatic'
+   */
+  dam?: DamMode;
 };
 
 // Global configuration for client factory
@@ -106,6 +112,15 @@ export type GraphReference = {
 /** Slot values for selecting the Graph engine version */
 export type GraphSlot = 'Current' | 'New';
 
+/**
+ * Controls whether DAM (Digital Asset Management) asset fragments are included
+ * in generated content queries.
+ * - `'automatic'`: Include them when the Graph schema exposes DAM types (default).
+ * - `'on'`: Always include them, skipping schema detection.
+ * - `'off'`: Never include them, skipping schema detection.
+ */
+export type DamMode = 'automatic' | 'on' | 'off';
+
 /** Query options shared by all query methods */
 export type GraphQueryOptions = {
   /**
@@ -121,6 +136,11 @@ export type GraphQueryOptions = {
    * Overrides the global `slot` setting in `GraphOptions`.
    */
   slot?: GraphSlot;
+  /**
+   * Control DAM asset fragment inclusion for this request.
+   * Overrides the global `dam` setting in `GraphOptions`.
+   */
+  dam?: DamMode;
 };
 
 export type GraphGetContentOptions = GraphQueryOptions & {
@@ -410,6 +430,7 @@ export class GraphClient {
   slot?: GraphSlot;
   userAgent: string;
   typeFilter?: (contentTypeKey: string) => boolean;
+  dam: DamMode;
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
@@ -423,6 +444,7 @@ export class GraphClient {
     this.slot = options.slot;
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
     this.typeFilter = options.typeFilter;
+    this.dam = options.dam ?? 'automatic';
   }
 
   /** Perform a GraphQL query with variables */
@@ -531,6 +553,7 @@ export class GraphClient {
     previewToken?: string,
     cache?: boolean,
     slot?: GraphSlot,
+    damMode: DamMode = 'automatic',
   ) {
     // Only worth asking when the application registered the form types; without
     // them there is nothing to leave out. This is a local registry lookup, so it
@@ -546,8 +569,13 @@ export class GraphClient {
     );
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
+
     // Determine if DAM is enabled based on the presence of cmp_Asset type
-    const damEnabled = data.damAssetType !== null;
+    // The metadata query always probes for cmp_Asset; forced modes just ignore it.
+    const damEnabled =
+      damMode === 'on' ? true
+      : damMode === 'off' ? false
+      : data.damAssetType !== null;
 
     // Form fragments are only worth their size on pages that contain a form.
     // The probe asks `_Experience`, so it reports nothing for a form container
@@ -601,12 +629,14 @@ export class GraphClient {
 
       const cacheEnabled = options?.cache ?? this.cache;
       const activeSlot = options?.slot ?? this.slot;
+      const damMode = options?.dam ?? this.dam;
 
       const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         undefined,
         cacheEnabled,
         activeSlot,
+        damMode,
       );
 
       if (!contentTypeName) {
@@ -800,12 +830,14 @@ export class GraphClient {
     return withGetPreviewContentSpan(params, async span => {
       const input = previewFilter(params);
       const activeSlot = options?.slot ?? this.slot;
+      const damMode = options?.dam ?? this.dam;
 
       const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
         input,
         params.preview_token,
         false,
         activeSlot,
+        damMode,
       );
 
       if (!contentTypeName) {
@@ -961,6 +993,7 @@ export class GraphClient {
 
       const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
       const activeSlot = options?.slot ?? this.slot;
+      const damMode = options?.dam ?? this.dam;
 
       const input: GraphVariables = {
         where: {
@@ -978,6 +1011,7 @@ export class GraphClient {
         previewToken,
         cacheEnabled,
         activeSlot,
+        damMode,
       );
 
       if (!contentTypeName) {

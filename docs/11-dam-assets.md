@@ -5,6 +5,40 @@ When DAM integration is enabled in your CMS instance, you get helper functions f
 > [!NOTE]
 > These utilities only work when DAM assets are enabled in your Content Graph. Check with your CMS administrator if you're not sure whether the integration is active.
 
+## Controlling DAM fragment inclusion
+
+By default, the SDK detects whether your Content Graph exposes DAM types and, when
+it does, automatically adds the DAM asset fragments to content queries that have
+`contentReference` properties. This detection rides along on the metadata request
+the SDK already makes, so it costs no extra round trip.
+
+You can control this behaviour with the `dam` option, which accepts:
+
+- `'automatic'` (default) — include DAM fragments when the schema exposes DAM types.
+- `'on'` — always include DAM fragments.
+- `'off'` — never include DAM fragments.
+
+Set it globally when configuring the client:
+
+```ts
+import { config } from '@optimizely/cms-sdk';
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  dam: 'on', // 'automatic' | 'on' | 'off'
+});
+```
+
+Or override it per request:
+
+```ts
+const content = await client.getContent({ key: '...' }, { dam: 'off' });
+```
+
+A per-request `dam` value takes precedence over the global setting. Use `'on'` or
+`'off'` when you already know whether DAM is enabled and want deterministic output
+regardless of the schema.
+
 The SDK gives you:
 
 - `damAssets()` - Returns pre-configured helpers for the content property
