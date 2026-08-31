@@ -32,6 +32,7 @@ export type {
   GraphGetItemOptions,
   GraphQueryOptions,
   GraphSlot,
+  DamMode,
 } from './graph/index.js';
 
 // Provided content types and experiences
