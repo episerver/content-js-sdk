@@ -398,6 +398,10 @@ export class GraphClient {
             previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
         };
 
+        if (stored) {
+          headers['cg-stored-query'] = 'template';
+        }
+
         if (slot === 'New') {
           headers['cg-query-new'] = 'true';
         }
