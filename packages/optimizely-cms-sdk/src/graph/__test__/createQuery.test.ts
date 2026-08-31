@@ -743,7 +743,7 @@ describe('deterministic query output', () => {
 
     const query = createSingleContentQuery('PreviewTest', false, 100, true, 'by-key', 'all');
 
-    expect(query).toContain('variation: ALL');
+    expect(query).toContain('variation: { include: ALL }');
     expect(query).toContain('$key: String');
     expect(query).toContain('$metadataLocale: String');
     expect(query).toContain('$version: String');
