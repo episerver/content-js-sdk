@@ -75,6 +75,12 @@ export type GraphOptions = {
    * @default 'OptimizelySDK/{version} (JS)'
    */
   userAgent?: string;
+  /**
+   * Control DAM asset fragment inclusion for all queries.
+   * Can be overridden per request.
+   * @default 'automatic'
+   */
+  dam?: DamMode;
 };
 
 // Global configuration for client factory
@@ -104,6 +110,15 @@ export type GraphReference = {
 /** Slot values for selecting the Graph engine version */
 export type GraphSlot = 'Current' | 'New';
 
+/**
+ * Controls whether DAM (Digital Asset Management) asset fragments are included
+ * in generated content queries.
+ * - `'automatic'`: Include them when the Graph schema exposes DAM types (default).
+ * - `'on'`: Always include them, skipping schema detection.
+ * - `'off'`: Never include them, skipping schema detection.
+ */
+export type DamMode = 'automatic' | 'on' | 'off';
+
 /** Query options shared by all query methods */
 export type GraphQueryOptions = {
   /**
@@ -127,6 +142,11 @@ export type GraphQueryOptions = {
    * Overrides the global `slot` setting in `GraphOptions`.
    */
   slot?: GraphSlot;
+  /**
+   * Control DAM asset fragment inclusion for this request.
+   * Overrides the global `dam` setting in `GraphOptions`.
+   */
+  dam?: DamMode;
 };
 
 export type GraphGetContentOptions = GraphQueryOptions & {
@@ -352,6 +372,7 @@ export class GraphClient {
   cache: boolean;
   slot?: GraphSlot;
   userAgent: string;
+  dam: DamMode;
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
@@ -364,6 +385,7 @@ export class GraphClient {
     this.cache = options.cache ?? true;
     this.slot = options.slot;
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
+    this.dam = options.dam ?? 'automatic';
   }
 
   /** Perform a GraphQL query with variables */
@@ -481,6 +503,7 @@ export class GraphClient {
     slot?: GraphSlot,
     stored?: boolean,
     variationMode: VariationMode = 'none',
+    damMode: DamMode = 'automatic',
   ) {
     const query = getMetadataQuery(filter.filterShape, variationMode);
     const variables = filter.variables;
@@ -495,7 +518,13 @@ export class GraphClient {
     );
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
-    const damEnabled = data.damAssetType !== null;
+
+    // Determine if DAM is enabled based on the presence of cmp_Asset type
+    // The metadata query always probes for cmp_Asset; forced modes just ignore it.
+    const damEnabled =
+      damMode === 'on' ? true
+      : damMode === 'off' ? false
+      : data.damAssetType !== null;
 
     if (!contentTypeName) {
       return { contentTypeName: null, damEnabled };
@@ -541,6 +570,7 @@ export class GraphClient {
       const cacheEnabled = options?.cache ?? this.cache;
       const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
+      const damMode = options?.dam ?? this.dam;
 
       const { contentTypeName, damEnabled } = await this.getContentMetaData(
         filter,
@@ -548,6 +578,8 @@ export class GraphClient {
         cacheEnabled,
         activeSlot,
         storedEnabled,
+        varMode,
+        damMode,
       );
 
       if (!contentTypeName) {
@@ -733,6 +765,7 @@ export class GraphClient {
       const filter = previewScalarFilter(params);
       const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
+      const damMode = options?.dam ?? this.dam;
 
       const { contentTypeName, damEnabled } = await this.getContentMetaData(
         filter,
@@ -741,6 +774,7 @@ export class GraphClient {
         activeSlot,
         storedEnabled,
         'all',
+        damMode,
       );
 
       if (!contentTypeName) {
@@ -896,6 +930,7 @@ export class GraphClient {
       const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
       const storedEnabled = options?.stored ?? true;
       const activeSlot = options?.slot ?? this.slot;
+      const damMode = options?.dam ?? this.dam;
 
       const filter = referenceScalarFilter(ref);
 
@@ -905,6 +940,8 @@ export class GraphClient {
         cacheEnabled,
         activeSlot,
         storedEnabled,
+        'none',
+        damMode,
       );
 
       if (!contentTypeName) {
