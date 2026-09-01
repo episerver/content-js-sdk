@@ -1,5 +1,25 @@
 # @optimizely/cms-sdk
 
+## 2.3.0-beta.0
+
+### Minor Changes
+
+- d6893f1: Make DAM asset fragments configurable.
+
+  New `dam` option on `GraphOptions` and `GraphQueryOptions` accepts `'automatic'`
+  (default, probes the schema for DAM types), `'on'` (always include DAM fragments,
+  skipping detection) or `'off'` (never include them). Exports the `DamMode` type.
+
+- 12ee7eb: Enable query caching (stored queries) by removing complex input arguments
+
+### Patch Changes
+
+- d6893f1: Render RichText content delivered as a serialized JSON string.
+
+  Optimizely Graph returns the `json` field either as an object or as a JSON string
+  depending on the CMS version. `RichText` previously rendered nothing for the string
+  form; it now parses it, and renders empty rather than throwing on malformed input.
+
 ## 2.2.0
 
 ### Minor Changes
