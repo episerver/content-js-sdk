@@ -11,7 +11,7 @@
   "dependencies": {
     "@optimizely/cms-cli": "workspace:*",
     "@optimizely/cms-sdk": "workspace:*",
-    "next": "16.2.1",
+    "next": "16.2.11",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
