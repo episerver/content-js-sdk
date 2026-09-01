@@ -1,6 +1,6 @@
-import { AnyContentType, Contract } from './contentTypes.js';
+import { AnyContentType, AnyContract } from './contentTypes.js';
 
-export type RegistryEntry = AnyContentType | Contract;
+export type RegistryEntry = AnyContentType | AnyContract;
 
 /** Types the application registered through `initContentTypeRegistry`. */
 let _registry: RegistryEntry[] = [];

@@ -1,6 +1,6 @@
 import { test, expectTypeOf } from 'vitest';
 import type { ContentProps, InferredAssetMetadata, InferredImageMetadata } from './infer.js';
-import { contentType } from './model/index.js';
+import { contentType, contract } from './model/index.js';
 
 test('ContentProps works for non-content type', () => {
   expectTypeOf<ContentProps<number>>().toBeUnknown();
@@ -174,4 +174,41 @@ test('ContentProps infers JsonValue for JSON properties', () => {
 
   type Result = ContentProps<typeof c1>;
   expectTypeOf<Result['settings']>().not.toBeAny();
+});
+
+test('ContentProps keeps every property when extending contracts without properties', () => {
+  const Foo = contract({
+    key: 'Foo',
+    displayName: 'Foo',
+    properties: { foo: { type: 'string' } },
+  });
+  const EmptyProps = contract({
+    key: 'EmptyProps',
+    displayName: 'Empty properties',
+    properties: {},
+  });
+  const NoProps = contract({ key: 'NoProps', displayName: 'No properties' });
+
+  const withEmptyProps = contentType({
+    key: 'withEmptyProps',
+    displayName: 'With empty properties',
+    baseType: '_page',
+    extends: [Foo, EmptyProps],
+    properties: { test: { type: 'string' } },
+  });
+
+  const withNoProps = contentType({
+    key: 'withNoProps',
+    displayName: 'With no properties',
+    baseType: '_page',
+    extends: [Foo, NoProps],
+    properties: { test: { type: 'string' } },
+  });
+
+  // A contract without properties must not erase the other contracts' properties,
+  // nor the content type's own, nor add an index signature
+  expectTypeOf<ContentProps<typeof withEmptyProps>['foo']>().toEqualTypeOf<string | null>();
+  expectTypeOf<ContentProps<typeof withEmptyProps>['test']>().toEqualTypeOf<string | null>();
+  expectTypeOf<ContentProps<typeof withNoProps>['foo']>().toEqualTypeOf<string | null>();
+  expectTypeOf<ContentProps<typeof withNoProps>['test']>().toEqualTypeOf<string | null>();
 });
