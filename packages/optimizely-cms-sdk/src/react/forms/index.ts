@@ -2,6 +2,7 @@ export { FormValidationProvider, useFormValidation } from './FormValidationConte
 export type { FormValidationContextType } from './FormValidationContext.js';
 export { FormSubmissionProvider, useFormSubmission } from './FormSubmissionProvider.js';
 export { default as FormWrapper, useFormSteps as useFormStep } from './FormWrapper.js';
+export type { FormSubmitHandler } from './FormWrapper.js';
 export type { DependencyRule } from './FormRulesContext.js';
 export { FormStep } from './FormStep.js';
 export { FormRulesProvider, useFormRules } from './FormRulesContext.js';

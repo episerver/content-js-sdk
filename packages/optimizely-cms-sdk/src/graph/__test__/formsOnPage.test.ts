@@ -99,7 +99,9 @@ describe('probing whether a page has a form', () => {
 
     await client.getContent({ key: 'a' });
 
-    expect(metadataCalls()[0][0]).not.toContain('formsOnPage');
+    // The probe lives in the one metadata query and is switched off with
+    // `@include`, so what matters is the flag, not the query text.
+    expect((metadataCalls()[0][1] as { withForms: boolean }).withForms).toBe(false);
     expect(contentQuery()).not.toContain('OptiForms');
   });
 
@@ -112,6 +114,101 @@ describe('probing whether a page has a form', () => {
     expect(JSON.stringify(variables.formsWhere)).toContain('OptiFormsContainerData');
     // The page's own filter has to survive, or the probe answers about the wrong page.
     expect(JSON.stringify(variables.formsWhere)).toContain('"key":{"eq":"b"}');
+  });
+});
+
+describe('a form in a content area rather than a composition', () => {
+  const PageType = contentType({
+    key: 'Standard',
+    displayName: 'Standard',
+    baseType: '_page',
+    properties: {
+      extras: {
+        type: 'array',
+        items: { type: 'content', allowedTypes: ['_component', '_section'] },
+      },
+    },
+  });
+
+  const PlainPageType = contentType({
+    key: 'Plain',
+    displayName: 'Plain',
+    baseType: '_page',
+    properties: { title: { type: 'string' } },
+  });
+
+  /** Stubs Graph as a page of `typeName` with no form in any composition. */
+  const stubPage = (typeName: string) => {
+    mockRequest = vi.spyOn(client, 'request').mockImplementation(async (query: string) => {
+      if (query.includes('GetContentMetadata')) {
+        return {
+          _Content: { item: { _metadata: { types: [typeName] } } },
+          damAssetType: null,
+          formsOnPage: { total: 0 },
+        };
+      }
+      return { _Content: { item: { __typename: typeName } } };
+    });
+  };
+
+  beforeEach(() => {
+    initContentTypeRegistry([PageType, PlainPageType, ...FormContentTypes]);
+    refreshCache();
+  });
+
+  // The probe asks `_Experience`, and a page's content area is not a
+  // composition, so it reports nothing. Without the content model as a second
+  // opinion the form fragments are dropped and the form renders as a bare title.
+  test('includes form fragments, though the probe found none', async () => {
+    stubPage('Standard');
+
+    await client.getContent({ key: 'a' });
+
+    expect(contentQuery()).toContain('fragment OptiFormsContainerData');
+  });
+
+  // Graph resolves a section's composition only when asked for that section, so
+  // the field comes back empty here and the client fetches it separately. The
+  // field still has to be in the query: it is how an empty one is told from a
+  // form that simply has no steps.
+  test('asks the container for its own composition', async () => {
+    stubPage('Standard');
+
+    await client.getContent({ key: 'a' });
+
+    const containerFragment =
+      contentQuery().match(/fragment OptiFormsContainerData on [\s\S]*?\n/)?.[0] ?? '';
+    expect(containerFragment).toContain('composition { ...ICompositionNode }');
+  });
+
+  // `_section` alone reaches nothing: base-type expansion matches on the
+  // declared `baseType`, and the container declares `_component`. A content
+  // area meant for a form has to allow `_component`, `*`, or the container by
+  // name — the same rule any section-enabled component already follows.
+  test('is not detected through a content area that allows only sections', async () => {
+    const SectionAreaPage = contentType({
+      key: 'SectionArea',
+      displayName: 'Section Area',
+      baseType: '_page',
+      properties: {
+        extras: { type: 'array', items: { type: 'content', allowedTypes: ['_section'] } },
+      },
+    });
+    initContentTypeRegistry([SectionAreaPage, ...FormContentTypes]);
+    refreshCache();
+    stubPage('SectionArea');
+
+    await client.getContent({ key: 'a' });
+
+    expect(contentQuery()).not.toContain('OptiForms');
+  });
+
+  test('still leaves them out for a page that cannot hold a form', async () => {
+    stubPage('Plain');
+
+    await client.getContent({ key: 'a' });
+
+    expect(contentQuery()).not.toContain('OptiForms');
   });
 });
 

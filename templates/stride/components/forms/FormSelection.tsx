@@ -7,6 +7,7 @@ import {
   getPreviewUtils,
   useFormField,
 } from '@optimizely/cms-sdk/forms/react';
+import { cn } from '../../lib/utils';
 import {
   errorTextClass,
   helpTextClass,
@@ -23,11 +24,20 @@ export default function FormSelection({ content }: FormSelectionProps) {
 
   // A radio group can't take `fieldProps`: the name and change handler belong on
   // each radio, and the ref goes on the fieldset that wraps them.
-  const { value, setValue, inputRef, onBlur, errorId, errorProps, errors, showErrors, isRequired } =
-    useFormField<HTMLFieldSetElement>({
-      content,
-      defaultValue: options.find(option => option.selected)?.value ?? '',
-    });
+  const {
+    value,
+    setValue,
+    inputRef,
+    onBlur,
+    errorId,
+    errorProps,
+    errors,
+    showErrors,
+    isRequired,
+  } = useFormField<HTMLFieldSetElement>({
+    content,
+    defaultValue: options.find(option => option.selected)?.value ?? '',
+  });
 
   const { pa } = getPreviewUtils(content);
 
@@ -47,11 +57,12 @@ export default function FormSelection({ content }: FormSelectionProps) {
             return (
               <label
                 key={option.value}
-                className={`flex cursor-pointer items-center rounded-md border bg-white px-3.5 py-2.5 transition-colors ${
+                className={cn(
+                  'flex cursor-pointer items-center rounded-md border bg-background px-4 py-3 transition-colors',
                   showErrors ? 'border-red-500'
-                  : isSelected ? 'border-teal-500 ring-1 ring-teal-500/30'
-                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-                }`}
+                  : isSelected ? 'border-key1 ring-1 ring-key1/30'
+                  : 'border-foreground/15 hover:border-foreground/30 hover:bg-background2',
+                )}
               >
                 <input
                   type='radio'
@@ -65,9 +76,9 @@ export default function FormSelection({ content }: FormSelectionProps) {
                   title={content.Tooltip ?? ''}
                   aria-invalid={showErrors}
                   aria-describedby={errorId}
-                  className='h-4 w-4 cursor-pointer accent-teal-500'
+                  className='h-4 w-4 cursor-pointer accent-key1'
                 />
-                <span className='ml-3 text-sm text-gray-900'>{option.label}</span>
+                <span className='ml-3 text-sm text-foreground'>{option.label}</span>
               </label>
             );
           })}

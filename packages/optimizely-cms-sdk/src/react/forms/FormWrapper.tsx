@@ -30,8 +30,29 @@ export function useFormSteps() {
   return context;
 }
 
+/**
+ * Sends a validated form.
+ *
+ * Resolving means success: the caller resets the fields, returns to the first
+ * step and scrolls, exactly as it does after its own POST. Throwing means
+ * failure, and an `Error`'s message reaches `useFormSubmission().errorMessage`.
+ *
+ * Runs in the browser. Anything needing a credential belongs in a server action
+ * or a route handler called from here.
+ *
+ * @param formData The form's current values.
+ * @param context.action The container's Submit URL, for a handler that wants it.
+ */
+export type FormSubmitHandler = (
+  formData: FormData,
+  context: { action: string },
+) => Promise<unknown>;
+
 type FormWrapperProps = {
-  action: string;
+  /** Where the built-in POST goes. Ignored when `submitHandler` is given. */
+  action?: string;
+  /** Replaces the built-in POST. Everything around it is unchanged. */
+  submitHandler?: FormSubmitHandler;
   children: ReactNode;
   scrollToOnSuccess?: string | false;
   scrollToOnError?: string | false;
@@ -49,6 +70,7 @@ function scrollToElement(elementId: string | false | undefined) {
 
 function FormWrapperContent({
   action,
+  submitHandler,
   children,
   scrollToOnSuccess = 'form-alert',
   scrollToOnError,
@@ -66,6 +88,16 @@ function FormWrapperContent({
   } = useFormValidation();
   const { setStatus } = useFormSubmission();
   const formRef = useRef<HTMLFormElement>(null);
+
+  // An empty action POSTs to the page itself, which answers 405 and surfaces as
+  // a generic failure. Usually means the container's Submit URL was left unset.
+  if (process.env.NODE_ENV !== 'production' && !action && !submitHandler) {
+    console.warn(
+      'FormWrapper has no `action` and no `submitHandler`, so the form will post ' +
+        "to the current page. Set the form container's Submit URL in the CMS, or " +
+        'pass a `submitHandler`.',
+    );
+  }
 
   // Fields register in render order, so the first entry is the earliest one on the page.
   const revealFirstInvalid = useCallback(
@@ -139,26 +171,33 @@ function FormWrapperContent({
 
     try {
       const formData = new FormData(formRef.current!);
-      const response = await fetch(action, {
-        method: 'POST',
-        body: formData,
-      });
 
-      if (response.ok) {
-        setStatus('success');
-        // `form.reset()` only clears uncontrolled inputs; fields driven by
-        // `useFormField` hold their value in React state and need the token.
-        formRef.current?.reset();
-        resetFields();
-        setAttemptedSubmit(false);
-        setCurrentStepIndex(0);
-        scrollToElement(scrollToOnSuccess);
+      if (submitHandler) {
+        await submitHandler(formData, { action: action ?? '' });
       } else {
-        setStatus('error');
-        scrollToElement(scrollToOnError);
+        const response = await fetch(action ?? '', {
+          method: 'POST',
+          body: formData,
+        });
+
+        // Thrown rather than branched, so both routes share one failure path.
+        if (!response.ok) {
+          throw new Error(`Submission failed with status ${response.status}`);
+        }
       }
-    } catch {
-      setStatus('error');
+
+      setStatus('success');
+      // `form.reset()` only clears uncontrolled inputs; fields driven by
+      // `useFormField` hold their value in React state and need the token.
+      formRef.current?.reset();
+      resetFields();
+      setAttemptedSubmit(false);
+      setCurrentStepIndex(0);
+      scrollToElement(scrollToOnSuccess);
+    } catch (error) {
+      // Only a handler's own error was written for a visitor to read. The
+      // built-in POST would offer `Failed to fetch` or a bare status code.
+      setStatus('error', submitHandler ? error : undefined);
       scrollToElement(scrollToOnError);
     }
   };

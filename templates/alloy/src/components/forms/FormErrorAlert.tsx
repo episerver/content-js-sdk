@@ -1,8 +1,10 @@
 type FormErrorAlertProps = {
   show: boolean;
+  /** Explanation from a `submitHandler`, when it gave one. */
+  message?: string;
 };
 
-export default function FormErrorAlert({ show }: FormErrorAlertProps) {
+export default function FormErrorAlert({ show, message }: FormErrorAlertProps) {
   if (!show) return null;
 
   return (
@@ -19,7 +21,7 @@ export default function FormErrorAlert({ show }: FormErrorAlertProps) {
         </div>
         <div className='ml-3'>
           <p className='text-sm font-medium text-red-800'>
-            Failed to submit form. Please try again.
+            {message || 'Failed to submit form. Please try again.'}
           </p>
         </div>
       </div>

@@ -21,6 +21,7 @@ import {
 import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
+import { contentTypeCanHoldForms, getCachedContentTypes } from '../util/queryUtils.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -159,34 +160,23 @@ export type GraphGetItemOptions = GraphQueryOptions & {
 
 export { GraphVariationInput };
 
-const GET_CONTENT_METADATA_QUERY = `
-query GetContentMetadata($where: _ContentWhereInput, $variation: VariationInput) {
-  _Content(where: $where, variation: $variation) {
-    item {
-      _metadata {
-        types
-        variation
-      }
-    }
-  }
-  # Check if "cmp_Asset" type exists which indicates that DAM is enabled
-  damAssetType: __type(name: "cmp_Asset") {
-    __typename
-  }
-}
-`;
-
 /**
- * The metadata query, plus a probe for whether this page contains a form.
+ * Content type and DAM detection, plus an optional probe for whether this page
+ * contains a form.
  *
- * Form fragments are large, so they're only fetched for pages that actually
- * have one. `composition.nodes.type` matches top-level sections, where a form
- * container always sits, and works whether or not Forms is enabled.
+ * Form fragments are large, so they are only fetched for pages that actually
+ * have one. The probe is skipped with `@include` rather than living in a second
+ * query, so the two cannot drift apart. It costs nothing when excluded.
+ *
+ * `composition.nodes.type` matches top-level sections, where a form container
+ * always sits, and is an ordinary string field — so the probe is valid whether
+ * or not Optimizely Forms is enabled on the instance.
  */
-const GET_CONTENT_METADATA_WITH_FORMS_QUERY = `
+const GET_CONTENT_METADATA_QUERY = `
 query GetContentMetadata(
   $where: _ContentWhereInput
   $formsWhere: _ExperienceWhereInput
+  $withForms: Boolean!
   $variation: VariationInput
 ) {
   _Content(where: $where, variation: $variation) {
@@ -202,11 +192,57 @@ query GetContentMetadata(
     __typename
   }
   # Non-zero when this page has a form container as a top-level section
-  formsOnPage: _Experience(where: $formsWhere) {
+  formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
     total
   }
 }
 `;
+
+/**
+ * The content types that really own a `composition` field.
+ *
+ * Kept in its own document on purpose. Graph truncates `possibleTypes` to just
+ * `_Section` when this introspection shares a query with a data field, which
+ * silently produces the opposite of the intended answer.
+ */
+const GET_SECTION_TYPES_QUERY = `
+query GetSectionTypes {
+  sectionTypes: __type(name: "_ISection") {
+    possibleTypes {
+      name
+    }
+  }
+}
+`;
+
+/**
+ * One schema lookup per endpoint for the lifetime of the process.
+ *
+ * The answer is a property of the schema, not of the content being fetched, so
+ * it cannot vary by page, preview token or slot. Held at module scope rather
+ * than on the client because `getClient()` returns a new client per call, and
+ * the in-flight promise is shared so concurrent first requests make one lookup.
+ */
+const sectionTypesByEndpoint = new Map<
+  string,
+  Promise<ReadonlySet<string> | undefined>
+>();
+
+/**
+ * Whether the application registered a section of its own.
+ *
+ * The schema lookup only changes the outcome for such a type: a form container
+ * is handled by the fallback, and everything else is not a section either way.
+ */
+const hasOwnSectionTypes = (): boolean =>
+  getCachedContentTypes().some(
+    contentType =>
+      'baseType' in contentType &&
+      (contentType.baseType === '_section' ||
+        ('compositionBehaviors' in contentType &&
+          (contentType.compositionBehaviors?.includes('sectionEnabled') ?? false))) &&
+      !isFormContentType(contentType.key),
+  );
 
 /** Content type key of the section Optimizely Forms uses for a form. */
 const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
@@ -393,6 +429,37 @@ function liftSectionNodes(item: any): any {
   return { ...item, nodes: composition.nodes };
 }
 
+/** True for a form container anywhere in a response. */
+const isFormContainer = (value: any): boolean =>
+  value?.__typename === FORM_CONTAINER_TYPE ||
+  value?._metadata?.types?.includes?.(FORM_CONTAINER_TYPE) === true;
+
+/**
+ * Collects the form containers in a response whose steps did not arrive.
+ *
+ * Graph resolves a section's `composition` only when that section is the
+ * content being asked for. Reached through a content area the field comes back
+ * empty, so `liftSectionNodes` finds nothing to lift and the container is left
+ * with no `nodes` at all — which is what tells the two cases apart. A form that
+ * genuinely has no steps still gets `nodes: []` and is not collected here.
+ */
+function findUnresolvedForms(value: any, found: any[] = [], seen = new Set()): any[] {
+  if (typeof value !== 'object' || value === null || seen.has(value)) return found;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    value.forEach(entry => findUnresolvedForms(entry, found, seen));
+    return found;
+  }
+
+  if (isFormContainer(value) && !Array.isArray(value.nodes) && value._metadata?.key) {
+    found.push(value);
+  }
+
+  Object.values(value).forEach(entry => findUnresolvedForms(entry, found, seen));
+  return found;
+}
+
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
@@ -539,6 +606,115 @@ export class GraphClient {
   }
 
   /**
+   * Fills in the steps of any form the response left unresolved.
+   *
+   * A form reached through a content area arrives without them, for the reason
+   * given on {@linkcode findUnresolvedForms}, and the only way to get them is to
+   * ask for that container on its own. Costs one extra fetch per such form, and
+   * nothing at all for a form in a composition or one previewed by itself.
+   *
+   * Mutates in place. Safe because `removeTypePrefix` has already rebuilt every
+   * object, so nothing here is shared with a cached response.
+   */
+  /**
+   * Which content types Graph gives a `composition` field.
+   *
+   * Costs one request the first time this process talks to an endpoint, and
+   * nothing afterwards. Runs alongside the metadata request rather than before
+   * it, so even that first call adds no latency.
+   *
+   * A failed lookup resolves to `undefined` and is not cached, so rendering
+   * falls back to assuming only the forms container has the field and a later
+   * request can try again.
+   */
+  private getSectionTypes(): Promise<ReadonlySet<string> | undefined> {
+    // Nothing to learn unless the application has a type whose answer could
+    // differ from the default. Forms are covered by the fallback, so an app
+    // with no sections of its own never pays for this.
+    if (!hasOwnSectionTypes()) return Promise.resolve(undefined);
+
+    const endpoint = `${this.graphUrl}::${this.apiKey}`;
+    const cached = sectionTypesByEndpoint.get(endpoint);
+    if (cached) return cached;
+
+    const pending = this.request(GET_SECTION_TYPES_QUERY, {}, undefined, true, this.slot)
+      .then((data: any) => {
+        const types = data?.sectionTypes?.possibleTypes;
+        if (!Array.isArray(types)) return undefined;
+        return new Set((types as { name: string }[]).map(type => type.name));
+      })
+      .catch(() => {
+        // A schema lookup must never stop a page rendering.
+        sectionTypesByEndpoint.delete(endpoint);
+        return undefined;
+      });
+
+    sectionTypesByEndpoint.set(endpoint, pending);
+    return pending;
+  }
+
+  private async resolveFormNodes<T>(
+    item: T,
+    options: {
+      damEnabled: boolean;
+      sectionTypes?: ReadonlySet<string>;
+      previewToken?: string;
+      cache?: boolean;
+      slot?: GraphSlot;
+    },
+  ): Promise<T> {
+    // Grouped by key: one shared form placed twice on a page arrives as two
+    // objects, and fetching it once per object would double the round trips.
+    const byKey = new Map<string, any[]>();
+    for (const form of findUnresolvedForms(item)) {
+      const key = form._metadata.key;
+      const group = byKey.get(key);
+      if (group) group.push(form);
+      else byKey.set(key, [form]);
+    }
+    if (byKey.size === 0) return item;
+
+    // Built here rather than delegating to `getContent`, which would spend a
+    // metadata round trip rediscovering a content type we already know.
+    const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
+      damEnabled: options.damEnabled,
+      maxFragmentThreshold: this.maxFragmentThreshold,
+      expandContracts: this.expandContracts,
+      formsEnabled: true,
+      sectionTypes: options.sectionTypes,
+    });
+
+    await Promise.all(
+      [...byKey].map(async ([key, forms]) => {
+        const { version, locale } = forms[0]._metadata;
+
+        // Version pins the previewed draft; otherwise Graph returns the
+        // published container.
+        const response = await this.request(
+          query,
+          referenceFilter({
+            key,
+            ...(version ? { version }
+            : locale ? { locale }
+            : {}),
+          }),
+          options.previewToken,
+          options.cache ?? this.cache,
+          options.slot ?? this.slot,
+        );
+
+        const container = liftSectionNodes(removeTypePrefix(response?._Content?.item));
+        const nodes = container?.nodes ?? [];
+        forms.forEach(form => {
+          form.nodes = nodes;
+        });
+      }),
+    );
+
+    return item;
+  }
+
+  /**
    * Fetches the content type metadata for a given content input.
    *
    * @param input - The content input used to query the content type.
@@ -555,18 +731,23 @@ export class GraphClient {
     slot?: GraphSlot,
     damMode: DamMode = 'automatic',
   ) {
-    // Only worth asking when the application registered the form types; without
-    // them there is nothing to leave out. This is a local registry lookup, so it
-    // costs no round trip and needs no cached schema state.
+    // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-    const data = await this.request(
-      mayRenderForms ? GET_CONTENT_METADATA_WITH_FORMS_QUERY : GET_CONTENT_METADATA_QUERY,
-      mayRenderForms ? { ...input, formsWhere: formsOnPageFilter(input.where) } : input,
-      previewToken,
-      cache ?? this.cache,
-      slot ?? this.slot,
-    );
+    const [data, sectionTypes] = await Promise.all([
+      this.request(
+        GET_CONTENT_METADATA_QUERY,
+        {
+          ...input,
+          withForms: mayRenderForms,
+          formsWhere: mayRenderForms ? formsOnPageFilter(input.where) : null,
+        },
+        previewToken,
+        cache ?? this.cache,
+        slot ?? this.slot,
+      ),
+      this.getSectionTypes(),
+    ]);
 
     const contentTypeName = data._Content?.item?._metadata?.types?.[0];
 
@@ -577,18 +758,22 @@ export class GraphClient {
       : damMode === 'off' ? false
       : data.damAssetType !== null;
 
-    // Form fragments are only worth their size on pages that contain a form.
-    // The probe asks `_Experience`, so it reports nothing for a form container
-    // requested on its own — previewing the shared block from the CMS. Its own
-    // type gives that away, and form elements only ever live under a container,
-    // so nothing else needs covering.
+    // The probe covers a form in a composition. Content type checks cover
+    // the form container itself and forms in content areas.
     const needsForms =
       mayRenderForms &&
       ((data.formsOnPage?.total ?? 0) > 0 ||
-        (typeof contentTypeName === 'string' && isFormContentType(contentTypeName)));
+        (typeof contentTypeName === 'string' &&
+          (isFormContentType(contentTypeName) ||
+            contentTypeCanHoldForms(contentTypeName))));
 
     if (!contentTypeName) {
-      return { contentTypeName: null, damEnabled, formsEnabled: needsForms };
+      return {
+        contentTypeName: null,
+        damEnabled,
+        formsEnabled: needsForms,
+        sectionTypes,
+      };
     }
 
     if (typeof contentTypeName !== 'string') {
@@ -603,7 +788,7 @@ export class GraphClient {
       );
     }
 
-    return { contentTypeName, damEnabled, formsEnabled: needsForms };
+    return { contentTypeName, damEnabled, formsEnabled: needsForms, sectionTypes };
   }
 
   /**
@@ -631,13 +816,14 @@ export class GraphClient {
       const activeSlot = options?.slot ?? this.slot;
       const damMode = options?.dam ?? this.dam;
 
-      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
-        input,
-        undefined,
-        cacheEnabled,
-        activeSlot,
-        damMode,
-      );
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(
+          input,
+          undefined,
+          cacheEnabled,
+          activeSlot,
+          damMode,
+        );
 
       if (!contentTypeName) {
         span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -652,6 +838,7 @@ export class GraphClient {
           maxFragmentThreshold: this.maxFragmentThreshold,
           expandContracts: this.expandContracts,
           formsEnabled,
+          sectionTypes,
         });
 
         const response = (await this.request(
@@ -662,8 +849,15 @@ export class GraphClient {
           activeSlot,
         )) as ItemsResponse<T>;
 
-        return response?._Content?.items.map((item: unknown) =>
-          liftSectionNodes(removeTypePrefix(item)),
+        return Promise.all(
+          response?._Content?.items.map((item: unknown) =>
+            this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item)), {
+              damEnabled,
+              sectionTypes,
+              cache: cacheEnabled,
+              slot: activeSlot,
+            }),
+          ) ?? [],
         );
       } catch (error) {
         // If content type is not registered, return empty array instead of throwing
@@ -832,13 +1026,14 @@ export class GraphClient {
       const activeSlot = options?.slot ?? this.slot;
       const damMode = options?.dam ?? this.dam;
 
-      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
-        input,
-        params.preview_token,
-        false,
-        activeSlot,
-        damMode,
-      );
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(
+          input,
+          params.preview_token,
+          false,
+          activeSlot,
+          damMode,
+        );
 
       if (!contentTypeName) {
         throw new GraphResponseError(
@@ -864,6 +1059,7 @@ export class GraphClient {
         maxFragmentThreshold: this.maxFragmentThreshold,
         expandContracts: this.expandContracts,
         formsEnabled,
+        sectionTypes,
       });
 
       const response = await this.request(
@@ -875,7 +1071,16 @@ export class GraphClient {
       );
 
       return decorateWithContext(
-        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+        await this.resolveFormNodes(
+          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+          {
+            damEnabled,
+            sectionTypes,
+            previewToken: params.preview_token,
+            cache: false,
+            slot: activeSlot,
+          },
+        ),
         params,
       );
     });
@@ -1006,13 +1211,14 @@ export class GraphClient {
         },
       };
 
-      const { contentTypeName, damEnabled, formsEnabled } = await this.getContentMetaData(
-        input,
-        previewToken,
-        cacheEnabled,
-        activeSlot,
-        damMode,
-      );
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(
+          input,
+          previewToken,
+          cacheEnabled,
+          activeSlot,
+          damMode,
+        );
 
       if (!contentTypeName) {
         span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -1027,6 +1233,7 @@ export class GraphClient {
           maxFragmentThreshold: this.maxFragmentThreshold,
           expandContracts: this.expandContracts,
           formsEnabled,
+          sectionTypes,
         });
 
         const response = await this.request(
@@ -1037,7 +1244,16 @@ export class GraphClient {
           activeSlot,
         );
 
-        return liftSectionNodes(removeTypePrefix(response?._Content?.item));
+        return this.resolveFormNodes(
+          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+          {
+            damEnabled,
+            sectionTypes,
+            previewToken,
+            cache: cacheEnabled,
+            slot: activeSlot,
+          },
+        );
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {
           return null;

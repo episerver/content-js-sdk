@@ -5,6 +5,7 @@ import {
 } from '@optimizely/cms-sdk';
 import {
   configureAdapter,
+  initForms,
   initReactComponentRegistry,
   ReactContextAdapter,
 } from '@optimizely/cms-sdk/react/server';
@@ -46,12 +47,18 @@ import EventCard, { EventCardComponent } from '../components/elements/EventCard'
 import EventCardsList, {
   EventCardsListContentType,
 } from '../components/blocks/EventCardsList';
+import FormContainer from '../components/forms/FormContainer';
+import FormInput from '../components/forms/FormInput';
+import FormSelection from '../components/forms/FormSelection';
+import FormSubmit from '../components/forms/FormSubmit';
+import FormTextarea from '../components/forms/FormTextarea';
 
 export function initialize() {
   configureAdapter(new ReactContextAdapter());
 
   config({
     apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+    host: process.env.APPLICATION_HOST,
   });
 
   initContentTypeRegistry([
@@ -94,6 +101,17 @@ export function initialize() {
       EventCardComponent: EventCard,
       EventCardsList,
     },
+  });
+
+  // Registers the OptiForms content types and their components. Without this,
+  // a form container placed in the CMS fails to resolve when a query is built
+  // for it.
+  initForms({
+    container: FormContainer,
+    textbox: FormInput,
+    selection: FormSelection,
+    textarea: FormTextarea,
+    submit: FormSubmit,
   });
 
   initDisplayTemplateRegistry([

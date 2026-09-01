@@ -37,6 +37,19 @@ const Experience = contentType({
   properties: {},
 });
 
+/** An ordinary page with a content area — no composition of its own. */
+const Page = contentType({
+  key: 'HostPage',
+  displayName: 'Host Page',
+  baseType: '_page',
+  properties: {
+    extras: {
+      type: 'array',
+      items: { type: 'content', allowedTypes: ['_component', '_section'] },
+    },
+  },
+});
+
 const fragmentsFor = (key: string): string[] =>
   createFragment(key, new Set(), '', createQueryContext({ maxFragmentThreshold: 100 }))
     .fragments;
@@ -45,7 +58,7 @@ const sectionFragment = (fragments: string[]) =>
   fragments.find(f => f.startsWith('fragment PlainSection on')) ?? '';
 
 beforeEach(() => {
-  initContentTypeRegistry([Experience, Section, Element]);
+  initContentTypeRegistry([Experience, Page, Section, Element]);
   refreshCache();
 });
 
@@ -81,6 +94,44 @@ describe('a section reached through an experience', () => {
     const fragments = fragmentsFor('HostExperience');
 
     expect(fragments.some(f => f.startsWith('fragment _IExperience'))).toBe(true);
+  });
+});
+
+describe('a section-enabled component reached through a content area', () => {
+  /** Fragments built as if Graph had reported these types as `_ISection`. */
+  const fragmentsKnowing = (...sections: string[]): string[] =>
+    createFragment(
+      'HostPage',
+      new Set(),
+      '',
+      createQueryContext({
+        maxFragmentThreshold: 100,
+        sectionTypes: new Set(sections),
+      }),
+    ).fragments;
+
+  // Declaring `sectionEnabled` does not make Graph give the type `_ISection`,
+  // and asking a type without it for `composition` fails the whole query with
+  // `Cannot query field "composition"`. Without the schema's list there is no
+  // way to tell, so only the forms container is assumed to have the field.
+  test('is not asked for a composition when the schema is unknown', () => {
+    expect(sectionFragment(fragmentsFor('HostPage'))).not.toContain('composition');
+  });
+
+  // The metadata response carries the `_ISection` implementers, so the guess
+  // can be replaced with the answer.
+  test('is asked once the schema says it is a section', () => {
+    const fragments = fragmentsKnowing('PlainSection');
+
+    expect(sectionFragment(fragments)).toContain('composition { ...ICompositionNode }');
+    expect(fragments.some(f => f.startsWith('fragment ICompositionNode'))).toBe(true);
+  });
+
+  // A type the schema leaves out must still be left alone, whatever it declares.
+  test('is left alone when the schema omits it', () => {
+    expect(sectionFragment(fragmentsKnowing('SomethingElse'))).not.toContain(
+      'composition',
+    );
   });
 });
 
@@ -147,7 +198,10 @@ describe('previewing a section as a shared block', () => {
     const client = new GraphClient('test-key');
     vi.spyOn(client, 'request').mockImplementation(async (query: string) =>
       query.includes('GetContentMetadata') ?
-        { _Content: { item: { _metadata: { types: ['PlainSection'] } } }, damAssetType: null }
+        {
+          _Content: { item: { _metadata: { types: ['PlainSection'] } } },
+          damAssetType: null,
+        }
       : sectionResponse,
     );
 

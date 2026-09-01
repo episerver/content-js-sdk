@@ -5,9 +5,10 @@ import { FormStep } from '../forms/FormStep.js';
 import { FormElement } from '../forms/FormElement.js';
 import { useFormField } from '../forms/useFormField.js';
 import { useFormValidation } from '../forms/FormValidationContext.js';
-import { FormSubmissionProvider } from '../forms/FormSubmissionProvider.js';
+import { FormSubmissionProvider, useFormSubmission } from '../forms/FormSubmissionProvider.js';
 import type { DependencyRule } from '../forms/FormRulesContext.js';
 import type { Validator } from '../../forms/validation.js';
+import type { FormSubmitHandler } from '../forms/FormWrapper.js';
 
 beforeAll(() => {
   // jsdom implements neither of these, and both run on a failed submit.
@@ -48,11 +49,14 @@ function Field({
 function Probe() {
   const { hasAnyErrors } = useFormValidation();
   const { currentStepIndex, nextStep } = useFormSteps();
+  const { status, errorMessage } = useFormSubmission();
 
   return (
     <>
       <span data-testid='has-errors'>{String(hasAnyErrors)}</span>
       <span data-testid='step'>{currentStepIndex}</span>
+      <span data-testid='status'>{status}</span>
+      <span data-testid='error-message'>{errorMessage ?? ''}</span>
       <button type='button' onClick={nextStep}>
         Next
       </button>
@@ -61,10 +65,19 @@ function Probe() {
   );
 }
 
-const renderForm = (children: React.ReactNode, rules?: DependencyRule[]) =>
+const renderForm = (
+  children: React.ReactNode,
+  rules?: DependencyRule[],
+  props?: { submitHandler?: FormSubmitHandler; action?: string },
+) =>
   render(
     <FormSubmissionProvider>
-      <FormWrapper action='/submit' steps={[{}, {}] as never} rules={rules}>
+      <FormWrapper
+        action='/submit'
+        steps={[{}, {}] as never}
+        rules={rules}
+        {...props}
+      >
         {children}
       </FormWrapper>
     </FormSubmissionProvider>,
@@ -72,6 +85,8 @@ const renderForm = (children: React.ReactNode, rules?: DependencyRule[]) =>
 
 const clickNext = () => act(() => screen.getByText('Next').click());
 const step = () => screen.getByTestId('step').textContent;
+const status = () => screen.getByTestId('status').textContent;
+const errorMessage = () => screen.getByTestId('error-message').textContent;
 
 describe('rule-hidden fields', () => {
   // A field hidden by a rule used to stay registered, so an empty required field
@@ -275,6 +290,112 @@ describe('submitting', () => {
     expect(step()).toBe('0');
 
     vi.unstubAllGlobals();
+  });
+
+  // The built-in POST reports a bare status code, which is no use to a visitor.
+  // A template rendering `errorMessage` must not end up showing it one.
+  test('a failed post leaves no message for the template to render', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 500 }) as Response));
+
+    renderForm(twoStepForm());
+    type('step0', 'filled');
+    clickNext();
+    type('step1', 'also filled');
+    await act(async () => screen.getByText('Submit').click());
+
+    expect(status()).toBe('error');
+    expect(errorMessage()).toBe('');
+
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('a submitHandler', () => {
+  const type = (label: string, value: string) =>
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+
+  const twoStepForm = () => (
+    <>
+      <FormStep index={0}>
+        <Field name='step0' />
+      </FormStep>
+      <FormStep index={1}>
+        <Field name='step1' />
+      </FormStep>
+      <Probe />
+    </>
+  );
+
+  /** Fills both steps and submits, which is the only way to reach the handler. */
+  const submitValidForm = async (handler: FormSubmitHandler) => {
+    renderForm(twoStepForm(), undefined, { submitHandler: handler });
+    type('step0', 'filled');
+    act(() => screen.getByText('Next').click());
+    type('step1', 'also filled');
+    await act(async () => screen.getByText('Submit').click());
+  };
+
+  test('replaces the post and receives the form values', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const handler = vi.fn<FormSubmitHandler>(async () => {});
+
+    await submitValidForm(handler);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledOnce();
+
+    const formData = handler.mock.calls[0][0];
+    expect(formData.get('step0')).toBe('filled');
+    expect(formData.get('step1')).toBe('also filled');
+    // Passed through so a handler shared between forms can still read it.
+    expect(handler.mock.calls[0][1]).toEqual({ action: '/submit' });
+
+    vi.unstubAllGlobals();
+  });
+
+  // Resolving has to mean the same thing an `ok` response does, or a template
+  // that swaps the transport quietly loses the reset and the step rewind.
+  test('resolving runs the whole success path', async () => {
+    await submitValidForm(async () => {});
+
+    expect(status()).toBe('success');
+    expect((screen.getByLabelText('step0') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('step1') as HTMLInputElement).value).toBe('');
+    expect(step()).toBe('0');
+  });
+
+  test('throwing fails the submit and surfaces the message', async () => {
+    await submitValidForm(async () => {
+      throw new Error('Email already registered');
+    });
+
+    expect(status()).toBe('error');
+    expect(errorMessage()).toBe('Email already registered');
+    // The values stay put, so the visitor can correct and retry.
+    expect((screen.getByLabelText('step1') as HTMLInputElement).value).toBe('also filled');
+  });
+
+  test('is never called while a field is invalid', () => {
+    const handler = vi.fn<FormSubmitHandler>(async () => {});
+
+    renderForm(twoStepForm(), undefined, { submitHandler: handler });
+    act(() => screen.getByText('Submit').click());
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  test('makes `action` unnecessary', async () => {
+    const handler = vi.fn<FormSubmitHandler>(async () => {});
+
+    renderForm(twoStepForm(), undefined, { submitHandler: handler, action: undefined });
+    type('step0', 'filled');
+    act(() => screen.getByText('Next').click());
+    type('step1', 'also filled');
+    await act(async () => screen.getByText('Submit').click());
+
+    expect(handler).toHaveBeenCalledOnce();
+    expect(status()).toBe('success');
   });
 });
 

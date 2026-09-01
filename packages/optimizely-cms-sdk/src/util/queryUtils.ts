@@ -106,6 +106,17 @@ export type QueryContext = {
    * Useful for skipping content types that have no registered component.
    */
   typeFilter?: (contentTypeKey: string) => boolean;
+  /**
+   * The content types Graph reports as implementing `_ISection`, and so the
+   * ones that actually have a `composition` field.
+   *
+   * Declaring `sectionEnabled` locally does not guarantee it — asking a type
+   * without the interface for `composition` fails the whole query. Read from
+   * the metadata response, which costs no extra round trip. Absent means the
+   * caller could not find out, and only the forms container is assumed to
+   * have the field.
+   */
+  sectionTypes?: ReadonlySet<string>;
 };
 
 /**
@@ -121,6 +132,20 @@ export type FragmentOptions = {
    * @default true
    */
   includeBaseFragments?: boolean;
+
+  /**
+   * Whether this fragment is being built for a node of a composition tree.
+   *
+   * Such a node already receives its children through that tree, so it must not
+   * fetch its own `composition`. A section reached any other way — as the query
+   * root, or through a content property — has no tree above it and does.
+   *
+   * Deliberately not propagated to nested calls: content referenced by a
+   * composition node is still ordinary linked content.
+   *
+   * @default false
+   */
+  insideComposition?: boolean;
 };
 
 /** Fills in the defaults for the settings a caller may leave out. */
@@ -132,6 +157,7 @@ export const createQueryContext = (
   expandContracts: options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS,
   formsEnabled: options.formsEnabled ?? false,
   typeFilter: options.typeFilter,
+  sectionTypes: options.sectionTypes,
 });
 
 export type FragmentInfo = {
@@ -282,6 +308,51 @@ const resolveAllowedTypes = (
       seen.add(key);
       return true;
     });
+};
+
+/**
+ * True when a content type can hold an Optimizely Forms container in one of its
+ * content properties.
+ *
+ * The `formsOnPage` probe only finds forms placed in an experience's
+ * composition. A form dropped into a content area of an ordinary page is an
+ * ordinary reference, and `_ContentWhereInput` exposes no field to filter on it,
+ * so the content model is consulted instead. This errs towards enabling forms:
+ * a page type that *permits* a form pays for the fragments even when the
+ * particular page has none.
+ */
+export const contentTypeCanHoldForms = (contentTypeName: string): boolean => {
+  const cached = getCachedContentTypes();
+  const seen = new Set<string>();
+
+  const propertyHoldsForm = (property: AnyProperty | undefined): boolean => {
+    if (!property) return false;
+    if (property.type === 'array') return propertyHoldsForm((property as any).items);
+    if (property.type !== 'content') return false;
+
+    return resolveAllowedTypes(
+      (property as any).allowedTypes,
+      (property as any).restrictedTypes,
+      cached,
+    ).some(entry => {
+      const key = getKeyName(entry);
+      return isFormContentType(key) || walk(key);
+    });
+  };
+
+  function walk(contentTypeKey: string): boolean {
+    if (seen.has(contentTypeKey)) return false;
+    seen.add(contentTypeKey);
+
+    const contentType = getContentType(contentTypeKey);
+    if (!contentType || !('properties' in contentType)) return false;
+
+    return Object.values(contentType.properties ?? {}).some(property =>
+      propertyHoldsForm(property as AnyProperty),
+    );
+  }
+
+  return walk(contentTypeName);
 };
 
 // PROPERTY HANDLERS
