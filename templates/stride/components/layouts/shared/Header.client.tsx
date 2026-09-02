@@ -7,16 +7,13 @@ import { MobileMenu } from './MobileMenu';
 import { Logo } from './Logo';
 import { SearchModal } from './SearchModal';
 import type { NavigationItem } from '../../../lib/navigation';
-import type { SearchableContent } from '../../../lib/search';
 
 export const HeaderClient = ({
   navigationItems,
   mobileNavItems,
-  searchableContent,
 }: {
   navigationItems: NavigationItem[];
   mobileNavItems: NavigationItem[];
-  searchableContent: SearchableContent[];
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -88,11 +85,7 @@ export const HeaderClient = ({
         navigationItems={mobileNavItems}
       />
 
-      <SearchModal
-        isOpen={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
-        searchableContent={searchableContent}
-      />
+      <SearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
     </>
   );
 };

@@ -9,40 +9,54 @@ import { searchContent, type SearchableContent } from '../../../lib/search';
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  searchableContent: SearchableContent[];
 }
 
 interface SearchResult extends SearchableContent {
   score?: number;
 }
 
-export const SearchModal: React.FC<SearchModalProps> = ({
-  isOpen,
-  onClose,
-  searchableContent,
-}) => {
+export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [results, setResults] = React.useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = React.useState(false);
+  const [searchableContent, setSearchableContent] = React.useState<
+    SearchableContent[] | null
+  >(null);
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const resultsRef = React.useRef<HTMLDivElement>(null);
 
+  const isSearching = searchQuery.trim() !== '' && searchableContent === null;
+
+  // Fetched on first open instead of shipped with every page: the index holds
+  // the body text of the whole site, and Next prefetches page payloads.
+  React.useEffect(() => {
+    if (!isOpen || searchableContent !== null) return;
+
+    let cancelled = false;
+
+    fetch('/api/search')
+      .then(response => response.json())
+      .then(json => {
+        if (!cancelled) setSearchableContent(json.success ? json.data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setSearchableContent([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, searchableContent]);
+
   const performSearch = React.useCallback(
     (query: string) => {
-      if (!query.trim()) {
+      if (!query.trim() || searchableContent === null) {
         setResults([]);
         return;
       }
 
-      setIsSearching(true);
-
-      setTimeout(() => {
-        const filtered = searchContent(searchableContent, query);
-        setResults(filtered);
-        setSelectedIndex(-1);
-        setIsSearching(false);
-      }, 200);
+      setResults(searchContent(searchableContent, query));
+      setSelectedIndex(-1);
     },
     [searchableContent],
   );
@@ -244,4 +258,3 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     </div>
   );
 };
-

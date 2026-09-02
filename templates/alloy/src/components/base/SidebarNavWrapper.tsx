@@ -1,4 +1,4 @@
-import { getClient } from '@optimizely/cms-sdk';
+import { getChildren } from '@/lib/navigation';
 import { SidebarNav } from './SidebarNav';
 
 interface SidebarNavWrapperProps {
@@ -13,22 +13,8 @@ export async function SidebarNavWrapper({ currentPath }: SidebarNavWrapperProps)
     return null;
   }
 
-  const client = getClient();
-
-  // Always fetch children of /en/about-us/ for the sidebar
-  const siblings = (await client.getItems('/en/about-us')) ?? [];
-
-  // Fetch children for each sibling to build the navigation tree
-  const navigationTree = await Promise.all(
-    siblings.map(async (sibling: any) => {
-      const siblingPath = sibling._metadata?.url?.hierarchical;
-      const children = siblingPath ? ((await client.getItems(siblingPath)) ?? []) : [];
-      return {
-        ...sibling,
-        children,
-      };
-    }),
-  );
+  // Children of /en/about-us/, each with its own children already attached
+  const navigationTree = await getChildren('/en/about-us');
 
   if (navigationTree.length === 0) {
     return null;

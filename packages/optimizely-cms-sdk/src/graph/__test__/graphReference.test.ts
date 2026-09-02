@@ -1232,3 +1232,100 @@ describe('GraphClient.getPreviewContent() query options', () => {
     );
   });
 });
+
+describe('GraphClient.getDescendants()', () => {
+  let client: GraphClient;
+  let mockRequest: any;
+
+  const page = (key: string, sortOrder: number, container = 'root') => ({
+    _metadata: { key, sortOrder, container, types: ['StandardPage'] },
+  });
+
+  beforeEach(() => {
+    client = new GraphClient('test-key');
+    mockRequest = vi.spyOn(client, 'request');
+  });
+
+  test('fetches the whole subtree in one request when given a reference', async () => {
+    mockRequest.mockResolvedValueOnce({
+      _Page: { total: 2, items: [page('child', 100), page('grandchild', 0, 'child')] },
+    });
+
+    const result = await client.getDescendants({ key: 'root', locale: 'en' });
+
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+    expect(mockRequest).toHaveBeenCalledWith(
+      expect.any(String),
+      {
+        where: { _metadata: { path: { eq: 'root' } } },
+        locale: ['en'],
+        limit: 100,
+        skip: 0,
+      },
+      undefined,
+      true,
+      undefined,
+    );
+    expect(result?.map(item => item._metadata?.key)).toEqual(['grandchild', 'child']);
+  });
+
+  test('excludes the ancestor itself, which matches its own path filter', async () => {
+    mockRequest.mockResolvedValueOnce({
+      _Page: { total: 2, items: [page('root', 0, 'site'), page('child', 10)] },
+    });
+
+    const result = await client.getDescendants({ key: 'root' });
+
+    expect(result?.map(item => item._metadata?.key)).toEqual(['child']);
+  });
+
+  test('resolves a URL path to a key before requesting the subtree', async () => {
+    mockRequest
+      .mockResolvedValueOnce({
+        _Content: { item: { _id: 'id', _metadata: { key: 'resolved' } } },
+      })
+      .mockResolvedValueOnce({ _Page: { total: 1, items: [page('child', 0)] } });
+
+    const result = await client.getDescendants('/en/about-us');
+
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(mockRequest.mock.calls[0][1]).toEqual({ where: { _or: expect.any(Array) } });
+    expect(mockRequest.mock.calls[1][1]).toMatchObject({
+      where: { _metadata: { path: { eq: 'resolved' } } },
+    });
+    expect(result).toHaveLength(1);
+  });
+
+  test('takes the key straight from a graph:// reference', async () => {
+    mockRequest.mockResolvedValueOnce({ _Page: { total: 0, items: [] } });
+
+    await client.getDescendants('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
+
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+    expect(mockRequest.mock.calls[0][1]).toMatchObject({
+      where: { _metadata: { path: { eq: '880777d5a2824399b07e93e3ca70668e' } } },
+      locale: ['en'],
+    });
+  });
+
+  test('pages through subtrees larger than the Graph limit', async () => {
+    const first = Array.from({ length: 100 }, (_, i) => page(`p${i}`, i));
+
+    mockRequest
+      .mockResolvedValueOnce({ _Page: { total: 101, items: first } })
+      .mockResolvedValueOnce({ _Page: { total: 101, items: [page('p100', 100)] } });
+
+    const result = await client.getDescendants({ key: 'root' });
+
+    expect(mockRequest).toHaveBeenCalledTimes(2);
+    expect(mockRequest.mock.calls[1][1]).toMatchObject({ skip: 100 });
+    expect(result).toHaveLength(101);
+  });
+
+  test('returns null when the page does not exist', async () => {
+    mockRequest.mockResolvedValueOnce({ _Content: { item: { _id: null } } });
+
+    expect(await client.getDescendants('/nowhere')).toBeNull();
+    expect(mockRequest).toHaveBeenCalledTimes(1);
+  });
+});

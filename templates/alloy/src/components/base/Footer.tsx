@@ -1,4 +1,4 @@
-import { getClient } from '@optimizely/cms-sdk';
+import { getChildren, type NavItem } from '@/lib/navigation';
 
 interface FooterLink {
   label: string;
@@ -10,18 +10,18 @@ interface FooterSection {
   links: FooterLink[];
 }
 
-const mapToLinks = (items: any[] | null) =>
-  items?.map((item: any) => ({
-    label: item._metadata?.displayName,
-    href: item._metadata?.url?.hierarchical,
-  })) ?? [];
+const mapToLinks = (items: NavItem[]) =>
+  items.map(item => ({
+    label: item._metadata.displayName,
+    href: item._metadata.url.hierarchical,
+  }));
 
 async function Footer() {
-  const client = getClient();
+  // All three come from the same cached site tree, so this is not three requests
   const [products, company, newsEvents] = await Promise.all([
-    client.getItems('/en/'),
-    client.getItems('/en/about-us'),
-    client.getItems('/en/about-us/news-events'),
+    getChildren('/en/'),
+    getChildren('/en/about-us'),
+    getChildren('/en/about-us/news-events'),
   ]);
 
   const sections: FooterSection[] = [
@@ -36,7 +36,9 @@ async function Footer() {
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8'>
           {sections.map((section, index) => (
             <div key={index} className='space-y-4'>
-              <h3 className='text-sm font-bold uppercase tracking-wider text-white'>{section.title}</h3>
+              <h3 className='text-sm font-bold uppercase tracking-wider text-white'>
+                {section.title}
+              </h3>
               <ul className='space-y-2'>
                 {section.links.map((link, linkIndex) => (
                   <li key={linkIndex}>

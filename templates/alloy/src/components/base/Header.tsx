@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getClient } from '@optimizely/cms-sdk';
+import { getChildren } from '@/lib/navigation';
 import { MobileMenu } from './MobileMenu';
 
 interface HeaderProps {
@@ -8,23 +9,24 @@ interface HeaderProps {
 }
 
 async function Header({ currentPath }: HeaderProps) {
-  const client = getClient();
-  const ancestors = (await client.getPath(currentPath)) || [];
-  const navLinks = (await client.getItems('/en/')) ?? [];
+  const [ancestors, navLinks] = await Promise.all([
+    getClient().getPath(currentPath),
+    getChildren('/en/'),
+  ]);
 
   // Filter out the start page (first item) and create breadcrumbs
-  const breadcrumbs = ancestors.slice(1).map((ancestor: any) => ({
+  const breadcrumbs = (ancestors ?? []).slice(1).map((ancestor: any) => ({
     key: ancestor._metadata.key,
     label: ancestor._metadata.displayName,
     href: ancestor._metadata.url.hierarchical,
   }));
 
-  // Create navigation from navLinks of the /en/ page
+  // Create navigation from the children of the /en/ page
   const navigations = navLinks
-    .map((ancestor: any) => ({
-      key: ancestor._metadata.key,
-      label: ancestor._metadata.displayName,
-      href: ancestor._metadata.url.hierarchical,
+    .map(item => ({
+      key: item._metadata.key,
+      label: item._metadata.displayName,
+      href: item._metadata.url.hierarchical,
     }))
     .sort((a, b) => {
       // Move "About Us" to the end
@@ -67,11 +69,14 @@ async function Header({ currentPath }: HeaderProps) {
 
       {/* Breadcrumbs */}
       {breadcrumbs.length > 0 && (
-        <nav className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4' aria-label='Breadcrumb'>
+        <nav
+          className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4'
+          aria-label='Breadcrumb'
+        >
           <ol className='flex items-center space-x-1'>
             <li>
               <Link
-                href={ancestors[0]?._metadata?.url?.hierarchical || '/'}
+                href={ancestors?.[0]?._metadata?.url?.hierarchical || '/'}
                 className='text-[#1cb898] hover:text-gray-700'
               >
                 Home

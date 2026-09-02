@@ -316,6 +316,74 @@ query GetPath($where: _ContentWhereInput, $locale: [Locales]) {
   }
 }`;
 
+/** Resolves a path or reference to a content key, for queries that filter on one. */
+const GET_KEY_QUERY = `
+query GetKey($where: _ContentWhereInput, $locale: [Locales]) {
+  _Content(where: $where, locale: $locale) {
+    item {
+      _id
+      _metadata {
+        key
+      }
+    }
+  }
+}`;
+
+/**
+ * Every page below an ancestor, whatever the depth.
+ *
+ * `_metadata.path` holds the keys of all of a page's ancestors, so filtering on
+ * one key returns its whole subtree in a single request. There is no
+ * `DESCENDANTS` link type to walk instead — `_link` only offers `ITEMS`, which
+ * is one level deep.
+ */
+const GET_DESCENDANTS_QUERY = `
+query GetDescendants($where: _PageWhereInput, $locale: [Locales], $limit: Int!, $skip: Int!) {
+  _Page(where: $where, locale: $locale, limit: $limit, skip: $skip) {
+    total
+    items {
+      _metadata {
+        key
+        sortOrder
+        displayName
+        locale
+        types
+        container
+        url {
+          base
+          hierarchical
+          default
+        }
+      }
+    }
+  }
+}`;
+
+/** Graph rejects a `limit` above this. */
+const DESCENDANTS_PAGE_SIZE = 100;
+
+type PageMetadata = {
+  key: string;
+  sortOrder?: number;
+  displayName?: string;
+  locale?: string;
+  types: string[];
+  /** Key of the parent page. Enough to rebuild the hierarchy in memory. */
+  container?: string;
+  url?: {
+    base?: string;
+    hierarchical?: string;
+    default?: string;
+  };
+};
+
+type GetDescendantsResponse = {
+  _Page: {
+    total: number;
+    items: Array<{ _metadata?: PageMetadata }>;
+  };
+};
+
 type GetLinksResponse = {
   _Content: {
     item: {
@@ -894,26 +962,7 @@ export class GraphClient {
    * ```
    */
   async getPath(reference: string | GraphReference, options?: GraphGetLinksOptions) {
-    let filter: GraphVariables;
-    if (typeof reference === 'string' && reference.startsWith('graph://')) {
-      const ref = this.parseGraphReference(reference);
-      filter = {
-        ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
-      };
-    } else if (typeof reference === 'string') {
-      filter = {
-        ...pathFilter(reference, options?.host ?? this.host),
-        ...localeFilter(options?.locales),
-      };
-    } else {
-      filter = {
-        ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
-        ),
-      };
-    }
+    const filter = this.linkFilter(reference, options);
 
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
@@ -977,26 +1026,7 @@ export class GraphClient {
    * ```
    */
   async getItems(reference: string | GraphReference, options?: GraphGetLinksOptions) {
-    let filter: GraphVariables;
-    if (typeof reference === 'string' && reference.startsWith('graph://')) {
-      const ref = this.parseGraphReference(reference);
-      filter = {
-        ...referenceFilter(ref),
-        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
-      };
-    } else if (typeof reference === 'string') {
-      filter = {
-        ...pathFilter(reference, options?.host ?? this.host),
-        ...localeFilter(options?.locales),
-      };
-    } else {
-      filter = {
-        ...referenceFilter(reference),
-        ...localeFilter(
-          options?.locales ?? (reference.locale ? [reference.locale] : undefined),
-        ),
-      };
-    }
+    const filter = this.linkFilter(reference, options);
 
     const cacheEnabled = options?.cache ?? this.cache;
     const activeSlot = options?.slot ?? this.slot;
@@ -1017,6 +1047,142 @@ export class GraphClient {
     const links = data?._Content?.item._link._Page.items;
 
     return links;
+  }
+
+  /**
+   * Builds the `where`/`locale` variables for a link query from any of the
+   * accepted reference forms: a URL path, a `graph://` string, or a
+   * {@linkcode GraphReference}.
+   */
+  private linkFilter(
+    reference: string | GraphReference,
+    options?: GraphGetLinksOptions,
+  ): GraphVariables {
+    if (typeof reference === 'string' && reference.startsWith('graph://')) {
+      const ref = this.parseGraphReference(reference);
+      return {
+        ...referenceFilter(ref),
+        ...localeFilter(options?.locales ?? (ref.locale ? [ref.locale] : undefined)),
+      };
+    }
+
+    if (typeof reference === 'string') {
+      return {
+        ...pathFilter(reference, options?.host ?? this.host),
+        ...localeFilter(options?.locales),
+      };
+    }
+
+    return {
+      ...referenceFilter(reference),
+      ...localeFilter(
+        options?.locales ?? (reference.locale ? [reference.locale] : undefined),
+      ),
+    };
+  }
+
+  /**
+   * Given the path or reference of a page, get every page below it, at any depth.
+   *
+   * Use this instead of walking the tree with {@linkcode getItems}, which
+   * returns one level and so costs one request per page. The whole subtree
+   * arrives in a single request here, or one per 100 pages for a large site.
+   * Each item carries `container`, the key of its parent, which is all that is
+   * needed to rebuild the hierarchy in memory.
+   *
+   * A URL path has to be resolved to a key before the subtree can be requested,
+   * costing one extra round trip. Pass a {@linkcode GraphReference} to skip it.
+   *
+   * The result is sorted by `sortOrder`, matching the order set in the CMS.
+   * Siblings stay adjacent once grouped by `container`.
+   *
+   * @param reference - URL path string or GraphReference object/string
+   * @param options - Optional host and locales filters
+   * @returns A flat list with the metadata of every descendant page, or `null`
+   *   if the page itself does not exist
+   *
+   * @example
+   * ```typescript
+   * const pages = await client.getDescendants({ key: rootKey, locale: 'en' });
+   *
+   * // Group by parent to rebuild the tree
+   * const childrenOf = Map.groupBy(pages ?? [], page => page._metadata?.container);
+   * ```
+   */
+  async getDescendants(
+    reference: string | GraphReference,
+    options?: GraphGetLinksOptions,
+  ) {
+    const cacheEnabled = options?.cache ?? this.cache;
+    const activeSlot = options?.slot ?? this.slot;
+
+    // A `graph://` string carries the key, so treat it as a reference and save
+    // the lookup that a URL path needs.
+    const ref =
+      typeof reference === 'string' && reference.startsWith('graph://') ?
+        this.parseGraphReference(reference)
+      : reference;
+
+    const locales =
+      options?.locales ??
+      (typeof ref === 'object' && ref.locale ? [ref.locale] : undefined);
+
+    const ancestorKey = await this.resolveKey(ref, options);
+    if (!ancestorKey) return null;
+
+    const items: Array<{ _metadata?: PageMetadata }> = [];
+    let total = 0;
+
+    do {
+      const data = (await this.request(
+        GET_DESCENDANTS_QUERY,
+        {
+          where: { _metadata: { path: { eq: ancestorKey } } },
+          ...localeFilter(locales),
+          limit: DESCENDANTS_PAGE_SIZE,
+          skip: items.length,
+        },
+        undefined,
+        cacheEnabled,
+        activeSlot,
+      )) as GetDescendantsResponse;
+
+      const page = data?._Page?.items ?? [];
+      total = data?._Page?.total ?? 0;
+
+      if (page.length === 0) break;
+      items.push(...page);
+    } while (items.length < total);
+
+    // A page's own `path` ends with its key, so the ancestor matches its own
+    // filter. Descendants only.
+    return items
+      .filter(item => item._metadata && item._metadata.key !== ancestorKey)
+      .sort((a, b) => (a._metadata?.sortOrder ?? 0) - (b._metadata?.sortOrder ?? 0));
+  }
+
+  /**
+   * The key of the referenced content, or `null` if it does not exist.
+   *
+   * Free when the reference already carries one; otherwise a lookup.
+   */
+  private async resolveKey(
+    reference: string | GraphReference,
+    options?: GraphGetLinksOptions,
+  ): Promise<string | null> {
+    if (typeof reference === 'object') return reference.key;
+
+    const data = (await this.request(
+      GET_KEY_QUERY,
+      this.linkFilter(reference, options),
+      undefined,
+      options?.cache ?? this.cache,
+      options?.slot ?? this.slot,
+    )) as { _Content: { item: { _id: string | null; _metadata?: { key?: string } } } };
+
+    if (!data._Content.item?._id) return null;
+
+    return data._Content.item._metadata?.key ?? null;
   }
 
   /** Fetches a content given the preview parameters (preview_token, ctx, ver, loc, key) */

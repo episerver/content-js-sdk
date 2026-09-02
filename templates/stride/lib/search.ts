@@ -1,6 +1,5 @@
 import { getClient } from '@optimizely/cms-sdk';
 import { unstable_cache } from 'next/cache';
-import { getNavigationItems, type NavigationItem } from './navigation';
 
 export type SearchableContent = {
   key: string;
@@ -13,7 +12,36 @@ export type SearchableContent = {
   locale: string;
 };
 
-type RawSearchableItem = {
+/**
+ * Every searchable page and its text, in one request.
+ *
+ * Fetching each page on its own instead costs two requests apiece — one to
+ * learn the content type, one for the content — and pulls in compositions and
+ * media that search has no use for. Runs without a request context, which the
+ * `/api/search` route has none of.
+ */
+const SEARCHABLE_CONTENT_QUERY = `
+query SearchableContent($locale: [Locales], $skip: Int!) {
+  _Page(locale: $locale, limit: 100, skip: $skip) {
+    total
+    items {
+      _metadata {
+        key
+        displayName
+        locale
+        types
+        url {
+          default
+        }
+      }
+      ... on StandardPage { heading intro { html } body { html } }
+      ... on ProductPage { heading intro { html } body { html } }
+      ... on NewsPage2 { heading body { html } }
+    }
+  }
+}`;
+
+type RawSearchablePage = {
   _metadata?: {
     key: string;
     displayName?: string;
@@ -24,74 +52,72 @@ type RawSearchableItem = {
     };
   };
   heading?: string;
-  intro?: {
-    text?: string;
-  };
-  body?: {
-    text?: string;
-  };
+  intro?: { html?: string };
+  body?: { html?: string };
 };
 
-const extractSearchableText = (item: RawSearchableItem | null) => {
-  if (!item) return { heading: undefined, intro: undefined, body: undefined };
-
-  return {
-    heading: item.heading,
-    intro: item.intro?.text,
-    body: item.body?.text,
-  };
+const ENTITIES: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&nbsp;': ' ',
 };
 
-const flattenNavigation = (items: NavigationItem[]): Array<{ displayName: string; url: string }> =>
-  items
-    .filter(item => item.displayName !== 'Overview')
-    .flatMap(item => [
-      { displayName: item.displayName, url: item.url },
-      ...(item.items?.length ? flattenNavigation(item.items) : []),
-    ]);
+/** Rich text arrives as markup; search only wants the words in it. */
+const toPlainText = (html?: string) =>
+  html ?
+    html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, match => ENTITIES[match])
+      .replace(/\s+/g, ' ')
+      .trim() || undefined
+  : undefined;
 
-const createFallbackContent = (page: { displayName: string; url: string }): SearchableContent => ({
-  key: '',
-  displayName: page.displayName,
-  url: page.url,
-  type: 'Page',
-  heading: page.displayName,
-  intro: undefined,
-  body: undefined,
-  locale: 'en',
-});
+// one locale, because that is all the template routes. Take the
+// locale as an argument once the site serves more than `/en`.
+const fetchAllSearchableContent = async (locale = 'en'): Promise<SearchableContent[]> => {
+  const byUrl = new Map<string, SearchableContent>();
+  let total = 0;
+  let fetched = 0;
 
-const fetchAllSearchableContent = async (): Promise<SearchableContent[]> => {
   try {
-    const navigationItems = await getNavigationItems();
-    const pages = flattenNavigation(navigationItems);
+    do {
+      const data = await getClient().request(SEARCHABLE_CONTENT_QUERY, {
+        locale: [locale],
+        skip: fetched,
+      });
 
-    const contentPromises = pages.map(async page => {
-      try {
-        const fullContent = await getClient().getContentByPath(page.url);
+      const items: RawSearchablePage[] = data?._Page?.items ?? [];
+      total = data?._Page?.total ?? 0;
 
-        if (fullContent?.length > 0) {
-          const content = fullContent[0];
-          const searchableText = extractSearchableText(content);
+      if (items.length === 0) break;
+      fetched += items.length;
 
-          return {
-            key: content._metadata?.key || '',
-            displayName: page.displayName,
-            url: page.url,
-            type: content._metadata?.types?.[0] || 'Page',
-            heading: searchableText.heading || page.displayName,
-            intro: searchableText.intro,
-            body: searchableText.body,
-            locale: content._metadata?.locale || 'en',
-          };
-        }
-        return createFallbackContent(page);
-      } catch {
-        return createFallbackContent(page);
+      for (const item of items) {
+        const metadata = item._metadata;
+        const url = metadata?.url?.default;
+
+        if (!metadata || !url) continue;
+        if (metadata.types.includes('BlankExperience')) continue;
+        // The same page can be reachable through more than one site root.
+        if (byUrl.has(url)) continue;
+
+        byUrl.set(url, {
+          key: metadata.key,
+          displayName: metadata.displayName || '',
+          url,
+          type: metadata.types[0] || 'Page',
+          heading: item.heading || metadata.displayName || '',
+          intro: toPlainText(item.intro?.html),
+          body: toPlainText(item.body?.html),
+          locale: metadata.locale || locale,
+        });
       }
-    });
+    } while (fetched < total);
 
-    return await Promise.all(contentPromises);
+    return [...byUrl.values()];
   } catch (error) {
     console.error('Error fetching searchable content:', error);
     return [];
@@ -151,4 +177,3 @@ export const searchContent = (
 
   return scoredResults.filter(item => item.score > 0).sort((a, b) => b.score - a.score);
 };
-

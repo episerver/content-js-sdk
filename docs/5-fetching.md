@@ -306,6 +306,47 @@ const items = await client.getItems(
 
 **Returns:** Array of child page metadata or null if parent doesn't exist
 
+Returns one level only. To fetch a whole subtree, use `getDescendants` rather than calling this recursively — see [Which one to use](./12-client-utils.md#which-one-to-use).
+
+---
+
+#### `getDescendants(input, options?)`
+
+Fetches every page below a given page, at any depth, as a flat list. Supports both URL paths and GraphReference.
+
+```typescript
+// Using GraphReference — one request
+const pages = await client.getDescendants({
+  key: '880777d5a2824399b07e93e3ca70668e',
+  locale: 'en'
+});
+
+// Using graph:// string format — one request
+const pages = await client.getDescendants('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
+
+// Using URL path — one extra request to resolve the path to a key
+const pages = await client.getDescendants('/blog');
+
+// With locales filter
+const pages = await client.getDescendants(
+  { key: '880777d5a2824399b07e93e3ca70668e' },
+  { locales: ['en', 'sv'] }
+);
+```
+
+**Parameters:**
+
+- `input` (string | GraphReference): URL path or GraphReference of the ancestor page
+- `options` (optional):
+  - `host`: Override default host (only for path strings)
+  - `locales`: Array of locales to filter
+
+**Returns:** Flat array of descendant page metadata sorted by `sortOrder`, or null if the ancestor doesn't exist. The ancestor itself is excluded. Every item includes `_metadata.container`, the key of its parent, for rebuilding the hierarchy.
+
+Paginates internally: one request per 100 descendants, since Graph caps a result page at 100 items.
+
+See [GraphClient Utility Functions](./12-client-utils.md#getdescendants) for a worked menu example.
+
 ---
 
 ## Advanced topics

@@ -1,4 +1,4 @@
-import { getClient } from '@optimizely/cms-sdk';
+import { getClient, type GraphClient } from '@optimizely/cms-sdk';
 import { getContext } from '@optimizely/cms-sdk/react/server';
 import { cache } from 'react';
 
@@ -10,95 +10,90 @@ export type NavigationItem = {
   items: NavigationItem[] | null;
 };
 
-type RawNavigationItem = {
-  _metadata?: {
-    key: string;
-    displayName?: string;
-    locale?: string;
-    types: string[];
-    url?: {
-      default?: string;
-    };
-  };
-};
-
-const fetchChildItems = async (
-  parentKey: string,
-  parentUrl: string,
-  locale: string,
+/** `getDescendants` returns a flat list, already sorted; this nests it. */
+function buildTree(
+  pages: Awaited<ReturnType<GraphClient['getDescendants']>>,
+  rootKey: string,
   activeKey: string,
-  isRoot: boolean = false,
-  skipOverview: boolean = true,
-): Promise<NavigationItem[]> => {
-  const items = await getClient().getItems({ key: parentKey, locale });
+): NavigationItem[] {
+  const nodes = new Map<string, NavigationItem>();
+  const parentOf = new Map<string, string>();
 
-  if (!items?.length) return [];
+  for (const { _metadata: metadata } of pages ?? []) {
+    if (!metadata) continue;
+    if (metadata.types.includes('BlankExperience')) continue;
 
-  const filteredItems = items.filter(
-    (item: RawNavigationItem) =>
-      item._metadata && !item._metadata.types.includes('BlankExperience'),
-  );
-
-  const childItems = await Promise.all(
-    filteredItems.map(async (item: RawNavigationItem) => {
-      const metadata = item._metadata!;
-      const grandchildItems = await fetchChildItems(
-        metadata.key,
-        metadata.url?.default || '',
-        locale,
-        activeKey,
-        false,
-        skipOverview,
-      );
-
-      return {
-        key: metadata.key,
-        displayName: metadata.displayName || '',
-        url: metadata.url?.default || '',
-        isActive: metadata.key === activeKey,
-        items: grandchildItems.length > 0 ? grandchildItems : null,
-      };
-    }),
-  );
-
-  if (!isRoot && childItems.length > 0 && !skipOverview) {
-    return [
-      {
-        key: parentKey,
-        displayName: 'Overview',
-        url: parentUrl,
-        isActive: parentKey === activeKey,
-        items: null,
-      },
-      ...childItems,
-    ];
+    nodes.set(metadata.key, {
+      key: metadata.key,
+      displayName: metadata.displayName || '',
+      url: metadata.url?.default || '',
+      isActive: metadata.key === activeKey,
+      items: null,
+    });
+    parentOf.set(metadata.key, metadata.container || '');
   }
 
-  return childItems;
-};
+  const roots: NavigationItem[] = [];
 
-export const getNavigationItems = cache(async (skipOverview: boolean = true) => {
+  for (const [key, node] of nodes) {
+    const parentKey = parentOf.get(key)!;
+    const parent = nodes.get(parentKey);
+
+    if (parent) (parent.items ??= []).push(node);
+    // A page whose parent was filtered out is dropped with it.
+    else if (parentKey === rootKey) roots.push(node);
+  }
+
+  return roots;
+}
+
+/** Prepends an "Overview" link to every branch, pointing at the branch itself. */
+const withOverview = (items: NavigationItem[], activeKey?: string): NavigationItem[] =>
+  items.map(item =>
+    item.items?.length ?
+      {
+        ...item,
+        items: [
+          {
+            key: item.key,
+            displayName: 'Overview',
+            url: item.url,
+            isActive: item.key === activeKey,
+            items: null,
+          },
+          ...withOverview(item.items, activeKey),
+        ],
+      }
+    : item,
+  );
+
+export const getNavigationItems = cache(async (): Promise<NavigationItem[]> => {
   const context = getContext();
 
   if (!context?.key || !context?.locale) {
     return [];
   }
 
-  const path = await getClient().getPath({ key: context.key, locale: context.locale });
-  if (!path?.length) return [];
+  // The page already carries its ancestors. Preview renders without them, so
+  // fall back to asking for the path there.
+  const currentContent = context.currentContent as
+    | { _metadata?: { path?: string[] } }
+    | undefined;
+  const rootKey =
+    currentContent?._metadata?.path?.[0] ??
+    (await getClient().getPath({ key: context.key, locale: context.locale }))?.[0]
+      ?._metadata?.key;
 
-  const rootUrl = path[0]._metadata?.url?.default || '';
-  const rootKey = path[0]._metadata?.key;
-  if (!rootKey || !rootUrl) return [];
+  if (!rootKey) return [];
 
-  return fetchChildItems(
-    rootKey,
-    rootUrl,
-    context.locale,
-    context.key,
-    true,
-    skipOverview,
-  );
+  const pages = await getClient().getDescendants({
+    key: rootKey,
+    locale: context.locale,
+  });
+
+  return buildTree(pages, rootKey, context.key);
 });
 
-export const getMobileNavigationItems = cache(() => getNavigationItems(false));
+export const getMobileNavigationItems = cache(async () =>
+  withOverview(await getNavigationItems(), getContext()?.key),
+);
