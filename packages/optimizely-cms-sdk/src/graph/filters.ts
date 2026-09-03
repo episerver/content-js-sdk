@@ -126,7 +126,7 @@ export function getVariationVarDecls(mode: VariationMode): string {
 
 export function getVariationClause(mode: VariationMode): string {
   if (mode === 'none') return '';
-  if (mode === 'all') return ', variation: ALL';
+  if (mode === 'all') return ', variation: { include: ALL }';
   const values = Array.from({ length: mode.count }, (_, i) => `$v${i + 1}`).join(', ');
   return `, variation: { include: SOME, value: [${values}] }`;
 }

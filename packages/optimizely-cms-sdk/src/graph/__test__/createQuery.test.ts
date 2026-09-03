@@ -779,13 +779,13 @@ describe('deterministic query output', () => {
     expect(query).not.toContain('VariationInput');
   });
 
-  test('preview query inlines variation: ALL', () => {
+  test('preview query inlines variation: { include: ALL }', () => {
     const ct1 = contentType({ key: 'PreviewTest', displayName: 'PreviewTest', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
     const query = createSingleContentQuery('PreviewTest', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-key', variationMode: 'all' });
 
-    expect(query).toContain('variation: ALL');
+    expect(query).toContain('variation: { include: ALL }');
     expect(query).toContain('$key: String');
     expect(query).toContain('$metadataLocale: String');
     expect(query).toContain('$version: String');

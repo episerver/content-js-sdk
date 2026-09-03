@@ -259,5 +259,19 @@ describe('getClient - Critical Edge Cases', () => {
       expect(url.searchParams.get('stored')).toBe('true');
       mockFetch.mockRestore();
     });
+
+    test('should send cg-stored-query header when stored is true', async () => {
+      await client.request('query { test }', {}, undefined, true, undefined, true);
+
+      expect(mockFetch.mock.calls[0][1].headers['cg-stored-query']).toBe('template');
+      mockFetch.mockRestore();
+    });
+
+    test('should omit cg-stored-query header when stored is false', async () => {
+      await client.request('query { test }', {}, undefined, true, undefined, false);
+
+      expect(mockFetch.mock.calls[0][1].headers['cg-stored-query']).toBeUndefined();
+      mockFetch.mockRestore();
+    });
   });
 });
