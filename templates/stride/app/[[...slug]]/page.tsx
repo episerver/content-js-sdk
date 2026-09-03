@@ -14,8 +14,11 @@ type Props = {
 
 const defaultSlug = ['en'];
 
-const getContentBySlug = cache(async (slug: String[]) => {
-  const path = `/${slug.join('/')}`;
+/** `['en', 'about-us']` → `/en/about-us`. Also the cache key below. */
+const toPath = (slug?: string[]) => `/${(slug ?? defaultSlug).join('/')}`;
+
+// Use the path as the cache key to avoid duplicate fetches.
+const getContentByPath = cache(async (path: string) => {
   const result = await getClient().getContentByPath(path);
 
   if (result.length === 0) {
@@ -27,7 +30,7 @@ const getContentBySlug = cache(async (slug: String[]) => {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const content = await getContentBySlug(slug ?? defaultSlug);
+  const content = await getContentByPath(toPath(slug));
 
   if (content === null) {
     return {
@@ -44,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export async function Page({ params }: Props) {
   const { slug } = await params;
-  const content = await getContentBySlug(slug ?? defaultSlug);
+  const content = await getContentByPath(toPath(slug));
 
   if (content === null) {
     notFound();
