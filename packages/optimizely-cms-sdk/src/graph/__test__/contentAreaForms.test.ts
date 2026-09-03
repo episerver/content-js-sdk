@@ -38,7 +38,7 @@ const stubGraph = ({ formTypes = ['OptiFormsContainerData'] } = {}) => {
   request = vi
     .spyOn(client, 'request')
     .mockImplementation(async (query: string, vars: any) => {
-      const askedForTheForm = JSON.stringify(vars?.where ?? {}).includes('form-1');
+      const askedForTheForm = vars?.key === 'form-1';
 
       if (query.includes('GetContentMetadata')) {
         return {
@@ -88,9 +88,7 @@ describe('a form reached through a content area', () => {
   test('is fetched on its own, since the page query cannot carry them', async () => {
     await client.getContent({ key: 'page-1' });
 
-    const askedForTheForm = request.mock.calls.filter((c: any[]) =>
-      JSON.stringify(c[1]?.where ?? {}).includes('form-1'),
-    );
+    const askedForTheForm = request.mock.calls.filter((c: any[]) => c[1]?.key === 'form-1');
     expect(askedForTheForm.length).toBeGreaterThan(0);
   });
 
@@ -117,7 +115,7 @@ describe('the same shared form referenced twice', () => {
   // the same key. Fetching per object would double the round trips.
   const stubTwice = () =>
     vi.spyOn(client, 'request').mockImplementation(async (query: string, vars: any) => {
-      const askedForTheForm = JSON.stringify(vars?.where ?? {}).includes('form-1');
+      const askedForTheForm = vars?.key === 'form-1';
 
       if (query.includes('GetContentMetadata')) {
         return {
@@ -161,9 +159,7 @@ describe('the same shared form referenced twice', () => {
     await client.getContent({ key: 'page-1' });
 
     const formFetches = request.mock.calls.filter(
-      (call: any[]) =>
-        JSON.stringify(call[1]?.where ?? {}).includes('form-1') &&
-        !String(call[0]).includes('GetContentMetadata'),
+      (call: any[]) => call[1]?.key === 'form-1' && !String(call[0]).includes('GetContentMetadata'),
     );
     expect(formFetches).toHaveLength(1);
   });
@@ -184,7 +180,7 @@ describe('the cost of filling forms in', () => {
     request = vi
       .spyOn(client, 'request')
       .mockImplementation(async (query: string, vars: any) => {
-        const key = JSON.stringify(vars?.where ?? {}).match(/form-\d/)?.[0];
+        const key = /^form-\d$/.test(vars?.key) ? vars.key : undefined;
 
         if (query.includes('GetContentMetadata')) {
           return {

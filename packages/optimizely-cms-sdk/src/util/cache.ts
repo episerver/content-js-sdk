@@ -4,11 +4,15 @@ import {
   type QueryContext,
 } from './queryUtils.js';
 import { getAllContentTypes } from '../model/contentTypeRegistry.js';
+import type { FilterShape, VariationMode } from '../graph/filters.js';
 
 const queryCache = new Map<string, string>();
 
 /** The lenient option bag the query builders accept. */
-type QueryOptions = Partial<QueryContext> & FragmentOptions;
+type QueryOptions = Partial<QueryContext> & FragmentOptions & {
+  filterShape?: FilterShape;
+  variationMode?: VariationMode;
+};
 
 type QueryGenerator = (contentType: string, options?: QueryOptions) => string;
 
@@ -18,6 +22,12 @@ const getFilterHash = (typeFilter: (key: string) => boolean): string => {
     .map(ct => ('key' in ct ? ct.key : ''))
     .sort()
     .join(',');
+};
+
+const getVariationModeKey = (mode?: VariationMode): string => {
+  if (!mode || mode === 'none') return 'none';
+  if (mode === 'all') return 'all';
+  return `some-${mode.count}`;
 };
 
 /**
@@ -40,11 +50,13 @@ function createCacheKey(
     typeFilter,
     sectionTypes,
   } = createQueryContext(options);
-  const { includeBaseFragments = true } = options;
+  const { includeBaseFragments = true, filterShape, variationMode } = options;
 
   const filterPart = typeFilter ? `:${getFilterHash(typeFilter)}` : '';
   // Which types own a `composition` changes the query, and differs per endpoint.
   const sectionPart = sectionTypes ? `:${[...sectionTypes].sort().join(',')}` : '';
+  const shapePart = filterShape ? `:${filterShape}` : '';
+  const variationPart = `:${getVariationModeKey(variationMode)}`;
 
   return (
     [
@@ -57,7 +69,9 @@ function createCacheKey(
       includeBaseFragments,
     ].join(':') +
     filterPart +
-    sectionPart
+    sectionPart +
+    shapePart +
+    variationPart
   );
 }
 

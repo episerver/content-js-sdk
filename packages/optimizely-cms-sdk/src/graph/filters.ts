@@ -21,134 +21,6 @@ function normalizePath(path: string) {
   }
 }
 
-/**
- * Creates a {@linkcode ContentInput} object that filters results by a specific URL path.
- *
- * @param path - The URL path to filter by.
- * @param host - Optional base URL/domain to filter by. Useful when multiple sites share the same CMS instance,
- *   ensuring content is retrieved only from the specified domain (e.g., "https://example.com").
- * @returns A `GraphQueryArguments` object with a `where` clause that matches the given path.
- */
-export function pathFilter(path: string, host?: string): ContentInput {
-  const { pathWithTrailingSlash, pathWithoutTrailingSlash } = normalizePath(path);
-
-  const baseFilter = host ? { eq: host } : undefined;
-
-  return {
-    where: {
-      _or: [
-        {
-          _metadata: {
-            url: {
-              default: { eq: pathWithTrailingSlash },
-              base: baseFilter,
-            },
-          },
-        },
-        {
-          _metadata: {
-            url: {
-              default: { eq: pathWithoutTrailingSlash },
-              base: baseFilter,
-            },
-          },
-        },
-        {
-          _metadata: {
-            url: {
-              hierarchical: { eq: pathWithTrailingSlash },
-              base: baseFilter,
-            },
-          },
-        },
-        {
-          _metadata: {
-            url: {
-              hierarchical: { eq: pathWithoutTrailingSlash },
-              base: baseFilter,
-            },
-          },
-        },
-      ],
-    },
-  };
-}
-
-/**
- * Creates a {@linkcode ContentInput} object for previewing content based on key, version, and locale.
- *
- * @param params - An object containing the following properties:
- * @param params.key - The unique key identifying the content.
- * @param params.ver - The version of the content to preview.
- * @param params.loc - The locale of the content to preview.
- *
- * @returns A `GraphQueryArguments` object with a `where` clause filtering by key, version, and locale.
- */
-export function previewFilter(params: {
-  key: string;
-  ver: string;
-  loc: string;
-}): ContentInput {
-  return {
-    where: {
-      _metadata: {
-        key: { eq: params.key },
-        version: { eq: params.ver },
-        locale: { eq: params.loc },
-      },
-    },
-    variation: {
-      include: 'ALL',
-    },
-  };
-}
-
-export function variationFilter(value: string): ContentInput {
-  return {
-    variation: {
-      include: 'SOME',
-      value: [value],
-    },
-  };
-}
-
-export function localeFilter(locale?: string[]): ContentInput {
-  return {
-    locale,
-  };
-}
-
-/**
- * Creates a {@linkcode ContentInput} object that filters by GraphReference (key, locale, version).
- *
- * @param reference - GraphReference object containing key and optional parameters
- * @returns A `ContentInput` object with a `where` clause filtering by the reference
- */
-export function referenceFilter(reference: {
-  key: string;
-  locale?: string;
-  version?: string;
-}): ContentInput {
-  return {
-    where: {
-      _metadata: {
-        key: { eq: reference.key },
-        ...(reference.version ? { version: { eq: reference.version } }
-        : reference.locale ? { locale: { eq: reference.locale } }
-        : {}),
-      },
-    },
-  };
-}
-
-/**
- * Arguments for querying content via the Graph API.
- */
-export type ContentInput = {
-  locale?: string[];
-  variation?: GraphVariationInput;
-  where?: ContentWhereInput;
-};
 
 export type GraphVariationInput =
   | { include: 'NONE' }
@@ -159,80 +31,103 @@ export type GraphVariationInput =
       includeOriginal?: boolean;
     };
 
-type ContentWhereInput = {
-  _and?: ContentWhereInput[];
-  _or?: ContentWhereInput[];
-  _fulltext?: StringFilterInput;
-  _modified?: DateFilterInput;
-  _metadata?: IContentMetadataWhereInput;
+// --- Scalar filter types for query caching ---
+
+export type FilterShape = 'by-key' | 'by-path';
+
+export type ScalarFilter = {
+  filterShape: FilterShape;
+  variables: Record<string, string | string[] | undefined>;
 };
 
-type StringFilterInput = ScalarFilterInput<string> & {
-  like?: string;
-  startsWith?: string;
-  endsWith?: string;
-  in?: string[];
-  notIn?: string[];
-  match?: string;
-  contains?: string;
-  synonyms?: ('ONE' | 'TWO')[];
-  fuzzly?: boolean;
-};
+export type VariationMode = 'none' | 'all' | { count: number };
 
-type DateFilterInput = ScalarFilterInput<string> & {
-  gt?: string;
-  gte?: string;
-  lt?: string;
-  lte?: string;
-  decay?: {
-    origin?: string;
-    scale?: number;
-    rate?: number;
+export function pathScalarFilter(path: string, host?: string): ScalarFilter {
+  const { pathWithTrailingSlash, pathWithoutTrailingSlash } = normalizePath(path);
+  return {
+    filterShape: 'by-path',
+    variables: {
+      path: pathWithTrailingSlash,
+      pathNoSlash: pathWithoutTrailingSlash,
+      ...(host ? { host } : {}),
+    },
   };
-};
+}
 
-type IContentMetadataWhereInput = {
-  key?: StringFilterInput;
-  locale?: StringFilterInput;
-  fallbackForLocale?: StringFilterInput;
-  version?: StringFilterInput;
-  displayName?: StringFilterInput;
-  url?: ContentUrlInput<StringFilterInput>;
-  types?: StringFilterInput;
-  published?: DateFilterInput;
-  status?: StringFilterInput;
-  changeset?: StringFilterInput;
-  created?: DateFilterInput;
-  lastModified?: DateFilterInput;
-  sortOrder?: IntFilterInput;
-  variation?: StringFilterInput;
-};
-
-type IntFilterInput = ScalarFilterInput<number> & {
-  gt?: number;
-  gte?: number;
-  lt?: number;
-  lte?: number;
-  in?: number[];
-  notIn?: number[];
-  factor?: {
-    value?: number;
-    modifier?: 'NONE' | 'SQUARE' | 'SQRT' | 'LOG' | 'RECIPROCAL';
+export function previewScalarFilter(params: {
+  key: string;
+  ver: string;
+  loc: string;
+}): ScalarFilter {
+  return {
+    filterShape: 'by-key',
+    variables: {
+      key: params.key,
+      version: params.ver,
+      metadataLocale: params.loc,
+    },
   };
-};
+}
 
-type ContentUrlInput<T> = {
-  type?: T;
-  default?: T;
-  hierarchical?: T;
-  internal?: T;
-  graph?: T;
-  base?: T;
-};
+export function referenceScalarFilter(reference: {
+  key: string;
+  locale?: string;
+  version?: string;
+}): ScalarFilter {
+  return {
+    filterShape: 'by-key',
+    variables: {
+      key: reference.key,
+      ...(reference.version ? { version: reference.version } : {}),
+      ...(reference.locale ? { metadataLocale: reference.locale } : {}),
+    },
+  };
+}
 
-type ScalarFilterInput<T> = {
-  eq?: T;
-  notEq?: T;
-  exist?: boolean;
-  boost?: number;
-};
+export function getVariationMode(variation?: GraphVariationInput): VariationMode {
+  if (!variation || variation.include === 'NONE') return 'none';
+  if (variation.include === 'ALL') return 'all';
+  return { count: variation.value.length };
+}
+
+export function getVariationVariables(
+  variation?: GraphVariationInput,
+): Record<string, string> {
+  if (!variation || variation.include !== 'SOME') return {};
+  const vars: Record<string, string> = {};
+  for (let i = 0; i < variation.value.length; i++) {
+    vars[`v${i + 1}`] = variation.value[i];
+  }
+  return vars;
+}
+
+const PATH_WHERE = `where: { _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }`;
+
+export function getFilterVarDecls(shape: FilterShape): string {
+  switch (shape) {
+    case 'by-key': return '$key: String, $version: String, $metadataLocale: String';
+    case 'by-path': return '$host: String, $path: String, $pathNoSlash: String';
+  }
+}
+
+export function getFilterWhereClause(shape: FilterShape): string {
+  switch (shape) {
+    case 'by-key':
+      return 'where: { _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }';
+    case 'by-path':
+      return PATH_WHERE;
+  }
+}
+
+export function getVariationVarDecls(mode: VariationMode): string {
+  if (mode === 'none' || mode === 'all') return '';
+  return Array.from({ length: mode.count }, (_, i) => `$v${i + 1}: String`).join(', ');
+}
+
+export function getVariationClause(mode: VariationMode): string {
+  if (mode === 'none') return '';
+  if (mode === 'all') return ', variation: { include: ALL }';
+  const values = Array.from({ length: mode.count }, (_, i) => `$v${i + 1}`).join(', ');
+  return `, variation: { include: SOME, value: [${values}] }`;
+}
+

@@ -212,4 +212,66 @@ describe('getClient - Critical Edge Cases', () => {
       expect(client.maxFragmentThreshold).toBe(100);
     });
   });
+
+  describe('stored URL parameter', () => {
+    let client: any;
+    let mockFetch: any;
+
+    beforeEach(() => {
+      config({ apiKey: 'test-key' });
+      client = getClient();
+      mockFetch = vi.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ data: {} }),
+      } as any);
+    });
+
+    test('should omit stored from URL by default for request()', async () => {
+      await client.request('query { test }', {});
+
+      const url = new URL(mockFetch.mock.calls[0][0].toString());
+      expect(url.searchParams.has('stored')).toBe(false);
+      mockFetch.mockRestore();
+    });
+
+    test('should omit stored from URL when stored is false', async () => {
+      await client.request('query { test }', {}, undefined, true, undefined, false);
+
+      const url = new URL(mockFetch.mock.calls[0][0].toString());
+      expect(url.searchParams.has('stored')).toBe(false);
+      mockFetch.mockRestore();
+    });
+
+    test('should have cache and stored in URL together', async () => {
+      await client.request('query { test }', {}, undefined, true, undefined, true);
+
+      const url = new URL(mockFetch.mock.calls[0][0].toString());
+      expect(url.searchParams.get('cache')).toBe('true');
+      expect(url.searchParams.get('stored')).toBe('true');
+      mockFetch.mockRestore();
+    });
+
+    test('preview requests should have cache=false and stored=true', async () => {
+      await client.request('query { test }', {}, 'preview-token', false, undefined, true);
+
+      const url = new URL(mockFetch.mock.calls[0][0].toString());
+      expect(url.searchParams.get('cache')).toBe('false');
+      expect(url.searchParams.get('stored')).toBe('true');
+      mockFetch.mockRestore();
+    });
+
+    test('should send cg-stored-query header when stored is true', async () => {
+      await client.request('query { test }', {}, undefined, true, undefined, true);
+
+      expect(mockFetch.mock.calls[0][1].headers['cg-stored-query']).toBe('template');
+      mockFetch.mockRestore();
+    });
+
+    test('should omit cg-stored-query header when stored is false', async () => {
+      await client.request('query { test }', {}, undefined, true, undefined, false);
+
+      expect(mockFetch.mock.calls[0][1].headers['cg-stored-query']).toBeUndefined();
+      mockFetch.mockRestore();
+    });
+  });
 });
