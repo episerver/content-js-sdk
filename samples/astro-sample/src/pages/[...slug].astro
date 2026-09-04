@@ -10,8 +10,6 @@ export const prerender = true;
 initOptimizely();
 
 export async function getStaticPaths() {
-  // Ensure SDK is initialized before querying
-  initOptimizely();
 
   // Note: in this sample site, we do not use pagination for querying pages.
   // If a website has more than 100 pages, only 100 will be statically generated
@@ -55,8 +53,6 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-
-initOptimizely();
 
 const client = getInitializedClient();
 const content = await client.getContentByPath(`/${slug}/`);
