@@ -48,8 +48,13 @@ export type GraphQueryOptions = {
   /**
    * Application host to filter paths by, for a CMS instance serving several
    * sites. Only applies to lookups by path; ignored when content is addressed
-   * by key.
-   * Overrides the global `host` setting in `GraphOptions`.
+   * by key. Overrides the global `host` setting in `GraphOptions`.
+   *
+   * Pass your site's **public hostname** — e.g., `"www.example.com"` or
+   * `"https://www.example.com"`. The SDK normalizes the value automatically
+   * (prepends `https://` if no scheme is present, strips trailing slashes,
+   * lowercases). Do **not** pass the platform's internal hostname
+   * (e.g., `app-xxxxx.cms.optimizely.com`).
    */
   host?: string;
 };
