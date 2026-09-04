@@ -1,0 +1,17 @@
+import type { ContentProps } from '@optimizely/cms-sdk';
+import { OptimizelyGridSection, getPreviewUtils } from '@optimizely/cms-sdk/react/server';
+import { BlankSectionContentType } from '@/lib/contentTypes';
+
+type BlankSectionProps = {
+  content: ContentProps<typeof BlankSectionContentType>;
+};
+
+/** Defines a component to render a blank section */
+export default function BlankSection({ content }: BlankSectionProps) {
+  const { pa } = getPreviewUtils(content);
+  return (
+    <section {...pa(content)}>
+      <OptimizelyGridSection nodes={content.nodes} />
+    </section>
+  );
+}

@@ -1,0 +1,72 @@
+---
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { getClient, isContentTypeRegistered } from '@optimizely/cms-sdk';
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
+
+initOptimizely();
+
+export async function getStaticPaths() {
+  if (!import.meta.env.APPLICATION_HOST) {
+    return [];
+  }
+
+  // Note: in this sample site, we do not use pagination for querying pages.
+  // If a website has more than 100 pages, only 100 will be statically generated
+  const query = `
+  query GetPosts {
+    _Page(limit: 100) {
+      items {
+        _metadata {
+          types
+          url {
+            base
+            default
+          }
+        }
+      }
+    }
+  }
+    `;
+
+  const client = getInitializedClient();
+  const data = await client.request(query, {});
+
+  return data._Page.items
+    .filter((item: any) => {
+      if (item?._metadata?.url?.base !== import.meta.env.APPLICATION_HOST) {
+        return false;
+      }
+
+      const contentType = item?._metadata?.types?.[0];
+      if (!contentType) {
+        return false;
+      }
+
+      const isRegistered = isContentTypeRegistered(contentType);
+      return isRegistered;
+    })
+    .map((item: any) => {
+      const path = item?._metadata?.url?.default;
+      const cleanPath = path?.replace(/^\/|\/$/g, '');
+      return {
+        params: { slug: cleanPath || undefined },
+      };
+    })
+    .filter((p: any) => p.params.slug);
+}
+
+const { slug } = Astro.params;
+
+const client = getInitializedClient();
+const content = await client.getContentByPath(`/${slug}/`);
+
+if (content.length === 0) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout>
+  <OptimizelyComponent content={content[0]} client:load />
+</BaseLayout>
