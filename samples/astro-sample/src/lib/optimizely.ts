@@ -6,6 +6,8 @@ import {
   BlankExperienceContentType,
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+// Auto-configure React adapter for context features
+import '@optimizely/cms-sdk/react/server';
 
 import Landing from '../components/react/Landing';
 import LandingSection from '../components/react/LandingSection';

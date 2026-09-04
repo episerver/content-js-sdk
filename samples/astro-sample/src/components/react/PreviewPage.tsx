@@ -6,7 +6,7 @@ interface PreviewPageProps {
   content: any;
 }
 
-function PreviewComponent({ content }: PreviewPageProps) {
+function PreviewPageComponent({ content }: PreviewPageProps) {
   return (
     <>
       <OptiPreviewComponent
@@ -21,5 +21,5 @@ function PreviewComponent({ content }: PreviewPageProps) {
   );
 }
 
-export default withAppContext(PreviewComponent);
+export default withAppContext(PreviewPageComponent);
 

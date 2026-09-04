@@ -1,16 +1,17 @@
 ---
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getClient, isContentTypeRegistered } from '@optimizely/cms-sdk';
+import { isContentTypeRegistered } from '@optimizely/cms-sdk';
 import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
 
+export const prerender = true;
+
+// Initialize SDK at module level
 initOptimizely();
 
 export async function getStaticPaths() {
-  if (!import.meta.env.APPLICATION_HOST) {
-    return [];
-  }
+  // Ensure SDK is initialized before querying
+  initOptimizely();
 
   // Note: in this sample site, we do not use pagination for querying pages.
   // If a website has more than 100 pages, only 100 will be statically generated
@@ -35,10 +36,6 @@ export async function getStaticPaths() {
 
   return data._Page.items
     .filter((item: any) => {
-      if (item?._metadata?.url?.base !== import.meta.env.APPLICATION_HOST) {
-        return false;
-      }
-
       const contentType = item?._metadata?.types?.[0];
       if (!contentType) {
         return false;
@@ -59,6 +56,8 @@ export async function getStaticPaths() {
 
 const { slug } = Astro.params;
 
+initOptimizely();
+
 const client = getInitializedClient();
 const content = await client.getContentByPath(`/${slug}/`);
 
@@ -68,5 +67,5 @@ if (content.length === 0) {
 ---
 
 <BaseLayout>
-  <OptimizelyComponent content={content[0]} client:load />
+  <OptimizelyComponent content={content[0]} />
 </BaseLayout>

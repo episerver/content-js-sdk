@@ -15,6 +15,7 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@astrojs/node": "^7.1.0",
     "@astrojs/react": "^6.0.5",
     "@optimizely/cms-cli": "workspace:*",
     "@types/node": "^20",
