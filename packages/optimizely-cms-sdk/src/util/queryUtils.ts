@@ -117,6 +117,11 @@ export type QueryContext = {
    * have the field.
    */
   sectionTypes?: ReadonlySet<string>;
+  /**
+   * Tracks the ancestor fragment chain during recursive fragment generation
+   * to prevent circular fragment references.
+   */
+  ancestors: Set<string>;
 };
 
 /**
@@ -158,6 +163,7 @@ export const createQueryContext = (
   formsEnabled: options.formsEnabled ?? false,
   typeFilter: options.typeFilter,
   sectionTypes: options.sectionTypes,
+  ancestors: options.ancestors ?? new Set(),
 });
 
 export type FragmentInfo = {
@@ -389,7 +395,7 @@ const handleContentProperty: PropertyHandler = (
   visited: Set<string>,
   ctx: QueryContext,
 ) => {
-  const { expandContracts, typeFilter } = ctx;
+  const { expandContracts, typeFilter, ancestors } = ctx;
   const resolved = resolveAllowedTypes(
     (property as any).allowedTypes,
     (property as any).restrictedTypes,
@@ -416,19 +422,25 @@ const handleContentProperty: PropertyHandler = (
   const subfields = ['__typename'];
 
   typesToInclude.forEach(key => {
+    const strippedKey = stripSourcePrefix(key);
     const result = createFragmentFor(key);
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
     extraFragments.push(...result.fragments);
-    subfields.push(`...${stripSourcePrefix(key)}`);
+    if (!ancestors?.has(strippedKey)) {
+      subfields.push(`...${strippedKey}`);
+    }
   });
 
   contractsToInclude.forEach(contractKey => {
+    const strippedKey = stripSourcePrefix(contractKey);
     const result = createFragmentFor(contractKey);
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
     extraFragments.push(...result.fragments);
-    subfields.push(`...${stripSourcePrefix(contractKey)}`);
+    if (!ancestors?.has(strippedKey)) {
+      subfields.push(`...${strippedKey}`);
+    }
   });
 
   const uniqueSubfields = [...new Set(subfields)].join(' ');
@@ -505,8 +517,6 @@ const handleArrayProperty: PropertyHandler = (
   visited: Set<string>,
   ctx: QueryContext,
 ) => {
-  // Forwards the whole context, which covers main's fix for `expandContracts`
-  // being dropped here (CMS-54935) along with every other query-wide setting.
   return convertProperty(name, (property as any).items, rootName, suffix, visited, ctx);
 };
 
