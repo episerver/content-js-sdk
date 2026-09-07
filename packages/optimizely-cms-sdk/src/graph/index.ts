@@ -29,6 +29,7 @@ import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms, getCachedContentTypes } from '../util/queryUtils.js';
+import { stableKey } from '../util/stableKey.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -210,10 +211,18 @@ const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-path': 'GetContentMetadataByPath',
 };
 
-function getMetadataQuery(shape: FilterShape, variationMode: VariationMode = 'none'): string {
+function getMetadataQuery(
+  shape: FilterShape,
+  variationMode: VariationMode = 'none',
+): string {
   const varDecls = getFilterVarDecls(shape);
   const variationVars = getVariationVarDecls(variationMode);
-  const allVars = [varDecls, variationVars, '$formsWhere: _ExperienceWhereInput', '$withForms: Boolean!']
+  const allVars = [
+    varDecls,
+    variationVars,
+    '$formsWhere: _ExperienceWhereInput',
+    '$withForms: Boolean!',
+  ]
     .filter(Boolean)
     .join(', ');
   const whereClause = getFilterWhereClause(shape);
@@ -332,10 +341,7 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     }
   }`;
 
-function getLinksQuery(
-  opName: string,
-  shape: FilterShape,
-): string {
+function getLinksQuery(opName: string, shape: FilterShape): string {
   const filterVars = getFilterVarDecls(shape);
   const whereClause = getFilterWhereClause(shape);
   const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
@@ -345,10 +351,7 @@ query ${opName}(${allVars}) {
 }`;
 }
 
-function getItemsQuery(
-  opName: string,
-  shape: FilterShape,
-): string {
+function getItemsQuery(opName: string, shape: FilterShape): string {
   const filterVars = getFilterVarDecls(shape);
   const whereClause = getFilterWhereClause(shape);
   const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
@@ -357,7 +360,6 @@ query ${opName}(${allVars}) {
   _Content(${whereClause}, locale: $locale) ${LINKS_BODY('ITEMS')}
 }`;
 }
-
 
 type GetLinksResponse = {
   _Content: {
@@ -503,20 +505,33 @@ function findUnresolvedForms(value: any, found: any[] = [], seen = new Set()): a
   return found;
 }
 
-/** Adds an extra `__context` property next to each `__typename` property */
-function decorateWithContext(obj: any, params: PreviewParams): any {
+/**
+ * Adds `_opuid` (a stable React list key) to every array item, and, when `params`
+ * is given, `__context` to every `__typename` object (preview/edit mode only).
+ * Exported only for testing — not part of the user-facing API.
+ */
+export function decorateWithContext(
+  obj: any,
+  params: PreviewParams | null,
+  isArrayItem = false,
+): any {
   if (Array.isArray(obj)) {
-    return obj.map(e => decorateWithContext(e, params));
+    return obj.map(e => decorateWithContext(e, params, true));
   }
   if (typeof obj === 'object' && obj !== null) {
     for (const k in obj) {
       obj[k] = decorateWithContext(obj[k], params);
     }
     if ('__typename' in obj) {
-      obj.__context = {
-        edit: params.ctx === 'edit',
-        preview_token: params.preview_token,
-      };
+      if (isArrayItem) {
+        obj._opuid = obj._metadata?.key ?? stableKey(obj);
+      }
+      if (params) {
+        obj.__context = {
+          edit: params.ctx === 'edit',
+          preview_token: params.preview_token,
+        };
+      }
     }
   }
   return obj;
@@ -918,15 +933,18 @@ export class GraphClient {
           storedEnabled,
         )) as ItemsResponse<T>;
 
-        return Promise.all(
-          response?._Content?.items.map((item: unknown) =>
-            this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item)), {
-              damEnabled,
-              sectionTypes,
-              cache: cacheEnabled,
-              slot: activeSlot,
-            }),
-          ) ?? [],
+        return decorateWithContext(
+          await Promise.all(
+            response?._Content?.items.map((item: unknown) =>
+              this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item)), {
+                damEnabled,
+                sectionTypes,
+                cache: cacheEnabled,
+                slot: activeSlot,
+              }),
+            ) ?? [],
+          ),
+          null,
         );
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {
@@ -1100,7 +1118,12 @@ export class GraphClient {
       if (!contentTypeName) {
         throw new GraphResponseError(
           `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
-          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape, 'all') } },
+          {
+            request: {
+              variables: filter.variables,
+              query: getMetadataQuery(filter.filterShape, 'all'),
+            },
+          },
         );
       }
 
@@ -1304,15 +1327,18 @@ export class GraphClient {
           storedEnabled,
         );
 
-        return this.resolveFormNodes(
-          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-          {
-            damEnabled,
-            sectionTypes,
-            previewToken,
-            cache: cacheEnabled,
-            slot: activeSlot,
-          },
+        return decorateWithContext(
+          await this.resolveFormNodes(
+            liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+            {
+              damEnabled,
+              sectionTypes,
+              previewToken,
+              cache: cacheEnabled,
+              slot: activeSlot,
+            },
+          ),
+          null,
         );
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {

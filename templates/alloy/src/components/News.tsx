@@ -92,8 +92,8 @@ function News({ content }: NewsPageProps) {
 
           {/* Teasers - Full Width */}
           <div {...pa('teasers')} className='lg:col-span-2 w-full space-y-4'>
-            {content.teasers?.map((teaser, index) => (
-              <OptimizelyComponent key={index} content={teaser} tag='teaser' />
+            {content.teasers?.map(teaser => (
+              <OptimizelyComponent key={teaser._opuid} content={teaser} tag='teaser' />
             ))}
           </div>
         </div>

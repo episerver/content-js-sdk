@@ -23,6 +23,9 @@ const STEPS = [
   { __typename: 'CompositionStructureNode', nodeType: 'step', key: 'step-1' },
 ];
 
+/** `STEPS` as it comes back out: array items also get `_opuid` (see decorateWithContext). */
+const EXPECTED_STEPS = STEPS.map(step => ({ ...step, _opuid: expect.any(String) }));
+
 /** A container as it arrives inside a content area: no steps. */
 const nestedForm = () => ({
   __typename: 'OptiFormsContainerData',
@@ -82,7 +85,7 @@ describe('a form reached through a content area', () => {
   test('has its steps filled in', async () => {
     const page: any = await client.getContent({ key: 'page-1' });
 
-    expect(page.extras[0].nodes).toEqual(STEPS);
+    expect(page.extras[0].nodes).toEqual(EXPECTED_STEPS);
   });
 
   test('is fetched on its own, since the page query cannot carry them', async () => {
@@ -169,8 +172,8 @@ describe('the same shared form referenced twice', () => {
 
     const page: any = await client.getContent({ key: 'page-1' });
 
-    expect(page.extras[0].nodes).toEqual(STEPS);
-    expect(page.extras[1].nodes).toEqual(STEPS);
+    expect(page.extras[0].nodes).toEqual(EXPECTED_STEPS);
+    expect(page.extras[1].nodes).toEqual(EXPECTED_STEPS);
   });
 });
 describe('the cost of filling forms in', () => {
@@ -251,7 +254,7 @@ describe('a form whose steps already arrived', () => {
 
     const form: any = await client.getContent({ key: 'form-1' });
 
-    expect(form.nodes).toEqual(STEPS);
+    expect(form.nodes).toEqual(EXPECTED_STEPS);
     expect(request.mock.calls).toHaveLength(2);
   });
 
