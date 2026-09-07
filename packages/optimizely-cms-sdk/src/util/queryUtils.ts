@@ -575,6 +575,7 @@ const PROPERTY_HANDLERS: Record<string, PropertyHandler> = {
   link: handleLinkProperty,
   contentReference: handleContentReferenceProperty,
   array: handleArrayProperty,
+  composition: handleContentProperty,
 };
 
 // PROPERTY CONVERSION

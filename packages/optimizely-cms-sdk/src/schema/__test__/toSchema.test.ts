@@ -184,6 +184,54 @@ describe('toSchema', () => {
     });
   });
 
+  describe('composition properties', () => {
+    const leaf = (key: string) => ({
+      __typename: 'CompositionComponentNode',
+      key,
+      nodeType: 'component',
+    });
+    const node = (nodes: unknown[] = []) => ({
+      __typename: 'CompositionStructureNode',
+      key: 'root',
+      nodeType: 'grid',
+      nodes,
+    });
+
+    it('should validate composition property as a composition node', () => {
+      const ct = contentType({
+        key: 'CompositionTest',
+        baseType: '_component',
+        displayName: 'Composition Test',
+        properties: {
+          blocks: { type: 'composition', allowedTypes: ['*'] },
+        },
+      });
+      const schema = toSchema(ct);
+      expect(schema.safeParse({ ...validBase, blocks: node() }).success).toBe(true);
+      expect(schema.safeParse({ ...validBase, blocks: 'not-a-node' }).success).toBe(false);
+    });
+
+    it('should enforce minItems and maxItems on composition nodes', () => {
+      const ct = contentType({
+        key: 'CompositionMinMaxTest',
+        baseType: '_component',
+        displayName: 'Composition MinMax Test',
+        properties: {
+          blocks: { type: 'composition', allowedTypes: ['*'], minItems: 1, maxItems: 2 },
+        },
+      });
+      const schema = toSchema(ct);
+      expect(schema.safeParse({ ...validBase, blocks: node([]) }).success).toBe(false);
+      expect(schema.safeParse({ ...validBase, blocks: node([leaf('a')]) }).success).toBe(
+        true,
+      );
+      expect(
+        schema.safeParse({ ...validBase, blocks: node([leaf('a'), leaf('b'), leaf('c')]) })
+          .success,
+      ).toBe(false);
+    });
+  });
+
   describe('array properties', () => {
     it('should validate array of strings', () => {
       const ct = contentType({

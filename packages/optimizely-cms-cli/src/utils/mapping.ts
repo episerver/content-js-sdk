@@ -135,7 +135,7 @@ const mapAllowedRestrictedTypes = (updatedValue: any, parentKey: string): any =>
   if (value.type === 'array' && value.items)
     value.items = mapAllowedRestrictedTypes(value.items, parentKey);
 
-  if (['contentReference', 'content'].includes(value.type)) {
+  if (['contentReference', 'content', 'composition'].includes(value.type)) {
     if (Array.isArray(value.allowedTypes)) {
       const mappedTypes = value.allowedTypes
         .map((input: any) => extractKeyName(input, parentKey))
