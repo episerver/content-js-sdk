@@ -57,6 +57,10 @@ Follow the prompts to:
 
 Commit the generated `.changeset/*.md` file with your changes.
 
+When the version bump PR is created, each changelog entry is automatically prefixed
+with a link to its Jira ticket (via [`.issuetracker`](./.issuetracker)), read from the
+branch name in the merge commit that added the changeset file.
+
 ### Release process
 
 Releases are managed through GitHub Actions workflows. Changesets accumulate until you're ready to release.
@@ -76,7 +80,6 @@ Releases are managed through GitHub Actions workflows. Changesets accumulate unt
    - Go to GitHub Actions → "Release Packages"
    - Run workflow
    - Packages publish with `@beta` tag
-   - Jira release created with `released: false`
 
 4. **Test and iterate**
    - QA tests using `npm install @optimizely/cms-sdk@beta`
@@ -98,7 +101,6 @@ Releases are managed through GitHub Actions workflows. Changesets accumulate unt
    - Run workflow
    - Packages publish with `@latest` tag
    - Beta versions automatically deprecated
-   - Jira release updated to `released: true`
 
 #### Direct stable release (skip beta)
 
