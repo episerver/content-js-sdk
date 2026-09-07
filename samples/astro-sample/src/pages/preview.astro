@@ -1,0 +1,25 @@
+---
+// Skip pre-rendering for preview page since it's dynamic
+export const prerender = false;
+
+import type { PreviewParams } from '@optimizely/cms-sdk';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
+import PreviewPage from '@/components/react/PreviewPage';
+
+initOptimizely();
+
+const searchParams = Astro.url.searchParams;
+const previewParams = Object.fromEntries(searchParams.entries());
+
+const client = getInitializedClient();
+const content = await client.getPreviewContent(previewParams as PreviewParams);
+
+const cmsUrl = import.meta.env.OPTIMIZELY_CMS_URL;
+const injectorUrl = new URL('/util/javascript/communicationinjector.js', cmsUrl).href;
+---
+
+<BaseLayout>
+  <script is:inline src={injectorUrl}></script>
+  <PreviewPage content={content} />
+</BaseLayout>

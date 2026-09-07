@@ -1,0 +1,27 @@
+{
+  "name": "astro-sample",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host",
+    "build": "astro build",
+    "preview": "astro preview",
+    "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
+  },
+  "dependencies": {
+    "@astrojs/ts-plugin": "^1.10.11",
+    "@optimizely/cms-sdk": "workspace:*",
+    "astro": "^7.3.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@astrojs/node": "^11.1.5",
+    "@astrojs/react": "^6.0.5",
+    "@optimizely/cms-cli": "workspace:*",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5",
+    "vite-plugin-mkcert": "^2.1.0"
+  }
+}
