@@ -41,6 +41,7 @@ import {
   DEFAULT_USER_AGENT,
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
+  DEFAULT_COMPOSITION_DEPTH,
   GRAPH_PATH,
 } from './constants.js';
 
@@ -54,6 +55,15 @@ export type GraphOptions = {
   host?: string;
   /** Hard limit on generated fragments per content area. Throws GraphFragmentThresholdError when exceeded on unconstrained properties. */
   maxFragmentThreshold?: number;
+  /**
+   * Nesting depth for ordinary composition fragments (sections/rows/columns/elements
+   * inside an experience). Raise it if a composition is nested deeper than the default.
+   *
+   * Temporary: only needed because Graph's `@recursive` directive doesn't retrieve
+   * DAM assets. Once it does, fragments recurse to any depth and this setting goes away.
+   * @default 4
+   */
+  compositionDepth?: number;
   /**
    * Enable or disable contract expansion.
    * When true, contracts are expanded to include all implementing types.
@@ -210,10 +220,18 @@ const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-path': 'GetContentMetadataByPath',
 };
 
-function getMetadataQuery(shape: FilterShape, variationMode: VariationMode = 'none'): string {
+function getMetadataQuery(
+  shape: FilterShape,
+  variationMode: VariationMode = 'none',
+): string {
   const varDecls = getFilterVarDecls(shape);
   const variationVars = getVariationVarDecls(variationMode);
-  const allVars = [varDecls, variationVars, '$formsWhere: _ExperienceWhereInput', '$withForms: Boolean!']
+  const allVars = [
+    varDecls,
+    variationVars,
+    '$formsWhere: _ExperienceWhereInput',
+    '$withForms: Boolean!',
+  ]
     .filter(Boolean)
     .join(', ');
   const whereClause = getFilterWhereClause(shape);
@@ -332,10 +350,7 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     }
   }`;
 
-function getLinksQuery(
-  opName: string,
-  shape: FilterShape,
-): string {
+function getLinksQuery(opName: string, shape: FilterShape): string {
   const filterVars = getFilterVarDecls(shape);
   const whereClause = getFilterWhereClause(shape);
   const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
@@ -345,10 +360,7 @@ query ${opName}(${allVars}) {
 }`;
 }
 
-function getItemsQuery(
-  opName: string,
-  shape: FilterShape,
-): string {
+function getItemsQuery(opName: string, shape: FilterShape): string {
   const filterVars = getFilterVarDecls(shape);
   const whereClause = getFilterWhereClause(shape);
   const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
@@ -357,7 +369,6 @@ query ${opName}(${allVars}) {
   _Content(${whereClause}, locale: $locale) ${LINKS_BODY('ITEMS')}
 }`;
 }
-
 
 type GetLinksResponse = {
   _Content: {
@@ -534,6 +545,7 @@ export class GraphClient {
   apiKey: string;
   graphUrl: string;
   maxFragmentThreshold: number;
+  compositionDepth: number;
   expandContracts: boolean;
   host?: string;
   cache: boolean;
@@ -548,6 +560,7 @@ export class GraphClient {
     this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
     this.maxFragmentThreshold =
       options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
+    this.compositionDepth = options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH;
     this.expandContracts = options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS;
     this.host = options.host;
     this.cache = options.cache ?? true;
@@ -746,6 +759,7 @@ export class GraphClient {
         const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
           damEnabled: options.damEnabled,
           maxFragmentThreshold: this.maxFragmentThreshold,
+          compositionDepth: this.compositionDepth,
           expandContracts: this.expandContracts,
           formsEnabled: true,
           sectionTypes: options.sectionTypes,
@@ -902,6 +916,7 @@ export class GraphClient {
         const query = createMultipleContentQuery(contentTypeName, {
           damEnabled,
           maxFragmentThreshold: this.maxFragmentThreshold,
+          compositionDepth: this.compositionDepth,
           expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,
@@ -1100,7 +1115,12 @@ export class GraphClient {
       if (!contentTypeName) {
         throw new GraphResponseError(
           `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
-          { request: { variables: filter.variables, query: getMetadataQuery(filter.filterShape, 'all') } },
+          {
+            request: {
+              variables: filter.variables,
+              query: getMetadataQuery(filter.filterShape, 'all'),
+            },
+          },
         );
       }
 
@@ -1118,6 +1138,7 @@ export class GraphClient {
       const query = createSingleContentQuery(contentTypeName, {
         damEnabled,
         maxFragmentThreshold: this.maxFragmentThreshold,
+        compositionDepth: this.compositionDepth,
         expandContracts: this.expandContracts,
         formsEnabled,
         sectionTypes,
@@ -1289,6 +1310,7 @@ export class GraphClient {
         const query = createSingleContentQuery(contentTypeName, {
           damEnabled,
           maxFragmentThreshold: this.maxFragmentThreshold,
+          compositionDepth: this.compositionDepth,
           expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,

@@ -108,7 +108,7 @@ const createExperienceFragments = (
   const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, ctx);
   return {
     fragments: [
-      ...getFixedFragments(ctx.formsEnabled, includeExperienceFragment),
+      ...getFixedFragments(ctx.formsEnabled, includeExperienceFragment, ctx.compositionDepth),
       ...experienceResult.fragments,
       buildInterfaceFragment('_IComponent', experienceNodeKeys),
     ],

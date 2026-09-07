@@ -24,6 +24,7 @@ import { isFormContentType } from '../model/formContentTypes.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
+  DEFAULT_COMPOSITION_DEPTH,
 } from '../graph/constants.js';
 
 const getImplementedContracts = (contentType: AnyContentType): RegistryEntry[] => {
@@ -101,6 +102,11 @@ export type QueryContext = {
    */
   formsEnabled: boolean;
   /**
+   * Nesting depth for ordinary composition fragments. Configurable via
+   * `config({ compositionDepth })`.
+   */
+  compositionDepth: number;
+  /**
    * Optional filter to exclude content types from fragment generation.
    * Return true to include a content type, false to exclude it.
    * Useful for skipping content types that have no registered component.
@@ -161,6 +167,7 @@ export const createQueryContext = (
   maxFragmentThreshold: options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS,
   formsEnabled: options.formsEnabled ?? false,
+  compositionDepth: options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH,
   typeFilter: options.typeFilter,
   sectionTypes: options.sectionTypes,
   ancestors: options.ancestors ?? new Set(),
