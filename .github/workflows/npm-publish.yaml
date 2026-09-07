@@ -3,11 +3,6 @@ name: Release Packages
 # Manual trigger only - run from GitHub Actions UI when ready to publish
 on:
   workflow_dispatch:
-    inputs:
-      skip_jira:
-        description: 'Skip Jira release creation'
-        type: boolean
-        default: false
 
 # Prevents multiple release workflows from running simultaneously
 concurrency: ${{ github.workflow }}-${{ github.ref }}
@@ -58,7 +53,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          SKIP_JIRA: ${{ github.event.inputs.skip_jira }}
-          JIRA_URL: ${{ secrets.JIRA_URL }}
-          JIRA_BOT_USERNAME: ${{ secrets.JIRA_BOT_USERNAME }}
-          JIRA_BOT_PASSWORD: ${{ secrets.JIRA_BOT_PASSWORD }}
