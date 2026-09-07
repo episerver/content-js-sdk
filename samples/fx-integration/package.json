@@ -13,7 +13,7 @@
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:*",
     "@optimizely/optimizely-sdk": "^6.1.0",
-    "nanoid": "^5.1.5",
+    "nanoid": "^6.0.0",
     "next": "16.2.1",
     "react": "19.2.7",
     "react-dom": "19.2.7"
