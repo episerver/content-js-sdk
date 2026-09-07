@@ -127,7 +127,8 @@ export type ArrayItems =
   | ContentReferenceProperty
   | ContentProperty
   | ComponentProperty<AnyContentType>
-  | LinkProperty;
+  | LinkProperty
+  | CompositionProperty;
 
 /**
  * Reprensents the content type property "Component".
@@ -144,4 +145,13 @@ export type ComponentProperty<T extends AnyContentType> = BaseProperty & {
 export type LinkProperty = BaseProperty & {
   type: 'link';
 
+};
+
+/** Represents the content type property "Composition" (a nested outline/grid of blocks) */
+export type CompositionProperty = BaseProperty & {
+  type: 'composition';
+  minItems?: number;
+  maxItems?: number;
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
 };

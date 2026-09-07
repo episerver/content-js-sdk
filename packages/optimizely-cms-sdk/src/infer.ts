@@ -11,6 +11,7 @@ import {
   BinaryProperty,
   BooleanProperty,
   ComponentProperty,
+  CompositionProperty,
   ContentProperty,
   ContentReferenceProperty,
   DateTimeProperty,
@@ -109,6 +110,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
   : T extends ContentProperty ? {__typename: string, __viewname: string}
   : T extends ComponentProperty<infer E> ? ContentProps<E>
+  : T extends CompositionProperty ? ExperienceStructureNode
   : unknown
 
 export type InferredAssetMetadata = {
