@@ -1,12 +1,10 @@
-import type { ContentInput } from './filters.js';
-
 /** Represents the request sent to graph */
 type GraphRequest = {
   /** Query sent to Graph */
   query: string;
 
   /** Variables sent to Graph */
-  variables: ContentInput;
+  variables: Record<string, any>;
 };
 
 /** Super-class for all errors related to Optimizely Graph */

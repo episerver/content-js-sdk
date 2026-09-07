@@ -1,5 +1,6 @@
 import React from 'react';
 import { generateDefaultElements, generateDefaultLeafs, type RichTextProps } from './lib.js';
+import { resolveRichTextNodes } from '../../components/richText/renderer.js';
 import { createReactRenderer } from './renderer.js';
 
 /**
@@ -25,7 +26,7 @@ export const RichText: React.FC<RichTextProps> = ({
   decodeHtmlEntities = true,
   ...htmlAttributes
 }) => {
-  const nodes = Array.isArray(content?.children) ? content.children : [];
+  const nodes = resolveRichTextNodes(content);
 
   // Merge default components with user overrides
   const elements = {

@@ -141,17 +141,45 @@ export type BaseLeafMap<TRenderer = unknown> = {
 };
 
 /**
+ * Resolves the top-level nodes of a RichText value.
+ *
+ * Graph returns the `json` field either as an object or as a serialized JSON
+ * string depending on the CMS version, so both are normalized here. Anything
+ * that does not resolve to a node array renders as nothing.
+ */
+export function resolveRichTextNodes(content?: RichTextPropsBase['content']): Node[] {
+  let value = content;
+
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+
+  return Array.isArray((value as { children?: Node[] })?.children) ?
+      (value as { children: Node[] }).children
+    : [];
+}
+
+/**
  * Generic props for RichText component (framework-agnostic)
  * Can be specialized for each framework with specific renderer types
  */
 export interface RichTextPropsBase<TElementRenderer = unknown, TLeafRenderer = unknown> {
   /**
-   * Slate.js compatible JSON content to render
+   * Slate.js compatible JSON content to render.
+   *
+   * Graph may return the `json` field either as an object or as a serialized
+   * JSON string, so both are accepted here.
    */
-  content?: {
-    type: 'richText';
-    children: Node[];
-  };
+  content?:
+    | {
+        type: 'richText';
+        children: Node[];
+      }
+    | string;
 
   /**
    * Custom components for rendering elements by type
