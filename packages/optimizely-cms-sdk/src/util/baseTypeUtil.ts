@@ -5,6 +5,7 @@ import {
   PermittedTypes,
   MediaStringTypes,
 } from '../model/contentTypes.js';
+import { DEFAULT_COMPOSITION_DEPTH } from '../graph/constants.js';
 
 export type BaseTypeFragments = {
   fields: string[];
@@ -67,8 +68,9 @@ export const stripSourcePrefix = (key: string): string => key.replace(/^[a-z]+:/
  * @param depth - Current nesting level (0 = deepest).
  * @returns Nested fragment string.
  *
- * NOTE: Temporary workaround for Graph issue with @recursive directive.
- * This function will not be used once Graph properly supports @recursive.
+ * NOTE: Temporary workaround for a Graph issue — the `@recursive` directive
+ * doesn't retrieve DAM assets. This function will not be used once Graph
+ * fixes that.
  */
 function buildNestedCompositionNodes(depth: number): string {
   const baseFields =
@@ -81,9 +83,6 @@ function buildNestedCompositionNodes(depth: number): string {
   const nested = buildNestedCompositionNodes(depth - 1);
   return `${baseFields} ...on CompositionStructureNode { component { ..._IComponent } nodes { ${nested} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } }`;
 }
-
-/** Nesting depth that covers ordinary experience compositions. */
-const COMPOSITION_NESTING_DEPTH = 4;
 
 /**
  * Forms nest deeper than an ordinary composition — steps hold rows, which hold
@@ -111,18 +110,21 @@ export const DAM_ASSET_FRAGMENTS = [
  * @param includeExperienceFragment Emit `_IExperience` too. A section reads its
  *   `composition` field directly rather than spreading that fragment, and
  *   GraphQL rejects a document containing a fragment nothing uses.
+ * @param compositionDepth Nesting depth for ordinary compositions. Ignored when
+ *   `formsEnabled`, which always needs the deeper Forms depth.
  */
 export const getFixedFragments = (
   formsEnabled = false,
   includeExperienceFragment = true,
+  compositionDepth = DEFAULT_COMPOSITION_DEPTH,
 ) => [
   ...(includeExperienceFragment ?
     ['fragment _IExperience on _IExperience { composition {...ICompositionNode }}']
   : []),
-  // This is a temporary workaround for Graph issue with @recursive directive. This will not be used once Graph properly supports @recursive.
-  // Replace it with a simpler recursive fragment once Graph supports @recursive, e.g. 'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }':
+  // Temporary workaround: Graph's @recursive directive doesn't retrieve DAM assets.
+  // Replace it with a simpler recursive fragment once Graph fixes that, e.g. 'fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { nodes @recursive } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }':
   `fragment ICompositionNode on ICompositionNode { ${buildNestedCompositionNodes(
-    formsEnabled ? FORMS_COMPOSITION_NESTING_DEPTH : COMPOSITION_NESTING_DEPTH,
+    formsEnabled ? FORMS_COMPOSITION_NESTING_DEPTH : compositionDepth,
   )} }`,
 ];
 

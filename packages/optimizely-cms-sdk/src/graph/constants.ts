@@ -24,3 +24,9 @@ export const DEFAULT_MAX_FRAGMENT_THRESHOLD = 100;
  * When false, only the contract itself is included without expansion.
  */
 export const DEFAULT_EXPAND_CONTRACTS = false;
+
+/**
+ * Default nesting depth for ordinary experience compositions.
+ * Configurable via `config({ compositionDepth })`.
+ */
+export const DEFAULT_COMPOSITION_DEPTH = 4;
