@@ -162,7 +162,7 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
         }
       }
       _link(type: ${linkType}) {
-        _Page {
+        _Page(locale: $locale) {
           items {
             _metadata {
               key
@@ -181,6 +181,11 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
       }
     }
   }`;
+
+/** Converts a BCP-47 locale (e.g. "en-BE") to the `Locales` enum's identifier syntax (e.g. "en_BE"). */
+export function toLocaleEnumValues(locales?: string[]): string[] | undefined {
+  return locales?.map(locale => locale.replace(/-/g, '_'));
+}
 
 /** The ancestors of one piece of content. */
 export function getLinksQuery(opName: string, shape: FilterShape): string {

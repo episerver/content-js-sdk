@@ -49,6 +49,7 @@ import {
   hasOwnSectionTypes,
   liftSectionNodes,
   removeTypePrefix,
+  toLocaleEnumValues,
 } from './queries.js';
 
 // SECTION TYPES
@@ -500,7 +501,7 @@ export async function getPath(
     locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
   }
 
-  const variables = { ...filter.variables, locale: locales };
+  const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const query = getLinksQuery('GetPath', filter.filterShape);
 
   const data = (await context.request(
@@ -558,7 +559,7 @@ export async function getItems(
     locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
   }
 
-  const variables = { ...filter.variables, locale: locales };
+  const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const query = getItemsQuery('GetItems', filter.filterShape);
 
   const data = (await context.request(
