@@ -59,28 +59,40 @@ describe('Content Type CRUD Operations', () => {
       const typeKey = getUniqueTypeKey('CreatePage');
       createdTypes.push(typeKey);
 
-      const { data, error } = await client.POST('/contenttypes', {
+      const createResponse = await client.POST('/contenttypes', {
         body: createMinimalPageType(typeKey),
       });
 
-      expect(error).toBeUndefined();
-      expect(data).toBeDefined();
-      expect(data.key).toBe(typeKey);
-      expect(data.baseType).toBe('_page');
+      expect(createResponse.response?.status).toBe(201);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const { data: fetchedType } = await client.GET('/contenttypes/{key}', {
+        params: { path: { key: typeKey } },
+      });
+
+      expect(fetchedType).toBeDefined();
+      expect(fetchedType.key).toBe(typeKey);
+      expect(fetchedType.baseType).toBe('_page');
     });
 
     test('should create component type', async () => {
       const typeKey = getUniqueTypeKey('CreateComponent');
       createdTypes.push(typeKey);
 
-      const { data, error } = await client.POST('/contenttypes', {
+      const createResponse = await client.POST('/contenttypes', {
         body: createMinimalComponentType(typeKey),
       });
 
-      expect(error).toBeUndefined();
-      expect(data).toBeDefined();
-      expect(data.key).toBe(typeKey);
-      expect(data.baseType).toBe('_component');
+      expect(createResponse.response?.status).toBe(201);
+
+      const { data: fetchedType } = await client.GET('/contenttypes/{key}', {
+        params: { path: { key: typeKey } },
+      });
+
+      expect(fetchedType).toBeDefined();
+      expect(fetchedType.key).toBe(typeKey);
+      expect(fetchedType.baseType).toBe('_component');
     });
   });
 
@@ -93,8 +105,7 @@ describe('Content Type CRUD Operations', () => {
         body: createMinimalPageType(typeKey),
       });
 
-      expect(createResponse.error).toBeUndefined();
-      expect(createResponse.data).toBeDefined();
+      expect(createResponse.response?.status).toBe(201);
 
       const { data, error } = await client.GET('/contenttypes/{key}', {
         params: { path: { key: typeKey } },

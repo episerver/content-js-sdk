@@ -18,17 +18,14 @@ export const cleanupTestContentTypes = async (
 ) => {
   const { data } = await client.GET('/contenttypes');
   const testTypes = (data?.items ?? []).filter(
-    (ct: any) =>
-      ct.key.startsWith(prefix) && ct.source === 'user'
+    (ct: any) => ct.key.startsWith(prefix)
   );
 
-  for (const type of testTypes) {
-    try {
-      await client.DELETE('/contenttypes/{key}', {
+  await Promise.allSettled(
+    testTypes.map((type: any) =>
+      client.DELETE('/contenttypes/{key}', {
         params: { path: { key: type.key } },
-      });
-    } catch (err) {
-      console.warn(`Cleanup failed for ${type.key}:`, err);
-    }
-  }
+      })
+    )
+  );
 };

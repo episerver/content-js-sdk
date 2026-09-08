@@ -28,6 +28,10 @@ dist
 .vscode
 .tanstack
 
+# Generated JS from TS scripts
+**/*.js
+!node_modules/**/*.js
+
 # Auto-generated files
 packages/optimizely-cms-sdk/src/generated/
 

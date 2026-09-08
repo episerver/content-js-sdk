@@ -53,7 +53,7 @@ cp .env.integration.template .env.integration
 
 # 3. (Optional) Clean up leftover test data from previous runs
 cd packages/optimizely-cms-cli
-pnpm cleanup-test-types
+pnpm test:cleanup
 
 # 4. Run integration tests
 cd packages/optimizely-cms-sdk
