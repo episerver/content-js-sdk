@@ -34,6 +34,43 @@ You can also pass the `--help` flag to any command to see the flags and argument
 
 - For `nextjs-template`, read the [README.md file in that project](./samples/nextjs-template/README.md)
 
+## Integration Testing
+
+This repository includes integration tests that can validate the SDK against a real Optimizely CMS instance.
+
+### Test Coverage
+
+- **optimizely-cms-sdk** - Content fetching using Graph API
+- **optimizely-cms-cli** - Content type operations using the API
+
+### Quick Setup
+
+```bash
+# 1. Copy environment template
+cp .env.integration.template .env.integration
+
+# 2. Add your test CMS credentials in .env.integration
+
+# 3. (Optional) Clean up leftover test data from previous runs
+cd packages/optimizely-cms-cli
+pnpm cleanup-test-types
+
+# 4. Run integration tests
+cd packages/optimizely-cms-sdk
+pnpm test:integration
+
+cd ../optimizely-cms-cli
+pnpm test:integration
+```
+
+### Details
+
+- Tests require a dedicated test CMS instance
+- GraphQL tests validate real content queries against Content Graph API
+- REST API tests create and clean up test content types automatically with `TEST_` prefix
+- Set `INTEGRATION_TEST_SKIP_CLEANUP=true` environment variable to debug test data
+- See [INTEGRATION_TESTS.md](./INTEGRATION_TESTS.md) for comprehensive setup and troubleshooting guide
+
 ## Versioning and release workflow
 
 This project uses [Changesets](https://github.com/changesets/changesets) for version management and releases.
