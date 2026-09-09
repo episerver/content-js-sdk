@@ -170,5 +170,16 @@ export type SelectionOption = {
 };
 
 /** Reads the `Options` property of a choice or selection element. */
-export const getSelectionOptions = (field: { Options?: unknown }): SelectionOption[] =>
-  Array.isArray(field.Options) ? (field.Options as SelectionOption[]) : [];
+export const getSelectionOptions = (field: { Options?: unknown }): SelectionOption[] => {
+  const options = field.Options;
+  if (Array.isArray(options)) return options as SelectionOption[];
+  if (typeof options === 'string') {
+    try {
+      const parsed = JSON.parse(options);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
