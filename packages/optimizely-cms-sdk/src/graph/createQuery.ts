@@ -302,10 +302,9 @@ export const createFragment = (
     // must be known to exist; use caller's schema list if available,
     // otherwise fall back to the forms container.
     const canBeAsked =
-      isRootCall ||
       (ctx.sectionTypes ?
         ctx.sectionTypes.has(stripSourcePrefix(contentTypeName))
-      : isFormContentType(contentTypeName));
+      : isRootCall || isFormContentType(contentTypeName));
     const isStandaloneSection =
       canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 
