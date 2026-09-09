@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, vi, afterEach } from 'vitest';
-import { removeTypePrefix, GraphClient } from '../index.js';
+import { removeTypePrefix, decorateWithContext, GraphClient } from '../index.js';
 import {
   configureAdapter,
   getContext,
@@ -81,6 +81,38 @@ describe('removeTypePrefix()', () => {
     };
 
     expect(removeTypePrefix(input)).toStrictEqual(input);
+  });
+});
+
+describe('decorateWithContext() - _opuid', () => {
+  const params = { ctx: 'published', preview_token: 'token-123' } as any;
+
+  test('uses _metadata.key when the item has CMS identity', () => {
+    const input = [{ __typename: 'Notice', _metadata: { key: 'abc123' }, title: 'Hi' }];
+    const [item] = decorateWithContext(input, params);
+    expect(item._opuid).toBe('abc123');
+  });
+
+  test('falls back to a content-derived hash when _metadata is absent', () => {
+    const input = [{ __typename: 'Hero', title: 'Same content' }];
+    const [item] = decorateWithContext(input, params);
+    expect(item._opuid).toBeTypeOf('string');
+    expect(item._opuid.length).toBeGreaterThan(0);
+  });
+
+  test('hash is stable for identical content and differs for different content', () => {
+    const [a] = decorateWithContext([{ __typename: 'Hero', title: 'Same' }], params);
+    const [b] = decorateWithContext([{ __typename: 'Hero', title: 'Same' }], params);
+    const [c] = decorateWithContext([{ __typename: 'Hero', title: 'Different' }], params);
+    expect(a._opuid).toBe(b._opuid);
+    expect(a._opuid).not.toBe(c._opuid);
+  });
+
+  test('does not add _opuid to a non-array (single) content object', () => {
+    const input = { __typename: 'Hero', title: 'Standalone' };
+    const item = decorateWithContext(input, params);
+    expect(item._opuid).toBeUndefined();
+    expect(item.__context).toBeDefined();
   });
 });
 

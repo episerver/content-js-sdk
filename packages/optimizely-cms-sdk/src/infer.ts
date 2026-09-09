@@ -105,7 +105,7 @@ export type InferFromProperty<T extends AnyProperty> =
   : T extends FloatProperty ? number
   : T extends ContentReferenceProperty ? InferredContentReference
   : T extends ArrayProperty<infer E> ? InferFromProperty<E>[]
-  : T extends ContentProperty ? {__typename: string, __viewname: string}
+  : T extends ContentProperty ? {__typename: string, __viewname: string, _opuid?: string}
   : T extends ComponentProperty<infer E> ? ContentProps<E>
   : unknown
 
@@ -124,6 +124,9 @@ export type InferredImageMetadata = {
 export type InferredBase = {
   _id: string;
   _metadata: InferredContentMetadata;
+
+  /** Unique id added by `decorateWithContext`; can be used as a React `key` */
+  _opuid?: string;
 
   // Properties that don't come from Graph are prefixed with double-underscores
   __typename: string;

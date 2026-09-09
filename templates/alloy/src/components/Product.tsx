@@ -91,8 +91,8 @@ function Product({ content }: ProductProps) {
 
           {/* Sidebar */}
           <div {...pa('content_area')} className='space-y-6 sm:space-y-8'>
-            {content.content_area?.map((contentItem, index) => {
-              return <OptimizelyComponent key={index} content={contentItem} />;
+            {content.content_area?.map(contentItem => {
+              return <OptimizelyComponent key={contentItem._opuid} content={contentItem} />;
             })}
           </div>
           <div className='flex flex-col space-y-6 sm:space-y-8'>
