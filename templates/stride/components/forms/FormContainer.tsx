@@ -57,7 +57,7 @@ export default function FormContainer({ content }: FormContainerProps) {
   return (
     <FormSubmissionProvider>
       {/* Forms read better narrow. Long lines make a field look like a text block. */}
-      <div id='form-alert' className='max-w-2xl space-y-5'>
+      <div id='form-alert' className='container mx-auto space-y-5'>
         <div className='space-y-2'>
           {/* `h2`, not `h1` — the form is a block on a page that already has a heading. */}
           {content.Title && (
