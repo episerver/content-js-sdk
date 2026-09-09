@@ -125,11 +125,24 @@ const compileAndImport = async (inputName: string, cwdUrl: string, outDir: strin
   }
 };
 
+/**
+ * Splits `components` config entries into glob include patterns and exclude patterns.
+ * Entries starting with `!` (e.g. `!src/legacy`) are treated as exclusions and are
+ * fed to `glob`'s `ignore` option instead of being globbed themselves.
+ */
 const separatePatterns = (paths: string[]): { include: string[]; exclude: string[] } => {
+  // keep everything that is NOT an exclusion (`!`-prefixed) as an include pattern
   const include = paths.filter(path => !path.startsWith('!'));
+
   const exclude = paths
+    // pick out only the exclusion entries
     .filter(path => path.startsWith('!'))
-    .map(path => path.substring(1));
+    // drop the leading '!' so it becomes a plain glob pattern
+    .map(path => path.substring(1))
+    // expand each pattern to also match files nested under it, so a bare
+    // directory exclude like `!src/legacy` also excludes `src/legacy/Old.ts`
+    .flatMap(path => [path, `${path}/**`]);
+
   return { include, exclude };
 };
 
@@ -158,7 +171,8 @@ const findFilesFromPatterns = async (
     )
   ).flat();
 
-  return unique(allFilesWithDuplicates).sort();
+  // preserve `components` pattern order so earlier entries take precedence on key conflicts
+  return unique(allFilesWithDuplicates);
 };
 
 const printFileContent = (
