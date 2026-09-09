@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    exclude: ['node_modules/**', 'src/**/__integration__/**'],
+    exclude: ['node_modules/**', 'dist/**', 'src/**/__integration__/**'],
   },
   esbuild: {
     jsx: 'automatic',
