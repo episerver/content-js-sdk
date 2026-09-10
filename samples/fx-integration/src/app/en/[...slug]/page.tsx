@@ -14,7 +14,7 @@ function returnFirst<T>(content: T[]) {
     notFound();
   }
 
-  return content[0] as any;
+  return content[0];
 }
 
 export default async function Page({ params }: Props) {

@@ -29,7 +29,6 @@ import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms, getCachedContentTypes } from '../util/queryUtils.js';
-import { stableKey } from '../util/stableKey.js';
 import { logError, SemanticAttributes } from '../telemetry/index.js';
 import {
   withRequestSpan,
@@ -515,33 +514,20 @@ function findUnresolvedForms(value: any, found: any[] = [], seen = new Set()): a
   return found;
 }
 
-/**
- * Adds `_opuid` (a stable React list key) to every array item, and, when `params`
- * is given, `__context` to every `__typename` object (preview/edit mode only).
- * Exported only for testing — not part of the user-facing API.
- */
-export function decorateWithContext(
-  obj: any,
-  params: PreviewParams | null,
-  isArrayItem = false,
-): any {
+/** Adds an extra `__context` property next to each `__typename` property */
+function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
-    return obj.map(e => decorateWithContext(e, params, true));
+    return obj.map(e => decorateWithContext(e, params));
   }
   if (typeof obj === 'object' && obj !== null) {
     for (const k in obj) {
       obj[k] = decorateWithContext(obj[k], params);
     }
     if ('__typename' in obj) {
-      if (isArrayItem) {
-        obj._opuid = obj._metadata?.key ?? stableKey(obj);
-      }
-      if (params) {
-        obj.__context = {
-          edit: params.ctx === 'edit',
-          preview_token: params.preview_token,
-        };
-      }
+      obj.__context = {
+        edit: params.ctx === 'edit',
+        preview_token: params.preview_token,
+      };
     }
   }
   return obj;
@@ -947,18 +933,15 @@ export class GraphClient {
           storedEnabled,
         )) as ItemsResponse<T>;
 
-        return decorateWithContext(
-          await Promise.all(
-            response?._Content?.items.map((item: unknown) =>
-              this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item)), {
-                damEnabled,
-                sectionTypes,
-                cache: cacheEnabled,
-                slot: activeSlot,
-              }),
-            ) ?? [],
-          ),
-          null,
+        return Promise.all(
+          response?._Content?.items.map((item: unknown) =>
+            this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item)), {
+              damEnabled,
+              sectionTypes,
+              cache: cacheEnabled,
+              slot: activeSlot,
+            }),
+          ) ?? [],
         );
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {
@@ -1343,18 +1326,15 @@ export class GraphClient {
           storedEnabled,
         );
 
-        return decorateWithContext(
-          await this.resolveFormNodes(
-            liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-            {
-              damEnabled,
-              sectionTypes,
-              previewToken,
-              cache: cacheEnabled,
-              slot: activeSlot,
-            },
-          ),
-          null,
+        return this.resolveFormNodes(
+          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+          {
+            damEnabled,
+            sectionTypes,
+            previewToken,
+            cache: cacheEnabled,
+            slot: activeSlot,
+          },
         );
       } catch (error) {
         if (error instanceof GraphMissingContentTypeError) {

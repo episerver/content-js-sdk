@@ -215,14 +215,6 @@ const LandingPageType = contentType({
 
 The `component` type requires a `contentType` field specifying which component type to use.
 
-`component` can also be used as an array's `items`, for a repeated inline block with no CMS-level identity of its own (unlike `type: 'content'`/`allowedTypes`, which references real, independently-identified content and already has `_metadata.key`). Use each item's `_opuid` for the React `key` — the SDK fills it in for every array item, using `_metadata.key` when the item has one (content references) or a content-derived id when it doesn't (inline components):
-
-```tsx
-{content.highlights?.map(highlight => (
-  <OptimizelyComponent key={highlight._opuid} content={highlight} />
-))}
-```
-
 ### Indexing Types
 
 The `indexingType` field controls how the property is indexed for search:
@@ -594,8 +586,8 @@ import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 function FeedPage({ content }) {
   return (
     <div>
-      {content.featuredItems?.map(item => (
-        <OptimizelyComponent key={item._opuid} content={item} />
+      {content.featuredItems?.map((item, index) => (
+        <OptimizelyComponent key={index} content={item} />
       ))}
     </div>
   );

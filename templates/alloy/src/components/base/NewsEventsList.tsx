@@ -52,8 +52,8 @@ function NewsEventsList({ content }: NewsEventsListProps) {
 
       {/* Teasers List */}
       <div className='space-y-6' {...pa('teasers')}>
-        {content.teasers?.map(teaser => {
-          return <OptimizelyComponent key={teaser._opuid} content={teaser} tag='teaser' />;
+        {content.teasers?.map((teaser, index) => {
+          return <OptimizelyComponent key={index} content={teaser} tag='teaser' />;
         })}
       </div>
 
