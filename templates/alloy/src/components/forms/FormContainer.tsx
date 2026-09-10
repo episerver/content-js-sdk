@@ -12,6 +12,7 @@ import FormTitle from './FormTitle';
 import FormDescription from './FormDescription';
 import FormAlerts from './FormAlerts';
 import FormStepTracker from './FormStepTracker';
+import FormStepNavigation from './FormStepNavigation';
 import GridRow from './GridRow';
 import GridColumn from './GridColumn';
 
@@ -95,7 +96,11 @@ export default function FormContainer({ content }: FormContainerProps) {
                     row={GridRow}
                     column={GridColumn}
                   />
-                  {step.buttons.length > 0 && <FormActions nodes={step.buttons} />}
+                  {step.buttons.length > 0 ? (
+                    <FormActions nodes={step.buttons} />
+                  ) : (
+                    <FormStepNavigation totalSteps={stepNodes.length} />
+                  )}
                 </FormStep>
               );
             })}

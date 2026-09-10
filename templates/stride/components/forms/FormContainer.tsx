@@ -11,6 +11,7 @@ import {
 import { cn } from '../../lib/utils';
 import FormAlerts from './FormAlerts';
 import FormStepTracker from './FormStepTracker';
+import FormStepNavigation from './FormStepNavigation';
 import { GridColumn, GridRow } from './Grid';
 
 type FormContainerProps = {
@@ -103,7 +104,11 @@ export default function FormContainer({ content }: FormContainerProps) {
                     row={GridRow}
                     column={GridColumn}
                   />
-                  {step.buttons.length > 0 && <FormActions nodes={step.buttons} />}
+                  {step.buttons.length > 0 ? (
+                    <FormActions nodes={step.buttons} />
+                  ) : (
+                    <FormStepNavigation totalSteps={stepNodes.length} />
+                  )}
                 </FormStep>
               );
             })}
