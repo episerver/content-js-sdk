@@ -42,8 +42,9 @@ export function FormRulesProvider({ children, rules = [] }: FormRulesProviderPro
 
     const fieldValue = values.get(condition.DependsOnField);
     const compareValue = condition.ComparisonValue;
+    const operator = condition.ComparisonOperator;
 
-    switch (condition.ComparisonOperator) {
+    switch (operator) {
       case 'Equals':
         return fieldValue === compareValue;
       case 'NotEquals':
@@ -52,6 +53,17 @@ export function FormRulesProvider({ children, rules = [] }: FormRulesProviderPro
         return String(fieldValue).includes(compareValue);
       case 'NotContains':
         return !String(fieldValue).includes(compareValue);
+      case 'StartsWith':
+        return String(fieldValue).startsWith(compareValue);
+      case 'EndsWith':
+        return String(fieldValue).endsWith(compareValue);
+      case 'MatchRegularExpression':
+        try {
+          const regex = new RegExp(compareValue);
+          return regex.test(String(fieldValue));
+        } catch {
+          return false;
+        }
       default:
         return false;
     }
