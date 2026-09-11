@@ -10,7 +10,7 @@ type FormResetProps = {
 };
 
 export default function FormReset({ content }: FormResetProps) {
-  const { role, label, buttonProps } = useFormButton(content);
+  const { role, label, buttonProps } = useFormButton(content, { role: 'reset' });
   const { pa } = getPreviewUtils(content);
 
   return (
