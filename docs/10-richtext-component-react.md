@@ -5,6 +5,9 @@ The `RichText` component is a React component for rendering Optimizely CMS rich 
 > [!TIP]
 > Using the `<RichText/>` component is the recommended way to render rich text content. It's safer than `dangerouslySetInnerHTML` as it doesn't rely on HTML parsing, and allows you to customize how elements are rendered with your own React components.
 
+> [!IMPORTANT]
+> This component requires the `json` field of the `richText` property — it does not accept the `html` field. The SDK fetches `json` by default; see [RichText Property](./3-modelling.md#richtext-property) for `richTextFormat` config.
+
 ## Import
 
 ```tsx
