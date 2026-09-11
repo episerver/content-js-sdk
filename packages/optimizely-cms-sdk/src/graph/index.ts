@@ -198,7 +198,7 @@ export { GraphVariationInput };
  * always sits, and is an ordinary string field — so the probe is valid whether
  * or not Optimizely Forms is enabled on the instance.
  */
-const METADATA_QUERY_BODY = `{
+const METADATA_QUERY_BODY_BASE = `{
     item {
       _metadata {
         types
@@ -209,36 +209,46 @@ const METADATA_QUERY_BODY = `{
   # Check if "cmp_Asset" type exists which indicates that DAM is enabled
   damAssetType: __type(name: "cmp_Asset") {
     __typename
-  }
+  }`;
+
+const METADATA_QUERY_BODY_FORMS = `
   # Non-zero when this page has a form container as a top-level section
   formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
     total
   }`;
 
-const METADATA_OP_NAMES: Record<FilterShape, string> = {
-  'by-key': 'GetContentMetadata',
-  'by-path': 'GetContentMetadataByPath',
+function getMetadataQueryBody(withForms: boolean): string {
+  return withForms
+    ? METADATA_QUERY_BODY_BASE + METADATA_QUERY_BODY_FORMS
+    : METADATA_QUERY_BODY_BASE;
+}
+
+const METADATA_OP_NAMES: Record<FilterShape, Record<'forms' | 'noForms', string>> = {
+  'by-key': { forms: 'GetContentMetadataV2', noForms: 'GetContentMetadataNoFormsV2' },
+  'by-path': { forms: 'GetContentMetadataByPathV2', noForms: 'GetContentMetadataByPathNoFormsV2' },
 };
 
 function getMetadataQuery(
   shape: FilterShape,
   variationMode: VariationMode = 'none',
+  withForms: boolean = true,
 ): string {
   const varDecls = getFilterVarDecls(shape);
   const variationVars = getVariationVarDecls(variationMode);
   const allVars = [
     varDecls,
     variationVars,
-    '$formsWhere: _ExperienceWhereInput',
-    '$withForms: Boolean!',
+    withForms ? '$formsWhere: _ExperienceWhereInput' : null,
+    withForms ? '$withForms: Boolean!' : null,
   ]
     .filter(Boolean)
     .join(', ');
+  const opName = METADATA_OP_NAMES[shape][withForms ? 'forms' : 'noForms'];
   const whereClause = getFilterWhereClause(shape);
   const variationClause = getVariationClause(variationMode);
   return `
-query ${METADATA_OP_NAMES[shape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
+query ${opName}(${allVars}) {
+  _Content(${whereClause}${variationClause}) ${getMetadataQueryBody(withForms)}
 }
 `;
 }
@@ -613,10 +623,7 @@ export class GraphClient {
         const response = await fetch(url, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            query,
-            variables,
-          }),
+          body: JSON.stringify({ query, variables }),
         }).catch(err => {
           if (err instanceof TypeError) {
             const optiErr = new OptimizelyGraphError(
@@ -806,11 +813,15 @@ export class GraphClient {
     // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-    const query = getMetadataQuery(filter.filterShape, variationMode);
+    const query = getMetadataQuery(filter.filterShape, variationMode, mayRenderForms);
     const variables = {
       ...filter.variables,
-      withForms: mayRenderForms,
-      formsWhere: mayRenderForms ? formsOnPageFilter(buildWhereObject(filter)) : null,
+      ...(mayRenderForms
+        ? {
+            withForms: true,
+            formsWhere: formsOnPageFilter(buildWhereObject(filter)),
+          }
+        : {}),
     };
 
     const [data, sectionTypes] = await Promise.all([
