@@ -34,7 +34,10 @@ export function useFormButton(
     isSubmitting,
     label: content.Label ?? 'Submit',
     buttonProps: {
-      type: role === 'submit' ? ('submit' as const) : ('button' as const),
+      type:
+        role === 'submit' ? ('submit' as const)
+        : role === 'reset' ? ('reset' as const)
+        : ('button' as const),
       // Disabled only while the request is in flight, to stop a double submit.
       // Disabling on validation errors hides the reason the form won't send;
       // submitting reports the errors and moves focus to the first bad field.

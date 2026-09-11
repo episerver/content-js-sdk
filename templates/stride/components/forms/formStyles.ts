@@ -30,4 +30,5 @@ export const buttonRoleClass = {
   submit: 'border-2 border-key1 bg-key1 text-foreground-inverted focus:ring-key1',
   next: 'border-2 border-key1 bg-key1 text-foreground-inverted focus:ring-key1',
   previous: 'border-2 border-foreground text-foreground focus:ring-foreground/30',
+  reset: 'border-2 border-foreground text-foreground focus:ring-foreground/30',
 };

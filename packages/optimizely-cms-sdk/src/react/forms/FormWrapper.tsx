@@ -205,7 +205,12 @@ function FormWrapperContent({
   return (
     <FormRulesProvider rules={Array.isArray(rules) ? rules : undefined}>
       <FormStepsContext.Provider value={{ currentStepIndex, nextStep, prevStep }}>
-        <form ref={formRef} onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit} onReset={(e) => {
+          e.preventDefault();
+          resetFields();
+          setAttemptedSubmit(false);
+          setCurrentStepIndex(0);
+        }}>
           {children}
         </form>
       </FormStepsContext.Provider>
