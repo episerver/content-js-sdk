@@ -141,6 +141,25 @@ Use `minimal` for short formatted text fields like summaries or introductions. U
 
 **Rendering:** Use the `<RichText>` component from `@optimizely/cms-sdk/react/richText` to render rich text content. See [RichText Component](./10-richtext-component-react.md) for details.
 
+**GraphQL query format:**
+
+Every `richText` property has two representations in Graph: `html` and `json`. Querying both roughly doubles the payload for that field and slows the request — most apps only render one of them.
+
+```ts
+import { config } from '@optimizely/cms-sdk';
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  richTextFormat: 'json', // 'html' | 'json' | 'both' — default: 'json'
+});
+```
+
+- **`'json'`** (default) — required by the `<RichText>` component, which renders from the structured JSON tree, not HTML. This is what most apps need.
+- **`'html'`** — use only if you render the raw HTML string yourself (e.g. `dangerouslySetInnerHTML`) instead of `<RichText>`. `<RichText>` will not work without `json`.
+- **`'both'`** — restores the pre-3.0 behavior of fetching both fields. Use this only if the same content needs both a rendered React tree and a raw HTML string.
+
+> **Upgrading from < 3.0.0:** the default changed from `'both'` to `'json'`. If your app reads the `html` field anywhere, set `richTextFormat: 'html'` or `'both'` to keep it working.
+
 #### Array Property
 
 For storing lists of values. The `items` field defines what type each array element should be:

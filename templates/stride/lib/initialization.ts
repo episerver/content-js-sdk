@@ -64,6 +64,7 @@ export function initialize() {
   config({
     apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
     host: process.env.APPLICATION_HOST,
+    richTextFormat: 'json',
   });
 
   initContentTypeRegistry([

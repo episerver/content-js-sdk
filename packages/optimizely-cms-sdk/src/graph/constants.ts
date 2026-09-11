@@ -30,3 +30,9 @@ export const DEFAULT_EXPAND_CONTRACTS = false;
  * Configurable via `config({ compositionDepth })`.
  */
 export const DEFAULT_COMPOSITION_DEPTH = 4;
+
+/**
+ * Default Rich Text representation(s) selected in GraphQL queries.
+ * Configurable via `config({ richTextFormat })`.
+ */
+export const DEFAULT_RICH_TEXT_FORMAT = 'json';
