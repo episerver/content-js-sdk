@@ -118,6 +118,27 @@ describe('createFragment() simple cases', () => {
     expect(jsonOnly.fragments.at(-1)).toContain('ct1__ric:ric { json }');
   });
 
+  test('richTextFormat is part of the query cache key, not shared across formats', () => {
+    const ct1 = contentType({
+      key: 'RichTextCacheTest',
+      displayName: 'RichTextCacheTest',
+      baseType: '_page',
+      properties: { ric: { type: 'richText' } },
+    });
+    initContentTypeRegistry([ct1]);
+
+    const jsonQuery = createSingleContentQuery('RichTextCacheTest', {
+      richTextFormat: 'json',
+    });
+    const htmlQuery = createSingleContentQuery('RichTextCacheTest', {
+      richTextFormat: 'html',
+    });
+
+    expect(jsonQuery).toContain('ric:ric { json }');
+    expect(htmlQuery).toContain('ric:ric { html }');
+    expect(jsonQuery).not.toBe(htmlQuery);
+  });
+
   test('correct syntax with content types without properties', async () => {
     const ct1 = contentType({ key: 'ct1', displayName: 'CT1', baseType: '_page' });
     initContentTypeRegistry([ct1]);
