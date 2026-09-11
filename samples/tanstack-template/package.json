@@ -40,6 +40,6 @@
     "typescript": "^5.7.2",
     "vite": "^8.1.1",
     "vite-plugin-mkcert": "^2.1.0",
-    "vitest": "^3.2.6"
+    "vitest": "^4.1.11"
   }
 }
