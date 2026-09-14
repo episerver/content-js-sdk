@@ -116,6 +116,14 @@ describe('createFragment() simple cases', () => {
       createQueryContext({ richTextFormat: 'json' }),
     );
     expect(jsonOnly.fragments.at(-1)).toContain('ct1__ric:ric { json }');
+
+    const both = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({ richTextFormat: 'both' }),
+    );
+    expect(both.fragments.at(-1)).toContain('ct1__ric:ric { html, json }');
   });
 
   test('richTextFormat is part of the query cache key, not shared across formats', () => {

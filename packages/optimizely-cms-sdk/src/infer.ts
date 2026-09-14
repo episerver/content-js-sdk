@@ -76,9 +76,10 @@ type InferredContentMetadata = {
 } & Partial<InferredInstanceMetadata> &
   Partial<InferredItemMetadata>;
 
+/** Selected `richTextFormat` representation(s), defaulting to `'json'`. */
 type InferredRichText = {
-  html: string;
-  json: { type: 'richText'; children: Node[] };
+  html?: string;
+  json?: { type: 'richText'; children: Node[] };
 };
 
 /** Asset types that can be returned in ContentReference */
