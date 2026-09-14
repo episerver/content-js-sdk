@@ -110,10 +110,33 @@ describe('probing whether a page has a form', () => {
 
     await client.getContent({ key: 'b' });
 
-    const variables = metadataCalls()[0][1] as { formsWhere: unknown };
-    expect(JSON.stringify(variables.formsWhere)).toContain('OptiFormsContainerData');
-    // The page's own filter has to survive, or the probe answers about the wrong page.
-    expect(JSON.stringify(variables.formsWhere)).toContain('"key":{"eq":"b"}');
+    // The condition is baked into the query text now, not a `formsWhere`
+    // variable — no `_ExperienceWhereInput` object is built or sent.
+    const [query, variables] = metadataCalls()[0] as [string, { key: unknown }];
+    expect(query).toContain('OptiFormsContainerData');
+    // Reuses the same $key as the page's own filter, or the probe would answer
+    // about the wrong page.
+    expect(query).toMatch(/formsOnPage:\s*_Experience\(where:.*\$key/);
+    expect(variables.key).toBe('b');
+  });
+
+  // The by-path query has its own filter text, so it needs its own probe text.
+  test('narrows it by path too, not only by key', async () => {
+    mockRequest = vi.spyOn(client, 'request').mockImplementation(async (query: string) => {
+      if (query.includes('GetContentMetadata')) {
+        return { ...metadataResponse, formsOnPage: { total: 1 } };
+      }
+      return { _Content: { items: [{ __typename: 'Landing' }] } };
+    });
+
+    await client.getContentByPath('/en/x/', { host: 'h' });
+
+    const query = String(metadataCalls()[0][0]);
+    const probe = query.match(/formsOnPage: _Experience\(.*\n?/)?.[0] ?? '';
+    expect(probe).toContain('$path');
+    expect(probe).toContain('$pathNoSlash');
+    expect(probe).toContain('$host');
+    expect(probe).toContain('OptiFormsContainerData');
   });
 });
 

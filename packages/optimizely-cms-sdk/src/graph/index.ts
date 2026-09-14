@@ -20,6 +20,7 @@ import {
   referenceScalarFilter,
   getFilterVarDecls,
   getFilterWhereClause,
+  PATH_OR_CLAUSE,
   getVariationMode,
   getVariationVariables,
   getVariationVarDecls,
@@ -197,6 +198,22 @@ export type GraphGetItemOptions = GraphQueryOptions & {
 
 export { GraphVariationInput };
 
+/** Content type key of the section Optimizely Forms uses for a form. */
+const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
+
+/**
+ * ANDs the forms condition onto the same identity filter `_Content` already
+ * uses for this shape, reusing its scalar variables instead of a second,
+ * nested `_ExperienceWhereInput` variable.
+ */
+function getFormsProbeWhereClause(shape: FilterShape): string {
+  const identity =
+    shape === 'by-key' ?
+      '{ _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }'
+    : `{ ${PATH_OR_CLAUSE} }`;
+  return `where: { _and: [${identity}, { composition: { nodes: { type: { eq: "${FORM_CONTAINER_TYPE}" } } } }] }`;
+}
+
 /**
  * Content type and DAM detection, plus an optional probe for whether this page
  * contains a form.
@@ -204,13 +221,15 @@ export { GraphVariationInput };
  * Form fragments are large, so they are only fetched for pages that actually
  * have one. The probe is skipped with `@include` rather than living in a second
  * query, so the two cannot drift apart, and the query text stays identical
- * whether or not forms apply — one stored query template instead of two.
+ * whether or not forms apply — one stored query template per shape, same as
+ * the shape already needs for its own `_Content` filter.
  *
  * `composition.nodes.type` matches top-level sections, where a form container
  * always sits, and is an ordinary string field — so the probe is valid whether
  * or not Optimizely Forms is enabled on the instance.
  */
-const METADATA_QUERY_BODY = `{
+function getMetadataQueryBody(shape: FilterShape): string {
+  return `{
     item {
       _metadata {
         types
@@ -223,9 +242,10 @@ const METADATA_QUERY_BODY = `{
     __typename
   }
   # Non-zero when this page has a form container as a top-level section
-  formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
+  formsOnPage: _Experience(${getFormsProbeWhereClause(shape)}) @include(if: $withForms) {
     total
   }`;
+}
 
 const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContentMetadata',
@@ -238,19 +258,14 @@ function getMetadataQuery(
 ): string {
   const varDecls = getFilterVarDecls(shape);
   const variationVars = getVariationVarDecls(variationMode);
-  const allVars = [
-    varDecls,
-    variationVars,
-    '$formsWhere: _ExperienceWhereInput',
-    '$withForms: Boolean!',
-  ]
+  const allVars = [varDecls, variationVars, '$withForms: Boolean!']
     .filter(Boolean)
     .join(', ');
   const whereClause = getFilterWhereClause(shape);
   const variationClause = getVariationClause(variationMode);
   return `
 query ${METADATA_OP_NAMES[shape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
+  _Content(${whereClause}${variationClause}) ${getMetadataQueryBody(shape)}
 }
 `;
 }
@@ -300,38 +315,6 @@ const hasOwnSectionTypes = (): boolean =>
           (contentType.compositionBehaviors?.includes('sectionEnabled') ?? false))) &&
       !isFormContentType(contentType.key),
   );
-
-/** Content type key of the section Optimizely Forms uses for a form. */
-const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
-
-/** Narrows a content filter to "the same content, and it contains a form". */
-const formsOnPageFilter = (where: unknown) => ({
-  _and: [where, { composition: { nodes: { type: { eq: FORM_CONTAINER_TYPE } } } }],
-});
-
-/** Reconstructs a where object from scalar filter variables (for the forms probe). */
-function buildWhereObject(filter: ScalarFilter): Record<string, unknown> {
-  const v = filter.variables;
-  switch (filter.filterShape) {
-    case 'by-key': {
-      const meta: Record<string, unknown> = { key: { eq: v.key } };
-      if (v.version) meta.version = { eq: v.version };
-      if (v.metadataLocale) meta.locale = { eq: v.metadataLocale };
-      return { _metadata: meta };
-    }
-    case 'by-path': {
-      const base = v.host ? { base: { eq: v.host } } : {};
-      return {
-        _or: [
-          { _metadata: { url: { ...base, default: { eq: v.path } } } },
-          { _metadata: { url: { ...base, default: { eq: v.pathNoSlash } } } },
-          { _metadata: { url: { ...base, hierarchical: { eq: v.path } } } },
-          { _metadata: { url: { ...base, hierarchical: { eq: v.pathNoSlash } } } },
-        ],
-      };
-    }
-  }
-}
 
 const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     item {
@@ -825,7 +808,6 @@ export class GraphClient {
     const variables = {
       ...filter.variables,
       withForms: mayRenderForms,
-      formsWhere: mayRenderForms ? formsOnPageFilter(buildWhereObject(filter)) : null,
     };
 
     const [data, sectionTypes] = await Promise.all([

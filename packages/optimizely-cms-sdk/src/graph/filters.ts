@@ -101,7 +101,10 @@ export function getVariationVariables(
   return vars;
 }
 
-const PATH_WHERE = `where: { _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }`;
+/** Matches a path by all four representations (with/without slash, default/hierarchical). */
+export const PATH_OR_CLAUSE = `_or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }]`;
+
+const PATH_WHERE = `where: { ${PATH_OR_CLAUSE} }`;
 
 export function getFilterVarDecls(shape: FilterShape): string {
   switch (shape) {
