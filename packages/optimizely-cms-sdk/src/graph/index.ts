@@ -196,10 +196,12 @@ const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
   dam: 'automatic',
 };
 
-const withDefaults = <T extends object>(defaults: T, overrides: Partial<T> = {}): T => ({
-  ...defaults,
-  ...Object.fromEntries(Object.entries(overrides).filter(([, value]) => value !== undefined)),
-});
+// Skips keys explicitly set to `undefined`, which a plain spread would copy over
+// the default. Keeps `{ maxThreshold: undefined }` meaning "unset", not "clear it".
+const withDefaults = <T extends object>(defaults: T, overrides: Partial<T> = {}): T => {
+  const set = Object.entries(overrides).filter(([, value]) => value !== undefined);
+  return { ...defaults, ...Object.fromEntries(set) };
+};
 
 export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
@@ -599,6 +601,20 @@ export class GraphClient {
     this.queryDefaults = withDefaults(DEFAULT_QUERY_OPTIONS, options.query);
   }
 
+  /**
+   * Resolves one request's options against the client's `query` defaults, so a
+   * method settles the whole group once instead of defaulting each key by hand.
+   */
+  private resolveQueryOptions(
+    options: GraphQueryOptions = {},
+    fallbacks: Partial<ResolvedQueryOptions> = {},
+  ): ResolvedQueryOptions {
+    const { cache, stored, slot, dam } = options;
+    const defaults = { ...this.queryDefaults, ...fallbacks };
+
+    return withDefaults(defaults, { cache, stored, slot, dam });
+  }
+
   /** Perform a GraphQL query with variables */
   async request(
     query: string,
@@ -731,7 +747,13 @@ export class GraphClient {
     const cached = sectionTypesByEndpoint.get(endpoint);
     if (cached) return cached;
 
-    const pending = this.request(GET_SECTION_TYPES_QUERY, {}, undefined, true, this.queryDefaults.slot)
+    const pending = this.request(
+      GET_SECTION_TYPES_QUERY,
+      {},
+      undefined,
+      true,
+      this.queryDefaults.slot,
+    )
       .then((data: any) => {
         const types = data?.sectionTypes?.possibleTypes;
         if (!Array.isArray(types)) return undefined;
@@ -768,6 +790,8 @@ export class GraphClient {
     }
     if (byKey.size === 0) return item;
 
+    const queryOptions = this.resolveQueryOptions(options);
+
     await Promise.all(
       [...byKey].map(async ([key, forms]) => {
         const { version, locale } = forms[0]._metadata;
@@ -797,8 +821,8 @@ export class GraphClient {
           query,
           filter.variables,
           options.previewToken,
-          options.cache ?? this.queryDefaults.cache,
-          options.slot ?? this.queryDefaults.slot,
+          queryOptions.cache,
+          queryOptions.slot,
         );
 
         const container = liftSectionNodes(removeTypePrefix(response?._Content?.item));
@@ -815,20 +839,17 @@ export class GraphClient {
   /**
    * Fetches the content type metadata for a given content input.
    *
-   * @param filterShape - The shape of the scalar filter.
-   * @param variables - The scalar variables for the query.
+   * @param filter - The scalar filter identifying the content.
+   * @param queryOptions - The request settings, already resolved against the defaults.
    * @param previewToken - Optional preview token for fetching preview content.
    * @returns The content type, whether DAM is enabled, and whether this page
    *   needs the Optimizely Forms fragments.
    */
   private async getContentMetaData(
     filter: ScalarFilter,
+    queryOptions: ResolvedQueryOptions,
     previewToken?: string,
-    cache?: boolean,
-    slot?: GraphSlot,
-    stored?: boolean,
     variationMode: VariationMode = 'none',
-    damMode: DamMode = 'automatic',
   ) {
     // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
@@ -845,9 +866,9 @@ export class GraphClient {
         query,
         variables,
         previewToken,
-        cache ?? this.queryDefaults.cache,
-        slot ?? this.queryDefaults.slot,
-        stored ?? this.queryDefaults.stored,
+        queryOptions.cache,
+        queryOptions.slot,
+        queryOptions.stored,
       ),
       this.getSectionTypes(),
     ]);
@@ -857,8 +878,8 @@ export class GraphClient {
     // Determine if DAM is enabled based on the presence of cmp_Asset type
     // The metadata query always probes for cmp_Asset; forced modes just ignore it.
     const damEnabled =
-      damMode === 'on' ? true
-      : damMode === 'off' ? false
+      queryOptions.dam === 'on' ? true
+      : queryOptions.dam === 'off' ? false
       : data.damAssetType !== null;
 
     // The probe covers a form in a composition. Content type checks cover
@@ -909,28 +930,17 @@ export class GraphClient {
    * @returns An array of all items matching the path and options. Returns an empty array if no content is found.
    */
   async getContentByPath<T = any>(path: string, options?: GraphGetContentOptions) {
-    return withGetContentByPathSpan(path, options?.cache ?? this.queryDefaults.cache, async span => {
+    const queryOptions = this.resolveQueryOptions(options);
+
+    return withGetContentByPathSpan(path, queryOptions.cache, async span => {
       const host = options?.host ?? this.host;
       const filter = pathScalarFilter(path, host);
       const varMode = getVariationMode(options?.variation);
       const variationVars = getVariationVariables(options?.variation);
       const variables = { ...filter.variables, ...variationVars };
 
-      const cacheEnabled = options?.cache ?? this.queryDefaults.cache;
-      const storedEnabled = options?.stored ?? this.queryDefaults.stored;
-      const activeSlot = options?.slot ?? this.queryDefaults.slot;
-      const damMode = options?.dam ?? this.queryDefaults.dam;
-
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-        await this.getContentMetaData(
-          filter,
-          undefined,
-          cacheEnabled,
-          activeSlot,
-          storedEnabled,
-          varMode,
-          damMode,
-        );
+        await this.getContentMetaData(filter, queryOptions, undefined, varMode);
 
       if (!contentTypeName) {
         span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -953,9 +963,9 @@ export class GraphClient {
           query,
           variables,
           undefined,
-          cacheEnabled,
-          activeSlot,
-          storedEnabled,
+          queryOptions.cache,
+          queryOptions.slot,
+          queryOptions.stored,
         )) as ItemsResponse<T>;
 
         return Promise.all(
@@ -963,8 +973,8 @@ export class GraphClient {
             this.resolveFormNodes(liftSectionNodes(removeTypePrefix(item)), {
               damEnabled,
               sectionTypes,
-              cache: cacheEnabled,
-              slot: activeSlot,
+              cache: queryOptions.cache,
+              slot: queryOptions.slot,
             }),
           ) ?? [],
         );
@@ -1019,18 +1029,15 @@ export class GraphClient {
 
     const variables = { ...filter.variables, locale: locales };
     const query = getLinksQuery('GetPath', filter.filterShape);
-
-    const cacheEnabled = options?.cache ?? this.queryDefaults.cache;
-    const storedEnabled = options?.stored ?? this.queryDefaults.stored;
-    const activeSlot = options?.slot ?? this.queryDefaults.slot;
+    const queryOptions = this.resolveQueryOptions(options);
 
     const data = (await this.request(
       query,
       variables,
       undefined,
-      cacheEnabled,
-      activeSlot,
-      storedEnabled,
+      queryOptions.cache,
+      queryOptions.slot,
+      queryOptions.stored,
     )) as GetLinksResponse;
 
     if (!data._Content.item._id) {
@@ -1098,18 +1105,15 @@ export class GraphClient {
 
     const variables = { ...filter.variables, locale: locales };
     const query = getItemsQuery('GetItems', filter.filterShape);
-
-    const cacheEnabled = options?.cache ?? this.queryDefaults.cache;
-    const storedEnabled = options?.stored ?? this.queryDefaults.stored;
-    const activeSlot = options?.slot ?? this.queryDefaults.slot;
+    const queryOptions = this.resolveQueryOptions(options);
 
     const data = (await this.request(
       query,
       variables,
       undefined,
-      cacheEnabled,
-      activeSlot,
-      storedEnabled,
+      queryOptions.cache,
+      queryOptions.slot,
+      queryOptions.stored,
     )) as GetLinksResponse;
 
     if (!data._Content.item._id) {
@@ -1122,19 +1126,14 @@ export class GraphClient {
   async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
     return withGetPreviewContentSpan(params, async span => {
       const filter = previewScalarFilter(params);
-      const storedEnabled = options?.stored ?? this.queryDefaults.stored;
-      const activeSlot = options?.slot ?? this.queryDefaults.slot;
-      const damMode = options?.dam ?? this.queryDefaults.dam;
+      const queryOptions = this.resolveQueryOptions(options);
 
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
         await this.getContentMetaData(
           filter,
+          { ...queryOptions, cache: false },
           params.preview_token,
-          false,
-          activeSlot,
-          storedEnabled,
           'all',
-          damMode,
         );
 
       if (!contentTypeName) {
@@ -1174,8 +1173,8 @@ export class GraphClient {
         filter.variables,
         params.preview_token,
         false,
-        activeSlot,
-        storedEnabled,
+        queryOptions.slot,
+        queryOptions.stored,
       );
 
       return decorateWithContext(
@@ -1186,7 +1185,7 @@ export class GraphClient {
             sectionTypes,
             previewToken: params.preview_token,
             cache: false,
-            slot: activeSlot,
+            slot: queryOptions.slot,
           },
         ),
         params,
@@ -1304,23 +1303,16 @@ export class GraphClient {
     return withGetContentSpan(ref, async span => {
       const previewToken = options?.previewToken;
 
-      const cacheEnabled = options?.cache ?? (previewToken ? false : this.queryDefaults.cache);
-      const storedEnabled = options?.stored ?? this.queryDefaults.stored;
-      const activeSlot = options?.slot ?? this.queryDefaults.slot;
-      const damMode = options?.dam ?? this.queryDefaults.dam;
+      // A preview is uncacheable unless the caller insists.
+      const queryOptions = this.resolveQueryOptions(
+        options,
+        previewToken ? { cache: false } : {},
+      );
 
       const filter = referenceScalarFilter(ref);
 
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-        await this.getContentMetaData(
-          filter,
-          previewToken,
-          cacheEnabled,
-          activeSlot,
-          storedEnabled,
-          'none',
-          damMode,
-        );
+        await this.getContentMetaData(filter, queryOptions, previewToken, 'none');
 
       if (!contentTypeName) {
         span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -1342,9 +1334,9 @@ export class GraphClient {
           query,
           filter.variables,
           previewToken,
-          cacheEnabled,
-          activeSlot,
-          storedEnabled,
+          queryOptions.cache,
+          queryOptions.slot,
+          queryOptions.stored,
         );
 
         return this.resolveFormNodes(
@@ -1353,8 +1345,8 @@ export class GraphClient {
             damEnabled,
             sectionTypes,
             previewToken,
-            cache: cacheEnabled,
-            slot: activeSlot,
+            cache: queryOptions.cache,
+            slot: queryOptions.slot,
           },
         );
       } catch (error) {
