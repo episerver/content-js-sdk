@@ -209,7 +209,9 @@ const METADATA_QUERY_BODY = `{
   # Check if "cmp_Asset" type exists which indicates that DAM is enabled
   damAssetType: __type(name: "cmp_Asset") {
     __typename
-  }
+  }`;
+
+const METADATA_FORMS_FRAGMENT = `
   # Non-zero when this page has a form container as a top-level section
   formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
     total
@@ -223,22 +225,27 @@ const METADATA_OP_NAMES: Record<FilterShape, string> = {
 function getMetadataQuery(
   shape: FilterShape,
   variationMode: VariationMode = 'none',
+  withForms: boolean = false,
 ): string {
   const varDecls = getFilterVarDecls(shape);
   const variationVars = getVariationVarDecls(variationMode);
   const allVars = [
     varDecls,
     variationVars,
-    '$formsWhere: _ExperienceWhereInput',
-    '$withForms: Boolean!',
+    ...(withForms
+      ? ['$formsWhere: _ExperienceWhereInput', '$withForms: Boolean!']
+      : []),
   ]
     .filter(Boolean)
     .join(', ');
   const whereClause = getFilterWhereClause(shape);
   const variationClause = getVariationClause(variationMode);
+  const body = withForms
+    ? METADATA_QUERY_BODY + METADATA_FORMS_FRAGMENT
+    : METADATA_QUERY_BODY;
   return `
 query ${METADATA_OP_NAMES[shape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
+  _Content(${whereClause}${variationClause}) ${body}
 }
 `;
 }
@@ -806,11 +813,13 @@ export class GraphClient {
     // Skip if forms aren't registered; local lookup, no round trip.
     const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-    const query = getMetadataQuery(filter.filterShape, variationMode);
+    const query = getMetadataQuery(filter.filterShape, variationMode, mayRenderForms);
     const variables = {
       ...filter.variables,
-      withForms: mayRenderForms,
-      formsWhere: mayRenderForms ? formsOnPageFilter(buildWhereObject(filter)) : null,
+      ...(mayRenderForms && {
+        withForms: true,
+        formsWhere: formsOnPageFilter(buildWhereObject(filter)),
+      }),
     };
 
     const [data, sectionTypes] = await Promise.all([
@@ -820,7 +829,7 @@ export class GraphClient {
         previewToken,
         cache ?? this.cache,
         slot ?? this.slot,
-        stored ?? true,
+        mayRenderForms ? false : (stored ?? true),
       ),
       this.getSectionTypes(),
     ]);
