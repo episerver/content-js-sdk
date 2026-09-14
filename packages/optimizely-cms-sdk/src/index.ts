@@ -29,6 +29,8 @@ export {
 export type {
   PreviewParams,
   GraphReference,
+  GraphOptions,
+  GraphFragmentOptions,
   GraphGetItemOptions,
   GraphQueryOptions,
   GraphSlot,

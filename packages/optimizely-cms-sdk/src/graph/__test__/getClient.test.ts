@@ -193,7 +193,7 @@ describe('getClient - Critical Edge Cases', () => {
 
       expect(client.apiKey).toBe('minimal-key');
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
-      expect(client.maxFragmentThreshold).toBe(100);
+      expect(client.fragmentDefaults.maxThreshold).toBe(100);
       expect(client.host).toBeUndefined();
     });
 
@@ -202,14 +202,14 @@ describe('getClient - Critical Edge Cases', () => {
         apiKey: 'test-key',
         graphUrl: undefined,
         host: undefined,
-        maxFragmentThreshold: undefined,
+        fragment: { maxThreshold: undefined },
       });
       const client = getClient();
 
       expect(client.apiKey).toBe('test-key');
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
       expect(client.host).toBeUndefined();
-      expect(client.maxFragmentThreshold).toBe(100);
+      expect(client.fragmentDefaults.maxThreshold).toBe(100);
     });
   });
 

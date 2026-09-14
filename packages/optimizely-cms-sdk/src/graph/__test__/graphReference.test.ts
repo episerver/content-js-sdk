@@ -642,7 +642,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
   });
 
   test('slot parameter inherits from global config', async () => {
-    const customClient = new GraphClient('test-key', { slot: 'New' });
+    const customClient = new GraphClient('test-key', { query: { slot: 'New' } });
     const customMockRequest = vi.spyOn(customClient, 'request');
 
     customMockRequest
@@ -680,8 +680,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
 
   test('per-request options override global config for all query options', async () => {
     const customClient = new GraphClient('test-key', {
-      cache: true,
-      slot: 'Current',
+      query: { cache: true, slot: 'Current' },
     });
     const customMockRequest = vi.spyOn(customClient, 'request');
 
@@ -1100,7 +1099,7 @@ describe('GraphClient.getPreviewContent() query options', () => {
   });
 
   test('uses global slot by default', async () => {
-    const customClient = new GraphClient('test-key', { slot: 'New' });
+    const customClient = new GraphClient('test-key', { query: { slot: 'New' } });
     const customMockRequest = vi.spyOn(customClient, 'request');
 
     customMockRequest
@@ -1145,7 +1144,7 @@ describe('GraphClient.getPreviewContent() query options', () => {
   });
 
   test('per-request options override global config', async () => {
-    const customClient = new GraphClient('test-key', { slot: 'Current' });
+    const customClient = new GraphClient('test-key', { query: { slot: 'Current' } });
     const customMockRequest = vi.spyOn(customClient, 'request');
 
     customMockRequest

@@ -95,7 +95,7 @@ describe('createFragment > Fragment threshold enforcement', () => {
     expect(() => createFragment('SafeType')).not.toThrow();
   });
 
-  it('should respect custom maxFragmentThreshold', () => {
+  it('should respect custom maxThreshold', () => {
     initContentTypeRegistry([rootType, ...childTypes]);
 
     expect(() =>
@@ -103,7 +103,7 @@ describe('createFragment > Fragment threshold enforcement', () => {
         'ExplodingType',
         new Set(),
         '',
-        createQueryContext({ maxFragmentThreshold: 200 }),
+        createQueryContext({ maxThreshold: 200 }),
       ),
     ).not.toThrow();
   });
@@ -237,7 +237,7 @@ describe('createFragment > typeFilter with ComponentRegistry integration', () =>
         'HomePage',
         new Set(),
         '',
-        createQueryContext({ typeFilter, maxFragmentThreshold: 20 }),
+        createQueryContext({ typeFilter, maxThreshold: 20 }),
       ),
     ).not.toThrow();
   });

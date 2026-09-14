@@ -18,14 +18,16 @@ You can control this behaviour with the `dam` option, which accepts:
 - `'on'` — always include DAM fragments.
 - `'off'` — never include DAM fragments.
 
-Set it globally when configuring the client:
+Set the default for every request in the `query` group when configuring the client:
 
 ```ts
 import { config } from '@optimizely/cms-sdk';
 
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-  dam: 'on', // 'automatic' | 'on' | 'off'
+  query: {
+    dam: 'on', // 'automatic' | 'on' | 'off'
+  },
 });
 ```
 

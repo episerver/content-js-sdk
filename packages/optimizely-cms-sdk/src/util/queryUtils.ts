@@ -93,7 +93,7 @@ export type QueryContext = {
    * Maximum number of fragments allowed before throwing an error.
    * Prevents excessive GraphQL query complexity from unrestricted content types.
    */
-  maxFragmentThreshold: number;
+  maxThreshold: number;
   /**
    * Enable or disable contract expansion.
    * When true, contracts are expanded to include all implementing types.
@@ -174,7 +174,7 @@ export const createQueryContext = (
   options: Partial<QueryContext> = {},
 ): QueryContext => ({
   damEnabled: options.damEnabled ?? false,
-  maxFragmentThreshold: options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  maxThreshold: options.maxThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS,
   formsEnabled: options.formsEnabled ?? false,
   compositionDepth: options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH,
@@ -603,10 +603,10 @@ export const convertProperty: PropertyHandler = (
   // Remove the namespace prefix (e.g. `graph:`) from rootName so field aliases
   // (`{rootName}__{field}`) match the GraphQL __typename, which has no prefix.
   rootName = stripSourcePrefix(rootName);
-  const { maxFragmentThreshold } = ctx;
+  const { maxThreshold } = ctx;
   const result = convertPropertyField(name, property, rootName, suffix, visited, ctx);
 
-  checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
+  checkTypeConstraintIssues(rootName, property, result, maxThreshold);
 
   return result;
 };

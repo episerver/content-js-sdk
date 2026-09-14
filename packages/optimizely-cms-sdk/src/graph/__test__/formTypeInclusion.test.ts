@@ -42,7 +42,7 @@ const buildFor = (
     'HostPage',
     new Set(),
     '',
-    createQueryContext({ formsEnabled, maxFragmentThreshold: 500 }),
+    createQueryContext({ formsEnabled, maxThreshold: 500 }),
   ).fragments.join('\n');
 };
 

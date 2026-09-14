@@ -150,7 +150,9 @@ import { config } from '@optimizely/cms-sdk';
 
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
-  richTextFormat: 'json', // 'html' | 'json' | 'both' — default: 'json'
+  fragment: {
+    richTextFormat: 'json', // 'html' | 'json' | 'both' — default: 'json'
+  },
 });
 ```
 
@@ -158,7 +160,7 @@ config({
 - **`'html'`** — use only if you render the raw HTML string yourself (e.g. `dangerouslySetInnerHTML`) instead of `<RichText>`. `<RichText>` will not work without `json`.
 - **`'both'`** — restores the pre-3.0 behavior of fetching both fields. Use this only if the same content needs both a rendered React tree and a raw HTML string.
 
-> **Upgrading from < 3.0.0:** the default changed from `'both'` to `'json'`. If your app reads the `html` field anywhere, set `richTextFormat: 'html'` or `'both'` to keep it working.
+> **Upgrading from < 3.0.0:** the default changed from `'both'` to `'json'`, and the option moved from the top level of `config()` into the `fragment` group. If your app reads the `html` field anywhere, set `fragment.richTextFormat` to `'html'` or `'both'` to keep it working.
 
 #### Array Property
 
@@ -579,6 +581,17 @@ const query = createQuery(FeedPageContentType, {
   expandContracts: true,
 });
 // Generates fragments for PublishableContract AND all implementing types (Article, News, etc.)
+```
+
+To turn expansion on for every query the client generates, set it in `config()` instead:
+
+```ts
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+  fragment: {
+    expandContracts: true,
+  },
+});
 ```
 
 **When `expandContracts: false` (default):**

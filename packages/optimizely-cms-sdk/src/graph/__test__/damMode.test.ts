@@ -81,7 +81,7 @@ describe("dam: 'automatic' (default)", () => {
 
 describe("dam: 'off'", () => {
   test('omits DAM fragments even when the schema has DAM', async () => {
-    client = new GraphClient('test-key', { dam: 'off' });
+    client = new GraphClient('test-key', { query: { dam: 'off' } });
     stubGraph(true);
 
     await client.getContent({ key: 'a' });
@@ -92,7 +92,7 @@ describe("dam: 'off'", () => {
 
 describe("dam: 'on'", () => {
   test('includes DAM fragments even when the schema lacks DAM', async () => {
-    client = new GraphClient('test-key', { dam: 'on' });
+    client = new GraphClient('test-key', { query: { dam: 'on' } });
     stubGraph(false);
 
     await client.getContent({ key: 'a' });
@@ -103,7 +103,7 @@ describe("dam: 'on'", () => {
 
 describe('per-request override', () => {
   test('request-level dam beats the global client setting', async () => {
-    client = new GraphClient('test-key', { dam: 'off' });
+    client = new GraphClient('test-key', { query: { dam: 'off' } });
     stubGraph(false);
 
     await client.getContent({ key: 'a' }, { dam: 'on' });

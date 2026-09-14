@@ -47,25 +47,13 @@ import {
 } from './constants.js';
 import { RichTextFormat } from '../util/queryUtils.js';
 
-/** Configuration for initializing the Optimizely Graph Client */
-export type GraphOptions = {
-  /** Your Optimizely Graph API key (Single key in CMS) */
-  apiKey: string;
-  /** Optional custom Graph URL */
-  graphUrl?: string;
-  /** Optional default host for path filtering */
-  host?: string;
-  /** Hard limit on generated fragments per content area. Throws GraphFragmentThresholdError when exceeded on unconstrained properties. */
-  maxFragmentThreshold?: number;
-  /**
-   * Nesting depth for ordinary composition fragments (sections/rows/columns/elements
-   * inside an experience). Raise it if a composition is nested deeper than the default.
-   *
-   * Temporary: only needed because Graph's `@recursive` directive doesn't retrieve
-   * DAM assets. Once it does, fragments recurse to any depth and this setting goes away.
-   * @default 4
-   */
-  compositionDepth?: number;
+/**
+ * Settings that shape the GraphQL query the SDK generates.
+ *
+ * Fixed for the lifetime of a client: unlike {@linkcode GraphQueryOptions},
+ * none of these can be overridden on an individual request.
+ */
+export type GraphFragmentOptions = {
   /**
    * Which Rich Text representation(s) to select in GraphQL queries: `'html'`,
    * `'json'`, or `'both'`. Requesting only what the app renders shrinks query
@@ -77,42 +65,48 @@ export type GraphOptions = {
    */
   richTextFormat?: RichTextFormat;
   /**
+   * Nesting depth for ordinary composition fragments. Raise it if a composition is nested deeper than the default.
+   *
+   * Temporary: only needed because Graph's `@recursive` directive doesn't retrieve
+   * DAM assets. Once it does, fragments recurse to any depth and this setting goes away.
+   * @default 4
+   */
+  compositionDepth?: number;
+  /**
    * Enable or disable contract expansion.
    * When true, contracts are expanded to include all implementing types.
    * When false, only the contract itself is included without expansion.
    */
   expandContracts?: boolean;
-  /**
-   * Enable or disable server-side caching for all queries.
-   * Can be overridden per request.
-   * @default true
-   */
-  cache?: boolean;
-  /**
-   * Select which Graph index to query against for all requests.
-   * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
-   * - `'Current'`: Query the current active index (default)
-   * - `'New'`: Query the new index that is being rebuilt
-   * Can be overridden per request.
-   */
-  slot?: GraphSlot;
-  /**
-   * Custom User-Agent string for HTTP requests to Graph API.
-   * @default 'OptimizelySDK/{version} (JS)'
-   */
-  userAgent?: string;
+  /** Hard limit on generated fragments per content area. Throws GraphFragmentThresholdError when exceeded on unconstrained properties. */
+  maxThreshold?: number;
   /**
    * Optional filter to exclude content types from fragment generation.
    * Return true to include a content type, false to exclude it.
    * Useful for skipping content types that have no registered component.
    */
   typeFilter?: (contentTypeKey: string) => boolean;
+};
+
+/**
+ * Configuration for initializing the Optimizely Graph Client.
+ */
+export type GraphOptions = {
+  /** Your Optimizely Graph API key (Single key in CMS) */
+  apiKey: string;
+  /** Optional custom Graph URL */
+  graphUrl?: string;
+  /** Optional default host */
+  host?: string;
   /**
-   * Control DAM asset fragment inclusion for all queries.
-   * Can be overridden per request.
-   * @default 'automatic'
+   * Custom User-Agent string for HTTP requests to Graph API.
+   * @default 'OptimizelySDK/{version} (JS)'
    */
-  dam?: DamMode;
+  userAgent?: string;
+  /** Settings that shape the generated GraphQL query. */
+  fragment?: GraphFragmentOptions;
+  /** Defaults for the per-request options, overridable on any single call. */
+  query?: GraphQueryOptions;
 };
 
 // Global configuration for client factory
@@ -180,6 +174,32 @@ export type GraphQueryOptions = {
    */
   dam?: DamMode;
 };
+
+/** The `fragment` group once defaults are applied. Only `typeFilter` has no default. */
+type ResolvedFragmentOptions = Required<Omit<GraphFragmentOptions, 'typeFilter'>> &
+  Pick<GraphFragmentOptions, 'typeFilter'>;
+
+/** The `query` group once defaults are applied. Only `slot` has no default. */
+type ResolvedQueryOptions = Required<Omit<GraphQueryOptions, 'slot'>> &
+  Pick<GraphQueryOptions, 'slot'>;
+
+const DEFAULT_FRAGMENT_OPTIONS: ResolvedFragmentOptions = {
+  richTextFormat: DEFAULT_RICH_TEXT_FORMAT,
+  compositionDepth: DEFAULT_COMPOSITION_DEPTH,
+  expandContracts: DEFAULT_EXPAND_CONTRACTS,
+  maxThreshold: DEFAULT_MAX_FRAGMENT_THRESHOLD,
+};
+
+const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
+  cache: true,
+  stored: true,
+  dam: 'automatic',
+};
+
+const withDefaults = <T extends object>(defaults: T, overrides: Partial<T> = {}): T => ({
+  ...defaults,
+  ...Object.fromEntries(Object.entries(overrides).filter(([, value]) => value !== undefined)),
+});
 
 export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
@@ -556,32 +576,27 @@ function normalizeGraphUrl(url: string): string {
 export class GraphClient {
   apiKey: string;
   graphUrl: string;
-  maxFragmentThreshold: number;
-  compositionDepth: number;
-  richTextFormat: RichTextFormat;
-  expandContracts: boolean;
   host?: string;
-  cache: boolean;
-  slot?: GraphSlot;
   userAgent: string;
-  typeFilter?: (contentTypeKey: string) => boolean;
-  dam: DamMode;
+
+  /**
+   * Every setting the query builders read that comes from configuration,
+   * assembled once so a call site cannot forget one.
+   */
+  readonly fragmentDefaults: ResolvedFragmentOptions;
+
+  /** The resolved `query` group: what every request uses unless it overrides it. */
+  readonly queryDefaults: ResolvedQueryOptions;
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
     this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
-    this.maxFragmentThreshold =
-      options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
-    this.compositionDepth = options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH;
-    this.richTextFormat = options.richTextFormat ?? DEFAULT_RICH_TEXT_FORMAT;
-    this.expandContracts = options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS;
     this.host = options.host;
-    this.cache = options.cache ?? true;
-    this.slot = options.slot;
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
-    this.typeFilter = options.typeFilter;
-    this.dam = options.dam ?? 'automatic';
+
+    this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
+    this.queryDefaults = withDefaults(DEFAULT_QUERY_OPTIONS, options.query);
   }
 
   /** Perform a GraphQL query with variables */
@@ -716,7 +731,7 @@ export class GraphClient {
     const cached = sectionTypesByEndpoint.get(endpoint);
     if (cached) return cached;
 
-    const pending = this.request(GET_SECTION_TYPES_QUERY, {}, undefined, true, this.slot)
+    const pending = this.request(GET_SECTION_TYPES_QUERY, {}, undefined, true, this.queryDefaults.slot)
       .then((data: any) => {
         const types = data?.sectionTypes?.possibleTypes;
         if (!Array.isArray(types)) return undefined;
@@ -771,11 +786,8 @@ export class GraphClient {
         // Built here rather than delegating to `getContent`, which would spend a
         // metadata round trip rediscovering a content type we already know.
         const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
+          ...this.fragmentDefaults,
           damEnabled: options.damEnabled,
-          maxFragmentThreshold: this.maxFragmentThreshold,
-          compositionDepth: this.compositionDepth,
-          richTextFormat: this.richTextFormat,
-          expandContracts: this.expandContracts,
           formsEnabled: true,
           sectionTypes: options.sectionTypes,
           filterShape: filter.filterShape,
@@ -785,8 +797,8 @@ export class GraphClient {
           query,
           filter.variables,
           options.previewToken,
-          options.cache ?? this.cache,
-          options.slot ?? this.slot,
+          options.cache ?? this.queryDefaults.cache,
+          options.slot ?? this.queryDefaults.slot,
         );
 
         const container = liftSectionNodes(removeTypePrefix(response?._Content?.item));
@@ -833,9 +845,9 @@ export class GraphClient {
         query,
         variables,
         previewToken,
-        cache ?? this.cache,
-        slot ?? this.slot,
-        stored ?? true,
+        cache ?? this.queryDefaults.cache,
+        slot ?? this.queryDefaults.slot,
+        stored ?? this.queryDefaults.stored,
       ),
       this.getSectionTypes(),
     ]);
@@ -897,17 +909,17 @@ export class GraphClient {
    * @returns An array of all items matching the path and options. Returns an empty array if no content is found.
    */
   async getContentByPath<T = any>(path: string, options?: GraphGetContentOptions) {
-    return withGetContentByPathSpan(path, options?.cache ?? this.cache, async span => {
+    return withGetContentByPathSpan(path, options?.cache ?? this.queryDefaults.cache, async span => {
       const host = options?.host ?? this.host;
       const filter = pathScalarFilter(path, host);
       const varMode = getVariationMode(options?.variation);
       const variationVars = getVariationVariables(options?.variation);
       const variables = { ...filter.variables, ...variationVars };
 
-      const cacheEnabled = options?.cache ?? this.cache;
-      const storedEnabled = options?.stored ?? true;
-      const activeSlot = options?.slot ?? this.slot;
-      const damMode = options?.dam ?? this.dam;
+      const cacheEnabled = options?.cache ?? this.queryDefaults.cache;
+      const storedEnabled = options?.stored ?? this.queryDefaults.stored;
+      const activeSlot = options?.slot ?? this.queryDefaults.slot;
+      const damMode = options?.dam ?? this.queryDefaults.dam;
 
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
         await this.getContentMetaData(
@@ -929,11 +941,8 @@ export class GraphClient {
 
       try {
         const query = createMultipleContentQuery(contentTypeName, {
+          ...this.fragmentDefaults,
           damEnabled,
-          maxFragmentThreshold: this.maxFragmentThreshold,
-          compositionDepth: this.compositionDepth,
-          richTextFormat: this.richTextFormat,
-          expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,
           filterShape: filter.filterShape,
@@ -1011,9 +1020,9 @@ export class GraphClient {
     const variables = { ...filter.variables, locale: locales };
     const query = getLinksQuery('GetPath', filter.filterShape);
 
-    const cacheEnabled = options?.cache ?? this.cache;
-    const storedEnabled = options?.stored ?? true;
-    const activeSlot = options?.slot ?? this.slot;
+    const cacheEnabled = options?.cache ?? this.queryDefaults.cache;
+    const storedEnabled = options?.stored ?? this.queryDefaults.stored;
+    const activeSlot = options?.slot ?? this.queryDefaults.slot;
 
     const data = (await this.request(
       query,
@@ -1090,9 +1099,9 @@ export class GraphClient {
     const variables = { ...filter.variables, locale: locales };
     const query = getItemsQuery('GetItems', filter.filterShape);
 
-    const cacheEnabled = options?.cache ?? this.cache;
-    const storedEnabled = options?.stored ?? true;
-    const activeSlot = options?.slot ?? this.slot;
+    const cacheEnabled = options?.cache ?? this.queryDefaults.cache;
+    const storedEnabled = options?.stored ?? this.queryDefaults.stored;
+    const activeSlot = options?.slot ?? this.queryDefaults.slot;
 
     const data = (await this.request(
       query,
@@ -1113,9 +1122,9 @@ export class GraphClient {
   async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
     return withGetPreviewContentSpan(params, async span => {
       const filter = previewScalarFilter(params);
-      const storedEnabled = options?.stored ?? true;
-      const activeSlot = options?.slot ?? this.slot;
-      const damMode = options?.dam ?? this.dam;
+      const storedEnabled = options?.stored ?? this.queryDefaults.stored;
+      const activeSlot = options?.slot ?? this.queryDefaults.slot;
+      const damMode = options?.dam ?? this.queryDefaults.dam;
 
       const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
         await this.getContentMetaData(
@@ -1152,11 +1161,8 @@ export class GraphClient {
       });
 
       const query = createSingleContentQuery(contentTypeName, {
+        ...this.fragmentDefaults,
         damEnabled,
-        maxFragmentThreshold: this.maxFragmentThreshold,
-        compositionDepth: this.compositionDepth,
-          richTextFormat: this.richTextFormat,
-        expandContracts: this.expandContracts,
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
@@ -1298,10 +1304,10 @@ export class GraphClient {
     return withGetContentSpan(ref, async span => {
       const previewToken = options?.previewToken;
 
-      const cacheEnabled = options?.cache ?? (previewToken ? false : this.cache);
-      const storedEnabled = options?.stored ?? true;
-      const activeSlot = options?.slot ?? this.slot;
-      const damMode = options?.dam ?? this.dam;
+      const cacheEnabled = options?.cache ?? (previewToken ? false : this.queryDefaults.cache);
+      const storedEnabled = options?.stored ?? this.queryDefaults.stored;
+      const activeSlot = options?.slot ?? this.queryDefaults.slot;
+      const damMode = options?.dam ?? this.queryDefaults.dam;
 
       const filter = referenceScalarFilter(ref);
 
@@ -1325,11 +1331,8 @@ export class GraphClient {
 
       try {
         const query = createSingleContentQuery(contentTypeName, {
+          ...this.fragmentDefaults,
           damEnabled,
-          maxFragmentThreshold: this.maxFragmentThreshold,
-          compositionDepth: this.compositionDepth,
-          richTextFormat: this.richTextFormat,
-          expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,
           filterShape: filter.filterShape,
@@ -1399,6 +1402,8 @@ export function getGraphConfig(): GraphOptions | null {
  *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
  *   host: 'example.com', // optional
+ *   fragment: { richTextFormat: 'json' }, // optional
+ *   query: { cache: true }, // optional
  * });
  *
  * export default function RootLayout({ children }) {
@@ -1419,6 +1424,16 @@ export function config(options: GraphOptions) {
   }
   setGraphConfig(options);
 }
+
+const mergeGraphOptions = (
+  base: GraphOptions,
+  override: Partial<GraphOptions> = {},
+): GraphOptions => ({
+  ...base,
+  ...override,
+  fragment: { ...base.fragment, ...override.fragment },
+  query: { ...base.query, ...override.query },
+});
 
 /**
  * Creates and returns a GraphClient instance using the global configuration.
@@ -1448,6 +1463,7 @@ export function config(options: GraphOptions) {
  *
  * // Or override config for specific use cases
  * const customClient = getClient({ host: 'custom.example.com' });
+ * const jsonOnly = getClient({ fragment: { richTextFormat: 'json' } });
  * ```
  */
 export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient {
@@ -1457,10 +1473,7 @@ export function getClient(overrideOptions?: Partial<GraphOptions>): GraphClient 
     );
   }
 
-  const options: GraphOptions = {
-    ...globalGraphConfig,
-    ...(overrideOptions ?? {}),
-  };
+  const options = mergeGraphOptions(globalGraphConfig, overrideOptions);
 
   return new GraphClient(options.apiKey, options);
 }

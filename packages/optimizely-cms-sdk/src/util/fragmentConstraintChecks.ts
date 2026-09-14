@@ -32,16 +32,16 @@ export function checkTypeConstraintIssues(
     fields: string[];
     extraFragments: string[];
   },
-  maxFragmentThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  maxThreshold: number = DEFAULT_MAX_FRAGMENT_THRESHOLD,
 ): void {
   if (
     (arePropertyConstraintsMissing(property) || areItemConstraintsMissing(property)) &&
-    result.extraFragments.length > maxFragmentThreshold
+    result.extraFragments.length > maxThreshold
   ) {
     throw new GraphFragmentThresholdError(
       rootName,
       result.extraFragments.length,
-      maxFragmentThreshold,
+      maxThreshold,
     );
   }
 }

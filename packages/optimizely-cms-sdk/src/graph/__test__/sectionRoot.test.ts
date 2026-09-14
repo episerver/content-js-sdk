@@ -51,7 +51,7 @@ const Page = contentType({
 });
 
 const fragmentsFor = (key: string): string[] =>
-  createFragment(key, new Set(), '', createQueryContext({ maxFragmentThreshold: 100 }))
+  createFragment(key, new Set(), '', createQueryContext({ maxThreshold: 100 }))
     .fragments;
 
 const sectionFragment = (fragments: string[]) =>
@@ -105,7 +105,7 @@ describe('a section-enabled component reached through a content area', () => {
       new Set(),
       '',
       createQueryContext({
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         sectionTypes: new Set(sections),
       }),
     ).fragments;

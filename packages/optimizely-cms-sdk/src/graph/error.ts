@@ -91,7 +91,7 @@ export class GraphFragmentThresholdError extends OptimizelyGraphError {
         `exceeding the configured limit of ${threshold}. ` +
         `Add "allowedTypes" or "restrictedTypes" to the content area property ` +
         `to narrow which content types are included, ` +
-        `or increase "maxFragmentThreshold" in your graph configuration if this is intentional.`,
+        `or increase "fragment.maxThreshold" in your graph configuration if this is intentional.`,
     );
     this.name = 'GraphFragmentThresholdError';
     this.contentType = contentType;
