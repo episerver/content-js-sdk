@@ -4,6 +4,7 @@
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 import { GraphClient } from '../index.js';
 import { referenceScalarFilter } from '../filters.js';
+import { parseGraphReference } from '../options.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 
 vi.mock('../../context/config.js', () => ({
@@ -64,26 +65,16 @@ describe('GraphReference type and filters', () => {
   });
 });
 
-describe('GraphClient.parseGraphReference()', () => {
-  let client: GraphClient;
-
-  beforeEach(() => {
-    client = new GraphClient('test-key');
-  });
-
+describe('parseGraphReference()', () => {
   test('parses key only format', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://880777d5a2824399b07e93e3ca70668e',
-    );
+    const result = parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e');
     expect(result).toEqual({
       key: '880777d5a2824399b07e93e3ca70668e',
     });
   });
 
   test('parses type/key format', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://Page/880777d5a2824399b07e93e3ca70668e',
-    );
+    const result = parseGraphReference('graph://Page/880777d5a2824399b07e93e3ca70668e');
     expect(result).toEqual({
       type: 'Page',
       key: '880777d5a2824399b07e93e3ca70668e',
@@ -91,7 +82,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses source/type/key format', () => {
-    const result = (client as any).parseGraphReference(
+    const result = parseGraphReference(
       'graph://cms/Page/880777d5a2824399b07e93e3ca70668e',
     );
     expect(result).toEqual({
@@ -102,9 +93,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with locale query parameter', () => {
-    const result = (client as any).parseGraphReference(
-      'graph://880777d5a2824399b07e93e3ca70668e?loc=en',
-    );
+    const result = parseGraphReference('graph://880777d5a2824399b07e93e3ca70668e?loc=en');
     expect(result).toEqual({
       key: '880777d5a2824399b07e93e3ca70668e',
       locale: 'en',
@@ -112,7 +101,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with version query parameter', () => {
-    const result = (client as any).parseGraphReference(
+    const result = parseGraphReference(
       'graph://880777d5a2824399b07e93e3ca70668e?ver=123',
     );
     expect(result).toEqual({
@@ -122,7 +111,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses with both locale and version', () => {
-    const result = (client as any).parseGraphReference(
+    const result = parseGraphReference(
       'graph://880777d5a2824399b07e93e3ca70668e?loc=en&ver=123',
     );
     expect(result).toEqual({
@@ -133,7 +122,7 @@ describe('GraphClient.parseGraphReference()', () => {
   });
 
   test('parses full format with all parameters', () => {
-    const result = (client as any).parseGraphReference(
+    const result = parseGraphReference(
       'graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123',
     );
     expect(result).toEqual({
@@ -147,18 +136,18 @@ describe('GraphClient.parseGraphReference()', () => {
 
   test('throws error for invalid protocol', () => {
     expect(() => {
-      (client as any).parseGraphReference('http://880777d5a2824399b07e93e3ca70668e');
+      parseGraphReference('http://880777d5a2824399b07e93e3ca70668e');
     }).toThrow('Invalid graph reference format');
   });
 
   test('throws error for missing key', () => {
     expect(() => {
-      (client as any).parseGraphReference('graph://');
+      parseGraphReference('graph://');
     }).toThrow('Expected at least key to be present');
   });
 
   test('handles trailing slashes', () => {
-    const result = (client as any).parseGraphReference(
+    const result = parseGraphReference(
       'graph://cms/Page/880777d5a2824399b07e93e3ca70668e/',
     );
     expect(result).toEqual({
