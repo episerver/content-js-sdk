@@ -25,7 +25,11 @@ import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
   DEFAULT_COMPOSITION_DEPTH,
+  DEFAULT_RICH_TEXT_FORMAT,
 } from '../graph/constants.js';
+
+/** Which Rich Text representation(s) a query selects. */
+export type RichTextFormat = 'html' | 'json' | 'both';
 
 const getImplementedContracts = (contentType: AnyContentType): RegistryEntry[] => {
   if (!contentType.extends) return [];
@@ -128,6 +132,12 @@ export type QueryContext = {
    * to prevent circular fragment references.
    */
   ancestors: Set<string>;
+  /**
+   * Which Rich Text representation(s) to select: `'html'`, `'json'`, or `'both'`.
+   * Configurable via `config({ richTextFormat })`.
+   * @default 'json'
+   */
+  richTextFormat: RichTextFormat;
 };
 
 /**
@@ -171,6 +181,7 @@ export const createQueryContext = (
   typeFilter: options.typeFilter,
   sectionTypes: options.sectionTypes,
   ancestors: options.ancestors ?? new Set(),
+  richTextFormat: options.richTextFormat ?? DEFAULT_RICH_TEXT_FORMAT,
 });
 
 export type FragmentInfo = {
@@ -456,15 +467,23 @@ const handleContentProperty: PropertyHandler = (
   return { fields, extraFragments, includesDamAssetsFragments };
 };
 
+const RICH_TEXT_SELECTION: Record<RichTextFormat, string> = {
+  html: 'html',
+  json: 'json',
+  both: 'html, json',
+};
+
 const handleRichTextProperty: PropertyHandler = (
   name: string,
   _property: AnyProperty,
   rootName: string,
   suffix: string,
   _visited: Set<string>,
-  _ctx: QueryContext,
+  ctx: QueryContext,
 ) => ({
-  fields: [`${rootName}${suffix}__${name}:${name} { html, json }`],
+  fields: [
+    `${rootName}${suffix}__${name}:${name} { ${RICH_TEXT_SELECTION[ctx.richTextFormat]} }`,
+  ],
   extraFragments: [],
   includesDamAssetsFragments: false,
 });

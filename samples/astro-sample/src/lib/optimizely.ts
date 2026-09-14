@@ -62,6 +62,8 @@ export function initOptimizely() {
   config({
     apiKey: import.meta.env.OPTIMIZELY_GRAPH_SINGLE_KEY || 'your api key here',
     graphUrl: import.meta.env.OPTIMIZELY_GRAPH_GATEWAY,
+    // These samples render body.html via dangerouslySetInnerHTML and body.json via RichText; the SDK default is 'json'.
+    richTextFormat: 'both',
   });
 
   initContentTypeRegistry([

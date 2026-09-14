@@ -99,6 +99,7 @@ config({
 - **`maxFragmentThreshold`** (optional): Maximum number of GraphQL fragments before logging warnings. Defaults to `100`
 - **`cache`** (optional): Enable/disable server-side caching for all queries. Defaults to `true`
 - **`slot`** (optional): Select which Graph index to query (`'Current'` or `'New'`). Used during smooth rebuilds
+- **`richTextFormat`** (optional): Which Rich Text representation(s) to fetch — `'html'`, `'json'`, or `'both'`. Defaults to `'json'`. See [RichText Property](./3-modelling.md#richtext-property)
 
 After declaring this, you can get the client anywhere within the project by using the `getClient()` method.
 

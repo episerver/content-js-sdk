@@ -367,7 +367,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
           "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
           "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
           "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-          "fragment ct1 on ct1 { __typename ct1__title:title ct1__description:description { html, json } ct1__link:link { ...ContentUrl } ..._IContent }",
+          "fragment ct1 on ct1 { __typename ct1__title:title ct1__description:description { json } ct1__link:link { ...ContentUrl } ..._IContent }",
         ],
         "includesDamAssetsFragments": false,
       }

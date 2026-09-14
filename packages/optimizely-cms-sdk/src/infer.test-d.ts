@@ -12,7 +12,7 @@ test('ContentProps works for basic properties', () => {
   type ExpectedType = {
     heading: string | null;
     subtitle: string | null;
-    body: { json: any; html: string } | null;
+    body: { json?: any; html?: string } | null;
     price: number | null;
     units: number | null;
     image: { url: { default: string | null; type: string | null } } | null;
@@ -39,7 +39,7 @@ test('ContentProps works for array properties', () => {
   type ExpectedType = {
     heading: string[] | null;
     subtitle: string[] | null;
-    body: { html: string; json: any }[] | null;
+    body: { html?: string; json?: any }[] | null;
     price: number[] | null;
     units: number[] | null;
     image: { url: { default: string | null; type: string | null } }[] | null;

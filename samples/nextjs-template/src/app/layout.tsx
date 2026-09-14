@@ -2,17 +2,29 @@ import React from 'react';
 
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
-import { BlankExperienceContentType, config, initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';
+import {
+  BlankExperienceContentType,
+  config,
+  initContentTypeRegistry,
+  initDisplayTemplateRegistry,
+} from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
 import Landing, { LandingPageContentType } from '@/components/Landing';
-import LandingSection, { LandingSectionContentType, LandingSectionDisplayTemplate } from '@/components/LandingSection';
-import SmallFeatureGrid, { SmallFeatureGridContentType } from '@/components/SmallFeatureGrid';
+import LandingSection, {
+  LandingSectionContentType,
+  LandingSectionDisplayTemplate,
+} from '@/components/LandingSection';
+import SmallFeatureGrid, {
+  SmallFeatureGridContentType,
+} from '@/components/SmallFeatureGrid';
 import SmallFeature, { SmallFeatureContentType } from '@/components/SmallFeature';
 import VideoFeature, { VideoFeatureContentType } from '@/components/VideoFeature';
 import { HeroContentType } from '@/components/Hero';
 import Article, { ArticleContentType } from '@/components/Article';
-import LandingExperience, { LandingExperienceContentType } from '@/components/LandingExperience';
+import LandingExperience, {
+  LandingExperienceContentType,
+} from '@/components/LandingExperience';
 import CallToAction, { CallToActionContentType } from '@/components/CallToAction';
 import BlankSection from '@/components/BlankSection';
 import BlogExperience, { BlogExperienceContentType } from '@/components/BlogExperience';
@@ -25,7 +37,9 @@ import Tile, {
   TileContentType,
   TileRowDisplayTemplate,
 } from '@/components/Tile';
-import AboutExperience, { AboutExperienceContentType } from '@/components/AboutExperience';
+import AboutExperience, {
+  AboutExperienceContentType,
+} from '@/components/AboutExperience';
 import AboutUs, { AboutUsContentType } from '@/components/AboutUs';
 import MonthlySpecial, { MonthlySpecialContentType } from '@/components/MonthlySpecial';
 import OfficeLocations, { OfficeContentType } from '@/components/OfficeLocations';
@@ -34,8 +48,10 @@ import BlankExperience from '@/components/BlankExperience';
 import FAQ, { FAQContentType } from '@/components/FAQ';
 
 config({
-  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || "your api key here",
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || 'your api key here',
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+  // These samples render body.html via dangerouslySetInnerHTML and body.json via RichText; the SDK default is 'json'.
+  richTextFormat: 'both',
 });
 
 initContentTypeRegistry([

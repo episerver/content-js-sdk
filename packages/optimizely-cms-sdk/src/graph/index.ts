@@ -42,8 +42,10 @@ import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
   DEFAULT_COMPOSITION_DEPTH,
+  DEFAULT_RICH_TEXT_FORMAT,
   GRAPH_PATH,
 } from './constants.js';
+import { RichTextFormat } from '../util/queryUtils.js';
 
 /** Configuration for initializing the Optimizely Graph Client */
 export type GraphOptions = {
@@ -64,6 +66,16 @@ export type GraphOptions = {
    * @default 4
    */
   compositionDepth?: number;
+  /**
+   * Which Rich Text representation(s) to select in GraphQL queries: `'html'`,
+   * `'json'`, or `'both'`. Requesting only what the app renders shrinks query
+   * and response payloads.
+   *
+   * Defaults to `'json'` rather than `'both'` — set to `'html'` or `'both'` if
+   * the app renders the raw HTML string (e.g. `dangerouslySetInnerHTML`).
+   * @default 'json'
+   */
+  richTextFormat?: RichTextFormat;
   /**
    * Enable or disable contract expansion.
    * When true, contracts are expanded to include all implementing types.
@@ -546,6 +558,7 @@ export class GraphClient {
   graphUrl: string;
   maxFragmentThreshold: number;
   compositionDepth: number;
+  richTextFormat: RichTextFormat;
   expandContracts: boolean;
   host?: string;
   cache: boolean;
@@ -561,6 +574,7 @@ export class GraphClient {
     this.maxFragmentThreshold =
       options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD;
     this.compositionDepth = options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH;
+    this.richTextFormat = options.richTextFormat ?? DEFAULT_RICH_TEXT_FORMAT;
     this.expandContracts = options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS;
     this.host = options.host;
     this.cache = options.cache ?? true;
@@ -760,6 +774,7 @@ export class GraphClient {
           damEnabled: options.damEnabled,
           maxFragmentThreshold: this.maxFragmentThreshold,
           compositionDepth: this.compositionDepth,
+          richTextFormat: this.richTextFormat,
           expandContracts: this.expandContracts,
           formsEnabled: true,
           sectionTypes: options.sectionTypes,
@@ -917,6 +932,7 @@ export class GraphClient {
           damEnabled,
           maxFragmentThreshold: this.maxFragmentThreshold,
           compositionDepth: this.compositionDepth,
+          richTextFormat: this.richTextFormat,
           expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,
@@ -1139,6 +1155,7 @@ export class GraphClient {
         damEnabled,
         maxFragmentThreshold: this.maxFragmentThreshold,
         compositionDepth: this.compositionDepth,
+          richTextFormat: this.richTextFormat,
         expandContracts: this.expandContracts,
         formsEnabled,
         sectionTypes,
@@ -1311,6 +1328,7 @@ export class GraphClient {
           damEnabled,
           maxFragmentThreshold: this.maxFragmentThreshold,
           compositionDepth: this.compositionDepth,
+          richTextFormat: this.richTextFormat,
           expandContracts: this.expandContracts,
           formsEnabled,
           sectionTypes,

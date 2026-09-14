@@ -49,6 +49,7 @@ function createCacheKey(
     formsEnabled,
     typeFilter,
     sectionTypes,
+    richTextFormat,
   } = createQueryContext(options);
   const { includeBaseFragments = true, filterShape, variationMode } = options;
 
@@ -67,6 +68,7 @@ function createCacheKey(
       expandContracts,
       formsEnabled,
       includeBaseFragments,
+      richTextFormat,
     ].join(':') +
     filterPart +
     sectionPart +
