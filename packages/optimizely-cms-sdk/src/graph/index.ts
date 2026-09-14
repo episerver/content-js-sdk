@@ -47,6 +47,50 @@ import {
 } from './constants.js';
 import { RichTextFormat } from '../util/queryUtils.js';
 
+// PUBLIC TYPES
+
+/** Slot values for selecting the Graph engine version */
+export type GraphSlot = 'Current' | 'New';
+
+/**
+ * Controls whether DAM (Digital Asset Management) asset fragments are included
+ * in generated content queries.
+ * - `'automatic'`: Include them when the Graph schema exposes DAM types (default).
+ * - `'on'`: Always include them, skipping schema detection.
+ * - `'off'`: Never include them, skipping schema detection.
+ */
+export type DamMode = 'automatic' | 'on' | 'off';
+
+/** Query options shared by all query methods */
+export type GraphQueryOptions = {
+  /**
+   * Enable or disable server-side caching for this request.
+   * Overrides the global `cache` setting in `GraphOptions`.
+   */
+  cache?: boolean;
+  /**
+   * Enable or disable server-side stored query registration for this request.
+   * When true (default), appends `stored=true` to the endpoint URL, allowing
+   * the server to reuse query plans for identical query strings.
+   * Set to false to bypass stored queries (useful for debugging schema changes).
+   * @default true
+   */
+  stored?: boolean;
+  /**
+   * Select which Graph index to query against.
+   * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
+   * - `'Current'`: Query the current active index (default)
+   * - `'New'`: Query the new index that is being rebuilt
+   * Overrides the global `slot` setting in `GraphOptions`.
+   */
+  slot?: GraphSlot;
+  /**
+   * Control DAM asset fragment inclusion for this request.
+   * Overrides the global `dam` setting in `GraphOptions`.
+   */
+  dam?: DamMode;
+};
+
 /**
  * Settings that shape the GraphQL query the SDK generates.
  *
@@ -109,8 +153,21 @@ export type GraphOptions = {
   query?: GraphQueryOptions;
 };
 
-// Global configuration for client factory
-let globalGraphConfig: GraphOptions | null = null;
+export type GraphGetContentOptions = GraphQueryOptions & {
+  variation?: GraphVariationInput;
+  host?: string;
+};
+
+export type GraphGetLinksOptions = GraphQueryOptions & {
+  host?: string;
+  locales?: string[];
+};
+
+export type GraphGetItemOptions = GraphQueryOptions & {
+  previewToken?: string;
+};
+
+export { GraphVariationInput };
 
 export type PreviewParams = {
   preview_token: string;
@@ -133,47 +190,7 @@ export type GraphReference = {
   source?: string;
 };
 
-/** Slot values for selecting the Graph engine version */
-export type GraphSlot = 'Current' | 'New';
-
-/**
- * Controls whether DAM (Digital Asset Management) asset fragments are included
- * in generated content queries.
- * - `'automatic'`: Include them when the Graph schema exposes DAM types (default).
- * - `'on'`: Always include them, skipping schema detection.
- * - `'off'`: Never include them, skipping schema detection.
- */
-export type DamMode = 'automatic' | 'on' | 'off';
-
-/** Query options shared by all query methods */
-export type GraphQueryOptions = {
-  /**
-   * Enable or disable server-side caching for this request.
-   * Overrides the global `cache` setting in `GraphOptions`.
-   */
-  cache?: boolean;
-  /**
-   * Enable or disable server-side stored query registration for this request.
-   * When true (default), appends `stored=true` to the endpoint URL, allowing
-   * the server to reuse query plans for identical query strings.
-   * Set to false to bypass stored queries (useful for debugging schema changes).
-   * @default true
-   */
-  stored?: boolean;
-  /**
-   * Select which Graph index to query against.
-   * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
-   * - `'Current'`: Query the current active index (default)
-   * - `'New'`: Query the new index that is being rebuilt
-   * Overrides the global `slot` setting in `GraphOptions`.
-   */
-  slot?: GraphSlot;
-  /**
-   * Control DAM asset fragment inclusion for this request.
-   * Overrides the global `dam` setting in `GraphOptions`.
-   */
-  dam?: DamMode;
-};
+// OPTION RESOLUTION
 
 /** The `fragment` group once defaults are applied. Only `typeFilter` has no default. */
 type ResolvedFragmentOptions = Required<Omit<GraphFragmentOptions, 'typeFilter'>> &
@@ -203,21 +220,15 @@ const withDefaults = <T extends object>(defaults: T, overrides: Partial<T> = {})
   return { ...defaults, ...Object.fromEntries(set) };
 };
 
-export type GraphGetContentOptions = GraphQueryOptions & {
-  variation?: GraphVariationInput;
-  host?: string;
-};
+function normalizeGraphUrl(url: string): string {
+  const parsed = new URL(url);
+  if (parsed.pathname === '/' || parsed.pathname === '') {
+    parsed.pathname = GRAPH_PATH;
+  }
+  return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+}
 
-export type GraphGetLinksOptions = GraphQueryOptions & {
-  host?: string;
-  locales?: string[];
-};
-
-export type GraphGetItemOptions = GraphQueryOptions & {
-  previewToken?: string;
-};
-
-export { GraphVariationInput };
+// METADATA QUERY
 
 /**
  * Content type and DAM detection, plus an optional probe for whether this page
@@ -277,6 +288,8 @@ query ${METADATA_OP_NAMES[shape]}(${allVars}) {
 `;
 }
 
+// SECTION TYPES
+
 /**
  * The content types that really own a `composition` field.
  *
@@ -323,6 +336,8 @@ const hasOwnSectionTypes = (): boolean =>
       !isFormContentType(contentType.key),
   );
 
+// FORMS
+
 /** Content type key of the section Optimizely Forms uses for a form. */
 const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
 
@@ -354,6 +369,39 @@ function buildWhereObject(filter: ScalarFilter): Record<string, unknown> {
     }
   }
 }
+
+/** True for a form container anywhere in a response. */
+const isFormContainer = (value: any): boolean =>
+  value?.__typename === FORM_CONTAINER_TYPE ||
+  value?._metadata?.types?.includes?.(FORM_CONTAINER_TYPE) === true;
+
+/**
+ * Collects the form containers in a response whose steps did not arrive.
+ *
+ * Graph resolves a section's `composition` only when that section is the
+ * content being asked for. Reached through a content area the field comes back
+ * empty, so `liftSectionNodes` finds nothing to lift and the container is left
+ * with no `nodes` at all — which is what tells the two cases apart. A form that
+ * genuinely has no steps still gets `nodes: []` and is not collected here.
+ */
+function findUnresolvedForms(value: any, found: any[] = [], seen = new Set()): any[] {
+  if (typeof value !== 'object' || value === null || seen.has(value)) return found;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    value.forEach(entry => findUnresolvedForms(entry, found, seen));
+    return found;
+  }
+
+  if (isFormContainer(value) && !Array.isArray(value.nodes) && value._metadata?.key) {
+    found.push(value);
+  }
+
+  Object.values(value).forEach(entry => findUnresolvedForms(entry, found, seen));
+  return found;
+}
+
+// LINKS AND ITEMS QUERIES
 
 const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     item {
@@ -432,6 +480,8 @@ type GetLinksResponse = {
     };
   };
 };
+
+// RESPONSE TRANSFORMS
 
 /**
  * Removes GraphQL alias prefixes from object keys in the response data.
@@ -517,37 +567,6 @@ function liftSectionNodes(item: any): any {
   return { ...item, nodes: composition.nodes };
 }
 
-/** True for a form container anywhere in a response. */
-const isFormContainer = (value: any): boolean =>
-  value?.__typename === FORM_CONTAINER_TYPE ||
-  value?._metadata?.types?.includes?.(FORM_CONTAINER_TYPE) === true;
-
-/**
- * Collects the form containers in a response whose steps did not arrive.
- *
- * Graph resolves a section's `composition` only when that section is the
- * content being asked for. Reached through a content area the field comes back
- * empty, so `liftSectionNodes` finds nothing to lift and the container is left
- * with no `nodes` at all — which is what tells the two cases apart. A form that
- * genuinely has no steps still gets `nodes: []` and is not collected here.
- */
-function findUnresolvedForms(value: any, found: any[] = [], seen = new Set()): any[] {
-  if (typeof value !== 'object' || value === null || seen.has(value)) return found;
-  seen.add(value);
-
-  if (Array.isArray(value)) {
-    value.forEach(entry => findUnresolvedForms(entry, found, seen));
-    return found;
-  }
-
-  if (isFormContainer(value) && !Array.isArray(value.nodes) && value._metadata?.key) {
-    found.push(value);
-  }
-
-  Object.values(value).forEach(entry => findUnresolvedForms(entry, found, seen));
-  return found;
-}
-
 /** Adds an extra `__context` property next to each `__typename` property */
 function decorateWithContext(obj: any, params: PreviewParams): any {
   if (Array.isArray(obj)) {
@@ -567,13 +586,7 @@ function decorateWithContext(obj: any, params: PreviewParams): any {
   return obj;
 }
 
-function normalizeGraphUrl(url: string): string {
-  const parsed = new URL(url);
-  if (parsed.pathname === '/' || parsed.pathname === '') {
-    parsed.pathname = GRAPH_PATH;
-  }
-  return parsed.origin + parsed.pathname.replace(/\/+$/, '');
-}
+// GRAPH CLIENT
 
 export class GraphClient {
   apiKey: string;
@@ -601,19 +614,7 @@ export class GraphClient {
     this.queryDefaults = withDefaults(DEFAULT_QUERY_OPTIONS, options.query);
   }
 
-  /**
-   * Resolves one request's options against the client's `query` defaults, so a
-   * method settles the whole group once instead of defaulting each key by hand.
-   */
-  private resolveQueryOptions(
-    options: GraphQueryOptions = {},
-    fallbacks: Partial<ResolvedQueryOptions> = {},
-  ): ResolvedQueryOptions {
-    const { cache, stored, slot, dam } = options;
-    const defaults = { ...this.queryDefaults, ...fallbacks };
-
-    return withDefaults(defaults, { cache, stored, slot, dam });
-  }
+  // TRANSPORT
 
   /** Perform a GraphQL query with variables */
   async request(
@@ -715,17 +716,22 @@ export class GraphClient {
     );
   }
 
+  // INTERNALS
+
   /**
-   * Fills in the steps of any form the response left unresolved.
-   *
-   * A form reached through a content area arrives without them, for the reason
-   * given on {@linkcode findUnresolvedForms}, and the only way to get them is to
-   * ask for that container on its own. Costs one extra fetch per such form, and
-   * nothing at all for a form in a composition or one previewed by itself.
-   *
-   * Mutates in place. Safe because `removeTypePrefix` has already rebuilt every
-   * object, so nothing here is shared with a cached response.
+   * Resolves one request's options against the client's `query` defaults, so a
+   * method settles the whole group once instead of defaulting each key by hand.
    */
+  private resolveQueryOptions(
+    options: GraphQueryOptions = {},
+    fallbacks: Partial<ResolvedQueryOptions> = {},
+  ): ResolvedQueryOptions {
+    const { cache, stored, slot, dam } = options;
+    const defaults = { ...this.queryDefaults, ...fallbacks };
+
+    return withDefaults(defaults, { cache, stored, slot, dam });
+  }
+
   /**
    * Which content types Graph gives a `composition` field.
    *
@@ -769,6 +775,17 @@ export class GraphClient {
     return pending;
   }
 
+  /**
+   * Fills in the steps of any form the response left unresolved.
+   *
+   * A form reached through a content area arrives without them, for the reason
+   * given on {@linkcode findUnresolvedForms}, and the only way to get them is to
+   * ask for that container on its own. Costs one extra fetch per such form, and
+   * nothing at all for a form in a composition or one previewed by itself.
+   *
+   * Mutates in place. Safe because `removeTypePrefix` has already rebuilt every
+   * object, so nothing here is shared with a cached response.
+   */
   private async resolveFormNodes<T>(
     item: T,
     options: {
@@ -916,6 +933,70 @@ export class GraphClient {
   }
 
   /**
+   * Parse GraphReference from string format.
+   * Supports format: `graph://source/type/key?loc=locale&ver=version`
+   *
+   * @param referenceString - String in graph:// format
+   * @returns Parsed GraphReference object
+   *
+   * @example
+   * ```typescript
+   * parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123')
+   * // Returns: { source: 'cms', type: 'Page', key: '880777d5a2824399b07e93e3ca70668e', locale: 'en', version: '123' }
+   * ```
+   */
+  private parseGraphReference(referenceString: string): GraphReference {
+    const graphProtocol = 'graph://';
+
+    if (!referenceString.startsWith(graphProtocol)) {
+      throw new Error(
+        `Invalid graph reference format. Expected to start with "${graphProtocol}", got: "${referenceString}"`,
+      );
+    }
+
+    const withoutProtocol = referenceString.slice(graphProtocol.length);
+    const [pathPart, queryPart] = withoutProtocol.split('?');
+    const pathSegments = pathPart.split('/').filter(s => s.length > 0);
+
+    if (pathSegments.length < 1) {
+      throw new Error(
+        `Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`,
+      );
+    }
+
+    let source: string | undefined;
+    let type: string | undefined;
+    let key: string;
+
+    if (pathSegments.length === 3) {
+      [source, type, key] = pathSegments;
+    } else if (pathSegments.length === 2) {
+      [type, key] = pathSegments;
+    } else {
+      key = pathSegments[0];
+    }
+
+    let locale: string | undefined;
+    let version: string | undefined;
+
+    if (queryPart) {
+      const params = new URLSearchParams(queryPart);
+      locale = params.get('loc') || undefined;
+      version = params.get('ver') || undefined;
+    }
+
+    return {
+      key,
+      ...(locale && { locale }),
+      ...(version && { version }),
+      ...(type && { type }),
+      ...(source && { source }),
+    };
+  }
+
+  // CONTENT FETCHING
+
+  /**
    * Fetches content from the CMS based on the provided path or options.
    *
    * If a string is provided, it is treated as a content path. If an object is provided,
@@ -986,6 +1067,181 @@ export class GraphClient {
       }
     });
   }
+
+  async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
+    return withGetPreviewContentSpan(params, async span => {
+      const filter = previewScalarFilter(params);
+      const queryOptions = this.resolveQueryOptions(options);
+
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(
+          filter,
+          { ...queryOptions, cache: false },
+          params.preview_token,
+          'all',
+        );
+
+      if (!contentTypeName) {
+        throw new GraphResponseError(
+          `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
+          {
+            request: {
+              variables: filter.variables,
+              query: getMetadataQuery(filter.filterShape, 'all'),
+            },
+          },
+        );
+      }
+
+      span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
+
+      setContext({
+        previewToken: params.preview_token,
+        version: params.ver,
+        locale: params.loc,
+        type: contentTypeName,
+        key: params.key,
+        mode: params.ctx,
+      });
+
+      const query = createSingleContentQuery(contentTypeName, {
+        ...this.fragmentDefaults,
+        damEnabled,
+        formsEnabled,
+        sectionTypes,
+        filterShape: filter.filterShape,
+        variationMode: 'all',
+      });
+
+      const response = await this.request(
+        query,
+        filter.variables,
+        params.preview_token,
+        false,
+        queryOptions.slot,
+        queryOptions.stored,
+      );
+
+      return decorateWithContext(
+        await this.resolveFormNodes(
+          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+          {
+            damEnabled,
+            sectionTypes,
+            previewToken: params.preview_token,
+            cache: false,
+            slot: queryOptions.slot,
+          },
+        ),
+        params,
+      );
+    });
+  }
+
+  /**
+   * Unified content fetching method using GraphReference.
+   * Fetches content by key with optional locale and version parameters.
+   *
+   * Supports both object and string formats:
+   * - Object: `{ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en', version: '123' }`
+   * - String: `graph://source/type/key?loc=en&ver=123`
+   *
+   * **Priority rules:**
+   * - If `version` is specified, it takes priority (ignores locale-based filtering)
+   * - If only `locale` is specified, fetches latest published version in that locale
+   * - If neither specified, fetches latest published version
+   *
+   * **Note:** This method always returns published content. To fetch draft content,
+   * use `getPreviewContent()` with a preview token instead.
+   * @param reference - GraphReference object or string in graph:// format
+   * @param previewToken - Optional preview token for preview mode
+   * @returns The requested content item, or null if not found
+   *
+   * @example
+   * ```typescript
+   * // Fetch latest published content by key
+   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
+   *
+   * // Fetch latest published content in specific locale
+   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
+   *
+   * // Fetch specific version (version has priority over locale)
+   * const content = await client.getContent({
+   *   key: '880777d5a2824399b07e93e3ca70668e',
+   *   version: '123',
+   *   locale: 'en' // This will be ignored when version is specified
+   * });
+   *
+   * // Using string format
+   * const content = await client.getContent('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
+   *
+   * // With preview token
+   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' }, { previewToken: 'token' });
+   * ```
+   */
+  async getContent(reference: string | GraphReference, options?: GraphGetItemOptions) {
+    const ref =
+      typeof reference === 'string' ? this.parseGraphReference(reference) : reference;
+
+    return withGetContentSpan(ref, async span => {
+      const previewToken = options?.previewToken;
+
+      // A preview is uncacheable unless the caller insists.
+      const queryOptions = this.resolveQueryOptions(
+        options,
+        previewToken ? { cache: false } : {},
+      );
+
+      const filter = referenceScalarFilter(ref);
+
+      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+        await this.getContentMetaData(filter, queryOptions, previewToken, 'none');
+
+      if (!contentTypeName) {
+        span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
+        return null;
+      }
+
+      span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
+
+      try {
+        const query = createSingleContentQuery(contentTypeName, {
+          ...this.fragmentDefaults,
+          damEnabled,
+          formsEnabled,
+          sectionTypes,
+          filterShape: filter.filterShape,
+        });
+
+        const response = await this.request(
+          query,
+          filter.variables,
+          previewToken,
+          queryOptions.cache,
+          queryOptions.slot,
+          queryOptions.stored,
+        );
+
+        return this.resolveFormNodes(
+          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+          {
+            damEnabled,
+            sectionTypes,
+            previewToken,
+            cache: queryOptions.cache,
+            slot: queryOptions.slot,
+          },
+        );
+      } catch (error) {
+        if (error instanceof GraphMissingContentTypeError) {
+          return null;
+        }
+        throw error;
+      }
+    });
+  }
+
+  // NAVIGATION
 
   /**
    * Given the path or reference of a page, return its "path" (i.e. a list of ancestor pages).
@@ -1122,242 +1378,12 @@ export class GraphClient {
 
     return data?._Content?.item._link._Page.items;
   }
-
-  async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
-    return withGetPreviewContentSpan(params, async span => {
-      const filter = previewScalarFilter(params);
-      const queryOptions = this.resolveQueryOptions(options);
-
-      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-        await this.getContentMetaData(
-          filter,
-          { ...queryOptions, cache: false },
-          params.preview_token,
-          'all',
-        );
-
-      if (!contentTypeName) {
-        throw new GraphResponseError(
-          `Content with key '${params.key}' could not be found. Verify it exists in the CMS.`,
-          {
-            request: {
-              variables: filter.variables,
-              query: getMetadataQuery(filter.filterShape, 'all'),
-            },
-          },
-        );
-      }
-
-      span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
-
-      setContext({
-        previewToken: params.preview_token,
-        version: params.ver,
-        locale: params.loc,
-        type: contentTypeName,
-        key: params.key,
-        mode: params.ctx,
-      });
-
-      const query = createSingleContentQuery(contentTypeName, {
-        ...this.fragmentDefaults,
-        damEnabled,
-        formsEnabled,
-        sectionTypes,
-        filterShape: filter.filterShape,
-        variationMode: 'all',
-      });
-
-      const response = await this.request(
-        query,
-        filter.variables,
-        params.preview_token,
-        false,
-        queryOptions.slot,
-        queryOptions.stored,
-      );
-
-      return decorateWithContext(
-        await this.resolveFormNodes(
-          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-          {
-            damEnabled,
-            sectionTypes,
-            previewToken: params.preview_token,
-            cache: false,
-            slot: queryOptions.slot,
-          },
-        ),
-        params,
-      );
-    });
-  }
-
-  /**
-   * Parse GraphReference from string format.
-   * Supports format: `graph://source/type/key?loc=locale&ver=version`
-   *
-   * @param referenceString - String in graph:// format
-   * @returns Parsed GraphReference object
-   *
-   * @example
-   * ```typescript
-   * parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123')
-   * // Returns: { source: 'cms', type: 'Page', key: '880777d5a2824399b07e93e3ca70668e', locale: 'en', version: '123' }
-   * ```
-   */
-  private parseGraphReference(referenceString: string): GraphReference {
-    const graphProtocol = 'graph://';
-
-    if (!referenceString.startsWith(graphProtocol)) {
-      throw new Error(
-        `Invalid graph reference format. Expected to start with "${graphProtocol}", got: "${referenceString}"`,
-      );
-    }
-
-    const withoutProtocol = referenceString.slice(graphProtocol.length);
-    const [pathPart, queryPart] = withoutProtocol.split('?');
-    const pathSegments = pathPart.split('/').filter(s => s.length > 0);
-
-    if (pathSegments.length < 1) {
-      throw new Error(
-        `Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`,
-      );
-    }
-
-    let source: string | undefined;
-    let type: string | undefined;
-    let key: string;
-
-    if (pathSegments.length === 3) {
-      [source, type, key] = pathSegments;
-    } else if (pathSegments.length === 2) {
-      [type, key] = pathSegments;
-    } else {
-      key = pathSegments[0];
-    }
-
-    let locale: string | undefined;
-    let version: string | undefined;
-
-    if (queryPart) {
-      const params = new URLSearchParams(queryPart);
-      locale = params.get('loc') || undefined;
-      version = params.get('ver') || undefined;
-    }
-
-    return {
-      key,
-      ...(locale && { locale }),
-      ...(version && { version }),
-      ...(type && { type }),
-      ...(source && { source }),
-    };
-  }
-
-  /**
-   * Unified content fetching method using GraphReference.
-   * Fetches content by key with optional locale and version parameters.
-   *
-   * Supports both object and string formats:
-   * - Object: `{ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en', version: '123' }`
-   * - String: `graph://source/type/key?loc=en&ver=123`
-   *
-   * **Priority rules:**
-   * - If `version` is specified, it takes priority (ignores locale-based filtering)
-   * - If only `locale` is specified, fetches latest published version in that locale
-   * - If neither specified, fetches latest published version
-   *
-   * **Note:** This method always returns published content. To fetch draft content,
-   * use `getPreviewContent()` with a preview token instead.
-   * @param reference - GraphReference object or string in graph:// format
-   * @param previewToken - Optional preview token for preview mode
-   * @returns The requested content item, or null if not found
-   *
-   * @example
-   * ```typescript
-   * // Fetch latest published content by key
-   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e' });
-   *
-   * // Fetch latest published content in specific locale
-   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', locale: 'en' });
-   *
-   * // Fetch specific version (version has priority over locale)
-   * const content = await client.getContent({
-   *   key: '880777d5a2824399b07e93e3ca70668e',
-   *   version: '123',
-   *   locale: 'en' // This will be ignored when version is specified
-   * });
-   *
-   * // Using string format
-   * const content = await client.getContent('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123');
-   *
-   * // With preview token
-   * const content = await client.getContent({ key: '880777d5a2824399b07e93e3ca70668e', version: '123' }, { previewToken: 'token' });
-   * ```
-   */
-  async getContent(reference: string | GraphReference, options?: GraphGetItemOptions) {
-    const ref =
-      typeof reference === 'string' ? this.parseGraphReference(reference) : reference;
-
-    return withGetContentSpan(ref, async span => {
-      const previewToken = options?.previewToken;
-
-      // A preview is uncacheable unless the caller insists.
-      const queryOptions = this.resolveQueryOptions(
-        options,
-        previewToken ? { cache: false } : {},
-      );
-
-      const filter = referenceScalarFilter(ref);
-
-      const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-        await this.getContentMetaData(filter, queryOptions, previewToken, 'none');
-
-      if (!contentTypeName) {
-        span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
-        return null;
-      }
-
-      span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
-
-      try {
-        const query = createSingleContentQuery(contentTypeName, {
-          ...this.fragmentDefaults,
-          damEnabled,
-          formsEnabled,
-          sectionTypes,
-          filterShape: filter.filterShape,
-        });
-
-        const response = await this.request(
-          query,
-          filter.variables,
-          previewToken,
-          queryOptions.cache,
-          queryOptions.slot,
-          queryOptions.stored,
-        );
-
-        return this.resolveFormNodes(
-          liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-          {
-            damEnabled,
-            sectionTypes,
-            previewToken,
-            cache: queryOptions.cache,
-            slot: queryOptions.slot,
-          },
-        );
-      } catch (error) {
-        if (error instanceof GraphMissingContentTypeError) {
-          return null;
-        }
-        throw error;
-      }
-    });
-  }
 }
+
+// GLOBAL CONFIGURATION
+
+// Global configuration for client factory
+let globalGraphConfig: GraphOptions | null = null;
 
 /**
  * Sets the global graph configuration to be used by getClient()
