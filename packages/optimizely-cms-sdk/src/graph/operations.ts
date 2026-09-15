@@ -41,10 +41,8 @@ import {
   type GetLinksResponse,
   FORM_CONTAINER_TYPE,
   GET_SECTION_TYPES_QUERY,
-  buildWhereObject,
   decorateWithContext,
   findUnresolvedForms,
-  formsOnPageFilter,
   getItemsQuery,
   getLinksQuery,
   getMetadataQuery,
@@ -210,11 +208,10 @@ async function getContentMetaData(
   // Skip if forms aren't registered; local lookup, no round trip.
   const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-  const query = getMetadataQuery(filter.filterShape, variationMode);
+  const query = getMetadataQuery(filter.filterShape, variationMode, mayRenderForms);
   const variables = {
     ...filter.variables,
-    withForms: mayRenderForms,
-    formsWhere: mayRenderForms ? formsOnPageFilter(buildWhereObject(filter)) : null,
+    ...(mayRenderForms && { withForms: true }),
   };
 
   const [data, sectionTypes] = await Promise.all([

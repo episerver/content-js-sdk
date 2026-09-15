@@ -1,6 +1,5 @@
 import {
   type FilterShape,
-  type ScalarFilter,
   type VariationMode,
   getFilterVarDecls,
   getFilterWhereClause,
@@ -37,11 +36,19 @@ const METADATA_QUERY_BODY = `{
   # Check if "cmp_Asset" type exists which indicates that DAM is enabled
   damAssetType: __type(name: "cmp_Asset") {
     __typename
-  }
-  # Non-zero when this page has a form container as a top-level section
-  formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
-    total
   }`;
+
+/** Non-zero when this page has a form container as a top-level section. */
+const FORMS_PROBE: Record<FilterShape, string> = {
+  'by-key': `
+  formsOnPage: _Experience(where: { _and: [{ _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }, { composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }] }) @include(if: $withForms) {
+    total
+  }`,
+  'by-path': `
+  formsOnPage: _Experience(where: { _and: [{ _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }, { composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }] }) @include(if: $withForms) {
+    total
+  }`,
+};
 
 const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContentMetadata',
@@ -52,22 +59,19 @@ const METADATA_OP_NAMES: Record<FilterShape, string> = {
 export function getMetadataQuery(
   shape: FilterShape,
   variationMode: VariationMode = 'none',
+  withForms: boolean = false,
 ): string {
   const varDecls = getFilterVarDecls(shape);
   const variationVars = getVariationVarDecls(variationMode);
-  const allVars = [
-    varDecls,
-    variationVars,
-    '$formsWhere: _ExperienceWhereInput',
-    '$withForms: Boolean!',
-  ]
+  const allVars = [varDecls, variationVars, ...(withForms ? ['$withForms: Boolean!'] : [])]
     .filter(Boolean)
     .join(', ');
   const whereClause = getFilterWhereClause(shape);
   const variationClause = getVariationClause(variationMode);
+  const formsProbe = withForms ? FORMS_PROBE[shape] : '';
   return `
 query ${METADATA_OP_NAMES[shape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}
+  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}${formsProbe}
 }
 `;
 }
@@ -111,35 +115,6 @@ export const hasOwnSectionTypes = (): boolean =>
 
 /** Content type key of the section Optimizely Forms uses for a form. */
 export const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
-
-/** Narrows a content filter to "the same content, and it contains a form". */
-export const formsOnPageFilter = (where: unknown) => ({
-  _and: [where, { composition: { nodes: { type: { eq: FORM_CONTAINER_TYPE } } } }],
-});
-
-/** Reconstructs a where object from scalar filter variables (for the forms probe). */
-export function buildWhereObject(filter: ScalarFilter): Record<string, unknown> {
-  const v = filter.variables;
-  switch (filter.filterShape) {
-    case 'by-key': {
-      const meta: Record<string, unknown> = { key: { eq: v.key } };
-      if (v.version) meta.version = { eq: v.version };
-      if (v.metadataLocale) meta.locale = { eq: v.metadataLocale };
-      return { _metadata: meta };
-    }
-    case 'by-path': {
-      const base = v.host ? { base: { eq: v.host } } : {};
-      return {
-        _or: [
-          { _metadata: { url: { ...base, default: { eq: v.path } } } },
-          { _metadata: { url: { ...base, default: { eq: v.pathNoSlash } } } },
-          { _metadata: { url: { ...base, hierarchical: { eq: v.path } } } },
-          { _metadata: { url: { ...base, hierarchical: { eq: v.pathNoSlash } } } },
-        ],
-      };
-    }
-  }
-}
 
 /** True for a form container anywhere in a response. */
 const isFormContainer = (value: any): boolean =>

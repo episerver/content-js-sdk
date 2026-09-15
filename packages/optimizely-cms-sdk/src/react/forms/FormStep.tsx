@@ -40,14 +40,22 @@ export function FormStep({ index, node, children }: FormStepProps) {
   const { currentStepIndex } = useFormSteps();
   const { pa } = getPreviewUtils(node ?? {});
 
+  const isActive = currentStepIndex === index;
+
   return (
     <FormStepIndexContext.Provider value={index}>
-      <div
-        style={{ display: currentStepIndex === index ? 'block' : 'none' }}
+      <fieldset
+        style={{
+          display: isActive ? 'block' : 'none',
+          border: 'none',
+          padding: 0,
+          margin: 0,
+          minInlineSize: 'auto',
+        }}
         {...(node ? pa(node) : {})}
       >
         {children}
-      </div>
+      </fieldset>
     </FormStepIndexContext.Provider>
   );
 }

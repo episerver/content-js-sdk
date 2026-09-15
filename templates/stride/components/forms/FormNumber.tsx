@@ -13,7 +13,6 @@ import {
 import {
   controlClass,
   errorTextClass,
-  helpTextClass,
   labelClass,
   requiredMarkClass,
 } from './formStyles';
@@ -58,11 +57,7 @@ export default function FormNumber({ content }: FormNumberProps) {
             ))}
           </div>
         )}
-        {!showErrors && content.Tooltip && (
-          <p className={helpTextClass} {...pa('Tooltip')}>
-            {content.Tooltip}
-          </p>
-        )}
+
       </div>
     </FormElement>
   );

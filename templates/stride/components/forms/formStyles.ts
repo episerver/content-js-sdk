@@ -8,7 +8,6 @@ export const labelClass = 'block text-sm font-semibold text-foreground';
 
 export const requiredMarkClass = 'ml-0.5 text-red-600';
 
-export const helpTextClass = 'text-xs text-foreground2';
 
 export const errorTextClass = 'text-xs text-red-600';
 
