@@ -211,11 +211,16 @@ const METADATA_QUERY_BODY = `{
     __typename
   }`;
 
-const METADATA_FORMS_FRAGMENT = `
-  # Non-zero when this page has a form container as a top-level section
-  formsOnPage: _Experience(where: $formsWhere) @include(if: $withForms) {
+const FORMS_PROBE: Record<FilterShape, string> = {
+  'by-key': `
+  formsOnPage: _Experience(where: { _and: [{ _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }, { composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }] }) @include(if: $withForms) {
     total
-  }`;
+  }`,
+  'by-path': `
+  formsOnPage: _Experience(where: { _and: [{ _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }, { composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }] }) @include(if: $withForms) {
+    total
+  }`,
+};
 
 const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContentMetadata',
@@ -232,20 +237,16 @@ function getMetadataQuery(
   const allVars = [
     varDecls,
     variationVars,
-    ...(withForms
-      ? ['$formsWhere: _ExperienceWhereInput', '$withForms: Boolean!']
-      : []),
+    ...(withForms ? ['$withForms: Boolean!'] : []),
   ]
     .filter(Boolean)
     .join(', ');
   const whereClause = getFilterWhereClause(shape);
   const variationClause = getVariationClause(variationMode);
-  const body = withForms
-    ? METADATA_QUERY_BODY + METADATA_FORMS_FRAGMENT
-    : METADATA_QUERY_BODY;
+  const formsProbe = withForms ? FORMS_PROBE[shape] : '';
   return `
 query ${METADATA_OP_NAMES[shape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) ${body}
+  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}${formsProbe}
 }
 `;
 }
@@ -299,34 +300,6 @@ const hasOwnSectionTypes = (): boolean =>
 /** Content type key of the section Optimizely Forms uses for a form. */
 const FORM_CONTAINER_TYPE = 'OptiFormsContainerData';
 
-/** Narrows a content filter to "the same content, and it contains a form". */
-const formsOnPageFilter = (where: unknown) => ({
-  _and: [where, { composition: { nodes: { type: { eq: FORM_CONTAINER_TYPE } } } }],
-});
-
-/** Reconstructs a where object from scalar filter variables (for the forms probe). */
-function buildWhereObject(filter: ScalarFilter): Record<string, unknown> {
-  const v = filter.variables;
-  switch (filter.filterShape) {
-    case 'by-key': {
-      const meta: Record<string, unknown> = { key: { eq: v.key } };
-      if (v.version) meta.version = { eq: v.version };
-      if (v.metadataLocale) meta.locale = { eq: v.metadataLocale };
-      return { _metadata: meta };
-    }
-    case 'by-path': {
-      const base = v.host ? { base: { eq: v.host } } : {};
-      return {
-        _or: [
-          { _metadata: { url: { ...base, default: { eq: v.path } } } },
-          { _metadata: { url: { ...base, default: { eq: v.pathNoSlash } } } },
-          { _metadata: { url: { ...base, hierarchical: { eq: v.path } } } },
-          { _metadata: { url: { ...base, hierarchical: { eq: v.pathNoSlash } } } },
-        ],
-      };
-    }
-  }
-}
 
 const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     item {
@@ -816,10 +789,7 @@ export class GraphClient {
     const query = getMetadataQuery(filter.filterShape, variationMode, mayRenderForms);
     const variables = {
       ...filter.variables,
-      ...(mayRenderForms && {
-        withForms: true,
-        formsWhere: formsOnPageFilter(buildWhereObject(filter)),
-      }),
+      ...(mayRenderForms && { withForms: true }),
     };
 
     const [data, sectionTypes] = await Promise.all([
@@ -829,7 +799,7 @@ export class GraphClient {
         previewToken,
         cache ?? this.cache,
         slot ?? this.slot,
-        mayRenderForms ? false : (stored ?? true),
+        stored ?? true,
       ),
       this.getSectionTypes(),
     ]);

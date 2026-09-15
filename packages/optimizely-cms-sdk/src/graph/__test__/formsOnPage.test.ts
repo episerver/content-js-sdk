@@ -99,9 +99,9 @@ describe('probing whether a page has a form', () => {
 
     await client.getContent({ key: 'a' });
 
-    // The probe lives in the one metadata query and is switched off with
-    // `@include`, so what matters is the flag, not the query text.
-    expect((metadataCalls()[0][1] as { withForms: boolean }).withForms).toBe(false);
+    // When forms are not registered, the probe is excluded from the query entirely.
+    expect((metadataCalls()[0][1] as Record<string, unknown>).withForms).toBeUndefined();
+    expect(metadataCalls()[0][0]).not.toContain('formsOnPage');
     expect(contentQuery()).not.toContain('OptiForms');
   });
 
@@ -110,10 +110,10 @@ describe('probing whether a page has a form', () => {
 
     await client.getContent({ key: 'b' });
 
-    const variables = metadataCalls()[0][1] as { formsWhere: unknown };
-    expect(JSON.stringify(variables.formsWhere)).toContain('OptiFormsContainerData');
-    // The page's own filter has to survive, or the probe answers about the wrong page.
-    expect(JSON.stringify(variables.formsWhere)).toContain('"key":{"eq":"b"}');
+    const query = metadataCalls()[0][0] as string;
+    expect(query).toContain('OptiFormsContainerData');
+    expect(query).toContain('$key');
+    expect((metadataCalls()[0][1] as Record<string, unknown>).withForms).toBe(true);
   });
 });
 
