@@ -33,6 +33,7 @@ import {
   type GraphSlot,
   type PreviewParams,
   type ResolvedQueryOptions,
+  fragmentContext,
   parseGraphReference,
   resolveQueryOptions,
 } from './options.js';
@@ -162,8 +163,7 @@ async function resolveFormNodes<T>(
       // Built here rather than delegating to `getContent`, which would spend a
       // metadata round trip rediscovering a content type we already know.
       const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
-        ...context.fragmentDefaults,
-        damEnabled: options.damEnabled,
+        ...fragmentContext(context, options.damEnabled),
         formsEnabled: true,
         sectionTypes: options.sectionTypes,
         filterShape: filter.filterShape,
@@ -233,9 +233,10 @@ async function getContentMetaData(
 
   // Determine if DAM is enabled based on the presence of cmp_Asset type
   // The metadata query always probes for cmp_Asset; forced modes just ignore it.
+  const { dam } = context.fragmentDefaults;
   const damEnabled =
-    queryOptions.dam === 'on' ? true
-    : queryOptions.dam === 'off' ? false
+    dam === 'on' ? true
+    : dam === 'off' ? false
     : data.damAssetType !== null;
 
   // The probe covers a form in a composition. Content type checks cover
@@ -282,8 +283,7 @@ export async function getContentByPath<T = any>(
   const queryOptions = resolveQueryOptions(context, options);
 
   return withGetContentByPathSpan(path, queryOptions.cache, async span => {
-    const host = options?.host ?? context.host;
-    const filter = pathScalarFilter(path, host);
+    const filter = pathScalarFilter(path, queryOptions.host);
     const varMode = getVariationMode(options?.variation);
     const variationVars = getVariationVariables(options?.variation);
     const variables = { ...filter.variables, ...variationVars };
@@ -300,8 +300,7 @@ export async function getContentByPath<T = any>(
 
     try {
       const query = createMultipleContentQuery(contentTypeName, {
-        ...context.fragmentDefaults,
-        damEnabled,
+        ...fragmentContext(context, damEnabled),
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
@@ -379,8 +378,7 @@ export async function getPreviewContent(
     });
 
     const query = createSingleContentQuery(contentTypeName, {
-      ...context.fragmentDefaults,
-      damEnabled,
+      ...fragmentContext(context, damEnabled),
       formsEnabled,
       sectionTypes,
       filterShape: filter.filterShape,
@@ -445,8 +443,7 @@ export async function getContent(
 
     try {
       const query = createSingleContentQuery(contentTypeName, {
-        ...context.fragmentDefaults,
-        damEnabled,
+        ...fragmentContext(context, damEnabled),
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
@@ -489,6 +486,8 @@ export async function getPath(
   reference: string | GraphReference,
   options?: GraphGetLinksOptions,
 ) {
+  const queryOptions = resolveQueryOptions(context, options);
+
   let filter: ScalarFilter;
   let locales: string[] | undefined;
 
@@ -497,7 +496,7 @@ export async function getPath(
     filter = referenceScalarFilter(ref);
     locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
   } else if (typeof reference === 'string') {
-    filter = pathScalarFilter(reference, options?.host ?? context.host);
+    filter = pathScalarFilter(reference, queryOptions.host);
     locales = options?.locales;
   } else {
     filter = referenceScalarFilter(reference);
@@ -506,7 +505,6 @@ export async function getPath(
 
   const variables = { ...filter.variables, locale: locales };
   const query = getLinksQuery('GetPath', filter.filterShape);
-  const queryOptions = resolveQueryOptions(context, options);
 
   const data = (await context.request(
     query,
@@ -546,6 +544,8 @@ export async function getItems(
   reference: string | GraphReference,
   options?: GraphGetLinksOptions,
 ) {
+  const queryOptions = resolveQueryOptions(context, options);
+
   let filter: ScalarFilter;
   let locales: string[] | undefined;
 
@@ -554,7 +554,7 @@ export async function getItems(
     filter = referenceScalarFilter(ref);
     locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
   } else if (typeof reference === 'string') {
-    filter = pathScalarFilter(reference, options?.host ?? context.host);
+    filter = pathScalarFilter(reference, queryOptions.host);
     locales = options?.locales;
   } else {
     filter = referenceScalarFilter(reference);
@@ -563,7 +563,6 @@ export async function getItems(
 
   const variables = { ...filter.variables, locale: locales };
   const query = getItemsQuery('GetItems', filter.filterShape);
-  const queryOptions = resolveQueryOptions(context, options);
 
   const data = (await context.request(
     query,

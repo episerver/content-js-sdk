@@ -7,7 +7,7 @@ describe('getClient - Critical Edge Cases', () => {
       config({
         apiKey: 'test-key',
         graphUrl: 'https://test.optimizely.com/content/v2',
-        host: 'test.com',
+        query: { host: 'test.com' },
       });
     });
 
@@ -17,16 +17,16 @@ describe('getClient - Critical Edge Cases', () => {
       expect(client).toBeInstanceOf(GraphClient);
       expect(client.apiKey).toBe('test-key');
       expect(client.graphUrl).toBe('https://test.optimizely.com/content/v2');
-      expect(client.host).toBe('test.com');
+      expect(client.queryDefaults.host).toBe('test.com');
     });
 
     test('should allow override options', () => {
       const client = getClient({
-        host: 'override.com',
+        query: { host: 'override.com' },
       });
 
       expect(client.apiKey).toBe('test-key');
-      expect(client.host).toBe('override.com');
+      expect(client.queryDefaults.host).toBe('override.com');
     });
   });
 
@@ -123,7 +123,7 @@ describe('getClient - Critical Edge Cases', () => {
       config({
         apiKey: 'base-key',
         graphUrl: 'https://base.optimizely.com/content/v2',
-        host: 'base.com',
+        query: { host: 'base.com' },
       });
     });
 
@@ -142,9 +142,9 @@ describe('getClient - Critical Edge Cases', () => {
     });
 
     test('should override with undefined host', () => {
-      const client = getClient({ host: undefined });
+      const client = getClient({ query: { host: undefined } });
 
-      expect(client.host).toBeUndefined();
+      expect(client.queryDefaults.host).toBeUndefined();
     });
   });
 
@@ -194,21 +194,21 @@ describe('getClient - Critical Edge Cases', () => {
       expect(client.apiKey).toBe('minimal-key');
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
       expect(client.fragmentDefaults.maxThreshold).toBe(100);
-      expect(client.host).toBeUndefined();
+      expect(client.queryDefaults.host).toBeUndefined();
     });
 
     test('should handle config with all optional values undefined', () => {
       config({
         apiKey: 'test-key',
         graphUrl: undefined,
-        host: undefined,
+        query: { host: undefined },
         fragment: { maxThreshold: undefined },
       });
       const client = getClient();
 
       expect(client.apiKey).toBe('test-key');
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
-      expect(client.host).toBeUndefined();
+      expect(client.queryDefaults.host).toBeUndefined();
       expect(client.fragmentDefaults.maxThreshold).toBe(100);
     });
   });

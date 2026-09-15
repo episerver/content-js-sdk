@@ -46,10 +46,12 @@ export type GraphQueryOptions = {
    */
   slot?: GraphSlot;
   /**
-   * Control DAM asset fragment inclusion for this request.
-   * Overrides the global `dam` setting in `GraphOptions`.
+   * Application host to filter paths by, for a CMS instance serving several
+   * sites. Only applies to lookups by path; ignored when content is addressed
+   * by key.
+   * Overrides the global `host` setting in `GraphOptions`.
    */
-  dam?: DamMode;
+  host?: string;
 };
 
 /**
@@ -86,6 +88,11 @@ export type GraphFragmentOptions = {
   /** Hard limit on generated fragments per content area. Throws GraphFragmentThresholdError when exceeded on unconstrained properties. */
   maxThreshold?: number;
   /**
+   * Whether the generated query includes DAM asset fragments.
+   * @default 'automatic'
+   */
+  dam?: DamMode;
+  /**
    * Optional filter to exclude content types from fragment generation.
    * Return true to include a content type, false to exclude it.
    * Useful for skipping content types that have no registered component.
@@ -101,8 +108,6 @@ export type GraphOptions = {
   apiKey: string;
   /** Optional custom Graph URL */
   graphUrl?: string;
-  /** Optional default host */
-  host?: string;
   /**
    * Custom User-Agent string for HTTP requests to Graph API.
    * @default 'OptimizelySDK/{version} (JS)'
@@ -116,11 +121,9 @@ export type GraphOptions = {
 
 export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
-  host?: string;
 };
 
 export type GraphGetLinksOptions = GraphQueryOptions & {
-  host?: string;
   locales?: string[];
 };
 
@@ -155,9 +158,9 @@ export type GraphReference = {
 export type ResolvedFragmentOptions = Required<Omit<GraphFragmentOptions, 'typeFilter'>> &
   Pick<GraphFragmentOptions, 'typeFilter'>;
 
-/** The `query` group once defaults are applied. Only `slot` has no default. */
-export type ResolvedQueryOptions = Required<Omit<GraphQueryOptions, 'slot'>> &
-  Pick<GraphQueryOptions, 'slot'>;
+/** The `query` group once defaults are applied. `slot` and `host` have no default. */
+export type ResolvedQueryOptions = Required<Omit<GraphQueryOptions, 'slot' | 'host'>> &
+  Pick<GraphQueryOptions, 'slot' | 'host'>;
 
 /**
  * What a content operation needs from the client running it.
@@ -169,7 +172,6 @@ export type ResolvedQueryOptions = Required<Omit<GraphQueryOptions, 'slot'>> &
 export interface GraphClientContext {
   readonly apiKey: string;
   readonly graphUrl: string;
-  readonly host?: string;
   readonly userAgent: string;
   readonly fragmentDefaults: ResolvedFragmentOptions;
   readonly queryDefaults: ResolvedQueryOptions;
@@ -188,12 +190,12 @@ export const DEFAULT_FRAGMENT_OPTIONS: ResolvedFragmentOptions = {
   compositionDepth: DEFAULT_COMPOSITION_DEPTH,
   expandContracts: DEFAULT_EXPAND_CONTRACTS,
   maxThreshold: DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  dam: 'automatic',
 };
 
 export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
   cache: true,
   stored: true,
-  dam: 'automatic',
 };
 
 // Skips keys explicitly set to `undefined`, which a plain spread would copy over
@@ -224,10 +226,20 @@ export function resolveQueryOptions(
   options: GraphQueryOptions = {},
   fallbacks: Partial<ResolvedQueryOptions> = {},
 ): ResolvedQueryOptions {
-  const { cache, stored, slot, dam } = options;
+  const { cache, stored, slot, host } = options;
   const defaults = { ...context.queryDefaults, ...fallbacks };
 
-  return withDefaults(defaults, { cache, stored, slot, dam });
+  return withDefaults(defaults, { cache, stored, slot, host });
+}
+
+/**
+ * The client's `fragment` settings in the shape the query builders take, with
+ * the tri-state `dam` already settled into a boolean.
+ */
+export function fragmentContext(context: GraphClientContext, damEnabled: boolean) {
+  const { dam, ...fragment } = context.fragmentDefaults;
+
+  return { ...fragment, damEnabled };
 }
 
 /**

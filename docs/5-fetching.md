@@ -103,19 +103,19 @@ The options are organised in three levels:
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  host: process.env.APPLICATION_HOST,
 
   fragment: {
     richTextFormat: 'json',
     compositionDepth: 4,
     expandContracts: true,
     maxThreshold: 100,
+    dam: 'automatic',
   },
 
   query: {
     cache: true,
     slot: 'Current',
-    dam: 'automatic',
+    host: process.env.APPLICATION_HOST,
   },
 });
 ```
@@ -124,7 +124,6 @@ config({
 
 - **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
 - **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`. If the URL does not include `/content/v2`, the SDK appends it automatically
-- **`host`** (optional): Default application host for path filtering. Useful for multi-site scenarios
 - **`userAgent`** (optional): Value sent in the `User-Agent` header of every Graph request
 
 ##### `fragment` — query shape
@@ -133,6 +132,7 @@ config({
 - **`compositionDepth`** (optional): How many levels of an experience composition to fetch. Defaults to `4`
 - **`expandContracts`** (optional): Include every content type implementing a contract used in `allowedTypes`. Defaults to `false`. See [expandContracts](./3-modelling.md#controlling-contract-expansion)
 - **`maxThreshold`** (optional): Maximum number of GraphQL fragments generated for a single content area property before the SDK throws. Defaults to `100`
+- **`dam`** (optional): Whether to include DAM asset fragments — `'automatic'`, `'on'`, or `'off'`. Defaults to `'automatic'`. See [DAM Assets](./11-dam-assets.md)
 - **`typeFilter`** (optional): Predicate excluding content types from fragment generation
 
 ##### `query` — per-request defaults
@@ -140,11 +140,11 @@ config({
 - **`cache`** (optional): Enable/disable server-side caching for all queries. Defaults to `true`
 - **`stored`** (optional): Send queries as stored (persisted) queries. Defaults to `true`
 - **`slot`** (optional): Select which Graph index to query (`'Current'` or `'New'`). Used during smooth rebuilds
-- **`dam`** (optional): Whether to include DAM asset fragments — `'automatic'`, `'on'`, or `'off'`. Defaults to `'automatic'`. See [DAM Assets](./11-dam-assets.md)
+- **`host`** (optional): Default application host for path filtering. Useful for multi-site scenarios. Only applies to lookups by path
 
 Every option in `query` is also accepted by the individual request methods, where it overrides the configured default for that one call.
 
-> **Upgrading from < 3.0.0:** `richTextFormat`, `compositionDepth`, `expandContracts`, `typeFilter`, `cache`, `slot` and `dam` used to sit at the top level, and `maxFragmentThreshold` is now `fragment.maxThreshold`. Move them into the group they belong to; TypeScript flags any that are left behind.
+> **Upgrading from < 3.0.0:** `richTextFormat`, `compositionDepth`, `expandContracts`, `typeFilter`, `dam`, `cache`, `slot` and `host` used to sit at the top level, and `maxFragmentThreshold` is now `fragment.maxThreshold`. Move them into the group they belong to; TypeScript flags any that are left behind. `dam` is no longer accepted per request — it shapes the generated query, so it is fixed for the lifetime of a client.
 
 After declaring this, you can get the client anywhere within the project by using the `getClient()` method.
 
@@ -390,7 +390,7 @@ config({
 const client = getClient()
 ```
 
-#### `host`
+#### `query.host`
 
 Default application host for path filtering. Useful when multiple sites share the same CMS instance - ensures content is retrieved only from the specified domain.
 
@@ -401,7 +401,9 @@ Default application host for path filtering. Useful when multiple sites share th
 ```ts
 const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY, {
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  host: 'https://example.com',
+  query: {
+    host: 'https://example.com',
+  },
 });
 ```
 
@@ -412,7 +414,9 @@ or
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
-  host: 'https://example.com',
+  query: {
+    host: 'https://example.com',
+  },
 })
 
 // Use the client with defined

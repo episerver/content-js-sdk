@@ -163,9 +163,9 @@ describe('getClient overrides merge into a group', () => {
   });
 
   test('an untouched group is inherited whole', () => {
-    const overridden = getClient({ host: 'other.example.com' });
+    const overridden = getClient({ userAgent: 'MyApp/1.0' });
 
-    expect(overridden.host).toBe('other.example.com');
+    expect(overridden.userAgent).toBe('MyApp/1.0');
     expect(overridden.fragmentDefaults.richTextFormat).toBe('html');
     expect(overridden.queryDefaults.slot).toBe('New');
   });

@@ -44,7 +44,6 @@ export type { DamMode, GraphFragmentOptions } from './options.js';
 export class GraphClient {
   apiKey: string;
   graphUrl: string;
-  host?: string;
   userAgent: string;
 
   /**
@@ -60,7 +59,6 @@ export class GraphClient {
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     this.apiKey = apiKey;
     this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
-    this.host = options.host;
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
 
     this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
@@ -336,9 +334,8 @@ export function getGraphConfig(): GraphOptions | null {
  * config({
  *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
- *   host: 'example.com', // optional
  *   fragment: { richTextFormat: 'json' }, // optional
- *   query: { cache: true }, // optional
+ *   query: { cache: true, host: 'example.com' }, // optional
  * });
  *
  * export default function RootLayout({ children }) {
@@ -387,7 +384,7 @@ const mergeGraphOptions = (
  * config({
  *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
- *   host: 'example.com', // optional
+ *   query: { host: 'example.com' }, // optional
  * });
  *
  * // In your components
@@ -397,7 +394,7 @@ const mergeGraphOptions = (
  * const content = await client.getContentByPath('/my-page/');
  *
  * // Or override config for specific use cases
- * const customClient = getClient({ host: 'custom.example.com' });
+ * const customClient = getClient({ query: { host: 'custom.example.com' } });
  * const jsonOnly = getClient({ fragment: { richTextFormat: 'json' } });
  * ```
  */
