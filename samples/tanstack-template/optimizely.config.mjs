@@ -24,6 +24,7 @@ export default buildConfig({
       key: 'AboutExperienceContent',
       displayName: 'About Experience',
       contentType: 'AboutExperience',
+      mayContainTypes: ['*'],
     },
 ],
   applications: [
