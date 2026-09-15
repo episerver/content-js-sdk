@@ -26,7 +26,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -75,7 +75,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: true,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -128,7 +128,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -171,7 +171,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: true,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -224,7 +224,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -241,7 +241,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: true,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -294,7 +294,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: true,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -341,7 +341,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: true,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -399,7 +399,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
       '',
       createQueryContext({
         damEnabled: true,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -428,7 +428,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
 
     const query = await createSingleContentQuery('ct1', {
       damEnabled: false,
-      maxFragmentThreshold: 100,
+      maxThreshold: 100,
       expandContracts: false,
       formsEnabled: false,
       includeBaseFragments: true,
@@ -452,7 +452,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
 
     const query = await createSingleContentQuery('ct1', {
       damEnabled: true,
-      maxFragmentThreshold: 100,
+      maxThreshold: 100,
       expandContracts: false,
       formsEnabled: false,
       includeBaseFragments: true,
@@ -482,7 +482,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
 
     const query = await createMultipleContentQuery('ct1', {
       damEnabled: false,
-      maxFragmentThreshold: 100,
+      maxThreshold: 100,
       expandContracts: false,
       formsEnabled: false,
       includeBaseFragments: true,
@@ -505,7 +505,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
 
     const query = await createMultipleContentQuery('ct1', {
       damEnabled: true,
-      maxFragmentThreshold: 100,
+      maxThreshold: 100,
       expandContracts: false,
       formsEnabled: false,
       includeBaseFragments: true,

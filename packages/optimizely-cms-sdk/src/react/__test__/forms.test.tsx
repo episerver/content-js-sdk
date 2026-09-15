@@ -354,6 +354,37 @@ describe('a submitHandler', () => {
     vi.unstubAllGlobals();
   });
 
+  // Every step stays in the DOM, so a name reused across steps reaches FormData
+  // once per step. Disabling the inactive ones fixes that by also dropping the
+  // answers already given, which is the whole point of a multi-step form.
+  test('a blank field does not shadow the same name answered on another step', async () => {
+    const handler = vi.fn<FormSubmitHandler>(async () => {});
+
+    renderForm(
+      <>
+        <FormStep index={0}>
+          <Field name='shared' />
+        </FormStep>
+        <FormStep index={1}>
+          <Field name='shared' validators={[]} />
+          <Field name='step1' />
+        </FormStep>
+        <Probe />
+      </>,
+      undefined,
+      { submitHandler: handler },
+    );
+
+    fireEvent.change(screen.getAllByLabelText('shared')[0], {
+      target: { value: 'answered' },
+    });
+    act(() => screen.getByText('Next').click());
+    type('step1', 'also filled');
+    await act(async () => screen.getByText('Submit').click());
+
+    expect(handler.mock.calls[0][0].getAll('shared')).toEqual(['answered']);
+  });
+
   // Resolving has to mean the same thing an `ok` response does, or a template
   // that swaps the transport quietly loses the reset and the step rewind.
   test('resolving runs the whole success path', async () => {

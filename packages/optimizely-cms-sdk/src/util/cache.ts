@@ -44,12 +44,13 @@ function createCacheKey(
 ): string {
   const {
     damEnabled,
-    maxFragmentThreshold,
+    maxThreshold,
     expandContracts,
     formsEnabled,
     typeFilter,
     sectionTypes,
     richTextFormat,
+    compositionDepth,
   } = createQueryContext(options);
   const { includeBaseFragments = true, filterShape, variationMode } = options;
 
@@ -64,11 +65,12 @@ function createCacheKey(
       queryType,
       contentType,
       damEnabled,
-      maxFragmentThreshold,
+      maxThreshold,
       expandContracts,
       formsEnabled,
       includeBaseFragments,
       richTextFormat,
+      compositionDepth,
     ].join(':') +
     filterPart +
     sectionPart +

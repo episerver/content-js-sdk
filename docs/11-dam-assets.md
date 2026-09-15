@@ -18,26 +18,22 @@ You can control this behaviour with the `dam` option, which accepts:
 - `'on'` — always include DAM fragments.
 - `'off'` — never include DAM fragments.
 
-Set it globally when configuring the client:
+Set it in the `fragment` group when configuring the client:
 
 ```ts
 import { config } from '@optimizely/cms-sdk';
 
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-  dam: 'on', // 'automatic' | 'on' | 'off'
+  fragment: {
+    dam: 'on', // 'automatic' | 'on' | 'off'
+  },
 });
 ```
 
-Or override it per request:
-
-```ts
-const content = await client.getContent({ key: '...' }, { dam: 'off' });
-```
-
-A per-request `dam` value takes precedence over the global setting. Use `'on'` or
-`'off'` when you already know whether DAM is enabled and want deterministic output
-regardless of the schema.
+It shapes the generated query, so it is fixed for the lifetime of a client and
+cannot be overridden on a single request. Use `'on'` or `'off'` when you already
+know whether DAM is enabled and want deterministic output regardless of the schema.
 
 The SDK gives you:
 

@@ -34,7 +34,7 @@ const depthFor = (formsEnabled: boolean) =>
       '',
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled,
       }),
@@ -78,7 +78,7 @@ describe('shared fragments', () => {
       '',
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: true,
       }),

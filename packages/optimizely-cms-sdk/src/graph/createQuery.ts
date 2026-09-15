@@ -239,7 +239,7 @@ export const createFragment = (
 ): FragmentResult => {
   validateContentTypeName(contentTypeName, visited);
 
-  const { damEnabled, maxFragmentThreshold } = ctx;
+  const { damEnabled, maxThreshold } = ctx;
   const { includeBaseFragments = true, insideComposition = false } = options;
 
   const fragmentName = `${stripSourcePrefix(contentTypeName)}${suffix}`;
@@ -255,7 +255,7 @@ export const createFragment = (
   const isRootCall = visited.size === 1;
   const span =
     isRootCall ?
-      startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix)
+      startFragmentSpan(contentTypeName, damEnabled, maxThreshold, suffix)
     : undefined;
   const startTime = isRootCall ? performance.now() : 0;
 
@@ -339,7 +339,7 @@ export const createFragment = (
     recordMetrics(fragmentGenerationDuration, fragmentGenerationCount, startTime, {
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentTypeName,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
-      [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: maxFragmentThreshold,
+      [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: maxThreshold,
     });
 
     span.end();

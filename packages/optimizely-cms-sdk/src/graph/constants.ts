@@ -27,12 +27,12 @@ export const DEFAULT_EXPAND_CONTRACTS = false;
 
 /**
  * Default nesting depth for ordinary experience compositions.
- * Configurable via `config({ compositionDepth })`.
+ * Configurable via `config({ fragment: { compositionDepth } })`.
  */
 export const DEFAULT_COMPOSITION_DEPTH = 4;
 
 /**
  * Default Rich Text representation(s) selected in GraphQL queries.
- * Configurable via `config({ richTextFormat })`.
+ * Configurable via `config({ fragment: { richTextFormat } })`.
  */
 export const DEFAULT_RICH_TEXT_FORMAT = 'json';

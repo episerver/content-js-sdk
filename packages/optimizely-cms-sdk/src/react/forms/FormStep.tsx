@@ -45,7 +45,6 @@ export function FormStep({ index, node, children }: FormStepProps) {
   return (
     <FormStepIndexContext.Provider value={index}>
       <fieldset
-        disabled={!isActive}
         style={{
           display: isActive ? 'block' : 'none',
           border: 'none',
