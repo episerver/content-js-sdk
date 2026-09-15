@@ -1,5 +1,70 @@
 # @optimizely/cms-cli
 
+## 3.0.0-beta.0
+
+### Major Changes
+
+- 61e921a: [CMS-54832](https://optimizely-ext.atlassian.net/browse/CMS-54832): Add
+  validations and type restrictions for properties with content and contentReference
+
+  `opti-cms config push` now stops before uploading when a `content` or `contentReference`
+  property (or array item) is misconfigured:
+  - Missing constraints — declare `contentType`, or `allowedTypes`/`restrictedTypes`.
+  - Empty `allowedTypes`/`restrictedTypes` — list at least one content type, or remove the
+    field.
+  - `contentType` combined with `allowedTypes`/`restrictedTypes` — declare only one of
+    them.
+
+  Previously unconstrained properties were only a warning; they make the SDK generate
+  nested GraphQL fragments for every content type.
+
+  **Migrating:** give every existing `content` and `contentReference` property a
+  `contentType` or a non-empty `allowedTypes`/`restrictedTypes` before upgrading. Narrower
+  constraints mean smaller queries and faster responses. See
+  [Content Relationships](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md#migrating-existing-content-types)
+  for examples.
+
+### Minor Changes
+
+- e7d2908: [CMS-55078](https://optimizely-ext.atlassian.net/browse/CMS-55078): Add
+  `displayMode` to content type properties. Set `displayMode: 'hidden'` to hide a property
+  from the editing interface. Defaults to `'available'` when not set.
+  `opti-cms config pull` keeps `displayMode: 'hidden'` in generated content types and
+  omits the `'available'` default.
+- 27426f2: [CMS-54768](https://optimizely-ext.atlassian.net/browse/CMS-54768): Add config
+  delete command
+- f79e569: [CMS-55061](https://optimizely-ext.atlassian.net/browse/CMS-55061):
+  `config pull` can now generate a `registry.ts` file that registers every pulled content
+  type and display template via `initContentTypeRegistry()` /
+  `initDisplayTemplateRegistry()`, optionally including a `config({ apiKey })` call.
+
+### Patch Changes
+
+- b751309: [CMS-54548](https://optimizely-ext.atlassian.net/browse/CMS-54548): Always
+  write allowedTypes and restrictedTypes when using config pull
+- 75cb2be: [CMS-54768](https://optimizely-ext.atlassian.net/browse/CMS-54768): Improve
+  detection of deletable types for delete-all-content-types
+- 8877d5c: Fix components glob exclusions and precedence: !dir now excludes nested files,
+  and pattern order determines which content type wins on key conflicts
+- Updated dependencies [61e921a]
+- Updated dependencies [e7d2908]
+- Updated dependencies [14f46bc]
+- Updated dependencies [6c3cd3a]
+- Updated dependencies [00037d9]
+- Updated dependencies [54977f8]
+- Updated dependencies [79dae6d]
+- Updated dependencies [67f52fa]
+- Updated dependencies [aba0462]
+- Updated dependencies [988568e]
+- Updated dependencies [36b4c1a]
+- Updated dependencies [d58d272]
+- Updated dependencies [a8dc922]
+- Updated dependencies [54ab0e9]
+- Updated dependencies [0333f2f]
+- Updated dependencies [7cc4a94]
+- Updated dependencies [40f3f23]
+  - @optimizely/cms-sdk@3.0.0-beta.0
+
 ## 2.2.0
 
 ### Minor Changes

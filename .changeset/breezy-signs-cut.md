@@ -3,7 +3,7 @@
 '@optimizely/cms-sdk': major
 ---
 
-Add validations and type restrictions for properties with content and contentReference
+[CMS-54832](https://optimizely-ext.atlassian.net/browse/CMS-54832): Add validations and type restrictions for properties with content and contentReference
 
 `opti-cms config push` now stops before uploading when a `content` or `contentReference` property (or array item) is misconfigured:
 

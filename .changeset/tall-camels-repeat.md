@@ -2,4 +2,4 @@
 '@optimizely/cms-sdk': patch
 ---
 
-Fix property inference for content types extending a contract without properties
+[CMS-55406](https://optimizely-ext.atlassian.net/browse/CMS-55406): Fix property inference for content types extending a contract without properties

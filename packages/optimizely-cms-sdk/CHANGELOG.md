@@ -1,5 +1,97 @@
 # @optimizely/cms-sdk
 
+## 3.0.0-beta.0
+
+### Major Changes
+
+- 61e921a: [CMS-54832](https://optimizely-ext.atlassian.net/browse/CMS-54832): Add
+  validations and type restrictions for properties with content and contentReference
+
+  `opti-cms config push` now stops before uploading when a `content` or `contentReference`
+  property (or array item) is misconfigured:
+  - Missing constraints — declare `contentType`, or `allowedTypes`/`restrictedTypes`.
+  - Empty `allowedTypes`/`restrictedTypes` — list at least one content type, or remove the
+    field.
+  - `contentType` combined with `allowedTypes`/`restrictedTypes` — declare only one of
+    them.
+
+  Previously unconstrained properties were only a warning; they make the SDK generate
+  nested GraphQL fragments for every content type.
+
+  **Migrating:** give every existing `content` and `contentReference` property a
+  `contentType` or a non-empty `allowedTypes`/`restrictedTypes` before upgrading. Narrower
+  constraints mean smaller queries and faster responses. See
+  [Content Relationships](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md#migrating-existing-content-types)
+  for examples.
+
+- d58d272: [CMS-55780](https://optimizely-ext.atlassian.net/browse/CMS-55780): Rich Text
+  properties now default to `json` only (was `html` + `json`), shrinking query/response
+  payloads. Rendering `html`? Set `config({ richTextFormat: 'html' })` or `'both'`.
+- 54ab0e9: [CMS-56023](https://optimizely-ext.atlassian.net/browse/CMS-56023): config()
+  options regrouped into fragment and query
+
+### Minor Changes
+
+- e7d2908: [CMS-55078](https://optimizely-ext.atlassian.net/browse/CMS-55078): Add
+  `displayMode` to content type properties. Set `displayMode: 'hidden'` to hide a property
+  from the editing interface. Defaults to `'available'` when not set.
+  `opti-cms config pull` keeps `displayMode: 'hidden'` in generated content types and
+  omits the `'available'` default.
+- 6c3cd3a: [CMS-54015](https://optimizely-ext.atlassian.net/browse/CMS-54015): Added forms
+  support to the sdk (query metadata, forms content types)
+- 54977f8: Introduce a user defined attribute to define composition fragment depth for
+  composition
+- 79dae6d: [CMS-54818](https://optimizely-ext.atlassian.net/browse/CMS-54818): Fix slow
+  and dropped preview updates in `PreviewComponent` and `NextPreviewComponent`
+- 67f52fa: [CMS-54015](https://optimizely-ext.atlassian.net/browse/CMS-54015): Hardened
+  the Optimizely Forms support ahead of release.
+
+  `initForms` now keeps its components in a registry of its own rather than merging them
+  into the application's. It can be called before or after `initReactComponentRegistry`
+  and `initContentTypeRegistry`, works with a resolver function as well as a component
+  map, and no longer registers duplicate content types when the entry point re-runs on a
+  hot reload. Previously, a resolver function caused every application component to stop
+  resolving.
+
+  Detecting whether Forms is enabled is now resolved once per Graph endpoint for the
+  lifetime of the process, instead of on every page render. It is cached at module scope
+  rather than on the client, because `getClient()` returns a new client per call and
+  frameworks call it once per request.
+
+- 988568e: [CMS-55279](https://optimizely-ext.atlassian.net/browse/CMS-55279): Forms
+  placed in a content area now render their fields. Their steps are fetched automatically,
+  so `content.nodes` is populated wherever the form sits.
+
+  `FormWrapper` also accepts an optional `submitHandler` that replaces the built-in POST —
+  resolving means success, throwing means failure, and a thrown `Error`'s message is
+  exposed as `useFormSubmission().errorMessage`. `action` is now optional.
+
+  ```tsx
+  <FormWrapper submitHandler={async formData => { await saveLead(formData) }}>
+  ```
+
+- 36b4c1a: Update RICHTEXT_PRESET values
+
+### Patch Changes
+
+- 14f46bc: [CMS-54769](https://optimizely-ext.atlassian.net/browse/CMS-54769): Handle
+  wildcard in allowedTypes
+- 00037d9: Fix parsing of incoming options for form selection
+- aba0462: [CMS-54844](https://optimizely-ext.atlassian.net/browse/CMS-54844): Access
+  section properties directly on `content`
+
+  Custom properties of `_section` content types are now available flat on `content`, the
+  same as every other content type, instead of nested under `content.component`.
+
+- a8dc922: [CMS-54607](https://optimizely-ext.atlassian.net/browse/CMS-54607): Normalize
+  graphUrl to auto-append /content/v2 when missing, fixing 404 errors when using
+  OPTIMIZELY_GRAPH_GATEWAY environment variable
+- 0333f2f: [CMS-55406](https://optimizely-ext.atlassian.net/browse/CMS-55406): Fix
+  property inference for content types extending a contract without properties
+- 7cc4a94: Fixed custom section properties not returned by graph client
+- 40f3f23: [CMS-54651](https://optimizely-ext.atlassian.net/browse/CMS-54651): Fix content
+  array resolution with multiple contracts
+
 ## 2.2.0
 
 ### Minor Changes
