@@ -2,7 +2,7 @@
 '@optimizely/cms-sdk': minor
 ---
 
-Hardened the Optimizely Forms support ahead of release.
+[CMS-54015](https://optimizely-ext.atlassian.net/browse/CMS-54015): Hardened the Optimizely Forms support ahead of release.
 
 `initForms` now keeps its components in a registry of its own rather than merging them into the application's. It can be called before or after `initReactComponentRegistry` and `initContentTypeRegistry`, works with a resolver function as well as a component map, and no longer registers duplicate content types when the entry point re-runs on a hot reload. Previously, a resolver function caused every application component to stop resolving.
 

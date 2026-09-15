@@ -2,4 +2,4 @@
 '@optimizely/cms-sdk': patch
 ---
 
-Handle wildcard in allowedTypes
+[CMS-54769](https://optimizely-ext.atlassian.net/browse/CMS-54769): Handle wildcard in allowedTypes
