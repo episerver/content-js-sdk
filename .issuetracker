@@ -4,4 +4,4 @@
 
 [issuetracker "Link Jira Tickets"]
   regex = "CMS-(\\d+)"
-  url = "https://jira.sso.episerver.net/browse/CMS-$1"
+  url = "https://optimizely-ext.atlassian.net/browse/CMS-$1"
