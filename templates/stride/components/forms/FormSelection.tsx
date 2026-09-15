@@ -10,7 +10,6 @@ import {
 import { cn } from '../../lib/utils';
 import {
   errorTextClass,
-  helpTextClass,
   labelClass,
   requiredMarkClass,
 } from './formStyles';
@@ -92,11 +91,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
             ))}
           </div>
         )}
-        {!showErrors && content.Tooltip && (
-          <p className={helpTextClass} {...pa('Tooltip')}>
-            {content.Tooltip}
-          </p>
-        )}
+
       </fieldset>
     </FormElement>
   );
