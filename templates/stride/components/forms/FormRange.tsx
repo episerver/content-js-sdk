@@ -7,7 +7,6 @@ import {
   useFormField,
 } from '@optimizely/cms-sdk/forms/react';
 import {
-  helpTextClass,
   labelClass,
 } from './formStyles';
 
@@ -45,11 +44,7 @@ export default function FormRange({ content }: FormRangeProps) {
           <span className='text-sm text-foreground2'>{content.Max ?? 100}</span>
         </div>
         <p className='text-sm text-foreground font-medium text-center'>{value}</p>
-        {content.Tooltip && (
-          <p className={helpTextClass} {...pa('Tooltip')}>
-            {content.Tooltip}
-          </p>
-        )}
+
       </div>
     </FormElement>
   );
