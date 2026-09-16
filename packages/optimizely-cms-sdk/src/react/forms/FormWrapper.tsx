@@ -13,6 +13,7 @@ import {
 import { FormValidationProvider, useFormValidation } from './FormValidationContext.js';
 import { useFormSubmission } from './FormSubmissionProvider.js';
 import { FormRulesProvider, useFormRules } from './FormRulesContext.js';
+import { getElementIds } from './getElementId.js';
 import { ExperienceNode } from '../../infer.js';
 
 type FormStepsContextType = {
@@ -117,16 +118,16 @@ function FormWrapperContent({
   const rulesRef = useRef({ getJumpTarget, isStepVisible });
   rulesRef.current = { getJumpTarget, isStepVisible };
 
-  const stepKeys = useMemo(
-    () => steps.map(s => (s as { key: string }).key),
+  const stepIds = useMemo(
+    () => steps.map(step => getElementIds({ ...step.component, __composition: step })),
     [steps],
   );
 
   const stepKeyToIndex = useMemo(() => {
     const map = new Map<string, number>();
-    stepKeys.forEach((key, i) => map.set(key, i));
+    stepIds.forEach((ids, index) => ids.forEach(id => map.set(id, index)));
     return map;
-  }, [stepKeys]);
+  }, [stepIds]);
 
   // An empty action POSTs to the page itself, which answers 405 and surfaces as
   // a generic failure. Usually means the container's Submit URL was left unset.
@@ -178,10 +179,10 @@ function FormWrapperContent({
     setAttemptedSubmit(false);
 
     const { getJumpTarget: jump, isStepVisible: stepVisible } = rulesRef.current;
-    const currentKey = stepKeys[currentStepIndex];
+    const currentIds = stepIds[currentStepIndex];
 
-    if (currentKey) {
-      const jumpTarget = jump(currentKey);
+    if (currentIds?.length) {
+      const jumpTarget = jump(currentIds);
       if (jumpTarget) {
         const targetIndex = stepKeyToIndex.get(jumpTarget);
         if (targetIndex !== undefined) {
@@ -193,7 +194,7 @@ function FormWrapperContent({
     }
 
     let next = currentStepIndex + 1;
-    while (next < lastStepIndex && !stepVisible(stepKeys[next])) {
+    while (next < lastStepIndex && !stepVisible(stepIds[next] ?? [])) {
       next++;
     }
     stepHistoryRef.current.push(currentStepIndex);
@@ -201,7 +202,7 @@ function FormWrapperContent({
   }, [
     currentStepIndex,
     lastStepIndex,
-    stepKeys,
+    stepIds,
     stepKeyToIndex,
     setAttemptedSubmit,
     validateAllFields,
@@ -267,13 +268,17 @@ function FormWrapperContent({
 
   return (
     <FormStepsContext.Provider value={{ currentStepIndex, nextStep, prevStep }}>
-      <form ref={formRef} onSubmit={handleSubmit} onReset={(e) => {
-        e.preventDefault();
-        resetFields();
-        setAttemptedSubmit(false);
-        setCurrentStepIndex(0);
-        stepHistoryRef.current = [];
-      }}>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        onReset={e => {
+          e.preventDefault();
+          resetFields();
+          setAttemptedSubmit(false);
+          setCurrentStepIndex(0);
+          stepHistoryRef.current = [];
+        }}
+      >
         {children}
       </form>
     </FormStepsContext.Provider>

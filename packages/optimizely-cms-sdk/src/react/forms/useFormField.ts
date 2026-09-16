@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useFormValidation } from './FormValidationContext.js';
 import { useFormRules } from './FormRulesContext.js';
 import { useFormStepIndex } from './FormStep.js';
-import { getElementId } from './getElementId.js';
+import { getElementIds } from './getElementId.js';
 import {
   validateField,
   getErrorMessages,
@@ -58,13 +58,8 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>({
   const [value, setValue] = useState(initialValue);
   const [isTouched, setIsTouched] = useState(false);
   const inputRef = useRef<TElement>(null);
-  const {
-    registerField,
-    unregisterField,
-    setFieldError,
-    attemptedSubmit,
-    resetToken,
-  } = useFormValidation();
+  const { registerField, unregisterField, setFieldError, attemptedSubmit, resetToken } =
+    useFormValidation();
 
   const initialValueRef = useRef(initialValue);
   initialValueRef.current = initialValue;
@@ -78,8 +73,12 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>({
 
   const { setFieldValue, isElementVisible } = useFormRules();
   const stepIndex = useFormStepIndex();
-  const elementId = content ? getElementId(content) : undefined;
-  const isVisible = !elementId || isElementVisible(elementId);
+  const elementIds = getElementIds(content);
+  const elementIdKey = elementIds.join('|');
+  const elementIdsRef = useRef(elementIds);
+  elementIdsRef.current = elementIds;
+
+  const isVisible = elementIds.length === 0 || isElementVisible(elementIds);
 
   const errors = validateField(value, validators);
   const errorMessages = getErrorMessages(errors);
@@ -110,10 +109,8 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>({
   ]);
 
   useEffect(() => {
-    if (elementId) {
-      setFieldValue(elementId, value);
-    }
-  }, [value, elementId, setFieldValue]);
+    if (elementIdKey) setFieldValue(elementIdsRef.current, value);
+  }, [value, elementIdKey, setFieldValue]);
 
   const errorId = showErrors ? `${name}-error` : undefined;
   const onBlur = () => setIsTouched(true);

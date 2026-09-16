@@ -1,7 +1,11 @@
 'use client';
 
 import { ContentProps, OptiFormsResetElementContentType } from '@optimizely/cms-sdk';
-import { getPreviewUtils, useFormButton } from '@optimizely/cms-sdk/forms/react';
+import {
+  FormElement,
+  getPreviewUtils,
+  useFormButton,
+} from '@optimizely/cms-sdk/forms/react';
 import { cn } from '../../lib/utils';
 import { buttonBase, buttonRoleClass } from './formStyles';
 
@@ -14,8 +18,13 @@ export default function FormReset({ content }: FormResetProps) {
   const { pa } = getPreviewUtils(content);
 
   return (
-    <button {...buttonProps} className={cn(buttonBase, buttonRoleClass[role] ?? buttonRoleClass.previous)}>
-      <span {...pa('Label')}>{label}</span>
-    </button>
+    <FormElement content={content}>
+      <button
+        {...buttonProps}
+        className={cn(buttonBase, buttonRoleClass[role] ?? buttonRoleClass.previous)}
+      >
+        <span {...pa('Label')}>{label}</span>
+      </button>
+    </FormElement>
   );
 }
