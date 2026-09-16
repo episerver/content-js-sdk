@@ -6,6 +6,9 @@ export type DependencyRule = {
   TargetElement: string | null;
   SatisfiedAction: string | null;
   ConditionCombination: string | null;
+  AfterStep?: string | null;
+  JumpToStep?: string | null;
+  TargetStep?: string | null;
   Conditions: Array<{
     DependsOnField: string | null;
     ComparisonOperator: string | null;
@@ -18,6 +21,8 @@ type FormRulesContextType = {
   fieldValues: Map<string, unknown>;
   setFieldValue: (fieldId: string, value: unknown) => void;
   isElementVisible: (elementId: string) => boolean;
+  getJumpTarget: (afterStepKey: string) => string | null;
+  isStepVisible: (stepKey: string) => boolean;
 };
 
 const FormRulesContext = createContext<FormRulesContextType | undefined>(undefined);
@@ -94,8 +99,33 @@ export function FormRulesProvider({ children, rules = [] }: FormRulesProviderPro
     return true;
   };
 
+  const getJumpTarget = (afterStepKey: string): string | null => {
+    const jumpRules = rules.filter(
+      r => r.JumpToStep && r.AfterStep === afterStepKey,
+    );
+    for (const rule of jumpRules) {
+      if (isSatisfied(rule)) {
+        return rule.JumpToStep!;
+      }
+    }
+    return null;
+  };
+
+  const isStepVisible = (stepKey: string): boolean => {
+    const applicableRules = rules.filter(r => r.TargetStep === stepKey);
+    if (applicableRules.length === 0) return true;
+
+    const allHide = applicableRules.filter(r => r.SatisfiedAction === 'Hide');
+    const allShow = applicableRules.filter(r => r.SatisfiedAction === 'Show');
+
+    if (allHide.length > 0 && allHide.some(isSatisfied)) return false;
+    if (allShow.length > 0 && !allShow.some(isSatisfied)) return false;
+
+    return true;
+  };
+
   return (
-    <FormRulesContext.Provider value={{ rules, fieldValues, setFieldValue, isElementVisible }}>
+    <FormRulesContext.Provider value={{ rules, fieldValues, setFieldValue, isElementVisible, getJumpTarget, isStepVisible }}>
       {children}
     </FormRulesContext.Provider>
   );
@@ -108,6 +138,8 @@ const NO_RULES: FormRulesContextType = {
   fieldValues: new Map(),
   setFieldValue: () => {},
   isElementVisible: () => true,
+  getJumpTarget: () => null,
+  isStepVisible: () => true,
 };
 
 export function useFormRules() {

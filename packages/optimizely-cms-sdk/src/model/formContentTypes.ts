@@ -155,6 +155,9 @@ export const OptiFormsDependencyRuleContentType = contentType({
     TargetElement: { type: 'string' },
     SatisfiedAction: { type: 'string' },
     ConditionCombination: { type: 'string' },
+    AfterStep: { type: 'string' },
+    JumpToStep: { type: 'string' },
+    TargetStep: { type: 'string' },
     Conditions: {
       type: 'array',
       items: {
