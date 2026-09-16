@@ -1,4 +1,5 @@
 import {
+  BlankExperienceContentType,
   config,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
@@ -72,6 +73,7 @@ export function initialize() {
   });
 
   initContentTypeRegistry([
+    BlankExperienceContentType,
     ProductPage,
     StandardPage,
     StartPage,
