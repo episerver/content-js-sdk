@@ -430,6 +430,95 @@ describe('a submitHandler', () => {
   });
 });
 
+describe('a rule naming its target by content key', () => {
+  // A rule carries whichever key the CMS holds for the element. Matching only
+  // the composition node key left every such rule with no target at all, and an
+  // element no rule mentions is always visible — so nothing ever hid or showed.
+  const cmsField = (name: string) => ({
+    _id: 'graph-id',
+    _metadata: { key: `${name}-content-key` },
+    __composition: { key: `${name}-node-key` },
+  });
+
+  const showWhenTextboxSaysSubmit: DependencyRule[] = [
+    {
+      TargetElement: 'button-content-key',
+      SatisfiedAction: 'Show',
+      ConditionCombination: 'All',
+      Conditions: [
+        {
+          DependsOnField: 'textbox-content-key',
+          ComparisonOperator: 'Equals',
+          ComparisonValue: 'submit',
+        },
+      ],
+    },
+  ];
+
+  /** A field whose content carries all three keys, as a CMS-rendered one does. */
+  function CmsField() {
+    const content = cmsField('textbox');
+    const { value, setValue, inputRef } = useFormField({
+      name: 'textbox',
+      validators: [],
+      content,
+    });
+
+    return (
+      <FormElement content={content}>
+        <input
+          ref={inputRef}
+          aria-label='textbox'
+          value={value}
+          onChange={e => setValue(e.target.value)}
+        />
+      </FormElement>
+    );
+  }
+
+  /** A button, which is not a field and so only wraps in `FormElement`. */
+  const CmsButton = () => (
+    <FormElement content={cmsField('button')}>
+      <button type='submit'>Send</button>
+    </FormElement>
+  );
+
+  const renderPair = () =>
+    renderForm(
+      <>
+        <CmsField />
+        <CmsButton />
+      </>,
+      showWhenTextboxSaysSubmit,
+    );
+
+  test('hides the button until the condition is met', () => {
+    renderPair();
+
+    expect(screen.queryByText('Send')).toBeNull();
+  });
+
+  test('shows the button once the field it depends on matches', () => {
+    renderPair();
+
+    fireEvent.change(screen.getByLabelText('textbox'), {
+      target: { value: 'submit' },
+    });
+
+    expect(screen.getByText('Send')).toBeTruthy();
+  });
+
+  test('hides the button again when the value stops matching', () => {
+    renderPair();
+    const textbox = screen.getByLabelText('textbox');
+
+    fireEvent.change(textbox, { target: { value: 'submit' } });
+    fireEvent.change(textbox, { target: { value: 'something else' } });
+
+    expect(screen.queryByText('Send')).toBeNull();
+  });
+});
+
 describe('a field hidden by a rule', () => {
   const hideRule: DependencyRule[] = [
     {

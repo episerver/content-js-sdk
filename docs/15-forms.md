@@ -339,6 +339,22 @@ itself. A hidden field is excluded from validation, and `useFormField` can only 
 from inside. Wrapping from outside leaves a hidden required field registered, blocking
 submission with no visible error.
 
+A rule can target a button as readily as a field — "show Submit once Email is filled in"
+is a common one — so the Submit and Reset components need the same `FormElement` wrapper.
+They take no part in validation, so that is all they need:
+
+```tsx
+export default function FormSubmit({ content }) {
+  const { buttonProps, label } = useFormButton(content);
+
+  return (
+    <FormElement content={content}>
+      <button {...buttonProps}>{label}</button>
+    </FormElement>
+  );
+}
+```
+
 A hidden field is rendered anyway while editing in the CMS. A rule describes what a
 visitor sees, and an editor still has to be able to find the field to change it —
 otherwise the CMS shows an empty, selectable block with no indication of what it is.
@@ -698,7 +714,7 @@ as you need them. The available keys are `container`, `textbox`, `textarea`, `nu
 | **Title renders, no fields**        | The container is nested deeper than a top-level section or a direct content area entry, so it is not detected. See [How form fragments are fetched](#how-form-fragments-are-fetched). |
 | **Nothing renders at all**          | A component is missing from `initForms`, or a field component is missing `'use client'`. Check the browser console for resolution errors.                                             |
 | **Validation never fires**          | `FormWrapper` is not wrapping the form, so there is no validation context.                                                                                                            |
-| **Rules never fire**                | `FormWrapper` did not get the `rules` prop, or a field component does not pass `content` to `useFormField`.                                                                           |
+| **Rules never fire**                | `FormWrapper` did not get the `rules` prop, or a component does not pass `content` to `useFormField` and `FormElement`. An element no rule can be matched to is always visible.       |
 | **Submit does nothing**             | The blocking field is on a step that is not showing. The form moves to it — check your field components actually render their error messages.                                         |
 | **Submit always fails**             | Empty Submit URL posts to the page and gets a `405`. Check the network tab.                                                                                                           |
 | **Buttons misplaced while editing** | Layout depending on a direct-child relationship; the CMS marker div sits in between. See [Editing in the CMS](#editing-in-the-cms).                                                   |

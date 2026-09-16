@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { useFormRules } from './FormRulesContext.js';
-import { getElementId } from './getElementId.js';
+import { getElementIds } from './getElementId.js';
 
 type FormElementProps = {
   content: Record<string, unknown> & { __context?: { edit?: boolean } };
@@ -23,10 +23,10 @@ type FormElementProps = {
  */
 export function FormElement({ content, children }: FormElementProps) {
   const { isElementVisible } = useFormRules();
-  const elementId = getElementId(content);
+  const elementIds = getElementIds(content);
 
   if (content.__context?.edit) return children;
-  if (elementId && !isElementVisible(elementId)) return null;
+  if (elementIds.length > 0 && !isElementVisible(elementIds)) return null;
 
   return children;
 }
