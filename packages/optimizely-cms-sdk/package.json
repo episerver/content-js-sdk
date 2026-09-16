@@ -67,7 +67,8 @@
     "prebuild": "node scripts/prebuild.js",
     "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
     "clean": "rimraf dist",
-    "test": "vitest --typecheck"
+    "test": "vitest --typecheck",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "files": [
     "dist"
