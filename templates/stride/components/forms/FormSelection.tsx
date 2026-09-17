@@ -20,9 +20,8 @@ type FormSelectionProps = {
 
 export default function FormSelection({ content }: FormSelectionProps) {
   const options = getSelectionOptions(content);
+  const isMulti = content.AllowMultiSelect === true;
 
-  // A radio group can't take `fieldProps`: the name and change handler belong on
-  // each radio, and the ref goes on the fieldset that wraps them.
   const {
     value,
     setValue,
@@ -35,10 +34,28 @@ export default function FormSelection({ content }: FormSelectionProps) {
     isRequired,
   } = useFormField<HTMLFieldSetElement>({
     content,
-    defaultValue: options.find(option => option.selected)?.value ?? '',
+    defaultValue: isMulti
+      ? options.filter(o => o.selected).map(o => o.value).join(',')
+      : options.find(option => option.selected)?.value ?? '',
   });
 
+  const selectedValues = isMulti ? value.split(',').filter(Boolean) : [value];
+
+  function toggleValue(optionValue: string) {
+    if (isMulti) {
+      const current = value.split(',').filter(Boolean);
+      const next = current.includes(optionValue)
+        ? current.filter(v => v !== optionValue)
+        : [...current, optionValue];
+      setValue(next.join(','));
+    } else {
+      setValue(optionValue);
+    }
+    onBlur();
+  }
+
   const { pa } = getPreviewUtils(content);
+  const inputType = isMulti ? 'checkbox' : 'radio';
 
   return (
     <FormElement content={content}>
@@ -51,7 +68,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
         )}
         <div className='grid gap-2 sm:grid-cols-2' {...pa('Options')}>
           {options.map(option => {
-            const isSelected = value === option.value;
+            const isSelected = selectedValues.includes(option.value);
 
             return (
               <label
@@ -64,14 +81,11 @@ export default function FormSelection({ content }: FormSelectionProps) {
                 )}
               >
                 <input
-                  type='radio'
+                  type={inputType}
                   name={content.SubmissionFieldName ?? content.Label ?? ''}
                   value={option.value}
                   checked={isSelected}
-                  onChange={() => {
-                    setValue(option.value);
-                    onBlur();
-                  }}
+                  onChange={() => toggleValue(option.value)}
                   title={content.Tooltip ?? ''}
                   aria-invalid={showErrors}
                   aria-describedby={errorId}
