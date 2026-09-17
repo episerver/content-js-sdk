@@ -16,4 +16,5 @@ export type { FormButtonRole } from '../../forms/buttonRole.js';
 export { isFormButtonNode, partitionFormNodes } from '../../forms/nodes.js';
 export { FORM_HANDLER_TO_CONTENT_TYPE, mapFormHandlersToContentTypes } from './setup.js';
 export type { FormHandlers } from './setup.js';
+export { createJsonSubmitHandler } from './createJsonSubmitHandler.js';
 export * from '../../forms/validation.js';
