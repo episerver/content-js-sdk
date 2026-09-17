@@ -4,9 +4,15 @@ import { useFormStep } from '@optimizely/cms-sdk/forms/react';
 
 type FormStepNavigationProps = {
   totalSteps: number;
+  excludeRoles?: string[];
+  bare?: boolean;
 };
 
-export default function FormStepNavigation({ totalSteps }: FormStepNavigationProps) {
+export default function FormStepNavigation({
+  totalSteps,
+  excludeRoles = [],
+  bare = false,
+}: FormStepNavigationProps) {
   const { currentStepIndex, nextStep, prevStep } = useFormStep();
 
   if (totalSteps < 2) return null;
@@ -14,13 +20,14 @@ export default function FormStepNavigation({ totalSteps }: FormStepNavigationPro
   const isFirst = currentStepIndex === 0;
   const isLast = currentStepIndex >= totalSteps - 1;
 
-  return (
-    <div
-      className={`mt-6 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-5 ${
-        isFirst ? 'justify-end' : 'justify-between'
-      }`}
-    >
-      {!isFirst && (
+  const showPrev = !isFirst && !excludeRoles.includes('previous');
+  const showNext = !isLast && !excludeRoles.includes('next');
+
+  if (!showPrev && !showNext) return null;
+
+  const buttons = (
+    <>
+      {showPrev && (
         <button
           type='button'
           onClick={prevStep}
@@ -29,7 +36,7 @@ export default function FormStepNavigation({ totalSteps }: FormStepNavigationPro
           Previous
         </button>
       )}
-      {!isLast && (
+      {showNext && (
         <button
           type='button'
           onClick={nextStep}
@@ -38,6 +45,18 @@ export default function FormStepNavigation({ totalSteps }: FormStepNavigationPro
           Next
         </button>
       )}
+    </>
+  );
+
+  if (bare) return <div className='flex gap-3'>{buttons}</div>;
+
+  return (
+    <div
+      className={`mt-6 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-5 ${
+        showPrev ? 'justify-between' : 'justify-end'
+      }`}
+    >
+      {buttons}
     </div>
   );
 }
