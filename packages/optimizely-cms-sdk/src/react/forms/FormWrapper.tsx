@@ -55,15 +55,6 @@ type FormWrapperProps = {
   action?: string;
   /** Replaces the built-in POST. Everything around it is unchanged. */
   submitHandler?: FormSubmitHandler;
-  /**
-   * Same-origin URL that proxies form submissions server-side. When set, the
-   * built-in POST sends `{ targetUrl, payload, formKey }` as JSON to this URL
-   * instead of fetching `action` directly — avoiding CORS errors for external
-   * webhooks. Ignored when `submitHandler` is given.
-   */
-  submitProxy?: string;
-  /** Content key identifying this form, forwarded to the proxy. */
-  formKey?: string;
   children: ReactNode;
   scrollToOnSuccess?: string | false;
   scrollToOnError?: string | false;
@@ -105,8 +96,6 @@ function scrollToElement(elementId: string | false | undefined) {
 function FormWrapperContent({
   action,
   submitHandler,
-  submitProxy,
-  formKey,
   children,
   scrollToOnSuccess = 'form-alert',
   scrollToOnError,
@@ -248,33 +237,6 @@ function FormWrapperContent({
 
       if (submitHandler) {
         await submitHandler(formData, { action: action ?? '' });
-      } else if (submitProxy) {
-        const payload: Record<string, string | string[]> = {};
-        for (const [key, value] of formData.entries()) {
-          if (typeof value !== 'string') continue;
-          const existing = payload[key];
-          if (existing === undefined) {
-            payload[key] = value;
-          } else if (Array.isArray(existing)) {
-            existing.push(value);
-          } else {
-            payload[key] = [existing, value];
-          }
-        }
-
-        const response = await fetch(submitProxy, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            targetUrl: action ?? '',
-            payload,
-            formKey: formKey ?? '',
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Submission failed with status ${response.status}`);
-        }
       } else {
         const response = await fetch(action ?? '', {
           method: 'POST',
