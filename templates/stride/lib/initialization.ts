@@ -70,6 +70,9 @@ export function initialize() {
     query: {
       host: process.env.APPLICATION_HOST,
     },
+    forms: {
+      submitProxy: '/api/forms/submit',
+    },
   });
 
   initContentTypeRegistry([

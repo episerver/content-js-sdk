@@ -100,6 +100,20 @@ export type GraphFragmentOptions = {
   typeFilter?: (contentTypeKey: string) => boolean;
 };
 
+/** Form-specific options passed to {@linkcode GraphOptions.forms}. */
+export type GraphFormsOptions = {
+  /**
+   * Proxy URL that form submissions are routed through instead of calling the
+   * webhook directly from the browser. Set this to a same-origin server route
+   * (e.g. `'/api/forms/submit'`) to avoid CORS errors when the CMS submit URL
+   * points at an external webhook.
+   *
+   * The proxy receives a JSON body with `{ targetUrl, payload, formKey }` and
+   * is responsible for forwarding the payload to `targetUrl` server-side.
+   */
+  submitProxy?: string;
+};
+
 /**
  * Configuration for initializing the Optimizely Graph Client.
  */
@@ -117,6 +131,8 @@ export type GraphOptions = {
   fragment?: GraphFragmentOptions;
   /** Defaults for the per-request options, overridable on any single call. */
   query?: GraphQueryOptions;
+  /** Optimizely Forms options. */
+  forms?: GraphFormsOptions;
 };
 
 export type GraphGetContentOptions = GraphQueryOptions & {

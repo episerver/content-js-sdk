@@ -31,6 +31,7 @@ export type {
   GraphReference,
   GraphOptions,
   GraphFragmentOptions,
+  GraphFormsOptions,
   GraphGetItemOptions,
   GraphQueryOptions,
   GraphSlot,

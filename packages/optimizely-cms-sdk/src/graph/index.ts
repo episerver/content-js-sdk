@@ -37,7 +37,7 @@ export {
   GraphSlot,
   PreviewParams,
 } from './options.js';
-export type { DamMode, GraphFragmentOptions } from './options.js';
+export type { DamMode, GraphFragmentOptions, GraphFormsOptions } from './options.js';
 
 // GRAPH CLIENT
 

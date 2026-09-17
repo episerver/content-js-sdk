@@ -84,6 +84,8 @@ export default function FormContainer({ content }: FormContainerProps) {
           scrollToOnSuccess='form-alert'
           scrollToOnError={false}
           action={content.SubmitUrl?.default ?? ''}
+          submitProxy='/api/forms/submit'
+          formKey={content._metadata?.key ?? ''}
           steps={stepNodes}
           rules={content.DependencyRules}
         >
