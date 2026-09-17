@@ -64,15 +64,11 @@ export function initialize() {
 
   config({
     apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY!,
     fragment: {
       richTextFormat: 'json',
     },
     query: {
       host: process.env.APPLICATION_HOST,
-    },
-    forms: {
-      submitProxy: '/api/forms/submit',
     },
   });
 
