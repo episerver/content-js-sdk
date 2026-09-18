@@ -3,10 +3,10 @@ import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/reac
 import {
   FormSubmissionProvider,
   FormStep,
-  FormWrapper,
   getFormButtonRole,
   isFormButtonNode,
 } from '@optimizely/cms-sdk/forms/react';
+import FormContainerClient from './FormContainerClient';
 import { cn } from '../../lib/utils';
 import FormAlerts from './FormAlerts';
 import FormStepTracker from './FormStepTracker';
@@ -122,7 +122,7 @@ export default function FormContainer({ content }: FormContainerProps) {
           submitConfirmationMessage={content.SubmitConfirmationMessage ?? null}
         />
 
-        <FormWrapper
+        <FormContainerClient
           scrollToOnSuccess='form-alert'
           scrollToOnError={false}
           action={content.SubmitUrl?.default ?? ''}
@@ -180,7 +180,7 @@ export default function FormContainer({ content }: FormContainerProps) {
 
             {buttonNodes.length > 0 && <FormActions nodes={buttonNodes} />}
           </div>
-        </FormWrapper>
+        </FormContainerClient>
       </div>
     </FormSubmissionProvider>
   );

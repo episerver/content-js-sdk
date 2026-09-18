@@ -243,7 +243,6 @@ function FormWrapperContent({
           body: formData,
         });
 
-        // Thrown rather than branched, so both routes share one failure path.
         if (!response.ok) {
           throw new Error(`Submission failed with status ${response.status}`);
         }
