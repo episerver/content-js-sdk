@@ -1,0 +1,170 @@
+/**
+ * Walks an experience composition and produces a flat description of what to
+ * render, without producing any framework's elements.
+ *
+ * A framework binding maps the returned items onto its own element type; all the
+ * decisions — which tag applies, how a node's fields become component content,
+ * which preview attributes go where — are made here.
+ *
+ * @module
+ */
+
+import type { ExperienceNode } from '../../infer.js';
+import { isComponentNode } from '../../util/baseTypeUtil.js';
+import { parseDisplaySettings } from '../../model/displayTemplates.js';
+import { getDisplayTemplateTag } from '../../model/displayTemplateRegistry.js';
+import { getPreviewUtils } from '../preview/attributes.js';
+import { resolveComponent } from './registry.js';
+
+/** Display settings after parsing, as a component receives them. */
+export type ParsedDisplaySettings = Record<string, string | boolean> | undefined;
+
+type RenderItemBase = {
+  key: string;
+  node: ExperienceNode;
+  /** The node's display-template tag, already applied to `content` as `__tag`. */
+  tag: string | undefined;
+  displaySettings: ParsedDisplaySettings;
+  /** `data-epi-*` attributes for this node. Empty outside edit mode. */
+  previewAttrs: Record<string, unknown>;
+};
+
+/** A node holding a component. The binding renders `content` through its component lookup. */
+export type ComponentRenderItem = RenderItemBase & {
+  kind: 'component';
+  content: Record<string, unknown>;
+  /**
+   * Which kind of node produced this item.
+   *
+   * A section is a content type in its own right, so it renders as content
+   * directly; a component node is what a binding offers a wrapper around.
+   */
+  source: 'component' | 'section';
+};
+
+/**
+ * A structure node — a row, a column, a form step — that wraps other items.
+ *
+ * `globalComponent` is whatever the registry holds for the node type (`_Row`,
+ * `_Column`). A binding is free to prefer its own override and to fall back to
+ * something of its own when both are absent.
+ */
+export type StructureRenderItem<C> = RenderItemBase & {
+  kind: 'structure';
+  nodeType: string;
+  index: number;
+  globalComponent: C | undefined;
+  children: RenderItem<C>[];
+};
+
+/** A node whose content type the CMS did not resolve. */
+export type UnknownRenderItem = RenderItemBase & {
+  kind: 'unknown';
+};
+
+export type RenderItem<C> =
+  | ComponentRenderItem
+  | StructureRenderItem<C>
+  | UnknownRenderItem;
+
+/** The registry keys used for globally registered row and column components. */
+const GLOBAL_STRUCTURE_NAMES: Record<string, string> = {
+  row: '_Row',
+  column: '_Column',
+};
+
+/** The per-node values every branch below needs. */
+function readNode(node: ExperienceNode) {
+  const { pa } = getPreviewUtils(node);
+
+  return {
+    key: node.key,
+    node,
+    tag: getDisplayTemplateTag(node.displayTemplateKey),
+    displaySettings: parseDisplaySettings(node.displaySettings),
+    previewAttrs: pa(node) as Record<string, unknown>,
+  };
+}
+
+/**
+ * Plans a flat composition, as rendered inside an experience section.
+ *
+ * Component nodes are expected to be wrapped by the binding, which is why their
+ * `previewAttrs` are reported separately rather than folded into `content`.
+ * Structure nodes are rendered as content in their own right here — a section has
+ * its own content type and its own component.
+ */
+export function planComposition<C>(nodes: ExperienceNode[]): RenderItem<C>[] {
+  return nodes.map(node => {
+    const base = readNode(node);
+
+    if (isComponentNode(node)) {
+      return {
+        ...base,
+        kind: 'component',
+        source: 'component',
+        content: { ...node.component, __tag: base.tag },
+      };
+    }
+
+    if (node.type === null) {
+      return { ...base, kind: 'unknown' };
+    }
+
+    // A section node carries user-defined properties in `component`, and its own
+    // scalar fields have to reach the component too.
+    const componentData = 'component' in node ? (node.component as object) : {};
+
+    return {
+      ...base,
+      kind: 'component',
+      source: 'section',
+      content: {
+        ...componentData,
+        ...node,
+        __typename: node.type,
+        __tag: base.tag,
+      },
+    };
+  });
+}
+
+/**
+ * Plans a grid section, recursing through rows and columns.
+ *
+ * Unlike {@linkcode planComposition}, a component node keeps a reference to the
+ * node it came from under `__composition`, which is what lets a component read
+ * its own display template key and its composition key.
+ */
+export function planGridSection<C>(nodes: ExperienceNode[]): RenderItem<C>[] {
+  return nodes.map((node, index) => {
+    const base = readNode(node);
+
+    if (isComponentNode(node)) {
+      return {
+        ...base,
+        kind: 'component',
+        source: 'component',
+        content: {
+          // `node.component` contains user-defined properties
+          ...node.component,
+          __composition: node,
+          __tag: base.tag,
+        },
+      };
+    }
+
+    const { nodeType } = node;
+    const globalName = GLOBAL_STRUCTURE_NAMES[nodeType];
+
+    return {
+      ...base,
+      kind: 'structure',
+      nodeType,
+      index,
+      globalComponent:
+        globalName ? resolveComponent<C>(globalName, { tag: base.tag }) : undefined,
+      children: planGridSection<C>(node.nodes ?? []),
+    };
+  });
+}

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { ContextData, ContextAdapter } from './baseContext.js';
+import { ContextData, ContextAdapter } from '../../context/baseContext.js';
 
 // Module-level cache - React.cache() ensures this is request-scoped in server components
 // All calls within the same request share this cached data

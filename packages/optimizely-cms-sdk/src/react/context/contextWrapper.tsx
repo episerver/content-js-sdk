@@ -1,6 +1,6 @@
 import React from 'react';
 import { configureAdapter, hasAdapter, initializeRequestContext } from '../../context/config.js';
-import ReactContextAdapter from '../../context/reactContextAdapter.js';
+import ReactContextAdapter from './reactContextAdapter.js';
 
 // Configure the React adapter only if no custom adapter has been set
 // This allows users to configure their own adapter before importing from react/server

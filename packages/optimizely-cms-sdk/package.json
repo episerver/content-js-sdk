@@ -15,6 +15,11 @@
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./core": {
+      "types": "./dist/cjs/core/index.d.ts",
+      "import": "./dist/esm/core/index.js",
+      "require": "./dist/cjs/core/index.js"
+    },
     "./react/server": {
       "types": "./dist/cjs/react/server.d.ts",
       "import": "./dist/esm/react/server.js",

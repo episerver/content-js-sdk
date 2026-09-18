@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { withAppContext } from '../contextWrapper.js';
 import { getContext } from '../../../context/config.js';
-import ReactContextAdapter from '../../../context/reactContextAdapter.js';
+import ReactContextAdapter from '../reactContextAdapter.js';
 import { configureAdapter } from '../../../context/config.js';
 
 // Ensure React adapter is configured for tests

@@ -4,7 +4,7 @@ import { GraphClient } from '../index.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createQueryContext, refreshCache } from '../../util/queryUtils.js';
 import { configureAdapter } from '../../context/config.js';
-import { ReactContextAdapter } from '../../context/reactContextAdapter.js';
+import { ReactContextAdapter } from '../../react/context/reactContextAdapter.js';
 
 /**
  * A section owns a composition, and Graph exposes it as a `composition` field on
