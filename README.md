@@ -56,7 +56,7 @@ A collection of [Agent Skills](https://agentskills.io) that teach AI coding agen
 
 **Compatible with:** Claude Code, Cursor, GitHub Copilot, and others
 
-> **Learn more:** See the [packages/optimizely-cms-skills/](./packages/optimizely-cms-skills/README.md) package
+> **Learn more:** The skills live in the [episerver/optimizely-cms-skills](https://github.com/episerver/optimizely-cms-skills) repository. See the [Agent Skills guide](./docs/13-agent-skills.md) for installation.
 >
 > **Framework Support:** While the SDK is designed to be framework-agnostic, this version currently includes first-class support for React and Next.js. Support for additional frameworks is coming soon.
 

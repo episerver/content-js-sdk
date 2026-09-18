@@ -37,9 +37,6 @@ CLAUDE.md
 graphify-out/
 .graphify_detect.json
 
-# Skill test/eval workspaces
-*-workspace/
-
 config.bat
 test-app
 *.tsbuildinfo
