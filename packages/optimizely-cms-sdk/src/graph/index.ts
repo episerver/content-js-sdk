@@ -4,7 +4,7 @@ import {
   OptimizelyGraphError,
 } from './error.js';
 import { logError, logWarning, SemanticAttributes } from '../telemetry/index.js';
-import { withRequestSpan } from '../telemetry/spans.js';
+import { type AuthMode, withRequestSpan } from '../telemetry/spans.js';
 import { DEFAULT_GRAPH_URL, DEFAULT_USER_AGENT } from './constants.js';
 import { isBrowser } from './environment.js';
 import {
@@ -51,14 +51,24 @@ export type {
 
 // AUTHENTICATION
 
-/** The auth headers for one request, empty when the single key is used. */
+/** Which credential a request will carry. */
+const authModeFor = (
+  auth: GraphAuthResolver | undefined,
+  previewToken: string | undefined,
+): AuthMode => (previewToken ? 'preview' : auth ? 'custom' : 'single');
+
+/** The auth headers for one request: a preview token, a resolver's headers, or the single key. */
 async function resolveAuthHeaders(
+  apiKey: string,
   auth: GraphAuthResolver | undefined,
   previewToken: string | undefined,
   request: GraphAuthContext,
 ): Promise<GraphAuthHeaders> {
-  // A preview token is itself a credential, so it replaces the resolver.
-  if (previewToken || !auth) return {};
+  // A preview token is itself a credential, so it replaces the others.
+  if (previewToken) return { Authorization: `Bearer ${previewToken}` };
+
+  const singleKey = { Authorization: `epi-single ${apiKey}` };
+  if (!auth) return singleKey;
 
   if (isBrowser())
     throw new OptimizelyGraphError(
@@ -80,7 +90,31 @@ async function resolveAuthHeaders(
       'The `auth` resolver must return an object mapping header names to string values.',
     );
 
-  return headers;
+  // A resolver may contribute only impersonation headers, leaving the single key in place.
+  return { ...singleKey, ...headers };
+}
+
+// RESPONSES
+
+/** Surfaces the `errors` array Graph can return alongside an HTTP 200. */
+function reportResponseErrors(
+  json: any,
+  status: number,
+  request: { query: string; variables: any },
+): void {
+  // Without this, an auth or permission failure returns no data and reads as
+  // "content not found" at the call site.
+  if (!json.errors?.length) return;
+
+  if (!json.data) throw new GraphContentResponseError(json.errors, { status, request });
+
+  // Partial data is still usable, so this stays a warning rather than a throw.
+  logWarning('Graph returned errors alongside partial data', {
+    [SemanticAttributes.HTTP_STATUS_CODE]: status,
+    'graph.errors': json.errors
+      .map((error: { message: string }) => error.message)
+      .join('; '),
+  });
 }
 
 // GRAPH CLIENT
@@ -130,9 +164,7 @@ export class GraphClient {
       cache,
       slot || 'Current',
       !!previewToken,
-      previewToken ? 'preview'
-      : this.auth ? 'custom'
-      : 'single',
+      authModeFor(this.auth, previewToken),
       async span => {
         const url = new URL(this.graphUrl);
 
@@ -147,20 +179,14 @@ export class GraphClient {
         // covers a hash of the body, so the resolver has to see the same bytes.
         const body = JSON.stringify({ query, variables });
 
-        const authHeaders = await resolveAuthHeaders(this.auth, previewToken, {
-          url: url.toString(),
-          method: 'POST',
-          body,
-        });
-
-        // Order is the precedence: a resolver overrides the single key, a preview
-        // token overrides both.
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
           'User-Agent': this.userAgent,
-          Authorization: `epi-single ${this.apiKey}`,
-          ...authHeaders,
-          ...(previewToken ? { Authorization: `Bearer ${previewToken}` } : {}),
+          ...(await resolveAuthHeaders(this.apiKey, this.auth, previewToken, {
+            url: url.toString(),
+            method: 'POST',
+            body,
+          })),
         };
 
         if (stored) {
@@ -223,24 +249,7 @@ export class GraphClient {
         }
 
         const json = (await response.json()) as any;
-
-        // Graph reports authentication and permission failures as a 200 carrying an
-        // `errors` array, so returning `json.data` regardless reads as "content not found".
-        if (json.errors?.length) {
-          if (!json.data)
-            throw new GraphContentResponseError(json.errors, {
-              status: response.status,
-              request: { query, variables },
-            });
-
-          // Partial data is still usable, so this stays a warning rather than a throw.
-          logWarning('Graph returned errors alongside partial data', {
-            [SemanticAttributes.HTTP_STATUS_CODE]: response.status,
-            'graph.errors': json.errors
-              .map((error: { message: string }) => error.message)
-              .join('; '),
-          });
-        }
+        reportResponseErrors(json, response.status, { query, variables });
 
         return json.data;
       },
