@@ -23,7 +23,8 @@
       "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/setup-tasks.ps1 -Json)",
       "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(pnpm build *)"
+      "Bash(pnpm build *)",
+      "Bash(git rebase *)"
     ],
     "additionalDirectories": [
       "e:\\content-js-sdk\\specs"

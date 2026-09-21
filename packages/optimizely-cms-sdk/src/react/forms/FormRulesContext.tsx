@@ -111,8 +111,8 @@ export function FormRulesProvider({ children, rules = [] }: FormRulesProviderPro
   const resolveVisibility = (applicableRules: DependencyRule[]): boolean => {
     if (applicableRules.length === 0) return true;
 
-    const allHide = applicableRules.filter(r => r.SatisfiedAction === 'Hide');
-    const allShow = applicableRules.filter(r => r.SatisfiedAction === 'Show');
+    const allHide = applicableRules.filter(r => r.SatisfiedAction === 'Hide' || r.SatisfiedAction === 'HideStep');
+    const allShow = applicableRules.filter(r => r.SatisfiedAction === 'Show' || r.SatisfiedAction === 'ShowStep');
 
     if (allHide.length > 0 && allHide.some(isSatisfied)) return false;
     if (allShow.length > 0 && !allShow.some(isSatisfied)) return false;
