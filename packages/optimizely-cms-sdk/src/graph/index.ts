@@ -3,10 +3,14 @@ import {
   GraphHttpResponseError,
   OptimizelyGraphError,
 } from './error.js';
-import { logError, SemanticAttributes } from '../telemetry/index.js';
+import { logError, logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { withRequestSpan } from '../telemetry/spans.js';
 import { DEFAULT_GRAPH_URL, DEFAULT_USER_AGENT } from './constants.js';
+import { isBrowser } from './environment.js';
 import {
+  type GraphAuthContext,
+  type GraphAuthHeaders,
+  type GraphAuthResolver,
   type GraphGetContentOptions,
   type GraphGetItemOptions,
   type GraphGetLinksOptions,
@@ -18,7 +22,7 @@ import {
   type ResolvedFragmentOptions,
   type ResolvedQueryOptions,
   DEFAULT_FRAGMENT_OPTIONS,
-  DEFAULT_QUERY_OPTIONS,
+  defaultQueryOptions,
   normalizeGraphUrl,
   withDefaults,
 } from './options.js';
@@ -37,7 +41,47 @@ export {
   GraphSlot,
   PreviewParams,
 } from './options.js';
-export type { DamMode, GraphFragmentOptions } from './options.js';
+export type {
+  DamMode,
+  GraphAuthContext,
+  GraphAuthHeaders,
+  GraphAuthResolver,
+  GraphFragmentOptions,
+} from './options.js';
+
+// AUTHENTICATION
+
+/** The auth headers for one request, empty when the single key is used. */
+async function resolveAuthHeaders(
+  auth: GraphAuthResolver | undefined,
+  previewToken: string | undefined,
+  request: GraphAuthContext,
+): Promise<GraphAuthHeaders> {
+  // A preview token is itself a credential, so it replaces the resolver.
+  if (previewToken || !auth) return {};
+
+  if (isBrowser())
+    throw new OptimizelyGraphError(
+      'The `auth` resolver ran in a browser. Graph credentials other than the single key must never reach client code. ' +
+        'Fetch from a server component, route handler or API route instead.',
+    );
+
+  // `Promise.resolve().then` so a resolver that throws synchronously is caught too.
+  const headers = await Promise.resolve()
+    .then(() => auth(request))
+    .catch(err => {
+      const optiErr = new OptimizelyGraphError('The `auth` resolver threw.');
+      optiErr.cause = err;
+      throw optiErr;
+    });
+
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers))
+    throw new OptimizelyGraphError(
+      'The `auth` resolver must return an object mapping header names to string values.',
+    );
+
+  return headers;
+}
 
 // GRAPH CLIENT
 
@@ -45,6 +89,9 @@ export class GraphClient {
   apiKey: string;
   graphUrl: string;
   userAgent: string;
+
+  /** Supplies the auth headers per request. Unset means the single key is used. */
+  readonly auth?: GraphAuthResolver;
 
   /**
    * Every setting the query builders read that comes from configuration,
@@ -60,9 +107,10 @@ export class GraphClient {
     this.apiKey = apiKey;
     this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
+    this.auth = options.auth;
 
     this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
-    this.queryDefaults = withDefaults(DEFAULT_QUERY_OPTIONS, options.query);
+    this.queryDefaults = withDefaults(defaultQueryOptions(options.auth), options.query);
   }
 
   // TRANSPORT
@@ -82,6 +130,9 @@ export class GraphClient {
       cache,
       slot || 'Current',
       !!previewToken,
+      previewToken ? 'preview'
+      : this.auth ? 'custom'
+      : 'single',
       async span => {
         const url = new URL(this.graphUrl);
 
@@ -92,11 +143,24 @@ export class GraphClient {
           url.searchParams.append('stored', 'true');
         }
 
+        // Serialized up front rather than inline in `fetch`: an HMAC signature
+        // covers a hash of the body, so the resolver has to see the same bytes.
+        const body = JSON.stringify({ query, variables });
+
+        const authHeaders = await resolveAuthHeaders(this.auth, previewToken, {
+          url: url.toString(),
+          method: 'POST',
+          body,
+        });
+
+        // Order is the precedence: a resolver overrides the single key, a preview
+        // token overrides both.
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
           'User-Agent': this.userAgent,
-          Authorization:
-            previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
+          Authorization: `epi-single ${this.apiKey}`,
+          ...authHeaders,
+          ...(previewToken ? { Authorization: `Bearer ${previewToken}` } : {}),
         };
 
         if (stored) {
@@ -110,10 +174,7 @@ export class GraphClient {
         const response = await fetch(url, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            query,
-            variables,
-          }),
+          body,
         }).catch(err => {
           if (err instanceof TypeError) {
             const optiErr = new OptimizelyGraphError(
@@ -162,6 +223,25 @@ export class GraphClient {
         }
 
         const json = (await response.json()) as any;
+
+        // Graph reports authentication and permission failures as a 200 carrying an
+        // `errors` array, so returning `json.data` regardless reads as "content not found".
+        if (json.errors?.length) {
+          if (!json.data)
+            throw new GraphContentResponseError(json.errors, {
+              status: response.status,
+              request: { query, variables },
+            });
+
+          // Partial data is still usable, so this stays a warning rather than a throw.
+          logWarning('Graph returned errors alongside partial data', {
+            [SemanticAttributes.HTTP_STATUS_CODE]: response.status,
+            'graph.errors': json.errors
+              .map((error: { message: string }) => error.message)
+              .join('; '),
+          });
+        }
+
         return json.data;
       },
     );

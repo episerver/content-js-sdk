@@ -100,6 +100,35 @@ export type GraphFragmentOptions = {
   typeFilter?: (contentTypeKey: string) => boolean;
 };
 
+/** Headers an auth resolver contributes. Any header is allowed; these are the well-known ones. */
+export type GraphAuthHeaders = Partial<
+  Record<'Authorization' | 'cg-username' | 'cg-roles', string>
+> &
+  Record<string, string>;
+
+/**
+ * The request about to be sent, in the form a signing scheme needs it.
+ */
+export type GraphAuthContext = {
+  /** Absolute URL the request goes to, query parameters included. */
+  url: string;
+  /** Always `POST`; Graph takes queries as POST bodies. */
+  method: 'POST';
+  /** The exact JSON body that will be sent, byte for byte. */
+  body: string;
+};
+
+/**
+ * Supplies the credentials for one Graph request, replacing the single key.
+ *
+ * Runs on every request, so the value may depend on the signed-in user — but only
+ * when the client was built per request with `getClient({ auth })`. A user-specific
+ * resolver handed to the global `config()` leaks across requests.
+ */
+export type GraphAuthResolver = (
+  request: GraphAuthContext,
+) => GraphAuthHeaders | Promise<GraphAuthHeaders>;
+
 /**
  * Configuration for initializing the Optimizely Graph Client.
  */
@@ -108,6 +137,17 @@ export type GraphOptions = {
   apiKey: string;
   /** Optional custom Graph URL */
   graphUrl?: string;
+  /**
+   * Supplies the auth headers for every Graph request, replacing the single key.
+   * Use it to reach content that CMS access rights hide from the single key, by
+   * signing the request (HMAC, Basic) or forwarding a token, optionally with
+   * Graph's `cg-username` / `cg-roles` impersonation headers.
+   *
+   * Server-side only: a request throws if this is set and it runs in a browser.
+   * Setting it also turns `query.cache` and `query.stored` off by default, since the
+   * response may differ per user and Graph shares both caches across credentials.
+   */
+  auth?: GraphAuthResolver;
   /**
    * Custom User-Agent string for HTTP requests to Graph API.
    * @default 'OptimizelySDK/{version} (JS)'
@@ -197,6 +237,14 @@ export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
   cache: true,
   stored: true,
 };
+
+/** The `query` defaults a client starts from, before its own `query` group is applied. */
+export const defaultQueryOptions = (auth?: GraphAuthResolver): ResolvedQueryOptions =>
+  // Graph keys both caches by query text rather than by credential, so leaving them on
+  // under a resolver shares one user's results with everyone issuing the same query.
+  auth ?
+    { ...DEFAULT_QUERY_OPTIONS, cache: false, stored: false }
+  : DEFAULT_QUERY_OPTIONS;
 
 // Skips keys explicitly set to `undefined`, which a plain spread would copy over
 // the default. Keeps `{ maxThreshold: undefined }` meaning "unset", not "clear it".

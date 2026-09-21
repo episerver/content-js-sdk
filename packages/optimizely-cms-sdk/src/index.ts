@@ -29,6 +29,9 @@ export {
 export type {
   PreviewParams,
   GraphReference,
+  GraphAuthContext,
+  GraphAuthHeaders,
+  GraphAuthResolver,
   GraphOptions,
   GraphFragmentOptions,
   GraphGetItemOptions,
