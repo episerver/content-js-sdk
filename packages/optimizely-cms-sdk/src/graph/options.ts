@@ -240,8 +240,10 @@ export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
 
 /** The `query` defaults a client starts from, before its own `query` group is applied. */
 export const defaultQueryOptions = (auth?: GraphAuthResolver): ResolvedQueryOptions =>
-  // Graph keys both caches by query text rather than by credential, so leaving them on
-  // under a resolver shares one user's results with everyone issuing the same query.
+  // The stored-query cache keys by query text rather than by credential, so leaving it on
+  // under a resolver shares one user's results with everyone issuing the same query. The
+  // response cache does scope by credential, but only as observed behaviour, not as a
+  // documented guarantee — off until Graph commits to it.
   auth ?
     { ...DEFAULT_QUERY_OPTIONS, cache: false, stored: false }
   : DEFAULT_QUERY_OPTIONS;

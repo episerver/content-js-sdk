@@ -466,7 +466,8 @@ secret with no signing, and works anywhere.
   or `query: { stored: true }` to opt back in where the response is not user-specific — but be
   careful with `stored`: Graph caches a stored query's result by the query text, not by the
   credential that ran it, so an authenticated request and an anonymous one issuing the same
-  query will share results.
+  query will share results. The ordinary `cache` does scope per credential, so opting that
+  one back in is the safer of the two.
 - **Live preview is unaffected.** A preview token is itself a credential, so it takes
   precedence and the resolver is not called for that request.
 - **HMAC and Basic are slower than the single key.** They bypass Graph's fast read path, so
