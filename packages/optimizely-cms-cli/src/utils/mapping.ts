@@ -183,7 +183,8 @@ export const validateContentAreaConstraints = (
         name => Array.isArray(target[name]) && target[name].length === 0,
       );
 
-      if (emptyLists.length > 0) {
+      // empty lists dropped only when unconstrained otherwise
+      if (emptyLists.length > 0 && !hasConstraints) {
         errors.push(
           `${location}: empty type constraints. ` +
             `${emptyLists.map(name => `"${name}"`).join(' and ')} must list at least one content type, or be removed.`,

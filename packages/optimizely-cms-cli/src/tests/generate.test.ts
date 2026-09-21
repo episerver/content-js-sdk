@@ -381,6 +381,40 @@ describe('generateContentCode - edge cases', () => {
     expect(result).not.toContain('compositionBehaviors:');
   });
 
+  it('should omit empty allowedTypes/restrictedTypes on properties', () => {
+    const heroSection: ManifestContentType = {
+      key: 'HeroSection',
+      displayName: 'Hero Section',
+      baseType: '_component',
+      isContract: false,
+      properties: {
+        image: {
+          type: 'contentReference',
+          contentType: 'ImageElement',
+          allowedTypes: [],
+          restrictedTypes: [],
+        } as any,
+        video: {
+          type: 'contentReference',
+          allowedTypes: ['_video'],
+          restrictedTypes: [],
+        } as any,
+        unconstrained: {
+          type: 'contentReference',
+          allowedTypes: [],
+          restrictedTypes: [],
+        } as any,
+      },
+    };
+
+    const result = generateContentCode(heroSection, mockManifest, false);
+    // `image` is covered by contentType, `video` by a non-empty allowedTypes
+    expect(result).not.toContain('restrictedTypes:');
+    expect(result).toContain("'_video'");
+    // `unconstrained` has nothing else, so one empty list survives to keep it typechecking
+    expect(result.match(/allowedTypes: \[\]/g)).toHaveLength(1);
+  });
+
   it('should handle display template with nodeType', () => {
     const templateWithNodeType: ManifestDisplayTemplate = {
       key: 'CustomTemplate',
@@ -758,7 +792,7 @@ describe('generateManifestCode', () => {
     expect(result).not.toContain('<|SysContentFolder|>');
   });
 
-  it('should include empty allowedTypes in generated code', () => {
+  it('should keep empty allowedTypes when nothing else constrains the property', () => {
     const contentTypeWithEmptyAllowedTypes: ManifestContentType = {
       key: 'PageWithContent',
       displayName: 'Page With Content',
@@ -780,12 +814,12 @@ describe('generateManifestCode', () => {
       contentTypes: [contentTypeWithEmptyAllowedTypes],
     });
 
-    // Should include empty allowedTypes arrays
-    expect(result).toContain('allowedTypes: []');
+    // Nothing else constrains these, so the empty list has to stay for the generated
+    // code to typecheck. `config push` reports them as empty type constraints.
     expect(result.match(/allowedTypes: \[\]/g)).toHaveLength(2);
   });
 
-  it('should include empty allowedTypes for unconstrained array items', () => {
+  it('should keep empty allowedTypes for unconstrained array items', () => {
     const contentTypeWithArrayContent: ManifestContentType = {
       key: 'PageWithSections',
       displayName: 'Page With Sections',
@@ -806,7 +840,7 @@ describe('generateManifestCode', () => {
       contentTypes: [contentTypeWithArrayContent],
     });
 
-    // Should include empty allowedTypes for array items
+    // Should keep empty allowedTypes for array items, nothing else constrains them
     expect(result).toContain('allowedTypes: []');
   });
 });

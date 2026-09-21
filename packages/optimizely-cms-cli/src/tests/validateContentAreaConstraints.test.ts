@@ -90,6 +90,26 @@ describe('validateContentAreaConstraints', () => {
     expect(errors).toHaveLength(0);
   });
 
+  it('should return no errors when an empty list sits next to a non-empty one', () => {
+    const types = [
+      contentType({
+        key: 'HeroSection',
+        baseType: '_page',
+        displayName: 'Hero',
+        properties: {
+          video: {
+            type: 'contentReference',
+            allowedTypes: ['VideoType'],
+            restrictedTypes: [],
+          } as any,
+        },
+      }),
+    ];
+
+    const { errors } = validateContentAreaConstraints(types);
+    expect(errors).toHaveLength(0);
+  });
+
   it('should return no errors when restrictedTypes is set', () => {
     const types = [
       contentType({
