@@ -358,7 +358,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       isInteractive &&
       (await confirm({
         message: 'Generate a registry file (registry.ts) for the generated types?',
-        default: true,
+        default: false,
       }));
 
     const registryIncludesConfig =

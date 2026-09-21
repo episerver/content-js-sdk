@@ -23,8 +23,12 @@ export default function FormSelection({ content }: FormSelectionProps) {
   const options = getSelectionOptions(content);
   const isMulti = content.AllowMultiSelect === true;
 
-  const defaultValue = isMulti
-    ? options.filter(o => o.selected).map(o => o.value).join(',')
+  const defaultValue =
+    isMulti ?
+      options
+        .filter(o => o.selected)
+        .map(o => o.value)
+        .join(',')
     : (options.find(o => o.selected)?.value ?? '');
 
   const {
@@ -37,7 +41,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
     errors,
     showErrors,
     isRequired,
-  } = useFormField<HTMLDivElement>({
+  } = useFormField<HTMLElement>({
     content,
     defaultValue,
   });
@@ -94,11 +98,16 @@ export default function FormSelection({ content }: FormSelectionProps) {
           </label>
         )}
         <select
-          ref={inputRef as React.RefObject<HTMLSelectElement>}
+          ref={element => {
+            inputRef.current = element;
+          }}
           id={content.SubmissionFieldName ?? content.Label ?? ''}
           name={content.SubmissionFieldName ?? content.Label ?? ''}
           value={value}
-          onChange={e => { setValue(e.target.value); onBlur(); }}
+          onChange={e => {
+            setValue(e.target.value);
+            onBlur();
+          }}
           onBlur={onBlur}
           title={content.Tooltip ?? ''}
           aria-invalid={showErrors}
@@ -106,9 +115,7 @@ export default function FormSelection({ content }: FormSelectionProps) {
           className={controlClass(showErrors)}
           {...pa('Options')}
         >
-          <option value=''>
-            {content.Placeholder || '-- Select --'}
-          </option>
+          <option value=''>{content.Placeholder || '-- Select --'}</option>
           {options.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -147,7 +154,7 @@ function MultiSelectDropdown({
   value: string;
   setValue: (v: string) => void;
   onBlur: () => void;
-  inputRef: React.RefObject<HTMLDivElement | null>;
+  inputRef: React.RefObject<HTMLElement | null>;
   placeholder: string;
   tooltip: string;
   showErrors: boolean;
@@ -179,38 +186,37 @@ function MultiSelectDropdown({
     onBlur();
   };
 
-  const selectedLabels = options
-    .filter(o => selected.has(o.value))
-    .map(o => o.label);
+  const selectedLabels = options.filter(o => selected.has(o.value)).map(o => o.label);
 
   return (
     <div ref={containerRef} className='relative'>
-      <div ref={inputRef}>
-        <button
-          type='button'
-          onClick={() => setOpen(prev => !prev)}
-          title={tooltip}
-          aria-invalid={showErrors}
-          aria-describedby={errorId}
-          aria-expanded={open}
-          className={`${controlClass(showErrors)} flex items-center justify-between text-left`}
+      <button
+        ref={element => {
+          inputRef.current = element;
+        }}
+        type='button'
+        onClick={() => setOpen(prev => !prev)}
+        title={tooltip}
+        aria-invalid={showErrors}
+        aria-describedby={errorId}
+        aria-expanded={open}
+        className={`${controlClass(showErrors)} flex items-center justify-between text-left`}
+      >
+        <span className={selectedLabels.length ? 'text-foreground' : 'text-foreground2'}>
+          {selectedLabels.length ? selectedLabels.join(', ') : placeholder}
+        </span>
+        <svg
+          className={`ml-2 h-4 w-4 shrink-0 text-foreground2 transition-transform ${open ? 'rotate-180' : ''}`}
+          viewBox='0 0 20 20'
+          fill='currentColor'
         >
-          <span className={selectedLabels.length ? 'text-foreground' : 'text-foreground2'}>
-            {selectedLabels.length ? selectedLabels.join(', ') : placeholder}
-          </span>
-          <svg
-            className={`ml-2 h-4 w-4 shrink-0 text-foreground2 transition-transform ${open ? 'rotate-180' : ''}`}
-            viewBox='0 0 20 20'
-            fill='currentColor'
-          >
-            <path
-              fillRule='evenodd'
-              d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'
-              clipRule='evenodd'
-            />
-          </svg>
-        </button>
-      </div>
+          <path
+            fillRule='evenodd'
+            d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'
+            clipRule='evenodd'
+          />
+        </svg>
+      </button>
       {open && (
         <ul
           role='listbox'
@@ -230,7 +236,11 @@ function MultiSelectDropdown({
               >
                 <span>{option.label}</span>
                 {isSelected && (
-                  <svg className='h-4 w-4 shrink-0 text-key1' viewBox='0 0 20 20' fill='currentColor'>
+                  <svg
+                    className='h-4 w-4 shrink-0 text-key1'
+                    viewBox='0 0 20 20'
+                    fill='currentColor'
+                  >
                     <path
                       fillRule='evenodd'
                       d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
