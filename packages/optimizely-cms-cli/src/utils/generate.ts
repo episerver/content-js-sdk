@@ -503,6 +503,8 @@ const skipPropertyConditions: Record<string, (it: any) => boolean> = {
   displayMode: (it: any) => it === 'available',
   mayContainTypes: (it: any) => it?.length === 0,
   extends: (it: any) => it?.length === 0,
+  allowedTypes: (it: any) => it?.length === 0,
+  restrictedTypes: (it: any) => it?.length === 0,
   contentType: (it: any) => it === undefined,
   nodeType: (it: any) => it === undefined,
   baseType: (it: any) => it === undefined,
