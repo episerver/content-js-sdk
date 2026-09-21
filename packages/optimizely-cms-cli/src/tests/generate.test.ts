@@ -399,13 +399,20 @@ describe('generateContentCode - edge cases', () => {
           allowedTypes: ['_video'],
           restrictedTypes: [],
         } as any,
+        unconstrained: {
+          type: 'contentReference',
+          allowedTypes: [],
+          restrictedTypes: [],
+        } as any,
       },
     };
 
     const result = generateContentCode(heroSection, mockManifest, false);
-    expect(result).not.toContain('allowedTypes: []');
+    // `image` is covered by contentType, `video` by a non-empty allowedTypes
     expect(result).not.toContain('restrictedTypes:');
     expect(result).toContain("'_video'");
+    // `unconstrained` has nothing else, so one empty list survives to keep it typechecking
+    expect(result.match(/allowedTypes: \[\]/g)).toHaveLength(1);
   });
 
   it('should handle display template with nodeType', () => {
@@ -785,7 +792,7 @@ describe('generateManifestCode', () => {
     expect(result).not.toContain('<|SysContentFolder|>');
   });
 
-  it('should omit empty allowedTypes from generated code', () => {
+  it('should keep empty allowedTypes when nothing else constrains the property', () => {
     const contentTypeWithEmptyAllowedTypes: ManifestContentType = {
       key: 'PageWithContent',
       displayName: 'Page With Content',
@@ -807,11 +814,12 @@ describe('generateManifestCode', () => {
       contentTypes: [contentTypeWithEmptyAllowedTypes],
     });
 
-    // Empty lists are noise, `config push` still rejects the unconstrained property
-    expect(result).not.toContain('allowedTypes:');
+    // Nothing else constrains these, so the empty list has to stay for the generated
+    // code to typecheck. `config push` reports them as empty type constraints.
+    expect(result.match(/allowedTypes: \[\]/g)).toHaveLength(2);
   });
 
-  it('should omit empty allowedTypes for unconstrained array items', () => {
+  it('should keep empty allowedTypes for unconstrained array items', () => {
     const contentTypeWithArrayContent: ManifestContentType = {
       key: 'PageWithSections',
       displayName: 'Page With Sections',
@@ -832,7 +840,7 @@ describe('generateManifestCode', () => {
       contentTypes: [contentTypeWithArrayContent],
     });
 
-    // Should omit empty allowedTypes for array items
-    expect(result).not.toContain('allowedTypes:');
+    // Should keep empty allowedTypes for array items, nothing else constrains them
+    expect(result).toContain('allowedTypes: []');
   });
 });
