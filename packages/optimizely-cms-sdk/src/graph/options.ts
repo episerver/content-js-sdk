@@ -187,8 +187,9 @@ export type GraphOptions = {
    * {@linkcode GraphAuthResolver} instead for a scheme the built-in modes do not cover.
    *
    * Server-side only: a request throws if this is set and it runs in a browser.
-   * Setting it also turns `query.stored` off, and `query.cache` off for any credential
-   * that can vary per user. See {@linkcode GraphAuthMode}.
+   * Setting it also turns `query.cache` and `query.stored` off, whichever credential is
+   * used, because the SDK generates the same query text for a given content type — a
+   * gated request and an anonymous one can share a cache entry. See {@linkcode GraphAuthMode}.
    */
   auth?: GraphAuth;
   /**
