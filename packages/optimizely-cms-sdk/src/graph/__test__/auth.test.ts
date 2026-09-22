@@ -210,14 +210,38 @@ describe('caching defaults', () => {
 });
 
 describe('server-only guard', () => {
-  test('refuses to resolve credentials in a browser', async () => {
+  // The guard covers the app secret, not authentication in general: a browser may hold a
+  // token of its own, and a resolver's headers are the caller's to account for.
+  test.each([
+    ['basic', { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0' }],
+    ['hmac', { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0' }],
+  ] as const)('refuses %s in a browser', async (_name, auth) => {
     vi.mocked(isBrowser).mockReturnValue(true);
-    const client = new GraphClient('test-key', {
-      auth: () => ({ Authorization: 'epi-hmac key:1:nonce:sig' }),
-    });
 
-    await expect(client.request(QUERY, {})).rejects.toThrow(OptimizelyGraphError);
+    await expect(
+      new GraphClient('test-key', { auth }).request(QUERY, {}),
+    ).rejects.toThrow(OptimizelyGraphError);
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('allows a bearer token in a browser', async () => {
+    vi.mocked(isBrowser).mockReturnValue(true);
+
+    await new GraphClient('test-key', {
+      auth: { type: 'bearer', token: 'user-jwt' },
+    }).request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('Bearer user-jwt');
+  });
+
+  test('allows a resolver in a browser', async () => {
+    vi.mocked(isBrowser).mockReturnValue(true);
+
+    await new GraphClient('test-key', {
+      auth: () => ({ Authorization: 'Bearer resolved-jwt' }),
+    }).request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('Bearer resolved-jwt');
   });
 
   test('leaves the single key alone in a browser', async () => {
@@ -426,15 +450,6 @@ describe('typed modes and the rest of the client', () => {
     const client = new GraphClient('test-key', { auth, query: { cache: true } });
 
     expect(client.queryDefaults.cache).toBe(true);
-  });
-
-  test.each(MODES)('%s is refused in a browser', async (_name, auth) => {
-    vi.mocked(isBrowser).mockReturnValue(true);
-
-    await expect(
-      new GraphClient('test-key', { auth }).request(QUERY, {}),
-    ).rejects.toThrow(OptimizelyGraphError);
-    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   test.each(MODES)('a preview token takes precedence over %s', async (_name, auth) => {

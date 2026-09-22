@@ -148,7 +148,8 @@ export type GraphImpersonation = {
  * - `bearer` — forwards a token you already hold. `token` may be a callback, since tokens
  *   expire.
  *
- * All three run on every runtime, edge included.
+ * All three run on every runtime, edge included. `basic` and `hmac` are refused in a
+ * browser, though, since an app secret must not reach client code.
  *
  * @example
  * ```ts
@@ -186,8 +187,11 @@ export type GraphOptions = {
    * with Graph's `cg-username` / `cg-roles` impersonation headers. Pass a
    * {@linkcode GraphAuthResolver} instead for a scheme the built-in modes do not cover.
    *
-   * Server-side only: a request throws if this is set and it runs in a browser.
-   * Setting it also turns `query.cache` and `query.stored` off, whichever credential is
+   * `basic` and `hmac` are server-side only — a request throws if one of them runs in a
+   * browser, since both carry an app secret. `bearer` and a resolver may run anywhere; what
+   * they put in the header is the caller's to keep safe.
+   *
+   * Setting `auth` also turns `query.cache` and `query.stored` off, whichever credential is
    * used, because the SDK generates the same query text for a given content type — a
    * gated request and an anonymous one can share a cache entry. See {@linkcode GraphAuthMode}.
    */

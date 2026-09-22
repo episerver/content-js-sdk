@@ -125,7 +125,7 @@ config({
 - **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
 - **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`. If the URL does not include `/content/v2`, the SDK appends it automatically
 - **`userAgent`** (optional): Value sent in the `User-Agent` header of every Graph request
-- **`auth`** (optional): Credentials to use instead of the single key — a built-in mode (`basic`, `hmac`, `bearer`) or a resolver function. Server-side only. See [Authentication](#authentication)
+- **`auth`** (optional): Credentials to use instead of the single key — a built-in mode (`basic`, `hmac`, `bearer`) or a resolver function. `basic` and `hmac` are server-side only. See [Authentication](#authentication)
 
 ##### `fragment` — query shape
 
@@ -366,9 +366,10 @@ rights is still indexed, but Graph will not return it to a single key.
 To reach that content, set `auth`. It takes one of the built-in modes below, or a
 [resolver function](#a-custom-resolver) if none of them fit.
 
-> **Server-side only.** These credentials must never reach a browser bundle. A request made
-> from browser code with `auth` set throws. Fetch from a server component, route handler or
-> API route instead.
+> **Keep the app secret on the server.** A request made from browser code with `basic` or
+> `hmac` set throws, because both carry the secret. Fetch from a server component, route
+> handler or API route instead. `bearer` and a resolver are allowed in the browser — what
+> they put in the header is yours to keep safe.
 
 #### Built-in modes
 
@@ -378,7 +379,7 @@ To reach that content, set `auth`. It takes one of the built-in modes below, or 
 | `hmac`   | App key and secret, signed  |
 | `bearer` | A token you already hold    |
 
-All three run on any runtime, edge included.
+All three run on any runtime, edge included. Of the three, only `bearer` may run in a browser.
 
 `basic` sends the app key and secret unsigned, over HTTPS. It is the simplest of the three:
 

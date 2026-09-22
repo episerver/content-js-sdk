@@ -129,6 +129,12 @@ async function resolverHeaders(
   return headers;
 }
 
+// Only the modes that take an app secret are refused in a browser. `bearer` forwards a token
+// the caller already holds and a resolver is the caller's own code, so neither can leak a
+// secret the SDK was handed.
+const carriesSecret = (auth: GraphAuth): auth is Extract<GraphAuthMode, { secret: string }> =>
+  typeof auth !== 'function' && (auth.type === 'basic' || auth.type === 'hmac');
+
 const requireText = (type: string, value: unknown, field: string): void => {
   if (typeof value !== 'string' || value.trim().length === 0)
     throw new OptimizelyGraphError(
@@ -161,10 +167,11 @@ export async function resolveAuthHeaders(
   const singleKey = { Authorization: `epi-single ${apiKey}` };
   if (!auth) return singleKey;
 
-  if (isBrowser())
+  if (carriesSecret(auth) && isBrowser())
     throw new OptimizelyGraphError(
-      'The `auth` option was used in a browser. Graph credentials other than the single key must never reach client code. ' +
-        'Fetch from a server component, route handler or API route instead.',
+      `The '${auth.type}' auth mode was used in a browser. Its app secret must never reach client code. ` +
+        'Fetch from a server component, route handler or API route instead, or use `bearer` to ' +
+        'forward a token the browser already holds.',
     );
 
   const headers =
