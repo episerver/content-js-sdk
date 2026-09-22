@@ -15,6 +15,12 @@ vi.mock('../environment.js', () => ({ isBrowser: vi.fn(() => false) }));
 
 const QUERY = 'query Test { _Content { total } }';
 
+const FIXED_NONCE = '11111111-2222-3333-4444-555555555555';
+const FIXED_TIMESTAMP = 1700000000000;
+
+/** A URL with a path, so the signed `pathAndQuery` is not just `/`. */
+const GRAPH_URL = 'https://graph.example.com/content/v2';
+
 let originalFetch: typeof global.fetch;
 
 /** The headers of the last `fetch` call. */
@@ -26,6 +32,10 @@ const sentUrl = (): URL => (global.fetch as any).mock.calls.at(-1)[0];
 
 beforeEach(() => {
   vi.mocked(isBrowser).mockReturnValue(false);
+
+  // Only the nonce is pinned; the digests stay real so the signature vectors below mean
+  // something. `Date.now` is pinned per test rather than here.
+  vi.spyOn(crypto, 'randomUUID').mockReturnValue(FIXED_NONCE);
 
   originalFetch = global.fetch;
   global.fetch = vi.fn(() =>
@@ -275,5 +285,190 @@ describe('configuration', () => {
     // The global client is unaffected by the override.
     await getClient().request(QUERY, {});
     expect(sentHeaders().Authorization).toBe('epi-single global-key');
+  });
+});
+
+// TYPED MODES
+
+describe('the basic mode', () => {
+  test('sends the app key and secret base64-encoded', async () => {
+    const client = new GraphClient('test-key', {
+      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0' },
+    });
+
+    await client.request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('Basic YXBwLWtleTpjMlZqY21WMA==');
+  });
+
+  test('carries impersonation headers', async () => {
+    const client = new GraphClient('test-key', {
+      auth: {
+        type: 'basic',
+        appKey: 'app-key',
+        secret: 'c2VjcmV0',
+        impersonate: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
+      },
+    });
+
+    await client.request(QUERY, {});
+
+    expect(sentHeaders()).toMatchObject({
+      'cg-username': 'delivery',
+      'cg-roles': 'WebDelivery,Members',
+    });
+  });
+});
+
+describe('the hmac mode', () => {
+  const hmacClient = (impersonate?: { username?: string; roles?: string[] }) =>
+    new GraphClient('test-key', {
+      graphUrl: GRAPH_URL,
+      auth: { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0', impersonate },
+    });
+
+  // Pinned against a signature computed outside the SDK, so a change to the message
+  // component order fails here rather than only against a live tenant.
+  test('matches a known-answer signature', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_TIMESTAMP);
+
+    await hmacClient().request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders().Authorization).toBe(
+      `epi-hmac app-key:${FIXED_TIMESTAMP}:${FIXED_NONCE}:` +
+        'mvsrSrf8X8PvJwXReuXGiBJf+Wh+8669A4Sd2kW70DA=',
+    );
+  });
+
+  test('signs the exact body that is sent', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_TIMESTAMP);
+
+    await hmacClient().request(QUERY, {}, undefined, false);
+
+    const [, init] = (global.fetch as any).mock.calls.at(-1);
+    expect(init.body).toBe(JSON.stringify({ query: QUERY, variables: {} }));
+  });
+
+  // A replayed timestamp or nonce would let a captured request be resent.
+  test('uses a fresh timestamp on every request', async () => {
+    const client = hmacClient();
+
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_TIMESTAMP);
+    await client.request(QUERY, {}, undefined, false);
+    const first = sentHeaders().Authorization;
+
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_TIMESTAMP + 1000);
+    await client.request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders().Authorization).not.toBe(first);
+  });
+
+  test('carries impersonation headers alongside the signature', async () => {
+    await hmacClient({ roles: ['WebDelivery'] }).request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders()['cg-roles']).toBe('WebDelivery');
+    expect(sentHeaders().Authorization).toMatch(/^epi-hmac app-key:/);
+  });
+
+  test('omits impersonation headers when none are configured', async () => {
+    await hmacClient().request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders()['cg-roles']).toBeUndefined();
+    expect(sentHeaders()['cg-username']).toBeUndefined();
+  });
+});
+
+describe('the bearer mode', () => {
+  test('forwards a static token', async () => {
+    const client = new GraphClient('test-key', {
+      auth: { type: 'bearer', token: 'user-jwt' },
+    });
+
+    await client.request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('Bearer user-jwt');
+  });
+
+  test('awaits a token callback and calls it per request', async () => {
+    const token = vi.fn(async () => 'fresh-jwt');
+    const client = new GraphClient('test-key', { auth: { type: 'bearer', token } });
+
+    await client.request(QUERY, {});
+    await client.request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('Bearer fresh-jwt');
+    expect(token).toHaveBeenCalledTimes(2);
+  });
+
+  test('rejects a callback that returns nothing usable', async () => {
+    const client = new GraphClient('test-key', {
+      auth: { type: 'bearer', token: (() => undefined) as any },
+    });
+
+    await expect(client.request(QUERY, {})).rejects.toThrow(/non-empty string/);
+  });
+});
+
+describe('typed modes and the rest of the client', () => {
+  const MODES = [
+    ['basic', { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0' }],
+    ['hmac', { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0' }],
+    ['bearer', { type: 'bearer', token: 'user-jwt' }],
+  ] as const;
+
+  test.each(MODES)('%s turns both caches off by default', (_name, auth) => {
+    const { cache, stored } = new GraphClient('test-key', { auth }).queryDefaults;
+
+    expect({ cache, stored }).toEqual({ cache: false, stored: false });
+  });
+
+  test.each(MODES)('%s still yields to an explicit cache setting', (_name, auth) => {
+    const client = new GraphClient('test-key', { auth, query: { cache: true } });
+
+    expect(client.queryDefaults.cache).toBe(true);
+  });
+
+  test.each(MODES)('%s is refused in a browser', async (_name, auth) => {
+    vi.mocked(isBrowser).mockReturnValue(true);
+
+    await expect(
+      new GraphClient('test-key', { auth }).request(QUERY, {}),
+    ).rejects.toThrow(OptimizelyGraphError);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test.each(MODES)('a preview token takes precedence over %s', async (_name, auth) => {
+    await new GraphClient('test-key', { auth }).request(QUERY, {}, 'preview-token');
+
+    expect(sentHeaders().Authorization).toBe('Bearer preview-token');
+  });
+});
+
+describe('configuration validation', () => {
+  const invalid: [string, any][] = [
+    ['an unknown type', { type: 'oauth' }],
+    ['basic without an appKey', { type: 'basic', secret: 'c2VjcmV0' }],
+    ['basic without a secret', { type: 'basic', appKey: 'app-key' }],
+    ['hmac with a blank secret', { type: 'hmac', appKey: 'app-key', secret: '  ' }],
+    ['bearer with an empty token', { type: 'bearer', token: '' }],
+  ];
+
+  test.each(invalid)('rejects %s when the client is built', (_name, auth) => {
+    expect(() => new GraphClient('test-key', { auth })).toThrow(OptimizelyGraphError);
+  });
+
+  // config() runs at application start-up, so a typo surfaces there rather than on
+  // whichever request happens to build the first client.
+  test.each(invalid)('rejects %s in config()', (_name, auth) => {
+    expect(() => config({ apiKey: 'global-key', auth })).toThrow(OptimizelyGraphError);
+  });
+
+  test('accepts a bearer callback without inspecting its result', () => {
+    expect(
+      () =>
+        new GraphClient('test-key', {
+          auth: { type: 'bearer', token: () => 'later' },
+        }),
+    ).not.toThrow();
   });
 });

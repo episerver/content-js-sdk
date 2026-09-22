@@ -4,13 +4,11 @@ import {
   OptimizelyGraphError,
 } from './error.js';
 import { logError, logWarning, SemanticAttributes } from '../telemetry/index.js';
-import { type AuthMode, withRequestSpan } from '../telemetry/spans.js';
+import { withRequestSpan } from '../telemetry/spans.js';
 import { DEFAULT_GRAPH_URL, DEFAULT_USER_AGENT } from './constants.js';
-import { isBrowser } from './environment.js';
+import { authModeFor, resolveAuthHeaders, validateAuth } from './auth.js';
 import {
-  type GraphAuthContext,
-  type GraphAuthHeaders,
-  type GraphAuthResolver,
+  type GraphAuth,
   type GraphGetContentOptions,
   type GraphGetItemOptions,
   type GraphGetLinksOptions,
@@ -43,56 +41,14 @@ export {
 } from './options.js';
 export type {
   DamMode,
+  GraphAuth,
   GraphAuthContext,
   GraphAuthHeaders,
+  GraphAuthMode,
   GraphAuthResolver,
   GraphFragmentOptions,
+  GraphImpersonation,
 } from './options.js';
-
-// AUTHENTICATION
-
-/** Which credential a request will carry. */
-const authModeFor = (
-  auth: GraphAuthResolver | undefined,
-  previewToken: string | undefined,
-): AuthMode => (previewToken ? 'preview' : auth ? 'custom' : 'single');
-
-/** The auth headers for one request: a preview token, a resolver's headers, or the single key. */
-async function resolveAuthHeaders(
-  apiKey: string,
-  auth: GraphAuthResolver | undefined,
-  previewToken: string | undefined,
-  request: GraphAuthContext,
-): Promise<GraphAuthHeaders> {
-  // A preview token is itself a credential, so it replaces the others.
-  if (previewToken) return { Authorization: `Bearer ${previewToken}` };
-
-  const singleKey = { Authorization: `epi-single ${apiKey}` };
-  if (!auth) return singleKey;
-
-  if (isBrowser())
-    throw new OptimizelyGraphError(
-      'The `auth` resolver ran in a browser. Graph credentials other than the single key must never reach client code. ' +
-        'Fetch from a server component, route handler or API route instead.',
-    );
-
-  // `Promise.resolve().then` so a resolver that throws synchronously is caught too.
-  const headers = await Promise.resolve()
-    .then(() => auth(request))
-    .catch(err => {
-      const optiErr = new OptimizelyGraphError('The `auth` resolver threw.');
-      optiErr.cause = err;
-      throw optiErr;
-    });
-
-  if (!headers || typeof headers !== 'object' || Array.isArray(headers))
-    throw new OptimizelyGraphError(
-      'The `auth` resolver must return an object mapping header names to string values.',
-    );
-
-  // A resolver may contribute only impersonation headers, leaving the single key in place.
-  return { ...singleKey, ...headers };
-}
 
 // RESPONSES
 
@@ -124,8 +80,8 @@ export class GraphClient {
   graphUrl: string;
   userAgent: string;
 
-  /** Supplies the auth headers per request. Unset means the single key is used. */
-  readonly auth?: GraphAuthResolver;
+  /** Supplies the credentials per request. Unset means the single key is used. */
+  readonly auth?: GraphAuth;
 
   /**
    * Every setting the query builders read that comes from configuration,
@@ -138,6 +94,8 @@ export class GraphClient {
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
+    validateAuth(options.auth);
+
     this.apiKey = apiKey;
     this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
@@ -443,6 +401,11 @@ export function config(options: GraphOptions) {
         'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
     );
   }
+
+  // Checked here as well as in the constructor so a malformed `auth` fails when the app
+  // starts up rather than on whichever request happens to build a client first.
+  validateAuth(options.auth);
+
   setGraphConfig(options);
 }
 

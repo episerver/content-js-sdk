@@ -62,8 +62,18 @@ export function startMultipleQuerySpan(contentType: string, damEnabled: boolean,
 
 // GraphQL Request Helpers
 
-/** Which credential a Graph request carried. Never the credential itself. */
-export type AuthMode = 'single' | 'custom' | 'preview';
+/**
+ * Which credential a Graph request carried. Never the credential itself.
+ *
+ * `custom` is a caller-supplied resolver; the named schemes are the built-in modes.
+ */
+export type AuthMode =
+  | 'single'
+  | 'preview'
+  | 'custom'
+  | 'basic'
+  | 'hmac'
+  | 'bearer';
 
 /**
  * Wraps request operation in span.

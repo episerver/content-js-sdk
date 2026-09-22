@@ -130,6 +130,48 @@ export type GraphAuthResolver = (
 ) => GraphAuthHeaders | Promise<GraphAuthHeaders>;
 
 /**
+ * Graph impersonation headers (`cg-username` / `cg-roles`).
+ *
+ * Valid on top of any credential except the single key.
+ */
+export type GraphImpersonation = {
+  username?: string;
+  roles?: string[];
+};
+
+/**
+ * A built-in authentication scheme, as an alternative to writing a
+ * {@linkcode GraphAuthResolver} by hand.
+ *
+ * - `basic` — app key and secret, unsigned.
+ * - `hmac` — app key and secret, signing each request so the secret never travels.
+ * - `bearer` — forwards a token you already hold. `token` may be a callback, since tokens
+ *   expire.
+ *
+ * All three run on every runtime, edge included.
+ *
+ * @example
+ * ```ts
+ * config({
+ *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+ *   auth: {
+ *     type: 'hmac',
+ *     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+ *     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+ *     impersonate: { roles: ['WebDelivery'] },
+ *   },
+ * });
+ * ```
+ */
+export type GraphAuthMode =
+  | { type: 'basic'; appKey: string; secret: string; impersonate?: GraphImpersonation }
+  | { type: 'hmac'; appKey: string; secret: string; impersonate?: GraphImpersonation }
+  | { type: 'bearer'; token: string | (() => string | Promise<string>) };
+
+/** Everything accepted by the `auth` option: a built-in scheme or a resolver. */
+export type GraphAuth = GraphAuthMode | GraphAuthResolver;
+
+/**
  * Configuration for initializing the Optimizely Graph Client.
  */
 export type GraphOptions = {
@@ -138,16 +180,17 @@ export type GraphOptions = {
   /** Optional custom Graph URL */
   graphUrl?: string;
   /**
-   * Supplies the auth headers for every Graph request, replacing the single key.
+   * Supplies the credentials for every Graph request, replacing the single key.
    * Use it to reach content that CMS access rights hide from the single key, by
-   * signing the request (HMAC, Basic) or forwarding a token, optionally with
-   * Graph's `cg-username` / `cg-roles` impersonation headers.
+   * signing the request (`hmac`, `basic`) or forwarding a token (`bearer`), optionally
+   * with Graph's `cg-username` / `cg-roles` impersonation headers. Pass a
+   * {@linkcode GraphAuthResolver} instead for a scheme the built-in modes do not cover.
    *
    * Server-side only: a request throws if this is set and it runs in a browser.
-   * Setting it also turns `query.cache` and `query.stored` off by default, since the
-   * response may differ per user and Graph shares both caches across credentials.
+   * Setting it also turns `query.stored` off, and `query.cache` off for any credential
+   * that can vary per user. See {@linkcode GraphAuthMode}.
    */
-  auth?: GraphAuthResolver;
+  auth?: GraphAuth;
   /**
    * Custom User-Agent string for HTTP requests to Graph API.
    * @default 'OptimizelySDK/{version} (JS)'
@@ -239,11 +282,7 @@ export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
 };
 
 /** The `query` defaults a client starts from, before its own `query` group is applied. */
-export const defaultQueryOptions = (auth?: GraphAuthResolver): ResolvedQueryOptions =>
-  // The stored-query cache keys by query text rather than by credential, so leaving it on
-  // under a resolver shares one user's results with everyone issuing the same query. The
-  // response cache does scope by credential, but only as observed behaviour, not as a
-  // documented guarantee — off until Graph commits to it.
+export const defaultQueryOptions = (auth?: GraphAuth): ResolvedQueryOptions =>
   auth ?
     { ...DEFAULT_QUERY_OPTIONS, cache: false, stored: false }
   : DEFAULT_QUERY_OPTIONS;
