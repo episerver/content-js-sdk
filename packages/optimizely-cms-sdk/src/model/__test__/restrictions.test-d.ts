@@ -124,3 +124,45 @@ test('content/contentReference require allowedTypes or restrictedTypes', () => {
     },
   });
 });
+
+test('contentReference accepts contentType field with ContentType value', () => {
+  const Article = contentType({
+    key: 'article',
+    displayName: 'Article',
+    baseType: '_component',
+  });
+
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      ref: {
+        type: 'contentReference',
+        displayName: 'Content Reference',
+        contentType: Article,
+      },
+    },
+  });
+});
+
+test('content accepts contentType field with ContentType value', () => {
+  const Article = contentType({
+    key: 'article',
+    displayName: 'Article',
+    baseType: '_component',
+  });
+
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      area: {
+        type: 'content',
+        displayName: 'Content Area',
+        contentType: Article,
+      },
+    },
+  });
+});
