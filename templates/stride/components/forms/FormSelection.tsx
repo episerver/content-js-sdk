@@ -93,28 +93,29 @@ export default function FormSelection({ content }: FormSelectionProps) {
             {isRequired && <span className={requiredMarkClass}>*</span>}
           </label>
         )}
-        <select
-          ref={inputRef as React.RefObject<HTMLSelectElement>}
-          id={content.SubmissionFieldName ?? content.Label ?? ''}
-          name={content.SubmissionFieldName ?? content.Label ?? ''}
-          value={value}
-          onChange={e => { setValue(e.target.value); onBlur(); }}
-          onBlur={onBlur}
-          title={content.Tooltip ?? ''}
-          aria-invalid={showErrors}
-          aria-describedby={errorId}
-          className={controlClass(showErrors)}
-          {...pa('Options')}
-        >
-          <option value=''>
-            {content.Placeholder || '-- Select --'}
-          </option>
-          {options.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
+        <div ref={inputRef}>
+          <select
+            id={content.SubmissionFieldName ?? content.Label ?? ''}
+            name={content.SubmissionFieldName ?? content.Label ?? ''}
+            value={value}
+            onChange={e => { setValue(e.target.value); onBlur(); }}
+            onBlur={onBlur}
+            title={content.Tooltip ?? ''}
+            aria-invalid={showErrors}
+            aria-describedby={errorId}
+            className={controlClass(showErrors)}
+            {...pa('Options')}
+          >
+            <option value=''>
+              {content.Placeholder || '-- Select --'}
             </option>
-          ))}
-        </select>
+            {options.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
         {showErrors && (
           <div {...errorProps} className='space-y-1'>
             {errors.map(message => (
