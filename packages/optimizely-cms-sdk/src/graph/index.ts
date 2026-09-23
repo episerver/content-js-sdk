@@ -41,13 +41,13 @@ export {
 } from './options.js';
 export type {
   DamMode,
+  GraphActingUser,
   GraphAuth,
   GraphAuthContext,
   GraphAuthHeaders,
   GraphAuthMode,
   GraphAuthResolver,
   GraphFragmentOptions,
-  GraphImpersonation,
 } from './options.js';
 
 // RESPONSES

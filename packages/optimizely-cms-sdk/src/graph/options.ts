@@ -144,11 +144,12 @@ export type GraphAuthResolver = (
 ) => GraphAuthHeaders | Promise<GraphAuthHeaders>;
 
 /**
- * Graph impersonation headers (`cg-username` / `cg-roles`).
+ * The user a request acts as, sent as Graph's `cg-username` / `cg-roles` headers.
  *
- * Valid on top of any credential except the single key.
+ * Valid on top of any credential except the single key. Graph takes the app
+ * credential's word for who this is; nothing here is verified.
  */
-export type GraphImpersonation = {
+export type GraphActingUser = {
   username?: string;
   roles?: string[];
 };
@@ -157,7 +158,7 @@ export type GraphImpersonation = {
 type GraphAppCredential = {
   appKey: string;
   secret: string;
-  impersonate?: GraphImpersonation;
+  asUser?: GraphActingUser;
   /** Also return content in the CMS trash. Maps to `cg-include-deleted`. @default false */
   includeDeleted?: boolean;
   /** Also return content whose stop-publish date has passed. Maps to `cg-include-expired`. @default false */
@@ -175,7 +176,7 @@ type GraphAppCredential = {
  *
  * All three run on every runtime, edge included. `basic` and `hmac` are refused in a
  * browser, though, since an app secret must not reach client code. Both also accept
- * `impersonate`, `includeDeleted` and `includeExpired`, which Graph honours only on a
+ * `asUser`, `includeDeleted` and `includeExpired`, which Graph honours only on a
  * credential that is not the single key.
  *
  * @example
@@ -186,7 +187,7 @@ type GraphAppCredential = {
  *     type: 'hmac',
  *     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
  *     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
- *     impersonate: { roles: ['WebDelivery'] },
+ *     asUser: { roles: ['WebDelivery'] },
  *   },
  * });
  * ```
@@ -211,7 +212,7 @@ export type GraphOptions = {
    * Supplies the credentials for every Graph request, replacing the single key.
    * Use it to reach content that CMS access rights hide from the single key, by
    * signing the request (`hmac`, `basic`) or forwarding a token (`bearer`), optionally
-   * with Graph's `cg-username` / `cg-roles` impersonation headers. Pass a
+   * acting as a named user via `asUser`. Pass a
    * {@linkcode GraphAuthResolver} instead for a scheme the built-in modes do not cover.
    *
    * `basic` and `hmac` are server-side only — a request throws if one of them runs in a

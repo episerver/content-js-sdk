@@ -34,7 +34,7 @@ export type {
   GraphAuthHeaders,
   GraphAuthMode,
   GraphAuthResolver,
-  GraphImpersonation,
+  GraphActingUser,
   GraphOptions,
   GraphFragmentOptions,
   GraphGetItemOptions,

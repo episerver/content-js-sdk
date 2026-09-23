@@ -6,7 +6,7 @@ import type {
   GraphAuth,
   GraphAuthContext,
   GraphAuthHeaders,
-  GraphImpersonation,
+  GraphActingUser,
   GraphAuthMode,
 } from './options.js';
 
@@ -81,16 +81,14 @@ const encodeUsername = (username: string): string =>
 const encodeRole = (role: string): string =>
   isPlainAscii(role) && !role.includes(',') ? role : encodeURIComponent(role);
 
-const impersonationHeaders = (impersonate?: GraphImpersonation): GraphAuthHeaders =>
-  !impersonate ?
+const actingUserHeaders = (asUser?: GraphActingUser): GraphAuthHeaders =>
+  !asUser ?
     {}
   : {
-      ...(impersonate.username ?
-        { 'cg-username': encodeUsername(impersonate.username) }
-      : {}),
+      ...(asUser.username ? { 'cg-username': encodeUsername(asUser.username) } : {}),
       // Graph takes the roles as one comma-separated header value.
-      ...(impersonate.roles?.length ?
-        { 'cg-roles': impersonate.roles.map(encodeRole).join(',') }
+      ...(asUser.roles?.length ?
+        { 'cg-roles': asUser.roles.map(encodeRole).join(',') }
       : {}),
     };
 
@@ -99,7 +97,7 @@ type GraphAppCredential = Extract<GraphAuthMode, { secret: string }>;
 // Both flags go out on every privileged request rather than only when set, so what Graph
 // returns does not depend on a server-side default we do not control.
 const credentialHeaders = (mode: GraphAppCredential): GraphAuthHeaders => ({
-  ...impersonationHeaders(mode.impersonate),
+  ...actingUserHeaders(mode.asUser),
   'cg-include-deleted': String(mode.includeDeleted ?? false),
   'cg-include-expired': String(mode.includeExpired ?? false),
 });
@@ -205,7 +203,7 @@ export async function resolveAuthHeaders(
       await resolverHeaders(auth, request)
     : await modeHeaders(auth, request);
 
-  // A resolver may contribute only impersonation headers, leaving the single key in place.
+  // A resolver may contribute only `cg-username` / `cg-roles`, leaving the single key in place.
   return { ...singleKey, ...headers };
 }
 

@@ -71,7 +71,7 @@ describe('the resolved headers', () => {
     expect(sentHeaders().Authorization).toBe('epi-hmac key:1:nonce:sig');
   });
 
-  test('impersonation headers reach Graph alongside the credential', async () => {
+  test('acting-user headers reach Graph alongside the credential', async () => {
     const client = new GraphClient('test-key', {
       auth: () => ({
         Authorization: 'epi-hmac key:1:nonce:sig',
@@ -325,13 +325,13 @@ describe('the basic mode', () => {
     expect(sentHeaders().Authorization).toBe('Basic YXBwLWtleTpjMlZqY21WMA==');
   });
 
-  test('carries impersonation headers', async () => {
+  test('carries acting-user headers', async () => {
     const client = new GraphClient('test-key', {
       auth: {
         type: 'basic',
         appKey: 'app-key',
         secret: 'c2VjcmV0',
-        impersonate: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
+        asUser: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
       },
     });
 
@@ -345,10 +345,10 @@ describe('the basic mode', () => {
 });
 
 describe('the hmac mode', () => {
-  const hmacClient = (impersonate?: { username?: string; roles?: string[] }) =>
+  const hmacClient = (asUser?: { username?: string; roles?: string[] }) =>
     new GraphClient('test-key', {
       graphUrl: GRAPH_URL,
-      auth: { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0', impersonate },
+      auth: { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0', asUser },
     });
 
   // Pinned against a signature computed outside the SDK, so a change to the message
@@ -387,14 +387,14 @@ describe('the hmac mode', () => {
     expect(sentHeaders().Authorization).not.toBe(first);
   });
 
-  test('carries impersonation headers alongside the signature', async () => {
+  test('carries acting-user headers alongside the signature', async () => {
     await hmacClient({ roles: ['WebDelivery'] }).request(QUERY, {}, undefined, false);
 
     expect(sentHeaders()['cg-roles']).toBe('WebDelivery');
     expect(sentHeaders().Authorization).toMatch(/^epi-hmac app-key:/);
   });
 
-  test('omits impersonation headers when none are configured', async () => {
+  test('omits acting-user headers when none are configured', async () => {
     await hmacClient().request(QUERY, {}, undefined, false);
 
     expect(sentHeaders()['cg-roles']).toBeUndefined();
@@ -407,13 +407,13 @@ describe('the hmac mode', () => {
  * measured on 2026-09-22 did not decode at all. Encoding an ASCII username anyway turns
  * `a@b.com` into `a%40b.com`, which matched nothing there — so ASCII has to go out raw.
  */
-describe('impersonation encoding', () => {
-  const sendAs = async (impersonate: {
+describe('acting-user encoding', () => {
+  const sendAs = async (asUser: {
     username?: string;
     roles?: string[];
   }): Promise<Record<string, string>> => {
     await new GraphClient('test-key', {
-      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0', impersonate },
+      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0', asUser },
     }).request(QUERY, {}, undefined, false);
 
     return sentHeaders();

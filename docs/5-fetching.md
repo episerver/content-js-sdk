@@ -423,11 +423,11 @@ config({
 });
 ```
 
-#### Impersonation
+#### Acting as a user
 
 `basic` and `hmac` authenticate as the **tenant**, not as a person, so by default they return
-everything the tenant holds. Add `impersonate` to have Graph apply one identity's access
-rights instead:
+everything the tenant holds. Add `asUser` to have Graph apply one user's access rights
+instead:
 
 ```ts
 config({
@@ -436,15 +436,19 @@ config({
     type: 'hmac',
     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
-    impersonate: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
+    asUser: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
   },
 });
 ```
 
-Both fields are optional and map to Graph's `cg-username` and `cg-roles` headers.
+Both fields are optional and map to Graph's `cg-username` and `cg-roles` headers — what
+Graph's own documentation calls impersonation. They narrow by access rights only, not by
+publication status; drafts are kept out by [`publishedOnly`](#publication-status), which is
+a separate setting and on by default.
 
-> **Impersonation narrows by access rights only**, not by publication status. Drafts are kept
-> out by [`publishedOnly`](#publication-status), which is a separate setting and on by default.
+> **Graph does not verify who this is.** It trusts the app credential's word, so treat
+> `asUser` as a privileged assertion: never populate it straight from a request header or
+> query parameter without establishing the user yourself first.
 
 #### Publication status
 
