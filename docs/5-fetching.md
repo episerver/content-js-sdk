@@ -445,6 +445,31 @@ Both fields are optional and map to Graph's `cg-username` and `cg-roles` headers
 > **Impersonation narrows by access rights only.** It does not narrow the response to
 > published content — unpublished versions come back either way.
 
+#### Deleted and expired content
+
+`basic` and `hmac` also take two flags that widen what Graph returns:
+
+```ts
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  auth: {
+    type: 'hmac',
+    appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+    secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+    includeDeleted: true,
+    includeExpired: true,
+  },
+});
+```
+
+| Option           | Header                | Adds                                            |
+| ---------------- | --------------------- | ----------------------------------------------- |
+| `includeDeleted` | `cg-include-deleted`  | Content in the CMS trash                        |
+| `includeExpired` | `cg-include-expired`  | Content whose stop-publish date has passed      |
+
+Both default to `false`, and the SDK sends both headers explicitly on every `basic` or `hmac`
+request.
+
 #### Per-user authentication
 
 `config()` is global, so an `auth` set there is shared by every visitor. To authenticate as the

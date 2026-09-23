@@ -139,6 +139,17 @@ export type GraphImpersonation = {
   roles?: string[];
 };
 
+/** An app key and secret, plus the modifiers Graph accepts alongside them. */
+type GraphAppCredential = {
+  appKey: string;
+  secret: string;
+  impersonate?: GraphImpersonation;
+  /** Also return content in the CMS trash. Maps to `cg-include-deleted`. @default false */
+  includeDeleted?: boolean;
+  /** Also return content whose stop-publish date has passed. Maps to `cg-include-expired`. @default false */
+  includeExpired?: boolean;
+};
+
 /**
  * A built-in authentication scheme, as an alternative to writing a
  * {@linkcode GraphAuthResolver} by hand.
@@ -149,7 +160,9 @@ export type GraphImpersonation = {
  *   expire.
  *
  * All three run on every runtime, edge included. `basic` and `hmac` are refused in a
- * browser, though, since an app secret must not reach client code.
+ * browser, though, since an app secret must not reach client code. Both also accept
+ * `impersonate`, `includeDeleted` and `includeExpired`, which Graph honours only on a
+ * credential that is not the single key.
  *
  * @example
  * ```ts
@@ -165,8 +178,8 @@ export type GraphImpersonation = {
  * ```
  */
 export type GraphAuthMode =
-  | { type: 'basic'; appKey: string; secret: string; impersonate?: GraphImpersonation }
-  | { type: 'hmac'; appKey: string; secret: string; impersonate?: GraphImpersonation }
+  | ({ type: 'basic' } & GraphAppCredential)
+  | ({ type: 'hmac' } & GraphAppCredential)
   | { type: 'bearer'; token: string | (() => string | Promise<string>) };
 
 /** Everything accepted by the `auth` option: a built-in scheme or a resolver. */

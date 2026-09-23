@@ -94,6 +94,16 @@ const impersonationHeaders = (impersonate?: GraphImpersonation): GraphAuthHeader
       : {}),
     };
 
+type GraphAppCredential = Extract<GraphAuthMode, { secret: string }>;
+
+// Both flags go out on every privileged request rather than only when set, so what Graph
+// returns does not depend on a server-side default we do not control.
+const credentialHeaders = (mode: GraphAppCredential): GraphAuthHeaders => ({
+  ...impersonationHeaders(mode.impersonate),
+  'cg-include-deleted': String(mode.includeDeleted ?? false),
+  'cg-include-expired': String(mode.includeExpired ?? false),
+});
+
 async function modeHeaders(
   mode: GraphAuthMode,
   request: GraphAuthContext,
@@ -102,13 +112,13 @@ async function modeHeaders(
     case 'basic':
       return {
         Authorization: basicHeader(mode.appKey, mode.secret),
-        ...impersonationHeaders(mode.impersonate),
+        ...credentialHeaders(mode),
       };
 
     case 'hmac':
       return {
         Authorization: await hmacHeader(mode.appKey, mode.secret, request),
-        ...impersonationHeaders(mode.impersonate),
+        ...credentialHeaders(mode),
       };
 
     case 'bearer': {
@@ -148,7 +158,7 @@ async function resolverHeaders(
 // Only the modes that take an app secret are refused in a browser. `bearer` forwards a token
 // the caller already holds and a resolver is the caller's own code, so neither can leak a
 // secret the SDK was handed.
-const carriesSecret = (auth: GraphAuth): auth is Extract<GraphAuthMode, { secret: string }> =>
+const carriesSecret = (auth: GraphAuth): auth is GraphAppCredential =>
   typeof auth !== 'function' && (auth.type === 'basic' || auth.type === 'hmac');
 
 const requireText = (type: string, value: unknown, field: string): void => {
@@ -227,4 +237,3 @@ export function validateAuth(auth: GraphAuth | undefined): void {
       );
   }
 }
-

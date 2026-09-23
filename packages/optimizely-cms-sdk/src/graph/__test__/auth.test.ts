@@ -454,6 +454,61 @@ describe('impersonation encoding', () => {
   });
 });
 
+describe('deleted and expired content', () => {
+  const sendWith = async (
+    visibility: { includeDeleted?: boolean; includeExpired?: boolean } = {},
+  ): Promise<Record<string, string>> => {
+    await new GraphClient('test-key', {
+      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0', ...visibility },
+    }).request(QUERY, {}, undefined, false);
+
+    return sentHeaders();
+  };
+
+  // Sent even when unset, so the response does not depend on a Graph-side default.
+  test('excludes both by default', async () => {
+    expect(await sendWith()).toMatchObject({
+      'cg-include-deleted': 'false',
+      'cg-include-expired': 'false',
+    });
+  });
+
+  test.each([
+    ['cg-include-deleted', { includeDeleted: true }],
+    ['cg-include-expired', { includeExpired: true }],
+  ])('sends %s when opted into', async (header, visibility) => {
+    expect((await sendWith(visibility))[header]).toBe('true');
+  });
+
+  test('sends both on an hmac request too', async () => {
+    await new GraphClient('test-key', {
+      auth: {
+        type: 'hmac',
+        appKey: 'app-key',
+        secret: 'c2VjcmV0',
+        includeDeleted: true,
+        includeExpired: true,
+      },
+    }).request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders()).toMatchObject({
+      'cg-include-deleted': 'true',
+      'cg-include-expired': 'true',
+    });
+  });
+
+  // Graph ignores them without a privileged credential, so sending them would only mislead.
+  test.each([
+    ['the single key', undefined],
+    ['a bearer token', { type: 'bearer', token: 'user-jwt' } as const],
+  ])('omits both for %s', async (_name, auth) => {
+    await new GraphClient('test-key', { auth }).request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders()['cg-include-deleted']).toBeUndefined();
+    expect(sentHeaders()['cg-include-expired']).toBeUndefined();
+  });
+});
+
 describe('the bearer mode', () => {
   test('forwards a static token', async () => {
     const client = new GraphClient('test-key', {
