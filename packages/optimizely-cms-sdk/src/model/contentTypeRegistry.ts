@@ -26,9 +26,22 @@ export function getRegistryVersion(): number {
 
 /** Initializes the content type registry */
 export function init(registry: RegistryEntry[]) {
-  _registry = registry;
+  _registry = [...registry, ...implicitContracts(registry)];
   _version++;
 }
+
+/** Returns the contracts reached through `extends` that the registry is missing. */
+const implicitContracts = (registry: RegistryEntry[]): RegistryEntry[] => {
+  const keys = new Set(registry.map(entry => entry.key));
+
+  return registry.flatMap(entry =>
+    ('extends' in entry ? [entry.extends].flat() : []).filter(contract => {
+      if (!contract || keys.has(contract.key)) return false;
+      keys.add(contract.key);
+      return true;
+    }),
+  ) as RegistryEntry[];
+};
 
 /**
  * Adds content types to the registry without replacing existing entries

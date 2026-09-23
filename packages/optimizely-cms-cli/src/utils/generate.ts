@@ -112,8 +112,10 @@ export const generateRegistryCode = (
   manifest: Manifest,
   options: RegistryOptions = {},
 ) => {
-  // Contracts are not registerable content types
-  const contentTypes = manifest.contentTypes.filter(it => !isContract(it));
+  // Contracts belong in the registry: query generation resolves a contract
+  // fragment by key, so an unregistered one throws GraphMissingContentTypeError
+  // as soon as a content area holds a type that extends it.
+  const contentTypes = manifest.contentTypes;
   const displayTemplates = manifest.displayTemplates || [];
 
   return `${generateRegistryImports(contentTypes, displayTemplates, options)}
@@ -191,7 +193,8 @@ const generateRegistryCall = (initFunction: string, contents: JSONContent[]) =>
   `  ${initFunction}([\n${contents.map(it => `    ${generateName(it)},`).join('\n')}\n  ]);`;
 
 const generateRegistryComment = (contentTypes: JSONContent[]) => {
-  const exampleKey = contentTypes[0]?.key ?? exampleContentTypeKey;
+  const exampleKey =
+    contentTypes.find(it => !isContract(it))?.key ?? exampleContentTypeKey;
 
   return `/**
  * Registers the generated content types and display templates with the SDK.
