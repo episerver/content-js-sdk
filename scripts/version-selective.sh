@@ -24,9 +24,12 @@ link_jira_tickets() {
     [ -z "$commit" ] && continue
     ticket=$(git log -1 --format=%B "$commit" | grep -oE "$regex" | head -1)
     [ -z "$ticket" ] && continue
+    # Already linked, by hand or by an earlier run of this script
+    grep -q "\[$ticket\]" "$f" && continue
     id=${ticket#CMS-}
     link="[$ticket](${url/\$1/$id})"
     awk -v link="$link" '
+      { sub(/\r$/, "") }  # CRLF files would never match the "---" delimiter
       $0 == "---" { fm++; print; next }
       fm >= 2 && !inserted && NF > 0 { print link ": " $0; inserted=1; next }
       { print }

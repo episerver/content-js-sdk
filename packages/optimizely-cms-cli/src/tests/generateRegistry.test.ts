@@ -30,17 +30,27 @@ const manifest: Manifest = {
 };
 
 describe('generateRegistryCode', () => {
-  it('registers content types and display templates, skipping contracts', () => {
+  it('registers content types, contracts and display templates', () => {
     const code = generateRegistryCode(manifest, { useGrouping: true });
 
     expect(code).toContain(`import { ArticlePageCT } from './page/ArticlePageCT';`);
+    expect(code).toContain(`import { SEOContract } from './contract/SEOContract';`);
     expect(code).toContain(
       `import { HeroDisplayDT } from './displayTemplates/HeroDisplayDT';`,
     );
-    expect(code).not.toContain('SEOContract');
-    expect(code).toContain('initContentTypeRegistry([\n    ArticlePageCT,\n  ]);');
+    expect(code).toContain(
+      'initContentTypeRegistry([\n    ArticlePageCT,\n    SEOContract,\n  ]);',
+    );
     expect(code).toContain('initDisplayTemplateRegistry([\n    HeroDisplayDT,\n  ]);');
     expect(code).not.toContain('config(');
+  });
+
+  it('uses a content type, never a contract, in the example comment', () => {
+    const code = generateRegistryCode({
+      contentTypes: [manifest.contentTypes[1], manifest.contentTypes[0]],
+    });
+
+    expect(code).toContain('{ ArticlePage: ArticlePageComponent }');
   });
 
   it('adds config() and flat imports when requested', () => {
@@ -57,7 +67,7 @@ describe('generateRegistryCode', () => {
     const code = generateRegistryCode(manifest, { singleFileModule: './manifest' });
 
     expect(code).toContain(
-      `import { ArticlePageCT, HeroDisplayDT } from './manifest';`,
+      `import { ArticlePageCT, SEOContract, HeroDisplayDT } from './manifest';`,
     );
   });
 });

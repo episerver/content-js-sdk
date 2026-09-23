@@ -86,7 +86,7 @@ export const validateContentTypeKey = (key: string): void => {
 };
 
 const handleComponentType = (property: any): any =>
-  property.type === 'component' && property.contentType?.key ?
+  ['component', 'content'].includes(property.type) && property.contentType?.key ?
     { ...property, contentType: property.contentType.key }
   : property;
 
@@ -97,7 +97,7 @@ const handleArrayType = (property: any): any => {
 
   if (itemType === 'link') return { ...property, format: 'LinkCollection' };
 
-  if (itemType === 'component' && property.items.contentType?.key)
+  if (['component', 'content'].includes(itemType) && property.items.contentType?.key)
     return {
       ...property,
       items: { ...property.items, contentType: property.items.contentType.key },
@@ -183,7 +183,8 @@ export const validateContentAreaConstraints = (
         name => Array.isArray(target[name]) && target[name].length === 0,
       );
 
-      if (emptyLists.length > 0) {
+      // empty lists dropped only when unconstrained otherwise
+      if (emptyLists.length > 0 && !hasConstraints) {
         errors.push(
           `${location}: empty type constraints. ` +
             `${emptyLists.map(name => `"${name}"`).join(' and ')} must list at least one content type, or be removed.`,

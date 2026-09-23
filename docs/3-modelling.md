@@ -125,7 +125,7 @@ properties: {
     type: 'richText',
     displayName: 'Summary',
     editorSettings: {
-      preset: 'minimal', // Options: 'minimal' | 'standard' | 'expanded'
+      preset: 'minimal', // Options: 'default' | 'minimal' | 'expanded'
     },
   },
 }
@@ -134,7 +134,7 @@ properties: {
 **Editor Presets:**
 
 - **`minimal`** - Basic formatting only (bold, italic, links, lists)
-- **`standard`** - Common formatting options (default if not specified)
+- **`default`** - Common formatting options (used if not specified)
 - **`expanded`** - Full TinyMCE toolbar with advanced features (tables, media, code)
 
 Use `minimal` for short formatted text fields like summaries or introductions. Use `expanded` for complex content requiring tables, embedded media, or custom HTML.

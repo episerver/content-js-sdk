@@ -112,8 +112,10 @@ export const generateRegistryCode = (
   manifest: Manifest,
   options: RegistryOptions = {},
 ) => {
-  // Contracts are not registerable content types
-  const contentTypes = manifest.contentTypes.filter(it => !isContract(it));
+  // Contracts belong in the registry: query generation resolves a contract
+  // fragment by key, so an unregistered one throws GraphMissingContentTypeError
+  // as soon as a content area holds a type that extends it.
+  const contentTypes = manifest.contentTypes;
   const displayTemplates = manifest.displayTemplates || [];
 
   return `${generateRegistryImports(contentTypes, displayTemplates, options)}
@@ -191,7 +193,8 @@ const generateRegistryCall = (initFunction: string, contents: JSONContent[]) =>
   `  ${initFunction}([\n${contents.map(it => `    ${generateName(it)},`).join('\n')}\n  ]);`;
 
 const generateRegistryComment = (contentTypes: JSONContent[]) => {
-  const exampleKey = contentTypes[0]?.key ?? exampleContentTypeKey;
+  const exampleKey =
+    contentTypes.find(it => !isContract(it))?.key ?? exampleContentTypeKey;
 
   return `/**
  * Registers the generated content types and display templates with the SDK.
@@ -437,7 +440,7 @@ const remakeObject = (
   circularMap?: CircularDependencyMap,
 ): Record<string, unknown> =>
   Object.entries(item)
-    .filter(([key, value]) => showProperty(key, value))
+    .filter(([key, value]) => showProperty(key, value, item))
     .reduce((acc, [key, value]) => {
       const newValue =
         isObject(value) ?
@@ -446,8 +449,21 @@ const remakeObject = (
       return { ...acc, [key]: newValue };
     }, {});
 
-const showProperty = (prop: string, value: any): boolean =>
-  prop in skipPropertyConditions ? !skipPropertyConditions[prop](value) : true;
+const showProperty = (prop: string, value: any, parent: any): boolean =>
+  prop in skipPropertyConditions ? !skipPropertyConditions[prop](value, parent) : true;
+
+/**
+ * The CMS API pads every `content`/`contentReference` property with `allowedTypes` and
+ * `restrictedTypes`, empty or not. Dropping an empty one is only safe while something else
+ * still declares a constraint, otherwise the generated code fails to typecheck against
+ * `ContentAndRefBlock`, which requires exactly one of the three. A fully unconstrained
+ * property therefore keeps `allowedTypes: []` as the anchor, and `config push` reports it.
+ */
+const isRedundantEmptyAllowedTypes = (value: any, parent: any): boolean =>
+  value?.length === 0 && (!!parent?.contentType || parent?.restrictedTypes?.length > 0);
+
+const isRedundantEmptyRestrictedTypes = (value: any, parent: any): boolean =>
+  value?.length === 0 && (!!parent?.contentType || Array.isArray(parent?.allowedTypes));
 
 // STRING UTILITIES
 
@@ -496,13 +512,15 @@ const propertiesThatCanHoldImports = [
   'extends',
 ];
 
-const skipPropertyConditions: Record<string, (it: any) => boolean> = {
+const skipPropertyConditions: Record<string, (it: any, parent?: any) => boolean> = {
   isLocalized: (it: any) => it === false,
   isRequired: (it: any) => it === false,
   sortOrder: (it: any) => it === 0,
   displayMode: (it: any) => it === 'available',
   mayContainTypes: (it: any) => it?.length === 0,
   extends: (it: any) => it?.length === 0,
+  allowedTypes: isRedundantEmptyAllowedTypes,
+  restrictedTypes: isRedundantEmptyRestrictedTypes,
   contentType: (it: any) => it === undefined,
   nodeType: (it: any) => it === undefined,
   baseType: (it: any) => it === undefined,

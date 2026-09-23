@@ -1,4 +1,4 @@
-import { AnyContentType, PermittedTypes } from './contentTypes.js';
+import { AnyContentType, ContentType, PermittedTypes } from './contentTypes.js';
 import { PropertyGroupKey } from './buildConfig.js';
 
 /** JSON type definitions */
@@ -87,7 +87,7 @@ export type FloatProperty = BaseProperty & {
 /** Represents type constraints for "content" and "contentReference" properties */
 type ContentAndRefBlock =
   | {
-      contentType: AnyContentType | string;
+      contentType: AnyContentType | ContentType | string;
       allowedTypes?: never;
       restrictedTypes?: never;
     }

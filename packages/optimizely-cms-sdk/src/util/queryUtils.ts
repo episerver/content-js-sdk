@@ -414,8 +414,10 @@ const handleContentProperty: PropertyHandler = (
   ctx: QueryContext,
 ) => {
   const { expandContracts, typeFilter, ancestors } = ctx;
+  const contentTypeKey = (property as any).contentType;
+  const allowedTypes = contentTypeKey ? [contentTypeKey] : (property as any).allowedTypes;
   const resolved = resolveAllowedTypes(
-    (property as any).allowedTypes,
+    allowedTypes,
     (property as any).restrictedTypes,
     getCachedContentTypes(),
     expandContracts,

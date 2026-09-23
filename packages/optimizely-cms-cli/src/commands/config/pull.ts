@@ -227,7 +227,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     this.logManifestStats(manifest, spinner);
     const fileName = hasProvidedFilename ? basename(resolvedOutput) : 'manifest.ts';
-    const displayLocation = hasProvidedFilename ?  dirname(providedOutput) : providedOutput;
+    const displayLocation =
+      hasProvidedFilename ? dirname(providedOutput) : providedOutput;
     spinner.succeed(` Generated ${fileName} file in ${displayLocation}`);
   }
 
@@ -358,14 +359,14 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       isInteractive &&
       (await confirm({
         message: 'Generate a registry file (registry.ts) for the generated types?',
-        default: true,
+        default: false,
       }));
 
     const registryIncludesConfig =
       wantsRegistry &&
       (await confirm({
         message: 'Include a config({ apiKey }) call in the registry file?',
-        default: true,
+        default: false,
       }));
 
     // Warn if conflicting flags are present

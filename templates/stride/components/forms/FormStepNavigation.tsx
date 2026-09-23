@@ -42,7 +42,7 @@ export default function FormStepNavigation({
         <button
           type='button'
           onClick={nextStep}
-          className={cn(buttonBase, buttonRoleClass.previous)}
+          className={cn(buttonBase, buttonRoleClass.next)}
         >
           Next
         </button>
@@ -56,7 +56,7 @@ export default function FormStepNavigation({
     <div
       className={cn(
         'mt-6 flex flex-wrap items-center gap-3 border-t border-foreground/10 pt-5',
-        showPrev ? 'justify-between' : 'justify-end',
+        'justify-end',
       )}
     >
       {buttons}
