@@ -204,7 +204,13 @@ export async function resolveAuthHeaders(
     : await modeHeaders(auth, request);
 
   // A resolver may contribute only `cg-username` / `cg-roles`, leaving the single key in place.
-  return { ...singleKey, ...headers };
+  // Matched case-insensitively, or a resolver returning `authorization` would send both and
+  // leave it to header-map insertion order which one survives.
+  const authorizes = Object.keys(headers).some(
+    name => name.toLowerCase() === 'authorization',
+  );
+
+  return authorizes ? headers : { ...singleKey, ...headers };
 }
 
 /** Rejects a malformed `auth` option at configuration time rather than on the first query. */
