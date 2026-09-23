@@ -52,6 +52,20 @@ export type GraphQueryOptions = {
    * Overrides the global `host` setting in `GraphOptions`.
    */
   host?: string;
+  /**
+   * Return only content whose `_metadata.status` is `Published`, hiding drafts
+   * and superseded versions.
+   *
+   * A no-op for the single key, which never sees a draft in the first place.
+   * It matters under `auth`, where a credential with editorial access
+   * otherwise gets every version. Turn it off to fetch drafts deliberately.
+   *
+   * Ignored where a specific version is being asked for — a preview, or a
+   * reference carrying a `version` — since that version is rarely the
+   * published one.
+   * @default true
+   */
+  publishedOnly?: boolean;
 };
 
 /**
@@ -297,6 +311,7 @@ export const DEFAULT_FRAGMENT_OPTIONS: ResolvedFragmentOptions = {
 export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
   cache: true,
   stored: true,
+  publishedOnly: true,
 };
 
 /** The `query` defaults a client starts from, before its own `query` group is applied. */
@@ -333,10 +348,10 @@ export function resolveQueryOptions(
   options: GraphQueryOptions = {},
   fallbacks: Partial<ResolvedQueryOptions> = {},
 ): ResolvedQueryOptions {
-  const { cache, stored, slot, host } = options;
+  const { cache, stored, slot, host, publishedOnly } = options;
   const defaults = { ...context.queryDefaults, ...fallbacks };
 
-  return withDefaults(defaults, { cache, stored, slot, host });
+  return withDefaults(defaults, { cache, stored, slot, host, publishedOnly });
 }
 
 /**

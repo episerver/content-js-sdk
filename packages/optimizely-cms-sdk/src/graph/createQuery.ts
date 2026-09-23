@@ -359,6 +359,7 @@ export const createFragment = (
 export type QueryOptions = Partial<QueryContext> & FragmentOptions & {
   filterShape?: FilterShape;
   variationMode?: VariationMode;
+  publishedOnly?: boolean;
 };
 
 const SINGLE_OP_NAMES: Record<FilterShape, string> = {
@@ -383,7 +384,7 @@ const generateSingleContentQuery = (
   const filterVars = getFilterVarDecls(filterShape);
   const variationVars = getVariationVarDecls(variationMode);
   const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
-  const whereClause = getFilterWhereClause(filterShape);
+  const whereClause = getFilterWhereClause(filterShape, options.publishedOnly);
   const variationClause = getVariationClause(variationMode);
 
   const query = `
@@ -447,7 +448,7 @@ const generateMultipleContentQuery = (
   const filterVars = getFilterVarDecls(filterShape);
   const variationVars = getVariationVarDecls(variationMode);
   const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
-  const whereClause = getFilterWhereClause(filterShape);
+  const whereClause = getFilterWhereClause(filterShape, options.publishedOnly);
   const variationClause = getVariationClause(variationMode);
 
   const query = `

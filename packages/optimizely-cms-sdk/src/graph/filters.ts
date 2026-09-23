@@ -21,7 +21,6 @@ function normalizePath(path: string) {
   }
 }
 
-
 export type GraphVariationInput =
   | { include: 'NONE' }
   | { include: 'ALL' }
@@ -101,22 +100,44 @@ export function getVariationVariables(
   return vars;
 }
 
-const PATH_WHERE = `where: { _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }`;
+const FILTER_PREDICATES: Record<FilterShape, string> = {
+  'by-key': `{ _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }`,
+  'by-path': `{ _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }`,
+};
+
+/** Live content, as opposed to a draft or a version that has been superseded. */
+const PUBLISHED_PREDICATE = `{ _metadata: { status: { eq: "Published" } } }`;
 
 export function getFilterVarDecls(shape: FilterShape): string {
   switch (shape) {
-    case 'by-key': return '$key: String, $version: String, $metadataLocale: String';
-    case 'by-path': return '$host: String, $path: String, $pathNoSlash: String';
+    case 'by-key':
+      return '$key: String, $version: String, $metadataLocale: String';
+    case 'by-path':
+      return '$host: String, $path: String, $pathNoSlash: String';
   }
 }
 
-export function getFilterWhereClause(shape: FilterShape): string {
-  switch (shape) {
-    case 'by-key':
-      return 'where: { _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }';
-    case 'by-path':
-      return PATH_WHERE;
-  }
+/**
+ * The `where` argument identifying the content a query is about.
+ *
+ * @param extra - Further predicates to combine with the identity filter.
+ */
+export function getFilterWhereClause(
+  shape: FilterShape,
+  publishedOnly = false,
+  extra: string[] = [],
+): string {
+  const predicates = [
+    FILTER_PREDICATES[shape],
+    ...(publishedOnly ? [PUBLISHED_PREDICATE] : []),
+    ...extra,
+  ];
+
+  // Kept unwrapped in the common case so the generated query text does not change
+  // for anyone who is not filtering.
+  return predicates.length === 1 ?
+      `where: ${predicates[0]}`
+    : `where: { _and: [${predicates.join(', ')}] }`;
 }
 
 export function getVariationVarDecls(mode: VariationMode): string {
@@ -130,4 +151,3 @@ export function getVariationClause(mode: VariationMode): string {
   const values = Array.from({ length: mode.count }, (_, i) => `$v${i + 1}`).join(', ');
   return `, variation: { include: SOME, value: [${values}] }`;
 }
-

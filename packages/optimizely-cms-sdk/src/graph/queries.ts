@@ -38,17 +38,13 @@ const METADATA_QUERY_BODY = `{
     __typename
   }`;
 
+const FORM_CONTAINER_PREDICATE = `{ composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }`;
+
 /** Non-zero when this page has a form container as a top-level section. */
-const FORMS_PROBE: Record<FilterShape, string> = {
-  'by-key': `
-  formsOnPage: _Experience(where: { _and: [{ _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }, { composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }] }) @include(if: $withForms) {
+const formsProbe = (shape: FilterShape, publishedOnly: boolean): string => `
+  formsOnPage: _Experience(${getFilterWhereClause(shape, publishedOnly, [FORM_CONTAINER_PREDICATE])}) @include(if: $withForms) {
     total
-  }`,
-  'by-path': `
-  formsOnPage: _Experience(where: { _and: [{ _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }, { composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }] }) @include(if: $withForms) {
-    total
-  }`,
-};
+  }`;
 
 const METADATA_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContentMetadata',
@@ -60,18 +56,23 @@ export function getMetadataQuery(
   shape: FilterShape,
   variationMode: VariationMode = 'none',
   withForms: boolean = false,
+  publishedOnly: boolean = false,
 ): string {
   const varDecls = getFilterVarDecls(shape);
   const variationVars = getVariationVarDecls(variationMode);
-  const allVars = [varDecls, variationVars, ...(withForms ? ['$withForms: Boolean!'] : [])]
+  const allVars = [
+    varDecls,
+    variationVars,
+    ...(withForms ? ['$withForms: Boolean!'] : []),
+  ]
     .filter(Boolean)
     .join(', ');
-  const whereClause = getFilterWhereClause(shape);
+  const whereClause = getFilterWhereClause(shape, publishedOnly);
   const variationClause = getVariationClause(variationMode);
-  const formsProbe = withForms ? FORMS_PROBE[shape] : '';
+  const probe = withForms ? formsProbe(shape, publishedOnly) : '';
   return `
 query ${METADATA_OP_NAMES[shape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}${formsProbe}
+  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}${probe}
 }
 `;
 }
@@ -183,9 +184,13 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
   }`;
 
 /** The ancestors of one piece of content. */
-export function getLinksQuery(opName: string, shape: FilterShape): string {
+export function getLinksQuery(
+  opName: string,
+  shape: FilterShape,
+  publishedOnly = false,
+): string {
   const filterVars = getFilterVarDecls(shape);
-  const whereClause = getFilterWhereClause(shape);
+  const whereClause = getFilterWhereClause(shape, publishedOnly);
   const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
   return `
 query ${opName}(${allVars}) {
@@ -194,9 +199,13 @@ query ${opName}(${allVars}) {
 }
 
 /** The children of one piece of content. */
-export function getItemsQuery(opName: string, shape: FilterShape): string {
+export function getItemsQuery(
+  opName: string,
+  shape: FilterShape,
+  publishedOnly = false,
+): string {
   const filterVars = getFilterVarDecls(shape);
-  const whereClause = getFilterWhereClause(shape);
+  const whereClause = getFilterWhereClause(shape, publishedOnly);
   const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
   return `
 query ${opName}(${allVars}) {

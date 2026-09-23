@@ -142,6 +142,7 @@ config({
 - **`stored`** (optional): Send queries as stored (persisted) queries. Defaults to `true`
 - **`slot`** (optional): Select which Graph index to query (`'Current'` or `'New'`). Used during smooth rebuilds
 - **`host`** (optional): Default application host for path filtering. Useful for multi-site scenarios. Only applies to lookups by path
+- **`publishedOnly`** (optional): Return only content whose `_metadata.status` is `Published`, hiding drafts and superseded versions. Defaults to `true`. See [Publication status](#publication-status)
 
 Every option in `query` is also accepted by the individual request methods, where it overrides the configured default for that one call.
 
@@ -442,8 +443,25 @@ config({
 
 Both fields are optional and map to Graph's `cg-username` and `cg-roles` headers.
 
-> **Impersonation narrows by access rights only.** It does not narrow the response to
-> published content — unpublished versions come back either way.
+> **Impersonation narrows by access rights only**, not by publication status. Drafts are kept
+> out by [`publishedOnly`](#publication-status), which is a separate setting and on by default.
+
+#### Publication status
+
+A privileged credential sees every version of a page, drafts included, so by default the SDK
+adds `_metadata.status: { eq: "Published" }` to the content it fetches. Turn it off to read
+drafts deliberately:
+
+```ts
+// One request.
+const drafts = await client.getContentByPath('/news/', { publishedOnly: false });
+
+// Or for every request this client makes.
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  query: { publishedOnly: false },
+});
+```
 
 #### Deleted and expired content
 
