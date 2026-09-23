@@ -11,6 +11,9 @@ The official JavaScript/TypeScript SDK for building headless applications with O
 - **Live preview** - Real-time content editing experience
 - **Rich text rendering** - Advanced rich text component with extensibility
 - **DAM integration** - Seamless digital asset management
+- **Optimizely Forms** - Render forms, validation, multi-step flows and dependency rules
+- **Runtime validation** - Validate Graph responses against your content types
+- **Observability** - OpenTelemetry traces and metrics out of the box
 
 ## Installation
 
@@ -31,13 +34,16 @@ yarn add @optimizely/cms-sdk
 ## Quick Start
 
 ```typescript
-// Initialize the client
-const client = new GraphClient('<YOUR_APP_SINGLE_KEY>', {
-  graphUrl: 'https://your-cms-instance.com',
+import { GraphClient } from '@optimizely/cms-sdk';
+
+// Initialize the client. `graphUrl` is the Optimizely Graph gateway, not your CMS
+// instance, and defaults to https://cg.optimizely.com/content/v2 when omitted.
+const client = new GraphClient(process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, {
+  graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
 });
 
-// Fetch content
-const c = await client.getContentByPath(`/<SOME_URL>`);
+// Fetch content. `getContentByPath` returns every item published at that path.
+const [content] = await client.getContentByPath('/<SOME_URL>/');
 ```
 
 ## Documentation
@@ -49,6 +55,7 @@ Full guides and documentation in the main repository:
 - [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/1-installation.md) - Set up your development environment
 - [Setup](https://github.com/episerver/content-js-sdk/blob/main/docs/2-setup.md) - Configure the SDK and CLI
 - [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md) - Define your content types with TypeScript
+- [Create Content](https://github.com/episerver/content-js-sdk/blob/main/docs/4-create-content.md) - Add content in Optimizely CMS
 
 ### Core Features
 
@@ -134,7 +141,15 @@ Top-level content properties (`p_string`, `p_xhtml`, etc.) are optional — `nul
 - [Display Settings](https://github.com/episerver/content-js-sdk/blob/main/docs/9-display-settings.md) - Configure content display options
 - [RichText Component (React)](https://github.com/episerver/content-js-sdk/blob/main/docs/10-richtext-component-react.md) - Render rich text content
 - [DAM Assets](https://github.com/episerver/content-js-sdk/blob/main/docs/11-dam-assets.md) - Manage digital assets
-- [Client Utils](https://github.com/episerver/content-js-sdk/blob/main/docs/12-client-utils.md) - Utility functions and helpers
+- [Client Utils](https://github.com/episerver/content-js-sdk/blob/main/docs/12-client-utils.md) - `getPath`, `getItems` and helpers
+- [Forms](https://github.com/episerver/content-js-sdk/blob/main/docs/15-forms.md) - Model and render Optimizely Forms
+- [Observability](https://github.com/episerver/content-js-sdk/blob/main/docs/observability.md) - OpenTelemetry traces and metrics
+
+### Tooling
+
+- [CLI Commands](https://github.com/episerver/content-js-sdk/blob/main/docs/13-cli-commands.md) - Every command, flag and env var
+- [Create App](https://github.com/episerver/content-js-sdk/blob/main/docs/14-create-app.md) - Scaffold a new or existing project
+- [Agent Skills](https://github.com/episerver/content-js-sdk/blob/main/docs/16-agent-skills.md) - AI-powered development
 
 ## Best Practices
 

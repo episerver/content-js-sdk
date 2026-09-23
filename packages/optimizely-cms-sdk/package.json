@@ -61,7 +61,8 @@
     }
   },
   "repository": {
-    "url": "https://github.com/episerver/content-js-sdk.git"
+    "url": "https://github.com/episerver/content-js-sdk.git",
+    "directory": "packages/optimizely-cms-sdk"
   },
   "scripts": {
     "prebuild": "node scripts/prebuild.js",

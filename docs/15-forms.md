@@ -249,6 +249,107 @@ This is the shape `FormStep` and `partitionFormNodes` work with, and it is
 why a single-step form still has a step in it. A container with no step, or fields placed
 outside one, renders as a title with no fields.
 
+### Building a form, step by step
+
+This walks through a newsletter sign-up form: a name, an email address and a submit
+button. It assumes `initForms()` has already run in your app — until it does, the form
+content types are not registered and none of the types below appear in the CMS.
+
+1. Create a **shared block**, search the content type list for **Form Container**, and
+   name it `Newsletter sign-up`.
+
+   ![Creating a Form Container shared block](./images/form-create-container.png)
+
+2. Open the block and add a **Form Step** with the **+** button. Every form needs at
+   least one, including a single-step form.
+
+   ![Adding a Form Step](./images/form-add-step.png)
+
+3. Inside the step, add a **row** and a **column**, the same way you would in a
+   composition or an experience. Elements live in columns, not directly in the step.
+
+   ![Adding a row and column](./images/form-add-row-column.png)
+
+4. Add an element to the column. The picker shows only form elements — Textbox,
+   Textarea, Number, Range, URL, Selection, Multiple or single choice, Submit button and
+   Reset button.
+
+   ![The form element picker](./images/form-element-picker.png)
+
+5. Add a **Textbox** for the visitor's name and fill in its properties:
+
+   | Property              | Value                                  |
+   | --------------------- | -------------------------------------- |
+   | `Label`               | `Name` — what the visitor sees         |
+   | `Placeholder`         | Optional hint text inside the field    |
+   | `SubmissionFieldName` | `name` — the key in the submitted data |
+   | `Validators`          | Tick **Required**                      |
+
+   `SubmissionFieldName` falls back to the label when you leave it empty, so a field
+   labelled `Name` submits as `Name`. Set it explicitly when your endpoint expects a
+   particular key.
+
+   ![Textbox properties](./images/form-textbox-properties.png)
+
+6. Add a second **Textbox** for the email address, labelled `Email` with
+   `SubmissionFieldName` set to `email`. There is no "email" property on the element —
+   email is a **validator**. In `Validators`, tick both **Email** and **Required**: the
+   email validator only checks what was typed, so on its own it accepts an empty field.
+
+   ![Email validators on a Textbox](./images/form-email-validators.png)
+
+7. Add another row and column, and put a **Submit button** in it.
+
+   ![Adding a Submit button](./images/form-add-submit-button.png)
+
+   It has just two properties, `Label` and `Tooltip`, but the label matters: `Next`,
+   `Previous` and `Back` are reserved for step navigation. A button labelled `Next` moves
+   to the next step instead of submitting. Use `Subscribe`, `Sign up` or anything else
+   that is not a navigation word.
+
+   ![Submit button properties](./images/form-submit-button.png)
+
+8. Go back to the container's own properties and set **Submit URL** to the absolute URL
+   of your newsletter endpoint. Leave it empty and the form posts to its own page, which
+   answers `405` — see [The Submit URL](#the-submit-url).
+
+   ![Setting the Submit URL](./images/form-submit-url.png)
+
+9. **Publish** the block. Nothing renders until you do — a draft container is not
+   returned by the published query your site runs.
+
+10. Place the published block. There are two routes, and they behave differently:
+
+    **In an experience**, drag it in as a **section**. The container is declared with
+    `compositionBehaviors: ['sectionEnabled']`, so it slots in at section level, beside
+    your other sections, and needs no extra setup.
+
+    ![Adding the form as a section in an experience](./images/form-add-to-experience.png)
+
+    **In a content area**, pick it the way you would any other shared block — but the
+    area's `allowedTypes` (or `restrictedTypes`) has to admit the container. If it does
+    not, the block still appears in the CMS and still renders its title, while its fields
+    are never fetched and the form comes out empty. See
+    [How form fragments are fetched](#how-form-fragments-are-fetched).
+
+    ![Adding the form to a content area](./images/form-add-to-content-area.png)
+
+    To bind a form to one specific page type instead, give the page a `component`
+    property typed to the container — see
+    [Using Forms in Content Models](#using-forms-in-content-models).
+
+#### Making it multi-step
+
+Adding a second **Form Step** at step 2 is all it takes. The SDK then shows one step at a
+time, keeps the values entered on the others, and adds the navigation — `Next` on the
+first step, `Previous` and `Next` in the middle, `Previous` plus the submit button on the
+last.
+
+![A form with multiple steps](./images/form-multi-step.png)
+
+See [Adding steps](#adding-steps) for what advancing validates, and
+[Branching between steps](#branching-between-steps) for skipping or jumping between them.
+
 ### What to get right
 
 Five things trip people up, because none of them fail loudly:

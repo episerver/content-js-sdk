@@ -16,7 +16,8 @@
     "test": "vitest --passWithNoTests"
   },
   "repository": {
-    "url": "https://github.com/episerver/content-js-sdk.git"
+    "url": "https://github.com/episerver/content-js-sdk.git",
+    "directory": "packages/optimizely-cms-create-app"
   },
   "keywords": [
     "optimizely",
