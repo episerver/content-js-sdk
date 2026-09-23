@@ -146,8 +146,8 @@ export type GraphAuthResolver = (
 /**
  * The user a request acts as, sent as Graph's `cg-username` / `cg-roles` headers.
  *
- * Valid on top of any credential except the single key. Graph takes the app
- * credential's word for who this is; nothing here is verified.
+ * Valid on the `basic` and `hmac` modes. Graph takes the app credential's word
+ * for who this is.
  */
 export type GraphActingUser = {
   username?: string;
