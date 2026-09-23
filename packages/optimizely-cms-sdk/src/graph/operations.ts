@@ -525,7 +525,8 @@ export async function getPath(
   }
 
   const variables = { ...filter.variables, locale: locales };
-  const query = getLinksQuery('GetPath', filter.filterShape, queryOptions.publishedOnly);
+  const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
+  const query = getLinksQuery('GetPath', filter.filterShape, publishedOnly);
 
   const data = (await context.request(
     query,
@@ -583,7 +584,8 @@ export async function getItems(
   }
 
   const variables = { ...filter.variables, locale: locales };
-  const query = getItemsQuery('GetItems', filter.filterShape, queryOptions.publishedOnly);
+  const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
+  const query = getItemsQuery('GetItems', filter.filterShape, publishedOnly);
 
   const data = (await context.request(
     query,
