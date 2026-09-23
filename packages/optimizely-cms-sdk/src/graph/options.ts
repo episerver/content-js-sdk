@@ -115,10 +115,11 @@ export type GraphFragmentOptions = {
 };
 
 /** Headers an auth resolver contributes. Any header is allowed; these are the well-known ones. */
-export type GraphAuthHeaders = Partial<
-  Record<'Authorization' | 'cg-username' | 'cg-roles', string>
-> &
-  Record<string, string>;
+export type GraphAuthHeaders = {
+  // `string & {}` rather than `string` so the literals survive the union and editors keep
+  // suggesting them.
+  [Name in ('Authorization' | 'cg-username' | 'cg-roles') | (string & {})]?: string;
+};
 
 /**
  * The request about to be sent, in the form a signing scheme needs it.
