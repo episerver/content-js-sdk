@@ -391,6 +391,7 @@ export async function getPreviewContent(
       sectionTypes,
       filterShape: filter.filterShape,
       variationMode: 'all',
+      publishedOnly: false,
     });
 
     const response = await context.request(
