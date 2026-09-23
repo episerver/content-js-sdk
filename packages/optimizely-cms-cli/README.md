@@ -131,6 +131,7 @@ optimizely-cms-cli config pull | grep -i "Article"
 
 # Include read-only system content types
 optimizely-cms-cli config pull --include-read-only
+optimizely-cms-cli config pull -r
 
 # Delete content types defined in your project
 optimizely-cms-cli config delete
@@ -148,7 +149,7 @@ optimizely-cms-cli config delete --host https://example.com
 
 > **Note:** The command automatically detects when output is piped or redirected and outputs JSON without prompting. You can also explicitly use `--json` to force JSON output. The `--output` flag works in all environments, including CI/non-TTY contexts.
 
-> **Note:** Use `--include-read-only` to pull all content types including system-generated read-only types. By default, only user-editable content types are pulled. This flag is useful for:
+> **Note:** Use `--include-read-only` (short form `-r`) to pull all content types including system-generated read-only types. By default, only user-editable content types are pulled. This flag is useful for:
 >
 > - **PaaS environments** where content types may be created from C# or .NET applications
 > - Auditing or understanding the full CMS content type schema

@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "tsx scripts/prepare-templates.ts && tsc",
-    "clean": "rimraf dist templates/nextjs-starter templates/nextjs-alloy templates/tanstack-starter",
+    "clean": "rimraf dist templates/nextjs-starter templates/nextjs-stride templates/nextjs-alloy templates/tanstack-starter",
     "test": "vitest --passWithNoTests"
   },
   "repository": {

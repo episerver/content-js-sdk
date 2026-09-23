@@ -129,7 +129,7 @@ Three key components work together here:
 For Next.js projects, use `NextPreviewComponent` instead of `PreviewComponent` for smooth preview experience:
 
 ```tsx
-import { NextPreviewComponent } from '@optimizely/cms-sdk/next';
+import { NextPreviewComponent } from '@optimizely/cms-sdk/react/nextjs';
 
 return (
   <>

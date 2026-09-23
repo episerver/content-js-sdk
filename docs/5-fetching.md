@@ -130,7 +130,7 @@ config({
 
 - **`richTextFormat`** (optional): Which Rich Text representation(s) to fetch — `'html'`, `'json'`, or `'both'`. Defaults to `'json'`. See [RichText Property](./3-modelling.md#richtext-property)
 - **`compositionDepth`** (optional): How many levels of an experience composition to fetch. Defaults to `4`
-- **`expandContracts`** (optional): Include every content type implementing a contract used in `allowedTypes`. Defaults to `false`. See [expandContracts](./3-modelling.md#controlling-contract-expansion)
+- **`expandContracts`** (optional): Include every content type implementing a contract used in `allowedTypes`. Defaults to `false`. See [expandContracts](./3-modelling.md#contract-expansion-in-graphql-queries)
 - **`maxThreshold`** (optional): Maximum number of GraphQL fragments generated for a single content area property before the SDK throws. Defaults to `100`
 - **`dam`** (optional): Whether to include DAM asset fragments — `'automatic'`, `'on'`, or `'off'`. Defaults to `'automatic'`. See [DAM Assets](./11-dam-assets.md)
 - **`typeFilter`** (optional): Predicate excluding content types from fragment generation
@@ -229,7 +229,7 @@ const content = await client.getContentByPath('/blog/my-article', {
 
 ---
 
-#### `getContent(reference, previewToken?)`
+#### `getContent(reference, options?)`
 
 Unified content fetching method using GraphReference. Provides flexible content retrieval with support for key-based queries, locale filtering, and version selection.
 
@@ -255,14 +255,16 @@ const content = await client.getContent('graph://cms/Page/880777d5a2824399b07e93
 // With preview token
 const content = await client.getContent(
   { key: '880777d5a2824399b07e93e3ca70668e', version: '123' },
-  'preview-token'
+  { previewToken: 'preview-token' }
 );
 ```
 
 **Parameters:**
 
 - `reference` (GraphReference | string): Content reference (object or graph:// string)
-- `previewToken` (optional): Preview token for draft content
+- `options` (optional):
+  - `previewToken`: Preview token for draft content
+  - `cache`, `stored`, `slot`: Per-request overrides of the `query` group. See [GraphClient Options](#graphclient-options)
 
 **GraphReference format:**
 
