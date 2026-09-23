@@ -69,13 +69,29 @@ async function hmacHeader(
   return `epi-hmac ${appKey}:${timestamp}:${nonce}:${bytesToBase64(new Uint8Array(signature))}`;
 }
 
+const isPlainAscii = (value: string): boolean => /^[\x20-\x7e]*$/.test(value);
+
+// Encoded only when it has to be. Graph documents plain ASCII as working unencoded, and
+// encoding it anyway would turn `a@b.com` into `a%40b.com`, which matches no one.
+const encodeUsername = (username: string): string =>
+  isPlainAscii(username) ? username : encodeURIComponent(username);
+
+// Graph splits on commas before it decodes, so a comma inside a name has to be encoded or
+// the role silently becomes two.
+const encodeRole = (role: string): string =>
+  isPlainAscii(role) && !role.includes(',') ? role : encodeURIComponent(role);
+
 const impersonationHeaders = (impersonate?: GraphImpersonation): GraphAuthHeaders =>
   !impersonate ?
     {}
   : {
-      ...(impersonate.username ? { 'cg-username': impersonate.username } : {}),
+      ...(impersonate.username ?
+        { 'cg-username': encodeUsername(impersonate.username) }
+      : {}),
       // Graph takes the roles as one comma-separated header value.
-      ...(impersonate.roles?.length ? { 'cg-roles': impersonate.roles.join(',') } : {}),
+      ...(impersonate.roles?.length ?
+        { 'cg-roles': impersonate.roles.map(encodeRole).join(',') }
+      : {}),
     };
 
 async function modeHeaders(

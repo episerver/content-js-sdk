@@ -402,6 +402,58 @@ describe('the hmac mode', () => {
   });
 });
 
+/**
+ * Graph decodes these headers but documents plain ASCII as working unencoded, and a tenant
+ * measured on 2026-09-22 did not decode at all. Encoding an ASCII username anyway turns
+ * `a@b.com` into `a%40b.com`, which matched nothing there — so ASCII has to go out raw.
+ */
+describe('impersonation encoding', () => {
+  const sendAs = async (impersonate: {
+    username?: string;
+    roles?: string[];
+  }): Promise<Record<string, string>> => {
+    await new GraphClient('test-key', {
+      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0', impersonate },
+    }).request(QUERY, {}, undefined, false);
+
+    return sentHeaders();
+  };
+
+  test.each([
+    ['an email-shaped username', 'marin.karamihalev@optimizely.com'],
+    ['a plain username', 'Tom'],
+    ['punctuation and spaces', "Tom O'Brien (admin)"],
+  ])('leaves %s untouched', async (_name, username) => {
+    expect((await sendAs({ username }))['cg-username']).toBe(username);
+  });
+
+  // The example from Graph's own HMAC documentation.
+  test('percent-encodes a non-ASCII username whole', async () => {
+    const headers = await sendAs({ username: 'förnamn@optimizely.com' });
+
+    expect(headers['cg-username']).toBe('f%C3%B6rnamn%40optimizely.com');
+  });
+
+  test('encodes only the roles that need it', async () => {
+    const headers = await sendAs({ roles: ['WebDelivery', 'Team Alpha', 'Redaktör'] });
+
+    expect(headers['cg-roles']).toBe('WebDelivery,Team Alpha,Redakt%C3%B6r');
+  });
+
+  test('encodes a comma inside a role rather than splitting it', async () => {
+    const headers = await sendAs({ roles: ['Editors, Reviewers', 'Authors'] });
+
+    expect(headers['cg-roles']).toBe('Editors%2C%20Reviewers,Authors');
+  });
+
+  // A raw CR or LF in a header value is how a header-injection attempt gets in.
+  test('encodes control characters', async () => {
+    const headers = await sendAs({ username: 'admin\r\ncg-roles: Administrators' });
+
+    expect(headers['cg-username']).not.toMatch(/[\r\n]/);
+  });
+});
+
 describe('the bearer mode', () => {
   test('forwards a static token', async () => {
     const client = new GraphClient('test-key', {
