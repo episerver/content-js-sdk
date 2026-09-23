@@ -120,6 +120,7 @@ export function getFilterVarDecls(shape: FilterShape): string {
 /**
  * The `where` argument identifying the content a query is about.
  *
+ * @param publishedOnly - Narrow to content whose `_metadata.status` is `Published`.
  * @param extra - Further predicates to combine with the identity filter.
  */
 export function getFilterWhereClause(
