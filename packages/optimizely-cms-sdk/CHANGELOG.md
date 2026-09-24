@@ -1,5 +1,54 @@
 # @optimizely/cms-sdk
 
+## 3.0.0-beta.1
+
+### Minor Changes
+
+- d392b21: [CMS-55409](https://optimizely-ext.atlassian.net/browse/CMS-55409): Turn DAM
+  asset fragments on or off from `config()`
+
+  DAM fragment inclusion used to be decided entirely by schema detection, with no way to
+  override it. The new `dam` option settles it yourself:
+  - `'automatic'` (default) — include DAM fragments when the Graph schema exposes DAM
+    types. Unchanged behaviour.
+  - `'on'` — always include them, skipping detection.
+  - `'off'` — never include them, skipping detection.
+
+  ```ts
+  config({
+    apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+    fragment: {
+      dam: 'on', // 'automatic' | 'on' | 'off'
+    },
+  });
+  ```
+
+  `dam` shapes the generated query, so it is fixed for the lifetime of a client and cannot
+  be overridden on a single request. See
+  [Working with DAM Assets](https://github.com/episerver/content-js-sdk/blob/main/docs/11-dam-assets.md#controlling-dam-fragment-inclusion).
+
+### Patch Changes
+
+- d392b21: [CMS-55090](https://optimizely-ext.atlassian.net/browse/CMS-55090): Generate
+  cacheable GraphQL queries
+
+  Queries now pass their filters as scalar variables instead of inline input objects, so
+  Optimizely Graph can cache and store them. Responses come back faster; no changes needed
+  in your application.
+
+- 16f90e1: [CMS-56470](https://optimizely-ext.atlassian.net/browse/CMS-56470): Register
+  contracts alongside the content types that extend them
+
+  Rendering a page whose content area accepted a content type implementing a contract
+  threw `Content type "<name>Contract" is not available in the component registry`,
+  because query generation looks a contract fragment up by key but nothing ever put the
+  contract in the registry.
+  - `initContentTypeRegistry()` now also registers any contract reached through a
+    registered type's `extends`, so existing applications need no change.
+  - `optimizely-cms-cli config pull` now includes contracts in the generated
+    `registry.ts`, which also covers contracts used only in
+    `allowedTypes`/`restrictedTypes`.
+
 ## 3.0.0-beta.0
 
 ### Major Changes
