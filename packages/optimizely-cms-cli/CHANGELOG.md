@@ -1,5 +1,135 @@
 # @optimizely/cms-cli
 
+## 3.0.0
+
+### Major Changes
+
+- 61e921a: [CMS-54832](https://optimizely-ext.atlassian.net/browse/CMS-54832): Add
+  validations and type restrictions for properties with content and contentReference
+
+  `optimizely-cms-cli config push` now stops before uploading when a `content` or
+  `contentReference` property (or array item) is misconfigured:
+  - Missing constraints — declare `contentType`, or `allowedTypes`/`restrictedTypes`.
+  - Empty `allowedTypes`/`restrictedTypes` — list at least one content type, or remove the
+    field.
+  - `contentType` combined with `allowedTypes`/`restrictedTypes` — declare only one of
+    them.
+
+  **Breaking change:** these were warnings before, so a content model that pushed cleanly
+  on the previous version can now be rejected outright. Unconstrained properties make the
+  SDK generate nested GraphQL fragments for every registered content type.
+
+  ```ts
+  // Rejected
+  properties: {
+    mainContent: { type: 'content' },                    // missing type constraints
+    gallery: { type: 'content', allowedTypes: [] },      // empty type constraints
+    hero: { type: 'contentReference', contentType: ImageCT, allowedTypes: [ImageCT] },
+  }
+
+  // Accepted
+  properties: {
+    mainContent: { type: 'content', allowedTypes: [TeaserCT] },
+    gallery: { type: 'content', restrictedTypes: [FolderCT] },
+    hero: { type: 'contentReference', contentType: ImageCT },
+  }
+  ```
+
+  **Migrating:** give every existing `content` and `contentReference` property a
+  `contentType` or a non-empty `allowedTypes`/`restrictedTypes` before upgrading. Narrower
+  constraints mean smaller queries and faster responses. See
+  [Content Relationships](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md#migrating-existing-content-types)
+  for examples.
+
+### Minor Changes
+
+- e7d2908: [CMS-55078](https://optimizely-ext.atlassian.net/browse/CMS-55078): Add
+  `displayMode` to content type properties. Set `displayMode: 'hidden'` to hide a property
+  from the editing interface. Defaults to `'available'` when not set.
+  `optimizely-cms-cli config pull` keeps `displayMode: 'hidden'` in generated content
+  types and omits the `'available'` default.
+- 27426f2: [CMS-54768](https://optimizely-ext.atlassian.net/browse/CMS-54768): Add
+  `optimizely-cms-cli config delete`
+
+  Deletes from the CMS only the content types declared in your project configuration,
+  after a confirmation prompt — unlike `danger delete-all-content-types`, which removes
+  every user-defined type.
+
+  ```sh
+  optimizely-cms-cli config delete             # ./optimizely.config.mjs
+  optimizely-cms-cli config delete ./custom-config.mjs
+  ```
+
+- f79e569: [CMS-55061](https://optimizely-ext.atlassian.net/browse/CMS-55061):
+  `config pull` can now generate a `registry.ts` file that registers every pulled content
+  type and display template via `initContentTypeRegistry()` /
+  `initDisplayTemplateRegistry()`, optionally including a `config({ apiKey })` call.
+
+### Patch Changes
+
+- 14f46bc: [CMS-54769](https://optimizely-ext.atlassian.net/browse/CMS-54769): Handle the
+  `'*'` wildcard in `allowedTypes`
+
+  `allowedTypes: ['*']` means "any content type". Queries treated `'*'` as a content type
+  key and resolved nothing; `optimizely-cms-cli config push` sent it to the CMS, which
+  rejects it. The wildcard now expands to every registered type when querying and is
+  stripped when pushing.
+
+- b751309: [CMS-54548](https://optimizely-ext.atlassian.net/browse/CMS-54548): Always
+  write `allowedTypes` and `restrictedTypes` on `config pull`
+
+  Empty constraint lists were dropped from the generated content types, so a pull followed
+  by a push turned a property that allowed nothing into one that allows everything.
+
+- 75cb2be: [CMS-54768](https://optimizely-ext.atlassian.net/browse/CMS-54768): Improve
+  detection of deletable types for `danger delete-all-content-types`
+
+  Only types with no `source` are user-defined and deletable. The command used to skip
+  just `system` and `serverModel`, so it attempted types owned by other sources and failed
+  on them.
+
+- 8877d5c: [CMS-55749](https://optimizely-ext.atlassian.net/browse/CMS-55749): Fix
+  `components` glob exclusions and precedence
+
+  `!dir` now excludes nested files, not only the ones directly inside it. When two
+  patterns match content types with the same key, the one listed first in `components`
+  wins — results used to be sorted by path, so the winner was arbitrary.
+
+- 16f90e1: [CMS-56470](https://optimizely-ext.atlassian.net/browse/CMS-56470): Register
+  contracts alongside the content types that extend them
+
+  Rendering a page whose content area accepted a content type implementing a contract
+  threw `Content type "<name>Contract" is not available in the component registry`,
+  because query generation looks a contract fragment up by key but nothing ever put the
+  contract in the registry.
+  - `initContentTypeRegistry()` now also registers any contract reached through a
+    registered type's `extends`, so existing applications need no change.
+  - `optimizely-cms-cli config pull` now includes contracts in the generated
+    `registry.ts`, which also covers contracts used only in
+    `allowedTypes`/`restrictedTypes`.
+
+- Updated dependencies [61e921a]
+- Updated dependencies [e7d2908]
+- Updated dependencies [14f46bc]
+- Updated dependencies [6c3cd3a]
+- Updated dependencies [00037d9]
+- Updated dependencies [54977f8]
+- Updated dependencies [79dae6d]
+- Updated dependencies [d392b21]
+- Updated dependencies [67f52fa]
+- Updated dependencies [aba0462]
+- Updated dependencies [988568e]
+- Updated dependencies [d392b21]
+- Updated dependencies [36b4c1a]
+- Updated dependencies [d58d272]
+- Updated dependencies [a8dc922]
+- Updated dependencies [54ab0e9]
+- Updated dependencies [0333f2f]
+- Updated dependencies [16f90e1]
+- Updated dependencies [7cc4a94]
+- Updated dependencies [40f3f23]
+  - @optimizely/cms-sdk@3.0.0
+
 ## 3.0.0-beta.0
 
 ### Major Changes
