@@ -13,10 +13,14 @@ on:
           - '@optimizely/cms-create-app'
           - '@optimizely/cms-sdk'
           - '@optimizely/cms-cli'
-      pre_release:
-        description: 'Pre-release mode (beta)'
-        type: boolean
-        default: false
+      pre_mode:
+        description: 'Pre-release: enter beta, exit back to stable, or leave as-is'
+        type: choice
+        default: none
+        options:
+          - none
+          - enter
+          - exit
 
 jobs:
   version:
@@ -44,9 +48,19 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
+      # `changeset version` reads .changeset/pre.json, so entering or exiting has
+      # to happen before it runs. changesets/action commits the whole working-tree
+      # diff to the version PR branch, so the pre.json change rides along with the
+      # bump — exiting and versioning are one dispatch, not two.
       - name: Enter Pre-release Mode
-        if: inputs.pre_release == true
+        if: inputs.pre_mode == 'enter'
         run: pnpm changeset pre enter beta
+
+      # Leaves "mode": "exit" behind; `changeset version` then deletes pre.json
+      # and writes stable versions.
+      - name: Exit Pre-release Mode
+        if: inputs.pre_mode == 'exit'
+        run: pnpm changeset pre exit
 
       - name: Create Version PR
         uses: changesets/action@v1
