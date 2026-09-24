@@ -1,6 +1,10 @@
 'use client';
 
-import { ContentProps, OptiFormsTextareaElementContentType } from '@optimizely/cms-sdk';
+import { ContentProps, OptiFormsUrlElementContentType } from '@optimizely/cms-sdk';
+import {
+  getHtmlValidationAttributes,
+  toValidators,
+} from '@optimizely/cms-sdk/forms/validation';
 import {
   FormElement,
   getPreviewUtils,
@@ -13,14 +17,16 @@ import {
   requiredMarkClass,
 } from './formStyles';
 
-type FormTextareaProps = {
-  content: ContentProps<typeof OptiFormsTextareaElementContentType>;
+type FormUrlProps = {
+  content: ContentProps<typeof OptiFormsUrlElementContentType>;
 };
 
-export default function FormTextarea({ content }: FormTextareaProps) {
-  const { fieldProps, errorProps, errors, showErrors, isRequired } =
-    useFormField<HTMLTextAreaElement>({ content });
+export default function FormUrl({ content }: FormUrlProps) {
+  const { fieldProps, errorProps, errors, showErrors, isRequired } = useFormField({
+    content,
+  });
 
+  const htmlAttrs = getHtmlValidationAttributes(toValidators(content.Validators));
   const { pa } = getPreviewUtils(content);
 
   return (
@@ -32,14 +38,14 @@ export default function FormTextarea({ content }: FormTextareaProps) {
             {isRequired && <span className={requiredMarkClass}>*</span>}
           </label>
         )}
-        <textarea
+        <input
           {...fieldProps}
-          rows={4}
+          type='url'
           placeholder={content.Placeholder ?? ''}
           title={content.Tooltip ?? ''}
           {...pa('Placeholder')}
-          autoComplete={content.AutoComplete ?? 'off'}
-          className={`${controlClass(showErrors)} resize-y`}
+          pattern={htmlAttrs.pattern as string | undefined}
+          className={controlClass(showErrors)}
         />
         {showErrors && (
           <div {...errorProps} className='space-y-1'>
