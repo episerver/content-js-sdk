@@ -4,12 +4,12 @@
 
 ### The official JavaScript SDK for building headless applications with Optimizely CMS
 
-[![Status](https://img.shields.io/badge/status-stable-green.svg)]()
+![Status](https://img.shields.io/badge/status-stable-green.svg)
 [![npm version - SDK](https://img.shields.io/npm/v/@optimizely/cms-sdk)](https://www.npmjs.com/package/@optimizely/cms-sdk)
 [![npm version - CLI](https://img.shields.io/npm/v/@optimizely/cms-cli)](https://www.npmjs.com/package/@optimizely/cms-cli)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE.md)
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Support](#support)
+[What's Included](#whats-included) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Support](#community--support)
 
 </div>
 
@@ -56,7 +56,7 @@ A collection of [Agent Skills](https://agentskills.io) that teach AI coding agen
 
 **Compatible with:** Claude Code, Cursor, GitHub Copilot, and others
 
-> **Learn more:** The skills live in the [episerver/optimizely-cms-skills](https://github.com/episerver/optimizely-cms-skills) repository. See the [Agent Skills guide](./docs/13-agent-skills.md) for installation.
+> **Learn more:** The skills live in the [episerver/optimizely-cms-skills](https://github.com/episerver/optimizely-cms-skills) repository. See the [Agent Skills guide](./docs/16-agent-skills.md) for installation.
 >
 > **Framework Support:** While the SDK is designed to be framework-agnostic, this version currently includes first-class support for React and Next.js. Support for additional frameworks is coming soon.
 
@@ -153,7 +153,11 @@ A step-by-step guides to build your headless application:
 | 10   | [RichText Component (React)](./docs/10-richtext-component-react.md) | Render rich text content                  |
 | 11   | [DAM Assets](./docs/11-dam-assets.md)                               | Manage digital assets                     |
 | 12   | [Client Utils](./docs/12-client-utils.md)                           | Utility functions and helpers             |
-| 13   | [Agent Skills](./docs/13-agent-skills.md)                           | AI-powered development                    |
+| 13   | [CLI Commands](./docs/13-cli-commands.md)                           | Full CLI reference                        |
+| 14   | [Create App](./docs/14-create-app.md)                               | Scaffold a new or existing project        |
+| 15   | [Forms](./docs/15-forms.md)                                         | Model and render Optimizely Forms         |
+| 16   | [Agent Skills](./docs/16-agent-skills.md)                           | AI-powered development                    |
+| —    | [Observability](./docs/observability.md)                            | OpenTelemetry traces and metrics          |
 
 ## Community & Support
 

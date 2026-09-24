@@ -40,10 +40,16 @@ yarn add -D @optimizely/cms-cli
 Create a `.env` file in your project root with your CMS credentials:
 
 ```env
-OPTIMIZELY_CMS_URL=https://your-cms-instance.com
 OPTIMIZELY_CMS_CLIENT_ID=your-client-id
 OPTIMIZELY_CMS_CLIENT_SECRET=your-client-secret
+
+# Optional. Defaults to https://api.cms.optimizely.com
+OPTIMIZELY_CMS_API_URL=https://api.cms.optimizely.com
 ```
+
+> **Note:** `OPTIMIZELY_CMS_URL` is **not** read by the CLI. It is an application-level
+> variable your app uses at runtime. To point the CLI at a different instance, set
+> `OPTIMIZELY_CMS_API_URL` or pass `--host`.
 
 ### 2. Define your content types
 
@@ -104,6 +110,12 @@ optimizely-cms-cli config push ./path/to/custom-config.mjs
 # Force update (may result in data loss)
 optimizely-cms-cli config push --force
 
+# Validate and build the manifest without sending anything to the server
+optimizely-cms-cli config push --dryRun
+
+# Write the manifest it would push to a file
+optimizely-cms-cli config push --output ./manifest.json
+
 # Pull content types from CMS and generate TypeScript files (prompts for options)
 optimizely-cms-cli config pull
 
@@ -115,6 +127,12 @@ optimizely-cms-cli config pull --output ./src/cms-types.ts
 
 # Group generated files by content type base type (page/, component/, section/, etc.)
 optimizely-cms-cli config pull --output ./src/types --group
+
+# Write every type to its own file
+optimizely-cms-cli config pull --output ./src/types --individual
+
+# Write all types into one file
+optimizely-cms-cli config pull --output ./src/types --single-file
 
 # Output raw JSON manifest (useful for piping/processing)
 optimizely-cms-cli config pull --json
@@ -131,6 +149,7 @@ optimizely-cms-cli config pull | grep -i "Article"
 
 # Include read-only system content types
 optimizely-cms-cli config pull --include-read-only
+optimizely-cms-cli config pull -r
 
 # Delete content types defined in your project
 optimizely-cms-cli config delete
@@ -148,7 +167,7 @@ optimizely-cms-cli config delete --host https://example.com
 
 > **Note:** The command automatically detects when output is piped or redirected and outputs JSON without prompting. You can also explicitly use `--json` to force JSON output. The `--output` flag works in all environments, including CI/non-TTY contexts.
 
-> **Note:** Use `--include-read-only` to pull all content types including system-generated read-only types. By default, only user-editable content types are pulled. This flag is useful for:
+> **Note:** Use `--include-read-only` (short form `-r`) to pull all content types including system-generated read-only types. By default, only user-editable content types are pulled. This flag is useful for:
 >
 > - **PaaS environments** where content types may be created from C# or .NET applications
 > - Auditing or understanding the full CMS content type schema
@@ -164,6 +183,21 @@ optimizely-cms-cli config delete --host https://example.com
 >
 > See [File Organization](#file-organization) below for detailed examples.
 
+> **Note:** `--group`, `--individual`, `--single-file` and `--json` are mutually
+> exclusive — pass at most one. `--output` cannot be combined with `--json`. Omit all of
+> them and `config pull` prompts for the layout.
+
+#### `config pull` flags
+
+| Flag                  | Short | Effect                                                        |
+| --------------------- | ----- | ------------------------------------------------------------- |
+| `--output`            | `-o`  | Output directory, or a `.ts`/`.tsx` file for single-file mode |
+| `--group`             | `-g`  | Group by base type and co-locate display templates            |
+| `--individual`        | `-i`  | One file per content type                                     |
+| `--single-file`       | `-s`  | All types in one file                                         |
+| `--json`              | `-j`  | Raw JSON manifest to stdout                                   |
+| `--include-read-only` | `-r`  | Include system-generated read-only types                      |
+
 ### Authentication
 
 Verify your CMS credentials are correctly configured:
@@ -174,7 +208,13 @@ optimizely-cms-cli login
 
 # Show detailed authentication output
 optimizely-cms-cli login --verbose
+
+# Test against a specific CMS instance
+optimizely-cms-cli login --host https://my-instance.cms.optimizely.com
 ```
+
+> **Note:** `--host` is available on every command and takes precedence over
+> `OPTIMIZELY_CMS_API_URL`.
 
 ### Content Type Operations
 
@@ -248,7 +288,7 @@ src/types/
     └── LegacyTemplate.ts    # Display templates with no matching content type
 ```
 
-**Example co-located file** ([page/ArticlePage.ts]()):
+**Example co-located file** (`page/ArticlePage.ts`):
 
 ```typescript
 import { contentType, displayTemplate } from '@optimizely/cms-sdk';
@@ -295,6 +335,12 @@ Guides and best practices:
 
 - [Create Content](https://github.com/episerver/content-js-sdk/blob/main/docs/4-create-content.md) - Add content in Optimizely CMS after syncing types
 - [Fetching Content](https://github.com/episerver/content-js-sdk/blob/main/docs/5-fetching.md) - Use the SDK to retrieve typed content
+
+### Reference
+
+- [CLI Commands](https://github.com/episerver/content-js-sdk/blob/main/docs/13-cli-commands.md) - Every command, flag and env var
+- [Create App](https://github.com/episerver/content-js-sdk/blob/main/docs/14-create-app.md) - Scaffold a new or existing project
+- [Agent Skills](https://github.com/episerver/content-js-sdk/blob/main/docs/16-agent-skills.md) - AI-powered development
 
 ## Best Practices
 

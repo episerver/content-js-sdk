@@ -11,8 +11,9 @@ you to model, fetch, and render forms in your headless applications.
 > `FormWrapper` POSTs the form's `FormData` to whatever URL the editor put in the
 > container's **Submit URL** field, and treats any `response.ok` as success. You are
 > responsible for the endpoint that receives it and for storing or forwarding the data.
-> The route in the Alloy template only logs the submission. To send it yourself instead —
-> a server action, JSON, a third-party SDK — see
+> The route in the Alloy template only logs the submission; the Stride one forwards it,
+> see [Posting through your own server](#posting-through-your-own-server). To send it
+> yourself instead — a server action, JSON, a third-party SDK — see
 > [Submitting from code](#submitting-from-code).
 
 ## Quick Start
@@ -248,17 +249,200 @@ This is the shape `FormStep` and `partitionFormNodes` work with, and it is
 why a single-step form still has a step in it. A container with no step, or fields placed
 outside one, renders as a title with no fields.
 
+### Building a form, step by step
+
+This walks through a newsletter sign-up form: a name, an email address and a submit
+button. It assumes `initForms()` has already run in your app — until it does, the form
+content types are not registered and none of the types below appear in the CMS.
+
+1. Create a **shared block**, search the content type list for **Form Container**, and
+   name it `Newsletter sign-up`.
+
+   ![Creating a Form Container shared block](./images/form-create-container.png)
+
+2. Open the block and add a **Form Step** with the **+** button. Every form needs at
+   least one, including a single-step form.
+
+   ![Adding a Form Step](./images/form-add-step.png)
+
+3. Inside the step, add a **row** and a **column**, the same way you would in a
+   composition or an experience. Elements live in columns, not directly in the step.
+
+   ![Adding a row and column](./images/form-add-row-column.png)
+
+4. Add an element to the column. The picker shows only form elements — Textbox,
+   Textarea, Number, Range, URL, Selection, Multiple or single choice, Submit button and
+   Reset button.
+
+   ![The form element picker](./images/form-element-picker.png)
+
+5. Add a **Textbox** for the visitor's name and fill in its properties:
+
+   | Property              | Value                                  |
+   | --------------------- | -------------------------------------- |
+   | `Label`               | `Name` — what the visitor sees         |
+   | `Placeholder`         | Optional hint text inside the field    |
+   | `SubmissionFieldName` | `name` — the key in the submitted data |
+   | `Validators`          | Tick **Required**                      |
+
+   `SubmissionFieldName` falls back to the label when you leave it empty, so a field
+   labelled `Name` submits as `Name`. Set it explicitly when your endpoint expects a
+   particular key.
+
+   ![Textbox properties](./images/form-textbox-properties.png)
+
+6. Add a second **Textbox** for the email address, labelled `Email` with
+   `SubmissionFieldName` set to `email`. There is no "email" property on the element —
+   email is a **validator**. In `Validators`, tick both **Email** and **Required**: the
+   email validator only checks what was typed, so on its own it accepts an empty field.
+
+   ![Email validators on a Textbox](./images/form-email-validators.png)
+
+7. Add another row and column, and put a **Submit button** in it.
+
+   ![Adding a Submit button](./images/form-add-submit-button.png)
+
+   It has just two properties, `Label` and `Tooltip`, but the label matters: `Next`,
+   `Previous` and `Back` are reserved for step navigation. A button labelled `Next` moves
+   to the next step instead of submitting. Use `Subscribe`, `Sign up` or anything else
+   that is not a navigation word.
+
+   ![Submit button properties](./images/form-submit-button.png)
+
+8. Go back to the container's own properties and set **Submit URL** to the absolute URL
+   of your newsletter endpoint. Leave it empty and the form posts to its own page, which
+   answers `405` — see [The Submit URL](#the-submit-url).
+
+   ![Setting the Submit URL](./images/form-submit-url.png)
+
+9. **Publish** the block. Nothing renders until you do — a draft container is not
+   returned by the published query your site runs.
+
+10. Place the published block. There are two routes, and they behave differently:
+
+    **In an experience**, drag it in as a **section**. The container is declared with
+    `compositionBehaviors: ['sectionEnabled']`, so it slots in at section level, beside
+    your other sections, and needs no extra setup.
+
+    ![Adding the form as a section in an experience](./images/form-add-to-experience.png)
+
+    **In a content area**, pick it the way you would any other shared block — but the
+    area's `allowedTypes` (or `restrictedTypes`) has to admit the container. If it does
+    not, the block still appears in the CMS and still renders its title, while its fields
+    are never fetched and the form comes out empty. See
+    [How form fragments are fetched](#how-form-fragments-are-fetched).
+
+    ![Adding the form to a content area](./images/form-add-to-content-area.png)
+
+    To bind a form to one specific page type instead, give the page a `component`
+    property typed to the container — see
+    [Using Forms in Content Models](#using-forms-in-content-models).
+
+#### Making it multi-step
+
+Adding a second **Form Step** at step 2 is all it takes. The SDK then shows one step at a
+time, keeps the values entered on the others, and adds the navigation — `Next` on the
+first step, `Previous` and `Next` in the middle, `Previous` plus the submit button on the
+last.
+
+![A form with multiple steps](./images/form-multi-step.png)
+
+See [Adding steps](#adding-steps) for what advancing validates, and
+[Branching between steps](#branching-between-steps) for skipping or jumping between them.
+
 ### What to get right
 
 Five things trip people up, because none of them fail loudly:
 
 |                           |                                                                                                                                                                                                             |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Submit URL**            | Leave it empty and the form posts to its own page, which answers `405`. Point it at your endpoint, or send the form yourself — see [Submitting from code](#submitting-from-code).                           |
+| **Submit URL**            | Where the submission goes. Leave it empty and the form posts to its own page, which answers `405`. See [The Submit URL](#the-submit-url).                                                                   |
 | **Submission field name** | The key the field uses in the submitted data. Falls back to the label, so set it when your endpoint expects a particular name.                                                                              |
 | **Validators combine**    | An email validator alone accepts an empty field; it only checks what was typed. Add a required validator too.                                                                                               |
-| **Step button labels**    | Label them exactly `Next` and `Previous` — matching ignores case and spacing. Any other label is treated as submit, so a mislabelled button sends a half-filled form.                                       |
-| **Where you place it**    | A content area's `allowedTypes` must admit the container, or its fields are never fetched — see [How form fragments are fetched](#how-form-fragments-are-fetched). A composition works with no extra setup. |
+| **Step button labels**    | Label them `Next` and `Previous` — or `Back`, which also goes backwards. Matching ignores case and surrounding whitespace, but not spelling: any other label is treated as submit, so a mislabelled button sends a half-filled form. |
+| **Where you place it**    | A content area's `allowedTypes` (or `restrictedTypes`) must admit the container, or its fields are never fetched — see [How form fragments are fetched](#how-form-fragments-are-fetched). A composition works with no extra setup. |
+
+### Container properties
+
+Besides its steps, the container carries the form's settings. The SDK fetches all of them
+and hands them to your component, but it only acts on two: `DependencyRules`, which it
+reads through `FormWrapper`, and `SubmitUrl`, which reaches it as `action`. **The rest are
+text for you to render.** Nothing displays them on your behalf.
+
+| Property                            | Holds                                         | Acted on by                                               |
+| ----------------------------------- | --------------------------------------------- | --------------------------------------------------------- |
+| `Title`, `Description`              | Heading and intro text                        | Your container, if it renders them                        |
+| `SubmitUrl`                         | Where the submission goes                     | `FormWrapper`, via `action` — see below                   |
+| `DependencyRules`                   | Show, hide, skip and jump rules               | `FormWrapper`, via `rules`                                |
+| `SubmitConfirmationMessage`         | Thank-you text for a successful submit        | Nothing. Both templates pass it to their alerts component |
+| `ResetConfirmationMessage`          | Text for a reset form                         | Nothing at all                                            |
+| `ShowSummaryMessageAfterSubmission` | Whether to show a summary instead of the form | Nothing at all                                            |
+
+The last two are worth knowing about, because they fail silently in the CMS: an editor can
+fill either one in, save, and see no effect anywhere. If your form needs them, read them
+off `content` and render them yourself — `useFormSubmission()` tells you when a submit has
+succeeded, which is the moment both describe:
+
+```tsx
+const { formSuccess } = useFormSubmission();
+
+if (formSuccess && content.ShowSummaryMessageAfterSubmission) {
+  return <p>{content.SubmitConfirmationMessage}</p>;
+}
+```
+
+`SubmitConfirmationMessage` is in the same position — the SDK does not render it, the
+templates do. The Quick Start's `FormAlerts` shows the pattern: take the message as a prop
+and fall back to your own wording when the editor left it empty.
+
+### The Submit URL
+
+Every form container has a **Submit URL** property, set by the editor, naming where the
+submission is sent. It is the one piece of the form whose value your code has to read
+rather than render, so it is worth knowing its shape.
+
+It is a URL property, not a string. The address an editor typed arrives as `default`:
+
+```json
+{
+  "type": "EXTERNAL",
+  "default": "https://hooks.example.com/forms",
+  "hierarchical": null,
+  "internal": null,
+  "graph": null,
+  "base": null
+}
+```
+
+Which is why the container component reads `content.SubmitUrl?.default` and passes it as
+`action`. The other fields are populated for URLs pointing at CMS content, not for the
+external endpoint a form normally posts to:
+
+```tsx
+action={content.SubmitUrl?.default ?? ''}
+```
+
+Three things about the value itself:
+
+**Give an absolute URL.** `https://example.com/leads`, not `/api/leads`. The browser would
+resolve a relative path, but a proxy route resolves it server-side where there is no page
+to be relative to, and Node's `fetch` rejects it outright.
+
+**Do not point it at your proxy route.** If you forward submissions through your own
+server, the Submit URL is the _final_ destination, not the forwarder. Pointing it at the
+forwarder makes the route call itself with a body it does not recognise — the second call
+answers `400`, which the first turns into a `502`. The form reports a generic failure and
+nothing in the browser explains why. See
+[Posting through your own server](#posting-through-your-own-server).
+
+**Empty is not neutral.** An unset Submit URL leaves `action` as `''`, which posts to the
+current page and gets a `405`. `FormWrapper` logs a development warning when it has
+neither an `action` nor a `submitHandler`.
+
+An editor changing this field changes where live submissions go, with no deployment and no
+code review. If that matters for your instance, take the destination out of their hands —
+ignore `action` and hardcode it in a `submitHandler`, or validate it server-side before
+forwarding.
 
 ### Adding steps
 
@@ -269,6 +453,9 @@ others. Each step carries its own navigation buttons: `Next` on the first, `Prev
 Advancing validates only the step on screen. Submitting validates every step and jumps to
 the one holding the first invalid field. For the rendering side, see
 [Multi-Step Forms](#multi-step-forms).
+
+Steps need not run front to back. A dependency rule can hide a step or send the visitor
+to a chosen one — see [Branching between steps](#branching-between-steps).
 
 ---
 
@@ -361,9 +548,39 @@ otherwise the CMS shows an empty, selectable block with no indication of what it
 
 ### Rule Conditions
 
-Supported conditions: `Equals`, `NotEquals`, `Contains`, `NotContains`
+Supported comparison operators:
 
-Supported operators: `All` (AND), `Any` (OR)
+| Operator                 | Checks                                    |
+| ------------------------ | ----------------------------------------- |
+| `Equals`                 | Exact match                               |
+| `NotEquals`              | Anything but an exact match               |
+| `Contains`               | Value contains the comparison text        |
+| `NotContains`            | Value does not contain it                 |
+| `StartsWith`             | Value begins with it                      |
+| `EndsWith`               | Value ends with it                        |
+| `MatchRegularExpression` | Value matches it as a pattern             |
+
+An unparseable pattern fails the condition rather than throwing. An unrecognised
+operator is treated as unsatisfied, so a rule the SDK cannot read leaves its target
+visible rather than hiding it.
+
+Combining conditions: `All` (AND), `Any` (OR).
+
+### Rule Actions
+
+A rule's `SatisfiedAction` decides what it does when its conditions hold:
+
+| Action                | Applies to               | Effect                                        |
+| --------------------- | ------------------------ | --------------------------------------------- |
+| `Show` / `Hide`        | `TargetElement`          | A field or button appears or disappears        |
+| `ShowStep` / `HideStep` | `TargetStep`             | A whole step is shown or skipped               |
+| `JumpToStep`           | `AfterStep` → `JumpToStep` | Next goes to a chosen step instead of the next one |
+
+`Hide` wins over `Show` when both target the same element, and an element no rule
+matches is always visible.
+
+Step actions need no work in your components — `FormWrapper` reads them from the same
+`rules` prop. See [Branching between steps](#branching-between-steps).
 
 ---
 
@@ -401,14 +618,52 @@ export default function FormSubmit({ content }) {
 }
 ```
 
-`role` is `'next'`, `'previous'` or `'submit'`. `buttonProps` sets the right `type`, the
-click handler, `disabled` while the request is in flight, and the tooltip.
+`role` is `'next'`, `'previous'`, `'submit'` or `'reset'`. `buttonProps` sets the right
+`type`, the click handler, `disabled` while the request is in flight, and the tooltip.
 
-For a form authored in another language, pass your own labels:
+The labels matched are `next` for forward and `previous` or `back` for backward, compared
+case-insensitively after trimming. For a form authored in another language, pass your own:
 
 ```tsx
 useFormButton(content, { labels: { next: ['nästa'], previous: ['tillbaka'] } });
 ```
+
+Your labels replace the defaults for whichever direction you give, so include the English
+ones too if a form might use either. To settle the question yourself — a Reset element,
+say, which is never navigation — pass the role outright and skip label matching:
+
+```tsx
+useFormButton(content, { role: 'reset' });
+```
+
+### Branching between steps
+
+Dependency rules can reorder the walk through a form as well as hide fields within it.
+Both are read from the same `rules` prop, and both need `steps` so `FormWrapper` can match
+a rule's step key to a rendered step — the Quick Start container already passes both:
+
+```tsx
+<FormWrapper steps={stepNodes} rules={content.DependencyRules}>
+```
+
+Nothing is needed in your step or field components. Pressing Next then resolves in order:
+
+1. A satisfied `JumpToStep` rule whose `AfterStep` is the current step wins, and the form
+   goes straight there. An unresolvable target is ignored and the walk continues below.
+2. Otherwise the form advances, skipping any step a `HideStep` rule is hiding or a
+   `ShowStep` rule has not yet revealed.
+
+Previous retraces the steps actually visited rather than counting back one, so a jump is
+undone by the button that follows it. The trail is cleared on a successful submit and on
+a form reset.
+
+The last step is never skipped, whatever its rules say — a form has to end somewhere, and
+a visitor stranded past the final step has no way to submit.
+
+Rules only steer the walk; they do not change validation. Submitting still validates every
+step, including ones skipped on the way, so a hidden step holding a required field blocks
+the form. Hide the fields inside it as well as the step itself, and `useFormField`
+unregisters them — see [Form Dependency Rules](#form-dependency-rules).
 
 ### After a successful submit
 
@@ -510,12 +765,22 @@ import { OptiFormsContainerDataContentType } from '@optimizely/cms-sdk';
 
 ### How form fragments are fetched
 
-Form fragments are large, so the SDK only requests them for pages that actually contain a
-form. It detects one either in the page's composition, or — for a form in a content area —
-by checking whether the page's content model permits a form container at all.
+Form fragments are large, so the SDK only requests them for pages that could actually
+contain a form. Nothing here needs configuring — it is described because it explains the
+one failure mode, a form that renders its title and no fields.
 
-For the second case the content area has to allow `_component`. The container is declared
-`_component` with `sectionEnabled`, and it is the base type that matters here:
+Detection is in two parts. A form placed in an experience's composition is found by a
+probe on the page itself. A form in a content area is an ordinary reference that Graph
+cannot filter on, so the page's **content model** is consulted instead: the SDK walks its
+content properties, and the properties of the types those admit, until it finds one whose
+`allowedTypes` or `restrictedTypes` resolve to include the form container. Nesting is
+followed, so a form two or three types deep still counts. The walk errs towards enabling
+forms — a page type that merely permits one pays for the fragments even when the
+particular page has none.
+
+That makes `_component` a convenient way to admit a container, since it is declared
+`_component` with `sectionEnabled`, but it is not the only one — naming the container
+type, or leaving a property open, works as well:
 
 ```ts
 extras: {
@@ -527,9 +792,16 @@ extras: {
 },
 ```
 
-A container has to be a top-level section of a composition, or a direct entry in a content
-area. Nested deeper it is not detected and renders with no fields; the templates log a
-development warning when that happens.
+Fetching is also two parts, because Graph only resolves a section's `composition` when
+that section is the content being asked for. A container reached through a content area
+therefore arrives with no steps, and the SDK follows up with one extra request per form to
+fetch them. Containers are found at any depth in the response and grouped by key, so the
+same shared form placed twice on a page costs one request, not two. A form in a
+composition, or previewed on its own, arrives complete and costs nothing extra.
+
+A container still renders with no fields if its own content model was never registered —
+`initForms` has to have run — or if it genuinely has no steps. The templates log a
+development warning in that case.
 
 ### Using Forms in Content Models
 
@@ -603,6 +875,57 @@ different destinations.
 Note that `submitHandler` runs in the browser, so anything needing a credential belongs in
 a server action or a route handler called from it.
 
+### Posting through your own server
+
+A Submit URL pointing at another origin is a cross-origin POST, and the browser blocks the
+response unless that endpoint sends CORS headers back. For a webhook you do not control,
+that is not something you can fix at the endpoint.
+
+`createJsonSubmitHandler` routes the submission through your own app instead. It turns the
+`FormData` into JSON and POSTs `{ targetUrl, payload, formKey }` to a same-origin route,
+which forwards it server-side where CORS does not apply:
+
+```tsx
+'use client';
+
+import { createJsonSubmitHandler, FormWrapper } from '@optimizely/cms-sdk/forms/react';
+
+<FormWrapper submitHandler={createJsonSubmitHandler('/api/forms/submit')} {...props} />;
+```
+
+`targetUrl` is the container's Submit URL, so the route stays generic and the editor keeps
+control of where a given form goes. Pass a second argument to label the form —
+`createJsonSubmitHandler('/api/forms/submit', content._metadata.key)` — and it arrives as
+`formKey`. Fields sharing a name arrive as an array. A non-`ok` response throws, which the
+form reports as a failure.
+
+The matching route is a forwarder:
+
+```ts
+// app/api/forms/submit/route.ts
+export async function POST(request: NextRequest) {
+  const { targetUrl, payload } = await request.json();
+  if (!targetUrl) return NextResponse.json({ error: 'Missing targetUrl' }, { status: 400 });
+
+  const response = await fetch(targetUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  return new NextResponse(null, { status: response.ok ? 200 : 502 });
+}
+```
+
+The Stride template ships exactly this. Alloy instead leaves `FormWrapper` to POST the raw
+`FormData` to the Submit URL, and its route only logs what arrives.
+
+> [!WARNING] The route above forwards to whatever URL the request names, so anyone who
+> finds it can use your server to POST to any host. Because `targetUrl` comes from content
+> an editor authored rather than from the visitor, check it before forwarding — an
+> allowlist of hosts you expect, or reading the Submit URL from the form's own content
+> server-side rather than trusting the body.
+
 ### useFormSubmission API
 
 ```ts
@@ -662,6 +985,8 @@ import {
   extractErrorMessage, // Get single validator message
   extractValidatorType, // Get normalized validator type
   getFieldName, // Get field display name
+  toValidators, // Read a field's `Validators` property into a Validator[]
+  getSelectionOptions, // Read a choice or selection field's `Options` property
   VALIDATION_PATTERNS, // Regex patterns: email, integer, etc.
 } from '@optimizely/cms-sdk/forms/validation';
 ```
@@ -671,11 +996,26 @@ import {
 ```ts
 import { useFormRules } from '@optimizely/cms-sdk/forms/react';
 
-const { rules, fieldValues, setFieldValue, isElementVisible } = useFormRules();
+const {
+  rules, // The container's DependencyRules, as given to FormWrapper
+  fieldValues, // Current value of every field a rule can depend on
+  setFieldValue, // Report a value yourself; useFormField already does
+  isElementVisible, // Is this field or button shown? (Show / Hide)
+  isStepVisible, // Is this step shown? (ShowStep / HideStep)
+  getJumpTarget, // Step key a satisfied JumpToStep rule points to, else null
+} = useFormRules();
 
 // Check if element should be visible
 const visible = isElementVisible(elementId);
 ```
+
+Every one of these takes or returns an element's **key**, not its label; `getElementId`
+derives it from a piece of content. They accept an array of keys as well as one, because a
+node can be named by its composition key or its content key and a rule may use either.
+
+`FormWrapper` already calls `isStepVisible` and `getJumpTarget`, so reach for them only
+when driving the steps yourself. Outside a `FormWrapper` the hook returns inert defaults —
+everything visible, no jumps — rather than throwing.
 
 ### Component Setup Options
 
@@ -711,10 +1051,14 @@ as you need them. The available keys are `container`, `textbox`, `textarea`, `nu
 
 | Symptom                             | Likely cause                                                                                                                                                                          |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Title renders, no fields**        | The container is nested deeper than a top-level section or a direct content area entry, so it is not detected. See [How form fragments are fetched](#how-form-fragments-are-fetched). |
+| **Title renders, no fields**        | `initForms` never ran, or the container genuinely has no step. Steps are fetched at any depth, so nesting is not the cause. See [How form fragments are fetched](#how-form-fragments-are-fetched). |
 | **Nothing renders at all**          | A component is missing from `initForms`, or a field component is missing `'use client'`. Check the browser console for resolution errors.                                             |
 | **Validation never fires**          | `FormWrapper` is not wrapping the form, so there is no validation context.                                                                                                            |
 | **Rules never fire**                | `FormWrapper` did not get the `rules` prop, or a component does not pass `content` to `useFormField` and `FormElement`. An element no rule can be matched to is always visible.       |
+| **Step rules never fire**           | `FormWrapper` did not get `steps`, so a rule's step key cannot be matched to a rendered step. See [Branching between steps](#branching-between-steps).                                |
 | **Submit does nothing**             | The blocking field is on a step that is not showing. The form moves to it — check your field components actually render their error messages.                                         |
-| **Submit always fails**             | Empty Submit URL posts to the page and gets a `405`. Check the network tab.                                                                                                           |
+| **Submit blocked by a hidden step** | Hiding a step does not unregister its fields. Hide the required fields inside it too, so `useFormField` drops them from validation.                                                   |
+| **Submit always fails**             | Empty Submit URL posts to the page and gets a `405`. A cross-origin Submit URL without CORS headers fails the same way — see [Posting through your own server](#posting-through-your-own-server). Check the network tab. |
+| **Proxy returns `502`**             | Usually the Submit URL naming the proxy route itself, so it forwards to itself and the second call answers `400`. A relative Submit URL throws instead, since server-side `fetch` needs an absolute one. See [The Submit URL](#the-submit-url). |
+| **A step button submits**           | Its label is not one the SDK matches. `Next`, `Previous` and `Back` are matched; anything else is a submit. Pass `labels` or `role` to `useFormButton`.                               |
 | **Buttons misplaced while editing** | Layout depending on a direct-child relationship; the CMS marker div sits in between. See [Editing in the CMS](#editing-in-the-cms).                                                   |
