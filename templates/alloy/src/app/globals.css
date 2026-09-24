@@ -2,25 +2,34 @@
 
 :root {
   --background: #ffffff;
+  --background2: #f9fafb;
   --foreground: #171717;
+  --foreground-inverted: #ffffff;
+  --key1: #14b8a6;
+  --card: #00000006;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background2: var(--background2);
+  --color-card: var(--card);
   --color-foreground: var(--foreground);
+  --color-foreground-inverted: var(--foreground-inverted);
+  --color-key1: var(--key1);
+  --color-foreground2: rgba(0, 0, 0, 0.51);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
-
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.card {
+  background-color: var(--card);
+  backdrop-filter: blur(3px);
+  border: 1px solid rgb(from var(--foreground) r g b / 0.05);
+  border-radius: 1rem;
 }

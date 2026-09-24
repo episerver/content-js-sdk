@@ -26,10 +26,15 @@ import NewsEventsList, {
   NewsEventsListContentType,
 } from '@/components/base/NewsEventsList';
 import FormContainer from '@/components/forms/FormContainer';
+import FormChoice from '@/components/forms/FormChoice';
 import FormInput from '@/components/forms/FormInput';
+import FormNumber from '@/components/forms/FormNumber';
+import FormRange from '@/components/forms/FormRange';
+import FormReset from '@/components/forms/FormReset';
 import FormSelection from '@/components/forms/FormSelection';
-import FormTextarea from '@/components/forms/FormTextarea';
 import FormSubmit from '@/components/forms/FormSubmit';
+import FormTextarea from '@/components/forms/FormTextarea';
+import FormUrl from '@/components/forms/FormUrl';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -96,10 +101,15 @@ initReactComponentRegistry({
 
 initForms({
   container: FormContainer,
-  textbox: FormInput,
+  choice: FormChoice,
+  number: FormNumber,
+  range: FormRange,
+  reset: FormReset,
   selection: FormSelection,
-  textarea: FormTextarea,
   submit: FormSubmit,
+  textbox: FormInput,
+  textarea: FormTextarea,
+  url: FormUrl,
 });
 
 export default async function RootLayout({
