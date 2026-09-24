@@ -48,24 +48,13 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      # `changeset version` reads .changeset/pre.json, so entering or exiting has
-      # to happen before it runs. changesets/action commits the whole working-tree
-      # diff to the version PR branch, so the pre.json change rides along with the
-      # bump — exiting and versioning are one dispatch, not two.
-      - name: Enter Pre-release Mode
-        if: inputs.pre_mode == 'enter'
-        run: pnpm changeset pre enter beta
-
-      # Leaves "mode": "exit" behind; `changeset version` then deletes pre.json
-      # and writes stable versions.
-      - name: Exit Pre-release Mode
-        if: inputs.pre_mode == 'exit'
-        run: pnpm changeset pre exit
-
+      # pre enter/exit runs inside version-selective.sh, not as a step here:
+      # changesets/action resets the branch before running the version command,
+      # so any pre.json written by an earlier step is discarded.
       - name: Create Version PR
         uses: changesets/action@v1
         with:
-          version: bash scripts/version-selective.sh "${{ inputs.package }}"
+          version: bash scripts/version-selective.sh "${{ inputs.package }}" "${{ inputs.pre_mode }}"
           commit: "chore(release): version packages"
           title: "chore(release): version packages"
         env:

@@ -2,11 +2,26 @@
 set -e
 
 # Version only the changesets that touch $TARGET, holding the rest as pending.
-# Usage: version-selective.sh [package-name|all]
+# Usage: version-selective.sh [package-name|all] [none|enter|exit]
 #   all / empty -> normal `changeset version` (bumps every pending package)
 #   a package   -> only changesets naming that package are consumed; others
 #                  are moved aside and restored so they stay pending on main.
+#   2nd arg     -> enter/exit pre-release (beta) mode before versioning.
 TARGET="$1"
+PRE_MODE="$2"
+
+# `changeset version` reads .changeset/pre.json, so the enter/exit has to happen
+# in the same process tree. It cannot be a separate workflow step: changesets/action
+# runs `git.prepareBranch()` before invoking this script, which wipes any
+# uncommitted pre.json edit made earlier in the job.
+apply_pre_mode() {
+  case "$PRE_MODE" in
+    # Leaves "mode": "exit" behind; `changeset version` then deletes pre.json
+    # and writes stable versions.
+    exit) pnpm changeset pre exit ;;
+    enter) pnpm changeset pre enter beta ;;
+  esac
+}
 
 # Prepend each changeset's release note with a link to its Jira ticket, so
 # every changelog entry traces back to the ticket that introduced it. The
@@ -39,6 +54,7 @@ link_jira_tickets() {
 
 if [ -z "$TARGET" ] || [ "$TARGET" = "all" ]; then
   link_jira_tickets
+  apply_pre_mode
   pnpm changeset version
   exit 0
 fi
@@ -52,6 +68,7 @@ for f in .changeset/*.md; do
 done
 
 link_jira_tickets
+apply_pre_mode
 pnpm changeset version
 
 # restore held changesets so they remain pending (unchanged in the PR diff)
