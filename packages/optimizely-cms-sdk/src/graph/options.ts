@@ -252,10 +252,14 @@ export function resolveQueryOptions(
  * The client's `fragment` settings in the shape the query builders take, with
  * the tri-state `dam` already settled into a boolean.
  */
-export function fragmentContext(context: GraphClientContext, damEnabled: boolean) {
-  const { dam, ...fragment } = context.fragmentDefaults;
+export function fragmentContext(
+  context: GraphClientContext,
+  damEnabled: boolean,
+  taxonomyEnabled: boolean = false,
+) {
+  const { dam, taxonomy, ...fragment } = context.fragmentDefaults;
 
-  return { ...fragment, damEnabled };
+  return { ...fragment, damEnabled, taxonomyEnabled };
 }
 
 /**
