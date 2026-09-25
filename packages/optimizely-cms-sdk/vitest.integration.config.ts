@@ -3,16 +3,16 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: 'jsdom',
     globals: true,
-    exclude: ['node_modules/**', 'dist/**', 'src/**/__integration__/**'],
-  },
-  esbuild: {
-    jsx: 'automatic',
+    environment: 'node',
+    include: ['src/**/__integration__/**/*.integration.test.ts'],
+    setupFiles: ['src/graph/__integration__/setup.ts'],
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    retry: 1,
   },
   resolve: {
     alias: {
-      // Handle .js imports in TypeScript files
       '~/': new URL('./src/', import.meta.url).pathname,
     },
   },
