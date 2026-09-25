@@ -32,9 +32,12 @@ export type {
   GraphOptions,
   GraphFragmentOptions,
   GraphGetItemOptions,
+  GraphGetPreviewOptions,
   GraphQueryOptions,
   GraphSlot,
   DamMode,
+  ResolvedCategory,
+  TaxonomyMode,
 } from './graph/index.js';
 
 // Provided content types and experiences

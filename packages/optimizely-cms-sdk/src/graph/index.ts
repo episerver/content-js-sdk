@@ -31,13 +31,14 @@ export {
   GraphGetContentOptions,
   GraphGetItemOptions,
   GraphGetLinksOptions,
+  GraphGetPreviewOptions,
   GraphOptions,
   GraphQueryOptions,
   GraphReference,
   GraphSlot,
   PreviewParams,
 } from './options.js';
-export type { DamMode, GraphFragmentOptions } from './options.js';
+export type { DamMode, GraphFragmentOptions, ResolvedCategory, TaxonomyMode } from './options.js';
 
 // GRAPH CLIENT
 
