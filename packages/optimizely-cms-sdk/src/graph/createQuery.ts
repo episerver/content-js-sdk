@@ -265,7 +265,7 @@ export const createFragment = (
   let contentType: RegistryEntry | undefined;
 
   if (isBaseType(contentTypeName)) {
-    const baseFragments = getBaseTypeFragments(contentTypeName);
+    const baseFragments = getBaseTypeFragments(contentTypeName, undefined, ctx.taxonomyEnabled);
     fields.push(...baseFragments.fields);
     extraFragments.push(...baseFragments.extraFragments);
   } else {
@@ -289,7 +289,7 @@ export const createFragment = (
     if (includeBaseFragments && !isNamespaced) {
       const baseType =
         'baseType' in contentType ? (contentType as AnyContentType).baseType : undefined;
-      const baseFragments = getBaseTypeFragments(baseType ?? '', contentTypeName);
+      const baseFragments = getBaseTypeFragments(baseType ?? '', contentTypeName, ctx.taxonomyEnabled);
       extraFragments.unshift(...baseFragments.extraFragments);
       fields.push(...baseFragments.fields);
     }

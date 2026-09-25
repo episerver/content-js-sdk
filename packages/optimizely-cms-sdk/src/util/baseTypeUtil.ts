@@ -128,23 +128,30 @@ export const getFixedFragments = (
   )} }`,
 ];
 
-const COMMON_FRAGMENTS = [
-  'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
-  'fragment ItemMetadata on ItemMetadata { changeset displayOption }',
-  'fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }',
-  CONTENT_URL_FRAGMENT,
-  'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }',
-  'fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }',
-];
+function buildCommonFragments(taxonomyEnabled: boolean) {
+  const itemMetadataFields = taxonomyEnabled
+    ? 'changeset displayOption categories'
+    : 'changeset displayOption';
+  return [
+    'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
+    `fragment ItemMetadata on ItemMetadata { ${itemMetadataFields} }`,
+    'fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }',
+    CONTENT_URL_FRAGMENT,
+    'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }',
+    'fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }',
+  ];
+}
 
 const COMMON_FIELDS = '..._IContent';
 
 export function getBaseTypeFragments(
   baseType: string,
   contentTypeName?: string,
+  taxonomyEnabled: boolean = false,
 ): BaseTypeFragments {
   const prefix =
     contentTypeName && !isBaseType(contentTypeName) ? `${contentTypeName}__` : '';
+  const commonFragments = buildCommonFragments(taxonomyEnabled);
 
   if (baseType === '_image') {
     return {
@@ -153,7 +160,7 @@ export function getBaseTypeFragments(
         `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
         `${prefix}imageMetadata:_imageMetadata { width height }`,
       ],
-      extraFragments: [...COMMON_FRAGMENTS],
+      extraFragments: [...commonFragments],
     };
   }
   if (isBaseMediaType(baseType)) {
@@ -162,11 +169,11 @@ export function getBaseTypeFragments(
         COMMON_FIELDS,
         `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
       ],
-      extraFragments: [...COMMON_FRAGMENTS],
+      extraFragments: [...commonFragments],
     };
   }
   return {
     fields: [COMMON_FIELDS],
-    extraFragments: [...COMMON_FRAGMENTS],
+    extraFragments: [...commonFragments],
   };
 }
