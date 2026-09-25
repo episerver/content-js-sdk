@@ -1,20 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+type FormSubmitBody = {
+  targetUrl: string;
+  payload: Record<string, unknown>;
+  formKey: string;
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const data = Object.fromEntries(formData);
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Form submission from CMS:', data);
+    const body = (await request.json()) as FormSubmitBody;
+
+    if (!body.targetUrl) {
+      return NextResponse.json({ error: 'Missing targetUrl' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error processing form submission:', error);
+    const response = await fetch(body.targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body.payload),
+    });
 
+    return new NextResponse(null, { status: response.ok ? 200 : 502 });
+  } catch (error) {
+    console.error('Form proxy error:', error);
     return NextResponse.json(
-      { error: 'Failed to process form submission' },
-      { status: 500 },
+      { error: 'Failed to forward form submission' },
+      { status: 502 },
     );
   }
 }
