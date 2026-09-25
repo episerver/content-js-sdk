@@ -48,8 +48,16 @@ export type GraphQueryOptions = {
   /**
    * Application host to filter paths by, for a CMS instance serving several
    * sites. Only applies to lookups by path; ignored when content is addressed
-   * by key.
-   * Overrides the global `host` setting in `GraphOptions`.
+   * by key. Overrides the global `host` setting in `GraphOptions`.
+   *
+   * Must match a base URL registered in Optimizely Graph **including scheme**
+   * — e.g., `"https://www.example.com"`. The value is passed through to the
+   * query as-is. If it does not match a registered base URL, content lookups
+   * will return zero results and the SDK will emit a warning.
+   *
+   * Do **not** pass the platform's internal hostname
+   * (`OPTIMIZELY_SITE_HOSTNAME` / `app-xxxxx.cms.optimizely.com`) — that is
+   * the webhook callback address, not your site's public URL.
    */
   host?: string;
 };

@@ -18,6 +18,7 @@ import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
 import { SemanticAttributes } from '../telemetry/index.js';
+import { logWarning } from '../telemetry/logger.js';
 import {
   withGetContentByPathSpan,
   withGetPreviewContentSpan,
@@ -290,6 +291,12 @@ export async function getContentByPath<T = any>(
 
     if (!contentTypeName) {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
+      if (queryOptions.host) {
+        logWarning(
+          `No content found for path "${path}" with host "${queryOptions.host}". If all pages are returning empty, verify that your host value matches a base URL registered in Optimizely Graph.`,
+          { 'host.value': queryOptions.host, 'content.path': path },
+        );
+      }
       return [];
     }
 
