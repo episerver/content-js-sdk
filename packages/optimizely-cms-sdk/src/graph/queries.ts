@@ -36,6 +36,9 @@ const METADATA_QUERY_BODY = `{
   # Check if "cmp_Asset" type exists which indicates that DAM is enabled
   damAssetType: __type(name: "cmp_Asset") {
     __typename
+  }
+  taxonomyType: __type(name: "_TaxonomyTerm") {
+    __typename
   }`;
 
 /** Non-zero when this page has a form container as a top-level section. */
