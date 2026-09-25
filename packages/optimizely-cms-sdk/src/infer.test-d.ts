@@ -1,5 +1,6 @@
 import { test, expectTypeOf } from 'vitest';
 import type { ContentProps, InferredAssetMetadata, InferredImageMetadata } from './infer.js';
+import type { ResolvedCategory, TaxonomyMode } from './graph/index.js';
 import { contentType, contract } from './model/index.js';
 
 test('ContentProps works for non-content type', () => {
@@ -211,4 +212,17 @@ test('ContentProps keeps every property when extending contracts without propert
   expectTypeOf<ContentProps<typeof withEmptyProps>['test']>().toEqualTypeOf<string | null>();
   expectTypeOf<ContentProps<typeof withNoProps>['foo']>().toEqualTypeOf<string | null>();
   expectTypeOf<ContentProps<typeof withNoProps>['test']>().toEqualTypeOf<string | null>();
+});
+
+test('TaxonomyMode is a tri-state type', () => {
+  expectTypeOf<TaxonomyMode>().toEqualTypeOf<'automatic' | 'on' | 'off'>();
+});
+
+test('ResolvedCategory has the expected shape', () => {
+  expectTypeOf<ResolvedCategory>().toHaveProperty('uri');
+  expectTypeOf<ResolvedCategory>().toHaveProperty('name');
+  expectTypeOf<ResolvedCategory>().toHaveProperty('path');
+  expectTypeOf<ResolvedCategory['uri']>().toBeString();
+  expectTypeOf<ResolvedCategory['name']>().toEqualTypeOf<string | null>();
+  expectTypeOf<ResolvedCategory['path']>().toEqualTypeOf<Array<{ uri: string; name: string | null }>>();
 });
