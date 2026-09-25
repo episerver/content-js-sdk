@@ -125,6 +125,7 @@ config({
 - **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
 - **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`. If the URL does not include `/content/v2`, the SDK appends it automatically
 - **`userAgent`** (optional): Value sent in the `User-Agent` header of every Graph request
+- **`auth`** (optional): Credentials to use instead of the single key — a built-in mode (`basic`, `hmac`, `bearer`) or a resolver function. `basic` and `hmac` are server-side only. See [Authentication](#authentication)
 
 ##### `fragment` — query shape
 
@@ -141,6 +142,7 @@ config({
 - **`stored`** (optional): Send queries as stored (persisted) queries. Defaults to `true`
 - **`slot`** (optional): Select which Graph index to query (`'Current'` or `'New'`). Used during smooth rebuilds
 - **`host`** (optional): Default application host for path filtering. Useful for multi-site scenarios. Only applies to lookups by path
+- **`publishedOnly`** (optional): Return only content whose `_metadata.status` is `Published`, hiding drafts and superseded versions. Defaults to `true`. See [Publication status](#publication-status)
 
 Every option in `query` is also accepted by the individual request methods, where it overrides the configured default for that one call.
 
@@ -357,6 +359,216 @@ const items = await client.getItems(
 ---
 
 ## Advanced topics
+
+### Authentication
+
+By default the SDK talks to Graph with your **single key**. That key is read-only and returns
+only content the **Everyone** group can read. Content an editor restricts through CMS access
+rights is still indexed, but Graph will not return it to a single key.
+
+To reach that content, set `auth`. It takes one of the built-in modes below, or a
+[resolver function](#a-custom-resolver) if none of them fit.
+
+> **Keep the app secret on the server.** A request made from browser code with `basic` or
+> `hmac` set throws, because both carry the secret. Fetch from a server component, route
+> handler or API route instead. `bearer` and a resolver are allowed in the browser — what
+> they put in the header is yours to keep safe.
+
+#### Built-in modes
+
+| `type`   | Credential                  |
+| -------- | --------------------------- |
+| `basic`  | App key and secret          |
+| `hmac`   | App key and secret, signed  |
+| `bearer` | A token you already hold    |
+
+All three run on any runtime, edge included. Of the three, only `bearer` may run in a browser.
+
+`basic` sends the app key and secret unsigned, over HTTPS. It is the simplest of the three:
+
+```ts
+import { config } from '@optimizely/cms-sdk';
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  auth: {
+    type: 'basic',
+    appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+    secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+  },
+});
+```
+
+`hmac` takes the same credentials but signs each request, so the secret itself never travels:
+
+```ts
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  auth: {
+    type: 'hmac',
+    appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+    secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+  },
+});
+```
+
+Prefer it to `basic` where you can: the two carry the same credentials, but only `basic` puts
+the secret itself on the wire.
+
+`bearer` forwards a token you obtained elsewhere. Because tokens expire, `token` may be a
+callback, which is awaited on every request:
+
+```ts
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  auth: { type: 'bearer', token: () => getAccessToken() },
+});
+```
+
+#### Acting as a user
+
+`basic` and `hmac` authenticate as the **tenant**, not as a person, so by default they return
+everything the tenant holds. Add `asUser` to have Graph apply one user's access rights
+instead:
+
+```ts
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  auth: {
+    type: 'hmac',
+    appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+    secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+    asUser: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
+  },
+});
+```
+
+Both fields are optional and map to Graph's `cg-username` and `cg-roles` headers — what
+Graph's own documentation calls impersonation. They narrow by access rights only, not by
+publication status; drafts are kept out by [`publishedOnly`](#publication-status), which is
+a separate setting and on by default.
+
+> **Graph does not verify who this is.** It trusts the app credential's word, so treat
+> `asUser` as a privileged assertion: never populate it straight from a request header or
+> query parameter without establishing the user yourself first.
+
+#### Publication status
+
+A privileged credential sees every version of a page, drafts included, so by default the SDK
+adds `_metadata.status: { eq: "Published" }` to the content it fetches. Turn it off to read
+drafts deliberately:
+
+```ts
+// One request.
+const drafts = await client.getContentByPath('/news/', { publishedOnly: false });
+
+// Or for every request this client makes.
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  query: { publishedOnly: false },
+});
+```
+
+#### Deleted and expired content
+
+`basic` and `hmac` also take two flags that widen what Graph returns:
+
+```ts
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  auth: {
+    type: 'hmac',
+    appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+    secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+    includeDeleted: true,
+    includeExpired: true,
+  },
+});
+```
+
+| Option           | Header                | Adds                                            |
+| ---------------- | --------------------- | ----------------------------------------------- |
+| `includeDeleted` | `cg-include-deleted`  | Content in the CMS trash                        |
+| `includeExpired` | `cg-include-expired`  | Content whose stop-publish date has passed      |
+
+Both default to `false`, and the SDK sends both headers explicitly on every `basic` or `hmac`
+request.
+
+#### Per-user authentication
+
+`config()` is global, so an `auth` set there is shared by every visitor. To authenticate as the
+**signed-in user**, build the client per request instead:
+
+```ts
+import { getClient } from '@optimizely/cms-sdk';
+
+export default async function Page() {
+  const session = await auth(); // your own session helper
+
+  const client =
+    session ?
+      getClient({ auth: { type: 'bearer', token: session.accessToken } })
+    : getClient(); // anonymous visitors keep the single key
+
+  const content = await client.getContentByPath('/members/');
+}
+```
+
+This is the mixed-mode pattern: public pages keep the fast single-key path, and only gated
+routes pay for the authenticated one.
+
+#### A custom resolver
+
+For anything the modes do not cover, `auth` also accepts a function returning the headers to
+send. It runs on every request and is handed the request it is authenticating — the absolute
+`url`, the `method` and the exact `body` bytes. Whatever it returns is merged over the single
+key, so a resolver may also contribute headers alone.
+
+The HMAC scheme written out by hand, as the reference for anyone whose scheme is not covered.
+Prefer `auth: { type: 'hmac', ... }` over copying this — the built-in mode is equivalent and
+needs no Node built-ins, so it survives an edge runtime and a browser bundle:
+
+```ts
+import { createHash, createHmac, randomUUID } from 'node:crypto';
+
+const appKey = process.env.OPTIMIZELY_GRAPH_APP_KEY!;
+const secret = process.env.OPTIMIZELY_GRAPH_SECRET!;
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+
+  auth: ({ url, method, body }) => {
+    const { pathname, search } = new URL(url);
+    const timestamp = Date.now().toString();
+    const nonce = randomUUID();
+    const bodyHash = createHash('md5').update(body).digest('base64');
+
+    const message = [appKey, method, pathname + search, timestamp, nonce, bodyHash].join('');
+    const signature = createHmac('sha256', Buffer.from(secret, 'base64'))
+      .update(message)
+      .digest('base64');
+
+    return {
+      Authorization: `epi-hmac ${appKey}:${timestamp}:${nonce}:${signature}`,
+      'cg-roles': 'WebDelivery',
+    };
+  },
+});
+```
+
+#### What to expect
+
+- **Caching and stored queries are off by default when `auth` is set.** Responses can differ
+  per identity, so the SDK stops sending `cache=true` and `stored=true`. Opting back in with
+  `query: { cache: true }` or `query: { stored: true }` is only safe where the response does
+  not vary by identity, and note that the SDK generates the same query text for a given
+  content type — a gated request and an anonymous one can collide on it. `stored` is the more
+  dangerous of the two: Graph keys a stored query's result by the query text rather than by
+  the credential that ran it.
+- **Live preview is unaffected.** A preview token is itself a credential, so it takes
+  precedence and `auth` is not consulted for that request.
+- **Authenticated requests are slower than the single key.** They bypass Graph's fast read
+  path, so use them for gated routes rather than for every public page.
 
 ### GraphClient Options
 

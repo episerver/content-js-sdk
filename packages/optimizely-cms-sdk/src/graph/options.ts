@@ -52,6 +52,20 @@ export type GraphQueryOptions = {
    * Overrides the global `host` setting in `GraphOptions`.
    */
   host?: string;
+  /**
+   * Return only content whose `_metadata.status` is `Published`, hiding drafts
+   * and superseded versions.
+   *
+   * A no-op for the single key, which never sees a draft in the first place.
+   * It matters under `auth`, where a credential with editorial access
+   * otherwise gets every version. Turn it off to fetch drafts deliberately.
+   *
+   * Ignored where a specific version is being asked for — a preview, or a
+   * reference carrying a `version` — since that version is rarely the
+   * published one.
+   * @default true
+   */
+  publishedOnly?: boolean;
 };
 
 /**
@@ -100,6 +114,93 @@ export type GraphFragmentOptions = {
   typeFilter?: (contentTypeKey: string) => boolean;
 };
 
+/** Headers an auth resolver contributes. Any header is allowed; these are the well-known ones. */
+export type GraphAuthHeaders = {
+  // `string & {}` rather than `string` so the literals survive the union and editors keep
+  // suggesting them.
+  [Name in ('Authorization' | 'cg-username' | 'cg-roles') | (string & {})]?: string;
+};
+
+/**
+ * The request about to be sent, in the form a signing scheme needs it.
+ */
+export type GraphAuthContext = {
+  /** Absolute URL the request goes to, query parameters included. */
+  url: string;
+  /** Always `POST`; Graph takes queries as POST bodies. */
+  method: 'POST';
+  /** The exact JSON body that will be sent, byte for byte. */
+  body: string;
+};
+
+/**
+ * Supplies the credentials for one Graph request, replacing the single key.
+ *
+ * Runs on every request, so the value may depend on the signed-in user — but only
+ * when the client was built per request with `getClient({ auth })`. A user-specific
+ * resolver handed to the global `config()` leaks across requests.
+ */
+export type GraphAuthResolver = (
+  request: GraphAuthContext,
+) => GraphAuthHeaders | Promise<GraphAuthHeaders>;
+
+/**
+ * The user a request acts as, sent as Graph's `cg-username` / `cg-roles` headers.
+ *
+ * Valid on the `basic` and `hmac` modes. Graph takes the app credential's word
+ * for who this is.
+ */
+export type GraphActingUser = {
+  username?: string;
+  roles?: string[];
+};
+
+/** An app key and secret, plus the modifiers Graph accepts alongside them. */
+type GraphAppCredential = {
+  appKey: string;
+  secret: string;
+  asUser?: GraphActingUser;
+  /** Also return content in the CMS trash. Maps to `cg-include-deleted`. @default false */
+  includeDeleted?: boolean;
+  /** Also return content whose stop-publish date has passed. Maps to `cg-include-expired`. @default false */
+  includeExpired?: boolean;
+};
+
+/**
+ * A built-in authentication scheme, as an alternative to writing a
+ * {@linkcode GraphAuthResolver} by hand.
+ *
+ * - `basic` — app key and secret, unsigned.
+ * - `hmac` — app key and secret, signing each request so the secret never travels.
+ * - `bearer` — forwards a token you already hold. `token` may be a callback, since tokens
+ *   expire.
+ *
+ * All three run on every runtime, edge included. `basic` and `hmac` are refused in a
+ * browser, though, since an app secret must not reach client code. Both also accept
+ * `asUser`, `includeDeleted` and `includeExpired`, which Graph honours only on a
+ * credential that is not the single key.
+ *
+ * @example
+ * ```ts
+ * config({
+ *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+ *   auth: {
+ *     type: 'hmac',
+ *     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+ *     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+ *     asUser: { roles: ['WebDelivery'] },
+ *   },
+ * });
+ * ```
+ */
+export type GraphAuthMode =
+  | ({ type: 'basic' } & GraphAppCredential)
+  | ({ type: 'hmac' } & GraphAppCredential)
+  | { type: 'bearer'; token: string | (() => string | Promise<string>) };
+
+/** Everything accepted by the `auth` option: a built-in scheme or a resolver. */
+export type GraphAuth = GraphAuthMode | GraphAuthResolver;
+
 /**
  * Configuration for initializing the Optimizely Graph Client.
  */
@@ -108,6 +209,22 @@ export type GraphOptions = {
   apiKey: string;
   /** Optional custom Graph URL */
   graphUrl?: string;
+  /**
+   * Supplies the credentials for every Graph request, replacing the single key.
+   * Use it to reach content that CMS access rights hide from the single key, by
+   * signing the request (`hmac`, `basic`) or forwarding a token (`bearer`), optionally
+   * acting as a named user via `asUser`. Pass a
+   * {@linkcode GraphAuthResolver} instead for a scheme the built-in modes do not cover.
+   *
+   * `basic` and `hmac` are server-side only — a request throws if one of them runs in a
+   * browser, since both carry an app secret. `bearer` and a resolver may run anywhere; what
+   * they put in the header is the caller's to keep safe.
+   *
+   * Setting `auth` also turns `query.cache` and `query.stored` off, whichever credential is
+   * used, because the SDK generates the same query text for a given content type — a
+   * gated request and an anonymous one can share a cache entry. See {@linkcode GraphAuthMode}.
+   */
+  auth?: GraphAuth;
   /**
    * Custom User-Agent string for HTTP requests to Graph API.
    * @default 'OptimizelySDK/{version} (JS)'
@@ -196,7 +313,14 @@ export const DEFAULT_FRAGMENT_OPTIONS: ResolvedFragmentOptions = {
 export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
   cache: true,
   stored: true,
+  publishedOnly: true,
 };
+
+/** The `query` defaults a client starts from, before its own `query` group is applied. */
+export const defaultQueryOptions = (auth?: GraphAuth): ResolvedQueryOptions =>
+  auth ?
+    { ...DEFAULT_QUERY_OPTIONS, cache: false, stored: false }
+  : DEFAULT_QUERY_OPTIONS;
 
 // Skips keys explicitly set to `undefined`, which a plain spread would copy over
 // the default. Keeps `{ maxThreshold: undefined }` meaning "unset", not "clear it".
@@ -226,10 +350,10 @@ export function resolveQueryOptions(
   options: GraphQueryOptions = {},
   fallbacks: Partial<ResolvedQueryOptions> = {},
 ): ResolvedQueryOptions {
-  const { cache, stored, slot, host } = options;
+  const { cache, stored, slot, host, publishedOnly } = options;
   const defaults = { ...context.queryDefaults, ...fallbacks };
 
-  return withDefaults(defaults, { cache, stored, slot, host });
+  return withDefaults(defaults, { cache, stored, slot, host, publishedOnly });
 }
 
 /**

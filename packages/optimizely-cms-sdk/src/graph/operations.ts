@@ -128,6 +128,7 @@ async function resolveFormNodes<T>(
     previewToken?: string;
     cache?: boolean;
     slot?: GraphSlot;
+    publishedOnly?: boolean;
   },
 ): Promise<T> {
   // Grouped by key: one shared form placed twice on a page arrives as two
@@ -165,6 +166,8 @@ async function resolveFormNodes<T>(
         formsEnabled: true,
         sectionTypes: options.sectionTypes,
         filterShape: filter.filterShape,
+        // A pinned version is the draft being previewed, which is not published.
+        publishedOnly: options.publishedOnly && !version,
       });
 
       const response = await context.request(
@@ -208,7 +211,12 @@ async function getContentMetaData(
   // Skip if forms aren't registered; local lookup, no round trip.
   const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-  const query = getMetadataQuery(filter.filterShape, variationMode, mayRenderForms);
+  const query = getMetadataQuery(
+    filter.filterShape,
+    variationMode,
+    mayRenderForms,
+    queryOptions.publishedOnly,
+  );
   const variables = {
     ...filter.variables,
     ...(mayRenderForms && { withForms: true }),
@@ -302,6 +310,7 @@ export async function getContentByPath<T = any>(
         sectionTypes,
         filterShape: filter.filterShape,
         variationMode: varMode,
+        publishedOnly: queryOptions.publishedOnly,
       });
 
       const response = (await context.request(
@@ -320,6 +329,7 @@ export async function getContentByPath<T = any>(
             sectionTypes,
             cache: queryOptions.cache,
             slot: queryOptions.slot,
+            publishedOnly: queryOptions.publishedOnly,
           }),
         ) ?? [],
       );
@@ -342,11 +352,12 @@ export async function getPreviewContent(
     const filter = previewScalarFilter(params);
     const queryOptions = resolveQueryOptions(context, options);
 
+    // A preview exists to show the draft, so the published filter never applies here.
     const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
       await getContentMetaData(
         context,
         filter,
-        { ...queryOptions, cache: false },
+        { ...queryOptions, cache: false, publishedOnly: false },
         params.preview_token,
         'all',
       );
@@ -380,6 +391,7 @@ export async function getPreviewContent(
       sectionTypes,
       filterShape: filter.filterShape,
       variationMode: 'all',
+      publishedOnly: false,
     });
 
     const response = await context.request(
@@ -401,6 +413,7 @@ export async function getPreviewContent(
           previewToken: params.preview_token,
           cache: false,
           slot: queryOptions.slot,
+          publishedOnly: false,
         },
       ),
       params,
@@ -428,8 +441,18 @@ export async function getContent(
 
     const filter = referenceScalarFilter(ref);
 
+    // A preview token or a pinned version asks for one exact version, which is
+    // rarely the published one.
+    const publishedOnly = queryOptions.publishedOnly && !previewToken && !ref.version;
+
     const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-      await getContentMetaData(context, filter, queryOptions, previewToken, 'none');
+      await getContentMetaData(
+        context,
+        filter,
+        { ...queryOptions, publishedOnly },
+        previewToken,
+        'none',
+      );
 
     if (!contentTypeName) {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -444,6 +467,7 @@ export async function getContent(
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
+        publishedOnly,
       });
 
       const response = await context.request(
@@ -464,6 +488,7 @@ export async function getContent(
           previewToken,
           cache: queryOptions.cache,
           slot: queryOptions.slot,
+          publishedOnly,
         },
       );
     } catch (error) {
@@ -501,7 +526,8 @@ export async function getPath(
   }
 
   const variables = { ...filter.variables, locale: locales };
-  const query = getLinksQuery('GetPath', filter.filterShape);
+  const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
+  const query = getLinksQuery('GetPath', filter.filterShape, publishedOnly);
 
   const data = (await context.request(
     query,
@@ -559,7 +585,8 @@ export async function getItems(
   }
 
   const variables = { ...filter.variables, locale: locales };
-  const query = getItemsQuery('GetItems', filter.filterShape);
+  const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
+  const query = getItemsQuery('GetItems', filter.filterShape, publishedOnly);
 
   const data = (await context.request(
     query,

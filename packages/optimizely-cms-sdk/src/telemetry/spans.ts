@@ -63,6 +63,19 @@ export function startMultipleQuerySpan(contentType: string, damEnabled: boolean,
 // GraphQL Request Helpers
 
 /**
+ * Which credential a Graph request carried. Never the credential itself.
+ *
+ * `custom` is a caller-supplied resolver; the named schemes are the built-in modes.
+ */
+export type AuthMode =
+  | 'single'
+  | 'preview'
+  | 'custom'
+  | 'basic'
+  | 'hmac'
+  | 'bearer';
+
+/**
  * Wraps request operation in span.
  */
 export function withRequestSpan<T>(
@@ -71,6 +84,7 @@ export function withRequestSpan<T>(
   cache: boolean,
   slot: string,
   hasPreviewToken: boolean,
+  authMode: AuthMode,
   fn: (span: any) => Promise<T>,
 ): Promise<T> {
   return createSpan('optimizely.graph.request', async span => {
@@ -81,6 +95,7 @@ export function withRequestSpan<T>(
       [SemanticAttributes.OPTI_CACHE_ENABLED]: cache,
       [SemanticAttributes.OPTI_SLOT]: slot,
       [SemanticAttributes.OPTI_PREVIEW_TOKEN]: hasPreviewToken,
+      [SemanticAttributes.OPTI_AUTH_MODE]: authMode,
     });
     return fn(span);
   });

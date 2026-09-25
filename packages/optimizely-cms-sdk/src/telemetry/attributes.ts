@@ -22,6 +22,7 @@ export const SemanticAttributes = {
   OPTI_CONTENT_KEY: 'optimizely.content.key', // Content GUID/key identifier
   OPTI_CONTENT_PATH: 'optimizely.content.path', // Content URL path
   OPTI_PREVIEW_TOKEN: 'optimizely.preview.token', // Whether preview token was used (boolean)
+  OPTI_AUTH_MODE: 'optimizely.auth.mode', // Credential used: 'single', 'preview', 'custom', 'basic', 'hmac' or 'bearer'
   OPTI_CACHE_ENABLED: 'optimizely.cache.enabled', // Whether server-side caching is enabled (boolean)
   OPTI_SLOT: 'optimizely.graph.slot', // Graph index slot ('Current' or 'New')
   OPTI_DAM_ENABLED: 'optimizely.dam.enabled', // Whether DAM assets are enabled (boolean)
