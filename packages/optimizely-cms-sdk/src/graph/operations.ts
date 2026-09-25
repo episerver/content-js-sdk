@@ -383,7 +383,7 @@ export async function getContentByPath<T = any>(
         queryOptions.stored,
       )) as ItemsResponse<T>;
 
-      return Promise.all(
+      const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
           resolveFormNodes(context, liftSectionNodes(removeTypePrefix(item)), {
             damEnabled,
@@ -394,6 +394,25 @@ export async function getContentByPath<T = any>(
           }),
         ) ?? [],
       );
+
+      if (options?.resolveCategories && taxonomyEnabled) {
+        await Promise.all(
+          items.map(async (item: any) => {
+            const categories: string[] | undefined = item?._metadata?.categories;
+            if (categories && categories.length > 0) {
+              item._metadata.resolvedCategories = await resolveCategoryHierarchy(
+                context,
+                categories,
+                item?._metadata?.locale,
+              );
+            } else if (categories) {
+              item._metadata.resolvedCategories = [];
+            }
+          }),
+        );
+      }
+
+      return items;
     } catch (error) {
       if (error instanceof GraphMissingContentTypeError) {
         return [];
@@ -462,21 +481,33 @@ export async function getPreviewContent(
       queryOptions.stored,
     );
 
-    return decorateWithContext(
-      await resolveFormNodes(
-        context,
-        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-        {
-          damEnabled,
-          taxonomyEnabled,
-          sectionTypes,
-          previewToken: params.preview_token,
-          cache: false,
-          slot: queryOptions.slot,
-        },
-      ),
-      params,
+    const result = await resolveFormNodes(
+      context,
+      liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+      {
+        damEnabled,
+        taxonomyEnabled,
+        sectionTypes,
+        previewToken: params.preview_token,
+        cache: false,
+        slot: queryOptions.slot,
+      },
     );
+
+    if (result && options?.resolveCategories && taxonomyEnabled) {
+      const categories: string[] | undefined = result?._metadata?.categories;
+      if (categories && categories.length > 0) {
+        result._metadata.resolvedCategories = await resolveCategoryHierarchy(
+          context,
+          categories,
+          params.loc,
+        );
+      } else if (categories) {
+        result._metadata.resolvedCategories = [];
+      }
+    }
+
+    return decorateWithContext(result, params);
   });
 }
 
@@ -527,7 +558,7 @@ export async function getContent(
         queryOptions.stored,
       );
 
-      return resolveFormNodes(
+      const result = await resolveFormNodes(
         context,
         liftSectionNodes(removeTypePrefix(response?._Content?.item)),
         {
@@ -539,6 +570,21 @@ export async function getContent(
           slot: queryOptions.slot,
         },
       );
+
+      if (result && options?.resolveCategories && taxonomyEnabled) {
+        const categories: string[] | undefined = result?._metadata?.categories;
+        if (categories && categories.length > 0) {
+          result._metadata.resolvedCategories = await resolveCategoryHierarchy(
+            context,
+            categories,
+            ref.locale,
+          );
+        } else if (categories) {
+          result._metadata.resolvedCategories = [];
+        }
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof GraphMissingContentTypeError) {
         return null;
