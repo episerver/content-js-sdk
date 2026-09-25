@@ -17,7 +17,7 @@ import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
-import { SemanticAttributes } from '../telemetry/index.js';
+import { SemanticAttributes, logWarning } from '../telemetry/index.js';
 import {
   withGetContentByPathSpan,
   withGetPreviewContentSpan,
@@ -28,10 +28,12 @@ import {
   type GraphGetContentOptions,
   type GraphGetItemOptions,
   type GraphGetLinksOptions,
+  type GraphGetPreviewOptions,
   type GraphQueryOptions,
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type ResolvedCategory,
   type ResolvedQueryOptions,
   fragmentContext,
   parseGraphReference,
@@ -185,6 +187,67 @@ async function resolveFormNodes<T>(
   );
 
   return item;
+}
+
+// TAXONOMY HIERARCHY RESOLUTION
+
+const RESOLVE_TAXONOMY_QUERY = `
+query ResolveTaxonomyTerms($uris: [String!]!) {
+  _TaxonomyTerm(where: { id: { in: $uris } }, limit: 100) {
+    items {
+      id
+      name
+      path {
+        id
+        name
+      }
+    }
+  }
+}
+`;
+
+async function resolveCategoryHierarchy(
+  context: GraphClientContext,
+  categoryUris: string[],
+  locale: string | undefined,
+): Promise<ResolvedCategory[] | undefined> {
+  if (categoryUris.length === 0) return [];
+
+  const uniqueUris = [...new Set(categoryUris)];
+
+  try {
+    const data = await context.request(
+      RESOLVE_TAXONOMY_QUERY,
+      { uris: uniqueUris, ...(locale && { locale }) },
+      undefined,
+      true,
+    );
+
+    const items: Array<{ id: string; name: string | null; path?: Array<{ id: string; name: string | null }> }> =
+      data?._TaxonomyTerm?.items ?? [];
+
+    const termMap = new Map(items.map(item => [item.id, item]));
+
+    return categoryUris.map(uri => {
+      const term = termMap.get(uri);
+      if (!term) {
+        return { uri, name: null, path: [{ uri, name: null }] };
+      }
+
+      const path = term.path
+        ? term.path.map(p => ({ uri: p.id, name: p.name }))
+        : [{ uri: term.id, name: term.name }];
+
+      return {
+        uri,
+        name: term.name,
+        path,
+      };
+    });
+  } catch {
+    logWarning('Taxonomy hierarchy resolution failed; resolvedCategories will be undefined');
+    return undefined;
+  }
 }
 
 // METADATA
@@ -344,7 +407,7 @@ export async function getContentByPath<T = any>(
 export async function getPreviewContent(
   context: GraphClientContext,
   params: PreviewParams,
-  options?: GraphQueryOptions,
+  options?: GraphGetPreviewOptions,
 ) {
   return withGetPreviewContentSpan(params, async span => {
     const filter = previewScalarFilter(params);
