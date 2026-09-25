@@ -45,6 +45,7 @@ export type InferredUrl = {
 type InferredItemMetadata = {
   changeset: string | null;
   displayOption: string | null;
+  categories: string[] | undefined;
 };
 
 type InferredInstanceMetadata = {
