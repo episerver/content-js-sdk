@@ -415,6 +415,67 @@ describe('the hmac mode', () => {
 });
 
 /**
+ * `config()` runs synchronously at module load, but reading the signed-in user usually
+ * needs an `await` — so `asUser` takes a callback, resolved when the request is made.
+ */
+describe('an asUser callback', () => {
+  const callbackClient = (asUser: any) =>
+    new GraphClient('test-key', { auth: { type: 'hmac', asUser }, secrets: SECRETS });
+
+  test.each([
+    ['a synchronous one', () => ({ username: 'johan' })],
+    ['an async one', async () => ({ username: 'johan' })],
+  ])('%s supplies the acting user', async (_name, asUser) => {
+    await callbackClient(asUser).request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders()['cg-username']).toBe('johan');
+  });
+
+  // Re-read per request, or a client built once would pin the first user it saw.
+  test('runs again on every request', async () => {
+    const asUser = vi
+      .fn()
+      .mockReturnValueOnce({ username: 'first' })
+      .mockReturnValueOnce({ username: 'second' });
+    const client = callbackClient(asUser);
+
+    await client.request(QUERY, {}, undefined, false);
+    await client.request(QUERY, {}, undefined, false);
+
+    expect(asUser).toHaveBeenCalledTimes(2);
+    expect(sentHeaders()['cg-username']).toBe('second');
+  });
+
+  test('a rejection surfaces rather than silently dropping the user', async () => {
+    const client = callbackClient(() => Promise.reject(new Error('no session')));
+
+    await expect(client.request(QUERY, {}, undefined, false)).rejects.toThrow(
+      'no session',
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  // An empty value would send no headers at all, silently widening the request to
+  // everything the app credential can see.
+  test.each([
+    ['a non-object', () => 'johan'],
+    ['nothing at all', () => undefined],
+    ['an empty object', () => ({})],
+    ['no roles and no username', () => ({ roles: [] })],
+  ])('%s is rejected rather than ignored', async (_name, asUser) => {
+    await expect(
+      callbackClient(asUser).request(QUERY, {}, undefined, false),
+    ).rejects.toThrow(OptimizelyGraphError);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  // A literal is just as capable of naming no one, and it can be caught at start-up.
+  test('an empty literal is rejected when the client is built', () => {
+    expect(() => callbackClient({})).toThrow(OptimizelyGraphError);
+  });
+});
+
+/**
  * Graph decodes these headers but documents plain ASCII as working unencoded, and a tenant
  * measured on 2026-09-22 did not decode at all. Encoding an ASCII username anyway turns
  * `a@b.com` into `a%40b.com`, which matched nothing there — so ASCII has to go out raw.

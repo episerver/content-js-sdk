@@ -148,6 +148,13 @@ export type GraphAuthResolver = (
  * The user a request acts as, sent as Graph's `cg-username` / `cg-roles` headers.
  *
  * Valid on the `hmac` mode. Graph takes the app credential's word for who this is.
+ *
+ * May be supplied by a callback, which is awaited on every request. Reading the
+ * current user in one is only safe where the request is in scope — a callback given
+ * to the global `config()` serves whichever user asked first.
+ *
+ * Both fields are individually optional, but one of them has to be there: naming no
+ * one would leave the request with the app credential's own full access.
  */
 export type GraphActingUser = {
   username?: string;
@@ -167,7 +174,11 @@ export type GraphSecrets = {
 
 /** The modifiers Graph accepts alongside an app credential. */
 type GraphAppCredential = {
-  asUser?: GraphActingUser;
+  /**
+   * The user to act as. May be a callback, awaited on every request, since who is
+   * signed in is rarely known when `config()` runs.
+   */
+  asUser?: GraphActingUser | (() => GraphActingUser | Promise<GraphActingUser>);
   /** Also return content in the CMS trash. Maps to `cg-include-deleted`. @default false */
   includeDeleted?: boolean;
   /** Also return content whose stop-publish date has passed. Maps to `cg-include-expired`. @default false */

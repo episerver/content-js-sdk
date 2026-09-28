@@ -79,23 +79,41 @@ const encodeUsername = (username: string): string =>
 const encodeRole = (role: string): string =>
   isPlainAscii(role) && !role.includes(',') ? role : encodeURIComponent(role);
 
-const actingUserHeaders = (asUser?: GraphActingUser): GraphAuthHeaders =>
-  !asUser ?
-    {}
-  : {
-      ...(asUser.username ? { 'cg-username': encodeUsername(asUser.username) } : {}),
-      // Graph takes the roles as one comma-separated header value.
-      ...(asUser.roles?.length ?
-        { 'cg-roles': asUser.roles.map(encodeRole).join(',') }
-      : {}),
-    };
-
 type GraphAppCredential = Extract<GraphAuthMode, { type: 'hmac' }>;
+
+// Rejected rather than sent as no headers at all, which would quietly widen the request to
+// everything the app credential can see.
+const requireActingUser = (user: unknown): GraphActingUser => {
+  const { username, roles } = (user ?? {}) as GraphActingUser;
+
+  if (!username && !roles?.length)
+    throw new OptimizelyGraphError(
+      'Invalid `asUser`: expected an object naming a `username`, some `roles` or both.',
+    );
+
+  return { username, roles };
+};
+
+const actingUserHeaders = async (
+  asUser?: GraphAppCredential['asUser'],
+): Promise<GraphAuthHeaders> => {
+  if (!asUser) return {};
+
+  const user = requireActingUser(typeof asUser === 'function' ? await asUser() : asUser);
+
+  return {
+    ...(user.username ? { 'cg-username': encodeUsername(user.username) } : {}),
+    // Graph takes the roles as one comma-separated header value.
+    ...(user.roles?.length ? { 'cg-roles': user.roles.map(encodeRole).join(',') } : {}),
+  };
+};
 
 // Both flags go out on every privileged request rather than only when set, so what Graph
 // returns does not depend on a server-side default we do not control.
-const credentialHeaders = (mode: GraphAppCredential): GraphAuthHeaders => ({
-  ...actingUserHeaders(mode.asUser),
+const credentialHeaders = async (
+  mode: GraphAppCredential,
+): Promise<GraphAuthHeaders> => ({
+  ...(await actingUserHeaders(mode.asUser)),
   'cg-include-deleted': String(mode.includeDeleted ?? false),
   'cg-include-expired': String(mode.includeExpired ?? false),
 });
@@ -120,7 +138,7 @@ async function modeHeaders(
 
       return {
         Authorization: await hmacHeader(appKey, secret, request),
-        ...credentialHeaders(mode),
+        ...(await credentialHeaders(mode)),
       };
     }
 
@@ -243,6 +261,9 @@ export function validateAuth(auth: GraphAuth | undefined, secrets?: GraphSecrets
 
       requireText(auth.type, appKey, 'secrets.appKey');
       requireText(auth.type, secret, 'secrets.secret');
+      // A callback can only be checked once it has run, on the first request.
+      if (auth.asUser && typeof auth.asUser !== 'function')
+        requireActingUser(auth.asUser);
       return;
     }
 

@@ -436,14 +436,35 @@ config({
 });
 ```
 
-Both fields are optional and map to Graph's `cg-username` and `cg-roles` headers — what
-Graph's own documentation calls impersonation. They narrow by access rights only, not by
-publication status; drafts are kept out by [`publishedOnly`](#publication-status), which is
-a separate setting and on by default.
+The two fields map to Graph's `cg-username` and `cg-roles` headers — what Graph's own
+documentation calls impersonation. Either one alone is enough, but naming no one is an
+error rather than a no-op, since it would leave the request with the app credential's full
+access. They narrow by access rights only, not by publication status; drafts are kept out
+by [`publishedOnly`](#publication-status), which is a separate setting and on by default.
 
 > **Graph does not verify who this is.** It trusts the app credential's word, so treat
 > `asUser` as a privileged assertion: never populate it straight from a request header or
 > query parameter without establishing the user yourself first.
+
+Who is signed in is rarely known when `config()` runs, so `asUser` also takes a callback,
+awaited on every request:
+
+```ts
+const client = getClient({
+  auth: {
+    type: 'hmac',
+    asUser: async () => {
+      const session = await auth(); // your own session helper
+
+      return { username: session.email, roles: session.roles };
+    },
+  },
+});
+```
+
+Read the current user in one only where the request is in scope, as above. A callback
+handed to the global `config()` is shared by every visitor, so it serves whichever user
+asked first — the same hazard as a [resolver](#a-custom-resolver) set globally.
 
 #### Publication status
 
