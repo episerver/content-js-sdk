@@ -55,8 +55,6 @@ const state = signal(store.getSnapshot());
 store.subscribe(() => state.set(store.getSnapshot()));
 ```
 
-`createStore` is exported too, if your binding needs one of its own.
-
 ## Rendering
 
 ### 1. Register components
@@ -304,10 +302,11 @@ host serving one request at a time, but not on a server handling concurrent requ
 Rich text is already framework-neutral. `BaseRichTextRenderer` walks the document and calls two
 abstract methods; a binding supplies `createElement` and `createTextNode` and nothing else.
 
-`buildRenderTree`, `resolveRichTextNodes`, `mapAttributes`, `createElementData`, `decodeHTML`,
-`defaultElementTypeMap` and `defaultMarkTypeMap` are all exported from `./core`, as are the
-per-element attribute helpers — `getLinkAttributes`, `getImageAttributes` (which applies the
-preview token), `isHtmlAttributeContext`, `resolveCssProperty`, `parseStyleString`.
+`buildRenderTree`, `resolveRichTextNodes`, `createElementData`, `defaultElementTypeMap` and
+`defaultMarkTypeMap` are all exported from `./core`, as are the per-element attribute helpers —
+`getLinkAttributes`, `getImageAttributes` (which applies the preview token),
+`isHtmlAttributeContext`, `resolveCssProperty`, `parseStyleString`, `kebabToCamelCase` and
+`DUAL_PURPOSE_PROPERTIES`.
 
 ## What stays in a binding
 

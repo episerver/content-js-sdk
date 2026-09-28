@@ -10,8 +10,7 @@
  */
 
 // Observable store primitive
-export { createStore } from './store.js';
-export type { Store, ReadableStore } from './store.js';
+export type { ReadableStore } from './store.js';
 
 // Component registry
 export { ComponentRegistry } from '../render/componentRegistry.js';
@@ -21,15 +20,10 @@ export {
   initForms,
   hasComponentRegistry,
   resolveComponent,
-  resetComponentRegistry,
 } from './render/registry.js';
 
 // Content resolution
-export {
-  resolveContentComponent,
-  resolveTag,
-  splitPreviewAttrs,
-} from './render/resolve.js';
+export { resolveContentComponent } from './render/resolve.js';
 export type { OptimizelyContent, ResolvedContentComponent } from './render/resolve.js';
 
 // Composition planning
@@ -51,8 +45,6 @@ export type {
   ContentSavedListenerOptions,
   NavigateCallback,
 } from './preview/contentSaved.js';
-export { damAssets } from '../render/assets.js';
-export { appendToken } from '../util/preview.js';
 
 // Context
 export {
@@ -96,21 +88,12 @@ export type {
   DefineFormFieldOptions,
 } from './forms/field.js';
 export { buildButtonProps } from './forms/button.js';
-export {
-  evaluateCondition,
-  getJumpTarget,
-  isElementVisible,
-  isRuleSatisfied,
-  isStepVisible,
-} from './forms/rules.js';
+export { getJumpTarget, isElementVisible, isStepVisible } from './forms/rules.js';
 export type { DependencyRule, DependencyCondition, ElementId } from './forms/rules.js';
 export { dropShadowedBlanks } from './forms/formData.js';
 export { createJsonSubmitHandler } from './forms/jsonSubmitHandler.js';
-export { getElementId, getElementIds } from './forms/elementId.js';
-export {
-  FORM_HANDLER_TO_CONTENT_TYPE,
-  mapFormHandlersToContentTypes,
-} from './forms/setup.js';
+export { getElementIds } from './forms/elementId.js';
+export { mapFormHandlersToContentTypes } from './forms/setup.js';
 export type { FormHandlers, FormComponentEntry } from './forms/setup.js';
 export { getFormButtonRole, DEFAULT_STEP_BUTTON_LABELS } from '../forms/buttonRole.js';
 export type {
@@ -127,16 +110,9 @@ export type { BaseRendererConfig } from '../components/richText/base.js';
 export {
   buildRenderTree,
   resolveRichTextNodes,
-  mapAttributes,
-  getTextMarks,
-  extractTextContent,
   createElementData,
-  decodeHTML,
   defaultElementTypeMap,
   defaultMarkTypeMap,
-  isText,
-  isElement,
-  RESERVED_PROPS,
 } from '../components/richText/renderer.js';
 export type {
   Node,
@@ -161,9 +137,7 @@ export type {
   BaseElement,
 } from '../components/richText/renderer.js';
 export {
-  CSS_PROPERTIES,
   DUAL_PURPOSE_PROPERTIES,
-  HTML_ATTRIBUTE_ELEMENTS,
   isHtmlAttributeContext,
   resolveCssProperty,
   parseStyleString,
@@ -172,16 +146,7 @@ export {
   getImageAttributes,
 } from './richText/attributes.js';
 
-// Display templates and content types, for a binding that resolves tags itself
-export { parseDisplaySettings } from '../model/displayTemplates.js';
-export {
-  getDisplayTemplate,
-  getDisplayTemplateTag,
-  getDisplayTemplateByTag,
-  getAllDisplayTemplates,
-} from '../model/displayTemplateRegistry.js';
-export { isComponentNode } from '../util/baseTypeUtil.js';
-export { isDev } from '../util/environment.js';
+// Experience node types
 export type {
   ExperienceNode,
   ExperienceComponentNode,
