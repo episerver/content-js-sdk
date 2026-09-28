@@ -125,7 +125,8 @@ config({
 - **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
 - **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`. If the URL does not include `/content/v2`, the SDK appends it automatically
 - **`userAgent`** (optional): Value sent in the `User-Agent` header of every Graph request
-- **`auth`** (optional): Credentials to use instead of the single key — a built-in mode (`basic`, `hmac`, `bearer`) or a resolver function. `basic` and `hmac` are server-side only. See [Authentication](#authentication)
+- **`secrets`** (optional): The `appKey` and `secret` the `basic` and `hmac` modes sign with. Declaring them does not authenticate anything on its own. See [Authentication](#authentication)
+- **`auth`** (optional): Which credential to use instead of the single key — a built-in mode (`basic`, `hmac`, `bearer`) or a resolver function. `basic` and `hmac` need `secrets` and are server-side only. Carries no secret itself, so it can be chosen per request. See [Authentication](#authentication)
 
 ##### `fragment` — query shape
 
@@ -382,36 +383,28 @@ To reach that content, set `auth`. It takes one of the built-in modes below, or 
 
 All three run on any runtime, edge included. Of the three, only `bearer` may run in a browser.
 
-`basic` sends the app key and secret unsigned, over HTTPS. It is the simplest of the three:
+`basic` and `hmac` both sign with the app key and secret, which you declare once in
+`secrets`:
 
 ```ts
 import { config } from '@optimizely/cms-sdk';
 
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-  auth: {
-    type: 'basic',
+  secrets: {
     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
   },
+  auth: { type: 'hmac' },
 });
 ```
 
-`hmac` takes the same credentials but signs each request, so the secret itself never travels:
+Prefer `hmac` to `basic` where you can: the two carry the same credentials, but only `basic`
+puts the secret itself on the wire.
 
-```ts
-config({
-  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-  auth: {
-    type: 'hmac',
-    appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
-    secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
-  },
-});
-```
-
-Prefer it to `basic` where you can: the two carry the same credentials, but only `basic` puts
-the secret itself on the wire.
+> **`secrets` on its own authenticates nothing.** Until an `auth` mode asks for them,
+> requests stay on the single key — so you can declare them globally and switch per request.
+> See [Choosing the credential per request](#choosing-the-credential-per-request).
 
 `bearer` forwards a token you obtained elsewhere. Because tokens expire, `token` may be a
 callback, which is awaited on every request:
@@ -432,10 +425,12 @@ instead:
 ```ts
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-  auth: {
-    type: 'hmac',
+  secrets: {
     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+  },
+  auth: {
+    type: 'hmac',
     asUser: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
   },
 });
@@ -474,13 +469,11 @@ config({
 ```ts
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-  auth: {
-    type: 'hmac',
+  secrets: {
     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
-    includeDeleted: true,
-    includeExpired: true,
   },
+  auth: { type: 'hmac', includeDeleted: true, includeExpired: true },
 });
 ```
 
@@ -492,10 +485,35 @@ config({
 Both default to `false`, and the SDK sends both headers explicitly on every `basic` or `hmac`
 request.
 
-#### Per-user authentication
+#### Choosing the credential per request
 
-`config()` is global, so an `auth` set there is shared by every visitor. To authenticate as the
-**signed-in user**, build the client per request instead:
+`config()` is global, so an `auth` set there is shared by every visitor. Because `auth`
+carries no secret of its own, you can leave it out of `config()` entirely and pick it per
+request with `getClient()`:
+
+```ts
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  secrets: {
+    appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+    secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+  },
+});
+
+// Anonymous — the single key, cached at the CDN.
+const news = await getClient().getContentByPath('/news/');
+
+// Signed, using the configured secrets. No need to restate them.
+const drafts = await getClient({ auth: { type: 'hmac' } })
+  .getContentByPath('/news/', { publishedOnly: false });
+
+// Signed, as a particular user.
+const mine = await getClient({ auth: { type: 'hmac', asUser: { username: 'johan' } } })
+  .getContentByPath('/members/');
+```
+
+The same applies to the **signed-in user**, whose token is only known once a request is in
+flight:
 
 ```ts
 import { getClient } from '@optimizely/cms-sdk';

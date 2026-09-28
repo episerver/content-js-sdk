@@ -15,6 +15,7 @@ import {
   type GraphOptions,
   type GraphQueryOptions,
   type GraphReference,
+  type GraphSecrets,
   type GraphSlot,
   type PreviewParams,
   type ResolvedFragmentOptions,
@@ -48,6 +49,7 @@ export type {
   GraphAuthMode,
   GraphAuthResolver,
   GraphFragmentOptions,
+  GraphSecrets,
 } from './options.js';
 
 // RESPONSES
@@ -80,8 +82,11 @@ export class GraphClient {
   graphUrl: string;
   userAgent: string;
 
-  /** Supplies the credentials per request. Unset means the single key is used. */
+  /** Which credential each request carries. Unset means the single key is used. */
   readonly auth?: GraphAuth;
+
+  /** The app key and secret the `basic` and `hmac` modes sign with. */
+  readonly secrets?: GraphSecrets;
 
   /**
    * Every setting the query builders read that comes from configuration,
@@ -94,12 +99,13 @@ export class GraphClient {
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
-    validateAuth(options.auth);
+    validateAuth(options.auth, options.secrets);
 
     this.apiKey = apiKey;
     this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
     this.auth = options.auth;
+    this.secrets = options.secrets;
 
     this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
     this.queryDefaults = withDefaults(defaultQueryOptions(options.auth), options.query);
@@ -140,11 +146,13 @@ export class GraphClient {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
           'User-Agent': this.userAgent,
-          ...(await resolveAuthHeaders(this.apiKey, this.auth, previewToken, {
-            url: url.toString(),
-            method: 'POST',
-            body,
-          })),
+          ...(await resolveAuthHeaders(
+            this.apiKey,
+            this.auth,
+            previewToken,
+            { url: url.toString(), method: 'POST', body },
+            this.secrets,
+          )),
         };
 
         if (stored) {
@@ -404,7 +412,7 @@ export function config(options: GraphOptions) {
 
   // Checked here as well as in the constructor so a malformed `auth` fails when the app
   // starts up rather than on whichever request happens to build a client first.
-  validateAuth(options.auth);
+  validateAuth(options.auth, options.secrets);
 
   setGraphConfig(options);
 }

@@ -8,6 +8,7 @@ import type {
   GraphAuthHeaders,
   GraphActingUser,
   GraphAuthMode,
+  GraphSecrets,
 } from './options.js';
 
 // CREDENTIALS
@@ -92,7 +93,7 @@ const actingUserHeaders = (asUser?: GraphActingUser): GraphAuthHeaders =>
       : {}),
     };
 
-type GraphAppCredential = Extract<GraphAuthMode, { secret: string }>;
+type GraphAppCredential = Extract<GraphAuthMode, { type: 'basic' | 'hmac' }>;
 
 // Both flags go out on every privileged request rather than only when set, so what Graph
 // returns does not depend on a server-side default we do not control.
@@ -102,22 +103,38 @@ const credentialHeaders = (mode: GraphAppCredential): GraphAuthHeaders => ({
   'cg-include-expired': String(mode.includeExpired ?? false),
 });
 
+const requireSecrets = (type: string, secrets?: GraphSecrets): GraphSecrets => {
+  if (!secrets)
+    throw new OptimizelyGraphError(
+      `The '${type}' auth mode needs \`secrets\`. Add \`secrets: { appKey, secret }\` to config().`,
+    );
+
+  return secrets;
+};
+
 async function modeHeaders(
   mode: GraphAuthMode,
   request: GraphAuthContext,
+  secrets?: GraphSecrets,
 ): Promise<GraphAuthHeaders> {
   switch (mode.type) {
-    case 'basic':
-      return {
-        Authorization: basicHeader(mode.appKey, mode.secret),
-        ...credentialHeaders(mode),
-      };
+    case 'basic': {
+      const { appKey, secret } = requireSecrets(mode.type, secrets);
 
-    case 'hmac':
       return {
-        Authorization: await hmacHeader(mode.appKey, mode.secret, request),
+        Authorization: basicHeader(appKey, secret),
         ...credentialHeaders(mode),
       };
+    }
+
+    case 'hmac': {
+      const { appKey, secret } = requireSecrets(mode.type, secrets);
+
+      return {
+        Authorization: await hmacHeader(appKey, secret, request),
+        ...credentialHeaders(mode),
+      };
+    }
 
     case 'bearer': {
       const token = typeof mode.token === 'function' ? await mode.token() : mode.token;
@@ -162,7 +179,7 @@ const carriesSecret = (auth: GraphAuth): auth is GraphAppCredential =>
 const requireText = (type: string, value: unknown, field: string): void => {
   if (typeof value !== 'string' || value.trim().length === 0)
     throw new OptimizelyGraphError(
-      `Invalid \`auth\` option: '${type}' requires a non-empty \`${field}\`.`,
+      `Invalid configuration: the '${type}' auth mode requires a non-empty \`${field}\`.`,
     );
 };
 
@@ -184,6 +201,7 @@ export async function resolveAuthHeaders(
   auth: GraphAuth | undefined,
   previewToken: string | undefined,
   request: GraphAuthContext,
+  secrets?: GraphSecrets,
 ): Promise<GraphAuthHeaders> {
   // A preview token is itself a credential, so it replaces the others.
   if (previewToken) return { Authorization: `Bearer ${previewToken}` };
@@ -201,7 +219,7 @@ export async function resolveAuthHeaders(
   const headers =
     typeof auth === 'function' ?
       await resolverHeaders(auth, request)
-    : await modeHeaders(auth, request);
+    : await modeHeaders(auth, request, secrets);
 
   // A resolver may contribute only `cg-username` / `cg-roles`, leaving the single key in place.
   // Matched case-insensitively, or a resolver returning `authorization` would send both and
@@ -214,7 +232,7 @@ export async function resolveAuthHeaders(
 }
 
 /** Rejects a malformed `auth` option at configuration time rather than on the first query. */
-export function validateAuth(auth: GraphAuth | undefined): void {
+export function validateAuth(auth: GraphAuth | undefined, secrets?: GraphSecrets): void {
   if (auth === undefined || typeof auth === 'function') return;
 
   if (!auth || typeof auth !== 'object')
@@ -225,10 +243,13 @@ export function validateAuth(auth: GraphAuth | undefined): void {
 
   switch (auth.type) {
     case 'basic':
-    case 'hmac':
-      requireText(auth.type, auth.appKey, 'appKey');
-      requireText(auth.type, auth.secret, 'secret');
+    case 'hmac': {
+      const { appKey, secret } = requireSecrets(auth.type, secrets);
+
+      requireText(auth.type, appKey, 'secrets.appKey');
+      requireText(auth.type, secret, 'secrets.secret');
       return;
+    }
 
     case 'bearer':
       if (typeof auth.token !== 'function') requireText(auth.type, auth.token, 'token');

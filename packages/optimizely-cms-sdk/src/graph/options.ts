@@ -155,10 +155,19 @@ export type GraphActingUser = {
   roles?: string[];
 };
 
-/** An app key and secret, plus the modifiers Graph accepts alongside them. */
-type GraphAppCredential = {
+/**
+ * The app key and secret the `basic` and `hmac` modes sign with.
+ *
+ * Kept out of {@linkcode GraphAuthMode} so it can be configured once, in
+ * `config()`, while each request still chooses how — or whether — to use it.
+ */
+export type GraphSecrets = {
   appKey: string;
   secret: string;
+};
+
+/** The modifiers Graph accepts alongside an app credential. */
+type GraphAppCredential = {
   asUser?: GraphActingUser;
   /** Also return content in the CMS trash. Maps to `cg-include-deleted`. @default false */
   includeDeleted?: boolean;
@@ -170,8 +179,8 @@ type GraphAppCredential = {
  * A built-in authentication scheme, as an alternative to writing a
  * {@linkcode GraphAuthResolver} by hand.
  *
- * - `basic` — app key and secret, unsigned.
- * - `hmac` — app key and secret, signing each request so the secret never travels.
+ * - `basic` — the configured {@linkcode GraphSecrets}, unsigned.
+ * - `hmac` — the same secrets, signing each request so the secret never travels.
  * - `bearer` — forwards a token you already hold. `token` may be a callback, since tokens
  *   expire.
  *
@@ -180,17 +189,20 @@ type GraphAppCredential = {
  * `asUser`, `includeDeleted` and `includeExpired`, which Graph honours only on a
  * credential that is not the single key.
  *
+ * Carries no secret of its own, so it is safe to pick per request.
+ *
  * @example
  * ```ts
  * config({
  *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
- *   auth: {
- *     type: 'hmac',
+ *   secrets: {
  *     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
  *     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
- *     asUser: { roles: ['WebDelivery'] },
  *   },
  * });
+ *
+ * // Anonymous by default; sign only where it is needed.
+ * getClient({ auth: { type: 'hmac', asUser: { roles: ['WebDelivery'] } } });
  * ```
  */
 export type GraphAuthMode =
@@ -210,15 +222,24 @@ export type GraphOptions = {
   /** Optional custom Graph URL */
   graphUrl?: string;
   /**
-   * Supplies the credentials for every Graph request, replacing the single key.
+   * The app key and secret the `basic` and `hmac` modes sign with.
+   *
+   * Configuring them does not authenticate anything on its own — requests stay on the
+   * single key until an `auth` mode asks for them, so this belongs in `config()` while
+   * `auth` is chosen per request.
+   */
+  secrets?: GraphSecrets;
+  /**
+   * Which credential each Graph request carries, replacing the single key.
    * Use it to reach content that CMS access rights hide from the single key, by
    * signing the request (`hmac`, `basic`) or forwarding a token (`bearer`), optionally
    * acting as a named user via `asUser`. Pass a
    * {@linkcode GraphAuthResolver} instead for a scheme the built-in modes do not cover.
    *
-   * `basic` and `hmac` are server-side only — a request throws if one of them runs in a
-   * browser, since both carry an app secret. `bearer` and a resolver may run anywhere; what
-   * they put in the header is the caller's to keep safe.
+   * `basic` and `hmac` need {@linkcode GraphSecrets} configured and are server-side only —
+   * a request throws if one of them runs in a browser, since both carry an app secret.
+   * `bearer` and a resolver may run anywhere; what they put in the header is the caller's
+   * to keep safe.
    *
    * Setting `auth` also turns `query.cache` and `query.stored` off, whichever credential is
    * used, because the SDK generates the same query text for a given content type — a

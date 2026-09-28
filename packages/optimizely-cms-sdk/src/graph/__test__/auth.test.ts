@@ -21,6 +21,8 @@ const FIXED_TIMESTAMP = 1700000000000;
 /** A URL with a path, so the signed `pathAndQuery` is not just `/`. */
 const GRAPH_URL = 'https://graph.example.com/content/v2';
 
+const SECRETS = { appKey: 'app-key', secret: 'c2VjcmV0' };
+
 let originalFetch: typeof global.fetch;
 
 /** The headers of the last `fetch` call. */
@@ -213,13 +215,13 @@ describe('server-only guard', () => {
   // The guard covers the app secret, not authentication in general: a browser may hold a
   // token of its own, and a resolver's headers are the caller's to account for.
   test.each([
-    ['basic', { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0' }],
-    ['hmac', { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0' }],
+    ['basic', { type: 'basic' }],
+    ['hmac', { type: 'hmac' }],
   ] as const)('refuses %s in a browser', async (_name, auth) => {
     vi.mocked(isBrowser).mockReturnValue(true);
 
     await expect(
-      new GraphClient('test-key', { auth }).request(QUERY, {}),
+      new GraphClient('test-key', { auth, secrets: SECRETS }).request(QUERY, {}),
     ).rejects.toThrow(OptimizelyGraphError);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -312,12 +314,55 @@ describe('configuration', () => {
   });
 });
 
+/**
+ * Secrets live in `config()` so an application declares them once, next to the API key;
+ * `auth` is the per-request switch that decides whether to use them.
+ */
+describe('secrets configured once, auth chosen per request', () => {
+  beforeEach(() => config({ apiKey: 'global-key', secrets: SECRETS }));
+
+  test('requests stay anonymous until a mode asks for the secrets', async () => {
+    await getClient().request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('epi-single global-key');
+  });
+
+  test.each([
+    ['basic', /^Basic /],
+    ['hmac', /^epi-hmac app-key:/],
+  ] as const)('%s picks them up without restating them', async (type, expected) => {
+    await getClient({ auth: { type } }).request(QUERY, {}, undefined, false);
+
+    expect(sentHeaders().Authorization).toMatch(expected);
+  });
+
+  test('an acting user can be named per request', async () => {
+    await getClient({ auth: { type: 'hmac', asUser: { username: 'johan' } } }).request(
+      QUERY,
+      {},
+      undefined,
+      false,
+    );
+
+    expect(sentHeaders()['cg-username']).toBe('johan');
+  });
+
+  // The override must not leak into clients built afterwards.
+  test('the next client is anonymous again', async () => {
+    await getClient({ auth: { type: 'hmac' } }).request(QUERY, {}, undefined, false);
+    await getClient().request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('epi-single global-key');
+  });
+});
+
 // TYPED MODES
 
 describe('the basic mode', () => {
   test('sends the app key and secret base64-encoded', async () => {
     const client = new GraphClient('test-key', {
-      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0' },
+      auth: { type: 'basic' },
+      secrets: SECRETS,
     });
 
     await client.request(QUERY, {});
@@ -329,10 +374,9 @@ describe('the basic mode', () => {
     const client = new GraphClient('test-key', {
       auth: {
         type: 'basic',
-        appKey: 'app-key',
-        secret: 'c2VjcmV0',
         asUser: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
       },
+      secrets: SECRETS,
     });
 
     await client.request(QUERY, {});
@@ -348,7 +392,8 @@ describe('the hmac mode', () => {
   const hmacClient = (asUser?: { username?: string; roles?: string[] }) =>
     new GraphClient('test-key', {
       graphUrl: GRAPH_URL,
-      auth: { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0', asUser },
+      auth: { type: 'hmac', asUser },
+      secrets: SECRETS,
     });
 
   // Pinned against a signature computed outside the SDK, so a change to the message
@@ -413,7 +458,8 @@ describe('acting-user encoding', () => {
     roles?: string[];
   }): Promise<Record<string, string>> => {
     await new GraphClient('test-key', {
-      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0', asUser },
+      auth: { type: 'basic', asUser },
+      secrets: SECRETS,
     }).request(QUERY, {}, undefined, false);
 
     return sentHeaders();
@@ -459,7 +505,8 @@ describe('deleted and expired content', () => {
     visibility: { includeDeleted?: boolean; includeExpired?: boolean } = {},
   ): Promise<Record<string, string>> => {
     await new GraphClient('test-key', {
-      auth: { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0', ...visibility },
+      auth: { type: 'basic', ...visibility },
+      secrets: SECRETS,
     }).request(QUERY, {}, undefined, false);
 
     return sentHeaders();
@@ -482,13 +529,8 @@ describe('deleted and expired content', () => {
 
   test('sends both on an hmac request too', async () => {
     await new GraphClient('test-key', {
-      auth: {
-        type: 'hmac',
-        appKey: 'app-key',
-        secret: 'c2VjcmV0',
-        includeDeleted: true,
-        includeExpired: true,
-      },
+      auth: { type: 'hmac', includeDeleted: true, includeExpired: true },
+      secrets: SECRETS,
     }).request(QUERY, {}, undefined, false);
 
     expect(sentHeaders()).toMatchObject({
@@ -542,47 +584,75 @@ describe('the bearer mode', () => {
 
 describe('typed modes and the rest of the client', () => {
   const MODES = [
-    ['basic', { type: 'basic', appKey: 'app-key', secret: 'c2VjcmV0' }],
-    ['hmac', { type: 'hmac', appKey: 'app-key', secret: 'c2VjcmV0' }],
+    ['basic', { type: 'basic' }],
+    ['hmac', { type: 'hmac' }],
     ['bearer', { type: 'bearer', token: 'user-jwt' }],
   ] as const;
 
   test.each(MODES)('%s turns both caches off by default', (_name, auth) => {
-    const { cache, stored } = new GraphClient('test-key', { auth }).queryDefaults;
+    const { cache, stored } = new GraphClient('test-key', {
+      auth,
+      secrets: SECRETS,
+    }).queryDefaults;
 
     expect({ cache, stored }).toEqual({ cache: false, stored: false });
   });
 
   test.each(MODES)('%s still yields to an explicit cache setting', (_name, auth) => {
-    const client = new GraphClient('test-key', { auth, query: { cache: true } });
+    const client = new GraphClient('test-key', {
+      auth,
+      secrets: SECRETS,
+      query: { cache: true },
+    });
 
     expect(client.queryDefaults.cache).toBe(true);
   });
 
   test.each(MODES)('a preview token takes precedence over %s', async (_name, auth) => {
-    await new GraphClient('test-key', { auth }).request(QUERY, {}, 'preview-token');
+    await new GraphClient('test-key', { auth, secrets: SECRETS }).request(
+      QUERY,
+      {},
+      'preview-token',
+    );
 
     expect(sentHeaders().Authorization).toBe('Bearer preview-token');
+  });
+
+  // Configuring secrets is not the same as using them, or every anonymous request would
+  // lose CDN caching the moment an app key was added to config().
+  test('secrets alone leave the client on the single key', async () => {
+    const client = new GraphClient('test-key', { secrets: SECRETS });
+
+    await client.request(QUERY, {});
+
+    expect(sentHeaders().Authorization).toBe('epi-single test-key');
+    expect(client.queryDefaults).toMatchObject({ cache: true, stored: true });
   });
 });
 
 describe('configuration validation', () => {
-  const invalid: [string, any][] = [
-    ['an unknown type', { type: 'oauth' }],
-    ['basic without an appKey', { type: 'basic', secret: 'c2VjcmV0' }],
-    ['basic without a secret', { type: 'basic', appKey: 'app-key' }],
-    ['hmac with a blank secret', { type: 'hmac', appKey: 'app-key', secret: '  ' }],
-    ['bearer with an empty token', { type: 'bearer', token: '' }],
+  const invalid: [string, any, any?][] = [
+    ['an unknown type', { type: 'oauth' }, SECRETS],
+    ['basic with no secrets configured', { type: 'basic' }, undefined],
+    ['hmac with no secrets configured', { type: 'hmac' }, undefined],
+    ['basic without an appKey', { type: 'basic' }, { secret: 'c2VjcmV0' }],
+    ['basic without a secret', { type: 'basic' }, { appKey: 'app-key' }],
+    ['hmac with a blank secret', { type: 'hmac' }, { appKey: 'app-key', secret: '  ' }],
+    ['bearer with an empty token', { type: 'bearer', token: '' }, undefined],
   ];
 
-  test.each(invalid)('rejects %s when the client is built', (_name, auth) => {
-    expect(() => new GraphClient('test-key', { auth })).toThrow(OptimizelyGraphError);
+  test.each(invalid)('rejects %s when the client is built', (_name, auth, secrets) => {
+    expect(() => new GraphClient('test-key', { auth, secrets })).toThrow(
+      OptimizelyGraphError,
+    );
   });
 
   // config() runs at application start-up, so a typo surfaces there rather than on
   // whichever request happens to build the first client.
-  test.each(invalid)('rejects %s in config()', (_name, auth) => {
-    expect(() => config({ apiKey: 'global-key', auth })).toThrow(OptimizelyGraphError);
+  test.each(invalid)('rejects %s in config()', (_name, auth, secrets) => {
+    expect(() => config({ apiKey: 'global-key', auth, secrets })).toThrow(
+      OptimizelyGraphError,
+    );
   });
 
   test('accepts a bearer callback without inspecting its result', () => {
