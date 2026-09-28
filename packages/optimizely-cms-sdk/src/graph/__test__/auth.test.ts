@@ -214,14 +214,14 @@ describe('caching defaults', () => {
 describe('server-only guard', () => {
   // The guard covers the app secret, not authentication in general: a browser may hold a
   // token of its own, and a resolver's headers are the caller's to account for.
-  test.each([
-    ['basic', { type: 'basic' }],
-    ['hmac', { type: 'hmac' }],
-  ] as const)('refuses %s in a browser', async (_name, auth) => {
+  test('refuses hmac in a browser', async () => {
     vi.mocked(isBrowser).mockReturnValue(true);
 
     await expect(
-      new GraphClient('test-key', { auth, secrets: SECRETS }).request(QUERY, {}),
+      new GraphClient('test-key', {
+        auth: { type: 'hmac' },
+        secrets: SECRETS,
+      }).request(QUERY, {}),
     ).rejects.toThrow(OptimizelyGraphError);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -327,13 +327,10 @@ describe('secrets configured once, auth chosen per request', () => {
     expect(sentHeaders().Authorization).toBe('epi-single global-key');
   });
 
-  test.each([
-    ['basic', /^Basic /],
-    ['hmac', /^epi-hmac app-key:/],
-  ] as const)('%s picks them up without restating them', async (type, expected) => {
-    await getClient({ auth: { type } }).request(QUERY, {}, undefined, false);
+  test('hmac picks them up without restating them', async () => {
+    await getClient({ auth: { type: 'hmac' } }).request(QUERY, {}, undefined, false);
 
-    expect(sentHeaders().Authorization).toMatch(expected);
+    expect(sentHeaders().Authorization).toMatch(/^epi-hmac app-key:/);
   });
 
   test('an acting user can be named per request', async () => {
@@ -357,36 +354,6 @@ describe('secrets configured once, auth chosen per request', () => {
 });
 
 // TYPED MODES
-
-describe('the basic mode', () => {
-  test('sends the app key and secret base64-encoded', async () => {
-    const client = new GraphClient('test-key', {
-      auth: { type: 'basic' },
-      secrets: SECRETS,
-    });
-
-    await client.request(QUERY, {});
-
-    expect(sentHeaders().Authorization).toBe('Basic YXBwLWtleTpjMlZqY21WMA==');
-  });
-
-  test('carries acting-user headers', async () => {
-    const client = new GraphClient('test-key', {
-      auth: {
-        type: 'basic',
-        asUser: { username: 'delivery', roles: ['WebDelivery', 'Members'] },
-      },
-      secrets: SECRETS,
-    });
-
-    await client.request(QUERY, {});
-
-    expect(sentHeaders()).toMatchObject({
-      'cg-username': 'delivery',
-      'cg-roles': 'WebDelivery,Members',
-    });
-  });
-});
 
 describe('the hmac mode', () => {
   const hmacClient = (asUser?: { username?: string; roles?: string[] }) =>
@@ -458,7 +425,7 @@ describe('acting-user encoding', () => {
     roles?: string[];
   }): Promise<Record<string, string>> => {
     await new GraphClient('test-key', {
-      auth: { type: 'basic', asUser },
+      auth: { type: 'hmac', asUser },
       secrets: SECRETS,
     }).request(QUERY, {}, undefined, false);
 
@@ -505,7 +472,7 @@ describe('deleted and expired content', () => {
     visibility: { includeDeleted?: boolean; includeExpired?: boolean } = {},
   ): Promise<Record<string, string>> => {
     await new GraphClient('test-key', {
-      auth: { type: 'basic', ...visibility },
+      auth: { type: 'hmac', ...visibility },
       secrets: SECRETS,
     }).request(QUERY, {}, undefined, false);
 
@@ -584,7 +551,6 @@ describe('the bearer mode', () => {
 
 describe('typed modes and the rest of the client', () => {
   const MODES = [
-    ['basic', { type: 'basic' }],
     ['hmac', { type: 'hmac' }],
     ['bearer', { type: 'bearer', token: 'user-jwt' }],
   ] as const;
@@ -633,10 +599,10 @@ describe('typed modes and the rest of the client', () => {
 describe('configuration validation', () => {
   const invalid: [string, any, any?][] = [
     ['an unknown type', { type: 'oauth' }, SECRETS],
-    ['basic with no secrets configured', { type: 'basic' }, undefined],
+    ['the unsupported basic mode', { type: 'basic' }, SECRETS],
     ['hmac with no secrets configured', { type: 'hmac' }, undefined],
-    ['basic without an appKey', { type: 'basic' }, { secret: 'c2VjcmV0' }],
-    ['basic without a secret', { type: 'basic' }, { appKey: 'app-key' }],
+    ['hmac without an appKey', { type: 'hmac' }, { secret: 'c2VjcmV0' }],
+    ['hmac without a secret', { type: 'hmac' }, { appKey: 'app-key' }],
     ['hmac with a blank secret', { type: 'hmac' }, { appKey: 'app-key', secret: '  ' }],
     ['bearer with an empty token', { type: 'bearer', token: '' }, undefined],
   ];
@@ -653,6 +619,13 @@ describe('configuration validation', () => {
     expect(() => config({ apiKey: 'global-key', auth, secrets })).toThrow(
       OptimizelyGraphError,
     );
+  });
+
+  // Graph supports Basic, so someone will try it; the message has to say where to go next.
+  test('points basic at hmac rather than calling it a typo', () => {
+    expect(() =>
+      config({ apiKey: 'global-key', auth: { type: 'basic' } as any }),
+    ).toThrow(/'hmac'/);
   });
 
   test('accepts a bearer callback without inspecting its result', () => {

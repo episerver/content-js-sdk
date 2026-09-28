@@ -27,9 +27,6 @@ const base64ToBytes: (text: string) => Uint8Array<ArrayBuffer> =
     text => Uint8Array.from(atob(text), character => character.charCodeAt(0))
   : text => new Uint8Array(Buffer.from(text, 'base64'));
 
-const basicHeader = (appKey: string, secret: string): string =>
-  `Basic ${toBase64(`${appKey}:${secret}`)}`;
-
 /**
  * Graph's HMAC scheme: the signature covers the app key, the request line, a timestamp,
  * a nonce and an MD5 digest of the body.
@@ -93,7 +90,7 @@ const actingUserHeaders = (asUser?: GraphActingUser): GraphAuthHeaders =>
       : {}),
     };
 
-type GraphAppCredential = Extract<GraphAuthMode, { type: 'basic' | 'hmac' }>;
+type GraphAppCredential = Extract<GraphAuthMode, { type: 'hmac' }>;
 
 // Both flags go out on every privileged request rather than only when set, so what Graph
 // returns does not depend on a server-side default we do not control.
@@ -118,15 +115,6 @@ async function modeHeaders(
   secrets?: GraphSecrets,
 ): Promise<GraphAuthHeaders> {
   switch (mode.type) {
-    case 'basic': {
-      const { appKey, secret } = requireSecrets(mode.type, secrets);
-
-      return {
-        Authorization: basicHeader(appKey, secret),
-        ...credentialHeaders(mode),
-      };
-    }
-
     case 'hmac': {
       const { appKey, secret } = requireSecrets(mode.type, secrets);
 
@@ -170,11 +158,11 @@ async function resolverHeaders(
   return headers;
 }
 
-// Only the modes that take an app secret are refused in a browser. `bearer` forwards a token
+// Only the mode that takes an app secret is refused in a browser. `bearer` forwards a token
 // the caller already holds and a resolver is the caller's own code, so neither can leak a
 // secret the SDK was handed.
 const carriesSecret = (auth: GraphAuth): auth is GraphAppCredential =>
-  typeof auth !== 'function' && (auth.type === 'basic' || auth.type === 'hmac');
+  typeof auth !== 'function' && auth.type === 'hmac';
 
 const requireText = (type: string, value: unknown, field: string): void => {
   if (typeof value !== 'string' || value.trim().length === 0)
@@ -238,11 +226,18 @@ export function validateAuth(auth: GraphAuth | undefined, secrets?: GraphSecrets
   if (!auth || typeof auth !== 'object')
     throw new OptimizelyGraphError(
       'Invalid `auth` option: expected a resolver function or an object with a `type` of ' +
-        "'basic', 'hmac' or 'bearer'.",
+        "'hmac' or 'bearer'.",
+    );
+
+  // Graph accepts Basic, so it gets a pointed message rather than 'unknown type'.
+  if ((auth.type as string) === 'basic')
+    throw new OptimizelyGraphError(
+      "Invalid `auth` option: the SDK has no 'basic' mode, since Basic puts the app secret " +
+        "on the wire with every request. Use 'hmac', which signs instead, or an `auth` " +
+        'resolver if Basic is unavoidable.',
     );
 
   switch (auth.type) {
-    case 'basic':
     case 'hmac': {
       const { appKey, secret } = requireSecrets(auth.type, secrets);
 
@@ -258,7 +253,7 @@ export function validateAuth(auth: GraphAuth | undefined, secrets?: GraphSecrets
     default:
       throw new OptimizelyGraphError(
         `Invalid \`auth\` option: unknown type '${(auth as { type: string }).type}'. ` +
-          "Expected 'basic', 'hmac' or 'bearer'.",
+          "Expected 'hmac' or 'bearer'.",
       );
   }
 }

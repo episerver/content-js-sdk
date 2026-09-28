@@ -32,7 +32,11 @@ export function startFragmentSpan(
  * Span for single content query generation.
  * Only created when queries are actually generated (not when cached).
  */
-export function startSingleQuerySpan(contentType: string, damEnabled: boolean, formsEnabled: boolean = false) {
+export function startSingleQuerySpan(
+  contentType: string,
+  damEnabled: boolean,
+  formsEnabled: boolean = false,
+) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.query.create', {
     attributes: {
@@ -48,7 +52,11 @@ export function startSingleQuerySpan(contentType: string, damEnabled: boolean, f
  * Span for multiple content query generation.
  * Only created when queries are actually generated (not when cached).
  */
-export function startMultipleQuerySpan(contentType: string, damEnabled: boolean, formsEnabled: boolean = false) {
+export function startMultipleQuerySpan(
+  contentType: string,
+  damEnabled: boolean,
+  formsEnabled: boolean = false,
+) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.query.create', {
     attributes: {
@@ -67,13 +75,7 @@ export function startMultipleQuerySpan(contentType: string, damEnabled: boolean,
  *
  * `custom` is a caller-supplied resolver; the named schemes are the built-in modes.
  */
-export type AuthMode =
-  | 'single'
-  | 'preview'
-  | 'custom'
-  | 'basic'
-  | 'hmac'
-  | 'bearer';
+export type AuthMode = 'single' | 'preview' | 'custom' | 'hmac' | 'bearer';
 
 /**
  * Wraps request operation in span.

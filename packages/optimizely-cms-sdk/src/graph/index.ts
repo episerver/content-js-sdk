@@ -85,7 +85,7 @@ export class GraphClient {
   /** Which credential each request carries. Unset means the single key is used. */
   readonly auth?: GraphAuth;
 
-  /** The app key and secret the `basic` and `hmac` modes sign with. */
+  /** The app key and secret the `hmac` mode signs with. */
   readonly secrets?: GraphSecrets;
 
   /**

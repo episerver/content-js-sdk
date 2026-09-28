@@ -125,8 +125,8 @@ config({
 - **`apiKey`** (required): Your Optimizely Graph API key (Single key from CMS Settings → API Keys)
 - **`graphUrl`** (optional): Custom Graph URL. Defaults to `https://cg.optimizely.com/content/v2`. If the URL does not include `/content/v2`, the SDK appends it automatically
 - **`userAgent`** (optional): Value sent in the `User-Agent` header of every Graph request
-- **`secrets`** (optional): The `appKey` and `secret` the `basic` and `hmac` modes sign with. Declaring them does not authenticate anything on its own. See [Authentication](#authentication)
-- **`auth`** (optional): Which credential to use instead of the single key — a built-in mode (`basic`, `hmac`, `bearer`) or a resolver function. `basic` and `hmac` need `secrets` and are server-side only. Carries no secret itself, so it can be chosen per request. See [Authentication](#authentication)
+- **`secrets`** (optional): The `appKey` and `secret` the `hmac` mode signs with. Declaring them does not authenticate anything on its own. See [Authentication](#authentication)
+- **`auth`** (optional): Which credential to use instead of the single key — a built-in mode (`hmac`, `bearer`) or a resolver function. `hmac` needs `secrets` and is server-side only. Carries no secret itself, so it can be chosen per request. See [Authentication](#authentication)
 
 ##### `fragment` — query shape
 
@@ -368,23 +368,21 @@ rights is still indexed, but Graph will not return it to a single key.
 To reach that content, set `auth`. It takes one of the built-in modes below, or a
 [resolver function](#a-custom-resolver) if none of them fit.
 
-> **Keep the app secret on the server.** A request made from browser code with `basic` or
-> `hmac` set throws, because both carry the secret. Fetch from a server component, route
-> handler or API route instead. `bearer` and a resolver are allowed in the browser — what
-> they put in the header is yours to keep safe.
+> **Keep the app secret on the server.** A request made from browser code with `hmac` set
+> throws, because it carries the secret. Fetch from a server component, route handler or
+> API route instead. `bearer` and a resolver are allowed in the browser — what they put in
+> the header is yours to keep safe.
 
 #### Built-in modes
 
-| `type`   | Credential                  |
-| -------- | --------------------------- |
-| `basic`  | App key and secret          |
-| `hmac`   | App key and secret, signed  |
-| `bearer` | A token you already hold    |
+| `type`   | Credential                 |
+| -------- | -------------------------- |
+| `hmac`   | App key and secret, signed |
+| `bearer` | A token you already hold   |
 
-All three run on any runtime, edge included. Of the three, only `bearer` may run in a browser.
+Both run on any runtime, edge included. Only `bearer` may run in a browser.
 
-`basic` and `hmac` both sign with the app key and secret, which you declare once in
-`secrets`:
+`hmac` signs with the app key and secret, which you declare once in `secrets`:
 
 ```ts
 import { config } from '@optimizely/cms-sdk';
@@ -399,8 +397,11 @@ config({
 });
 ```
 
-Prefer `hmac` to `basic` where you can: the two carry the same credentials, but only `basic`
-puts the secret itself on the wire.
+Graph also accepts HTTP Basic with the same app key and secret. The SDK leaves it out on
+purpose: Basic puts the long-lived secret on the wire with every request, so anything that
+terminates TLS — an intercepting proxy, a mis-trusted CA — walks away with a permanent
+credential. `hmac` sends a per-request signature instead, and the secret never travels. If
+Basic is unavoidable, a [resolver](#a-custom-resolver) can build the header itself.
 
 > **`secrets` on its own authenticates nothing.** Until an `auth` mode asks for them,
 > requests stay on the single key — so you can declare them globally and switch per request.
@@ -418,9 +419,8 @@ config({
 
 #### Acting as a user
 
-`basic` and `hmac` authenticate as the **tenant**, not as a person, so by default they return
-everything the tenant holds. Add `asUser` to have Graph apply one user's access rights
-instead:
+`hmac` authenticates as the **tenant**, not as a person, so by default it returns everything
+the tenant holds. Add `asUser` to have Graph apply one user's access rights instead:
 
 ```ts
 config({
@@ -464,7 +464,7 @@ config({
 
 #### Deleted and expired content
 
-`basic` and `hmac` also take two flags that widen what Graph returns:
+`hmac` also takes two flags that widen what Graph returns:
 
 ```ts
 config({
@@ -482,8 +482,7 @@ config({
 | `includeDeleted` | `cg-include-deleted`  | Content in the CMS trash                        |
 | `includeExpired` | `cg-include-expired`  | Content whose stop-publish date has passed      |
 
-Both default to `false`, and the SDK sends both headers explicitly on every `basic` or `hmac`
-request.
+Both default to `false`, and the SDK sends both headers explicitly on every `hmac` request.
 
 #### Choosing the credential per request
 
