@@ -22,6 +22,15 @@ export type GraphSlot = 'Current' | 'New';
  */
 export type DamMode = 'automatic' | 'on' | 'off';
 
+/**
+ * Controls whether taxonomy category fields are included in generated content
+ * queries (specifically in the `ItemMetadata` fragment).
+ * - `'automatic'`: Include them when the Graph schema exposes taxonomy types (default).
+ * - `'on'`: Always include them, skipping schema detection.
+ * - `'off'`: Never include them, skipping schema detection.
+ */
+export type TaxonomyMode = 'automatic' | 'on' | 'off';
+
 /** Query options shared by all query methods */
 export type GraphQueryOptions = {
   /**
@@ -106,6 +115,12 @@ export type GraphFragmentOptions = {
    * @default 'automatic'
    */
   dam?: DamMode;
+  /**
+   * Whether the generated query includes taxonomy category fields in the
+   * `ItemMetadata` fragment.
+   * @default 'automatic'
+   */
+  taxonomy?: TaxonomyMode;
   /**
    * Optional filter to exclude content types from fragment generation.
    * Return true to include a content type, false to exclude it.
@@ -336,6 +351,7 @@ export const DEFAULT_FRAGMENT_OPTIONS: ResolvedFragmentOptions = {
   expandContracts: DEFAULT_EXPAND_CONTRACTS,
   maxThreshold: DEFAULT_MAX_FRAGMENT_THRESHOLD,
   dam: 'automatic',
+  taxonomy: 'automatic',
 };
 
 export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
@@ -388,10 +404,14 @@ export function resolveQueryOptions(
  * The client's `fragment` settings in the shape the query builders take, with
  * the tri-state `dam` already settled into a boolean.
  */
-export function fragmentContext(context: GraphClientContext, damEnabled: boolean) {
-  const { dam, ...fragment } = context.fragmentDefaults;
+export function fragmentContext(
+  context: GraphClientContext,
+  damEnabled: boolean,
+  taxonomyEnabled: boolean = false,
+) {
+  const { dam, taxonomy, ...fragment } = context.fragmentDefaults;
 
-  return { ...fragment, damEnabled };
+  return { ...fragment, damEnabled, taxonomyEnabled };
 }
 
 /**
