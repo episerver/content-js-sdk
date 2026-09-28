@@ -125,6 +125,7 @@ async function resolveFormNodes<T>(
   item: T,
   options: {
     damEnabled: boolean;
+    taxonomyEnabled?: boolean;
     sectionTypes?: ReadonlySet<string>;
     previewToken?: string;
     cache?: boolean;
@@ -163,7 +164,7 @@ async function resolveFormNodes<T>(
       // Built here rather than delegating to `getContent`, which would spend a
       // metadata round trip rediscovering a content type we already know.
       const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
-        ...fragmentContext(context, options.damEnabled),
+        ...fragmentContext(context, options.damEnabled, options.taxonomyEnabled),
         formsEnabled: true,
         sectionTypes: options.sectionTypes,
         filterShape: filter.filterShape,
@@ -243,11 +244,16 @@ async function getContentMetaData(
 
   // Determine if DAM is enabled based on the presence of cmp_Asset type
   // The metadata query always probes for cmp_Asset; forced modes just ignore it.
-  const { dam } = context.fragmentDefaults;
+  const { dam, taxonomy } = context.fragmentDefaults;
   const damEnabled =
     dam === 'on' ? true
     : dam === 'off' ? false
     : data.damAssetType !== null;
+
+  const taxonomyEnabled =
+    taxonomy === 'on' ? true
+    : taxonomy === 'off' ? false
+    : data.taxonomyType !== null;
 
   // The probe covers a form in a composition. Content type checks cover
   // the form container itself and forms in content areas.
@@ -262,6 +268,7 @@ async function getContentMetaData(
     return {
       contentTypeName: null,
       damEnabled,
+      taxonomyEnabled,
       formsEnabled: needsForms,
       sectionTypes,
     };
@@ -279,7 +286,7 @@ async function getContentMetaData(
     );
   }
 
-  return { contentTypeName, damEnabled, formsEnabled: needsForms, sectionTypes };
+  return { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled: needsForms, sectionTypes };
 }
 
 // CONTENT FETCHING
@@ -298,7 +305,7 @@ export async function getContentByPath<T = any>(
     const variationVars = getVariationVariables(options?.variation);
     const variables = { ...filter.variables, ...variationVars };
 
-    const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+    const { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled, sectionTypes } =
       await getContentMetaData(
         context,
         filter,
@@ -316,7 +323,7 @@ export async function getContentByPath<T = any>(
 
     try {
       const query = createMultipleContentQuery(contentTypeName, {
-        ...fragmentContext(context, damEnabled),
+        ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
@@ -337,6 +344,7 @@ export async function getContentByPath<T = any>(
         response?._Content?.items.map((item: unknown) =>
           resolveFormNodes(context, liftSectionNodes(removeTypePrefix(item)), {
             damEnabled,
+            taxonomyEnabled,
             sectionTypes,
             cache: queryOptions.cache,
             slot: queryOptions.slot,
@@ -364,7 +372,7 @@ export async function getPreviewContent(
     const queryOptions = resolveQueryOptions(context, options);
 
     // A preview exists to show the draft, so the published filter never applies here.
-    const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+    const { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled, sectionTypes } =
       await getContentMetaData(
         context,
         filter,
@@ -420,6 +428,7 @@ export async function getPreviewContent(
         liftSectionNodes(removeTypePrefix(response?._Content?.item)),
         {
           damEnabled,
+          taxonomyEnabled,
           sectionTypes,
           previewToken: params.preview_token,
           cache: false,
@@ -456,7 +465,7 @@ export async function getContent(
     // rarely the published one.
     const publishedOnly = queryOptions.publishedOnly && !previewToken && !ref.version;
 
-    const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+    const { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled, sectionTypes } =
       await getContentMetaData(
         context,
         filter,
@@ -473,7 +482,7 @@ export async function getContent(
 
     try {
       const query = createSingleContentQuery(contentTypeName, {
-        ...fragmentContext(context, damEnabled),
+        ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
@@ -494,6 +503,7 @@ export async function getContent(
         liftSectionNodes(removeTypePrefix(response?._Content?.item)),
         {
           damEnabled,
+          taxonomyEnabled,
           sectionTypes,
           previewToken,
           cache: queryOptions.cache,
