@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { GraphClient, config, getClient } from '../index.js';
 import { OptimizelyGraphError } from '../error.js';
 import { isBrowser } from '../environment.js';
+import type { GraphActingUser, GraphAuthMode } from '../options.js';
 
 /**
  * The `auth` resolver replaces the single key on a per-request basis, so that an
@@ -355,14 +356,22 @@ describe('secrets configured once, auth chosen per request', () => {
 
 // TYPED MODES
 
-describe('the hmac mode', () => {
-  const hmacClient = (asUser?: { username?: string; roles?: string[] }) =>
-    new GraphClient('test-key', {
-      graphUrl: GRAPH_URL,
-      auth: { type: 'hmac', asUser },
-      secrets: SECRETS,
-    });
+/** An `hmac` client with `mode` spread over the auth; loosely typed so tests can pass bad values. */
+const hmacClient = (mode: object = {}) =>
+  new GraphClient('test-key', {
+    graphUrl: GRAPH_URL,
+    auth: { type: 'hmac', ...mode } as GraphAuthMode,
+    secrets: SECRETS,
+  });
 
+/** Sends one request through an `hmac` client and returns its headers. */
+const sendHmac = async (mode: object = {}): Promise<Record<string, string>> => {
+  await hmacClient(mode).request(QUERY, {}, undefined, false);
+
+  return sentHeaders();
+};
+
+describe('the hmac mode', () => {
   // Pinned against a signature computed outside the SDK, so a change to the message
   // component order fails here rather than only against a live tenant.
   test('matches a known-answer signature', async () => {
@@ -400,17 +409,17 @@ describe('the hmac mode', () => {
   });
 
   test('carries acting-user headers alongside the signature', async () => {
-    await hmacClient({ roles: ['WebDelivery'] }).request(QUERY, {}, undefined, false);
+    const headers = await sendHmac({ asUser: { roles: ['WebDelivery'] } });
 
-    expect(sentHeaders()['cg-roles']).toBe('WebDelivery');
-    expect(sentHeaders().Authorization).toMatch(/^epi-hmac app-key:/);
+    expect(headers['cg-roles']).toBe('WebDelivery');
+    expect(headers.Authorization).toMatch(/^epi-hmac app-key:/);
   });
 
   test('omits acting-user headers when none are configured', async () => {
-    await hmacClient().request(QUERY, {}, undefined, false);
+    const headers = await sendHmac();
 
-    expect(sentHeaders()['cg-roles']).toBeUndefined();
-    expect(sentHeaders()['cg-username']).toBeUndefined();
+    expect(headers['cg-roles']).toBeUndefined();
+    expect(headers['cg-username']).toBeUndefined();
   });
 });
 
@@ -419,16 +428,11 @@ describe('the hmac mode', () => {
  * needs an `await` — so `asUser` takes a callback, resolved when the request is made.
  */
 describe('an asUser callback', () => {
-  const callbackClient = (asUser: any) =>
-    new GraphClient('test-key', { auth: { type: 'hmac', asUser }, secrets: SECRETS });
-
   test.each([
     ['a synchronous one', () => ({ username: 'johan' })],
     ['an async one', async () => ({ username: 'johan' })],
   ])('%s supplies the acting user', async (_name, asUser) => {
-    await callbackClient(asUser).request(QUERY, {}, undefined, false);
-
-    expect(sentHeaders()['cg-username']).toBe('johan');
+    expect((await sendHmac({ asUser }))['cg-username']).toBe('johan');
   });
 
   // Re-read per request, or a client built once would pin the first user it saw.
@@ -437,7 +441,7 @@ describe('an asUser callback', () => {
       .fn()
       .mockReturnValueOnce({ username: 'first' })
       .mockReturnValueOnce({ username: 'second' });
-    const client = callbackClient(asUser);
+    const client = hmacClient({ asUser });
 
     await client.request(QUERY, {}, undefined, false);
     await client.request(QUERY, {}, undefined, false);
@@ -447,11 +451,9 @@ describe('an asUser callback', () => {
   });
 
   test('a rejection surfaces rather than silently dropping the user', async () => {
-    const client = callbackClient(() => Promise.reject(new Error('no session')));
+    const asUser = () => Promise.reject(new Error('no session'));
 
-    await expect(client.request(QUERY, {}, undefined, false)).rejects.toThrow(
-      'no session',
-    );
+    await expect(sendHmac({ asUser })).rejects.toThrow('no session');
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
@@ -463,15 +465,13 @@ describe('an asUser callback', () => {
     ['an empty object', () => ({})],
     ['no roles and no username', () => ({ roles: [] })],
   ])('%s is rejected rather than ignored', async (_name, asUser) => {
-    await expect(
-      callbackClient(asUser).request(QUERY, {}, undefined, false),
-    ).rejects.toThrow(OptimizelyGraphError);
+    await expect(sendHmac({ asUser })).rejects.toThrow(OptimizelyGraphError);
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
   // A literal is just as capable of naming no one, and it can be caught at start-up.
   test('an empty literal is rejected when the client is built', () => {
-    expect(() => callbackClient({})).toThrow(OptimizelyGraphError);
+    expect(() => hmacClient({ asUser: {} })).toThrow(OptimizelyGraphError);
   });
 });
 
@@ -481,17 +481,7 @@ describe('an asUser callback', () => {
  * `a@b.com` into `a%40b.com`, which matched nothing there — so ASCII has to go out raw.
  */
 describe('acting-user encoding', () => {
-  const sendAs = async (asUser: {
-    username?: string;
-    roles?: string[];
-  }): Promise<Record<string, string>> => {
-    await new GraphClient('test-key', {
-      auth: { type: 'hmac', asUser },
-      secrets: SECRETS,
-    }).request(QUERY, {}, undefined, false);
-
-    return sentHeaders();
-  };
+  const sendAs = (asUser: GraphActingUser) => sendHmac({ asUser });
 
   test.each([
     ['an email-shaped username', 'marin.karamihalev@optimizely.com'],
@@ -529,20 +519,9 @@ describe('acting-user encoding', () => {
 });
 
 describe('deleted and expired content', () => {
-  const sendWith = async (
-    visibility: { includeDeleted?: boolean; includeExpired?: boolean } = {},
-  ): Promise<Record<string, string>> => {
-    await new GraphClient('test-key', {
-      auth: { type: 'hmac', ...visibility },
-      secrets: SECRETS,
-    }).request(QUERY, {}, undefined, false);
-
-    return sentHeaders();
-  };
-
   // Sent even when unset, so the response does not depend on a Graph-side default.
   test('excludes both by default', async () => {
-    expect(await sendWith()).toMatchObject({
+    expect(await sendHmac()).toMatchObject({
       'cg-include-deleted': 'false',
       'cg-include-expired': 'false',
     });
@@ -552,19 +531,7 @@ describe('deleted and expired content', () => {
     ['cg-include-deleted', { includeDeleted: true }],
     ['cg-include-expired', { includeExpired: true }],
   ])('sends %s when opted into', async (header, visibility) => {
-    expect((await sendWith(visibility))[header]).toBe('true');
-  });
-
-  test('sends both on an hmac request too', async () => {
-    await new GraphClient('test-key', {
-      auth: { type: 'hmac', includeDeleted: true, includeExpired: true },
-      secrets: SECRETS,
-    }).request(QUERY, {}, undefined, false);
-
-    expect(sentHeaders()).toMatchObject({
-      'cg-include-deleted': 'true',
-      'cg-include-expired': 'true',
-    });
+    expect((await sendHmac(visibility))[header]).toBe('true');
   });
 
   // Graph ignores them without a privileged credential, so sending them would only mislead.

@@ -32,11 +32,7 @@ export function startFragmentSpan(
  * Span for single content query generation.
  * Only created when queries are actually generated (not when cached).
  */
-export function startSingleQuerySpan(
-  contentType: string,
-  damEnabled: boolean,
-  formsEnabled: boolean = false,
-) {
+export function startSingleQuerySpan(contentType: string, damEnabled: boolean, formsEnabled: boolean = false) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.query.create', {
     attributes: {
@@ -52,11 +48,7 @@ export function startSingleQuerySpan(
  * Span for multiple content query generation.
  * Only created when queries are actually generated (not when cached).
  */
-export function startMultipleQuerySpan(
-  contentType: string,
-  damEnabled: boolean,
-  formsEnabled: boolean = false,
-) {
+export function startMultipleQuerySpan(contentType: string, damEnabled: boolean, formsEnabled: boolean = false) {
   const tracer = getTracer();
   return tracer.startSpan('optimizely.query.create', {
     attributes: {

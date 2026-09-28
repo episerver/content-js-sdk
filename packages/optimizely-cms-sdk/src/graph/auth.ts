@@ -79,7 +79,7 @@ const encodeUsername = (username: string): string =>
 const encodeRole = (role: string): string =>
   isPlainAscii(role) && !role.includes(',') ? role : encodeURIComponent(role);
 
-type GraphAppCredential = Extract<GraphAuthMode, { type: 'hmac' }>;
+type GraphHmacMode = Extract<GraphAuthMode, { type: 'hmac' }>;
 
 // Rejected rather than sent as no headers at all, which would quietly widen the request to
 // everything the app credential can see.
@@ -95,7 +95,7 @@ const requireActingUser = (user: unknown): GraphActingUser => {
 };
 
 const actingUserHeaders = async (
-  asUser?: GraphAppCredential['asUser'],
+  asUser?: GraphHmacMode['asUser'],
 ): Promise<GraphAuthHeaders> => {
   if (!asUser) return {};
 
@@ -108,25 +108,6 @@ const actingUserHeaders = async (
   };
 };
 
-// Both flags go out on every privileged request rather than only when set, so what Graph
-// returns does not depend on a server-side default we do not control.
-const credentialHeaders = async (
-  mode: GraphAppCredential,
-): Promise<GraphAuthHeaders> => ({
-  ...(await actingUserHeaders(mode.asUser)),
-  'cg-include-deleted': String(mode.includeDeleted ?? false),
-  'cg-include-expired': String(mode.includeExpired ?? false),
-});
-
-const requireSecrets = (type: string, secrets?: GraphSecrets): GraphSecrets => {
-  if (!secrets)
-    throw new OptimizelyGraphError(
-      `The '${type}' auth mode needs \`secrets\`. Add \`secrets: { appKey, secret }\` to config().`,
-    );
-
-  return secrets;
-};
-
 async function modeHeaders(
   mode: GraphAuthMode,
   request: GraphAuthContext,
@@ -134,11 +115,20 @@ async function modeHeaders(
 ): Promise<GraphAuthHeaders> {
   switch (mode.type) {
     case 'hmac': {
-      const { appKey, secret } = requireSecrets(mode.type, secrets);
+      // `validateAuth` has already refused an `hmac` client without secrets.
+      const { appKey, secret } = secrets!;
+      const [authorization, actingUser] = await Promise.all([
+        hmacHeader(appKey, secret, request),
+        actingUserHeaders(mode.asUser),
+      ]);
 
       return {
-        Authorization: await hmacHeader(appKey, secret, request),
-        ...(await credentialHeaders(mode)),
+        Authorization: authorization,
+        ...actingUser,
+        // Sent even when unset, so what Graph returns does not depend on a server-side
+        // default we do not control.
+        'cg-include-deleted': String(mode.includeDeleted ?? false),
+        'cg-include-expired': String(mode.includeExpired ?? false),
       };
     }
 
@@ -176,12 +166,6 @@ async function resolverHeaders(
   return headers;
 }
 
-// Only the mode that takes an app secret is refused in a browser. `bearer` forwards a token
-// the caller already holds and a resolver is the caller's own code, so neither can leak a
-// secret the SDK was handed.
-const carriesSecret = (auth: GraphAuth): auth is GraphAppCredential =>
-  typeof auth !== 'function' && auth.type === 'hmac';
-
 const requireText = (type: string, value: unknown, field: string): void => {
   if (typeof value !== 'string' || value.trim().length === 0)
     throw new OptimizelyGraphError(
@@ -215,7 +199,8 @@ export async function resolveAuthHeaders(
   const singleKey = { Authorization: `epi-single ${apiKey}` };
   if (!auth) return singleKey;
 
-  if (carriesSecret(auth) && isBrowser())
+  // `bearer` and a resolver are allowed: neither can leak a secret the SDK was handed.
+  if (typeof auth !== 'function' && auth.type === 'hmac' && isBrowser())
     throw new OptimizelyGraphError(
       `The '${auth.type}' auth mode was used in a browser. Its app secret must never reach client code. ` +
         'Fetch from a server component, route handler or API route instead, or use `bearer` to ' +
@@ -257,10 +242,13 @@ export function validateAuth(auth: GraphAuth | undefined, secrets?: GraphSecrets
 
   switch (auth.type) {
     case 'hmac': {
-      const { appKey, secret } = requireSecrets(auth.type, secrets);
+      if (!secrets)
+        throw new OptimizelyGraphError(
+          "The 'hmac' auth mode needs `secrets`. Add `secrets: { appKey, secret }` to config().",
+        );
 
-      requireText(auth.type, appKey, 'secrets.appKey');
-      requireText(auth.type, secret, 'secrets.secret');
+      requireText(auth.type, secrets.appKey, 'secrets.appKey');
+      requireText(auth.type, secrets.secret, 'secrets.secret');
       // A callback can only be checked once it has run, on the first request.
       if (auth.asUser && typeof auth.asUser !== 'function')
         requireActingUser(auth.asUser);

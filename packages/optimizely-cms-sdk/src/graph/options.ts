@@ -149,10 +149,6 @@ export type GraphAuthResolver = (
  *
  * Valid on the `hmac` mode. Graph takes the app credential's word for who this is.
  *
- * May be supplied by a callback, which is awaited on every request. Reading the
- * current user in one is only safe where the request is in scope — a callback given
- * to the global `config()` serves whichever user asked first.
- *
  * Both fields are individually optional, but one of them has to be there: naming no
  * one would leave the request with the app credential's own full access.
  */
@@ -176,7 +172,9 @@ export type GraphSecrets = {
 type GraphAppCredential = {
   /**
    * The user to act as. May be a callback, awaited on every request, since who is
-   * signed in is rarely known when `config()` runs.
+   * signed in is rarely known when `config()` runs. Read the current user in one only
+   * where the request is in scope — one given to the global `config()` serves whichever
+   * user asked first.
    */
   asUser?: GraphActingUser | (() => GraphActingUser | Promise<GraphActingUser>);
   /** Also return content in the CMS trash. Maps to `cg-include-deleted`. @default false */
@@ -201,8 +199,6 @@ type GraphAppCredential = {
  * Graph also accepts Basic, which the SDK deliberately leaves out: it puts the
  * long-lived secret on the wire on every request. Write a {@linkcode GraphAuthResolver}
  * if you need it anyway.
- *
- * Carries no secret of its own, so it is safe to pick per request.
  *
  * @example
  * ```ts
