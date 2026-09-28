@@ -174,11 +174,12 @@ export type FormController = ReadableStore<FormState> & {
    */
   validateAllFields(options?: { stepIndex?: number }): string[];
   /**
-   * Replaces the settings. A binding re-renders with new props far more often
+   * Merges into the current settings; keys left out keep their value, keys set
+   * to `undefined` clear it. A binding re-renders with new props far more often
    * than a form is mounted, and an inline `submitHandler` is a new function each
    * time, so these are read at use rather than captured at creation.
    */
-  update(settings: FormControllerSettings): void;
+  update(settings: Partial<FormControllerSettings>): void;
   setAttemptedSubmit(value: boolean): void;
   nextStep(): void;
   prevStep(): void;
@@ -277,7 +278,7 @@ export function createFormController(options: FormControllerOptions): FormContro
     },
 
     update(next) {
-      settings = next;
+      settings = { ...settings, ...next };
     },
 
     setAttemptedSubmit,

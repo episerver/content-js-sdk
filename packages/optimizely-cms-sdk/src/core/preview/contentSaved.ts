@@ -49,12 +49,12 @@ export type ContentSavedListener = {
   start(): () => void;
 
   /**
-   * Replaces the options without resubscribing.
+   * Merges into the current options without resubscribing.
    *
    * Callers pass an inline arrow for `onNavigate`, and tearing the listener down
    * would `clearTimeout` a refresh that is already pending.
    */
-  update(options: ContentSavedListenerOptions): void;
+  update(options: Partial<ContentSavedListenerOptions>): void;
 };
 
 /**
@@ -120,7 +120,7 @@ export function createContentSavedListener(
 
   return {
     update(next) {
-      options = next;
+      options = { ...options, ...next };
     },
 
     start() {

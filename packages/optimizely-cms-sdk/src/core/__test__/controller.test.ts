@@ -315,6 +315,21 @@ describe('submit', () => {
     expect(second).toHaveBeenCalled();
   });
 
+  test('update keeps the settings it is not given', async () => {
+    fetchMock.mockResolvedValue({ ok: true });
+
+    const controller = createFormController({
+      submission: createSubmissionStore(),
+      action: 'https://example.com/submit',
+      effects: effects(),
+    });
+
+    controller.update({ scrollToOnError: 'form-top' });
+    await controller.submit(new FormData());
+
+    expect(fetchMock).toHaveBeenCalledWith('https://example.com/submit', expect.anything());
+  });
+
   test('scrollToOnSuccess defaults to the alert, and errors scroll where asked', async () => {
     fetchMock.mockResolvedValue({ ok: true });
 

@@ -222,7 +222,8 @@ controller.registerField(name, element, () => isValid, stepIndex);
 
 Things worth knowing before you write a binding against it:
 
-- **Call `controller.update(settings)` during render**, not in an effect. `submit` can fire
+- **Call `controller.update(settings)` during render**, not in an effect. It merges, so
+  pass only what changed; pass a key as `undefined` to clear it. `submit` can fire
   before the first effect flushes, and an inline `submitHandler` is a new function every
   render. Anything in `FormControllerSettings` — `action`, `submitHandler`, `stepIds`,
   `stepRules`, `scrollToOnSuccess`, `scrollToOnError` — is read at use rather than captured
