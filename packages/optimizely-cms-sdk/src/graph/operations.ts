@@ -17,7 +17,7 @@ import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
-import { SemanticAttributes } from '../telemetry/index.js';
+import { SemanticAttributes, logWarning } from '../telemetry/index.js';
 import {
   withGetContentByPathSpan,
   withGetPreviewContentSpan,
@@ -28,10 +28,12 @@ import {
   type GraphGetContentOptions,
   type GraphGetItemOptions,
   type GraphGetLinksOptions,
+  type GraphGetPreviewOptions,
   type GraphQueryOptions,
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type ResolvedCategory,
   type ResolvedQueryOptions,
   fragmentContext,
   parseGraphReference,
@@ -191,6 +193,67 @@ async function resolveFormNodes<T>(
   return item;
 }
 
+// TAXONOMY HIERARCHY RESOLUTION
+
+const RESOLVE_TAXONOMY_QUERY = `
+query ResolveTaxonomyTerms($uris: [String!]!) {
+  _TaxonomyTerm(where: { id: { in: $uris } }, limit: 100) {
+    items {
+      id
+      name
+      path {
+        id
+        name
+      }
+    }
+  }
+}
+`;
+
+async function resolveCategoryHierarchy(
+  context: GraphClientContext,
+  categoryUris: string[],
+  locale: string | undefined,
+): Promise<ResolvedCategory[] | undefined> {
+  if (categoryUris.length === 0) return [];
+
+  const uniqueUris = [...new Set(categoryUris)];
+
+  try {
+    const data = await context.request(
+      RESOLVE_TAXONOMY_QUERY,
+      { uris: uniqueUris, ...(locale && { locale }) },
+      undefined,
+      true,
+    );
+
+    const items: Array<{ id: string; name: string | null; path?: Array<{ id: string; name: string | null }> }> =
+      data?._TaxonomyTerm?.items ?? [];
+
+    const termMap = new Map(items.map(item => [item.id, item]));
+
+    return categoryUris.map(uri => {
+      const term = termMap.get(uri);
+      if (!term) {
+        return { uri, name: null, path: [{ uri, name: null }] };
+      }
+
+      const path = term.path
+        ? term.path.map(p => ({ uri: p.id, name: p.name }))
+        : [{ uri: term.id, name: term.name }];
+
+      return {
+        uri,
+        name: term.name,
+        path,
+      };
+    });
+  } catch {
+    logWarning('Taxonomy hierarchy resolution failed; resolvedCategories will be undefined');
+    return undefined;
+  }
+}
+
 // METADATA
 
 /**
@@ -340,7 +403,7 @@ export async function getContentByPath<T = any>(
         queryOptions.stored,
       )) as ItemsResponse<T>;
 
-      return Promise.all(
+      const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
           resolveFormNodes(context, liftSectionNodes(removeTypePrefix(item)), {
             damEnabled,
@@ -352,6 +415,25 @@ export async function getContentByPath<T = any>(
           }),
         ) ?? [],
       );
+
+      if (options?.resolveCategories && taxonomyEnabled) {
+        await Promise.all(
+          items.map(async (item: any) => {
+            const categories: string[] | undefined = item?._metadata?.categories;
+            if (categories && categories.length > 0) {
+              item._metadata.resolvedCategories = await resolveCategoryHierarchy(
+                context,
+                categories,
+                item?._metadata?.locale,
+              );
+            } else if (categories) {
+              item._metadata.resolvedCategories = [];
+            }
+          }),
+        );
+      }
+
+      return items;
     } catch (error) {
       if (error instanceof GraphMissingContentTypeError) {
         return [];
@@ -365,7 +447,7 @@ export async function getContentByPath<T = any>(
 export async function getPreviewContent(
   context: GraphClientContext,
   params: PreviewParams,
-  options?: GraphQueryOptions,
+  options?: GraphGetPreviewOptions,
 ) {
   return withGetPreviewContentSpan(params, async span => {
     const filter = previewScalarFilter(params);
@@ -422,22 +504,34 @@ export async function getPreviewContent(
       queryOptions.stored,
     );
 
-    return decorateWithContext(
-      await resolveFormNodes(
-        context,
-        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-        {
-          damEnabled,
-          taxonomyEnabled,
-          sectionTypes,
-          previewToken: params.preview_token,
-          cache: false,
-          slot: queryOptions.slot,
-          publishedOnly: false,
-        },
-      ),
-      params,
+    const result = await resolveFormNodes(
+      context,
+      liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+      {
+        damEnabled,
+        taxonomyEnabled,
+        sectionTypes,
+        previewToken: params.preview_token,
+        cache: false,
+        slot: queryOptions.slot,
+        publishedOnly: false,
+      },
     );
+
+    if (result && options?.resolveCategories && taxonomyEnabled) {
+      const categories: string[] | undefined = result?._metadata?.categories;
+      if (categories && categories.length > 0) {
+        result._metadata.resolvedCategories = await resolveCategoryHierarchy(
+          context,
+          categories,
+          params.loc,
+        );
+      } else if (categories) {
+        result._metadata.resolvedCategories = [];
+      }
+    }
+
+    return decorateWithContext(result, params);
   });
 }
 
@@ -498,7 +592,7 @@ export async function getContent(
         queryOptions.stored,
       );
 
-      return resolveFormNodes(
+      const result = await resolveFormNodes(
         context,
         liftSectionNodes(removeTypePrefix(response?._Content?.item)),
         {
@@ -511,6 +605,21 @@ export async function getContent(
           publishedOnly,
         },
       );
+
+      if (result && options?.resolveCategories && taxonomyEnabled) {
+        const categories: string[] | undefined = result?._metadata?.categories;
+        if (categories && categories.length > 0) {
+          result._metadata.resolvedCategories = await resolveCategoryHierarchy(
+            context,
+            categories,
+            ref.locale,
+          );
+        } else if (categories) {
+          result._metadata.resolvedCategories = [];
+        }
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof GraphMissingContentTypeError) {
         return null;
