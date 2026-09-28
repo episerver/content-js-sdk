@@ -13,7 +13,8 @@ async function Header({ currentPath }: HeaderProps) {
   const locale = currentPath.split('/')[1] || 'en';
   // Start page of that locale. The path selects *which* page, `locales` filters its children.
   const startPagePath = `/${locale}/`;
-  const ancestors = (await client.getPath(currentPath)) || [];
+  // Without `locales` the ancestors resolve per-page, so a breadcrumb can mix languages.
+  const ancestors = (await client.getPath(currentPath, { locales: [locale] })) || [];
   const navLinks = (await client.getItems(startPagePath, { locales: [locale] })) ?? [];
 
   // Filter out the start page (first item) and create breadcrumbs
