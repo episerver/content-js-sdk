@@ -105,6 +105,7 @@ export {
 } from './forms/rules.js';
 export type { DependencyRule, DependencyCondition, ElementId } from './forms/rules.js';
 export { dropShadowedBlanks } from './forms/formData.js';
+export { createJsonSubmitHandler } from './forms/jsonSubmitHandler.js';
 export { getElementId, getElementIds } from './forms/elementId.js';
 export {
   FORM_HANDLER_TO_CONTENT_TYPE,
