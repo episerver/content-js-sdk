@@ -478,6 +478,32 @@ export async function getContent(
 
 // NAVIGATION
 
+/**
+ * The filter and locale list behind `getPath` and `getItems`.
+ *
+ * A requested locale is carried only by the `locale:` field argument, never by
+ * `_metadata.locale` in the `where` clause. Those two are not interchangeable:
+ * a language-fallback document keeps the `_metadata.locale` of the language it
+ * was authored in and announces the requested one through `fallbackForLocale`,
+ * so filtering on `_metadata.locale` excludes every fallback and the lookup
+ * comes back empty. The `locale:` argument is what resolves fallbacks.
+ */
+function linksFilter(
+  reference: string | GraphReference,
+  host: string | undefined,
+  options?: GraphGetLinksOptions,
+): { filter: ScalarFilter; locales: string[] | undefined } {
+  if (typeof reference === 'string' && !reference.startsWith('graph://')) {
+    return { filter: pathScalarFilter(reference, host), locales: options?.locales };
+  }
+
+  const ref = typeof reference === 'string' ? parseGraphReference(reference) : reference;
+  return {
+    filter: referenceScalarFilter({ key: ref.key, version: ref.version }),
+    locales: options?.locales ?? (ref.locale ? [ref.locale] : undefined),
+  };
+}
+
 /** The ancestors of a page, top-most first. See `GraphClient.getPath`. */
 export async function getPath(
   context: GraphClientContext,
@@ -485,21 +511,7 @@ export async function getPath(
   options?: GraphGetLinksOptions,
 ) {
   const queryOptions = resolveQueryOptions(context, options);
-
-  let filter: ScalarFilter;
-  let locales: string[] | undefined;
-
-  if (typeof reference === 'string' && reference.startsWith('graph://')) {
-    const ref = parseGraphReference(reference);
-    filter = referenceScalarFilter(ref);
-    locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
-  } else if (typeof reference === 'string') {
-    filter = pathScalarFilter(reference, queryOptions.host);
-    locales = options?.locales;
-  } else {
-    filter = referenceScalarFilter(reference);
-    locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
-  }
+  const { filter, locales } = linksFilter(reference, queryOptions.host, options);
 
   const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const query = getLinksQuery('GetPath', filter.filterShape);
@@ -543,21 +555,7 @@ export async function getItems(
   options?: GraphGetLinksOptions,
 ) {
   const queryOptions = resolveQueryOptions(context, options);
-
-  let filter: ScalarFilter;
-  let locales: string[] | undefined;
-
-  if (typeof reference === 'string' && reference.startsWith('graph://')) {
-    const ref = parseGraphReference(reference);
-    filter = referenceScalarFilter(ref);
-    locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
-  } else if (typeof reference === 'string') {
-    filter = pathScalarFilter(reference, queryOptions.host);
-    locales = options?.locales;
-  } else {
-    filter = referenceScalarFilter(reference);
-    locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
-  }
+  const { filter, locales } = linksFilter(reference, queryOptions.host, options);
 
   const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const query = getItemsQuery('GetItems', filter.filterShape);
