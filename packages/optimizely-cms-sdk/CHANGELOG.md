@@ -1,5 +1,16 @@
 # @optimizely/cms-sdk
 
+## 3.0.2
+
+### Patch Changes
+
+- 7cb957b: [CMS-56719](https://optimizely-ext.atlassian.net/browse/CMS-56719): Fix
+  `getContentByPath()` with `variation: { include: 'SOME' }`, broken since 3.0.0.
+
+  The metadata lookup declared its `$vN` variables but never sent the values, so Graph
+  received `value: [null]` and answered `HTTP 500`. `includeOriginal` was typed but never
+  read, so a visitor matching no variation got nothing instead of the original.
+
 ## 3.0.1
 
 ### Patch Changes
