@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import type { ExperienceNode } from '../../infer.js';
 import { init as initDisplayTemplates } from '../../model/displayTemplateRegistry.js';
+import { ComponentRegistry } from '../../render/componentRegistry.js';
 import { initComponentRegistry, resetComponentRegistry } from '../render/registry.js';
 import {
   planComposition,
@@ -167,6 +168,21 @@ describe('planGridSection', () => {
     expect((row.children[0] as StructureRenderItem<string>).globalComponent).toBe(
       'ColumnComponent',
     );
+  });
+
+  test('a registry passed in supplies the row and column components at every depth', () => {
+    initComponentRegistry({ resolver: { _Row: 'GlobalRow', _Column: 'GlobalColumn' } });
+
+    const registry = new ComponentRegistry<string>({ _Row: 'LocalRow' });
+    const grid = structureNode({
+      nodeType: 'row',
+      nodes: [structureNode({ key: 'column', nodeType: 'column' })],
+    });
+
+    const [row] = planGridSection<string>([grid], { registry }) as StructureRenderItem<string>[];
+
+    expect(row.globalComponent).toBe('LocalRow');
+    expect((row.children[0] as StructureRenderItem<string>).globalComponent).toBeUndefined();
   });
 
   test('a structure node that is neither row nor column has no global component', () => {

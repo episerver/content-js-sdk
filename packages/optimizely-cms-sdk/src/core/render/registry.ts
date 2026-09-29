@@ -50,11 +50,23 @@ export function initForms<C>(handlers: FormHandlers<C>) {
 export const hasComponentRegistry = (): boolean =>
   !!componentRegistry || !!formComponentRegistry;
 
-/** Looks a component up in the application's registry, then in the forms one. */
+/** Options for a component lookup. */
+export type ResolveComponentOptions<C> = {
+  tag?: string;
+  /** Looked up instead of both global registries, so bindings sharing a host stay apart. */
+  registry?: ComponentRegistry<C>;
+};
+
+/**
+ * Looks a component up in `options.registry` when given, otherwise in the
+ * application's registry, then in the forms one.
+ */
 export function resolveComponent<C>(
   contentType: string,
-  options: { tag?: string } = {},
+  { registry, ...options }: ResolveComponentOptions<C> = {},
 ): C | undefined {
+  if (registry) return registry.getComponent(contentType, options);
+
   return (componentRegistry?.getComponent(contentType, options) ??
     formComponentRegistry?.getComponent(contentType, options)) as C | undefined;
 }

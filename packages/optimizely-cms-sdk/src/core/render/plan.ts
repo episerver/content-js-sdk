@@ -14,6 +14,7 @@ import { isComponentNode } from '../../util/baseTypeUtil.js';
 import { parseDisplaySettings } from '../../model/displayTemplates.js';
 import { getDisplayTemplateTag } from '../../model/displayTemplateRegistry.js';
 import { getPreviewUtils } from '../preview/attributes.js';
+import type { ComponentRegistry } from '../../render/componentRegistry.js';
 import { resolveComponent } from './registry.js';
 
 /** Display settings after parsing, as a component receives them. */
@@ -135,8 +136,13 @@ export function planComposition<C>(nodes: ExperienceNode[]): RenderItem<C>[] {
  * Unlike {@linkcode planComposition}, a component node keeps a reference to the
  * node it came from under `__composition`, which is what lets a component read
  * its own display template key and its composition key.
+ *
+ * @param options.registry Looked up for `_Row` / `_Column` instead of the global registries.
  */
-export function planGridSection<C>(nodes: ExperienceNode[]): RenderItem<C>[] {
+export function planGridSection<C>(
+  nodes: ExperienceNode[],
+  options: { registry?: ComponentRegistry<C> } = {},
+): RenderItem<C>[] {
   return nodes.map((node, index) => {
     const base = readNode(node);
 
@@ -163,8 +169,10 @@ export function planGridSection<C>(nodes: ExperienceNode[]): RenderItem<C>[] {
       nodeType,
       index,
       globalComponent:
-        globalName ? resolveComponent<C>(globalName, { tag: base.tag }) : undefined,
-      children: planGridSection<C>(node.nodes ?? []),
+        globalName ?
+          resolveComponent<C>(globalName, { tag: base.tag, registry: options.registry })
+        : undefined,
+      children: planGridSection<C>(node.nodes ?? [], options),
     };
   });
 }

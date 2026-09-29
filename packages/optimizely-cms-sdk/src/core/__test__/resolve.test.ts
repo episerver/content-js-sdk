@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { init as initDisplayTemplates } from '../../model/displayTemplateRegistry.js';
+import { ComponentRegistry } from '../../render/componentRegistry.js';
 import { initComponentRegistry, resetComponentRegistry } from '../render/registry.js';
 import {
   resolveContentComponent,
@@ -152,6 +153,17 @@ describe('resolveContentComponent', () => {
     );
 
     expect(resolved).toMatchObject({ component: 'FeaturedHero', tag: 'featured' });
+  });
+
+  test('a registry passed in is used instead of the global one, with no fallback', () => {
+    initComponentRegistry({ resolver: { Hero: 'GlobalHero', Banner: 'GlobalBanner' } });
+
+    const registry = new ComponentRegistry<string>({ Hero: 'LocalHero' });
+    const resolve = (__typename: string) =>
+      resolveContentComponent<string>({ __typename }, { registry }).component;
+
+    expect(resolve('Hero')).toBe('LocalHero');
+    expect(resolve('Banner')).toBeUndefined();
   });
 
   test('the content is copied, and caller props are split around edit mode', () => {

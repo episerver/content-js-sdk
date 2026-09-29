@@ -10,7 +10,8 @@
 
 import { getDisplayTemplateTag } from '../../model/displayTemplateRegistry.js';
 import type { ExperienceCompositionNode } from '../../infer.js';
-import { resolveComponent } from './registry.js';
+import type { ComponentRegistry } from '../../render/componentRegistry.js';
+import { resolveComponent, type ResolveComponentOptions } from './registry.js';
 
 /** Content data from the CMS, as the render layer reads it. */
 export type OptimizelyContent = {
@@ -90,7 +91,7 @@ export function resolveTag(
  */
 function findComponent<C>(
   content: OptimizelyContent,
-  options: { tag?: string },
+  options: ResolveComponentOptions<C>,
 ): { component: C | undefined; typename: string | undefined } {
   // Try _metadata.types array first
   const types = content._metadata?.types;
@@ -134,13 +135,21 @@ export function splitPreviewAttrs(
  * @param content Content read from the CMS.
  * @param options.tag Manual tag override, taking priority over the content's own.
  * @param options.props Extra props from the caller. `data-epi-*` entries are separated out.
+ * @param options.registry Looked up instead of the global registries.
  */
 export function resolveContentComponent<C>(
   content: OptimizelyContent,
-  options: { tag?: string; props?: Record<string, unknown> } = {},
+  options: {
+    tag?: string;
+    props?: Record<string, unknown>;
+    registry?: ComponentRegistry<C>;
+  } = {},
 ): ResolvedContentComponent<C> {
   const tag = resolveTag(content, options.tag);
-  const { component, typename } = findComponent<C>(content, { tag });
+  const { component, typename } = findComponent<C>(content, {
+    tag,
+    registry: options.registry,
+  });
 
   const { previewAttrs, componentProps } = splitPreviewAttrs(
     options.props ?? {},

@@ -77,6 +77,19 @@ your framework's component type as the type argument when you read one back.
 separate so the calls can happen in either order, and so an application using a resolver
 *function* keeps it.
 
+Both registries are global, and `initReactComponentRegistry` writes the same one. A host
+rendering with more than one framework — Astro with React and Svelte islands, say — gives each
+binding its own registry instead, and passes it to `resolveContentComponent` and
+`planGridSection` as `registry`. It is consulted instead of both global registries, with no
+fallback, so register form components in it too (see `mapFormHandlersToContentTypes`).
+
+```ts
+const registry = new ComponentRegistry<SvelteComponent>({ Article: ArticleComponent });
+
+resolveContentComponent(content, { registry });
+planGridSection(nodes, { registry });
+```
+
 ### 2. Resolve one piece of content
 
 ```ts

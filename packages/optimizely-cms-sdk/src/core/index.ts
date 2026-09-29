@@ -21,6 +21,7 @@ export {
   hasComponentRegistry,
   resolveComponent,
 } from './render/registry.js';
+export type { ResolveComponentOptions } from './render/registry.js';
 
 // Content resolution
 export { resolveContentComponent } from './render/resolve.js';
