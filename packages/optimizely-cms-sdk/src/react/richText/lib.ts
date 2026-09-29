@@ -14,15 +14,7 @@ import {
   type TableElement,
   type TableCellElement,
 } from '../../components/richText/renderer.js';
-import {
-  DUAL_PURPOSE_PROPERTIES,
-  getImageAttributes,
-  getLinkAttributes,
-  isHtmlAttributeContext,
-  kebabToCamelCase,
-  parseStyleString,
-  resolveCssProperty,
-} from '../../core/richText/attributes.js';
+import { getImageAttributes, getLinkAttributes, splitAttributes } from '../../core/richText/attributes.js';
 
 /**
  * React-specific element renderer props (extends shared props with React children)
@@ -184,57 +176,17 @@ export const HTML_TO_REACT_ATTRS: Record<string, string> = {
  * Handles HTML attribute to React JSX attribute conversion and CSS properties
  */
 export function toReactProps(attributes: Record<string, unknown>, elementType?: string): Record<string, unknown> {
-  const reactProps: Record<string, unknown> = {};
-  const styleProps: Record<string, string> = {};
+  const { attributes: htmlAttributes, style } = splitAttributes(attributes, elementType);
 
-  for (const [key, value] of Object.entries(attributes)) {
-    // Handle dual-purpose properties based on element context
-    if (DUAL_PURPOSE_PROPERTIES.has(key.toLowerCase())) {
-      if (isHtmlAttributeContext(key, elementType)) {
-        // Treat as HTML attribute for specific elements
-        const reactKey = HTML_TO_REACT_ATTRS[key.toLowerCase()] || key;
-        reactProps[reactKey] = value;
-        continue;
-      } else {
-        // Treat as CSS property for other elements
-        const camelKey = kebabToCamelCase(key);
-        styleProps[camelKey] = String(value);
-        continue;
-      }
-    }
-
-    // Handle CSS properties - move them to style object
-    const cssKey = resolveCssProperty(key);
-    if (cssKey) {
-      const camelKey = kebabToCamelCase(cssKey);
-      styleProps[camelKey] = String(value);
-      continue;
-    }
-
-    // Convert HTML attribute names to React prop names
+  const reactProps = Object.entries(htmlAttributes).reduce<Record<string, unknown>>((acc, [key, value]) => {
     const reactKey = HTML_TO_REACT_ATTRS[key.toLowerCase()] || key;
+    // `class` and `className` both land on className
+    if (reactKey === 'className' && acc.className) return { ...acc, className: `${acc.className} ${value}` };
+    return { ...acc, [reactKey]: value };
+  }, {});
 
-    // Special handling for existing style attribute (if it's a string, parse it to object)
-    if (reactKey === 'style' && typeof value === 'string') {
-      const parsedStyle = parseStyleString(value);
-      Object.assign(styleProps, parsedStyle);
-    } else if (reactKey === 'className' && reactProps.className) {
-      // Merge multiple class/className attributes
-      reactProps.className = `${reactProps.className} ${value}`;
-    } else {
-      reactProps[reactKey] = value;
-    }
-  }
-
-  // Add style object if we have CSS properties
-  if (Object.keys(styleProps).length > 0) {
-    reactProps.style = {
-      ...((reactProps.style as Record<string, string>) || {}),
-      ...styleProps,
-    };
-  }
-
-  return reactProps;
+  if (Object.keys(style).length === 0) return reactProps;
+  return { ...reactProps, style: { ...((reactProps.style as Record<string, string>) || {}), ...style } };
 }
 
 /**

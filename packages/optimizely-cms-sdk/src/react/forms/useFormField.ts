@@ -5,7 +5,6 @@ import { useFormValidation } from './FormValidationContext.js';
 import { useFormRules } from './FormRulesContext.js';
 import { useFormStepIndex } from './FormStep.js';
 import {
-  buildErrorProps,
   buildFieldProps,
   computeFieldState,
   defineFormField,
@@ -88,6 +87,7 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>(
   }, [value, elementIdKey, setFieldValue]);
 
   const onBlur = () => setIsTouched(true);
+  const { fieldProps, errorProps } = buildFieldProps(definition, fieldState, value);
 
   return {
     value,
@@ -102,7 +102,7 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>(
     errorId,
 
     fieldProps: {
-      ...buildFieldProps(definition, fieldState, value),
+      ...fieldProps,
       ref: inputRef,
       // Structural typing keeps this assignable to both an input's and a
       // textarea's onChange without a cast at either call site.
@@ -110,6 +110,6 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>(
       onBlur,
     },
 
-    errorProps: buildErrorProps(definition),
+    errorProps,
   };
 }

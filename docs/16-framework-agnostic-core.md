@@ -257,8 +257,8 @@ Field state is derived, not stored. The binding owns only the value and the touc
 const definition = defineFormField({ content });
 const state = computeFieldState(definition, { value, isTouched, attemptedSubmit, isVisible });
 
-const props = { ...buildFieldProps(definition, state, value), onChange, onBlur, ref };
-const errorProps = buildErrorProps(definition);
+const { fieldProps, errorProps } = buildFieldProps(definition, state, value);
+const props = { ...fieldProps, onChange, onBlur, ref };
 ```
 
 Buttons the same way:
@@ -304,9 +304,9 @@ abstract methods; a binding supplies `createElement` and `createTextNode` and no
 
 `buildRenderTree`, `resolveRichTextNodes`, `createElementData`, `defaultElementTypeMap` and
 `defaultMarkTypeMap` are all exported from `./core`, as are the per-element attribute helpers —
-`getLinkAttributes`, `getImageAttributes` (which applies the preview token),
-`isHtmlAttributeContext`, `resolveCssProperty`, `parseStyleString`, `kebabToCamelCase` and
-`DUAL_PURPOSE_PROPERTIES`.
+`splitAttributes` (separates HTML attributes from CSS declarations), `getLinkAttributes` and
+`getImageAttributes` (which applies the preview token). A binding only maps the attribute names
+onto its own.
 
 ## What stays in a binding
 

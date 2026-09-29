@@ -79,7 +79,6 @@ export {
   defineFormField,
   computeFieldState,
   buildFieldProps,
-  buildErrorProps,
 } from './forms/field.js';
 export type {
   FormFieldContent,
@@ -136,15 +135,8 @@ export type {
   GenericElementType,
   BaseElement,
 } from '../components/richText/renderer.js';
-export {
-  DUAL_PURPOSE_PROPERTIES,
-  isHtmlAttributeContext,
-  resolveCssProperty,
-  parseStyleString,
-  kebabToCamelCase,
-  getLinkAttributes,
-  getImageAttributes,
-} from './richText/attributes.js';
+export { splitAttributes, getLinkAttributes, getImageAttributes } from './richText/attributes.js';
+export type { SplitAttributes } from './richText/attributes.js';
 
 // Experience node types
 export type {

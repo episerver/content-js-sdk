@@ -95,24 +95,27 @@ export function computeFieldState(
   };
 }
 
-/** The attributes that belong on the `<input>` / `<textarea>`, minus the handlers. */
+/**
+ * The attributes for the `<input>` / `<textarea>` (minus the handlers) and for
+ * the element listing the messages.
+ */
 export function buildFieldProps(
   definition: FormFieldDefinition,
   state: FormFieldState,
   value: string,
 ) {
   return {
-    id: definition.name,
-    name: definition.name,
-    value,
-    required: state.isRequired,
-    'aria-invalid': state.showErrors,
-    'aria-describedby': state.errorId,
+    fieldProps: {
+      id: definition.name,
+      name: definition.name,
+      value,
+      required: state.isRequired,
+      'aria-invalid': state.showErrors,
+      'aria-describedby': state.errorId,
+    },
+    errorProps: {
+      id: `${definition.name}-error`,
+      role: 'alert' as const,
+    },
   };
 }
-
-/** The attributes that belong on the element listing the messages. */
-export const buildErrorProps = (definition: FormFieldDefinition) => ({
-  id: `${definition.name}-error`,
-  role: 'alert' as const,
-});

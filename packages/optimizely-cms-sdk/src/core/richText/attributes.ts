@@ -17,7 +17,7 @@ import type { ImageElement, LinkElement } from '../../components/richText/render
  * CSS properties that should be moved to the style object
  * These are properties that are primarily CSS styling properties and not valid HTML attributes
  */
-export const CSS_PROPERTIES = new Set([
+const CSS_PROPERTIES = new Set([
   // Layout & Sizing (excluding width/height which can be HTML attributes)
   'min-width',
   'max-width',
@@ -220,50 +220,30 @@ export const CSS_PROPERTIES = new Set([
   'counter-increment',
 ]);
 
-/**
- * Converts kebab-case to camelCase
- * e.g., 'font-size' -> 'fontSize', 'background-color' -> 'backgroundColor'
- */
-export function kebabToCamelCase(str: string): string {
-  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-}
-
 /** Properties that can be either HTML attributes or CSS properties depending on context */
-export const DUAL_PURPOSE_PROPERTIES = new Set(['border', 'width', 'height']);
+const DUAL_PURPOSE_PROPERTIES = new Set(['border', 'width', 'height']);
 
 /** Element types that should treat dual-purpose properties as HTML attributes */
-export const HTML_ATTRIBUTE_ELEMENTS = new Set(['table', 'img', 'input', 'canvas']);
+const HTML_ATTRIBUTE_ELEMENTS = new Set(['table', 'img', 'input', 'canvas']);
 
-/** True when a dual-purpose key is an HTML attribute on this element rather than a style. */
-export const isHtmlAttributeContext = (key: string, elementType?: string): boolean =>
+const kebabToCamelCase = (str: string): string =>
+  str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+
+const isHtmlAttributeContext = (key: string, elementType?: string): boolean =>
   DUAL_PURPOSE_PROPERTIES.has(key.toLowerCase()) &&
   !!elementType &&
   HTML_ATTRIBUTE_ELEMENTS.has(elementType);
 
-/**
- * Resolves a key to the CSS property it names, or `undefined` if it names none.
- *
- * Also resolves old CMS shorthand keys missing the "text-" prefix
- * (e.g. "decoration" -> "text-decoration").
- */
-export function resolveCssProperty(key: string): string | undefined {
+// Also resolves old CMS shorthand keys missing the "text-" prefix ("decoration").
+const resolveCssProperty = (key: string): string | undefined => {
   const lowerKey = key.toLowerCase();
+  if (DUAL_PURPOSE_PROPERTIES.has(lowerKey) || CSS_PROPERTIES.has(lowerKey)) return lowerKey;
+  if (CSS_PROPERTIES.has(`text-${lowerKey}`)) return `text-${lowerKey}`;
+  return undefined;
+};
 
-  return (
-    CSS_PROPERTIES.has(lowerKey) ? lowerKey
-    : CSS_PROPERTIES.has(`text-${lowerKey}`) ? `text-${lowerKey}`
-    : undefined
-  );
-}
-
-/**
- * Parses an inline style string into camelCased declarations
- * e.g., "font-size: 14px; color: red" -> { fontSize: '14px', color: 'red' }
- */
-export function parseStyleString(styleString: string): Record<string, string> {
-  if (!styleString || typeof styleString !== 'string') return {};
-
-  return styleString.split(';').reduce<Record<string, string>>((acc, declaration) => {
+const parseStyleString = (styleString: string): Record<string, string> =>
+  styleString.split(';').reduce<Record<string, string>>((acc, declaration) => {
     const colonIndex = declaration.indexOf(':');
     if (colonIndex === -1) return acc;
 
@@ -274,6 +254,35 @@ export function parseStyleString(styleString: string): Record<string, string> {
 
     return { ...acc, [kebabToCamelCase(property)]: value };
   }, {});
+
+export type SplitAttributes = {
+  /** HTML attributes, under the names the CMS gave them. */
+  attributes: Record<string, unknown>;
+  /** CSS declarations, camelCased, including any parsed from a `style` string. */
+  style: Record<string, string>;
+};
+
+/**
+ * Separates a rich-text node's attributes into HTML attributes and CSS
+ * declarations. `border`, `width` and `height` stay attributes on
+ * `table`/`img`/`input`/`canvas` and become styles everywhere else.
+ */
+export function splitAttributes(
+  attributes: Record<string, unknown>,
+  elementType?: string,
+): SplitAttributes {
+  return Object.entries(attributes).reduce<SplitAttributes>(
+    (acc, [key, value]) => {
+      const cssKey = isHtmlAttributeContext(key, elementType) ? undefined : resolveCssProperty(key);
+
+      if (cssKey)
+        return { ...acc, style: { ...acc.style, [kebabToCamelCase(cssKey)]: String(value) } };
+      if (key === 'style' && typeof value === 'string')
+        return { ...acc, style: { ...acc.style, ...parseStyleString(value) } };
+      return { ...acc, attributes: { ...acc.attributes, [key]: value } };
+    },
+    { attributes: {}, style: {} },
+  );
 }
 
 /** The attributes a link element contributes, on top of its generic ones. */
