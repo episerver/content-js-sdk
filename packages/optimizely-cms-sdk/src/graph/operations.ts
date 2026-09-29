@@ -6,7 +6,7 @@ import {
 import { GraphResponseError, GraphMissingContentTypeError } from './error.js';
 import {
   type ScalarFilter,
-  type VariationMode,
+  type GraphVariationInput,
   pathScalarFilter,
   previewScalarFilter,
   referenceScalarFilter,
@@ -195,6 +195,9 @@ async function resolveFormNodes<T>(
  * @param filter - The scalar filter identifying the content.
  * @param queryOptions - The request settings, already resolved against the defaults.
  * @param previewToken - Optional preview token for fetching preview content.
+ * @param variation - The variation filter. Takes the input rather than a
+ *   `VariationMode` so the `$vN` values travel with the declarations; a mode
+ *   alone knows how many variables the query declares but not what they are.
  * @returns The content type, whether DAM is enabled, and whether this page
  *   needs the Optimizely Forms fragments.
  */
@@ -203,14 +206,19 @@ async function getContentMetaData(
   filter: ScalarFilter,
   queryOptions: ResolvedQueryOptions,
   previewToken?: string,
-  variationMode: VariationMode = 'none',
+  variation?: GraphVariationInput,
 ) {
   // Skip if forms aren't registered; local lookup, no round trip.
   const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-  const query = getMetadataQuery(filter.filterShape, variationMode, mayRenderForms);
+  const query = getMetadataQuery(
+    filter.filterShape,
+    getVariationMode(variation),
+    mayRenderForms,
+  );
   const variables = {
     ...filter.variables,
+    ...getVariationVariables(variation),
     ...(mayRenderForms && { withForms: true }),
   };
 
@@ -286,7 +294,13 @@ export async function getContentByPath<T = any>(
     const variables = { ...filter.variables, ...variationVars };
 
     const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-      await getContentMetaData(context, filter, queryOptions, undefined, varMode);
+      await getContentMetaData(
+        context,
+        filter,
+        queryOptions,
+        undefined,
+        options?.variation,
+      );
 
     if (!contentTypeName) {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -348,7 +362,7 @@ export async function getPreviewContent(
         filter,
         { ...queryOptions, cache: false },
         params.preview_token,
-        'all',
+        { include: 'ALL' },
       );
 
     if (!contentTypeName) {
@@ -429,7 +443,7 @@ export async function getContent(
     const filter = referenceScalarFilter(ref);
 
     const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-      await getContentMetaData(context, filter, queryOptions, previewToken, 'none');
+      await getContentMetaData(context, filter, queryOptions, previewToken);
 
     if (!contentTypeName) {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
