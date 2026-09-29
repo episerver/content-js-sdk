@@ -33,7 +33,7 @@ import {
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
-  type ResolvedCategory,
+  type TaxonomyTerm,
   type ResolvedQueryOptions,
   fragmentContext,
   parseGraphReference,
@@ -195,63 +195,144 @@ async function resolveFormNodes<T>(
 
 // TAXONOMY HIERARCHY RESOLUTION
 
+const PARENT_FIELDS = 'key displayName';
+const PARENT_DEPTH = `{ ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} } } } } }`;
+
 const RESOLVE_TAXONOMY_QUERY = `
-query ResolveTaxonomyTerms($uris: [String!]!) {
-  _TaxonomyTerm(where: { id: { in: $uris } }, limit: 100) {
+query ResolveTaxonomyTerms($keys: [String!]!) {
+  _TaxonomyTerm(where: { _metadata: { key: { in: $keys } } }, limit: 100) {
     items {
-      id
-      name
-      path {
-        id
-        name
+      _metadata {
+        key
+        displayName
+        description
+        taxonomy
+        usage
+        parent ${PARENT_DEPTH}
       }
     }
   }
 }
 `;
 
-async function resolveCategoryHierarchy(
-  context: GraphClientContext,
-  categoryUris: string[],
-  locale: string | undefined,
-): Promise<ResolvedCategory[] | undefined> {
-  if (categoryUris.length === 0) return [];
+type TermMetadata = {
+  key: string;
+  displayName: string | null;
+  description?: string | null;
+  taxonomy?: string | null;
+  usage?: string | null;
+  parent?: { key: string; displayName: string | null; parent?: TermMetadata['parent'] } | null;
+};
 
-  const uniqueUris = [...new Set(categoryUris)];
-
-  try {
-    const data = await context.request(
-      RESOLVE_TAXONOMY_QUERY,
-      { uris: uniqueUris, ...(locale && { locale }) },
-      undefined,
-      true,
-    );
-
-    const items: Array<{ id: string; name: string | null; path?: Array<{ id: string; name: string | null }> }> =
-      data?._TaxonomyTerm?.items ?? [];
-
-    const termMap = new Map(items.map(item => [item.id, item]));
-
-    return categoryUris.map(uri => {
-      const term = termMap.get(uri);
-      if (!term) {
-        return { uri, name: null, path: [{ uri, name: null }] };
-      }
-
-      const path = term.path
-        ? term.path.map(p => ({ uri: p.id, name: p.name }))
-        : [{ uri: term.id, name: term.name }];
-
-      return {
-        uri,
-        name: term.name,
-        path,
-      };
-    });
-  } catch {
-    logWarning('Taxonomy hierarchy resolution failed; resolvedCategories will be undefined');
-    return undefined;
+function buildPath(meta: TermMetadata): Array<{ key: string; displayName: string | null }> {
+  const chain: Array<{ key: string; displayName: string | null }> = [];
+  let current: TermMetadata['parent'] = { key: meta.key, displayName: meta.displayName, parent: meta.parent };
+  while (current) {
+    chain.push({ key: current.key, displayName: current.displayName });
+    current = current.parent;
   }
+  chain.reverse();
+  return chain;
+}
+
+function metadataToTaxonomyTerm(key: string, meta: TermMetadata | undefined): TaxonomyTerm {
+  if (!meta) {
+    return {
+      key,
+      displayName: null,
+      description: null,
+      taxonomy: null,
+      usage: null,
+      sortOrder: null,
+      isAvailable: null,
+      isSelectable: null,
+      path: [{ key, displayName: null }],
+    };
+  }
+
+  return {
+    key,
+    displayName: meta.displayName,
+    description: meta.description ?? null,
+    taxonomy: meta.taxonomy ?? null,
+    usage: meta.usage ?? null,
+    sortOrder: null,
+    isAvailable: null,
+    isSelectable: null,
+    path: buildPath(meta),
+  };
+}
+
+/**
+ * Per-endpoint, per-locale cache for resolved taxonomy terms.
+ *
+ * Taxonomy terms change rarely compared to content, so caching them for the
+ * lifetime of the process avoids redundant `_TaxonomyTerm` queries when
+ * multiple content items share the same categories (e.g., 20 items on a page).
+ *
+ * Follows the same pattern as {@linkcode sectionTypesByEndpoint}.
+ */
+const taxonomyTermCache = new Map<string, Map<string, TaxonomyTerm>>();
+
+function taxonomyCacheKey(context: GraphClientContext, locale: string | undefined): string {
+  return `${context.graphUrl}::${context.apiKey}::${locale ?? ''}`;
+}
+
+export function clearTaxonomyCache(): void {
+  taxonomyTermCache.clear();
+}
+
+async function resolveTaxonomyTerms(
+  context: GraphClientContext,
+  termKeys: string[],
+  locale: string | undefined,
+): Promise<TaxonomyTerm[] | undefined> {
+  if (termKeys.length === 0) return [];
+
+  const cacheKey = taxonomyCacheKey(context, locale);
+  let localCache = taxonomyTermCache.get(cacheKey);
+  if (!localCache) {
+    localCache = new Map();
+    taxonomyTermCache.set(cacheKey, localCache);
+  }
+
+  const cached: TaxonomyTerm[] = [];
+  const uncachedKeys: string[] = [];
+
+  for (const key of [...new Set(termKeys)]) {
+    const hit = localCache.get(key);
+    if (hit) {
+      cached.push(hit);
+    } else {
+      uncachedKeys.push(key);
+    }
+  }
+
+  if (uncachedKeys.length > 0) {
+    try {
+      const data = await context.request(
+        RESOLVE_TAXONOMY_QUERY,
+        { keys: uncachedKeys, ...(locale && { locale }) },
+        undefined,
+        true,
+      );
+
+      const items: Array<{ _metadata: TermMetadata }> =
+        data?._TaxonomyTerm?.items ?? [];
+
+      const fetchedMap = new Map(items.map(item => [item._metadata.key, item._metadata]));
+
+      for (const key of uncachedKeys) {
+        const term = metadataToTaxonomyTerm(key, fetchedMap.get(key));
+        localCache.set(key, term);
+      }
+    } catch {
+      logWarning('Taxonomy hierarchy resolution failed; resolvedCategories will be undefined');
+      return undefined;
+    }
+  }
+
+  return termKeys.map(key => localCache!.get(key) ?? metadataToTaxonomyTerm(key, undefined));
 }
 
 // METADATA
@@ -416,12 +497,12 @@ export async function getContentByPath<T = any>(
         ) ?? [],
       );
 
-      if (options?.resolveCategories && taxonomyEnabled) {
+      if (options?.resolveTaxonomy && taxonomyEnabled) {
         await Promise.all(
           items.map(async (item: any) => {
             const categories: string[] | undefined = item?._metadata?.categories;
             if (categories && categories.length > 0) {
-              item._metadata.resolvedCategories = await resolveCategoryHierarchy(
+              item._metadata.resolvedCategories = await resolveTaxonomyTerms(
                 context,
                 categories,
                 item?._metadata?.locale,
@@ -518,10 +599,10 @@ export async function getPreviewContent(
       },
     );
 
-    if (result && options?.resolveCategories && taxonomyEnabled) {
+    if (result && options?.resolveTaxonomy && taxonomyEnabled) {
       const categories: string[] | undefined = result?._metadata?.categories;
       if (categories && categories.length > 0) {
-        result._metadata.resolvedCategories = await resolveCategoryHierarchy(
+        result._metadata.resolvedCategories = await resolveTaxonomyTerms(
           context,
           categories,
           params.loc,
@@ -606,10 +687,10 @@ export async function getContent(
         },
       );
 
-      if (result && options?.resolveCategories && taxonomyEnabled) {
+      if (result && options?.resolveTaxonomy && taxonomyEnabled) {
         const categories: string[] | undefined = result?._metadata?.categories;
         if (categories && categories.length > 0) {
-          result._metadata.resolvedCategories = await resolveCategoryHierarchy(
+          result._metadata.resolvedCategories = await resolveTaxonomyTerms(
             context,
             categories,
             ref.locale,

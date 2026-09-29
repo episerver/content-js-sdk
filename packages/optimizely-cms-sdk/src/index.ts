@@ -41,7 +41,7 @@ export type {
   GraphQueryOptions,
   GraphSlot,
   DamMode,
-  ResolvedCategory,
+  TaxonomyTerm,
   TaxonomyMode,
 } from './graph/index.js';
 

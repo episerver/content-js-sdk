@@ -51,7 +51,7 @@ export type {
   GraphAuthResolver,
   GraphFragmentOptions,
   GraphSecrets,
-  ResolvedCategory,
+  TaxonomyTerm,
   TaxonomyMode,
 } from './options.js';
 

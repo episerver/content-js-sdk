@@ -32,16 +32,22 @@ export type DamMode = 'automatic' | 'on' | 'off';
 export type TaxonomyMode = 'automatic' | 'on' | 'off';
 
 /**
- * A single resolved taxonomy category with its breadcrumb hierarchy.
+ * A single resolved taxonomy term with its breadcrumb hierarchy.
  *
- * `name` is `string | null` to distinguish "the term exists but its name could
+ * `displayName` is `string | null` to distinguish "the term exists but could
  * not be resolved" (deleted/moved term — `null`) from "resolved data is not
  * available at all" (`resolvedCategories: undefined`).
  */
-export type ResolvedCategory = {
-  uri: string;
-  name: string | null;
-  path: Array<{ uri: string; name: string | null }>;
+export type TaxonomyTerm = {
+  key: string;
+  displayName: string | null;
+  description: string | null;
+  taxonomy: string | null;
+  usage: string | null;
+  sortOrder: number | null;
+  isAvailable: boolean | null;
+  isSelectable: boolean | null;
+  path: Array<{ key: string; displayName: string | null }>;
 };
 
 /** Query options shared by all query methods */
@@ -294,7 +300,7 @@ export type GraphOptions = {
 
 export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
-  resolveCategories?: boolean;
+  resolveTaxonomy?: boolean;
 };
 
 export type GraphGetLinksOptions = GraphQueryOptions & {
@@ -303,11 +309,11 @@ export type GraphGetLinksOptions = GraphQueryOptions & {
 
 export type GraphGetItemOptions = GraphQueryOptions & {
   previewToken?: string;
-  resolveCategories?: boolean;
+  resolveTaxonomy?: boolean;
 };
 
 export type GraphGetPreviewOptions = GraphQueryOptions & {
-  resolveCategories?: boolean;
+  resolveTaxonomy?: boolean;
 };
 
 export type PreviewParams = {
