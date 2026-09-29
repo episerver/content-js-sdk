@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { GraphClient } from '../index.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { getVariationClause, getVariationMode } from '../filters.js';
+import { createMultipleContentQuery } from '../createQuery.js';
 
 describe('variation filters', () => {
   let client: GraphClient;
@@ -49,5 +50,23 @@ describe('variation filters', () => {
 
     const without = getVariationMode({ include: 'SOME', value: ['business'] });
     expect(getVariationClause(without)).not.toContain('includeOriginal');
+  });
+
+  // The generated query is memoized on a key built from the variation mode.
+  // Same content type and same count, so the two calls collide unless the key
+  // distinguishes includeOriginal - and a collision serves the first query to
+  // both callers, silently reinstating the defect above.
+  test('the query cache does not reuse a query across includeOriginal', () => {
+    const without = createMultipleContentQuery('Page', {
+      filterShape: 'by-path',
+      variationMode: { count: 1 },
+    });
+    const withOriginal = createMultipleContentQuery('Page', {
+      filterShape: 'by-path',
+      variationMode: { count: 1, includeOriginal: true },
+    });
+
+    expect(without).not.toContain('includeOriginal');
+    expect(withOriginal).toContain('includeOriginal: true');
   });
 });
