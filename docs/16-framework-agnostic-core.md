@@ -106,6 +106,19 @@ wrapper with one check:
 const needsWrapper = Object.keys(resolved.previewAttrs).length > 0;
 ```
 
+To appear in the same traces as the React components, wrap the render in
+`withComponentRenderSpan`. It emits `optimizely.<framework>.render_component`, a no-op unless
+OpenTelemetry is configured:
+
+```ts
+import { SemanticAttributes } from '@optimizely/cms-sdk/telemetry';
+
+await withComponentRenderSpan('svelte', content.__typename, !!resolved.tag, !!displaySettings, async span => {
+  span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, !!resolved.component);
+  // render
+});
+```
+
 ### 3. Plan a composition
 
 `planComposition(nodes)` and `planGridSection(nodes)` walk an experience and return a flat

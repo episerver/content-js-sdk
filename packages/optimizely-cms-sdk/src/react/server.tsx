@@ -24,7 +24,7 @@ import {
 } from '../infer.js';
 import { isDev } from '../util/environment.js';
 import { OptimizelyReactError } from './error.js';
-import { withReactComponentSpan } from '../telemetry/spans.js';
+import { withComponentRenderSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
@@ -137,7 +137,8 @@ export async function OptimizelyComponent({
 
   const resolved = resolveContentComponent<ComponentType>(content, { tag, props });
 
-  return withReactComponentSpan(
+  return withComponentRenderSpan(
+    'react',
     content.__typename,
     !!resolved.tag,
     !!displaySettings,
