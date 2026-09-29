@@ -35,10 +35,9 @@ export async function Page({ params }: Props) {
     <>
       <Header currentPath={path} />
       <ContentLayout content={content[0]} currentPath={path} />
-      <Footer />
+      <Footer currentPath={path} />
     </>
   );
 }
 
 export default withAppContext(Page);
-

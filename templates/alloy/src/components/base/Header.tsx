@@ -9,8 +9,13 @@ interface HeaderProps {
 
 async function Header({ currentPath }: HeaderProps) {
   const client = getClient();
-  const ancestors = (await client.getPath(currentPath)) || [];
-  const navLinks = (await client.getItems('/en/')) ?? [];
+  // Locale is the first URL segment, e.g. "/de/alloy-plan" -> "de"
+  const locale = currentPath.split('/')[1] || 'en';
+  // Start page of that locale. The path selects *which* page, `locales` filters its children.
+  const startPagePath = `/${locale}/`;
+  // Without `locales` the ancestors resolve per-page, so a breadcrumb can mix languages.
+  const ancestors = (await client.getPath(currentPath, { locales: [locale] })) || [];
+  const navLinks = (await client.getItems(startPagePath, { locales: [locale] })) ?? [];
 
   // Filter out the start page (first item) and create breadcrumbs
   const breadcrumbs = ancestors.slice(1).map((ancestor: any) => ({
@@ -19,7 +24,7 @@ async function Header({ currentPath }: HeaderProps) {
     href: ancestor._metadata.url.hierarchical,
   }));
 
-  // Create navigation from navLinks of the /en/ page
+  // Create navigation from navLinks of the locale root page
   const navigations = navLinks
     .map((ancestor: any) => ({
       key: ancestor._metadata.key,
@@ -41,7 +46,7 @@ async function Header({ currentPath }: HeaderProps) {
             {/* Navigation */}
             <nav className='flex items-center space-x-8'>
               {/* Logo */}
-              <Link href='/en' className='shrink-0'>
+              <Link href={`/${locale}`} className='shrink-0'>
                 <img src='/logo.png' alt='Logo' className='h-14 w-auto' />
               </Link>
 
