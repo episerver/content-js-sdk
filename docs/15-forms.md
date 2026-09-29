@@ -15,6 +15,10 @@ you to model, fetch, and render forms in your headless applications.
 > a server action, JSON, a third-party SDK — see
 > [Submitting from code](#submitting-from-code).
 
+> [!NOTE] This page covers the React components. Validation, steps, dependency rules and
+> submission are also available without React; see
+> [Forms in the framework-agnostic core](./16-framework-agnostic-core.md#forms).
+
 ## Quick Start
 
 Rendering forms takes two things, done once each:

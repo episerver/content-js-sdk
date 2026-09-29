@@ -154,6 +154,7 @@ A step-by-step guides to build your headless application:
 | 11   | [DAM Assets](./docs/11-dam-assets.md)                               | Manage digital assets                     |
 | 12   | [Client Utils](./docs/12-client-utils.md)                           | Utility functions and helpers             |
 | 13   | [Agent Skills](./docs/13-agent-skills.md)                           | AI-powered development                    |
+| 16   | [Framework-agnostic Core](./docs/16-framework-agnostic-core.md)     | Render without React, or build a binding  |
 
 ## Community & Support
 
