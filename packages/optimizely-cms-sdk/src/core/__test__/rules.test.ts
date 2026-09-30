@@ -66,6 +66,12 @@ describe('isRuleSatisfied', () => {
     expect(isRuleSatisfied(rule({ Conditions: null }), values)).toBe(true);
   });
 
+  test('malformed conditions count as none', () => {
+    const malformed = rule({ Conditions: {} as unknown as DependencyRule['Conditions'] });
+
+    expect(isRuleSatisfied(malformed, values)).toBe(true);
+  });
+
   test('All requires every condition', () => {
     expect(isRuleSatisfied(rule({ ConditionCombination: 'All', Conditions: two }), values)).toBe(
       false,

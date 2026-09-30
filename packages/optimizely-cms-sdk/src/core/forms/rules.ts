@@ -65,8 +65,9 @@ export function evaluateCondition(
 
 /** A rule with no conditions is always satisfied. */
 export function isRuleSatisfied(rule: DependencyRule, values: Map<string, unknown>): boolean {
-  const conditions = rule.Conditions ?? [];
-  if (conditions.length === 0) return true;
+  const conditions = rule.Conditions;
+  // Rules arrive untyped from the CMS, so anything but a non-empty array counts as none
+  if (!Array.isArray(conditions) || conditions.length === 0) return true;
 
   const results = conditions.map(condition => evaluateCondition(condition, values));
 
