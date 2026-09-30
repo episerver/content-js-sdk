@@ -138,6 +138,18 @@ describe('steps', () => {
     expect(controller.getSnapshot().currentStepIndex).toBe(0);
   });
 
+  test('a jump target naming no step falls back to the next step', () => {
+    const controller = createFormController({
+      submission: createSubmissionStore(),
+      stepIds: [['a'], ['b'], ['c']],
+      stepRules: { getJumpTarget: () => 'missing', isStepVisible: () => true },
+      effects: effects(),
+    });
+
+    controller.nextStep();
+    expect(controller.getSnapshot().currentStepIndex).toBe(1);
+  });
+
   test('nextStep skips hidden steps but never the last one', () => {
     const controller = createFormController({
       submission: createSubmissionStore(),
@@ -277,6 +289,25 @@ describe('submit', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(submission.getSnapshot().errorMessage).toBe('The service is down');
+  });
+
+  test('a thrown non-Error fails the submit without a message', async () => {
+    const submission = createSubmissionStore();
+    const controller = createFormController({
+      submission,
+      submitHandler: async () => {
+        throw 'The service is down';
+      },
+      effects: effects(),
+    });
+
+    await controller.submit(new FormData());
+
+    expect(submission.getSnapshot()).toMatchObject({
+      status: 'error',
+      error: 'The service is down',
+      errorMessage: undefined,
+    });
   });
 
   test('a submit while one is in flight is ignored', async () => {
