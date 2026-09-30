@@ -66,17 +66,24 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
   );
 }
 
+function useControllerValue<T>(
+  controller: FormController,
+  select: (state: ReturnType<FormController['getSnapshot']>) => T,
+): T {
+  const read = () => select(controller.getSnapshot());
+  return useSyncExternalStore(controller.subscribe, read, read);
+}
+
 export function useFormValidation(): FormValidationContextType {
   const controller = useContext(FormControllerContext);
   if (!controller) {
     throw new Error('useFormValidation must be used within a FormValidationProvider');
   }
 
-  const { attemptedSubmit, hasAnyErrors, resetToken } = useSyncExternalStore(
-    controller.subscribe,
-    controller.getSnapshot,
-    controller.getSnapshot,
-  );
+  // One subscription per value, so step changes and reveals don't re-render every field
+  const attemptedSubmit = useControllerValue(controller, state => state.attemptedSubmit);
+  const hasAnyErrors = useControllerValue(controller, state => state.hasAnyErrors);
+  const resetToken = useControllerValue(controller, state => state.resetToken);
 
   return {
     attemptedSubmit,

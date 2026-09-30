@@ -283,10 +283,10 @@ export function createFormController(options: FormControllerOptions): FormContro
       // Later steps are validated when the form is finally submitted.
       const current = store.getSnapshot().currentStepIndex;
 
-      setAttemptedSubmit(true);
       const invalid = controller.validateAllFields({ stepIndex: current });
 
       if (invalid.length > 0) {
+        setAttemptedSubmit(true);
         revealFirstInvalid(invalid);
         return;
       }
@@ -337,11 +337,10 @@ export function createFormController(options: FormControllerOptions): FormContro
         scrollToOnError,
       } = settings;
 
-      setAttemptedSubmit(true);
-
       const invalid = controller.validateAllFields();
 
       if (invalid.length > 0) {
+        setAttemptedSubmit(true);
         revealFirstInvalid(invalid);
         scrollToElement(scrollToOnError);
         return;
