@@ -18,7 +18,7 @@
   const items = $derived(planGridSection(nodes, { registry }));
 </script>
 
-{#snippet renderItems(items: GridRenderItem<Component<any>>[])}
+{#snippet renderItems(items: GridRenderItem<Component<never>>[])}
   {#each items as item}
     {#if item.kind === 'component'}
       <OptimizelyComponent
@@ -27,7 +27,9 @@
         {...item.previewAttrs}
       />
     {:else}
-      {@const Container = getStructureContainer(item, { fallbacks })}
+      {@const Container = getStructureContainer(item, { fallbacks }) as
+        | Component<Record<string, unknown>>
+        | undefined}
       {#if Container}
         <Container node={item.node} index={item.index} displaySettings={item.displaySettings}>
           {@render renderItems(item.children)}

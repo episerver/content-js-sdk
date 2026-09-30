@@ -1,4 +1,3 @@
-import type { Component } from 'svelte';
 import { ComponentRegistry } from '@optimizely/cms-sdk/core';
 
 import Article from '../components/svelte/Article.svelte';
@@ -15,7 +14,7 @@ import Tile from '../components/svelte/Tile.svelte';
 import SquareTile from '../components/svelte/SquareTile.svelte';
 
 // Kept apart from the React registry in `optimizely.ts`, which is global and shared by the React routes.
-export const svelteRegistry = new ComponentRegistry<Component<any>>({
+export const svelteRegistry = new ComponentRegistry({
   Article,
   Banner,
   BlankExperience,

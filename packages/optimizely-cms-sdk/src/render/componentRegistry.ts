@@ -82,8 +82,19 @@ function getTagComponent<C>(entry: ComponentEntry<C>, tag: string): C | undefine
  */
 export type ComponentResolverOrObject<C> = ComponentResolver<C> | ComponentMap<C>;
 
+/** Every component in a {@linkcode ComponentEntry} union, variants included */
+type ComponentsOf<E> = E extends ComponentWithVariants<infer C> ? C : E;
+
+type ComponentRegistryConstructor = {
+  /** Infers the component type from the map, so entries may be any mix of one framework's components */
+  new <M extends ComponentMap<unknown>>(map: M): Registry<ComponentsOf<M[keyof M]>>;
+  new <T>(resolverOrObject: ComponentResolverOrObject<T>): Registry<T>;
+};
+
 /** A registry mapping content type names and components */
-export class ComponentRegistry<T> {
+export type ComponentRegistry<T> = Registry<T>;
+
+class Registry<T> {
   resolver: ComponentResolverOrObject<T>;
 
   constructor(resolverOrObject: ComponentResolverOrObject<T>) {
@@ -177,3 +188,5 @@ export class ComponentRegistry<T> {
     return undefined;
   }
 }
+
+export const ComponentRegistry: ComponentRegistryConstructor = Registry;

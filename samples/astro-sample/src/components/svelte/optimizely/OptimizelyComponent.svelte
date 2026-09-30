@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Component } from 'svelte';
   import { resolveContentComponent, type OptimizelyContent } from '@optimizely/cms-sdk/core';
   import { getRegistry } from './context';
 
@@ -19,7 +20,7 @@
 
 {#snippet rendered()}
   {#if resolved.component}
-    {@const Resolved = resolved.component}
+    {@const Resolved = resolved.component as Component<Record<string, unknown>>}
     <Resolved content={resolved.contentProps} {displaySettings} {...resolved.componentProps} />
   {:else if import.meta.env.DEV}
     <div style="margin: 1rem; padding: 1rem; border: 1px solid; border-radius: 8px">

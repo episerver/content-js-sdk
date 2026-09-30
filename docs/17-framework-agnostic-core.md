@@ -84,7 +84,10 @@ binding its own registry instead, and passes it to `resolveContentComponent` and
 fallback, so register form components in it too (see `mapFormHandlersToContentTypes`).
 
 ```ts
-const registry = new ComponentRegistry<SvelteComponent>({ Article: ArticleComponent });
+import { ComponentRegistry, planGridSection, resolveContentComponent } from '@optimizely/cms-sdk/core';
+
+// The component type is inferred from the map, tagged variants included
+const registry = new ComponentRegistry({ Article: ArticleComponent });
 
 resolveContentComponent(content, { registry });
 planGridSection(nodes, { registry });
