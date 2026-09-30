@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Component } from 'svelte';
   import { resolveContentComponent, type OptimizelyContent } from '@optimizely/cms-sdk/core';
   import { getRegistry } from './context';
 

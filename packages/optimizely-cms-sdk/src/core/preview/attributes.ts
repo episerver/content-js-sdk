@@ -12,7 +12,7 @@ type PreviewableContent = {
 export function getPreviewUtils(content: PreviewableContent) {
   return {
     /** Get the HTML data attributes required for a property */
-    pa(property?: string | { key: string }) {
+    pa(property?: string | { key: string }): Record<string, string> {
       if (content.__context?.edit) {
         if (typeof property === 'string') {
           return {

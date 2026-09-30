@@ -205,8 +205,6 @@ export function createFormController(options: FormControllerOptions): FormContro
 
   let settings: FormControllerSettings = options;
 
-  const lastStepIndex = () => Math.max(0, (settings.stepIds?.length ?? 0) - 1);
-
   // Where each `nextStep` came from, so `prevStep` retraces jumps and skipped steps.
   let stepHistory: number[] = [];
 
@@ -231,9 +229,6 @@ export function createFormController(options: FormControllerOptions): FormContro
 
   const publishErrorCount = () =>
     store.setState(state => ({ ...state, hasAnyErrors: fieldsWithErrors.size > 0 }));
-
-  const setCurrentStepIndex = (next: (current: number) => number) =>
-    store.setState(state => ({ ...state, currentStepIndex: next(state.currentStepIndex) }));
 
   const setAttemptedSubmit = (attemptedSubmit: boolean) =>
     store.setState(state => ({ ...state, attemptedSubmit }));
@@ -286,28 +281,27 @@ export function createFormController(options: FormControllerOptions): FormContro
     nextStep() {
       // Only the current step is on screen, so only its fields can be corrected here.
       // Later steps are validated when the form is finally submitted.
+      const current = store.getSnapshot().currentStepIndex;
+
       setAttemptedSubmit(true);
-      const invalid = controller.validateAllFields({
-        stepIndex: store.getSnapshot().currentStepIndex,
-      });
+      const invalid = controller.validateAllFields({ stepIndex: current });
 
       if (invalid.length > 0) {
         revealFirstInvalid(invalid);
         return;
       }
 
-      setAttemptedSubmit(false);
-
-      const current = store.getSnapshot().currentStepIndex;
       stepHistory.push(current);
-      setCurrentStepIndex(() => followingStep(current));
+      store.setState(state => ({
+        ...state,
+        attemptedSubmit: false,
+        currentStepIndex: followingStep(current),
+      }));
     },
 
     prevStep() {
-      setAttemptedSubmit(false);
-
       const previous = stepHistory.pop() ?? 0;
-      setCurrentStepIndex(() => previous);
+      store.setState(state => ({ ...state, attemptedSubmit: false, currentStepIndex: previous }));
     },
 
     revealPendingField() {
@@ -387,7 +381,7 @@ export function createFormController(options: FormControllerOptions): FormContro
   // never skipped, so the form always has somewhere to submit from.
   function followingStep(current: number): number {
     const { stepIds = [], stepRules } = settings;
-    const last = lastStepIndex();
+    const last = Math.max(0, stepIds.length - 1);
 
     const currentIds = stepIds[current] ?? [];
     const jumpTarget = currentIds.length ? stepRules?.getJumpTarget(currentIds) : null;

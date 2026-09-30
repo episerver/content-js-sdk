@@ -66,9 +66,6 @@ export function FormValidationProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/** The controller from context, or `undefined` outside any provider. */
-export const useFormController = () => useContext(FormControllerContext);
-
 export function useFormValidation(): FormValidationContextType {
   const controller = useContext(FormControllerContext);
   if (!controller) {

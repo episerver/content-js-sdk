@@ -7,6 +7,8 @@
  * @module
  */
 
+import { toArray } from '../../util/general.js';
+
 export type DependencyCondition = {
   DependsOnField: string | null;
   ComparisonOperator: string | null;
@@ -25,8 +27,6 @@ export type DependencyRule = {
 
 /** One identifier, or every identifier an element is known by. */
 export type ElementId = string | string[];
-
-const toIds = (id: ElementId): string[] => (Array.isArray(id) ? id : [id]);
 
 export function evaluateCondition(
   condition: DependencyCondition,
@@ -66,7 +66,7 @@ export function evaluateCondition(
 /** A rule with no conditions is always satisfied. */
 export function isRuleSatisfied(rule: DependencyRule, values: Map<string, unknown>): boolean {
   const conditions = rule.Conditions ?? [];
-  if (!Array.isArray(conditions) || conditions.length === 0) return true;
+  if (conditions.length === 0) return true;
 
   const results = conditions.map(condition => evaluateCondition(condition, values));
 
@@ -81,7 +81,7 @@ const findRulesFor = (
   id: ElementId,
   target: (rule: DependencyRule) => string | null | undefined,
 ): DependencyRule[] => {
-  const ids = new Set(toIds(id));
+  const ids = new Set(toArray(id));
   return rules.filter(rule => {
     const name = target(rule);
     return !!name && ids.has(name);
@@ -93,8 +93,6 @@ const resolveVisibility = (
   applicableRules: DependencyRule[],
   values: Map<string, unknown>,
 ): boolean => {
-  if (applicableRules.length === 0) return true;
-
   const satisfied = (rule: DependencyRule) => isRuleSatisfied(rule, values);
   const hideRules = applicableRules.filter(
     rule => rule.SatisfiedAction === 'Hide' || rule.SatisfiedAction === 'HideStep',
@@ -103,10 +101,7 @@ const resolveVisibility = (
     rule => rule.SatisfiedAction === 'Show' || rule.SatisfiedAction === 'ShowStep',
   );
 
-  if (hideRules.length > 0 && hideRules.some(satisfied)) return false;
-  if (showRules.length > 0 && !showRules.some(satisfied)) return false;
-
-  return true;
+  return !hideRules.some(satisfied) && (showRules.length === 0 || showRules.some(satisfied));
 };
 
 /** Decides whether an element is visible under the current values. Untargeted elements are. */

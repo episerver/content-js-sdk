@@ -2,7 +2,7 @@
 
 import { createContext, ReactNode, useContext } from 'react';
 import { useFormSteps } from './FormWrapper.js';
-import { getPreviewUtils } from '../previewUtils.js';
+import { getPreviewUtils } from '../../core/preview/attributes.js';
 
 /**
  * The step a field belongs to, or `undefined` for fields outside any step.

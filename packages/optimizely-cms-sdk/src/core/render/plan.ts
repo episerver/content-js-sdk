@@ -105,7 +105,7 @@ function readNode(node: ExperienceNode) {
     node,
     tag: getDisplayTemplateTag(node.displayTemplateKey),
     displaySettings: parseDisplaySettings(node.displaySettings),
-    previewAttrs: pa(node) as Record<string, unknown>,
+    previewAttrs: pa(node),
   };
 }
 

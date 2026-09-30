@@ -58,7 +58,7 @@ export type { ContextAdapter, ContextData } from '../context/baseContext.js';
  * });
  * ```
  */
-export const initForms = (handlers: FormHandlers) => initFormsCore(handlers);
+export const initForms: (handlers: FormHandlers) => void = initFormsCore;
 
 type InitOptions = {
   resolver: ComponentResolverOrObject<ComponentType>;
@@ -104,7 +104,7 @@ type InitOptions = {
  * ```
  */
 export function initReactComponentRegistry(options: InitOptions) {
-  initComponentRegistry({ resolver: options.resolver });
+  initComponentRegistry(options);
 }
 
 /** Props for the {@linkcode OptimizelyComponent} component */

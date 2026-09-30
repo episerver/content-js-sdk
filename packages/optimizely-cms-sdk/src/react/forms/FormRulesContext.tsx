@@ -8,6 +8,7 @@ import {
   type DependencyRule,
   type ElementId,
 } from '../../core/forms/rules.js';
+import { toArray } from '../../util/general.js';
 
 export type { DependencyRule, ElementId };
 
@@ -20,8 +21,6 @@ type FormRulesContextType = {
   isStepVisible: (stepKey: ElementId) => boolean;
 };
 
-const toIds = (id: ElementId): string[] => (Array.isArray(id) ? id : [id]);
-
 const FormRulesContext = createContext<FormRulesContextType | undefined>(undefined);
 
 type FormRulesProviderProps = {
@@ -33,7 +32,7 @@ export function FormRulesProvider({ children, rules = [] }: FormRulesProviderPro
   const [fieldValues, setFieldValuesMap] = useState(new Map<string, unknown>());
 
   const setFieldValue = useCallback((fieldId: ElementId, value: unknown) => {
-    const ids = toIds(fieldId);
+    const ids = toArray(fieldId);
     if (ids.length === 0) return;
 
     // Unchanged values would otherwise publish a new Map on every field mount.

@@ -10,7 +10,6 @@
 
 import { getDisplayTemplateTag } from '../../model/displayTemplateRegistry.js';
 import type { ExperienceCompositionNode } from '../../infer.js';
-import type { ComponentRegistry } from '../../render/componentRegistry.js';
 import { resolveComponent, type ResolveComponentOptions } from './registry.js';
 
 /** Content data from the CMS, as the render layer reads it. */
@@ -93,19 +92,13 @@ function findComponent<C>(
   content: OptimizelyContent,
   options: ResolveComponentOptions<C>,
 ): { component: C | undefined; typename: string | undefined } {
-  // Try _metadata.types array first
-  const types = content._metadata?.types;
-  if (Array.isArray(types)) {
-    for (const typename of types) {
-      const component = resolveComponent<C>(typename, options);
-      if (component) return { component, typename };
-    }
-  }
+  const lookup = (typename: string | undefined) => ({
+    typename,
+    component: typename ? resolveComponent<C>(typename, options) : undefined,
+  });
+  const types = content._metadata?.types ?? [];
 
-  // Fallback to __typename
-  const typename = content.__typename;
-  const component = typename ? resolveComponent<C>(typename, options) : undefined;
-  return { component, typename };
+  return types.map(lookup).find(it => it.component) ?? lookup(content.__typename);
 }
 
 /** Splits caller props into preview attributes and everything else. */
@@ -116,20 +109,15 @@ export function splitPreviewAttrs(
   previewAttrs: Record<string, unknown> | undefined;
   componentProps: Record<string, unknown>;
 } {
-  const previewAttrs: Record<string, unknown> = {};
-  const componentProps: Record<string, unknown> = {};
+  const entries = Object.entries(props);
+  const previewEntries = entries.filter(([key]) => key.startsWith('data-epi-'));
+  const componentEntries = entries.filter(([key]) => !key.startsWith('data-epi-'));
+  const hasPreviewAttrs = isEditMode && previewEntries.length > 0;
 
-  for (const [key, value] of Object.entries(props)) {
-    if (key.startsWith('data-epi-')) {
-      previewAttrs[key] = value;
-    } else {
-      componentProps[key] = value;
-    }
-  }
-
-  const hasPreviewAttrs = isEditMode && Object.keys(previewAttrs).length > 0;
-
-  return { previewAttrs: hasPreviewAttrs ? previewAttrs : undefined, componentProps };
+  return {
+    previewAttrs: hasPreviewAttrs ? Object.fromEntries(previewEntries) : undefined,
+    componentProps: Object.fromEntries(componentEntries),
+  };
 }
 
 /**
@@ -142,11 +130,7 @@ export function splitPreviewAttrs(
  */
 export function resolveContentComponent<C>(
   content: OptimizelyContent,
-  options: {
-    tag?: string;
-    props?: Record<string, unknown>;
-    registry?: ComponentRegistry<C>;
-  } = {},
+  options: ResolveComponentOptions<C> & { props?: Record<string, unknown> } = {},
 ): ResolvedContentComponent<C> {
   const tag = resolveTag(content, options.tag);
   const { component, typename } = findComponent<C>(content, {

@@ -2,14 +2,12 @@
 import {
   useState,
   useEffect,
-  useRef,
   type ReactNode,
   type FunctionComponent,
   type PropsWithChildren,
 } from 'react';
 import {
   createContentSavedListener,
-  type ContentSavedListener,
   type NavigateCallback,
 } from '../core/preview/contentSaved.js';
 
@@ -61,20 +59,19 @@ export const PreviewComponent: FunctionComponent<
 > = ({ onNavigate, refreshTimeout = 50, children, busy = false }) => {
   const [showMask, setShowMask] = useState<boolean>(false);
 
-  const listenerRef = useRef<ContentSavedListener | undefined>(undefined);
-  listenerRef.current ??= createContentSavedListener();
+  const [listener] = useState(createContentSavedListener);
 
   // Pushed on every render rather than passed to `start`, so the subscription
   // survives the inline arrow callers give for `onNavigate`.
   useEffect(() => {
-    listenerRef.current?.update({
+    listener.update({
       onNavigate,
       refreshTimeout,
       onBusyChange: setShowMask,
     });
   });
 
-  useEffect(() => listenerRef.current?.start(), []);
+  useEffect(() => listener.start(), [listener]);
 
   return (showMask || busy) && children ? <>{children}</> : null;
 };

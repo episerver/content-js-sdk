@@ -13,7 +13,6 @@ import { appendToken } from '../../util/preview.js';
 import { getContextData } from '../../context/config.js';
 import {
   buildRenderTree,
-  createElementData,
   defaultElementTypeMap,
   defaultMarkTypeMap,
   resolveRichTextNodes,
@@ -303,23 +302,19 @@ export const getLinkAttributes = (element: LinkElement) => ({
   title: element.title,
 });
 
-/**
- * The attributes an image element contributes, with the preview token applied.
- *
- * Reading the token throws when no context adapter is configured, which is a
- * legitimate state for an application that never previews.
- */
-export function getImageAttributes(element: ImageElement) {
-  let previewToken: string | undefined;
-
+// Throws when no context adapter is configured, a legitimate state for an app that never previews.
+function readPreviewToken(): string | undefined {
   try {
-    previewToken = getContextData('previewToken');
+    return getContextData('previewToken');
   } catch {
-    previewToken = undefined;
+    return undefined;
   }
+}
 
+/** The attributes an image element contributes, with the preview token applied. */
+export function getImageAttributes(element: ImageElement) {
   return {
-    src: appendToken(element.url, previewToken),
+    src: appendToken(element.url, readPreviewToken()),
     alt: element.alt,
     title: element.title,
     width: element.width,
@@ -345,9 +340,10 @@ export function getRichTextElement(node: RenderNode): RichTextElement {
   const elementType = node.elementType?.toLowerCase() ?? '';
   const { tag, config } = defaultElementTypeMap[elementType] ?? { tag: 'span' };
   const source = node.attributes ?? {};
+  // `buildRenderTree` has already mapped the image `url` to `src`.
   const attributes =
     elementType === 'image' ?
-      { ...source, ...getImageAttributes(createElementData('image', source) as ImageElement) }
+      { ...source, src: appendToken(String(source.src ?? ''), readPreviewToken()) }
     : source;
 
   return { tag, selfClosing: !!config?.selfClosing, ...splitAttributes(attributes, tag) };
