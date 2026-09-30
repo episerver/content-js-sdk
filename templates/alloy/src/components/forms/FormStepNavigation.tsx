@@ -1,6 +1,8 @@
 'use client';
 
 import { useFormStep } from '@optimizely/cms-sdk/forms/react';
+import { cn } from '../../util/merge';
+import { buttonBase, buttonRoleClass } from './formStyles';
 
 type FormStepNavigationProps = {
   totalSteps: number;
@@ -31,7 +33,7 @@ export default function FormStepNavigation({
         <button
           type='button'
           onClick={prevStep}
-          className='rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50'
+          className={cn(buttonBase, buttonRoleClass.previous)}
         >
           Previous
         </button>
@@ -40,7 +42,7 @@ export default function FormStepNavigation({
         <button
           type='button'
           onClick={nextStep}
-          className='rounded-md bg-teal-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-600'
+          className={cn(buttonBase, buttonRoleClass.next)}
         >
           Next
         </button>
@@ -52,9 +54,10 @@ export default function FormStepNavigation({
 
   return (
     <div
-      className={`mt-6 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-5 ${
-        showPrev ? 'justify-between' : 'justify-end'
-      }`}
+      className={cn(
+        'mt-6 flex flex-wrap items-center gap-3 border-t border-foreground/10 pt-5',
+        'justify-end',
+      )}
     >
       {buttons}
     </div>

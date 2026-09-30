@@ -16,6 +16,8 @@
     "hello-world",
     "nextjs-template",
     "tanstack-template",
-    "alloy-template"
+    "alloy-template",
+    "stride-template",
+    "astro-sample"
   ]
 }

@@ -9,7 +9,6 @@ import {
 import {
   controlClass,
   errorTextClass,
-  helpTextClass,
   labelClass,
   requiredMarkClass,
 } from './formStyles';
@@ -51,11 +50,7 @@ export default function FormTextarea({ content }: FormTextareaProps) {
             ))}
           </div>
         )}
-        {!showErrors && content.Tooltip && (
-          <p className={helpTextClass} {...pa('Tooltip')}>
-            {content.Tooltip}
-          </p>
-        )}
+
       </div>
     </FormElement>
   );

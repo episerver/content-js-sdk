@@ -142,7 +142,7 @@ React components are rendered via `OptimizelyComponent` which:
 ### Svelte Rendering
 
 `/svelte/<path>/` renders the same content through Svelte components built on
-[`@optimizely/cms-sdk/core`](../../docs/16-framework-agnostic-core.md), next to the React routes:
+[`@optimizely/cms-sdk/core`](../../docs/17-framework-agnostic-core.md), next to the React routes:
 
 - `src/components/svelte/optimizely/` — a minimal binding: `OptimizelyComponent`, `OptimizelyComposition`,
   `OptimizelyGridSection` and `RichText`

@@ -148,7 +148,7 @@ OPTIMIZELY_CMS_API_URL=https://api.cmstest.optimizely.com
 > [!NOTE]
 > When connecting to a local CMS instance with self-signed certificates, add `NODE_TLS_REJECT_UNAUTHORIZED="0"` to your `.env` file to allow the CLI to establish a connection.
 
-[Read more about environment variables for the CLI](../packages/optimizely-cms-cli/docs/environmental-variables.md)
+[Read more about environment variables for the CLI](./13-cli-commands.md#environment-variables)
 
 ## Next steps
 

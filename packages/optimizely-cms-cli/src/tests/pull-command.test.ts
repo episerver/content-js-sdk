@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { makeFile } from '../utils/make.js';
 import { generateManifestCode, generateManifestFilePath } from '../utils/generate.js';
 import { Manifest } from '../utils/manifest.js';
+import ConfigPull from '../commands/config/pull.js';
 
 const mockManifest: Manifest = {
   contentTypes: [
@@ -102,5 +103,15 @@ describe('Pull command file output logic', () => {
       const files = await readdir(tempDir);
       expect(files).toContain('my.content.types.ts');
     });
+  });
+});
+
+describe('config pull flags', () => {
+  it('assigns each short flag to exactly one flag', () => {
+    const chars = Object.values(ConfigPull.flags)
+      .map(f => (f as { char?: string }).char)
+      .filter((c): c is string => Boolean(c));
+
+    expect(chars).toEqual([...new Set(chars)]);
   });
 });

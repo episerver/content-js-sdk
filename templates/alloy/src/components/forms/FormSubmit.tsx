@@ -6,19 +6,11 @@ import {
   getPreviewUtils,
   useFormButton,
 } from '@optimizely/cms-sdk/forms/react';
+import { cn } from '../../util/merge';
+import { buttonBase, buttonRoleClass } from './formStyles';
 
 type FormSubmitProps = {
   content: ContentProps<typeof OptiFormsSubmitElementContentType>;
-};
-
-const baseClass =
-  'inline-flex w-fit items-center justify-center gap-2 rounded-md px-6 py-2.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
-
-const roleClass = {
-  submit: 'bg-teal-500 text-white hover:bg-teal-600 focus:ring-teal-500',
-  next: 'bg-teal-500 text-white hover:bg-teal-600 focus:ring-teal-500',
-  previous:
-    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-300',
 };
 
 export default function FormSubmit({ content }: FormSubmitProps) {
@@ -27,7 +19,7 @@ export default function FormSubmit({ content }: FormSubmitProps) {
 
   return (
     <FormElement content={content}>
-      <button {...buttonProps} className={`${baseClass} ${roleClass[role]}`}>
+      <button {...buttonProps} className={cn(buttonBase, buttonRoleClass[role])}>
         {isSubmitting && (
           <svg
             className='h-4 w-4 animate-spin'

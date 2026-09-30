@@ -44,7 +44,6 @@ import {
 } from '../util/queryUtils.js';
 import { isContract } from '../model/index.js';
 import { isFormContentType } from '../model/formContentTypes.js';
-import { DEFAULT_MAX_FRAGMENT_THRESHOLD, DEFAULT_EXPAND_CONTRACTS } from './constants.js';
 
 // TYPE DEFINITIONS
 
@@ -108,7 +107,11 @@ const createExperienceFragments = (
   const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, ctx);
   return {
     fragments: [
-      ...getFixedFragments(ctx.formsEnabled, includeExperienceFragment, ctx.compositionDepth),
+      ...getFixedFragments(
+        ctx.formsEnabled,
+        includeExperienceFragment,
+        ctx.compositionDepth,
+      ),
       ...experienceResult.fragments,
       buildInterfaceFragment('_IComponent', experienceNodeKeys),
     ],
@@ -302,9 +305,9 @@ export const createFragment = (
     // must be known to exist; use caller's schema list if available,
     // otherwise fall back to the forms container.
     const canBeAsked =
-      (ctx.sectionTypes ?
+      ctx.sectionTypes ?
         ctx.sectionTypes.has(stripSourcePrefix(contentTypeName))
-      : isRootCall || isFormContentType(contentTypeName));
+      : isRootCall || isFormContentType(contentTypeName);
     const isStandaloneSection =
       canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 
@@ -356,10 +359,11 @@ export const createFragment = (
  * a caller only states what it cares about. It is turned into a strict
  * {@linkcode QueryContext} once, at the boundary, and never rebuilt after that.
  */
-export type QueryOptions = Partial<QueryContext> & FragmentOptions & {
-  filterShape?: FilterShape;
-  variationMode?: VariationMode;
-};
+export type QueryOptions = Partial<QueryContext> &
+  FragmentOptions & {
+    filterShape?: FilterShape;
+    variationMode?: VariationMode;
+  };
 
 const SINGLE_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContent',

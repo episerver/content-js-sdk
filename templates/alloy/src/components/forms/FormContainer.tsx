@@ -3,17 +3,15 @@ import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/reac
 import {
   FormSubmissionProvider,
   FormStep,
-  FormWrapper,
   getFormButtonRole,
   isFormButtonNode,
 } from '@optimizely/cms-sdk/forms/react';
-import FormTitle from './FormTitle';
-import FormDescription from './FormDescription';
+import FormContainerClient from './FormContainerClient';
+import { cn } from '../../util/merge';
 import FormAlerts from './FormAlerts';
 import FormStepTracker from './FormStepTracker';
 import FormStepNavigation from './FormStepNavigation';
-import GridRow from './GridRow';
-import GridColumn from './GridColumn';
+import { GridColumn, GridRow } from './Grid';
 
 type FormContainerProps = {
   content: OptiFormsContainerContentType;
@@ -53,11 +51,6 @@ function partitionStepNodes(nodes: Node[]): { content: Node[]; buttons: Node[] }
   return { content, buttons };
 }
 
-/**
- * Footer holding a step's buttons: back on the left, forward on the right.
- * Alignment is done here, not via `ml-auto` on the button, since in edit mode
- * the CMS marker div around each button would swallow that margin.
- */
 function FormActions({
   nodes,
   children,
@@ -76,9 +69,10 @@ function FormActions({
 
   return (
     <div
-      className={`mt-6 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-5 ${
-        nodes.some(goesStart) ? 'justify-between' : 'justify-end'
-      }`}
+      className={cn(
+        'mt-6 flex flex-wrap items-center gap-3 border-t border-foreground/10 pt-5',
+        nodes.some(goesStart) ? 'justify-between' : 'justify-end',
+      )}
     >
       <OptimizelyGridSection nodes={nodes} row={GridRow} column={GridColumn} />
       {children}
@@ -100,28 +94,35 @@ export default function FormContainer({ content }: FormContainerProps) {
 
   return (
     <FormSubmissionProvider>
-      {/* Forms read better narrow. Long lines make a field look like a text block. */}
-      <div id='form-alert' className='max-w-2xl space-y-5'>
+      <div id='form-alert' className='max-w-2xl mx-auto space-y-5'>
         <div className='space-y-2'>
-          <FormTitle title={content.Title ?? null} previewAttributes={pa} />
-          <FormDescription
-            description={content.Description ?? null}
-            previewAttributes={pa}
-          />
+          {content.Title && (
+            <h2
+              {...pa('Title')}
+              className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'
+            >
+              {content.Title}
+            </h2>
+          )}
+          {content.Description && (
+            <p {...pa('Description')} className='text-base leading-relaxed text-foreground2'>
+              {content.Description}
+            </p>
+          )}
         </div>
 
         <FormAlerts
           submitConfirmationMessage={content.SubmitConfirmationMessage ?? null}
         />
 
-        <FormWrapper
+        <FormContainerClient
           scrollToOnSuccess='form-alert'
           scrollToOnError={false}
           action={content.SubmitUrl?.default ?? ''}
           steps={stepNodes}
           rules={content.DependencyRules}
         >
-          <div className='space-y-6 rounded-lg border border-gray-200 bg-white p-6 sm:p-8'>
+          <div className='card space-y-6 p-6 sm:p-8'>
             <FormStepTracker steps={stepNodes.length} />
 
             {stepNodes.map((node, index) => {
@@ -172,7 +173,7 @@ export default function FormContainer({ content }: FormContainerProps) {
 
             {buttonNodes.length > 0 && <FormActions nodes={buttonNodes} />}
           </div>
-        </FormWrapper>
+        </FormContainerClient>
       </div>
     </FormSubmissionProvider>
   );

@@ -4,7 +4,7 @@
  * Everything the React components do is available here as plain functions and
  * stores, with no framework and no DOM beyond what a browser always provides.
  * A framework binding is expected to be a thin layer over this module: see
- * `docs/16-framework-agnostic-core.md`.
+ * `docs/17-framework-agnostic-core.md`.
  *
  * @module
  */

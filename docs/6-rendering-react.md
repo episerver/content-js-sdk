@@ -3,7 +3,7 @@
 In this page you will learn how to create a React component for your content type and how to render it.
 
 > [!NOTE] Not using React? The logic behind these components is available framework-free in
-> `@optimizely/cms-sdk/core`. See [The framework-agnostic core](./16-framework-agnostic-core.md).
+> `@optimizely/cms-sdk/core`. See [The framework-agnostic core](./17-framework-agnostic-core.md).
 
 ## Step 1. Create a React component for Article
 
@@ -292,6 +292,6 @@ This is the end of the tutorial on how to create your first website using Optimi
 
 You can continue exploring these topics:
 
-- **[Add Experiences](./8-experiences.md)** - Learn how to create personalized content experiences for different audiences
+- **[Add Experiences](./8-experience.md)** - Learn how to create personalized content experiences for different audiences
 - **[Add Live Preview](./7-live-preview.md)** - Enable real-time content editing and preview capabilities
 - **[Add Display Settings](./9-display-settings.md)** - Configure how your content is displayed across different contexts
