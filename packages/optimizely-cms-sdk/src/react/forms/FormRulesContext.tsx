@@ -28,8 +28,11 @@ type FormRulesProviderProps = {
   rules?: DependencyRule[];
 };
 
-export function FormRulesProvider({ children, rules = [] }: FormRulesProviderProps) {
-  const [fieldValues, setFieldValuesMap] = useState(new Map<string, unknown>());
+// A stable default, so the memoised context value survives a render without rules
+const NO_RULES_ARRAY: DependencyRule[] = [];
+
+export function FormRulesProvider({ children, rules = NO_RULES_ARRAY }: FormRulesProviderProps) {
+  const [fieldValues, setFieldValuesMap] = useState(() => new Map<string, unknown>());
 
   const setFieldValue = useCallback((fieldId: ElementId, value: unknown) => {
     const ids = toArray(fieldId);
