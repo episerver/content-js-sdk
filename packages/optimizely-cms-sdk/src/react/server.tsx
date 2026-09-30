@@ -13,7 +13,9 @@ import {
 import {
   planComposition,
   planGridSection,
-  type RenderItem,
+  isWrappedComponent,
+  getStructureContainer,
+  type GridRenderItem,
 } from '../core/render/plan.js';
 import type { FormHandlers, ComponentType } from './forms/setup.js';
 import {
@@ -219,17 +221,15 @@ export function OptimizelyComposition({
   nodes: ExperienceNode[];
   ComponentWrapper?: ComponentContainer;
 }) {
-  return planComposition<ComponentType>(nodes).map(item => {
+  return planComposition(nodes).map(item => {
     if (item.kind === 'unknown') {
       // TODO: Error handling
       return <div>???</div>;
     }
 
-    if (item.kind === 'structure') return null;
-
     const content = item.content as OptimizelyContent;
 
-    if (item.source === 'component') {
+    if (isWrappedComponent(item)) {
       const Wrapper = ComponentWrapper ?? DefaultComponentWrapper;
 
       return (
@@ -313,10 +313,8 @@ export function OptimizelyGridSection({
     column,
   };
 
-  const renderItems = (items: RenderItem<ComponentType>[]): React.ReactNode[] =>
+  const renderItems = (items: GridRenderItem<StructureContainer>[]): React.ReactNode[] =>
     items.map(item => {
-      if (item.kind === 'unknown') return null;
-
       if (item.kind === 'component') {
         const component = (
           <OptimizelyComponent
@@ -342,15 +340,7 @@ export function OptimizelyGridSection({
         return <React.Fragment key={item.key}>{component}</React.Fragment>;
       }
 
-      // Pick the component in the following order:
-      // 1. Explicitly defined in this component
-      // 2. Globally defined (in the registry)
-      // 3. Fallback
-      // 4. React.Fragment
-      const Component =
-        locallyDefined[item.nodeType] ??
-        (item.globalComponent as StructureContainer | undefined) ??
-        fallbacks[item.nodeType];
+      const Component = getStructureContainer(item, { overrides: locallyDefined, fallbacks });
 
       const childNodes = renderItems(item.children);
 
@@ -373,5 +363,5 @@ export function OptimizelyGridSection({
       );
     });
 
-  return renderItems(planGridSection<ComponentType>(nodes));
+  return renderItems(planGridSection<StructureContainer>(nodes));
 }

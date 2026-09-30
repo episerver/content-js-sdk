@@ -141,7 +141,7 @@ description of what to render. Neither produces any element.
 type RenderItem<C> =
   | { kind: 'component'; source: 'component' | 'section'; content: Record<string, unknown>; … }
   | { kind: 'structure'; nodeType: string; index: number; globalComponent: C | undefined;
-      children: RenderItem<C>[]; … }
+      children: GridRenderItem<C>[]; … }
   | { kind: 'unknown'; … };
 ```
 
@@ -152,12 +152,13 @@ The two planners differ in more than recursion, and the difference is load-beari
 - **`planComposition`** is a flat experience section. A component node's `content` is
   `{ ...node.component, __tag }`. A section node's `content` also carries the node's own
   scalar fields and `__typename: node.type` — a section is a content type in its own right.
-  `source` tells the two apart.
+  `source` tells the two apart; `isWrappedComponent(item)` is true for the component nodes a
+  binding wraps. It never returns `structure` items.
 - **`planGridSection`** recurses through rows and columns. A component node's `content` is
   `{ ...node.component, __composition: node, __tag }`, which is what lets a component read its
   own composition key. A `row` or `column` node gets `globalComponent` filled from whatever is
-  registered under `_Row` / `_Column`; a binding may prefer its own override and fall back to
-  something of its own when both are absent.
+  registered under `_Row` / `_Column`. `getStructureContainer(item, { overrides, fallbacks })`
+  picks the binding's override first, then that component, then the binding's fallback.
 
 A `kind: 'unknown'` item is a node whose content type the CMS did not resolve. Render your own
 placeholder, or nothing.
@@ -170,7 +171,7 @@ function render(items: RenderItem<MyComponentType>[]): MyElement[] {
     if (item.kind === 'unknown') return placeholder(item.key);
 
     if (item.kind === 'structure')
-      return element(item.globalComponent ?? defaultFor(item.nodeType), {
+      return element(getStructureContainer(item, { fallbacks }) ?? Fragment, {
         key: item.key,
         displaySettings: item.displaySettings,
         ...item.previewAttrs,

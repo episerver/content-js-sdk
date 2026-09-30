@@ -31,9 +31,15 @@ export type { OptimizelyContent, ResolvedContentComponent } from './render/resol
 export { withComponentRenderSpan } from '../telemetry/spans.js';
 
 // Composition planning
-export { planComposition, planGridSection } from './render/plan.js';
+export {
+  planComposition,
+  planGridSection,
+  isWrappedComponent,
+  getStructureContainer,
+} from './render/plan.js';
 export type {
   RenderItem,
+  GridRenderItem,
   ComponentRenderItem,
   StructureRenderItem,
   UnknownRenderItem,

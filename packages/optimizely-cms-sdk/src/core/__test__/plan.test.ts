@@ -4,6 +4,8 @@ import { init as initDisplayTemplates } from '../../model/displayTemplateRegistr
 import { ComponentRegistry } from '../../render/componentRegistry.js';
 import { initComponentRegistry, resetComponentRegistry } from '../render/registry.js';
 import {
+  getStructureContainer,
+  isWrappedComponent,
   planComposition,
   planGridSection,
   type ComponentRenderItem,
@@ -120,6 +122,16 @@ describe('planComposition', () => {
     const [editing] = planComposition([componentNode({ __context: EDIT_CONTEXT })]);
     expect(editing.previewAttrs).toEqual({ 'data-epi-block-id': 'hero-key' });
   });
+
+  test('only component nodes are reported as wrapped', () => {
+    const items = planComposition([
+      componentNode(),
+      structureNode({ type: 'ArticleSection', nodeType: 'section' }),
+      structureNode({ type: null }),
+    ]);
+
+    expect(items.map(isWrappedComponent)).toEqual([true, false, false]);
+  });
 });
 
 describe('planGridSection', () => {
@@ -204,5 +216,28 @@ describe('planGridSection', () => {
 
     expect(items.map(it => it.index)).toEqual([0, 1]);
     expect((items[0].children[0] as StructureRenderItem<string>).index).toBe(0);
+  });
+});
+
+describe('getStructureContainer', () => {
+  const planRow = () => planGridSection<string>([structureNode()])[0] as StructureRenderItem<string>;
+
+  test('an override wins over the registered component and the fallback', () => {
+    initComponentRegistry({ resolver: { _Row: 'GlobalRow' } });
+
+    expect(
+      getStructureContainer(planRow(), { overrides: { row: 'OwnRow' }, fallbacks: { row: 'FallbackRow' } }),
+    ).toBe('OwnRow');
+  });
+
+  test('the registered component wins over the fallback', () => {
+    initComponentRegistry({ resolver: { _Row: 'GlobalRow' } });
+
+    expect(getStructureContainer(planRow(), { fallbacks: { row: 'FallbackRow' } })).toBe('GlobalRow');
+  });
+
+  test('the fallback is used when nothing else is given, and nothing when it is absent', () => {
+    expect(getStructureContainer(planRow(), { fallbacks: { row: 'FallbackRow' } })).toBe('FallbackRow');
+    expect(getStructureContainer(planRow())).toBeUndefined();
   });
 });

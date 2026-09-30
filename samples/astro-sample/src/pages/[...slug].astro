@@ -1,6 +1,6 @@
 ---
 import { isContentTypeRegistered } from '@optimizely/cms-sdk';
-import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
+import ContentPage from '@/components/react/ContentPage';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
 
@@ -67,5 +67,5 @@ if (content.length === 0) {
 ---
 
 <BaseLayout>
-  <OptimizelyComponent content={content[0]} />
+  <ContentPage content={content[0]} />
 </BaseLayout>

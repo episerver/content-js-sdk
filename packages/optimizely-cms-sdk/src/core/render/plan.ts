@@ -55,7 +55,7 @@ export type StructureRenderItem<C> = RenderItemBase & {
   nodeType: string;
   index: number;
   globalComponent: C | undefined;
-  children: RenderItem<C>[];
+  children: GridRenderItem<C>[];
 };
 
 /** A node whose content type the CMS did not resolve. */
@@ -63,10 +63,31 @@ export type UnknownRenderItem = RenderItemBase & {
   kind: 'unknown';
 };
 
-export type RenderItem<C> =
-  | ComponentRenderItem
-  | StructureRenderItem<C>
-  | UnknownRenderItem;
+/** What {@linkcode planGridSection} produces, at every depth. */
+export type GridRenderItem<C> = ComponentRenderItem | StructureRenderItem<C>;
+
+export type RenderItem<C> = GridRenderItem<C> | UnknownRenderItem;
+
+/** Whether the item is a component node, which a binding renders inside a wrapper carrying its preview attributes. */
+export function isWrappedComponent<C>(
+  item: RenderItem<C>,
+): item is ComponentRenderItem & { source: 'component' } {
+  return item.kind === 'component' && item.source === 'component';
+}
+
+/** Picks the container for a structure item: the binding's override, then the registered `_Row`/`_Column`, then the binding's fallback. */
+export function getStructureContainer<C>(
+  item: StructureRenderItem<C>,
+  {
+    overrides = {},
+    fallbacks = {},
+  }: {
+    overrides?: Partial<Record<string, C>>;
+    fallbacks?: Partial<Record<string, C>>;
+  } = {},
+): C | undefined {
+  return overrides[item.nodeType] ?? item.globalComponent ?? fallbacks[item.nodeType];
+}
 
 /** The registry keys used for globally registered row and column components. */
 const GLOBAL_STRUCTURE_NAMES: Record<string, string> = {
@@ -95,7 +116,9 @@ function readNode(node: ExperienceNode) {
  * Structure nodes are rendered as content in their own right here — a section has
  * its own content type and its own component.
  */
-export function planComposition<C>(nodes: ExperienceNode[]): RenderItem<C>[] {
+export function planComposition(
+  nodes: ExperienceNode[],
+): (ComponentRenderItem | UnknownRenderItem)[] {
   return nodes.map(node => {
     const base = readNode(node);
 
@@ -142,7 +165,7 @@ export function planComposition<C>(nodes: ExperienceNode[]): RenderItem<C>[] {
 export function planGridSection<C>(
   nodes: ExperienceNode[],
   options: { registry?: ComponentRegistry<C> } = {},
-): RenderItem<C>[] {
+): GridRenderItem<C>[] {
   return nodes.map((node, index) => {
     const base = readNode(node);
 
