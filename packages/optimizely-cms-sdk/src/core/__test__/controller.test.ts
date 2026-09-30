@@ -279,6 +279,23 @@ describe('submit', () => {
     expect(submission.getSnapshot().errorMessage).toBe('The service is down');
   });
 
+  test('a submit while one is in flight is ignored', async () => {
+    let finish = () => {};
+    const submitHandler = vi.fn(() => new Promise<void>(resolve => (finish = resolve)));
+    const submission = createSubmissionStore();
+    const controller = createFormController({ submission, submitHandler, effects: effects() });
+
+    const first = controller.submit(new FormData());
+    expect(submission.getSnapshot().isSubmitting).toBe(true);
+
+    await controller.submit(new FormData());
+    finish();
+    await first;
+
+    expect(submitHandler).toHaveBeenCalledTimes(1);
+    expect(submission.getSnapshot().formSuccess).toBe(true);
+  });
+
   test('blanks shadowing an answer are dropped before sending', async () => {
     const submitHandler = vi.fn().mockResolvedValue(undefined);
     const controller = createFormController({

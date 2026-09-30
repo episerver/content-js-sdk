@@ -328,6 +328,8 @@ export function createFormController(options: FormControllerOptions): FormContro
     },
 
     async submit(formData, form) {
+      if (submission.getSnapshot().isSubmitting) return;
+
       const {
         action,
         submitHandler,
