@@ -118,6 +118,11 @@ export function createContentSavedListener(
     }
   };
 
+  // One window listener however many times `start` is called; the last stop removes it
+  const listener = (event: Event) =>
+    handleContentSaved((event as CustomEvent).detail as ContentSavedEvent);
+  let subscribers = 0;
+
   return {
     update(next) {
       options = { ...options, ...next };
@@ -126,12 +131,17 @@ export function createContentSavedListener(
     start() {
       if (typeof window === 'undefined') return () => {};
 
-      const listener = (event: Event) =>
-        handleContentSaved((event as CustomEvent).detail as ContentSavedEvent);
+      if (subscribers === 0) window.addEventListener(EVENT_NAME, listener);
+      subscribers++;
 
-      window.addEventListener(EVENT_NAME, listener);
+      let stopped = false;
 
       return () => {
+        if (stopped) return;
+        stopped = true;
+        subscribers--;
+
+        if (subscribers > 0) return;
         window.removeEventListener(EVENT_NAME, listener);
         if (reloadDelay) clearTimeout(reloadDelay);
       };

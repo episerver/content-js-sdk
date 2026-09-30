@@ -173,4 +173,26 @@ describe('lifecycle', () => {
 
     expect(onNavigate).not.toHaveBeenCalled();
   });
+
+  test('starting twice handles each save once, and only the last stop cancels', () => {
+    const onNavigate = vi.fn();
+    const listener = createContentSavedListener({ onNavigate, refreshTimeout: false });
+    const stopFirst = listener.start();
+    const stopSecond = listener.start();
+
+    save();
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+
+    listener.update({ refreshTimeout: 50 });
+    save({ contentLink: 'content-2' });
+    stopFirst();
+    stopFirst();
+    vi.advanceTimersByTime(50);
+    expect(onNavigate).toHaveBeenCalledTimes(2);
+
+    stopSecond();
+    save({ contentLink: 'content-3' });
+    vi.advanceTimersByTime(50);
+    expect(onNavigate).toHaveBeenCalledTimes(2);
+  });
 });
