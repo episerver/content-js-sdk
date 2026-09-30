@@ -353,7 +353,8 @@ export function OptimizelyGridSection({
           key={item.key}
           displaySettings={item.displaySettings}
         >
-          {childNodes}
+          {/* A single child, so containers using `Children.only`/`cloneElement` keep working */}
+          <>{childNodes}</>
         </Component>
       );
     });
