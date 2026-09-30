@@ -113,6 +113,15 @@ export namespace ContentTypeProperties {
     restrictedTypes?: string[];
   };
 
+  // Composition property - allowedTypes/restrictedTypes must be strings for API format
+  export type Composition = Omit<
+    Properties.CompositionProperty,
+    'allowedTypes' | 'restrictedTypes'
+  > & {
+    allowedTypes?: string[];
+    restrictedTypes?: string[];
+  };
+
   // Other properties can use SDK types directly
   export type Boolean = Properties.BooleanProperty;
   export type DateTime = Properties.DateTimeProperty;
@@ -148,7 +157,8 @@ export namespace ContentTypeProperties {
     | RichText
     | Json
     | Link
-    | Component;
+    | Component
+    | Composition;
 
   export type All = Array | NonArray;
 }

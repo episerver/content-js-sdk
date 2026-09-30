@@ -166,3 +166,55 @@ test('content accepts contentType field with ContentType value', () => {
     },
   });
 });
+
+test('composition accepts allowedTypes and restrictedTypes together', () => {
+  const Card = contentType({
+    key: 'card',
+    displayName: 'Card',
+    baseType: '_component',
+    compositionBehaviors: ['elementEnabled'],
+  });
+
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      sidebar: {
+        type: 'composition',
+        displayName: 'Sidebar',
+        allowedTypes: [Card, '_component'],
+        restrictedTypes: ['Deprecated'],
+        minItems: 1,
+        maxItems: 4,
+      },
+    },
+  });
+});
+
+test('composition needs no type constraints at all', () => {
+  // Unlike a content area, an unconstrained composition is legal: the CMS
+  // falls back to every type that may appear in a composition.
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      sidebar: { type: 'composition' },
+    },
+  });
+});
+
+test('the built-in composition is overridden through the reserved key', () => {
+  contentType({
+    key: 'experience',
+    displayName: 'Experience',
+    baseType: '_experience',
+    properties: {
+      composition: {
+        type: 'composition',
+        allowedTypes: ['_component'],
+      },
+    },
+  });
+});

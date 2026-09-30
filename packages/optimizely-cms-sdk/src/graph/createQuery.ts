@@ -93,7 +93,15 @@ const buildInterfaceFragment = (typeName: string, keys: string[]): string => {
   return `fragment ${typeName} on ${typeName} { __typename ${nodeNames} }`;
 };
 
-const createExperienceFragments = (
+/**
+ * Builds the fragments every composition needs: the fixed `ICompositionNode`
+ * (and optionally `_IExperience`) fragments, one fragment per composition
+ * element type, and the `_IComponent` interface fragment tying them together.
+ *
+ * Shared by the built-in `composition` field and by composition properties, so
+ * a document containing both emits each of these once.
+ */
+export const createExperienceFragments = (
   visited: Set<string>,
   ctx: QueryContext,
   { includeExperienceFragment = true } = {},
@@ -155,6 +163,7 @@ const processUserTypeProperties = (
   suffix: string,
   visited: Set<string>,
   ctx: QueryContext,
+  ownsBuiltInComposition: boolean,
 ): FragmentInfo => {
   const props = Object.entries(contentType.properties ?? {}).filter(
     ([, t]) => t.indexingType !== 'disabled',
@@ -165,6 +174,17 @@ const processUserTypeProperties = (
   let includesDamAssetsFragments = false;
 
   for (const [propKey, prop] of props) {
+    // A model may restrict the built-in composition by redeclaring the reserved
+    // `composition` key. The field is already selected by `_IExperience` (or
+    // read directly by a section), so selecting it again under an alias would
+    // fetch the whole node tree twice.
+    if (
+      ownsBuiltInComposition &&
+      propKey === 'composition' &&
+      prop.type === 'composition'
+    )
+      continue;
+
     const result = convertProperty(propKey, prop, contentTypeName, suffix, visited, ctx);
 
     fields.push(...result.fields);
@@ -275,6 +295,20 @@ export const createFragment = (
     contentType = getContentType(contentTypeName);
     if (!contentType) throw new GraphMissingContentTypeError(contentTypeName);
 
+    const isExperience =
+      'baseType' in contentType && contentType.baseType === '_experience';
+
+    // Sections fetch their own composition unless nested in one already.
+    // Standalone sections need composition to render properly. The field
+    // must be known to exist; use caller's schema list if available,
+    // otherwise fall back to the forms container.
+    const canBeAsked =
+      ctx.sectionTypes ?
+        ctx.sectionTypes.has(stripSourcePrefix(contentTypeName))
+      : isRootCall || isFormContentType(contentTypeName);
+    const isStandaloneSection =
+      canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
+
     // Process properties (contracts and content types both have properties)
     const propResult = processUserTypeProperties(
       contentType as AnyContentType,
@@ -282,6 +316,7 @@ export const createFragment = (
       suffix,
       visited,
       ctx,
+      isExperience || isStandaloneSection,
     );
     fields.push(...propResult.fields);
     extraFragments.push(...propResult.extraFragments);
@@ -296,20 +331,6 @@ export const createFragment = (
       extraFragments.unshift(...baseFragments.extraFragments);
       fields.push(...baseFragments.fields);
     }
-
-    const isExperience =
-      'baseType' in contentType && contentType.baseType === '_experience';
-
-    // Sections fetch their own composition unless nested in one already.
-    // Standalone sections need composition to render properly. The field
-    // must be known to exist; use caller's schema list if available,
-    // otherwise fall back to the forms container.
-    const canBeAsked =
-      ctx.sectionTypes ?
-        ctx.sectionTypes.has(stripSourcePrefix(contentTypeName))
-      : isRootCall || isFormContentType(contentTypeName);
-    const isStandaloneSection =
-      canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 
     if (isExperience || isStandaloneSection) {
       // `_IExperience` is an interface a section does not implement, so the

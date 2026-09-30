@@ -49,6 +49,12 @@ export const ProductPage = contentType({
         preset: 'expanded',
       },
     },
+    sidebar: {
+      type: 'composition',
+      displayName: 'Sidebar',
+      sortOrder: 6,
+      allowedTypes: ['_component'],
+    },
   },
 });
 
@@ -102,8 +108,8 @@ export default function Product({ content }: ProductPageProps) {
             </CmsField>
           </div>
 
-          <div className='lg:col-span-4'>
-            <p>Sidebar</p>
+          <div className='lg:col-span-4 space-y-6'>
+            <OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
           </div>
         </div>
       </div>
