@@ -3,8 +3,7 @@
  * is built on.
  *
  * The `subscribe` / `getSnapshot` pair is deliberately the shape React's
- * `useSyncExternalStore` expects, and the same pair satisfies Svelte's store
- * contract and maps onto an Angular signal.
+ * `useSyncExternalStore` expects, and adapts to a Svelte store or an Angular signal.
  *
  * @module
  */

@@ -40,8 +40,8 @@ type ReadableStore<T> = {
 ```
 
 `getSnapshot()` keeps its identity until the state actually changes. That is what React's
-`useSyncExternalStore` requires; it is also the Svelte store contract, and it maps onto an
-Angular signal:
+`useSyncExternalStore` requires, and it adapts to a Svelte store or an Angular signal in one
+line:
 
 ```ts
 // React
