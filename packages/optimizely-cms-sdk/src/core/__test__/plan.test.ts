@@ -236,6 +236,15 @@ describe('getStructureContainer', () => {
     expect(getStructureContainer(planRow(), { fallbacks: { row: 'FallbackRow' } })).toBe('GlobalRow');
   });
 
+  test('an override skips the registry lookup', () => {
+    const lookups: string[] = [];
+    initComponentRegistry({ resolver: (contentType: string) => (lookups.push(contentType), 'GlobalRow') });
+
+    getStructureContainer(planRow(), { overrides: { row: 'OwnRow' } });
+
+    expect(lookups).toEqual([]);
+  });
+
   test('the fallback is used when nothing else is given, and nothing when it is absent', () => {
     expect(getStructureContainer(planRow(), { fallbacks: { row: 'FallbackRow' } })).toBe('FallbackRow');
     expect(getStructureContainer(planRow())).toBeUndefined();

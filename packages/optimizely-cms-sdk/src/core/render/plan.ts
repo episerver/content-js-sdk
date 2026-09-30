@@ -192,10 +192,12 @@ export function planGridSection<C>(
       kind: 'structure',
       nodeType,
       index,
-      globalComponent:
-        globalName ?
-          resolveComponent<C>(globalName, { tag: base.tag, registry: options.registry })
-        : undefined,
+      // Lazy, so the registry isn't consulted when the binding has its own override
+      get globalComponent() {
+        return globalName ?
+            resolveComponent<C>(globalName, { tag: base.tag, registry: options.registry })
+          : undefined;
+      },
       children: planGridSection<C>(node.nodes ?? [], options),
     };
   });
