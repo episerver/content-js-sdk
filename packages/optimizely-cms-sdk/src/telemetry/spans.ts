@@ -164,15 +164,16 @@ export function startComponentResolveSpan(contentType: string, tag?: string) {
 }
 
 /**
- * Wraps a React component in span.
+ * Wraps a component render in a span named `optimizely.<framework>.render_component`.
  */
-export function withReactComponentSpan<T>(
+export function withComponentRenderSpan<T>(
+  framework: string,
   contentType: string,
   hasTag: boolean,
   hasDisplaySettings: boolean,
   fn: (span: any) => Promise<T>,
 ): Promise<T> {
-  return createSpan('optimizely.react.render_component', async span => {
+  return createSpan(`optimizely.${framework}.render_component`, async span => {
     span.setAttributes({
       [SemanticAttributes.OPTI_COMPONENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_COMPONENT_HAS_TAG]: hasTag,

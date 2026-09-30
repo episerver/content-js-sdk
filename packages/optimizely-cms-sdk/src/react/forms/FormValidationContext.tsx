@@ -1,6 +1,17 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useSyncExternalStore,
+  ReactNode,
+} from 'react';
+import {
+  createFormController,
+  createSubmissionStore,
+  type FormController,
+} from '../../core/forms/controller.js';
 
 export type FormValidationContextType = {
   attemptedSubmit: boolean;
@@ -35,110 +46,56 @@ export type FormValidationContextType = {
   resetFields: () => void;
 };
 
-const FormValidationContext = createContext<FormValidationContextType | undefined>(undefined);
+const FormControllerContext = createContext<FormController | undefined>(undefined);
 
+/** Puts an existing controller in context. `FormWrapper` owns the one it creates. */
+export const FormControllerProvider = FormControllerContext.Provider;
+
+/**
+ * Creates a controller with no submission target.
+ *
+ * `FormWrapper` provides its own, so this is for fields mounted outside one.
+ */
 export function FormValidationProvider({ children }: { children: ReactNode }) {
-  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
-  const [resetToken, setResetToken] = useState(0);
-  const [fieldsWithErrors, setFieldsWithErrors] = useState<Set<string>>(new Set());
-  const fieldsRef = useRef<
-    Map<string, { ref: HTMLElement | null; validate: () => boolean; stepIndex?: number }>
-  >(new Map());
-
-  const updateFieldsWithErrors = useCallback(
-    (mutate: (set: Set<string>) => void) => {
-      setFieldsWithErrors(prev => {
-        const next = new Set(prev);
-        mutate(next);
-        return next;
-      });
-    },
-    [],
-  );
-
-  // Page order, remembered separately from the field map. A field re-registers
-  // every time its validity flips, and the cleanup deletes it first, so map
-  // insertion order drifts away from the order the fields appear in.
-  const fieldOrderRef = useRef<Map<string, number>>(new Map());
-  const nextOrderRef = useRef(0);
-
-  const registerField = useCallback(
-    (name: string, ref: HTMLElement | null, validate: () => boolean, stepIndex?: number) => {
-      if (!fieldOrderRef.current.has(name)) {
-        fieldOrderRef.current.set(name, nextOrderRef.current++);
-      }
-      fieldsRef.current.set(name, { ref, validate, stepIndex });
-    },
-    [],
-  );
-
-  const unregisterField = useCallback(
-    (name: string) => {
-      fieldsRef.current.delete(name);
-      updateFieldsWithErrors(set => set.delete(name));
-    },
-    [updateFieldsWithErrors],
-  );
-
-  const setFieldError = useCallback(
-    (name: string, hasError: boolean) => {
-      updateFieldsWithErrors(set => {
-        if (hasError) set.add(name);
-        else set.delete(name);
-      });
-    },
-    [updateFieldsWithErrors],
-  );
-
-  const getFieldRef = useCallback((name: string): HTMLElement | null => {
-    return fieldsRef.current.get(name)?.ref ?? null;
-  }, []);
-
-  const getFieldStepIndex = useCallback((name: string): number | undefined => {
-    return fieldsRef.current.get(name)?.stepIndex;
-  }, []);
-
-  const resetFields = useCallback(() => setResetToken(token => token + 1), []);
-
-  const validateAllFields = useCallback(
-    ({ stepIndex }: { stepIndex?: number } = {}): string[] => {
-      const invalid: string[] = [];
-      fieldsRef.current.forEach((field, name) => {
-        if (stepIndex !== undefined && field.stepIndex !== stepIndex) return;
-        if (!field.validate()) invalid.push(name);
-      });
-
-      const orderOf = (name: string) => fieldOrderRef.current.get(name) ?? 0;
-      return invalid.sort((a, b) => orderOf(a) - orderOf(b));
-    },
-    [],
+  const [controller] = useState(() =>
+    createFormController({ submission: createSubmissionStore() }),
   );
 
   return (
-    <FormValidationContext.Provider
-      value={{
-        attemptedSubmit,
-        setAttemptedSubmit,
-        registerField,
-        unregisterField,
-        setFieldError,
-        getFieldRef,
-        getFieldStepIndex,
-        validateAllFields,
-        hasAnyErrors: fieldsWithErrors.size > 0,
-        resetToken,
-        resetFields,
-      }}
-    >
-      {children}
-    </FormValidationContext.Provider>
+    <FormControllerProvider value={controller}>{children}</FormControllerProvider>
   );
 }
 
-export function useFormValidation() {
-  const context = useContext(FormValidationContext);
-  if (!context) {
+function useControllerValue<T>(
+  controller: FormController,
+  select: (state: ReturnType<FormController['getSnapshot']>) => T,
+): T {
+  const read = () => select(controller.getSnapshot());
+  return useSyncExternalStore(controller.subscribe, read, read);
+}
+
+export function useFormValidation(): FormValidationContextType {
+  const controller = useContext(FormControllerContext);
+  if (!controller) {
     throw new Error('useFormValidation must be used within a FormValidationProvider');
   }
-  return context;
+
+  // One subscription per value, so step changes and reveals don't re-render every field
+  const attemptedSubmit = useControllerValue(controller, state => state.attemptedSubmit);
+  const hasAnyErrors = useControllerValue(controller, state => state.hasAnyErrors);
+  const resetToken = useControllerValue(controller, state => state.resetToken);
+
+  return {
+    attemptedSubmit,
+    hasAnyErrors,
+    resetToken,
+    setAttemptedSubmit: controller.setAttemptedSubmit,
+    registerField: controller.registerField,
+    unregisterField: controller.unregisterField,
+    setFieldError: controller.setFieldError,
+    getFieldRef: controller.getFieldRef,
+    getFieldStepIndex: controller.getFieldStepIndex,
+    validateAllFields: controller.validateAllFields,
+    resetFields: controller.resetFields,
+  };
 }

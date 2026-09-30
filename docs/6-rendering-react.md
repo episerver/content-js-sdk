@@ -2,6 +2,10 @@
 
 In this page you will learn how to create a React component for your content type and how to render it.
 
+> [!NOTE]
+> Not using React? The logic behind these components is available framework-free in
+> `@optimizely/cms-sdk/core`. See [The framework-agnostic core](./17-framework-agnostic-core.md).
+
 ## Step 1. Create a React component for Article
 
 Open the `src/app/components/Article.tsx` file and add the following

@@ -1,0 +1,23 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SveltePage from '@/components/svelte/SveltePage.svelte';
+import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
+
+// Renders the same content as `/[...slug]`, through Svelte components built on `@optimizely/cms-sdk/core`.
+export const prerender = false;
+
+initOptimizely();
+
+const { slug } = Astro.params;
+
+const client = getInitializedClient();
+const content = await client.getContentByPath(slug ? `/${slug}/` : '/');
+
+if (content.length === 0) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout>
+  <SveltePage content={content[0]} />
+</BaseLayout>

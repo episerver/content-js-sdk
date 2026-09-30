@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { useFormRules } from './FormRulesContext.js';
-import { getElementIds } from './getElementId.js';
+import { getElementIds } from '../../core/forms/elementId.js';
 
 type FormElementProps = {
   content: Record<string, unknown> & { __context?: { edit?: boolean } };

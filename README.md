@@ -157,6 +157,7 @@ A step-by-step guides to build your headless application:
 | 14   | [Create App](./docs/14-create-app.md)                               | Scaffold a new or existing project        |
 | 15   | [Forms](./docs/15-forms.md)                                         | Model and render Optimizely Forms         |
 | 16   | [Agent Skills](./docs/16-agent-skills.md)                           | AI-powered development                    |
+| 17   | [Framework-agnostic Core](./docs/17-framework-agnostic-core.md)     | Render without React, or build a binding  |
 | —    | [Observability](./docs/observability.md)                            | OpenTelemetry traces and metrics          |
 
 ## Community & Support

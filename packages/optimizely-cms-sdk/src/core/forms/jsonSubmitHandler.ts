@@ -1,4 +1,19 @@
-import type { FormSubmitHandler } from './FormWrapper.js';
+import type { FormSubmitHandler } from './controller.js';
+
+type JsonPayload = Record<string, string | string[]>;
+
+const appendValue = (payload: JsonPayload, key: string, value: string): JsonPayload => {
+  const existing = payload[key];
+  if (existing === undefined) return { ...payload, [key]: value };
+  return { ...payload, [key]: [...(Array.isArray(existing) ? existing : [existing]), value] };
+};
+
+// File entries are dropped: they cannot be represented in JSON.
+const toJsonPayload = (formData: FormData): JsonPayload =>
+  Array.from(formData.entries()).reduce<JsonPayload>(
+    (acc, [key, value]) => (typeof value === 'string' ? appendValue(acc, key, value) : acc),
+    {},
+  );
 
 /**
  * Creates a {@linkcode FormSubmitHandler} that converts `FormData` into a JSON
@@ -16,31 +31,16 @@ import type { FormSubmitHandler } from './FormWrapper.js';
  */
 export function createJsonSubmitHandler(url: string, formKey?: string): FormSubmitHandler {
   return async (formData, { action }) => {
-    const payload: Record<string, string | string[]> = {};
-    for (const [key, value] of formData.entries()) {
-      if (typeof value !== 'string') continue;
-      const existing = payload[key];
-      if (existing === undefined) {
-        payload[key] = value;
-      } else if (Array.isArray(existing)) {
-        existing.push(value);
-      } else {
-        payload[key] = [existing, value];
-      }
-    }
-
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         targetUrl: action,
-        payload,
+        payload: toJsonPayload(formData),
         formKey: formKey ?? '',
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Submission failed with status ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Submission failed with status ${response.status}`);
   };
 }

@@ -139,6 +139,21 @@ React components are rendered via `OptimizelyComponent` which:
 2. Passes content properties as component props
 3. Renders with preview attributes (`pa()`) for edit mode
 
+### Svelte Rendering
+
+`/svelte/<path>/` renders the same content through Svelte components built on
+[`@optimizely/cms-sdk/core`](../../docs/17-framework-agnostic-core.md), next to the React routes:
+
+- `src/components/svelte/optimizely/` — a minimal binding: `OptimizelyComponent`, `OptimizelyComposition`,
+  `OptimizelyGridSection` and `RichText`
+- `src/components/svelte/` — Svelte versions of Article, Banner, BlankExperience, BlankSection, BlogCard,
+  BlogExperience, CallToAction, MonthlySpecial, SmallFeature, SmallFeatureGrid and Tile, enough for
+  `/svelte/blog/` to match `/blog/`; other content types show a dev-only fallback
+- `src/lib/svelteRegistry.ts` — a `ComponentRegistry` of its own, passed to core as `registry`, since the global
+  one holds the React components
+
+The Svelte route is rendered on request and does not cover preview mode.
+
 ## Astro-Specific Patterns
 
 ### Client Directives

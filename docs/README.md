@@ -28,4 +28,5 @@ path to a working app. The rest are reference, read as needed.
 | [Create App](./14-create-app.md)                               | Scaffold a new or existing project     |
 | [Forms](./15-forms.md)                                         | Model and render Optimizely Forms      |
 | [Agent Skills](./16-agent-skills.md)                           | AI-powered development                 |
+| [Framework-agnostic Core](./17-framework-agnostic-core.md)     | Render without React, build a binding  |
 | [Observability](./observability.md)                            | OpenTelemetry traces and metrics       |

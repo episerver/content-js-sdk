@@ -2,6 +2,7 @@
 
 import { useFormSubmission } from './FormSubmissionProvider.js';
 import { useFormSteps } from './FormWrapper.js';
+import { buildButtonProps } from '../../core/forms/button.js';
 import {
   getFormButtonRole,
   type FormButtonContent,
@@ -34,15 +35,7 @@ export function useFormButton(
     isSubmitting,
     label: content.Label ?? 'Submit',
     buttonProps: {
-      type:
-        role === 'submit' ? ('submit' as const)
-        : role === 'reset' ? ('reset' as const)
-        : ('button' as const),
-      // Disabled only while the request is in flight, to stop a double submit.
-      // Disabling on validation errors hides the reason the form won't send;
-      // submitting reports the errors and moves focus to the first bad field.
-      disabled: isSubmitting,
-      title: content.Tooltip ?? '',
+      ...buildButtonProps(role, { isSubmitting, tooltip: content.Tooltip }),
       onClick:
         role === 'next' ? nextStep
         : role === 'previous' ? prevStep

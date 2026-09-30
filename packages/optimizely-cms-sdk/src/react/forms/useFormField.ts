@@ -4,34 +4,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useFormValidation } from './FormValidationContext.js';
 import { useFormRules } from './FormRulesContext.js';
 import { useFormStepIndex } from './FormStep.js';
-import { getElementIds } from './getElementId.js';
 import {
-  validateField,
-  getErrorMessages,
-  isFieldRequired,
-  getFieldName,
-  toValidators,
-} from '../../forms/validation.js';
-import type { Validator } from '../../forms/validation.js';
-
-/** The element properties this hook reads. Every form field content type has them. */
-type FormFieldContent = {
-  SubmissionFieldName?: string | null;
-  Label?: string | null;
-  Validators?: unknown;
-  PredefinedValue?: string | null;
-};
-
-type UseFormFieldOptions = {
-  /** The element's content. Name, validators and initial value are read from it. */
-  content?: FormFieldContent & Record<string, unknown>;
-  /** Overrides the name derived from `SubmissionFieldName` / `Label`. */
-  name?: string;
-  /** Overrides the validators read from `Validators`. */
-  validators?: Validator[];
-  /** Overrides the initial value read from `PredefinedValue`. */
-  defaultValue?: string;
-};
+  buildFieldProps,
+  computeFieldState,
+  defineFormField,
+  type DefineFormFieldOptions,
+} from '../../core/forms/field.js';
 
 /**
  * Wires a single form field into validation and dependency rules.
@@ -44,17 +22,12 @@ type UseFormFieldOptions = {
  *   those directly (a radio group, say) can use `inputRef`, `value`, `setValue`,
  *   `onBlur` and `errorId` instead.
  */
-export function useFormField<TElement extends HTMLElement = HTMLInputElement>({
-  content,
-  name: nameOverride,
-  validators: validatorsOverride,
-  defaultValue,
-}: UseFormFieldOptions) {
-  const field = content ?? {};
-  const name = nameOverride ?? getFieldName(field);
-  const validators = validatorsOverride ?? toValidators(field.Validators);
+export function useFormField<TElement extends HTMLElement = HTMLInputElement>(
+  options: DefineFormFieldOptions,
+) {
+  const definition = defineFormField(options);
+  const { name, initialValue, elementIds } = definition;
 
-  const initialValue = defaultValue ?? field.PredefinedValue ?? '';
   const [value, setValue] = useState(initialValue);
   const [isTouched, setIsTouched] = useState(false);
   const inputRef = useRef<TElement>(null);
@@ -73,18 +46,19 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>({
 
   const { setFieldValue, isElementVisible } = useFormRules();
   const stepIndex = useFormStepIndex();
-  const elementIds = getElementIds(content);
   const elementIdKey = elementIds.join('|');
   const elementIdsRef = useRef(elementIds);
   elementIdsRef.current = elementIds;
 
   const isVisible = elementIds.length === 0 || isElementVisible(elementIds);
 
-  const errors = validateField(value, validators);
-  const errorMessages = getErrorMessages(errors);
-  const hasErrors = errorMessages.length > 0;
-  const showErrors = isVisible && (isTouched || attemptedSubmit) && hasErrors;
-  const isRequired = isFieldRequired(validators);
+  const fieldState = computeFieldState(definition, {
+    value,
+    isTouched,
+    attemptedSubmit,
+    isVisible,
+  });
+  const { errors, hasErrors, showErrors, isRequired, errorId } = fieldState;
 
   useEffect(() => {
     // A field hidden by a rule takes no part in validation. Without this, an
@@ -112,8 +86,8 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>({
     if (elementIdKey) setFieldValue(elementIdsRef.current, value);
   }, [value, elementIdKey, setFieldValue]);
 
-  const errorId = showErrors ? `${name}-error` : undefined;
   const onBlur = () => setIsTouched(true);
+  const { fieldProps, errorProps } = buildFieldProps(definition, fieldState, value);
 
   return {
     value,
@@ -121,29 +95,21 @@ export function useFormField<TElement extends HTMLElement = HTMLInputElement>({
     isVisible,
     inputRef,
     onBlur,
-    errors: errorMessages,
+    errors,
     showErrors,
     hasErrors,
     isRequired,
     errorId,
 
     fieldProps: {
+      ...fieldProps,
       ref: inputRef,
-      id: name,
-      name,
-      value,
-      required: isRequired,
-      'aria-invalid': showErrors,
-      'aria-describedby': errorId,
       // Structural typing keeps this assignable to both an input's and a
       // textarea's onChange without a cast at either call site.
       onChange: (event: { target: { value: string } }) => setValue(event.target.value),
       onBlur,
     },
 
-    errorProps: {
-      id: `${name}-error`,
-      role: 'alert' as const,
-    },
+    errorProps,
   };
 }

@@ -1,13 +1,7 @@
-import { InferredContentReference } from '../infer.js';
-import { appendToken } from '../util/preview.js';
+import { InferredContentReference } from '../../infer.js';
+import { appendToken } from '../../util/preview.js';
 
-/**
- * The parts of a content item the preview helpers read.
- *
- * Kept out of `react/server.tsx` so that client components can use these too —
- * a form field renders on the client but still has to mark its label as
- * editable. Nothing here touches React or any server-only API.
- */
+/** The parts of a content item the preview helpers read. */
 type PreviewableContent = {
   __context?: { edit: boolean; preview_token: string };
   // Callers pass whole content objects; only `__context` is read.
@@ -18,7 +12,7 @@ type PreviewableContent = {
 export function getPreviewUtils(content: PreviewableContent) {
   return {
     /** Get the HTML data attributes required for a property */
-    pa(property?: string | { key: string }) {
+    pa(property?: string | { key: string }): Record<string, string> {
       if (content.__context?.edit) {
         if (typeof property === 'string') {
           return {

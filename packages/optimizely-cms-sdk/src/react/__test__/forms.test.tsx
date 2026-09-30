@@ -186,6 +186,28 @@ describe('step navigation', () => {
     expect(screen.getByLabelText('step1')).toBeTruthy();
   });
 
+  test('changing step does not re-render components reading validation state', () => {
+    let renders = 0;
+    function Counter() {
+      useFormValidation();
+      renders++;
+      return null;
+    }
+
+    renderForm(
+      <>
+        <Counter />
+        <Probe />
+      </>,
+    );
+
+    const initial = renders;
+    clickNext();
+
+    expect(step()).toBe('1');
+    expect(renders).toBe(initial);
+  });
+
   test('fields on inactive steps stay mounted so their values survive', () => {
     renderForm(
       <>

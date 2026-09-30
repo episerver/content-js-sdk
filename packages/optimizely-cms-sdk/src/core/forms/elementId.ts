@@ -5,9 +5,7 @@ const idCandidates = (content: Record<string, unknown>): unknown[] => [
   (content as any)?._id,
 ];
 
-/**
- * Every identifier a dependency rule might use to name this element.
- */
+/** Every identifier a dependency rule might use to name this element. */
 export function getElementIds(content: Record<string, unknown> | undefined): string[] {
   if (!content) return [];
 
