@@ -7,8 +7,14 @@
   const items = $derived(planComposition(nodes));
 </script>
 
-{#each items as item}
-  {#if isWrappedComponent(item)}
+{#each items as item (item.key)}
+  {#if item.kind === 'unknown'}
+    {#if import.meta.env.DEV}
+      <div style="margin: 1rem; padding: 1rem; border: 1px solid; border-radius: 8px">
+        Unresolved composition node <b>{item.key}</b>
+      </div>
+    {/if}
+  {:else if isWrappedComponent(item)}
     <div {...item.previewAttrs}>
       <OptimizelyComponent
         content={item.content}

@@ -19,7 +19,7 @@
 </script>
 
 {#snippet renderItems(items: GridRenderItem<Component<never>>[])}
-  {#each items as item}
+  {#each items as item (item.key)}
     {#if item.kind === 'component'}
       <OptimizelyComponent
         content={item.content}

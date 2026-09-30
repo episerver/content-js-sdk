@@ -11,7 +11,7 @@ initOptimizely();
 const { slug } = Astro.params;
 
 const client = getInitializedClient();
-const content = await client.getContentByPath(`/${slug}/`);
+const content = await client.getContentByPath(slug ? `/${slug}/` : '/');
 
 if (content.length === 0) {
   return Astro.redirect('/404');
