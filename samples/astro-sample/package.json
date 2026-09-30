@@ -9,15 +9,15 @@
     "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
-    "@astrojs/ts-plugin": "^1.10.11",
+    "@astrojs/ts-plugin": "^1.10.12",
     "@optimizely/cms-sdk": "workspace:*",
-    "astro": "^7.3.1",
+    "astro": "^7.3.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@astrojs/node": "^11.1.5",
-    "@astrojs/react": "^6.0.5",
+    "@astrojs/node": "^11.1.6",
+    "@astrojs/react": "^6.0.6",
     "@optimizely/cms-cli": "workspace:*",
     "@types/node": "^20",
     "@types/react": "^19",

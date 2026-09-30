@@ -16,12 +16,15 @@ const mapToLinks = (items: any[] | null) =>
     href: item._metadata?.url?.hierarchical,
   })) ?? [];
 
-async function Footer() {
+async function Footer({ currentPath }: { currentPath: string }) {
   const client = getClient();
+  // Locale is the first URL segment, e.g. "/de/alloy-plan" -> "de"
+  const locale = currentPath.split('/')[1] || 'en';
+  // Paths must use the same locale as `locales`, otherwise nothing matches both.
   const [products, company, newsEvents] = await Promise.all([
-    client.getItems('/en/'),
-    client.getItems('/en/about-us'),
-    client.getItems('/en/about-us/news-events'),
+    client.getItems(`/${locale}/`, { locales: [locale] }),
+    client.getItems(`/${locale}/about-us`, { locales: [locale] }),
+    client.getItems(`/${locale}/about-us/news-events`, { locales: [locale] }),
   ]);
 
   const sections: FooterSection[] = [
@@ -36,7 +39,9 @@ async function Footer() {
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8'>
           {sections.map((section, index) => (
             <div key={index} className='space-y-4'>
-              <h3 className='text-sm font-bold uppercase tracking-wider text-white'>{section.title}</h3>
+              <h3 className='text-sm font-bold uppercase tracking-wider text-white'>
+                {section.title}
+              </h3>
               <ul className='space-y-2'>
                 {section.links.map((link, linkIndex) => (
                   <li key={linkIndex}>

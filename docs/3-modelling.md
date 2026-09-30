@@ -567,23 +567,9 @@ This is particularly useful when you want to allow multiple content types that s
 
 #### Contract Expansion in GraphQL Queries
 
-When generating GraphQL queries for properties that reference contracts in `allowedTypes`, you can control whether the SDK automatically includes all implementing content types using the `expandContracts` option:
+When generating GraphQL queries for properties that reference contracts in `allowedTypes`, you can control whether the SDK automatically includes all implementing content types using the `expandContracts` option.
 
-```ts
-import { createQuery } from '@optimizely/cms-sdk';
-
-// Without expansion (default behavior)
-const query = createQuery(FeedPageContentType);
-// Generates fragments ONLY for the PublishableContract interface
-
-// With expansion
-const query = createQuery(FeedPageContentType, {
-  expandContracts: true,
-});
-// Generates fragments for PublishableContract AND all implementing types (Article, News, etc.)
-```
-
-To turn expansion on for every query the client generates, set it in `config()` instead:
+`expandContracts` shapes every query a client generates, so it is set once in `config()` and cannot be overridden per request:
 
 ```ts
 config({
@@ -678,7 +664,7 @@ export const PageWithFormContentType = contentType({
 Forms support includes validation, conditional visibility, field dependencies, and more. For a complete list of available Forms content types and detailed documentation, see [Working with Optimizely Forms](./15-forms.md).
 
 > [!NOTE]
-> Forms support is automatic. If Forms is enabled in your CMS, the SDK will detect it and make Forms content types available. See [Enabling Forms in the CMS](./15-forms.md#enabling-forms-in-the-cms) for setup instructions.
+> Forms support is automatic. If Forms is enabled in your CMS, the SDK will detect it and make Forms content types available. See [Working with Optimizely Forms](./15-forms.md) for setup instructions.
 
 ## Step 2. Sync content types to the CMS
 

@@ -6,7 +6,7 @@ import {
 import { GraphResponseError, GraphMissingContentTypeError } from './error.js';
 import {
   type ScalarFilter,
-  type VariationMode,
+  type GraphVariationInput,
   pathScalarFilter,
   previewScalarFilter,
   referenceScalarFilter,
@@ -49,6 +49,7 @@ import {
   hasOwnSectionTypes,
   liftSectionNodes,
   removeTypePrefix,
+  toLocaleEnumValues,
 } from './queries.js';
 
 // SECTION TYPES
@@ -198,6 +199,9 @@ async function resolveFormNodes<T>(
  * @param filter - The scalar filter identifying the content.
  * @param queryOptions - The request settings, already resolved against the defaults.
  * @param previewToken - Optional preview token for fetching preview content.
+ * @param variation - The variation filter. Takes the input rather than a
+ *   `VariationMode` so the `$vN` values travel with the declarations; a mode
+ *   alone knows how many variables the query declares but not what they are.
  * @returns The content type, whether DAM is enabled, and whether this page
  *   needs the Optimizely Forms fragments.
  */
@@ -206,19 +210,20 @@ async function getContentMetaData(
   filter: ScalarFilter,
   queryOptions: ResolvedQueryOptions,
   previewToken?: string,
-  variationMode: VariationMode = 'none',
+  variation?: GraphVariationInput,
 ) {
   // Skip if forms aren't registered; local lookup, no round trip.
   const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
   const query = getMetadataQuery(
     filter.filterShape,
-    variationMode,
+    getVariationMode(variation),
     mayRenderForms,
     queryOptions.publishedOnly,
   );
   const variables = {
     ...filter.variables,
+    ...getVariationVariables(variation),
     ...(mayRenderForms && { withForms: true }),
   };
 
@@ -294,7 +299,13 @@ export async function getContentByPath<T = any>(
     const variables = { ...filter.variables, ...variationVars };
 
     const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
-      await getContentMetaData(context, filter, queryOptions, undefined, varMode);
+      await getContentMetaData(
+        context,
+        filter,
+        queryOptions,
+        undefined,
+        options?.variation,
+      );
 
     if (!contentTypeName) {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
@@ -359,7 +370,7 @@ export async function getPreviewContent(
         filter,
         { ...queryOptions, cache: false, publishedOnly: false },
         params.preview_token,
-        'all',
+        { include: 'ALL' },
       );
 
     if (!contentTypeName) {
@@ -451,7 +462,6 @@ export async function getContent(
         filter,
         { ...queryOptions, publishedOnly },
         previewToken,
-        'none',
       );
 
     if (!contentTypeName) {
@@ -502,6 +512,32 @@ export async function getContent(
 
 // NAVIGATION
 
+/**
+ * The filter and locale list behind `getPath` and `getItems`.
+ *
+ * A requested locale is carried only by the `locale:` field argument, never by
+ * `_metadata.locale` in the `where` clause. Those two are not interchangeable:
+ * a language-fallback document keeps the `_metadata.locale` of the language it
+ * was authored in and announces the requested one through `fallbackForLocale`,
+ * so filtering on `_metadata.locale` excludes every fallback and the lookup
+ * comes back empty. The `locale:` argument is what resolves fallbacks.
+ */
+function linksFilter(
+  reference: string | GraphReference,
+  host: string | undefined,
+  options?: GraphGetLinksOptions,
+): { filter: ScalarFilter; locales: string[] | undefined } {
+  if (typeof reference === 'string' && !reference.startsWith('graph://')) {
+    return { filter: pathScalarFilter(reference, host), locales: options?.locales };
+  }
+
+  const ref = typeof reference === 'string' ? parseGraphReference(reference) : reference;
+  return {
+    filter: referenceScalarFilter({ key: ref.key, version: ref.version }),
+    locales: options?.locales ?? (ref.locale ? [ref.locale] : undefined),
+  };
+}
+
 /** The ancestors of a page, top-most first. See `GraphClient.getPath`. */
 export async function getPath(
   context: GraphClientContext,
@@ -509,23 +545,9 @@ export async function getPath(
   options?: GraphGetLinksOptions,
 ) {
   const queryOptions = resolveQueryOptions(context, options);
+  const { filter, locales } = linksFilter(reference, queryOptions.host, options);
 
-  let filter: ScalarFilter;
-  let locales: string[] | undefined;
-
-  if (typeof reference === 'string' && reference.startsWith('graph://')) {
-    const ref = parseGraphReference(reference);
-    filter = referenceScalarFilter(ref);
-    locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
-  } else if (typeof reference === 'string') {
-    filter = pathScalarFilter(reference, queryOptions.host);
-    locales = options?.locales;
-  } else {
-    filter = referenceScalarFilter(reference);
-    locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
-  }
-
-  const variables = { ...filter.variables, locale: locales };
+  const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
   const query = getLinksQuery('GetPath', filter.filterShape, publishedOnly);
 
@@ -568,23 +590,9 @@ export async function getItems(
   options?: GraphGetLinksOptions,
 ) {
   const queryOptions = resolveQueryOptions(context, options);
+  const { filter, locales } = linksFilter(reference, queryOptions.host, options);
 
-  let filter: ScalarFilter;
-  let locales: string[] | undefined;
-
-  if (typeof reference === 'string' && reference.startsWith('graph://')) {
-    const ref = parseGraphReference(reference);
-    filter = referenceScalarFilter(ref);
-    locales = options?.locales ?? (ref.locale ? [ref.locale] : undefined);
-  } else if (typeof reference === 'string') {
-    filter = pathScalarFilter(reference, queryOptions.host);
-    locales = options?.locales;
-  } else {
-    filter = referenceScalarFilter(reference);
-    locales = options?.locales ?? (reference.locale ? [reference.locale] : undefined);
-  }
-
-  const variables = { ...filter.variables, locale: locales };
+  const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
   const query = getItemsQuery('GetItems', filter.filterShape, publishedOnly);
 

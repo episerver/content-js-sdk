@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 import { initReactComponentRegistry, OptimizelyComposition } from '../server.js';
 import { ExperienceNode } from '../../infer.js';

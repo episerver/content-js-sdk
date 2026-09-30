@@ -13,10 +13,14 @@ on:
           - '@optimizely/cms-create-app'
           - '@optimizely/cms-sdk'
           - '@optimizely/cms-cli'
-      pre_release:
-        description: 'Pre-release mode (beta)'
-        type: boolean
-        default: false
+      pre_mode:
+        description: 'Pre-release: enter beta, exit back to stable, or leave as-is'
+        type: choice
+        default: none
+        options:
+          - none
+          - enter
+          - exit
 
 jobs:
   version:
@@ -44,14 +48,13 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      - name: Enter Pre-release Mode
-        if: inputs.pre_release == true
-        run: pnpm changeset pre enter beta
-
+      # pre enter/exit runs inside version-selective.sh, not as a step here:
+      # changesets/action resets the branch before running the version command,
+      # so any pre.json written by an earlier step is discarded.
       - name: Create Version PR
         uses: changesets/action@v1
         with:
-          version: bash scripts/version-selective.sh "${{ inputs.package }}"
+          version: bash scripts/version-selective.sh "${{ inputs.package }}" "${{ inputs.pre_mode }}"
           commit: "chore(release): version packages"
           title: "chore(release): version packages"
         env:

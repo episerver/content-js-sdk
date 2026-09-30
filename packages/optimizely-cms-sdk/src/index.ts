@@ -13,8 +13,6 @@ export {
   PropertyGroupType,
 } from './model/index.js';
 
-export { initForms } from './react/server.js';
-
 // GraphQL
 export {
   GraphClient,

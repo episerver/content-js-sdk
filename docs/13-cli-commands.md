@@ -48,10 +48,15 @@ optimizely-cms-cli config push
 
 By default, reads `./optimizely.config.mjs` from your project root.
 
+**Arguments:**
+
+- `[FILE]` - Path to the config file (default: `./optimizely.config.mjs`). Positional, not a flag
+
 **Flags:**
 
-- `--config <path>` - Path to config file (default: `./optimizely.config.mjs`)
 - `--force` - Force update content types (⚠️ may result in data loss)
+- `--dryRun` - Build the manifest but send nothing to the server
+- `--output <path>` - Write the generated manifest JSON to a file
 - `--host <url>` - Override CMS host URL
 
 **Examples:**
@@ -61,7 +66,10 @@ By default, reads `./optimizely.config.mjs` from your project root.
 optimizely-cms-cli config push
 
 # Push with custom config file
-optimizely-cms-cli config push --config ./custom-config.mjs
+optimizely-cms-cli config push ./custom-config.mjs
+
+# Preview the manifest without pushing
+optimizely-cms-cli config push --dryRun --output ./manifest.json
 
 # Force update (overwrites existing content types)
 optimizely-cms-cli config push --force
@@ -87,12 +95,12 @@ In interactive mode (terminal), prompts for output directory and grouping prefer
 
 **Flags:**
 
-- `--output <path>` - Output directory for generated files (or path to output file for single-file mode)
+- `--output <path>` / `-o` - Output directory for generated files (or path to output file for single-file mode)
 - `--single-file` / `-s` - Produce single file containing all types
 - `--individual` / `-i` - Write each type to a separate file
 - `--group` / `-g` - Group files by base type (page/, component/, section/, etc.)
 - `--json` / `-j` - Output manifest as JSON to stdout (useful for piping)
-- `--include-read-only` - Include read-only system content types
+- `--include-read-only` / `-r` - Include read-only system content types
 - `--host <url>` - Override CMS host URL
 
 **Examples:**
@@ -128,6 +136,7 @@ optimizely-cms-cli config pull --json | grep -i "Article"
 
 # Include read-only system content types
 optimizely-cms-cli config pull --include-read-only
+optimizely-cms-cli config pull -r
 
 # Combine flags
 optimizely-cms-cli config pull --output ./src/types --group --include-read-only
@@ -169,7 +178,7 @@ src/types/
 
 **Read-only content types:**
 
-By default, `config pull` excludes system-generated read-only content types. Use `--include-read-only` to pull all content types including system types:
+By default, `config pull` excludes system-generated read-only content types. Use `--include-read-only` (short form `-r`) to pull all content types including system types:
 
 ```bash
 optimizely-cms-cli config pull --include-read-only
@@ -274,7 +283,7 @@ Requires interactive confirmation before executing.
 optimizely-cms-cli danger delete-all-content-types
 ```
 
-> [!DANGER]
+> [!CAUTION]
 > This command is **extremely destructive**. It will delete ALL user-defined content types and their associated content from CMS. Use only when you need to completely reset your CMS schema. This operation cannot be undone.
 
 ## Environment Variables
@@ -285,12 +294,15 @@ The CLI uses the following environment variables for configuration:
 
 - `OPTIMIZELY_CMS_CLIENT_ID` - Your CMS API client ID (required)
 - `OPTIMIZELY_CMS_CLIENT_SECRET` - Your CMS API client secret (required)
-- `OPTIMIZELY_CMS_URL` - Your CMS instance URL (e.g., `https://example.cms.optimizely.com`)
 
 ### API Configuration
 
 - `OPTIMIZELY_CMS_API_URL` - Override API endpoint URL (default: `https://api.cms.optimizely.com`)
   - Use for non-production environments (e.g., `https://api.cmstest.optimizely.com`)
+  - To target a specific CMS instance for a single command, use the `--host` flag instead
+
+> [!NOTE]
+> `OPTIMIZELY_CMS_URL` is **not** read by the CLI. It is an application-level variable used by your app at runtime (for example, to load the CMS preview communication script). See [Live Preview](./7-live-preview.md#step-2-configure-environment-variables).
 
 ### Development
 
@@ -301,7 +313,6 @@ The CLI uses the following environment variables for configuration:
 ```ini
 OPTIMIZELY_CMS_CLIENT_ID=your-client-id
 OPTIMIZELY_CMS_CLIENT_SECRET=your-client-secret
-OPTIMIZELY_CMS_URL=https://example.cms.optimizely.com
 ```
 
 For non-production environments:
@@ -383,7 +394,7 @@ optimizely-cms-cli config push
 # Automatically outputs JSON when stdout is not a TTY
 
 # Push in CI
-optimizely-cms-cli config push --config ./optimizely.config.mjs
+optimizely-cms-cli config push ./optimizely.config.mjs
 
 # Pull and generate files in CI
 optimizely-cms-cli config pull --output ./src/content-types --group
@@ -408,8 +419,8 @@ optimizely-cms-cli config pull --json > manifest.json
 **Problem:** `Failed to connect to CMS`
 
 **Solutions:**
-- Check `OPTIMIZELY_CMS_URL` is correct in `.env`
-- For non-production environments, set `OPTIMIZELY_CMS_API_URL`
+- Check `OPTIMIZELY_CMS_API_URL` is correct in `.env`, or pass `--host <url>` to target a specific instance
+- For non-production environments, set `OPTIMIZELY_CMS_API_URL` (e.g. `https://api.cmstest.optimizely.com`)
 - For local development with self-signed certificates, add `NODE_TLS_REJECT_UNAUTHORIZED="0"`
 
 ### Config File Not Found
@@ -418,7 +429,7 @@ optimizely-cms-cli config pull --json > manifest.json
 
 **Solutions:**
 - Ensure `optimizely.config.mjs` exists in your project root
-- Or specify the config path: `optimizely-cms-cli config push --config ./path/to/config.mjs`
+- Or specify the config path: `optimizely-cms-cli config push ./path/to/config.mjs`
 
 ### Push Conflicts
 

@@ -742,7 +742,6 @@ describe('GraphClient.getPath() with GraphReference', () => {
       expect.any(String),
       {
         key: '880777d5a2824399b07e93e3ca70668e',
-        metadataLocale: 'en',
         locale: ['en'],
       },
       undefined,
@@ -776,7 +775,6 @@ describe('GraphClient.getPath() with GraphReference', () => {
       expect.any(String),
       {
         key: '880777d5a2824399b07e93e3ca70668e',
-        metadataLocale: 'en',
         locale: ['en'],
       },
       undefined,
@@ -904,7 +902,6 @@ describe('GraphClient.getItems() with GraphReference', () => {
       expect.any(String),
       {
         key: '880777d5a2824399b07e93e3ca70668e',
-        metadataLocale: 'en',
         locale: ['en'],
       },
       undefined,
@@ -935,7 +932,6 @@ describe('GraphClient.getItems() with GraphReference', () => {
       expect.any(String),
       {
         key: '880777d5a2824399b07e93e3ca70668e',
-        metadataLocale: 'en',
         locale: ['en'],
       },
       undefined,

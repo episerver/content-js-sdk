@@ -26,7 +26,7 @@ const defaultOutput = './src/content-types';
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   static override flags = {
     includeReadOnly: Flags.boolean({
-      char: 'i',
+      char: 'r',
       aliases: ['include-read-only'],
       description:
         'Include read-only content types in the manifest. This may include system-generated content types that are not editable in the CMS.',

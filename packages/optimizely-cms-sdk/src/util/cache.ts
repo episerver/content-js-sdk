@@ -29,7 +29,7 @@ const getFilterHash = (typeFilter: (key: string) => boolean): string => {
 const getVariationModeKey = (mode?: VariationMode): string => {
   if (!mode || mode === 'none') return 'none';
   if (mode === 'all') return 'all';
-  return `some-${mode.count}`;
+  return `some-${mode.count}${mode.includeOriginal ? '-orig' : ''}`;
 };
 
 /**

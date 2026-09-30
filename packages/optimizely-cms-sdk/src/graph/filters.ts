@@ -39,7 +39,10 @@ export type ScalarFilter = {
   variables: Record<string, string | string[] | undefined>;
 };
 
-export type VariationMode = 'none' | 'all' | { count: number };
+export type VariationMode =
+  | 'none'
+  | 'all'
+  | { count: number; includeOriginal?: boolean };
 
 export function pathScalarFilter(path: string, host?: string): ScalarFilter {
   const { pathWithTrailingSlash, pathWithoutTrailingSlash } = normalizePath(path);
@@ -86,7 +89,7 @@ export function referenceScalarFilter(reference: {
 export function getVariationMode(variation?: GraphVariationInput): VariationMode {
   if (!variation || variation.include === 'NONE') return 'none';
   if (variation.include === 'ALL') return 'all';
-  return { count: variation.value.length };
+  return { count: variation.value.length, includeOriginal: variation.includeOriginal };
 }
 
 export function getVariationVariables(
@@ -150,5 +153,6 @@ export function getVariationClause(mode: VariationMode): string {
   if (mode === 'none') return '';
   if (mode === 'all') return ', variation: { include: ALL }';
   const values = Array.from({ length: mode.count }, (_, i) => `$v${i + 1}`).join(', ');
-  return `, variation: { include: SOME, value: [${values}] }`;
+  const original = mode.includeOriginal ? ', includeOriginal: true' : '';
+  return `, variation: { include: SOME, value: [${values}]${original} }`;
 }
