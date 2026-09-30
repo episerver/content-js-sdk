@@ -3,22 +3,25 @@ import {
   GraphHttpResponseError,
   OptimizelyGraphError,
 } from './error.js';
-import { logError, SemanticAttributes } from '../telemetry/index.js';
+import { logError, logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { withRequestSpan } from '../telemetry/spans.js';
 import { DEFAULT_GRAPH_URL, DEFAULT_USER_AGENT } from './constants.js';
+import { authModeFor, resolveAuthHeaders, validateAuth } from './auth.js';
 import {
+  type GraphAuth,
   type GraphGetContentOptions,
   type GraphGetItemOptions,
   type GraphGetLinksOptions,
   type GraphOptions,
   type GraphQueryOptions,
   type GraphReference,
+  type GraphSecrets,
   type GraphSlot,
   type PreviewParams,
   type ResolvedFragmentOptions,
   type ResolvedQueryOptions,
   DEFAULT_FRAGMENT_OPTIONS,
-  DEFAULT_QUERY_OPTIONS,
+  defaultQueryOptions,
   normalizeGraphUrl,
   withDefaults,
 } from './options.js';
@@ -37,7 +40,40 @@ export {
   GraphSlot,
   PreviewParams,
 } from './options.js';
-export type { DamMode, GraphFragmentOptions } from './options.js';
+export type {
+  DamMode,
+  GraphActingUser,
+  GraphAuth,
+  GraphAuthContext,
+  GraphAuthHeaders,
+  GraphAuthMode,
+  GraphAuthResolver,
+  GraphFragmentOptions,
+  GraphSecrets,
+} from './options.js';
+
+// RESPONSES
+
+/** Surfaces the `errors` array Graph can return alongside an HTTP 200. */
+function reportResponseErrors(
+  json: any,
+  status: number,
+  request: { query: string; variables: any },
+): void {
+  // Without this, an auth or permission failure returns no data and reads as
+  // "content not found" at the call site.
+  if (!json.errors?.length) return;
+
+  if (!json.data) throw new GraphContentResponseError(json.errors, { status, request });
+
+  // Partial data is still usable, so this stays a warning rather than a throw.
+  logWarning('Graph returned errors alongside partial data', {
+    [SemanticAttributes.HTTP_STATUS_CODE]: status,
+    'graph.errors': json.errors
+      .map((error: { message: string }) => error.message)
+      .join('; '),
+  });
+}
 
 // GRAPH CLIENT
 
@@ -45,6 +81,12 @@ export class GraphClient {
   apiKey: string;
   graphUrl: string;
   userAgent: string;
+
+  /** Which credential each request carries. Unset means the single key is used. */
+  readonly auth?: GraphAuth;
+
+  /** The app key and secret the `hmac` mode signs with. */
+  readonly secrets?: GraphSecrets;
 
   /**
    * Every setting the query builders read that comes from configuration,
@@ -57,12 +99,16 @@ export class GraphClient {
 
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
+    validateAuth(options.auth, options.secrets);
+
     this.apiKey = apiKey;
     this.graphUrl = normalizeGraphUrl(options.graphUrl || DEFAULT_GRAPH_URL);
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
+    this.auth = options.auth;
+    this.secrets = options.secrets;
 
     this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
-    this.queryDefaults = withDefaults(DEFAULT_QUERY_OPTIONS, options.query);
+    this.queryDefaults = withDefaults(defaultQueryOptions(options.auth), options.query);
   }
 
   // TRANSPORT
@@ -82,6 +128,7 @@ export class GraphClient {
       cache,
       slot || 'Current',
       !!previewToken,
+      authModeFor(this.auth, previewToken),
       async span => {
         const url = new URL(this.graphUrl);
 
@@ -92,11 +139,20 @@ export class GraphClient {
           url.searchParams.append('stored', 'true');
         }
 
+        // Serialized up front rather than inline in `fetch`: an HMAC signature
+        // covers a hash of the body, so the resolver has to see the same bytes.
+        const body = JSON.stringify({ query, variables });
+
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
           'User-Agent': this.userAgent,
-          Authorization:
-            previewToken ? `Bearer ${previewToken}` : `epi-single ${this.apiKey}`,
+          ...(await resolveAuthHeaders(
+            this.apiKey,
+            this.auth,
+            previewToken,
+            { url: url.toString(), method: 'POST', body },
+            this.secrets,
+          )),
         };
 
         if (stored) {
@@ -110,10 +166,7 @@ export class GraphClient {
         const response = await fetch(url, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            query,
-            variables,
-          }),
+          body,
         }).catch(err => {
           if (err instanceof TypeError) {
             const optiErr = new OptimizelyGraphError(
@@ -162,6 +215,8 @@ export class GraphClient {
         }
 
         const json = (await response.json()) as any;
+        reportResponseErrors(json, response.status, { query, variables });
+
         return json.data;
       },
     );
@@ -354,6 +409,11 @@ export function config(options: GraphOptions) {
         'Check that your environment variable is set correctly (e.g., process.env.OPTIMIZELY_GRAPH_SINGLE_KEY).',
     );
   }
+
+  // Checked here as well as in the constructor so a malformed `auth` fails when the app
+  // starts up rather than on whichever request happens to build a client first.
+  validateAuth(options.auth, options.secrets);
+
   setGraphConfig(options);
 }
 

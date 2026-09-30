@@ -9,10 +9,12 @@ import type { FilterShape, VariationMode } from '../graph/filters.js';
 const queryCache = new Map<string, string>();
 
 /** The lenient option bag the query builders accept. */
-type QueryOptions = Partial<QueryContext> & FragmentOptions & {
-  filterShape?: FilterShape;
-  variationMode?: VariationMode;
-};
+type QueryOptions = Partial<QueryContext> &
+  FragmentOptions & {
+    filterShape?: FilterShape;
+    variationMode?: VariationMode;
+    publishedOnly?: boolean;
+  };
 
 type QueryGenerator = (contentType: string, options?: QueryOptions) => string;
 
@@ -52,13 +54,19 @@ function createCacheKey(
     richTextFormat,
     compositionDepth,
   } = createQueryContext(options);
-  const { includeBaseFragments = true, filterShape, variationMode } = options;
+  const {
+    includeBaseFragments = true,
+    filterShape,
+    variationMode,
+    publishedOnly = false,
+  } = options;
 
   const filterPart = typeFilter ? `:${getFilterHash(typeFilter)}` : '';
   // Which types own a `composition` changes the query, and differs per endpoint.
   const sectionPart = sectionTypes ? `:${[...sectionTypes].sort().join(',')}` : '';
   const shapePart = filterShape ? `:${filterShape}` : '';
   const variationPart = `:${getVariationModeKey(variationMode)}`;
+  const publishedPart = publishedOnly ? ':published' : '';
 
   return (
     [
@@ -75,7 +83,8 @@ function createCacheKey(
     filterPart +
     sectionPart +
     shapePart +
-    variationPart
+    variationPart +
+    publishedPart
   );
 }
 
