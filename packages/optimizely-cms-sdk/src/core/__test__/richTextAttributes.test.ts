@@ -1,4 +1,6 @@
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { configureAdapter } from '../../context/config.js';
+import { MemoryAdapter } from '../context/memoryAdapter.js';
 import {
   getMarkTag,
   getRichTextElement,
@@ -97,6 +99,22 @@ describe('getRichTextElement', () => {
       src: '/a.png',
       alt: 'A',
       width: '100',
+    });
+  });
+
+  describe('in preview', () => {
+    beforeEach(() => {
+      const adapter = new MemoryAdapter();
+      adapter.set('previewToken', 'token');
+      configureAdapter(adapter);
+    });
+
+    test('an image source gets the preview token', () => {
+      expect(element('image', { src: '/a.png' }).attributes.src).toBe('/a.png?preview_token=token');
+    });
+
+    test('an image without a source gets none', () => {
+      expect(element('image', { alt: 'A' }).attributes).not.toHaveProperty('src');
     });
   });
 });

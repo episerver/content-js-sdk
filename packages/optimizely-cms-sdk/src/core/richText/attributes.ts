@@ -342,8 +342,8 @@ export function getRichTextElement(node: RenderNode): RichTextElement {
   const source = node.attributes ?? {};
   // `buildRenderTree` has already mapped the image `url` to `src`.
   const attributes =
-    elementType === 'image' ?
-      { ...source, src: appendToken(String(source.src ?? ''), readPreviewToken()) }
+    elementType === 'image' && source.src ?
+      { ...source, src: appendToken(String(source.src), readPreviewToken()) }
     : source;
 
   return { tag, selfClosing: !!config?.selfClosing, ...splitAttributes(attributes, tag) };
