@@ -57,6 +57,7 @@ The `type` field defines the data type and can be one of:
 - **`'contentReference'`** - References to content with additional constraints
 - **`'array'`** - Lists of values
 - **`'component'`** - Embedded component types
+- **`'composition'`** - A visual builder tree of rows, columns and components
 
 #### URL Property
 
@@ -235,6 +236,39 @@ const LandingPageType = contentType({
 ```
 
 The `component` type requires a `contentType` field specifying which component type to use.
+
+#### Composition Property
+
+For a visual builder area editors can fill with rows, columns and components — the same tree an experience's built-in composition holds — on any content type:
+
+```ts
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_page',
+  properties: {
+    sidebar: {
+      type: 'composition',
+      displayName: 'Sidebar',
+      allowedTypes: ['_component'],
+      minItems: 1,
+      maxItems: 4,
+    },
+  },
+});
+```
+
+Render it with the same pipeline as the built-in composition, passing the property's `nodes`:
+
+```tsx
+<OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
+```
+
+`allowedTypes` and `restrictedTypes` constrain what the CMS editor may place in the composition. They do not narrow the generated GraphQL query, which always selects every composition element type.
+
+On an `_experience`, declaring a property under the reserved key `composition` overrides the built-in one — use it to restrict what the built-in composition accepts. Any other key defines an additional, independent composition.
+
+> [!NOTE]
+> Composition properties require Optimizely CMS SaaS (and future CMS 14). Older instances reject them on `opti-cms config push`.
 
 ### Indexing Types
 

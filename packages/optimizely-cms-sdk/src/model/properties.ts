@@ -84,8 +84,13 @@ export type FloatProperty = BaseProperty & {
   maximum?: number;
 } & WithEnum<number>;
 
-/** Represents type constraints for "content" properties */
-type ContentBlock =
+/** Represents type constraints for "content" and "contentReference" properties */
+type ContentAndRefBlock =
+  | {
+      contentType: AnyContentType | ContentType | string;
+      allowedTypes?: never;
+      restrictedTypes?: never;
+    }
   | {
       contentType?: never;
       allowedTypes: PermittedTypes[];
@@ -97,15 +102,6 @@ type ContentBlock =
       restrictedTypes: PermittedTypes[];
     };
 
-/** Represents type constraints for "contentReference" properties */
-type ContentReferenceBlock =
-  | {
-      contentType: AnyContentType | ContentType | string;
-      allowedTypes?: never;
-      restrictedTypes?: never;
-    }
-  | ContentBlock;
-
 type BaseContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
 };
@@ -114,9 +110,9 @@ type BaseContentProperty = BaseProperty & {
   type: 'content';
 };
 
-export type ContentReferenceProperty = BaseContentReferenceProperty & ContentReferenceBlock;
+export type ContentReferenceProperty = BaseContentReferenceProperty & ContentAndRefBlock;
 
-export type ContentProperty = BaseContentProperty & ContentBlock;
+export type ContentProperty = BaseContentProperty & ContentAndRefBlock;
 
 export type ArrayItems =
   | StringProperty
@@ -148,10 +144,19 @@ export type ComponentProperty<T extends AnyContentType> = BaseProperty & {
 // - In the GUI is called
 export type LinkProperty = BaseProperty & {
   type: 'link';
-
 };
 
-/** Represents the content type property "Composition" (a nested outline/grid of blocks) */
+/**
+ * Represents the content type property "Composition": a nested tree of rows,
+ * columns and components, the same shape an experience's built-in `composition`
+ * holds.
+ *
+ * Declaring one under the reserved key `composition` overrides the built-in
+ * property of an experience; any other key defines a custom composition.
+ * `allowedTypes`/`restrictedTypes` constrain what the CMS editor may place in
+ * it — they do not narrow the generated query, which always selects every
+ * composition element type.
+ */
 export type CompositionProperty = BaseProperty & {
   type: 'composition';
   minItems?: number;

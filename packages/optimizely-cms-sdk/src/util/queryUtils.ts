@@ -18,7 +18,7 @@ import {
 } from './baseTypeUtil.js';
 import { AnyProperty } from '../model/properties.js';
 import { checkTypeConstraintIssues } from './fragmentConstraintChecks.js';
-import { createFragment } from '../graph/createQuery.js';
+import { createExperienceFragments, createFragment } from '../graph/createQuery.js';
 import { isContract, findExtendingContentTypes } from '../model/index.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import {
@@ -475,6 +475,36 @@ const handleContentProperty: PropertyHandler = (
   return { fields, extraFragments, includesDamAssetsFragments };
 };
 
+/**
+ * A composition property holds a node tree, not linked content, so it selects
+ * the same `ICompositionNode` fragment the built-in `composition` field does
+ * and pulls in the shared composition element fragments.
+ *
+ * `_IExperience` is deliberately left out: the field is read directly, and
+ * GraphQL rejects a document holding a fragment nothing spreads.
+ *
+ * ponytail: `allowedTypes`/`restrictedTypes` are not applied here — every
+ * composition element type stays in the query. Generate a restriction-scoped
+ * `_IComponent` variant per property if query size becomes a problem.
+ */
+const handleCompositionProperty: PropertyHandler = (
+  name: string,
+  _property: AnyProperty,
+  rootName: string,
+  suffix: string,
+  visited: Set<string>,
+  ctx: QueryContext,
+) => {
+  const result = createExperienceFragments(visited, ctx, {
+    includeExperienceFragment: false,
+  });
+
+  return {
+    fields: [`${rootName}${suffix}__${name}:${name} { ...ICompositionNode }`],
+    extraFragments: result.fragments,
+    includesDamAssetsFragments: result.includesDamAssetsFragments,
+  };
+};
 const RICH_TEXT_SELECTION: Record<RichTextFormat, string> = {
   html: 'html',
   json: 'json',
@@ -575,7 +605,7 @@ const PROPERTY_HANDLERS: Record<string, PropertyHandler> = {
   link: handleLinkProperty,
   contentReference: handleContentReferenceProperty,
   array: handleArrayProperty,
-  composition: handleContentProperty,
+  composition: handleCompositionProperty,
 };
 
 // PROPERTY CONVERSION

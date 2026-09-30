@@ -346,6 +346,62 @@ initReactComponentRegistry({
 });
 ```
 
+## Composition Properties
+
+An experience gets a built-in `composition` field for free. Any content type — page, component or experience — can also declare its own composition properties with `type: 'composition'`:
+
+```tsx
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_page',
+  properties: {
+    title: { type: 'string' },
+    sidebar: {
+      type: 'composition',
+      displayName: 'Sidebar',
+      allowedTypes: ['_component'],
+    },
+  },
+});
+```
+
+They hold the same node tree and render through the same pipeline:
+
+```tsx
+export default function ProductPage({ content }: Props) {
+  return (
+    <main>
+      <h1>{content.title}</h1>
+      <aside>
+        <OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
+      </aside>
+    </main>
+  );
+}
+```
+
+`allowedTypes` and `restrictedTypes` restrict what editors may place in the composition; they do not narrow the generated query, which still selects every composition element type.
+
+To restrict the *built-in* composition of an experience, declare a property under the reserved key `composition`:
+
+```tsx
+const LandingExperienceType = contentType({
+  key: 'LandingExperience',
+  baseType: '_experience',
+  properties: {
+    composition: {
+      type: 'composition',
+      allowedTypes: [HeroComponentType, '_component'],
+    },
+  },
+});
+```
+
+This overrides the built-in property rather than adding a second one — `content.composition` keeps working exactly as before.
+
+> [!NOTE]
+> Composition properties require Optimizely CMS SaaS (and future CMS 14).
+
 ## Best Practices
 
 ### Mixing Static and Composed Content

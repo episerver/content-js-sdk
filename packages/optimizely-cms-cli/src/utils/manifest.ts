@@ -95,7 +95,11 @@ export namespace ContentTypeProperties {
   };
 
   // Content/ContentReference properties - allowedTypes/restrictedTypes/contentType must be strings for API format
-  export type Content = Omit<Properties.ContentProperty, 'allowedTypes' | 'restrictedTypes'> & {
+  export type Content = Omit<
+    Properties.ContentProperty,
+    'allowedTypes' | 'restrictedTypes' | 'contentType'
+  > & {
+    contentType?: string;
     allowedTypes?: string[];
     restrictedTypes?: string[];
   };
@@ -117,6 +121,15 @@ export namespace ContentTypeProperties {
   export type RichText = Properties.RichTextProperty;
   export type Json = Properties.JsonProperty;
   export type Link = Properties.LinkProperty;
+  // Composition property - allowedTypes/restrictedTypes must be strings for API format
+  export type Composition = Omit<
+    Properties.CompositionProperty,
+    'allowedTypes' | 'restrictedTypes'
+  > & {
+    allowedTypes?: string[];
+    restrictedTypes?: string[];
+  };
+
   // Component property - contentType must be string for API format
   export type Component = Omit<Properties.ComponentProperty<any>, 'contentType'> & {
     contentType: string;
@@ -144,7 +157,8 @@ export namespace ContentTypeProperties {
     | RichText
     | Json
     | Link
-    | Component;
+    | Component
+    | Composition;
 
   export type All = Array | NonArray;
 }
