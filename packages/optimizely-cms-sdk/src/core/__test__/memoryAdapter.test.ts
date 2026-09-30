@@ -26,17 +26,23 @@ describe('MemoryAdapter', () => {
     expect(adapter.getData()).toEqual({});
   });
 
-  test('run gives fn a context of its own and restores the outer one', () => {
+  test('run starts fn from an empty context', () => {
     const adapter = new MemoryAdapter();
     adapter.set('locale', 'en');
 
-    const inner = adapter.run(() => {
+    expect(adapter.run(() => adapter.get('locale'))).toBeUndefined();
+  });
+
+  test('without AsyncLocalStorage, the run context survives an await', async () => {
+    const adapter = new MemoryAdapter();
+
+    const locale = await adapter.run(async () => {
       adapter.set('locale', 'sv');
+      await new Promise(resolve => setTimeout(resolve, 0));
       return adapter.get('locale');
     });
 
-    expect(inner).toBe('sv');
-    expect(adapter.get('locale')).toBe('en');
+    expect(locale).toBe('sv');
   });
 
   test('with AsyncLocalStorage, concurrent runs do not see each other', async () => {

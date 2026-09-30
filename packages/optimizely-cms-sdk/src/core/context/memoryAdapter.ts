@@ -24,14 +24,10 @@ function createSharedStorage(): AsyncContextStorage {
 
   return {
     getStore: () => shared,
+    // Not restored afterwards: a synchronous restore would drop the context at an async `fn`'s first `await`
     run(store, fn) {
-      const previous = shared;
       shared = store;
-      try {
-        return fn();
-      } finally {
-        shared = previous;
-      }
+      return fn();
     },
   };
 }
