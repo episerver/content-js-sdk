@@ -16,7 +16,6 @@
   const resolved = $derived(
     resolveContentComponent(content, { tag, props, registry }),
   );
-  const hasPreviewAttrs = $derived(Object.keys(resolved.previewAttrs).length > 0);
 </script>
 
 {#snippet rendered()}
@@ -30,7 +29,7 @@
   {/if}
 {/snippet}
 
-{#if hasPreviewAttrs}
+{#if resolved.previewAttrs}
   <div {...resolved.previewAttrs}>{@render rendered()}</div>
 {:else}
   {@render rendered()}

@@ -103,7 +103,7 @@ It returns:
 - `tag` — the tag it used
 - `contentProps` — the content to hand the component
 - `componentProps` — the caller's props, minus the preview attributes
-- `previewAttrs` — the `data-epi-*` props, **always empty outside edit mode**
+- `previewAttrs` — the `data-epi-*` props, or `undefined` when there are none (**always outside edit mode**)
 
 Tag precedence is: an explicit `tag` option, then `content.__tag`, then the tag of the display
 template named by `_metadata.displayOption`, `composition.displayTemplateKey`,
@@ -112,12 +112,7 @@ template named by `_metadata.displayOption`, `composition.displayTemplateKey`,
 Component lookup tries each entry of `_metadata.types` in turn, most specific first, and falls
 back to `__typename`.
 
-Because `previewAttrs` is empty outside edit mode, a binding can decide whether to render a
-wrapper with one check:
-
-```ts
-const needsWrapper = Object.keys(resolved.previewAttrs).length > 0;
-```
+A binding decides whether to render a wrapper by checking `resolved.previewAttrs` directly.
 
 To appear in the same traces as the React components, wrap the render in
 `withComponentRenderSpan`. It emits `optimizely.<framework>.render_component`, a no-op unless

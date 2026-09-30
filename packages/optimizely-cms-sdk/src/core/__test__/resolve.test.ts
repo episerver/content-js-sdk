@@ -102,8 +102,12 @@ describe('splitPreviewAttrs', () => {
   test('outside edit mode the preview attributes are dropped entirely', () => {
     const { previewAttrs, componentProps } = splitPreviewAttrs(props, false);
 
-    expect(previewAttrs).toEqual({});
+    expect(previewAttrs).toBeUndefined();
     expect(componentProps).toEqual({ className: 'card', onClick: 'noop' });
+  });
+
+  test('in edit mode with no data-epi-* props there are no preview attributes', () => {
+    expect(splitPreviewAttrs({ className: 'card' }, true).previewAttrs).toBeUndefined();
   });
 });
 

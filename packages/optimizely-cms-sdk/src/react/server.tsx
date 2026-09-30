@@ -166,12 +166,9 @@ export async function OptimizelyComponent({
         />
       );
 
-      // `previewAttrs` is already empty outside edit mode.
-      if (Object.keys(resolved.previewAttrs).length > 0) {
-        return <div {...resolved.previewAttrs}>{element}</div>;
-      }
-
-      return element;
+      return resolved.previewAttrs ?
+          <div {...resolved.previewAttrs}>{element}</div>
+        : element;
     },
   );
 }

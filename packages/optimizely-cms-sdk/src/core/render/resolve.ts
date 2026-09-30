@@ -53,8 +53,8 @@ export type ResolvedContentComponent<C> = {
   /** Caller props, minus the preview attributes. */
   componentProps: Record<string, unknown>;
 
-  /** `data-epi-*` props. Always empty outside edit mode. */
-  previewAttrs: Record<string, unknown>;
+  /** `data-epi-*` props, or `undefined` when there are none. Always `undefined` outside edit mode. */
+  previewAttrs: Record<string, unknown> | undefined;
 };
 
 /** Gets the display template key from content, checking multiple sources. */
@@ -112,7 +112,10 @@ function findComponent<C>(
 export function splitPreviewAttrs(
   props: Record<string, unknown>,
   isEditMode: boolean,
-): { previewAttrs: Record<string, unknown>; componentProps: Record<string, unknown> } {
+): {
+  previewAttrs: Record<string, unknown> | undefined;
+  componentProps: Record<string, unknown>;
+} {
   const previewAttrs: Record<string, unknown> = {};
   const componentProps: Record<string, unknown> = {};
 
@@ -124,9 +127,9 @@ export function splitPreviewAttrs(
     }
   }
 
-  // Outside edit mode the attributes are never rendered, so the caller should not
-  // have to decide whether wrapping is worth it.
-  return { previewAttrs: isEditMode ? previewAttrs : {}, componentProps };
+  const hasPreviewAttrs = isEditMode && Object.keys(previewAttrs).length > 0;
+
+  return { previewAttrs: hasPreviewAttrs ? previewAttrs : undefined, componentProps };
 }
 
 /**
