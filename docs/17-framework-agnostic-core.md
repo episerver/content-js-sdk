@@ -39,9 +39,8 @@ type ReadableStore<T> = {
 };
 ```
 
-`getSnapshot()` keeps its identity until the state actually changes. That is what React's
-`useSyncExternalStore` requires, and it adapts to a Svelte store or an Angular signal in one
-line:
+`getSnapshot()` keeps its identity until the state changes, so it adapts to any framework in
+one line:
 
 ```ts
 // React
@@ -73,15 +72,14 @@ initComponentRegistry({
 The registry holds components as `unknown` — core has no opinion on what a component is. Pass
 your framework's component type as the type argument when you read one back.
 
-`initForms(handlers)` fills a second registry for Optimizely Forms elements. The two are
-separate so the calls can happen in either order, and so an application using a resolver
-*function* keeps it.
+`initForms(handlers)` fills a second registry for Optimizely Forms elements; the calls can
+happen in either order.
 
 Both registries are global, and `initReactComponentRegistry` writes the same one. A host
-rendering with more than one framework — Astro with React and Svelte islands, say — gives each
-binding its own registry instead, and passes it to `resolveContentComponent` and
-`planGridSection` as `registry`. It is consulted instead of both global registries, with no
-fallback, so register form components in it too (see `mapFormHandlersToContentTypes`).
+rendering with more than one framework (e.g. Astro with React and Svelte islands) gives each
+binding its own registry, passed as `registry` to `resolveContentComponent` and
+`planGridSection`. It replaces both global registries with no fallback, so register form
+components in it too (see `mapFormHandlersToContentTypes`).
 
 ```ts
 import { ComponentRegistry, planGridSection, resolveContentComponent } from '@optimizely/cms-sdk/core';
@@ -145,7 +143,7 @@ type RenderItem<C> =
 
 Every item also carries `key`, `node`, `tag`, `displaySettings` and `previewAttrs`.
 
-The two planners differ in more than recursion, and the difference is load-bearing:
+The two planners shape `content` differently:
 
 - **`planComposition`** is a flat experience section. A component node's `content` is
   `{ ...node.component, __tag }`. A section node's `content` also carries the node's own
@@ -200,8 +198,8 @@ has a working Svelte binding built this way.
 
 ## Live preview
 
-`createContentSavedListener` holds the whole CMS save-event flow: URL normalisation,
-debouncing, the duplicate guard, same-URL detection, and the hard-reload fallback.
+`createContentSavedListener` handles CMS save events: URL normalisation, debouncing,
+duplicate filtering, same-URL detection and the hard-reload fallback.
 
 ```ts
 const listener = createContentSavedListener({
@@ -213,21 +211,14 @@ const listener = createContentSavedListener({
 const stop = listener.start();
 ```
 
-Nothing subscribes until `start()`, so importing the module on a server is safe.
-
-The CMS emits a burst of events for a single save — the page, plus each nested block — which
-`refreshTimeout` coalesces into one navigation. Setting it to `false` navigates immediately and
-falls back to a 50 ms duplicate guard instead.
-
-Call `listener.update(options)` on every render rather than recreating the listener. Bindings
-pass an inline arrow for `onNavigate`, and tearing the listener down would cancel a refresh
-that is already pending.
-
-Without an `onNavigate`, the page hard-reloads via `window.location.replace`.
+- Nothing subscribes until `start()`, so importing on a server is safe.
+- `refreshTimeout` coalesces the burst of events one save emits into a single navigation;
+  `false` navigates immediately, with a 50 ms duplicate guard.
+- Call `listener.update(options)` on every render instead of recreating the listener, which
+  would cancel a pending refresh.
+- Without `onNavigate`, the page hard-reloads.
 
 ## Forms
-
-Three pieces, deliberately separate.
 
 ### The submission store
 
@@ -236,10 +227,8 @@ const submission = createSubmissionStore();
 // { status, error, errorMessage, formSuccess, formError, isSubmitting }
 ```
 
-Separate from the controller because the status is usually read *outside* the form — an alert
-above it, a button in a footer. `errorMessage` is only ever set when a `submitHandler` threw an
-`Error`; a failed built-in POST leaves it undefined, so a template rendering it cannot put
-`Failed to fetch` or a bare status code in front of a visitor.
+Kept separate from the controller so status can be read outside the form. `errorMessage` is
+only set when a `submitHandler` throws an `Error`, never for a failed built-in POST.
 
 ### The controller
 
@@ -255,36 +244,23 @@ Fields register themselves with a validator:
 controller.registerField(name, element, () => isValid, stepIndex);
 ```
 
-Things worth knowing before you write a binding against it:
-
-- **Call `controller.update(settings)` during render**, not in an effect. It merges, so
-  pass only what changed; pass a key as `undefined` to clear it. `submit` can fire
-  before the first effect flushes, and an inline `submitHandler` is a new function every
-  render. Anything in `FormControllerSettings` — `action`, `submitHandler`, `stepIds`,
-  `stepRules`, `scrollToOnSuccess`, `scrollToOnError` — is read at use rather than captured
+- **Call `controller.update(settings)` during render**, not in an effect. It merges; pass a key
+  as `undefined` to clear it. Every `FormControllerSettings` value is read at use, not captured
   at creation.
 - **`stepIds` holds, per step, every id a dependency rule may name it by** (see
-  `getElementIds`). `stepRules` answers jump targets and step visibility from the current
-  field values; `nextStep` follows a jump, otherwise skips hidden steps (never the last), and
-  `prevStep` retraces the path actually taken.
-- **`nextStep` validates only the current step**; `submit` validates every step, including ones
-  that are not on screen, and switches to the step holding the first failure.
-- **Revealing a field is two-phase.** A failed validation sets `fieldToReveal`; the binding
-  calls `controller.revealPendingField()` after rendering, once the step holding it is on
-  screen. Scrolling to a `display: none` element does nothing, which would leave the visitor on
-  a form that silently refuses to send.
-- **`resetToken` is how fields clear.** The inputs are controlled, so a DOM `form.reset()`
-  clears the markup but leaves framework state holding the old values. Fields watch the token
-  and return to their initial value; it starts at 0, so skip the first render.
-- **Field order is tracked separately from registration.** A field re-registers every time its
-  validity flips, so map insertion order drifts from page order. `validateAllFields` returns
-  failures in page order regardless.
-- **DOM work is injectable.** `effects.scrollToElementId` and `effects.revealField` default to
-  the real DOM; pass your own to test the controller headless.
+  `getElementIds`). `nextStep` follows a jump from `stepRules`, otherwise skips hidden steps
+  (never the last); `prevStep` retraces the path taken.
+- **`nextStep` validates only the current step**; `submit` validates every step and switches to
+  the first failure.
+- **Revealing a field is two-phase.** A failed validation sets `fieldToReveal`; call
+  `controller.revealPendingField()` after the step holding it has rendered.
+- **Fields clear on `resetToken`**, returning to their initial value. It starts at 0, so skip
+  the first render.
+- **`validateAllFields` returns failures in page order**, not registration order.
+- **DOM work is injectable** through `effects.scrollToElementId` and `effects.revealField`.
 
-`submit(formData, form)` runs `dropShadowedBlanks` first. Every step stays mounted and enabled,
-so a field name reused across steps reaches `FormData` once per step, and the blank copies would
-otherwise shadow the real answer.
+`submit(formData, form)` runs `dropShadowedBlanks` first, so blank copies of a field name reused
+across steps don't shadow the real answer.
 
 ### Fields, buttons and rules
 
@@ -311,9 +287,8 @@ Dependency rules are pure functions over a map of field values:
 const visible = isElementVisible(rules, fieldValues, elementId);
 ```
 
-The binding owns that map — a satisfied `Hide` beats a satisfied `Show`, and an element no rule
-targets is visible. Core deliberately does not hold the values, so there is only ever one source
-of truth for them.
+The binding owns that map. A satisfied `Hide` beats a satisfied `Show`, and an element no rule
+targets is visible.
 
 ## Context
 
