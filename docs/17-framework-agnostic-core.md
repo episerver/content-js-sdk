@@ -168,20 +168,32 @@ function render(items: RenderItem<MyComponentType>[]): MyElement[] {
     if (item.kind === 'structure')
       return element(getStructureContainer(item, { fallbacks }) ?? Fragment, {
         key: item.key,
+        node: item.node,
+        index: item.index,
         displaySettings: item.displaySettings,
-        ...item.previewAttrs,
         children: render(item.children),
       });
 
-    const resolved = resolveContentComponent<MyComponentType>(item.content);
-    return element(resolved.component ?? Fallback, {
-      key: item.key,
+    const resolved = resolveContentComponent<MyComponentType>(item.content, {
+      props: item.previewAttrs,
+      registry,
+    });
+    const component = element(resolved.component ?? Fallback, {
       content: resolved.contentProps,
       displaySettings: item.displaySettings,
+      ...resolved.componentProps,
     });
+
+    return resolved.previewAttrs ?
+        element('div', { key: item.key, ...resolved.previewAttrs, children: component })
+      : withKey(component, item.key);
   });
 }
 ```
+
+For `planComposition`, render `isWrappedComponent(item)` items inside a wrapper carrying
+`item.previewAttrs` instead of passing them as props. `samples/astro-sample/src/components/svelte/optimizely/`
+has a working Svelte binding built this way.
 
 ## Live preview
 
