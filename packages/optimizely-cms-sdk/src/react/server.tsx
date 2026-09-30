@@ -227,8 +227,6 @@ export function OptimizelyComposition({
       return <div>???</div>;
     }
 
-    const content = item.content as OptimizelyContent;
-
     if (isWrappedComponent(item)) {
       const Wrapper = ComponentWrapper ?? DefaultComponentWrapper;
 
@@ -238,7 +236,7 @@ export function OptimizelyComposition({
           key={item.key}
           displaySettings={item.displaySettings}
         >
-          <OptimizelyComponent content={content} displaySettings={item.displaySettings} />
+          <OptimizelyComponent content={item.content} displaySettings={item.displaySettings} />
         </Wrapper>
       );
     }
@@ -246,7 +244,7 @@ export function OptimizelyComposition({
     return (
       <OptimizelyComponent
         key={item.key}
-        content={content}
+        content={item.content}
         displaySettings={item.displaySettings}
         {...item.previewAttrs}
       />
@@ -318,7 +316,7 @@ export function OptimizelyGridSection({
       if (item.kind === 'component') {
         const component = (
           <OptimizelyComponent
-            content={item.content as OptimizelyContent}
+            content={item.content}
             displaySettings={item.displaySettings}
             {...(ComponentWrapper ? {} : item.previewAttrs)}
           />

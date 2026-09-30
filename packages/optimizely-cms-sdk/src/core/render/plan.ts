@@ -16,6 +16,7 @@ import { getDisplayTemplateTag } from '../../model/displayTemplateRegistry.js';
 import { getPreviewUtils } from '../preview/attributes.js';
 import type { ComponentRegistry } from '../../render/componentRegistry.js';
 import { resolveComponent } from './registry.js';
+import type { OptimizelyContent } from './resolve.js';
 
 /** Display settings after parsing, as a component receives them. */
 export type ParsedDisplaySettings = Record<string, string | boolean> | undefined;
@@ -33,7 +34,7 @@ type RenderItemBase = {
 /** A node holding a component. The binding renders `content` through its component lookup. */
 export type ComponentRenderItem = RenderItemBase & {
   kind: 'component';
-  content: Record<string, unknown>;
+  content: OptimizelyContent & Record<string, unknown>;
   /**
    * Which kind of node produced this item.
    *

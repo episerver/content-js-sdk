@@ -4,7 +4,6 @@
     getStructureContainer,
     planGridSection,
     type ExperienceNode,
-    type OptimizelyContent,
     type GridRenderItem,
   } from '@optimizely/cms-sdk/core';
   import OptimizelyComponent from './OptimizelyComponent.svelte';
@@ -23,7 +22,7 @@
   {#each items as item}
     {#if item.kind === 'component'}
       <OptimizelyComponent
-        content={item.content as OptimizelyContent}
+        content={item.content}
         displaySettings={item.displaySettings}
         {...item.previewAttrs}
       />

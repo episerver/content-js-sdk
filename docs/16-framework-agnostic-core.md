@@ -139,7 +139,7 @@ description of what to render. Neither produces any element.
 
 ```ts
 type RenderItem<C> =
-  | { kind: 'component'; source: 'component' | 'section'; content: Record<string, unknown>; … }
+  | { kind: 'component'; source: 'component' | 'section'; content: OptimizelyContent; … }
   | { kind: 'structure'; nodeType: string; index: number; globalComponent: C | undefined;
       children: GridRenderItem<C>[]; … }
   | { kind: 'unknown'; … };
