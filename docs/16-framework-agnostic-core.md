@@ -326,14 +326,10 @@ host serving one request at a time, but not on a server handling concurrent requ
 
 ## Rich text
 
-Rich text is already framework-neutral. `BaseRichTextRenderer` walks the document and calls two
-abstract methods; a binding supplies `createElement` and `createTextNode` and nothing else.
-
-`buildRenderTree`, `resolveRichTextNodes`, `createElementData`, `defaultElementTypeMap` and
-`defaultMarkTypeMap` are all exported from `./core`, as are the per-element attribute helpers —
-`splitAttributes` (separates HTML attributes from CSS declarations), `getLinkAttributes` and
-`getImageAttributes` (which applies the preview token). A binding only maps the attribute names
-onto its own.
+`getRichTextTree(content)` turns a rich-text field into a tree of `RenderNode`s. A binding walks it
+with three helpers: `getRichTextElement(node)` gives an element node's `tag`, `selfClosing`,
+`attributes` and `style` (with the image preview token applied); `getMarkTag(mark)` gives a text
+mark's tag; and `toStyleString(style)` writes the style for frameworks that take a string.
 
 ## What stays in a binding
 

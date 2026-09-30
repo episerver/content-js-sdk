@@ -11,7 +11,17 @@
 
 import { appendToken } from '../../util/preview.js';
 import { getContextData } from '../../context/config.js';
-import type { ImageElement, LinkElement } from '../../components/richText/renderer.js';
+import {
+  buildRenderTree,
+  createElementData,
+  defaultElementTypeMap,
+  defaultMarkTypeMap,
+  resolveRichTextNodes,
+  type ImageElement,
+  type LinkElement,
+  type RenderNode,
+  type RichTextPropsBase,
+} from '../../components/richText/renderer.js';
 
 /**
  * CSS properties that should be moved to the style object
@@ -317,3 +327,41 @@ export function getImageAttributes(element: ImageElement) {
     loading: element.loading,
   };
 }
+
+/** The render tree for rich-text content, given as the document object or its JSON string. */
+export const getRichTextTree = (
+  content: RichTextPropsBase['content'],
+  { decodeHtmlEntities = true }: { decodeHtmlEntities?: boolean } = {},
+): RenderNode[] => buildRenderTree(resolveRichTextNodes(content), { decodeHtmlEntities });
+
+export type RichTextElement = SplitAttributes & {
+  tag: string;
+  /** Rendered without children, like `img` or `br`. */
+  selfClosing: boolean;
+};
+
+/** The tag, attributes and styles for a rich-text element node, with the image preview token applied. */
+export function getRichTextElement(node: RenderNode): RichTextElement {
+  const elementType = node.elementType?.toLowerCase() ?? '';
+  const { tag, config } = defaultElementTypeMap[elementType] ?? { tag: 'span' };
+  const source = node.attributes ?? {};
+  const attributes =
+    elementType === 'image' ?
+      { ...source, ...getImageAttributes(createElementData('image', source) as ImageElement) }
+    : source;
+
+  return { tag, selfClosing: !!config?.selfClosing, ...splitAttributes(attributes, tag) };
+}
+
+/** The tag for a rich-text mark such as `bold`, or `span` when it is unknown. */
+export const getMarkTag = (mark: string): string =>
+  defaultMarkTypeMap[mark.toLowerCase()] ?? 'span';
+
+const toKebabCase = (property: string) =>
+  property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+
+/** Writes a camelCased style object as a CSS declaration string, or `undefined` when empty. */
+export const toStyleString = (style: Record<string, string>): string | undefined =>
+  Object.entries(style)
+    .map(([property, value]) => `${toKebabCase(property)}: ${value}`)
+    .join('; ') || undefined;

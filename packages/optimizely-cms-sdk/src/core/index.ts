@@ -114,39 +114,14 @@ export { isFormButtonNode, partitionFormNodes } from '../forms/nodes.js';
 export * from '../forms/validation.js';
 
 // Rich text
-export { BaseRichTextRenderer } from '../components/richText/base.js';
-export type { BaseRendererConfig } from '../components/richText/base.js';
+export type { RenderNode, RichTextPropsBase } from '../components/richText/renderer.js';
 export {
-  buildRenderTree,
-  resolveRichTextNodes,
-  createElementData,
-  defaultElementTypeMap,
-  defaultMarkTypeMap,
-} from '../components/richText/renderer.js';
-export type {
-  Node,
-  Element,
-  Text,
-  RenderNode,
-  RendererConfig,
-  ElementType,
-  MarkType,
-  HtmlComponentConfig,
-  BaseElementRendererProps,
-  BaseLeafRendererProps,
-  BaseElementMap,
-  BaseLeafMap,
-  RichTextPropsBase,
-  LinkElement,
-  ImageElement,
-  TableElement,
-  TableCellElement,
-  GenericElement,
-  GenericElementType,
-  BaseElement,
-} from '../components/richText/renderer.js';
-export { splitAttributes, getLinkAttributes, getImageAttributes } from './richText/attributes.js';
-export type { SplitAttributes } from './richText/attributes.js';
+  getRichTextTree,
+  getRichTextElement,
+  getMarkTag,
+  toStyleString,
+} from './richText/attributes.js';
+export type { RichTextElement } from './richText/attributes.js';
 
 // Experience node types
 export type {
