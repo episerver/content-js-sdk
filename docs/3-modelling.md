@@ -250,9 +250,6 @@ const ProductPageType = contentType({
       type: 'composition',
       format: 'grid',
       displayName: 'Sidebar',
-      allowedTypes: ['_component'],
-      minItems: 1,
-      maxItems: 4,
     },
   },
 });
@@ -273,12 +270,21 @@ Render it with the same pipeline as the built-in composition, passing the proper
 
 Both values are reserved: other property types may declare a `format`, but not `'grid'` or `'outline'`. `opti-cms config push` rejects that.
 
-`allowedTypes` and `restrictedTypes` constrain what the CMS editor may place in the composition. They do not narrow the generated GraphQL query, which always selects every composition element type.
+`allowedTypes` and `restrictedTypes` are optional and control what an editor may place in the composition. Leave them out and any composition element is allowed. Either way they do not narrow the generated GraphQL query, which always selects every composition element type. `minItems` and `maxItems` are not supported: pushing them is rejected.
 
-On an `_experience`, declaring a property under the reserved key `composition` overrides the built-in one — use it to restrict what the built-in composition accepts. Any other key defines an additional, independent composition.
+```ts
+sidebar: {
+  type: 'composition',
+  format: 'grid',
+  allowedTypes: [CardElementType, '_component'],
+  restrictedTypes: [LegacyBannerType],
+},
+```
 
 > [!IMPORTANT]
 > Composition properties are only accepted on `_experience` content types. On a page, component or section, `opti-cms config push` fails with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types`. Use a content area (`type: 'array'` of `type: 'content'`) on those types instead. Sections keep their inherited built-in `composition` and cannot declare extra ones.
+>
+> The key `composition` is reserved on an experience for its built-in property; declaring it fails with `The property name 'composition' is reserved for metadata for this content type`. Give the property any other key.
 >
 > They also require Optimizely CMS SaaS (and future CMS 14).
 

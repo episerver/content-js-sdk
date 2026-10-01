@@ -197,37 +197,23 @@ describe('toSchema', () => {
       nodes,
     });
 
-    it('should validate composition property as a composition node', () => {
+    it('should validate a composition property and its nested nodes', () => {
       const ct = contentType({
         key: 'CompositionTest',
-        baseType: '_component',
+        baseType: '_experience',
         displayName: 'Composition Test',
         properties: {
-          blocks: { type: 'composition', format: 'grid', allowedTypes: ['*'] },
+          blocks: { type: 'composition', format: 'grid' },
         },
       });
       const schema = toSchema(ct);
-      expect(schema.safeParse({ ...validBase, blocks: node() }).success).toBe(true);
-      expect(schema.safeParse({ ...validBase, blocks: 'not-a-node' }).success).toBe(false);
-    });
 
-    it('should enforce minItems and maxItems on composition nodes', () => {
-      const ct = contentType({
-        key: 'CompositionMinMaxTest',
-        baseType: '_component',
-        displayName: 'Composition MinMax Test',
-        properties: {
-          blocks: { type: 'composition', format: 'grid', allowedTypes: ['*'], minItems: 1, maxItems: 2 },
-        },
-      });
-      const schema = toSchema(ct);
-      expect(schema.safeParse({ ...validBase, blocks: node([]) }).success).toBe(false);
       expect(schema.safeParse({ ...validBase, blocks: node([leaf('a')]) }).success).toBe(
         true,
       );
+      expect(schema.safeParse({ ...validBase, blocks: 'not-a-node' }).success).toBe(false);
       expect(
-        schema.safeParse({ ...validBase, blocks: node([leaf('a'), leaf('b'), leaf('c')]) })
-          .success,
+        schema.safeParse({ ...validBase, blocks: node(['not-a-node']) }).success,
       ).toBe(false);
     });
   });

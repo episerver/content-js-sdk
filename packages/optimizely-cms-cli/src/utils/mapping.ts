@@ -218,14 +218,8 @@ export const validateContentAreaConstraints = (
         name => Array.isArray(target[name]) && target[name].length === 0,
       );
 
-      // CMS silently drops `contentType` on content properties, leaving them unrestricted
-      if (!isContentReference && target.contentType) {
-        errors.push(
-          `${location}: unsupported type constraint. ` +
-            `"contentType" is only supported on contentReference properties, use "allowedTypes" or "restrictedTypes" instead.`,
-        );
-      } else if (emptyLists.length > 0 && !hasConstraints) {
-        // empty lists dropped only when unconstrained otherwise
+      // empty lists dropped only when unconstrained otherwise
+      if (emptyLists.length > 0 && !hasConstraints) {
         errors.push(
           `${location}: empty type constraints. ` +
             `${emptyLists.map(name => `"${name}"`).join(' and ')} must list at least one content type, or be removed.`,
@@ -238,7 +232,7 @@ export const validateContentAreaConstraints = (
       } else if (!target.contentType && !hasConstraints) {
         errors.push(
           `${location}: missing type constraints. ` +
-            `Declare ${isContentReference ? '"contentType", or ' : ''}"allowedTypes"/"restrictedTypes", to define which content types are permitted.`,
+            `Declare "contentType", or "allowedTypes"/"restrictedTypes", to define which content types are permitted.`,
         );
       }
     }

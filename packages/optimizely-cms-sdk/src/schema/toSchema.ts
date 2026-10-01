@@ -3,7 +3,6 @@ import type {
   AnyProperty,
   ArrayProperty,
   ArrayItems,
-  CompositionProperty,
   FloatProperty,
   IntegerProperty,
   StringProperty,
@@ -413,25 +412,6 @@ function validateArray(
   }
 }
 
-function validateComposition(
-  value: unknown,
-  property: CompositionProperty,
-  path: string[],
-  errors: ValidationError[],
-) {
-  validateExperienceNode(value, path, errors);
-  if (typeof value !== 'object' || value === null) return;
-
-  const nodes = (value as Record<string, unknown>).nodes;
-  const nodeCount = Array.isArray(nodes) ? nodes.length : 0;
-  if (property.minItems !== undefined && nodeCount < property.minItems) {
-    addError(errors, path, `Composition must have at least ${property.minItems} nodes`);
-  }
-  if (property.maxItems !== undefined && nodeCount > property.maxItems) {
-    addError(errors, path, `Composition must have at most ${property.maxItems} nodes`);
-  }
-}
-
 function validateProperty(
   value: unknown,
   property: AnyProperty,
@@ -509,7 +489,8 @@ function validateProperty(
       validateArray(value, property, path, errors, visited);
       break;
     case 'composition':
-      validateComposition(value, property, path, errors);
+      // A composition takes no constraints: only its node tree is validated.
+      validateExperienceNode(value, path, errors);
       break;
   }
 }

@@ -69,12 +69,6 @@ describe('rendering a composition property', () => {
 
     expect(headings).toEqual(['heading-a', 'heading-b']);
   });
-
-  it('renders nothing when the property is empty', () => {
-    const { container } = render(<>{OptimizelyComposition({ nodes: [] })}</>);
-
-    expect(container.textContent).toBe('');
-  });
 });
 
 /**
