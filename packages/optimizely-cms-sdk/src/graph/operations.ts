@@ -17,7 +17,7 @@ import { setContext } from '../context/config.js';
 import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
-import { SemanticAttributes } from '../telemetry/index.js';
+import { SemanticAttributes, logWarning } from '../telemetry/index.js';
 import {
   withGetContentByPathSpan,
   withGetPreviewContentSpan,
@@ -28,10 +28,12 @@ import {
   type GraphGetContentOptions,
   type GraphGetItemOptions,
   type GraphGetLinksOptions,
+  type GraphGetPreviewOptions,
   type GraphQueryOptions,
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type TaxonomyTerm,
   type ResolvedQueryOptions,
   fragmentContext,
   parseGraphReference,
@@ -125,6 +127,7 @@ async function resolveFormNodes<T>(
   item: T,
   options: {
     damEnabled: boolean;
+    taxonomyEnabled?: boolean;
     sectionTypes?: ReadonlySet<string>;
     previewToken?: string;
     cache?: boolean;
@@ -163,7 +166,7 @@ async function resolveFormNodes<T>(
       // Built here rather than delegating to `getContent`, which would spend a
       // metadata round trip rediscovering a content type we already know.
       const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
-        ...fragmentContext(context, options.damEnabled),
+        ...fragmentContext(context, options.damEnabled, options.taxonomyEnabled),
         formsEnabled: true,
         sectionTypes: options.sectionTypes,
         filterShape: filter.filterShape,
@@ -188,6 +191,163 @@ async function resolveFormNodes<T>(
   );
 
   return item;
+}
+
+// TAXONOMY HIERARCHY RESOLUTION
+
+const PARENT_FIELDS = 'key displayName';
+const PARENT_DEPTH = `{ ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} } } } } }`;
+
+const TAXONOMY_BATCH_SIZE = 100;
+
+const RESOLVE_TAXONOMY_QUERY = `
+query ResolveTaxonomyTerms($keys: [String!]!) {
+  _TaxonomyTerm(where: { _metadata: { key: { in: $keys } } }) {
+    items {
+      _metadata {
+        key
+        displayName
+        description
+        taxonomy
+        usage
+        parent ${PARENT_DEPTH}
+      }
+    }
+  }
+}
+`;
+
+type TermMetadata = {
+  key: string;
+  displayName: string | null;
+  description?: string | null;
+  taxonomy?: string | null;
+  usage?: string | null;
+  parent?: { key: string; displayName: string | null; parent?: TermMetadata['parent'] } | null;
+};
+
+function buildPath(meta: TermMetadata): Array<{ key: string; displayName: string | null }> {
+  const chain: Array<{ key: string; displayName: string | null }> = [];
+  let current: TermMetadata['parent'] = { key: meta.key, displayName: meta.displayName, parent: meta.parent };
+  while (current) {
+    chain.push({ key: current.key, displayName: current.displayName });
+    current = current.parent;
+  }
+  chain.reverse();
+  return chain;
+}
+
+function metadataToTaxonomyTerm(key: string, meta: TermMetadata | undefined): TaxonomyTerm {
+  if (!meta) {
+    return {
+      key,
+      displayName: null,
+      description: null,
+      taxonomy: null,
+      usage: null,
+      sortOrder: null,
+      isAvailable: null,
+      isSelectable: null,
+      path: [{ key, displayName: null }],
+    };
+  }
+
+  return {
+    key,
+    displayName: meta.displayName,
+    description: meta.description ?? null,
+    taxonomy: meta.taxonomy ?? null,
+    usage: meta.usage ?? null,
+    sortOrder: null,
+    isAvailable: null,
+    isSelectable: null,
+    path: buildPath(meta),
+  };
+}
+
+/**
+ * Per-endpoint, per-locale cache for resolved taxonomy terms.
+ *
+ * Taxonomy terms change rarely compared to content, so caching them for the
+ * lifetime of the process avoids redundant `_TaxonomyTerm` queries when
+ * multiple content items share the same categories (e.g., 20 items on a page).
+ *
+ * Follows the same pattern as {@linkcode sectionTypesByEndpoint}.
+ */
+const taxonomyTermCache = new Map<string, Map<string, TaxonomyTerm>>();
+
+function taxonomyCacheKey(context: GraphClientContext, locale: string | undefined): string {
+  return `${context.graphUrl}::${context.apiKey}::${locale ?? ''}`;
+}
+
+export function clearTaxonomyCache(): void {
+  taxonomyTermCache.clear();
+}
+
+async function resolveTaxonomyTerms(
+  context: GraphClientContext,
+  termKeys: string[],
+  locale: string | undefined,
+): Promise<TaxonomyTerm[] | undefined> {
+  if (termKeys.length === 0) return [];
+
+  const cacheKey = taxonomyCacheKey(context, locale);
+  let localCache = taxonomyTermCache.get(cacheKey);
+  if (!localCache) {
+    localCache = new Map();
+    taxonomyTermCache.set(cacheKey, localCache);
+  }
+
+  const cached: TaxonomyTerm[] = [];
+  const uncachedKeys: string[] = [];
+
+  for (const key of [...new Set(termKeys)]) {
+    const hit = localCache.get(key);
+    if (hit) {
+      cached.push(hit);
+    } else {
+      uncachedKeys.push(key);
+    }
+  }
+
+  if (uncachedKeys.length > 0) {
+    try {
+      const batches: string[][] = [];
+      for (let i = 0; i < uncachedKeys.length; i += TAXONOMY_BATCH_SIZE) {
+        batches.push(uncachedKeys.slice(i, i + TAXONOMY_BATCH_SIZE));
+      }
+
+      const batchResults = await Promise.all(
+        batches.map(batch =>
+          context.request(
+            RESOLVE_TAXONOMY_QUERY,
+            { keys: batch, ...(locale && { locale }) },
+            undefined,
+            true,
+          ),
+        ),
+      );
+
+      const fetchedMap = new Map<string, TermMetadata>();
+      for (const data of batchResults) {
+        const items: Array<{ _metadata: TermMetadata }> =
+          data?._TaxonomyTerm?.items ?? [];
+        for (const item of items) {
+          fetchedMap.set(item._metadata.key, item._metadata);
+        }
+      }
+
+      for (const key of uncachedKeys) {
+        const term = metadataToTaxonomyTerm(key, fetchedMap.get(key));
+        localCache.set(key, term);
+      }
+    } catch {
+      logWarning('Taxonomy hierarchy resolution failed; resolvedCategories will be undefined');
+      return undefined;
+    }
+  }
+
+  return termKeys.map(key => localCache!.get(key) ?? metadataToTaxonomyTerm(key, undefined));
 }
 
 // METADATA
@@ -243,11 +403,16 @@ async function getContentMetaData(
 
   // Determine if DAM is enabled based on the presence of cmp_Asset type
   // The metadata query always probes for cmp_Asset; forced modes just ignore it.
-  const { dam } = context.fragmentDefaults;
+  const { dam, taxonomy } = context.fragmentDefaults;
   const damEnabled =
     dam === 'on' ? true
     : dam === 'off' ? false
     : data.damAssetType !== null;
+
+  const taxonomyEnabled =
+    taxonomy === 'on' ? true
+    : taxonomy === 'off' ? false
+    : data.taxonomyType !== null;
 
   // The probe covers a form in a composition. Content type checks cover
   // the form container itself and forms in content areas.
@@ -262,6 +427,7 @@ async function getContentMetaData(
     return {
       contentTypeName: null,
       damEnabled,
+      taxonomyEnabled,
       formsEnabled: needsForms,
       sectionTypes,
     };
@@ -279,7 +445,7 @@ async function getContentMetaData(
     );
   }
 
-  return { contentTypeName, damEnabled, formsEnabled: needsForms, sectionTypes };
+  return { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled: needsForms, sectionTypes };
 }
 
 // CONTENT FETCHING
@@ -298,7 +464,7 @@ export async function getContentByPath<T = any>(
     const variationVars = getVariationVariables(options?.variation);
     const variables = { ...filter.variables, ...variationVars };
 
-    const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+    const { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled, sectionTypes } =
       await getContentMetaData(
         context,
         filter,
@@ -316,7 +482,7 @@ export async function getContentByPath<T = any>(
 
     try {
       const query = createMultipleContentQuery(contentTypeName, {
-        ...fragmentContext(context, damEnabled),
+        ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
@@ -333,10 +499,11 @@ export async function getContentByPath<T = any>(
         queryOptions.stored,
       )) as ItemsResponse<T>;
 
-      return Promise.all(
+      const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
           resolveFormNodes(context, liftSectionNodes(removeTypePrefix(item)), {
             damEnabled,
+            taxonomyEnabled,
             sectionTypes,
             cache: queryOptions.cache,
             slot: queryOptions.slot,
@@ -344,6 +511,25 @@ export async function getContentByPath<T = any>(
           }),
         ) ?? [],
       );
+
+      if (options?.resolveTaxonomy && taxonomyEnabled) {
+        await Promise.all(
+          items.map(async (item: any) => {
+            const categories: string[] | undefined = item?._metadata?.categories;
+            if (categories && categories.length > 0) {
+              item._metadata.resolvedCategories = await resolveTaxonomyTerms(
+                context,
+                categories,
+                item?._metadata?.locale,
+              );
+            } else if (categories) {
+              item._metadata.resolvedCategories = [];
+            }
+          }),
+        );
+      }
+
+      return items;
     } catch (error) {
       if (error instanceof GraphMissingContentTypeError) {
         return [];
@@ -357,14 +543,14 @@ export async function getContentByPath<T = any>(
 export async function getPreviewContent(
   context: GraphClientContext,
   params: PreviewParams,
-  options?: GraphQueryOptions,
+  options?: GraphGetPreviewOptions,
 ) {
   return withGetPreviewContentSpan(params, async span => {
     const filter = previewScalarFilter(params);
     const queryOptions = resolveQueryOptions(context, options);
 
     // A preview exists to show the draft, so the published filter never applies here.
-    const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+    const { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled, sectionTypes } =
       await getContentMetaData(
         context,
         filter,
@@ -414,21 +600,34 @@ export async function getPreviewContent(
       queryOptions.stored,
     );
 
-    return decorateWithContext(
-      await resolveFormNodes(
-        context,
-        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
-        {
-          damEnabled,
-          sectionTypes,
-          previewToken: params.preview_token,
-          cache: false,
-          slot: queryOptions.slot,
-          publishedOnly: false,
-        },
-      ),
-      params,
+    const result = await resolveFormNodes(
+      context,
+      liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+      {
+        damEnabled,
+        taxonomyEnabled,
+        sectionTypes,
+        previewToken: params.preview_token,
+        cache: false,
+        slot: queryOptions.slot,
+        publishedOnly: false,
+      },
     );
+
+    if (result && options?.resolveTaxonomy && taxonomyEnabled) {
+      const categories: string[] | undefined = result?._metadata?.categories;
+      if (categories && categories.length > 0) {
+        result._metadata.resolvedCategories = await resolveTaxonomyTerms(
+          context,
+          categories,
+          params.loc,
+        );
+      } else if (categories) {
+        result._metadata.resolvedCategories = [];
+      }
+    }
+
+    return decorateWithContext(result, params);
   });
 }
 
@@ -456,7 +655,7 @@ export async function getContent(
     // rarely the published one.
     const publishedOnly = queryOptions.publishedOnly && !previewToken && !ref.version;
 
-    const { contentTypeName, damEnabled, formsEnabled, sectionTypes } =
+    const { contentTypeName, damEnabled, taxonomyEnabled, formsEnabled, sectionTypes } =
       await getContentMetaData(
         context,
         filter,
@@ -473,7 +672,7 @@ export async function getContent(
 
     try {
       const query = createSingleContentQuery(contentTypeName, {
-        ...fragmentContext(context, damEnabled),
+        ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
         filterShape: filter.filterShape,
@@ -489,11 +688,12 @@ export async function getContent(
         queryOptions.stored,
       );
 
-      return resolveFormNodes(
+      const result = await resolveFormNodes(
         context,
         liftSectionNodes(removeTypePrefix(response?._Content?.item)),
         {
           damEnabled,
+          taxonomyEnabled,
           sectionTypes,
           previewToken,
           cache: queryOptions.cache,
@@ -501,6 +701,21 @@ export async function getContent(
           publishedOnly,
         },
       );
+
+      if (result && options?.resolveTaxonomy && taxonomyEnabled) {
+        const categories: string[] | undefined = result?._metadata?.categories;
+        if (categories && categories.length > 0) {
+          result._metadata.resolvedCategories = await resolveTaxonomyTerms(
+            context,
+            categories,
+            ref.locale,
+          );
+        } else if (categories) {
+          result._metadata.resolvedCategories = [];
+        }
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof GraphMissingContentTypeError) {
         return null;

@@ -34,6 +34,7 @@ export {
   GraphGetContentOptions,
   GraphGetItemOptions,
   GraphGetLinksOptions,
+  GraphGetPreviewOptions,
   GraphOptions,
   GraphQueryOptions,
   GraphReference,
@@ -50,6 +51,8 @@ export type {
   GraphAuthResolver,
   GraphFragmentOptions,
   GraphSecrets,
+  TaxonomyTerm,
+  TaxonomyMode,
 } from './options.js';
 
 // RESPONSES

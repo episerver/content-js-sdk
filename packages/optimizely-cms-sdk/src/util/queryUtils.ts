@@ -106,6 +106,11 @@ export type QueryContext = {
    */
   formsEnabled: boolean;
   /**
+   * Enable taxonomy category support in the ItemMetadata fragment.
+   * Auto-detected from GraphQL schema introspection.
+   */
+  taxonomyEnabled: boolean;
+  /**
    * Nesting depth for ordinary composition fragments. Configurable via
    * `config({ compositionDepth })`.
    */
@@ -177,6 +182,7 @@ export const createQueryContext = (
   maxThreshold: options.maxThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS,
   formsEnabled: options.formsEnabled ?? false,
+  taxonomyEnabled: options.taxonomyEnabled ?? false,
   compositionDepth: options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH,
   typeFilter: options.typeFilter,
   sectionTypes: options.sectionTypes,
