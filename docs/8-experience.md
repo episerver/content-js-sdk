@@ -348,16 +348,17 @@ initReactComponentRegistry({
 
 ## Composition Properties
 
-An experience gets a built-in `composition` field for free. Any content type — page, component or experience — can also declare its own composition properties with `type: 'composition'`:
+An experience gets a built-in `composition` field for free. It can also declare further composition properties with `type: 'composition'`, each an independent visual builder area:
 
 ```tsx
 const ProductPageType = contentType({
   key: 'ProductPage',
-  baseType: '_page',
+  baseType: '_experience',
   properties: {
     title: { type: 'string' },
     sidebar: {
       type: 'composition',
+      format: 'grid',
       displayName: 'Sidebar',
       allowedTypes: ['_component'],
     },
@@ -380,6 +381,8 @@ export default function ProductPage({ content }: Props) {
 }
 ```
 
+`format` is required: `'grid'` for the row-and-column layout the built-in composition uses, or `'outline'` for a flat ordered list of components. Both values are reserved for composition properties — any other property type using one is rejected on push.
+
 `allowedTypes` and `restrictedTypes` restrict what editors may place in the composition; they do not narrow the generated query, which still selects every composition element type.
 
 To restrict the *built-in* composition of an experience, declare a property under the reserved key `composition`:
@@ -391,6 +394,7 @@ const LandingExperienceType = contentType({
   properties: {
     composition: {
       type: 'composition',
+      format: 'grid',
       allowedTypes: [HeroComponentType, '_component'],
     },
   },
@@ -399,8 +403,10 @@ const LandingExperienceType = contentType({
 
 This overrides the built-in property rather than adding a second one — `content.composition` keeps working exactly as before.
 
-> [!NOTE]
-> Composition properties require Optimizely CMS SaaS (and future CMS 14).
+> [!IMPORTANT]
+> The CMS only accepts composition properties on `_experience` content types. Declaring one on a page, component or section makes `opti-cms config push` fail with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types` — use a content area there instead. Sections keep their inherited built-in `composition` and cannot add more.
+>
+> They also require Optimizely CMS SaaS (and future CMS 14).
 
 ## Best Practices
 

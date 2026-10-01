@@ -51,6 +51,7 @@ export const ProductPage = contentType({
     },
     sidebar: {
       type: 'composition',
+      format: 'grid',
       displayName: 'Sidebar',
       sortOrder: 6,
       allowedTypes: ['_component'],

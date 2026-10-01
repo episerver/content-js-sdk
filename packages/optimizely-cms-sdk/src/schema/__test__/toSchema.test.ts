@@ -203,7 +203,7 @@ describe('toSchema', () => {
         baseType: '_component',
         displayName: 'Composition Test',
         properties: {
-          blocks: { type: 'composition', allowedTypes: ['*'] },
+          blocks: { type: 'composition', format: 'grid', allowedTypes: ['*'] },
         },
       });
       const schema = toSchema(ct);
@@ -217,7 +217,7 @@ describe('toSchema', () => {
         baseType: '_component',
         displayName: 'Composition MinMax Test',
         properties: {
-          blocks: { type: 'composition', allowedTypes: ['*'], minItems: 1, maxItems: 2 },
+          blocks: { type: 'composition', format: 'grid', allowedTypes: ['*'], minItems: 1, maxItems: 2 },
         },
       });
       const schema = toSchema(ct);

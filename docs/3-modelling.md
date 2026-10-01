@@ -239,15 +239,16 @@ The `component` type requires a `contentType` field specifying which component t
 
 #### Composition Property
 
-For a visual builder area editors can fill with rows, columns and components — the same tree an experience's built-in composition holds — on any content type:
+For an extra visual builder area editors can fill with rows, columns and components, alongside the built-in one an experience already has:
 
 ```ts
 const ProductPageType = contentType({
   key: 'ProductPage',
-  baseType: '_page',
+  baseType: '_experience',
   properties: {
     sidebar: {
       type: 'composition',
+      format: 'grid',
       displayName: 'Sidebar',
       allowedTypes: ['_component'],
       minItems: 1,
@@ -263,12 +264,23 @@ Render it with the same pipeline as the built-in composition, passing the proper
 <OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
 ```
 
+`format` is required and picks the editing layout:
+
+| Format | Editing experience |
+| --- | --- |
+| `'grid'` | Rows and columns, arranged visually. Matches the built-in composition of an experience. |
+| `'outline'` | A flat, ordered list of components, without row/column layout. |
+
+Both values are reserved: other property types may declare a `format`, but not `'grid'` or `'outline'`. `opti-cms config push` rejects that.
+
 `allowedTypes` and `restrictedTypes` constrain what the CMS editor may place in the composition. They do not narrow the generated GraphQL query, which always selects every composition element type.
 
 On an `_experience`, declaring a property under the reserved key `composition` overrides the built-in one — use it to restrict what the built-in composition accepts. Any other key defines an additional, independent composition.
 
-> [!NOTE]
-> Composition properties require Optimizely CMS SaaS (and future CMS 14). Older instances reject them on `opti-cms config push`.
+> [!IMPORTANT]
+> Composition properties are only accepted on `_experience` content types. On a page, component or section, `opti-cms config push` fails with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types`. Use a content area (`type: 'array'` of `type: 'content'`) on those types instead. Sections keep their inherited built-in `composition` and cannot declare extra ones.
+>
+> They also require Optimizely CMS SaaS (and future CMS 14).
 
 ### Indexing Types
 
