@@ -10,7 +10,6 @@ export const BlogExperienceContentType = contentType({
   key: 'BlogExperience',
   displayName: 'Blog Experience',
   baseType: '_experience',
-  mayContainTypes: ['*'],
   properties: {
     title: {
       type: 'string',
