@@ -5,7 +5,8 @@ export const prerender = false;
 import type { PreviewParams } from '@optimizely/cms-sdk';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
-import PreviewPage from '@/components/react/PreviewPage';
+import ContentPage from '@/components/react/ContentPage';
+import PreviewListener from '@/components/react/PreviewListener';
 
 initOptimizely();
 
@@ -21,5 +22,6 @@ const injectorUrl = new URL('/util/javascript/communicationinjector.js', cmsUrl)
 
 <BaseLayout>
   <script is:inline src={injectorUrl}></script>
-  <PreviewPage content={content} />
+  <PreviewListener client:only="react" />
+  <ContentPage content={content} />
 </BaseLayout>
