@@ -1,0 +1,9 @@
+{
+  // Type-checking only: `tsconfig.json` is the build config and excludes `src/tests`,
+  // which would leave `*.test-d.ts` assertions unchecked.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": []
+}

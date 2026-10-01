@@ -1,6 +1,10 @@
 import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
-import { getPreviewUtils, OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
+import {
+  getPreviewUtils,
+  OptimizelyComponent,
+  OptimizelyComposition,
+} from '@optimizely/cms-sdk/react/server';
 import { SEOContentType } from './base/SEO';
 import { NoticeContentType } from './base/Notice';
 
@@ -29,18 +33,26 @@ export const ProductContentType = contentType({
       sortOrder: 4,
       displayName: 'Title',
     },
+    content_area: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: [NoticeContentType],
+      },
+      displayName: 'Content Area',
+      sortOrder: 5,
+    },
     sidebar: {
       type: 'composition',
       format: 'grid',
-      allowedTypes: [NoticeContentType],
       displayName: 'Sidebar',
-      sortOrder: 5,
+      sortOrder: 6,
     },
     seo_properties: {
       type: 'component',
       contentType: SEOContentType,
       displayName: 'SEO',
-      sortOrder: 6,
+      sortOrder: 7,
     },
   },
 });
@@ -83,6 +95,11 @@ function Product({ content }: ProductProps) {
           </div>
 
           {/* Sidebar */}
+          <div {...pa('content_area')} className='space-y-6 sm:space-y-8'>
+            {content.content_area?.map((contentItem, index) => {
+              return <OptimizelyComponent key={index} content={contentItem} />;
+            })}
+          </div>
           <div className='space-y-6 sm:space-y-8'>
             <OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
           </div>

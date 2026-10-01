@@ -54,7 +54,6 @@ export const ProductPage = contentType({
       format: 'grid',
       displayName: 'Sidebar',
       sortOrder: 6,
-      allowedTypes: ['_component'],
     },
   },
 });

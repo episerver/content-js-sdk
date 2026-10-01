@@ -9,18 +9,6 @@ import type { ContentTypeProperties } from '../utils/manifest.js';
  * enumeration, or drops a field a composition property relies on.
  */
 test('a composition property fits the CMS content type schema', () => {
-  expectTypeOf<{
-    type: 'composition';
-    format: string;
-    displayName: string;
-    allowedTypes: string[];
-    restrictedTypes: string[];
-    minItems: number;
-    maxItems: number;
-  }>().toExtend<components['schemas']['ContentTypeProperty']>();
-});
-
-test('the manifest composition property fits it too', () => {
   expectTypeOf<ContentTypeProperties.Composition>().toExtend<
     components['schemas']['ContentTypeProperty']
   >();

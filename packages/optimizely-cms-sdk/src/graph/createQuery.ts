@@ -174,10 +174,10 @@ const processUserTypeProperties = (
   let includesDamAssetsFragments = false;
 
   for (const [propKey, prop] of props) {
-    // A model may restrict the built-in composition by redeclaring the reserved
-    // `composition` key. The field is already selected by `_IExperience` (or
-    // read directly by a section), so selecting it again under an alias would
-    // fetch the whole node tree twice.
+    // A section may declare its own `composition` property, the one key the CMS
+    // accepts there. The field is already read directly (or selected by
+    // `_IExperience` on an experience, where the key is reserved and cannot be
+    // declared at all), so aliasing it would fetch the whole node tree twice.
     if (
       ownsBuiltInComposition &&
       propKey === 'composition' &&

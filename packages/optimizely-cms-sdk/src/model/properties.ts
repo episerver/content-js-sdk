@@ -8,7 +8,8 @@ export type JsonArray = JsonValue[];
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
 /** All possible content type properties */
-export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
+// A composition is not an `ArrayItems`: the CMS takes no array of compositions.
+export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems | CompositionProperty;
 
 export type INDEX_TYPE = 'disabled' | 'queryable' | 'searchable';
 
@@ -127,8 +128,7 @@ export type ArrayItems =
   | ContentReferenceProperty
   | ContentProperty
   | ComponentProperty<AnyContentType>
-  | LinkProperty
-  | CompositionProperty;
+  | LinkProperty;
 
 /**
  * Reprensents the content type property "Component".
@@ -149,7 +149,7 @@ export type LinkProperty = BaseProperty & {
 /** The layouts a composition property can be edited and rendered in. */
 export const COMPOSITION_FORMATS = ['grid', 'outline'] as const;
 
-/** Layout of a composition property. The CMS requires one; it has no default. */
+/** Layout of a composition property, validated by the CMS as a layout type. */
 export type CompositionFormat = (typeof COMPOSITION_FORMATS)[number];
 
 /**
@@ -157,17 +157,16 @@ export type CompositionFormat = (typeof COMPOSITION_FORMATS)[number];
  * columns and components, the same shape an experience's built-in `composition`
  * holds.
  *
- * Declaring one under the reserved key `composition` overrides the built-in
- * property of an experience; any other key defines a custom composition.
- * `allowedTypes`/`restrictedTypes` constrain what the CMS editor may place in
- * it — they do not narrow the generated query, which always selects every
- * composition element type.
+ * Only an `_experience` may declare one, and not under the key `composition`,
+ * which the CMS reserves for the built-in property.
+ *
+ * `allowedTypes` and `restrictedTypes` are optional and control what an editor
+ * may place in the property; without them every composition element is allowed.
+ * Neither narrows the generated query.
  */
 export type CompositionProperty = BaseProperty & {
   type: 'composition';
   format: CompositionFormat;
-  minItems?: number;
-  maxItems?: number;
   allowedTypes?: PermittedTypes[];
   restrictedTypes?: PermittedTypes[];
 };

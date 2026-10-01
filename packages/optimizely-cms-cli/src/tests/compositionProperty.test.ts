@@ -6,9 +6,9 @@ import { Manifest, ManifestContentType } from '../utils/manifest.js';
 import { HeroComponentType, BannerComponentType } from './fixtures.js';
 
 /**
- * A composition property is pushed like any other: its `allowedTypes` and
- * `restrictedTypes` are flattened to content type keys, and `*` is dropped
- * because the API expresses "anything" as an absent list.
+ * A composition property needs nothing but a `format`. `allowedTypes` and
+ * `restrictedTypes` are optional; when declared they are flattened to content
+ * type keys like any other type constraint.
  */
 
 const SidebarPageType = contentType({
@@ -20,20 +20,10 @@ const SidebarPageType = contentType({
       type: 'composition',
       format: 'grid',
       displayName: 'Sidebar',
-      allowedTypes: [HeroComponentType, '_component'],
-      restrictedTypes: [BannerComponentType],
-      minItems: 1,
-      maxItems: 4,
     },
     anything: {
       type: 'composition',
       format: 'outline',
-      allowedTypes: ['*'],
-    },
-    self: {
-      type: 'composition',
-      format: 'grid',
-      allowedTypes: ['_self'],
     },
   },
 });
@@ -44,42 +34,60 @@ describe('composition properties', () => {
     SidebarPageType.key,
   ) as Record<string, any>;
 
-  it('flattens allowedTypes and restrictedTypes to keys', () => {
-    expect(result.sidebar.allowedTypes).toEqual(['HeroComponent', '_component']);
-    expect(result.sidebar.restrictedTypes).toEqual(['BannerComponent']);
-  });
-
-  it('keeps the other constraints untouched', () => {
-    expect(result.sidebar).toMatchObject({
+  it('passes the property through untouched', () => {
+    expect(result.sidebar).toEqual({
       type: 'composition',
       format: 'grid',
       displayName: 'Sidebar',
-      minItems: 1,
-      maxItems: 4,
     });
   });
 
   it('passes the format through to the API payload', () => {
-    expect(result.anything.format).toBe('outline');
-  });
-
-  it('drops a wildcard, which the API expresses as no list at all', () => {
     expect(result.anything).toEqual({ type: 'composition', format: 'outline' });
   });
 
-  it('resolves `_self` to the owning content type', () => {
-    expect(result.self.allowedTypes).toEqual(['SidebarPageType']);
+  it('needs no type constraints to be valid', () => {
+    expect(validateContentAreaConstraints([SidebarPageType]).errors).toEqual([]);
   });
 
-  it('is legal without any type constraints', () => {
-    const Unconstrained = contentType({
-      key: 'UnconstrainedExperience',
-      displayName: 'Unconstrained Experience',
-      baseType: '_experience',
-      properties: { sidebar: { type: 'composition', format: 'grid' } },
-    });
+  it('flattens the optional type constraints to keys', () => {
+    // They control what an editor may place in the composition, so they must
+    // reach the API as content type keys, like any other type constraint.
+    const constrained = {
+      sidebar: {
+        type: 'composition',
+        format: 'grid',
+        allowedTypes: [HeroComponentType, '_component'],
+        restrictedTypes: [BannerComponentType],
+      },
+    };
 
-    expect(validateContentAreaConstraints([Unconstrained]).errors).toEqual([]);
+    expect(transformProperties(constrained, 'SidebarPageType')).toEqual({
+      sidebar: {
+        type: 'composition',
+        format: 'grid',
+        allowedTypes: ['HeroComponent', '_component'],
+        restrictedTypes: ['BannerComponent'],
+      },
+    });
+  });
+
+  it('drops a wildcard, which the API expresses as no list at all', () => {
+    expect(
+      transformProperties(
+        { sidebar: { type: 'composition', format: 'grid', allowedTypes: ['*'] } },
+        'SidebarPageType',
+      ),
+    ).toEqual({ sidebar: { type: 'composition', format: 'grid' } });
+  });
+
+  it('resolves `_self` to the owning content type', () => {
+    const result = transformProperties(
+      { sidebar: { type: 'composition', format: 'grid', allowedTypes: ['_self'] } },
+      'SidebarPageType',
+    ) as Record<string, any>;
+
+    expect(result.sidebar.allowedTypes).toEqual(['SidebarPageType']);
   });
 });
 
@@ -167,8 +175,6 @@ describe('pulling a composition property back into a model', () => {
         format: 'grid',
         displayName: 'Sidebar',
         allowedTypes: ['HeroComponent', '_component'],
-        minItems: 1,
-        maxItems: 4,
       },
     },
   };
@@ -209,9 +215,7 @@ describe('pulling a composition property back into a model', () => {
             allowedTypes: [
               HeroComponentCT,
               '_component'
-            ],
-            minItems: 1,
-            maxItems: 4
+            ]
           }
         }
       });
