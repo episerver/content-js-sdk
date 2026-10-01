@@ -96,6 +96,10 @@ const GLOBAL_STRUCTURE_NAMES: Record<string, string> = {
   column: '_Column',
 };
 
+/** Whether a node is a row or a column, and so belongs to {@linkcode planGridSection}. */
+export const isGridStructureNode = (node: ExperienceNode): boolean =>
+  node.nodeType in GLOBAL_STRUCTURE_NAMES;
+
 /** The per-node values every branch below needs. */
 function readNode(node: ExperienceNode) {
   const { pa } = getPreviewUtils(node);

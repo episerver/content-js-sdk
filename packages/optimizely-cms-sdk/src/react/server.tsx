@@ -14,6 +14,7 @@ import {
   planComposition,
   planGridSection,
   isWrappedComponent,
+  isGridStructureNode,
   getStructureContainer,
   type GridRenderItem,
 } from '../core/render/plan.js';
@@ -220,6 +221,19 @@ export function OptimizelyComposition({
 }) {
   return planComposition(nodes).map(item => {
     if (item.kind === 'unknown') {
+      // A `format: 'grid'` composition property has no section level: its top-level
+      // nodes are the rows an experience section would otherwise own. They carry no
+      // content type, so plan them as a grid instead of reporting them unknown.
+      if (isGridStructureNode(item.node)) {
+        return (
+          <OptimizelyGridSection
+            key={item.key}
+            nodes={[item.node]}
+            ComponentWrapper={ComponentWrapper}
+          />
+        );
+      }
+
       // TODO: Error handling
       return <div>???</div>;
     }

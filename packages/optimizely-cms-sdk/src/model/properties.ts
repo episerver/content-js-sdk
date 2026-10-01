@@ -146,6 +146,12 @@ export type LinkProperty = BaseProperty & {
   type: 'link';
 };
 
+/** The layouts a composition property can be edited and rendered in. */
+export const COMPOSITION_FORMATS = ['grid', 'outline'] as const;
+
+/** Layout of a composition property. The CMS requires one; it has no default. */
+export type CompositionFormat = (typeof COMPOSITION_FORMATS)[number];
+
 /**
  * Represents the content type property "Composition": a nested tree of rows,
  * columns and components, the same shape an experience's built-in `composition`
@@ -159,6 +165,7 @@ export type LinkProperty = BaseProperty & {
  */
 export type CompositionProperty = BaseProperty & {
   type: 'composition';
+  format: CompositionFormat;
   minItems?: number;
   maxItems?: number;
   allowedTypes?: PermittedTypes[];

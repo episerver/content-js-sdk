@@ -1,7 +1,7 @@
 import { ManifestContentType } from './manifest.js';
 import { extractKeyName } from '../service/utils.js';
 import { isKeyInvalid } from './validate.js';
-import { ContentTypes } from '@optimizely/cms-sdk';
+import { ContentTypes, Properties } from '@optimizely/cms-sdk';
 
 /**
  * Normalizes the `mayContainTypes` field of a content type object.
@@ -169,6 +169,10 @@ const mapAllowedRestrictedTypes = (updatedValue: any, parentKey: string): any =>
  * `contentType`, or a non-empty `allowedTypes`/`restrictedTypes`. Declaring both is a
  * conflict, declaring neither leaves the property unbounded and causes excessive GraphQL
  * fragment generation at runtime.
+ *
+ * Also validates `format`: a `composition` property must declare one of
+ * `COMPOSITION_FORMATS`, and those values are reserved — no other property type may use
+ * them, though other types remain free to use any other format.
  */
 export const validateContentAreaConstraints = (
   contentTypes: ContentTypes.AnyContentType[],
@@ -181,9 +185,34 @@ export const validateContentAreaConstraints = (
     for (const [propName, prop] of Object.entries(ct.properties)) {
       // an array delegates its constraints to `items`
       const target: any = prop.type === 'array' ? (prop as any).items : prop;
-      if (!target || !['content', 'contentReference'].includes(target.type)) continue;
+      if (!target) continue;
 
       const location = `Content type "${ct.key}", property "${propName}" (${target.type})`;
+      const formats = Properties.COMPOSITION_FORMATS.map(f => `"${f}"`).join(' or ');
+
+      // `format` is mandatory on a composition. TypeScript enforces this already, so the
+      // check is here for plain JS configs and casts.
+      if (target.type === 'composition') {
+        if (target.format === undefined) {
+          errors.push(`${location}: missing "format". Declare ${formats}.`);
+        } else if (!Properties.COMPOSITION_FORMATS.includes(target.format)) {
+          errors.push(`${location}: invalid "format" "${target.format}". Must be ${formats}.`);
+        }
+        continue;
+      }
+
+      // The composition formats are reserved. Any other property type may carry a
+      // `format`, just not one of these. TypeScript cannot catch this: `format` is typed
+      // `string` on the base property, so the literal is widened away before inference.
+      if (Properties.COMPOSITION_FORMATS.includes(target.format)) {
+        errors.push(
+          `${location}: "format" "${target.format}" is reserved for composition properties. ` +
+            `Use "type": "composition", or choose a different format.`,
+        );
+      }
+
+      if (!['content', 'contentReference'].includes(target.type)) continue;
+
       const hasConstraints = hasTypeConstraints(target);
       const emptyLists = ['allowedTypes', 'restrictedTypes'].filter(
         name => Array.isArray(target[name]) && target[name].length === 0,

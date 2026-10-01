@@ -182,6 +182,7 @@ test('composition accepts allowedTypes and restrictedTypes together', () => {
     properties: {
       sidebar: {
         type: 'composition',
+        format: 'grid',
         displayName: 'Sidebar',
         allowedTypes: [Card, '_component'],
         restrictedTypes: ['Deprecated'],
@@ -196,11 +197,42 @@ test('composition needs no type constraints at all', () => {
   // Unlike a content area, an unconstrained composition is legal: the CMS
   // falls back to every type that may appear in a composition.
   contentType({
-    key: 'page',
-    displayName: 'Page',
-    baseType: '_page',
+    key: 'experience',
+    displayName: 'Experience',
+    baseType: '_experience',
     properties: {
-      sidebar: { type: 'composition' },
+      sidebar: { type: 'composition', format: 'grid' },
+    },
+  });
+});
+
+test('composition requires a format, and only a known one', () => {
+  contentType({
+    key: 'experience',
+    displayName: 'Experience',
+    baseType: '_experience',
+    properties: {
+      outlined: { type: 'composition', format: 'outline' },
+    },
+  });
+
+  contentType({
+    key: 'experience',
+    displayName: 'Experience',
+    baseType: '_experience',
+    properties: {
+      // @ts-expect-error - format is mandatory on a composition property
+      sidebar: { type: 'composition', displayName: 'Sidebar' },
+    },
+  });
+
+  contentType({
+    key: 'experience',
+    displayName: 'Experience',
+    baseType: '_experience',
+    properties: {
+      // @ts-expect-error - 'stack' is not one of COMPOSITION_FORMATS
+      sidebar: { type: 'composition', format: 'stack' },
     },
   });
 });
@@ -213,6 +245,7 @@ test('the built-in composition is overridden through the reserved key', () => {
     properties: {
       composition: {
         type: 'composition',
+        format: 'grid',
         allowedTypes: ['_component'],
       },
     },

@@ -14,10 +14,11 @@ import { HeroComponentType, BannerComponentType } from './fixtures.js';
 const SidebarPageType = contentType({
   key: 'SidebarPageType',
   displayName: 'Sidebar Page Type',
-  baseType: '_page',
+  baseType: '_experience',
   properties: {
     sidebar: {
       type: 'composition',
+      format: 'grid',
       displayName: 'Sidebar',
       allowedTypes: [HeroComponentType, '_component'],
       restrictedTypes: [BannerComponentType],
@@ -26,10 +27,12 @@ const SidebarPageType = contentType({
     },
     anything: {
       type: 'composition',
+      format: 'outline',
       allowedTypes: ['*'],
     },
     self: {
       type: 'composition',
+      format: 'grid',
       allowedTypes: ['_self'],
     },
   },
@@ -49,14 +52,19 @@ describe('composition properties', () => {
   it('keeps the other constraints untouched', () => {
     expect(result.sidebar).toMatchObject({
       type: 'composition',
+      format: 'grid',
       displayName: 'Sidebar',
       minItems: 1,
       maxItems: 4,
     });
   });
 
+  it('passes the format through to the API payload', () => {
+    expect(result.anything.format).toBe('outline');
+  });
+
   it('drops a wildcard, which the API expresses as no list at all', () => {
-    expect(result.anything).toEqual({ type: 'composition' });
+    expect(result.anything).toEqual({ type: 'composition', format: 'outline' });
   });
 
   it('resolves `_self` to the owning content type', () => {
@@ -65,25 +73,98 @@ describe('composition properties', () => {
 
   it('is legal without any type constraints', () => {
     const Unconstrained = contentType({
-      key: 'UnconstrainedPage',
-      displayName: 'Unconstrained Page',
-      baseType: '_page',
-      properties: { sidebar: { type: 'composition' } },
+      key: 'UnconstrainedExperience',
+      displayName: 'Unconstrained Experience',
+      baseType: '_experience',
+      properties: { sidebar: { type: 'composition', format: 'grid' } },
     });
 
     expect(validateContentAreaConstraints([Unconstrained]).errors).toEqual([]);
   });
 });
 
+/**
+ * TypeScript already makes `format` mandatory, so these only reach the validator
+ * from a plain JS config or a cast — which is exactly what `push` has to survive.
+ */
+describe('validating the composition format', () => {
+  const experienceWith = (sidebar: unknown) =>
+    ({
+      key: 'SomeExperience',
+      displayName: 'Some Experience',
+      baseType: '_experience',
+      properties: { sidebar },
+    }) as any;
+
+  it('accepts every known format', () => {
+    for (const format of ['grid', 'outline']) {
+      const errors = validateContentAreaConstraints([
+        experienceWith({ type: 'composition', format }),
+      ]).errors;
+
+      expect(errors).toEqual([]);
+    }
+  });
+
+  it('reports a missing format', () => {
+    const { errors } = validateContentAreaConstraints([
+      experienceWith({ type: 'composition' }),
+    ]);
+
+    expect(errors).toEqual([
+      'Content type "SomeExperience", property "sidebar" (composition): missing "format". Declare "grid" or "outline".',
+    ]);
+  });
+
+  it('reports an unknown format', () => {
+    const { errors } = validateContentAreaConstraints([
+      experienceWith({ type: 'composition', format: 'stack' }),
+    ]);
+
+    expect(errors).toEqual([
+      'Content type "SomeExperience", property "sidebar" (composition): invalid "format" "stack". Must be "grid" or "outline".',
+    ]);
+  });
+
+  it('leaves any other `format` alone on other property types', () => {
+    const { errors } = validateContentAreaConstraints([
+      experienceWith({ type: 'string', format: 'html', displayName: 'Plain' }),
+    ]);
+
+    expect(errors).toEqual([]);
+  });
+
+  it('reserves the composition formats for composition properties', () => {
+    const { errors } = validateContentAreaConstraints([
+      experienceWith({ type: 'string', format: 'grid' }),
+    ]);
+
+    expect(errors).toEqual([
+      'Content type "SomeExperience", property "sidebar" (string): "format" "grid" is reserved for composition properties. Use "type": "composition", or choose a different format.',
+    ]);
+  });
+
+  it('reserves them inside array items too', () => {
+    const { errors } = validateContentAreaConstraints([
+      experienceWith({ type: 'array', items: { type: 'string', format: 'outline' } }),
+    ]);
+
+    expect(errors).toEqual([
+      'Content type "SomeExperience", property "sidebar" (string): "format" "outline" is reserved for composition properties. Use "type": "composition", or choose a different format.',
+    ]);
+  });
+});
+
 describe('pulling a composition property back into a model', () => {
   const pulledPage: ManifestContentType = {
-    key: 'PulledPage',
-    displayName: 'Pulled Page',
-    baseType: '_page',
+    key: 'PulledExperience',
+    displayName: 'Pulled Experience',
+    baseType: '_experience',
     isContract: false,
     properties: {
       sidebar: {
         type: 'composition',
+        format: 'grid',
         displayName: 'Sidebar',
         allowedTypes: ['HeroComponent', '_component'],
         minItems: 1,
@@ -114,15 +195,16 @@ describe('pulling a composition property back into a model', () => {
       import { HeroComponentCT } from './HeroComponentCT';
 
       /**
-       * Pulled Page
+       * Pulled Experience
        */
-      export const PulledPageCT = contentType({
-        key: 'PulledPage',
-        displayName: 'Pulled Page',
-        baseType: '_page',
+      export const PulledExperienceCT = contentType({
+        key: 'PulledExperience',
+        displayName: 'Pulled Experience',
+        baseType: '_experience',
         properties: {
           sidebar: {
             type: 'composition',
+            format: 'grid',
             displayName: 'Sidebar',
             allowedTypes: [
               HeroComponentCT,

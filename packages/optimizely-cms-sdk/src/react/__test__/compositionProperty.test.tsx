@@ -26,11 +26,12 @@ const componentNode = (key: string, typename: string): ExperienceNode => ({
 const structureNode = (
   key: string,
   nodes: ExperienceNode[],
+  nodeType = 'grid',
 ): ExperienceStructureNode => ({
   __typename: 'CompositionStructureNode',
   key,
   type: null,
-  nodeType: 'grid',
+  nodeType,
   layoutType: null,
   displayName: key,
   displayTemplateKey: null,
@@ -73,5 +74,40 @@ describe('rendering a composition property', () => {
     const { container } = render(<>{OptimizelyComposition({ nodes: [] })}</>);
 
     expect(container.textContent).toBe('');
+  });
+});
+
+/**
+ * A `format: 'grid'` composition has no section level — the CMS hands back
+ * `experience → row → column → component`, where rows and columns carry no
+ * content type of their own. They must render as a grid, not as unknown nodes.
+ */
+describe('rendering a grid composition property', () => {
+  const sidebar = structureNode('sidebar-root', [
+    structureNode(
+      'row-1',
+      [structureNode('col-1', [componentNode('a', 'CardElement')], 'column')],
+      'row',
+    ),
+  ]);
+
+  it('renders the components inside its rows and columns', async () => {
+    const [grid] = OptimizelyComposition({ nodes: sidebar.nodes ?? [] }) as any[];
+
+    // `OptimizelyGridSection` returns the row container; walk down to the component
+    const [row] = grid.type(grid.props);
+    const column = row.props.children.props.children[0];
+    const inner = column.props.children.props.children[0].props.children;
+
+    const { container } = render(await inner.type(inner.props));
+
+    expect(container.querySelector('[data-testid="card"]')?.textContent).toBe('heading-a');
+  });
+
+  it('still reports a structure node it cannot place', () => {
+    const odd = structureNode('odd', [componentNode('a', 'CardElement')], 'somethingElse');
+    const { container } = render(<>{OptimizelyComposition({ nodes: [odd] })}</>);
+
+    expect(container.textContent).toBe('???');
   });
 });

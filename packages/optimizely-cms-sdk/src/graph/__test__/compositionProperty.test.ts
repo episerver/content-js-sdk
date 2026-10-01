@@ -32,7 +32,7 @@ const Page = contentType({
   displayName: 'Sidebar Page',
   baseType: '_page',
   properties: {
-    sidebar: { type: 'composition', allowedTypes: ['_component'] },
+    sidebar: { type: 'composition', format: 'grid', allowedTypes: ['_component'] },
   },
 });
 
@@ -42,7 +42,7 @@ const Experience = contentType({
   displayName: 'Host Experience',
   baseType: '_experience',
   properties: {
-    sidebar: { type: 'composition', allowedTypes: ['_component'] },
+    sidebar: { type: 'composition', format: 'grid', allowedTypes: ['_component'] },
   },
 });
 
@@ -54,6 +54,7 @@ const RestrictedPage = contentType({
   properties: {
     sidebar: {
       type: 'composition',
+      format: 'grid',
       allowedTypes: ['PlainElement'],
       restrictedTypes: ['OtherElement'],
     },
@@ -66,7 +67,7 @@ const OverriddenExperience = contentType({
   displayName: 'Overridden Experience',
   baseType: '_experience',
   properties: {
-    composition: { type: 'composition', allowedTypes: ['PlainElement'] },
+    composition: { type: 'composition', format: 'grid', allowedTypes: ['PlainElement'] },
   },
 });
 
@@ -161,7 +162,7 @@ describe('alongside the built-in composition', () => {
       baseType: '_component',
       compositionBehaviors: ['sectionEnabled'],
       properties: {
-        composition: { type: 'composition', allowedTypes: ['PlainElement'] },
+        composition: { type: 'composition', format: 'grid', allowedTypes: ['PlainElement'] },
       },
     });
     initContentTypeRegistry([Section, Element]);
