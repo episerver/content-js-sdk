@@ -1,7 +1,7 @@
 import { buildConfig } from '@optimizely/cms-sdk';
 
 export default buildConfig({
-  components: ['./src/components/**.tsx', './src/components/**.ts'],
+  components: ['./src/lib/contentTypes/index.ts'],
   propertyGroups: [
     {
       key: 'seo',
@@ -35,9 +35,9 @@ export default buildConfig({
   ],
   applications: [
     {
-      key: 'nextjs_app',
+      key: 'astro_app',
       entryPoint: 'AboutExperienceContent',
-      displayName: 'Next.js Template',
+      displayName: 'Astro Sample',
       type: 'website',
       isDefault: true,
       useApplicationSpecificAssets: false,
