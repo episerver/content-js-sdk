@@ -198,9 +198,11 @@ async function resolveFormNodes<T>(
 const PARENT_FIELDS = 'key displayName';
 const PARENT_DEPTH = `{ ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} } } } } }`;
 
+const TAXONOMY_BATCH_SIZE = 100;
+
 const RESOLVE_TAXONOMY_QUERY = `
 query ResolveTaxonomyTerms($keys: [String!]!) {
-  _TaxonomyTerm(where: { _metadata: { key: { in: $keys } } }, limit: 100) {
+  _TaxonomyTerm(where: { _metadata: { key: { in: $keys } } }) {
     items {
       _metadata {
         key
@@ -310,17 +312,30 @@ async function resolveTaxonomyTerms(
 
   if (uncachedKeys.length > 0) {
     try {
-      const data = await context.request(
-        RESOLVE_TAXONOMY_QUERY,
-        { keys: uncachedKeys, ...(locale && { locale }) },
-        undefined,
-        true,
+      const batches: string[][] = [];
+      for (let i = 0; i < uncachedKeys.length; i += TAXONOMY_BATCH_SIZE) {
+        batches.push(uncachedKeys.slice(i, i + TAXONOMY_BATCH_SIZE));
+      }
+
+      const batchResults = await Promise.all(
+        batches.map(batch =>
+          context.request(
+            RESOLVE_TAXONOMY_QUERY,
+            { keys: batch, ...(locale && { locale }) },
+            undefined,
+            true,
+          ),
+        ),
       );
 
-      const items: Array<{ _metadata: TermMetadata }> =
-        data?._TaxonomyTerm?.items ?? [];
-
-      const fetchedMap = new Map(items.map(item => [item._metadata.key, item._metadata]));
+      const fetchedMap = new Map<string, TermMetadata>();
+      for (const data of batchResults) {
+        const items: Array<{ _metadata: TermMetadata }> =
+          data?._TaxonomyTerm?.items ?? [];
+        for (const item of items) {
+          fetchedMap.set(item._metadata.key, item._metadata);
+        }
+      }
 
       for (const key of uncachedKeys) {
         const term = metadataToTaxonomyTerm(key, fetchedMap.get(key));
