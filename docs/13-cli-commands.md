@@ -431,6 +431,15 @@ optimizely-cms-cli config pull --json > manifest.json
 - Ensure `optimizely.config.mjs` exists in your project root
 - Or specify the config path: `optimizely-cms-cli config push ./path/to/config.mjs`
 
+### Composition Type Not Allowed
+
+**Problem:** `The type 'X' cannot be used in a 'grid' layout composition.`
+
+**Solutions:**
+- Match the type to the layout: a `'grid'` composition holds elements (`compositionBehaviors: ['elementEnabled']`, or the base type `_component`), an `'outline'` composition holds sections (`compositionBehaviors: ['sectionEnabled']`, `_section` content types, or `_component`)
+- If the named type is new in this same push, push it first. `allowedTypes` and `restrictedTypes` are validated against the content types already in the CMS, so a type created by the same manifest is not visible yet. Push the referenced types, then push the full configuration
+- A push is all or nothing: when it reports this error, nothing was created
+
 ### Push Conflicts
 
 **Problem:** `Content type already exists with different properties`

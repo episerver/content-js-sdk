@@ -380,9 +380,11 @@ export default function ProductPage({ content }: Props) {
 }
 ```
 
-`format` is required: `'grid'` for the row-and-column layout the built-in composition uses, or `'outline'` for a flat ordered list of components. Both values are reserved for composition properties — any other property type using one is rejected on push.
+`format` is required: `'grid'` for the row-and-column layout of elements the built-in composition uses, or `'outline'` for a flat ordered list of sections. Both values are reserved for composition properties — any other property type using one is rejected on push.
 
 A composition needs nothing but a `format`. `allowedTypes` and `restrictedTypes` are optional and narrow what editors may place in it; without them, any composition element is allowed. Neither narrows the generated query, which still selects every composition element type. `minItems` and `maxItems` are not supported.
+
+The two layouts hold different things, so `format` decides which types the lists may name. A `'grid'` takes elements — components with `compositionBehaviors: ['elementEnabled']`, or the base type `_component`. An `'outline'` takes sections — components with `compositionBehaviors: ['sectionEnabled']`, `_section` content types, or the base type `_component`. Naming the wrong kind fails on push with `The type 'X' cannot be used in a 'grid' layout composition.`
 
 > [!IMPORTANT]
 > The CMS only accepts composition properties on `_experience` content types. Declaring one on a page, component or section makes `opti-cms config push` fail with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types` — use a content area there instead. Sections keep their inherited built-in `composition` and cannot add more.
@@ -401,7 +403,7 @@ const ProductPageType = contentType({
   baseType: '_experience',
   composition: {
     format: 'outline',
-    allowedTypes: ['_component'],
+    allowedTypes: [HeroSectionType, '_component'],
     restrictedTypes: [LegacyBannerType],
   },
   properties: {
@@ -412,11 +414,11 @@ const ProductPageType = contentType({
 
 | Field | Effect |
 | --- | --- |
-| `format` | `'grid'` or `'outline'`. Left out, the base type's default layout applies. |
-| `allowedTypes` | What editors may place on the canvas. Left out, every composition element is allowed. |
+| `format` | `'grid'` for rows and columns of elements, `'outline'` for a flat list of sections. Left out, the base type's default layout applies. |
+| `allowedTypes` | What editors may place in the composition. Left out, every composition element is allowed. |
 | `restrictedTypes` | What they may not. |
 
-A `_section` takes the same configuration for its own canvas. Neither list narrows the generated query.
+The same `format`/`allowedTypes` pairing applies here: a `'grid'` accepts element types, an `'outline'` accepts section types. A `_section` takes the same configuration for its own composition. Neither list narrows the generated query.
 
 ## Best Practices
 
