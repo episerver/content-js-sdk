@@ -19,8 +19,8 @@ const ProductPageType = contentType({
 
   // Configures the built-in composition
   composition: {
-    format: 'outline',
-    allowedTypes: ['_component'],
+    format: 'grid',
+    allowedTypes: [HeroComponentType, '_component'],
     restrictedTypes: [LegacyBannerType],
   },
 
@@ -32,7 +32,7 @@ const ProductPageType = contentType({
       type: 'composition',
       format: 'grid',
       displayName: 'Sidebar',
-      allowedTypes: [HeroComponentType, '_component'],
+      allowedTypes: [HeroComponentType],
     },
   },
 });
@@ -52,9 +52,9 @@ export default function ProductPage({ content }: Props) {
 }
 ```
 
-`format` sets the editing layout: `'grid'` for rows and columns, `'outline'` for a flat ordered list. It is required on a composition property. On the built-in configuration it is optional, and the base type's default is used when it is left out.
+`format` sets the editing layout: `'grid'` for rows and columns of elements, `'outline'` for a flat ordered list of sections. It is required on a composition property. On the built-in configuration it is optional, and the base type's default is used when it is left out.
 
-`allowedTypes` and `restrictedTypes` limit what an editor can add. Leave them out to allow every composition element. Neither changes the generated GraphQL query, which always selects every composition element type.
+`allowedTypes` and `restrictedTypes` limit what an editor can add. Leave them out to allow every composition element. Because the two layouts hold different things, the format decides which types the lists may name: a `'grid'` takes components with `compositionBehaviors: ['elementEnabled']` or the base type `_component`, an `'outline'` takes components with `compositionBehaviors: ['sectionEnabled']`, `_section` content types, or `_component`. Neither list changes the generated GraphQL query, which always selects every composition element type.
 
 `opti-cms config push` checks the format before sending, so a typo fails locally with a clear message. `opti-cms config pull` writes both forms back into your models and imports the content types they reference.
 

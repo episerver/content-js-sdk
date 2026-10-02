@@ -153,16 +153,24 @@ export const COMPOSITION_FORMATS = ['grid', 'outline'] as const;
 export type CompositionFormat = (typeof COMPOSITION_FORMATS)[number];
 
 /**
- * Represents the content type property "Composition": a nested tree of rows,
- * columns and components, the same shape an experience's built-in `composition`
- * holds.
+ * An extra visual builder area on an experience: a tree of rows, columns and
+ * components, the same shape as the built-in `composition`.
  *
- * Only an `_experience` may declare one, and not under the key `composition`,
+ * Only an `_experience` may declare one, under any key except `composition`,
  * which the CMS reserves for the built-in property.
  *
- * `allowedTypes` and `restrictedTypes` are optional and control what an editor
- * may place in the property; without them every composition element is allowed.
- * Neither narrows the generated query.
+ * `format` picks the layout, and with it what the area can hold:
+ *
+ * - `grid` — rows and columns of **elements**: `elementEnabled` components, or
+ *   the base type `_component`
+ * - `outline` — a flat, ordered list of **sections**: `sectionEnabled`
+ *   components, `_section` content types, or `_component`
+ *
+ * `allowedTypes` and `restrictedTypes` are optional; left out, every composition
+ * element is allowed. When present they may only name types the `format` permits
+ * — the CMS rejects a `sectionEnabled` component in a `grid`, and an
+ * `elementEnabled` one in an `outline`. Neither list narrows the generated query,
+ * which always selects every composition element type.
  */
 export type CompositionProperty = BaseProperty & {
   type: 'composition';
@@ -178,7 +186,8 @@ export type CompositionProperty = BaseProperty & {
  * This is not a property: it sits beside `properties` on the content type,
  * because the CMS reserves the key `composition` and rejects it as a custom
  * property. Everything else matches {@linkcode CompositionProperty}, including
- * that the restrictions do not narrow the generated query.
+ * the layout-dependent restrictions and that they do not narrow the generated
+ * query.
  */
 export type CompositionConfiguration = {
   /** Editing layout. Left out, the base type's own default applies. */

@@ -263,14 +263,23 @@ Render it with the same pipeline as the built-in composition, passing the proper
 
 `format` is required and picks the editing layout:
 
-| Format | Editing experience |
-| --- | --- |
-| `'grid'` | Rows and columns, arranged visually. Matches the built-in composition of an experience. |
-| `'outline'` | A flat, ordered list of components, without row/column layout. |
+| Format | Editing experience | Holds |
+| --- | --- | --- |
+| `'grid'` | Rows and columns, arranged visually. Matches the built-in composition of an experience. | Elements |
+| `'outline'` | A flat, ordered list, without row/column layout. | Sections |
 
 Both values are reserved: other property types may declare a `format`, but not `'grid'` or `'outline'`. `opti-cms config push` rejects that.
 
 `allowedTypes` and `restrictedTypes` are optional and control what an editor may place in the composition. Leave them out and any composition element is allowed. Either way they do not narrow the generated GraphQL query, which always selects every composition element type. `minItems` and `maxItems` are not supported: pushing them is rejected.
+
+The `format` decides which types the lists may name, because the two layouts hold different things:
+
+| Format | `allowedTypes` may name |
+| --- | --- |
+| `'grid'` | Components with `compositionBehaviors: ['elementEnabled']`, or the base type `_component` |
+| `'outline'` | Components with `compositionBehaviors: ['sectionEnabled']`, `_section` content types, or the base type `_component` |
+
+Naming the wrong kind fails on push with `The type 'X' cannot be used in a 'grid' layout composition.` An `elementEnabled` component is not valid in an `'outline'` composition, and a `sectionEnabled` component is not valid in a `'grid'` one.
 
 ```ts
 sidebar: {
@@ -297,7 +306,7 @@ const ProductPageType = contentType({
   key: 'ProductPage',
   baseType: '_experience',
   composition: {
-    format: 'outline',
+    format: 'grid',
     allowedTypes: [CardElementType, '_component'],
     restrictedTypes: [LegacyBannerType],
   },
