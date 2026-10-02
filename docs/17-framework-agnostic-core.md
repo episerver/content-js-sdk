@@ -149,7 +149,8 @@ The two planners shape `content` differently:
   `{ ...node.component, __tag }`. A section node's `content` also carries the node's own
   scalar fields and `__typename: node.type` — a section is a content type in its own right.
   `source` tells the two apart; `isWrappedComponent(item)` is true for the component nodes a
-  binding wraps. It never returns `structure` items.
+  binding wraps. A row or a column is the one case it plans as a grid, recursing as
+  `planGridSection` does — see below.
 - **`planGridSection`** recurses through rows and columns. A component node's `content` is
   `{ ...node.component, __composition: node, __tag }`, which is what lets a component read its
   own composition key. A `row` or `column` node gets `globalComponent` filled from whatever is
@@ -158,6 +159,17 @@ The two planners shape `content` differently:
 
 A `kind: 'unknown'` item is a node whose content type the CMS did not resolve. Render your own
 placeholder, or nothing.
+
+A `type: 'composition'` property with `format: 'grid'` has no section level, so its top-level
+nodes are rows, which carry no content type of their own. `planComposition` returns those as
+`structure` items rather than `unknown`, so one renderer handles both:
+
+```ts
+const items: RenderItem<MyComponentType>[] = planComposition<MyComponentType>(nodes);
+```
+
+Pass `{ registry }` as a second argument to resolve `_Row` / `_Column` from your own registry
+instead of the global one, exactly as `planGridSection` does.
 
 ### Rendering the plan
 

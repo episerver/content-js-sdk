@@ -71,6 +71,23 @@ describe('rendering a composition property', () => {
   });
 });
 
+/** Finds the element rendering a component of the given type, at any depth. */
+function findComponentElement(node: any, typename: string): any {
+  if (!node || typeof node !== 'object') return null;
+
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findComponentElement(child, typename);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  if (node.props?.content?.__typename === typename) return node;
+
+  return findComponentElement(node.props?.children, typename);
+}
+
 /**
  * A `format: 'grid'` composition has no section level — the CMS hands back
  * `experience → row → column → component`, where rows and columns carry no
@@ -86,13 +103,14 @@ describe('rendering a grid composition property', () => {
   ]);
 
   it('renders the components inside its rows and columns', async () => {
-    const [grid] = OptimizelyComposition({ nodes: sidebar.nodes ?? [] }) as any[];
+    const tree = OptimizelyComposition({ nodes: sidebar.nodes ?? [] });
 
-    // `OptimizelyGridSection` returns the row container; walk down to the component
-    const [row] = grid.type(grid.props);
-    const column = row.props.children.props.children[0];
-    const inner = column.props.children.props.children[0].props.children;
+    // Every child is passed as a prop, so the component is reachable without
+    // rendering the row and column containers that hold it.
+    const inner = findComponentElement(tree, 'CardElement');
+    expect(inner).not.toBeNull();
 
+    // `OptimizelyComponent` is an async server component, so resolve it before rendering
     const { container } = render(await inner.type(inner.props));
 
     expect(container.querySelector('[data-testid="card"]')?.textContent).toBe('heading-a');

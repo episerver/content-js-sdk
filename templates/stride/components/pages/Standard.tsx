@@ -2,6 +2,7 @@ import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import { bindCmsField } from '../shared/CmsField';
 import SubNavigationLayout from '../layouts/SubNavigationLayout';
+import { OptimizelyComponent } from '@optimizely/cms-sdk/react/server';
 
 export const StandardPage = contentType({
   key: 'StandardPage',
@@ -34,6 +35,13 @@ export const StandardPage = contentType({
         preset: 'expanded',
       },
     },
+    extras: {
+      type: 'array',
+      items: {
+        type: 'content',
+        allowedTypes: ['_component', '_experience'],
+      },
+    },
   },
 });
 
@@ -62,6 +70,12 @@ export default function Standard({ content }: StandardPageProps) {
       <CmsField field={c => c.body}>
         <RichText content={content.body?.json} className='prose' />
       </CmsField>
+
+      {content.extras ?
+        content.extras.map((extra, index) => (
+          <OptimizelyComponent content={extra} key={`extra-${index + 1}`} />
+        ))
+      : null}
     </SubNavigationLayout>
   );
 }

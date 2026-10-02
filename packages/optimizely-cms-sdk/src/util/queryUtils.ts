@@ -483,7 +483,7 @@ const handleContentProperty: PropertyHandler = (
  * `_IExperience` is deliberately left out: the field is read directly, and
  * GraphQL rejects a document holding a fragment nothing spreads.
  *
- * ponytail: `allowedTypes`/`restrictedTypes` are not applied here — every
+ * `allowedTypes`/`restrictedTypes` are not applied here — every
  * composition element type stays in the query. Generate a restriction-scoped
  * `_IComponent` variant per property if query size becomes a problem.
  */
@@ -505,6 +505,7 @@ const handleCompositionProperty: PropertyHandler = (
     includesDamAssetsFragments: result.includesDamAssetsFragments,
   };
 };
+
 const RICH_TEXT_SELECTION: Record<RichTextFormat, string> = {
   html: 'html',
   json: 'json',
