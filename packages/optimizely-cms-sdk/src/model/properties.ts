@@ -170,3 +170,19 @@ export type CompositionProperty = BaseProperty & {
   allowedTypes?: PermittedTypes[];
   restrictedTypes?: PermittedTypes[];
 };
+
+/**
+ * Configures the built-in composition — the "canvas" — that an `_experience` or
+ * `_section` has without declaring it.
+ *
+ * This is not a property: it sits beside `properties` on the content type,
+ * because the CMS reserves the key `composition` and rejects it as a custom
+ * property. Everything else matches {@linkcode CompositionProperty}, including
+ * that the restrictions do not narrow the generated query.
+ */
+export type CompositionConfiguration = {
+  /** Editing layout. Left out, the base type's own default applies. */
+  format?: CompositionFormat;
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
+};

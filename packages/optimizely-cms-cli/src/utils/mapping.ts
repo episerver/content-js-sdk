@@ -129,36 +129,47 @@ const hasContentTypeWithKey = (obj: any): boolean =>
   obj.contentType !== null &&
   'key' in obj.contentType;
 
+/**
+ * Rewrites `allowedTypes`/`restrictedTypes` in place to the keys the API takes.
+ * A wildcard is dropped, and a list left empty by that is removed: the API
+ * expresses "anything" as no list at all.
+ */
+const flattenTypeLists = (value: any, parentKey: string): void => {
+  for (const name of ['allowedTypes', 'restrictedTypes']) {
+    if (!Array.isArray(value[name])) continue;
+
+    const keys = value[name]
+      .map((input: any) => extractKeyName(input, parentKey))
+      .filter((key: string) => key !== '*');
+
+    if (keys.length > 0) value[name] = keys;
+    else delete value[name];
+  }
+};
+
 const mapAllowedRestrictedTypes = (updatedValue: any, parentKey: string): any => {
   const value = { ...updatedValue };
 
   if (value.type === 'array' && value.items)
     value.items = mapAllowedRestrictedTypes(value.items, parentKey);
 
-  if (['contentReference', 'content', 'composition'].includes(value.type)) {
-    if (Array.isArray(value.allowedTypes)) {
-      const mappedTypes = value.allowedTypes
-        .map((input: any) => extractKeyName(input, parentKey))
-        .filter((key: string) => key !== '*');
-      if (mappedTypes.length > 0) {
-        value.allowedTypes = mappedTypes;
-      } else {
-        delete value.allowedTypes;
-      }
-    }
+  if (['contentReference', 'content', 'composition'].includes(value.type))
+    flattenTypeLists(value, parentKey);
 
-    if (Array.isArray(value.restrictedTypes)) {
-      const mappedTypes = value.restrictedTypes
-        .map((input: any) => extractKeyName(input, parentKey))
-        .filter((key: string) => key !== '*');
-      if (mappedTypes.length > 0) {
-        value.restrictedTypes = mappedTypes;
-      } else {
-        delete value.restrictedTypes;
-      }
-    }
-  }
+  return value;
+};
 
+/**
+ * Maps the built-in composition configuration of an `_experience` or `_section`
+ * to the API shape. It is not a property — the CMS reserves the key
+ * `composition` — so it travels beside `properties` on the content type.
+ */
+export const transformCompositionConfiguration = (
+  composition: any,
+  parentKey: string,
+): any => {
+  const value = { ...composition };
+  flattenTypeLists(value, parentKey);
   return value;
 };
 
@@ -180,6 +191,14 @@ export const validateContentAreaConstraints = (
   const errors: string[] = [];
 
   for (const ct of contentTypes) {
+    const builtIn = (ct as any).composition;
+    if (builtIn?.format !== undefined && !isKnownFormat(builtIn.format)) {
+      errors.push(
+        `Content type "${ct.key}", built-in composition: invalid "format" ` +
+          `"${builtIn.format}". Must be ${formatList()}.`,
+      );
+    }
+
     if (!ct.properties) continue;
 
     for (const [propName, prop] of Object.entries(ct.properties)) {
@@ -188,14 +207,14 @@ export const validateContentAreaConstraints = (
       if (!target) continue;
 
       const location = `Content type "${ct.key}", property "${propName}" (${target.type})`;
-      const formats = Properties.COMPOSITION_FORMATS.map(f => `"${f}"`).join(' or ');
+      const formats = formatList();
 
       // `format` is mandatory on a composition. TypeScript enforces this already, so the
       // check is here for plain JS configs and casts.
       if (target.type === 'composition') {
         if (target.format === undefined) {
           errors.push(`${location}: missing "format". Declare ${formats}.`);
-        } else if (!Properties.COMPOSITION_FORMATS.includes(target.format)) {
+        } else if (!isKnownFormat(target.format)) {
           errors.push(`${location}: invalid "format" "${target.format}". Must be ${formats}.`);
         }
         continue;
@@ -204,7 +223,7 @@ export const validateContentAreaConstraints = (
       // The composition formats are reserved. Any other property type may carry a
       // `format`, just not one of these. TypeScript cannot catch this: `format` is typed
       // `string` on the base property, so the literal is widened away before inference.
-      if (Properties.COMPOSITION_FORMATS.includes(target.format)) {
+      if (isKnownFormat(target.format)) {
         errors.push(
           `${location}: "format" "${target.format}" is reserved for composition properties. ` +
             `Use "type": "composition", or choose a different format.`,
@@ -240,6 +259,12 @@ export const validateContentAreaConstraints = (
 
   return { errors };
 };
+
+const isKnownFormat = (format: unknown): boolean =>
+  Properties.COMPOSITION_FORMATS.includes(format as Properties.CompositionFormat);
+
+const formatList = (): string =>
+  Properties.COMPOSITION_FORMATS.map(f => `"${f}"`).join(' or ');
 
 const hasTypeConstraints = (prop: any): boolean =>
   (Array.isArray(prop.allowedTypes) && prop.allowedTypes.length > 0) ||
