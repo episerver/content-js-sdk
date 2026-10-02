@@ -1,6 +1,7 @@
 import { AnyContentType } from '../service/utils.js';
 import {
   transformProperties,
+  transformCompositionConfiguration,
   validateContentTypeKey,
   normalizeMayContainTypes,
 } from '../utils/mapping.js';
@@ -36,11 +37,15 @@ function transformContentType(
   );
   const formattedProperties = transformProperties(properties, key);
   const contracts = convertExtendsToContracts(contentType);
+  const composition = (contentType as any).composition;
 
   return {
     ...parsedContentType,
     properties: formattedProperties,
     ...(contracts ? { contracts } : {}),
+    ...(composition ?
+      { composition: transformCompositionConfiguration(composition, key) }
+    : {}),
   };
 }
 

@@ -288,6 +288,27 @@ sidebar: {
 >
 > They also require Optimizely CMS SaaS (and future CMS 14).
 
+#### Configuring the Built-In Composition
+
+The built-in composition of an `_experience` or `_section` is configured through `composition`, beside `properties` — it is not a property, because the CMS reserves that key:
+
+```ts
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_experience',
+  composition: {
+    format: 'outline',
+    allowedTypes: [CardElementType, '_component'],
+    restrictedTypes: [LegacyBannerType],
+  },
+  properties: {
+    title: { type: 'string' },
+  },
+});
+```
+
+Every field is optional. Left out, `format` keeps the base type's own default layout, and an absent list allows everything. As with a composition property, the restrictions do not narrow the generated GraphQL query.
+
 ### Indexing Types
 
 The `indexingType` field controls how the property is indexed for search:

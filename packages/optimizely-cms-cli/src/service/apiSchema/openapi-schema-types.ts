@@ -1016,6 +1016,7 @@ export interface components {
              * @example richText
              * @example json
              * @example component
+             * @example composition
              */
             type: string;
             /** @description The property format that defines specialized handling and validation for this array item. */
@@ -1111,6 +1112,24 @@ export interface components {
             /** @description The display name of this blueprint. */
             displayName?: null | string;
             content?: components["schemas"]["BlueprintDataPatch"];
+        };
+        /** @description Configures the built-in composition (the "canvas") of an experience or section content type. Only applicable to content types with base type `_experience` or `_section`. */
+        CompositionConfiguration: {
+            /** @description The layout type to use for the built-in composition (e.g. `outline` or `grid`). When empty, the default layout for the base type is used. */
+            format?: string;
+            /** @description Content types and base types that the built-in composition is permitted to contain. */
+            allowedTypes?: string[];
+            /** @description Content types and base types that the built-in composition is forbidden from containing. */
+            restrictedTypes?: string[];
+        };
+        /** @description Configures the built-in composition (the "canvas") of an experience or section content type. Only applicable to content types with base type `_experience` or `_section`. */
+        CompositionConfigurationPatch: {
+            /** @description The layout type to use for the built-in composition (e.g. `outline` or `grid`). When empty, the default layout for the base type is used. */
+            format?: null | string;
+            /** @description Content types and base types that the built-in composition is permitted to contain. */
+            allowedTypes?: null | string[];
+            /** @description Content types and base types that the built-in composition is forbidden from containing. */
+            restrictedTypes?: null | string[];
         };
         /** @description Display settings for a composition node. */
         CompositionDisplaySettings: {
@@ -1405,6 +1424,8 @@ export interface components {
             mediaFileExtensions?: string[];
             /** @description Provides a set of composition behaviors specifying how this content type can be used within compositions. Currently this can only be assigned when baseType is 'component'. */
             compositionBehaviors?: string[];
+            /** @description Configures the built-in composition (the "canvas") for experience and section content types. Only applicable when BaseType is `_experience` or `_section`. */
+            composition?: components["schemas"]["CompositionConfiguration"];
             /** @description Provides a set of contract content types that this content type is bound to. */
             contracts?: string[];
             /**
@@ -1523,6 +1544,7 @@ export interface components {
             mediaFileExtensions?: null | string[];
             /** @description Provides a set of composition behaviors specifying how this content type can be used within compositions. Currently this can only be assigned when baseType is 'component'. */
             compositionBehaviors?: null | string[];
+            composition?: components["schemas"]["CompositionConfigurationPatch"];
             /** @description Provides a set of contract content types that this content type is bound to. */
             contracts?: null | string[];
             /** @description Dictionary with all custom properties of this content type. */
@@ -1549,6 +1571,7 @@ export interface components {
              * @example json
              * @example array
              * @example component
+             * @example composition
              */
             type: string;
             /** @description The property format that defines specialized handling and validation for this property. */
@@ -2082,6 +2105,7 @@ export interface components {
              * @example json
              * @example array
              * @example component
+             * @example composition
              */
             dataType?: string;
             /**
@@ -2099,6 +2123,7 @@ export interface components {
              * @example json
              * @example array
              * @example component
+             * @example composition
              */
             readonly itemType?: string;
             /** @description The display name of this property format. */

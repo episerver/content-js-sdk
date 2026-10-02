@@ -234,3 +234,41 @@ test('composition requires a format, and only a known one', () => {
     },
   });
 });
+
+test('the built-in composition is configured beside the properties', () => {
+  const Card = contentType({
+    key: 'card',
+    displayName: 'Card',
+    baseType: '_component',
+    compositionBehaviors: ['elementEnabled'],
+  });
+
+  contentType({
+    key: 'experience',
+    displayName: 'Experience',
+    baseType: '_experience',
+    composition: {
+      format: 'grid',
+      allowedTypes: [Card, '_component'],
+      restrictedTypes: ['Deprecated'],
+    },
+  });
+
+  // A section has the same canvas, and every field is optional
+  contentType({
+    key: 'section',
+    displayName: 'Section',
+    baseType: '_section',
+    composition: { allowedTypes: [Card] },
+  });
+});
+
+test('the built-in composition takes only a known format', () => {
+  contentType({
+    key: 'experience',
+    displayName: 'Experience',
+    baseType: '_experience',
+    // @ts-expect-error - 'stack' is not one of COMPOSITION_FORMATS
+    composition: { format: 'stack' },
+  });
+});

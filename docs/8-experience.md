@@ -391,6 +391,33 @@ A composition needs nothing but a `format`. `allowedTypes` and `restrictedTypes`
 >
 > They also require Optimizely CMS SaaS (and future CMS 14).
 
+### Configuring the Built-In Composition
+
+The built-in `composition` is configured through a `composition` key beside `properties`. It is not a property — the CMS reserves that name — so it is declared at the content type level:
+
+```tsx
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_experience',
+  composition: {
+    format: 'outline',
+    allowedTypes: ['_component'],
+    restrictedTypes: [LegacyBannerType],
+  },
+  properties: {
+    title: { type: 'string' },
+  },
+});
+```
+
+| Field | Effect |
+| --- | --- |
+| `format` | `'grid'` or `'outline'`. Left out, the base type's default layout applies. |
+| `allowedTypes` | What editors may place on the canvas. Left out, every composition element is allowed. |
+| `restrictedTypes` | What they may not. |
+
+A `_section` takes the same configuration for its own canvas. Neither list narrows the generated query.
+
 ## Best Practices
 
 ### Mixing Static and Composed Content

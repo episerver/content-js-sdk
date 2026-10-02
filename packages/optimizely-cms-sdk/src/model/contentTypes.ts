@@ -1,4 +1,4 @@
-import { AnyProperty } from './properties.js';
+import { AnyProperty, CompositionConfiguration } from './properties.js';
 
 // Main base types
 export const MAIN_BASE_TYPES = [
@@ -96,6 +96,8 @@ export type PageContentType = SkipCompositionBehaviors<
 export type ExperienceContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: '_experience';
+    /** Restrictions and layout for the built-in composition. */
+    composition?: CompositionConfiguration;
     mayContainTypes?: Array<
       | ContentType<PageContentType | ExperienceContentType | FolderContentType>
       | '_self'
@@ -123,6 +125,8 @@ export type ComponentContentType = BaseContentType & {
 export type SectionContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: '_section';
+    /** Restrictions and layout for the built-in composition. */
+    composition?: CompositionConfiguration;
   }
 >;
 
