@@ -96,8 +96,8 @@ const GLOBAL_STRUCTURE_NAMES: Record<string, string> = {
   column: '_Column',
 };
 
-/** Whether a node is a row or a column, and so belongs to {@linkcode planGridSection}. */
-export const isGridStructureNode = (node: ExperienceNode): boolean =>
+/** Whether a node is a row or a column, and so is planned as a grid. */
+const isGridStructureNode = (node: ExperienceNode): boolean =>
   node.nodeType in GLOBAL_STRUCTURE_NAMES;
 
 /** The per-node values every branch below needs. */
@@ -120,11 +120,18 @@ function readNode(node: ExperienceNode) {
  * `previewAttrs` are reported separately rather than folded into `content`.
  * Structure nodes are rendered as content in their own right here — a section has
  * its own content type and its own component.
+ *
+ * The exception is a row or a column: a `type: 'composition'` property with
+ * `format: 'grid'` has no section level, so its top-level nodes are rows. Those
+ * are planned as grids, recursing like {@linkcode planGridSection}.
+ *
+ * @param options.registry Looked up for `_Row` / `_Column` instead of the global registries.
  */
-export function planComposition(
+export function planComposition<C>(
   nodes: ExperienceNode[],
-): (ComponentRenderItem | UnknownRenderItem)[] {
-  return nodes.map(node => {
+  options: { registry?: ComponentRegistry<C> } = {},
+): RenderItem<C>[] {
+  return nodes.map((node, index) => {
     const base = readNode(node);
 
     if (isComponentNode(node)) {
@@ -134,6 +141,10 @@ export function planComposition(
         source: 'component',
         content: { ...node.component, __tag: base.tag },
       };
+    }
+
+    if (isGridStructureNode(node)) {
+      return planGridNode<C>(node, index, options);
     }
 
     if (node.type === null) {
@@ -171,38 +182,45 @@ export function planGridSection<C>(
   nodes: ExperienceNode[],
   options: { registry?: ComponentRegistry<C> } = {},
 ): GridRenderItem<C>[] {
-  return nodes.map((node, index) => {
-    const base = readNode(node);
+  return nodes.map((node, index) => planGridNode<C>(node, index, options));
+}
 
-    if (isComponentNode(node)) {
-      return {
-        ...base,
-        kind: 'component',
-        source: 'component',
-        content: {
-          // `node.component` contains user-defined properties
-          ...node.component,
-          __composition: node,
-          __tag: base.tag,
-        },
-      };
-    }
+/** One node of a grid, as both planners see it. */
+function planGridNode<C>(
+  node: ExperienceNode,
+  index: number,
+  options: { registry?: ComponentRegistry<C> },
+): GridRenderItem<C> {
+  const base = readNode(node);
 
-    const { nodeType } = node;
-    const globalName = GLOBAL_STRUCTURE_NAMES[nodeType];
-
+  if (isComponentNode(node)) {
     return {
       ...base,
-      kind: 'structure',
-      nodeType,
-      index,
-      // Lazy, so the registry isn't consulted when the binding has its own override
-      get globalComponent() {
-        return globalName ?
-            resolveComponent<C>(globalName, { tag: base.tag, registry: options.registry })
-          : undefined;
+      kind: 'component',
+      source: 'component',
+      content: {
+        // `node.component` contains user-defined properties
+        ...node.component,
+        __composition: node,
+        __tag: base.tag,
       },
-      children: planGridSection<C>(node.nodes ?? [], options),
     };
-  });
+  }
+
+  const { nodeType } = node;
+  const globalName = GLOBAL_STRUCTURE_NAMES[nodeType];
+
+  return {
+    ...base,
+    kind: 'structure',
+    nodeType,
+    index,
+    // Lazy, so the registry isn't consulted when the binding has its own override
+    get globalComponent() {
+      return globalName ?
+          resolveComponent<C>(globalName, { tag: base.tag, registry: options.registry })
+        : undefined;
+    },
+    children: planGridSection<C>(node.nodes ?? [], options),
+  };
 }

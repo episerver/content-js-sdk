@@ -33,15 +33,6 @@ export const ProductContentType = contentType({
       sortOrder: 4,
       displayName: 'Title',
     },
-    content_area: {
-      type: 'array',
-      items: {
-        type: 'content',
-        allowedTypes: [NoticeContentType],
-      },
-      displayName: 'Content Area',
-      sortOrder: 5,
-    },
     sidebar: {
       type: 'composition',
       format: 'grid',
@@ -95,11 +86,6 @@ function Product({ content }: ProductProps) {
           </div>
 
           {/* Sidebar */}
-          <div {...pa('content_area')} className='space-y-6 sm:space-y-8'>
-            {content.content_area?.map((contentItem, index) => {
-              return <OptimizelyComponent key={index} content={contentItem} />;
-            })}
-          </div>
           <div className='space-y-6 sm:space-y-8'>
             <OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
           </div>
