@@ -6,13 +6,19 @@ import { ContentTypes } from '@optimizely/cms-sdk';
 /**
  * Normalizes the `mayContainTypes` field of a content type object.
  */
+const CONTAINER_BASE_TYPES = ['_page', '_experience', '_folder', '_component'];
+
 export const normalizeMayContainTypes = (
   contentType: Record<string, any>,
   allowedKeys?: Set<string>,
 ): any => {
   const { mayContainTypes, key, ...rest } = contentType;
 
-  if (!Array.isArray(mayContainTypes)) return { ...rest, key };
+  if (!Array.isArray(mayContainTypes)) {
+    if (CONTAINER_BASE_TYPES.includes(contentType.baseType))
+      return { ...rest, key, mayContainTypes: ['*'] };
+    return { ...rest, key };
+  }
 
   const seen = new Set<string>();
   const duplicates: string[] = [];
