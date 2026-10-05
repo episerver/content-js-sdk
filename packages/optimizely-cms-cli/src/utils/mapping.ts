@@ -189,6 +189,7 @@ export const validateContentAreaConstraints = (
   contentTypes: ContentTypes.AnyContentType[],
 ): { errors: string[] } => {
   const errors: string[] = [];
+  const byKey = new Map(contentTypes.map(ct => [ct.key, ct as any]));
 
   for (const ct of contentTypes) {
     const builtIn = (ct as any).composition;
@@ -196,6 +197,14 @@ export const validateContentAreaConstraints = (
       errors.push(
         `Content type "${ct.key}", built-in composition: invalid "format" ` +
           `"${builtIn.format}". Must be ${formatList()}.`,
+      );
+    }
+    if (builtIn) {
+      checkAllowedTypeFormats(
+        builtIn,
+        `Content type "${ct.key}", built-in composition`,
+        byKey,
+        errors,
       );
     }
 
@@ -217,6 +226,7 @@ export const validateContentAreaConstraints = (
         } else if (!isKnownFormat(target.format)) {
           errors.push(`${location}: invalid "format" "${target.format}". Must be ${formats}.`);
         }
+        checkAllowedTypeFormats(target, location, byKey, errors);
         continue;
       }
 
@@ -258,6 +268,72 @@ export const validateContentAreaConstraints = (
   }
 
   return { errors };
+};
+
+/**
+ * Which layouts a type may appear in, because the two hold different things: a
+ * `grid` is rows and columns of elements, an `outline` a flat list of sections.
+ *
+ * `undefined` means the type is not in this configuration — an external or
+ * not-yet-pushed key — so the CMS is left to judge it.
+ */
+const permittedFormats = (
+  entry: any,
+  byKey: Map<string, any>,
+): Properties.CompositionFormat[] | undefined => {
+  const key = typeof entry === 'string' ? entry : entry?.key;
+  if (typeof key !== 'string') return undefined;
+
+  // A base type names a family rather than a content type
+  if (key === '_component') return ['grid', 'outline'];
+  if (key === '_section') return ['outline'];
+  if (key.startsWith('_')) return undefined;
+
+  const target = typeof entry === 'object' && 'baseType' in entry ? entry : byKey.get(key);
+  if (!target) return undefined;
+
+  if (target.baseType === '_section') return ['outline'];
+
+  const behaviors: string[] = target.compositionBehaviors ?? [];
+  const formats: Properties.CompositionFormat[] = [];
+  if (behaviors.includes('elementEnabled')) formats.push('grid');
+  if (behaviors.includes('sectionEnabled')) formats.push('outline');
+
+  return formats.length > 0 ? formats : undefined;
+};
+
+/**
+ * Reports an `allowedTypes` entry the layout cannot hold, which the CMS rejects
+ * on push with `The type 'X' cannot be used in a '<format>' layout composition.`
+ *
+ * Only `allowedTypes` is checked: the CMS accepts a `restrictedTypes` entry
+ * whatever the layout, since excluding a type that could never appear is
+ * harmless.
+ */
+const checkAllowedTypeFormats = (
+  composition: any,
+  location: string,
+  byKey: Map<string, any>,
+  errors: string[],
+): void => {
+  const format = composition?.format;
+  // Without a format the base type's default applies, and that is the CMS's to know
+  if (!isKnownFormat(format) || !Array.isArray(composition.allowedTypes)) return;
+
+  const other = format === 'grid' ? 'outline' : 'grid';
+
+  for (const entry of composition.allowedTypes) {
+    const formats = permittedFormats(entry, byKey);
+    if (!formats || formats.includes(format)) continue;
+
+    const key = typeof entry === 'string' ? entry : entry.key;
+    const kind = format === 'grid' ? 'elements' : 'sections';
+    errors.push(
+      `${location}: "${key}" cannot be used in a "${format}" layout composition, ` +
+        `which holds ${kind}. Use "format": "${other}", or allow a type that is ` +
+        `valid in a "${format}" layout.`,
+    );
+  }
 };
 
 const isKnownFormat = (format: unknown): boolean =>

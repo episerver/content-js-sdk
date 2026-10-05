@@ -380,11 +380,32 @@ export default function ProductPage({ content }: Props) {
 }
 ```
 
-`format` is required: `'grid'` for the row-and-column layout of elements the built-in composition uses, or `'outline'` for a flat ordered list of sections. Both values are reserved for composition properties — any other property type using one is rejected on push.
+`format` is required, and it decides what the composition holds — **elements** or **sections**, never both:
 
-A composition needs nothing but a `format`. `allowedTypes` and `restrictedTypes` are optional and narrow what editors may place in it; without them, any composition element is allowed. Neither narrows the generated query, which still selects every composition element type. `minItems` and `maxItems` are not supported.
+| | `'grid'` | `'outline'` |
+| --- | --- | --- |
+| Editing | Rows and columns, arranged visually | A flat, ordered list |
+| Holds | **Elements** | **Sections** |
+| So `allowedTypes` may name | components with `compositionBehaviors: ['elementEnabled']`<br>the base type `_component` | components with `compositionBehaviors: ['sectionEnabled']`<br>`_section` content types<br>the base type `_component` |
 
-The two layouts hold different things, so `format` decides which types the lists may name. A `'grid'` takes elements — components with `compositionBehaviors: ['elementEnabled']`, or the base type `_component`. An `'outline'` takes sections — components with `compositionBehaviors: ['sectionEnabled']`, `_section` content types, or the base type `_component`. Naming the wrong kind fails on push with `The type 'X' cannot be used in a 'grid' layout composition.`
+Whether a component is an element or a section is set where the component itself is declared:
+
+```ts
+compositionBehaviors: ['elementEnabled']   // → belongs in a 'grid'
+compositionBehaviors: ['sectionEnabled']   // → belongs in an 'outline'
+```
+
+```ts
+// ✓ a grid of elements
+sidebar: { type: 'composition', format: 'grid', allowedTypes: [CardElementType] },
+
+// ✗ rejected: an outline holds sections, CardElement is an element
+sidebar: { type: 'composition', format: 'outline', allowedTypes: [CardElementType] },
+```
+
+`opti-cms config push` catches the mismatch locally, naming the content type and the composition, rather than letting the CMS answer `The type 'CardElement' cannot be used in a 'outline' layout composition.`
+
+A composition needs nothing but a `format`. `allowedTypes` and `restrictedTypes` are optional; without them every composition element valid for the layout is allowed. Only `allowedTypes` is checked against the format — a `restrictedTypes` entry is accepted either way. Neither narrows the generated query, which still selects every composition element type. `minItems` and `maxItems` are not supported, and both format values are reserved: another property type using one is rejected on push.
 
 > [!IMPORTANT]
 > The CMS only accepts composition properties on `_experience` content types. Declaring one on a page, component or section makes `opti-cms config push` fail with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types` — use a content area there instead. Sections keep their inherited built-in `composition` and cannot add more.
@@ -414,11 +435,16 @@ const ProductPageType = contentType({
 
 | Field | Effect |
 | --- | --- |
-| `format` | `'grid'` for rows and columns of elements, `'outline'` for a flat list of sections. Left out, the base type's default layout applies. |
+| `format` | `'grid'` for rows and columns of elements, `'outline'` for a flat list of sections. Left out, the base type's default layout applies — and because only the CMS knows that default, nothing is validated locally. |
 | `allowedTypes` | What editors may place in the composition. Left out, every composition element is allowed. |
 | `restrictedTypes` | What they may not. |
 
-The same `format`/`allowedTypes` pairing applies here: a `'grid'` accepts element types, an `'outline'` accepts section types. A `_section` takes the same configuration for its own composition. Neither list narrows the generated query.
+The `format`/`allowedTypes` pairing above applies here unchanged, so the example pairs `'outline'` with `HeroSectionType`, a `sectionEnabled` component. Pairing it with an `elementEnabled` one would be rejected.
+
+A `_section` takes the same configuration for its own composition. Neither list narrows the generated query.
+
+> [!NOTE]
+> The built-in composition and a composition property are independent. Restricting one does not restrict the other, and the CMS accepts lists that name completely different types — even contradictory ones. If a sidebar should be restricted the same way as the canvas, say so on both.
 
 ## Best Practices
 

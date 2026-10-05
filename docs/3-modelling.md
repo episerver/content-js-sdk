@@ -261,25 +261,60 @@ Render it with the same pipeline as the built-in composition, passing the proper
 <OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
 ```
 
-`format` is required and picks the editing layout:
+##### Choosing a format
 
-| Format | Editing experience | Holds |
+`format` is required, and it is the decision everything else follows from. A composition holds either **elements** or **sections**, never both, and the format is what picks:
+
+| | `'grid'` | `'outline'` |
 | --- | --- | --- |
-| `'grid'` | Rows and columns, arranged visually. Matches the built-in composition of an experience. | Elements |
-| `'outline'` | A flat, ordered list, without row/column layout. | Sections |
+| Editing | Rows and columns, arranged visually | A flat, ordered list |
+| Holds | **Elements** | **Sections** |
+| So `allowedTypes` may name | components with `compositionBehaviors: ['elementEnabled']`<br>the base type `_component` | components with `compositionBehaviors: ['sectionEnabled']`<br>`_section` content types<br>the base type `_component` |
 
-Both values are reserved: other property types may declare a `format`, but not `'grid'` or `'outline'`. `opti-cms config push` rejects that.
+A component is an element or a section depending on how *it* was declared, so start there:
 
-`allowedTypes` and `restrictedTypes` are optional and control what an editor may place in the composition. Leave them out and any composition element is allowed. Either way they do not narrow the generated GraphQL query, which always selects every composition element type. `minItems` and `maxItems` are not supported: pushing them is rejected.
+```ts
+const CardElementType = contentType({
+  key: 'CardElement',
+  baseType: '_component',
+  compositionBehaviors: ['elementEnabled'],   // an element → belongs in a 'grid'
+});
 
-The `format` decides which types the lists may name, because the two layouts hold different things:
+const HeroSectionType = contentType({
+  key: 'HeroSection',
+  baseType: '_component',
+  compositionBehaviors: ['sectionEnabled'],   // a section → belongs in an 'outline'
+});
+```
 
-| Format | `allowedTypes` may name |
-| --- | --- |
-| `'grid'` | Components with `compositionBehaviors: ['elementEnabled']`, or the base type `_component` |
-| `'outline'` | Components with `compositionBehaviors: ['sectionEnabled']`, `_section` content types, or the base type `_component` |
+Then the pairing follows:
 
-Naming the wrong kind fails on push with `The type 'X' cannot be used in a 'grid' layout composition.` An `elementEnabled` component is not valid in an `'outline'` composition, and a `sectionEnabled` component is not valid in a `'grid'` one.
+```ts
+// ✓ a grid of elements
+sidebar: { type: 'composition', format: 'grid', allowedTypes: [CardElementType] },
+
+// ✓ an outline of sections
+body:    { type: 'composition', format: 'outline', allowedTypes: [HeroSectionType] },
+
+// ✗ rejected: an outline holds sections, CardElement is an element
+sidebar: { type: 'composition', format: 'outline', allowedTypes: [CardElementType] },
+```
+
+`opti-cms config push` catches the mismatch before contacting the CMS:
+
+```
+✖ Content type "ProductPage", property "sidebar" (composition): "CardElement" cannot be
+  used in a "outline" layout composition, which holds sections. Use "format": "grid", or
+  allow a type that is valid in a "outline" layout.
+```
+
+Without that check the CMS rejects the push with `The type 'CardElement' cannot be used in a 'outline' layout composition.`
+
+`'grid'` and `'outline'` are reserved: another property type may declare a `format`, just not one of these. `opti-cms config push` rejects that too.
+
+##### Restricting what editors may add
+
+`allowedTypes` and `restrictedTypes` are optional. Leave them out and every composition element valid for the layout is allowed.
 
 ```ts
 sidebar: {
@@ -289,6 +324,12 @@ sidebar: {
   restrictedTypes: [LegacyBannerType],
 },
 ```
+
+Three things to know:
+
+- **Only `allowedTypes` is checked against the format.** A `restrictedTypes` entry is accepted in either layout, because excluding a type that could never appear there is harmless.
+- **They do not narrow the generated GraphQL query**, which always selects every composition element type.
+- **`minItems` and `maxItems` are not supported**, and pushing them is rejected.
 
 > [!IMPORTANT]
 > Composition properties are only accepted on `_experience` content types. On a page, component or section, `opti-cms config push` fails with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types`. Use a content area (`type: 'array'` of `type: 'content'`) on those types instead. Sections keep their inherited built-in `composition` and cannot declare extra ones.
