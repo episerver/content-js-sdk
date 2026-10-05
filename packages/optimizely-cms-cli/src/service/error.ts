@@ -23,3 +23,21 @@ export const credentialErrors = {
     }
   },
 };
+
+export const hostingErrors = {
+  InvalidHostingCredentials: class InvalidHostingCredentials extends CLIError {
+    constructor() {
+      super(
+        'The front-end hosting credentials were rejected. Check `OPTIMIZELY_DXP_CLIENT_KEY` and `OPTIMIZELY_DXP_CLIENT_SECRET` against the API tab of the DXP management portal',
+        { exit: 1 },
+      );
+    }
+  },
+  MissingHostingCredentials: class MissingHostingCredentials extends CLIError {
+    constructor(missing: string[]) {
+      super(
+        `Front-end hosting credentials not provided. Define ${missing.map((name) => `\`${name}\``).join(', ')} with the values from the API tab of the DXP management portal. These are not the CMS credentials (\`OPTIMIZELY_CMS_CLIENT_ID\` / \`OPTIMIZELY_CMS_CLIENT_SECRET\`)`,
+      );
+    }
+  },
+};

@@ -2,7 +2,7 @@
 
 import Conf from 'conf';
 import { z } from 'zod';
-import { credentialErrors } from './error.js';
+import { credentialErrors, hostingErrors } from './error.js';
 
 const CmsSettingsSchema = z.record(
   z.string(),
@@ -42,4 +42,30 @@ export function readEnvCredentials() {
   }
 
   throw new credentialErrors.MissingCredentials();
+}
+
+const HOSTING_ENV_VARS = {
+  projectId: 'OPTIMIZELY_DXP_PROJECT_ID',
+  clientKey: 'OPTIMIZELY_DXP_CLIENT_KEY',
+  clientSecret: 'OPTIMIZELY_DXP_CLIENT_SECRET',
+} as const;
+
+/** Front-end hosting (DXP) deployment credentials */
+export type HostingCredentials = Record<keyof typeof HOSTING_ENV_VARS, string>;
+
+/** Read the front-end hosting deployment credentials from environment variables */
+export function readHostingCredentials(): HostingCredentials {
+  const entries = Object.entries(HOSTING_ENV_VARS).map(
+    ([key, envVar]) => [key, envVar, process.env[envVar]] as const,
+  );
+  const missing = entries
+    .filter(([, , value]) => !value)
+    .map(([, envVar]) => envVar);
+
+  if (missing.length > 0)
+    throw new hostingErrors.MissingHostingCredentials(missing);
+
+  return Object.fromEntries(
+    entries.map(([key, , value]) => [key, value]),
+  ) as HostingCredentials;
 }
