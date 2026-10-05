@@ -25,6 +25,20 @@ export const credentialErrors = {
 };
 
 export const hostingErrors = {
+  InvalidPackageName: class InvalidPackageName extends CLIError {
+    constructor(name: string) {
+      super(
+        `Invalid package name "${name}". Use only letters, numbers and hyphens, or set it with --package-name`,
+      );
+    }
+  },
+  InvalidProject: class InvalidProject extends CLIError {
+    constructor(problems: string[]) {
+      super(
+        `The project cannot be deployed to front-end hosting:\n${problems.map((problem) => `  - ${problem}`).join('\n')}`,
+      );
+    }
+  },
   InvalidHostingCredentials: class InvalidHostingCredentials extends CLIError {
     constructor() {
       super(
