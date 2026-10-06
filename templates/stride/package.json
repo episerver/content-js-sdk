@@ -3,11 +3,15 @@
   "version": "0.1.3-beta.0",
   "license": "Apache-2.0",
   "private": true,
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0"
+  },
   "scripts": {
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "config:push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
+    "deploy": "optimizely-cms-cli deploy",
+    "config:push": "optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:*",

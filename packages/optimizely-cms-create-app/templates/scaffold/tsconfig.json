@@ -1,0 +1,17 @@
+{
+  "//": "Editor and type-check support only; scaffold files are copied by name, so this file never reaches a generated project. Needs a built @optimizely/cms-sdk",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "paths": {
+      "@optimizely/cms-sdk": ["../../../optimizely-cms-sdk/dist/cjs/index.d.ts"],
+      "@optimizely/cms-sdk/react/server": ["../../../optimizely-cms-sdk/dist/cjs/react/server.d.ts"]
+    }
+  },
+  "include": ["nextjs/optimizely.ts"]
+}

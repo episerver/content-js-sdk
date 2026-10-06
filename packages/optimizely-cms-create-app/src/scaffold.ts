@@ -37,17 +37,39 @@ export async function createProject(options: CreateOptions): Promise<void> {
     }
   }
 
+  const { packageManager } = options;
+  const canDeploy = hasScript(targetDir, 'deploy');
+
   p.note(
     [
       `cd ${options.projectName}`,
+      ...(options.skipInstall ? [`${packageManager} install`] : []),
       '# Configure your CMS credentials in .env',
-      `${options.packageManager === 'npm' ? 'npm run' : options.packageManager} dev`,
+      `${packageManager === 'npm' ? 'npm run' : packageManager} dev`,
+      ...(canDeploy && packageManager !== 'pnpm' ? deployInstructions(packageManager) : []),
     ].join('\n'),
     'Next steps',
   );
 
+  if (canDeploy && packageManager === 'pnpm')
+    p.log.warn(
+      'Optimizely front-end hosting installs with npm or yarn. Before deploying, create a lock file with `npm install --package-lock-only`.',
+    );
+
   p.outro('Your project is ready!');
 }
+
+const hasScript = (dir: string, script: string): boolean => {
+  const pkgPath = path.join(dir, 'package.json');
+
+  return fs.existsSync(pkgPath) && Boolean(JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).scripts?.[script]);
+};
+
+// `pnpm deploy` is a built-in pnpm command, so the script is always run through npm or yarn
+const deployInstructions = (packageManager: 'npm' | 'yarn') => [
+  '# Deploy to Optimizely front-end hosting (credentials in .env)',
+  `${packageManager === 'npm' ? 'npm run deploy --' : 'yarn deploy'} --env Test1`,
+];
 
 export async function createFreshProject(options: FreshCreateOptions): Promise<string> {
   const targetDir = path.resolve(process.cwd(), options.projectName);

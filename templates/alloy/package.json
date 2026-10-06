@@ -2,10 +2,14 @@
   "name": "alloy-template",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0"
+  },
   "scripts": {
     "dev": "next dev --experimental-https",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "deploy": "optimizely-cms-cli deploy"
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:*",
