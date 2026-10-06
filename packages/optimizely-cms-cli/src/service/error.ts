@@ -25,10 +25,41 @@ export const credentialErrors = {
 };
 
 export const hostingErrors = {
+  DeploymentApiError: class DeploymentApiError extends CLIError {
+    constructor(action: string, status: number, errors: string[] = []) {
+      super(
+        [`Failed to ${action} (HTTP ${status})`, ...errors.map(error => `  - ${error}`)].join('\n'),
+      );
+    }
+  },
+  DeploymentFailed: class DeploymentFailed extends CLIError {
+    constructor(id: string, errors: string[] = []) {
+      super(
+        [
+          `Deployment ${id} failed. See the DXP management portal for the full log`,
+          ...errors.map(error => `  - ${error}`),
+        ].join('\n'),
+      );
+    }
+  },
+  DeploymentTimeout: class DeploymentTimeout extends CLIError {
+    constructor(id: string, minutes: number) {
+      super(
+        `Deployment ${id} did not finish within ${minutes} minutes. It may still be running; check the DXP management portal or raise --timeout`,
+      );
+    }
+  },
+  ForbiddenHostingCredentials: class ForbiddenHostingCredentials extends CLIError {
+    constructor() {
+      super(
+        'The front-end hosting credentials have no access to this project or environment. In the API tab of the DXP management portal, create an API key with the target environment selected',
+      );
+    }
+  },
   InvalidPackageName: class InvalidPackageName extends CLIError {
     constructor(name: string) {
       super(
-        `Invalid package name "${name}". Use only letters, numbers and hyphens, or set it with --package-name`,
+        `Invalid package name "${name}". Use only letters, numbers and hyphens, or set it with --name`,
       );
     }
   },
@@ -52,6 +83,11 @@ export const hostingErrors = {
       super(
         `Front-end hosting credentials not provided. Define ${missing.map((name) => `\`${name}\``).join(', ')} with the values from the API tab of the DXP management portal. These are not the CMS credentials (\`OPTIMIZELY_CMS_CLIENT_ID\` / \`OPTIMIZELY_CMS_CLIENT_SECRET\`)`,
       );
+    }
+  },
+  PackageExists: class PackageExists extends CLIError {
+    constructor(name: string) {
+      super(`A package named ${name} was already uploaded. Deploy again with a different --version`);
     }
   },
 };
