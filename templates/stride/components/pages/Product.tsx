@@ -4,6 +4,8 @@ import { bindCmsField } from '../shared/CmsField';
 import Eyebrow, { EyebrowComponent } from '../blocks/Eyebrow';
 import FullWidthLayout from '../layouts/FullWidthLayout';
 import { OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
+import { ImageComponent } from '../elements/Image';
+import { ImageCardComponent } from '../elements/ImageCard';
 
 export const ProductPage = contentType({
   key: 'ProductPage',
@@ -50,10 +52,20 @@ export const ProductPage = contentType({
       },
     },
     sidebar: {
+      // Unrestricted: editors may place any element in the sidebar.
       type: 'composition',
       format: 'grid',
       displayName: 'Sidebar',
       sortOrder: 6,
+    },
+    gallery: {
+      // Restricted so the grid below keeps its shape: it lays every node out
+      // in equal cells, which only works for images.
+      type: 'composition',
+      format: 'grid',
+      displayName: 'Gallery',
+      sortOrder: 7,
+      allowedTypes: [ImageComponent, ImageCardComponent],
     },
   },
 });
@@ -113,6 +125,14 @@ export default function Product({ content }: ProductPageProps) {
           </div>
         </div>
       </div>
+
+      {content.gallery?.nodes?.length ?
+        <section className='container mx-auto pb-20'>
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+            <OptimizelyComposition nodes={content.gallery.nodes} />
+          </div>
+        </section>
+      : null}
 
       <OptimizelyComposition nodes={content.composition.nodes ?? []} />
     </FullWidthLayout>
