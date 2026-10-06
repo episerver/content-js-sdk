@@ -1,0 +1,41 @@
+# Deploys the site to Optimizely front-end hosting.
+# Add OPTIMIZELY_DXP_PROJECT_ID, OPTIMIZELY_DXP_CLIENT_KEY and OPTIMIZELY_DXP_CLIENT_SECRET
+# as repository secrets (Settings > Secrets and variables > Actions). Generate them in the
+# API tab of the DXP management portal.
+name: Deploy to Optimizely
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment (for example Test1, Test2 or Production)
+        required: true
+        default: Test1
+
+concurrency:
+  group: optimizely-deploy-${{ inputs.environment || 'Test1' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_ENVIRONMENT: ${{ inputs.environment || 'Test1' }}
+      OPTIMIZELY_DXP_PROJECT_ID: ${{ secrets.OPTIMIZELY_DXP_PROJECT_ID }}
+      OPTIMIZELY_DXP_CLIENT_KEY: ${{ secrets.OPTIMIZELY_DXP_CLIENT_KEY }}
+      OPTIMIZELY_DXP_CLIENT_SECRET: ${{ secrets.OPTIMIZELY_DXP_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: ${{ hashFiles('yarn.lock') != '' && 'yarn' || 'npm' }}
+
+      - name: Install dependencies
+        run: if [ -f yarn.lock ]; then yarn install --frozen-lockfile; else npm ci; fi
+
+      - name: Deploy
+        run: npx optimizely-cms-cli deploy --env "$DEPLOY_ENVIRONMENT" --yes

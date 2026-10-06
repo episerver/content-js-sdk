@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import * as p from '@clack/prompts';
 import type { CreateOptions, FreshCreateOptions } from './types.js';
-import { copyTemplate } from './template.js';
+import { copyTemplate, getScaffoldDir } from './template.js';
 import { getInstallCommand } from './package-manager.js';
-import { exec } from './utils.js';
+import { exec, hasScript } from './utils.js';
 import { FRAMEWORKS } from './registry.js';
 
 export async function createProject(options: CreateOptions): Promise<void> {
@@ -27,6 +27,8 @@ export async function createProject(options: CreateOptions): Promise<void> {
     process.exit(1);
   }
 
+  if (options.ci === 'github') addDeployWorkflow(targetDir);
+
   if (!options.skipInstall) {
     s.start('Installing dependencies...');
     try {
@@ -47,6 +49,7 @@ export async function createProject(options: CreateOptions): Promise<void> {
       '# Configure your CMS credentials in .env',
       `${packageManager === 'npm' ? 'npm run' : packageManager} dev`,
       ...(canDeploy && packageManager !== 'pnpm' ? deployInstructions(packageManager) : []),
+      ...(options.ci === 'github' ? ['# Add the OPTIMIZELY_DXP_* values as GitHub repository secrets'] : []),
     ].join('\n'),
     'Next steps',
   );
@@ -59,10 +62,14 @@ export async function createProject(options: CreateOptions): Promise<void> {
   p.outro('Your project is ready!');
 }
 
-const hasScript = (dir: string, script: string): boolean => {
-  const pkgPath = path.join(dir, 'package.json');
+const addDeployWorkflow = (targetDir: string) => {
+  const workflowsDir = path.join(targetDir, '.github', 'workflows');
 
-  return fs.existsSync(pkgPath) && Boolean(JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).scripts?.[script]);
+  fs.mkdirSync(workflowsDir, { recursive: true });
+  fs.copyFileSync(
+    path.join(getScaffoldDir(), 'github', 'deploy-optimizely.yml'),
+    path.join(workflowsDir, 'deploy-optimizely.yml'),
+  );
 };
 
 // `pnpm deploy` is a built-in pnpm command, so the script is always run through npm or yarn

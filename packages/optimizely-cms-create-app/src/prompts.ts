@@ -1,14 +1,16 @@
 import * as p from '@clack/prompts';
-import type { CreateOptions, ScaffoldOptions, FreshCreateOptions, Mode, TemplateName, PackageManager, Framework } from './types.js';
+import type { CreateOptions, ScaffoldOptions, FreshCreateOptions, Mode, TemplateName, PackageManager, Framework, CiProvider } from './types.js';
 import { detectFramework, detectPackageManager, isExistingProject } from './detect.js';
-import { isValidProjectName } from './utils.js';
+import { hasScript, isValidProjectName } from './utils.js';
 import { TEMPLATES, FRAMEWORKS, getFrameworkLabel } from './registry.js';
+import { getTemplateDir } from './template.js';
 
 export async function runPrompts(args: {
   projectName?: string;
   template?: TemplateName;
   packageManager?: PackageManager;
   skipInstall: boolean;
+  ci?: CiProvider;
 }): Promise<CreateOptions | ScaffoldOptions | FreshCreateOptions | null> {
   p.intro('Optimizely CMS — Create a new project');
 
@@ -58,6 +60,7 @@ async function runCreatePrompts(args: {
   template?: TemplateName;
   packageManager?: PackageManager;
   skipInstall: boolean;
+  ci?: CiProvider;
 }): Promise<CreateOptions | null> {
   let projectName = args.projectName;
   if (!projectName) {
@@ -97,12 +100,28 @@ async function runCreatePrompts(args: {
     packageManager = result as PackageManager;
   }
 
+  let ci = args.ci;
+  if (!ci) {
+    // Without a TTY the prompt would cancel scripted runs that used to need no input
+    if (process.stdin.isTTY && hasScript(getTemplateDir(template), 'deploy')) {
+      const result = await p.confirm({
+        message: 'Add a GitHub Actions workflow that deploys to Optimizely front-end hosting?',
+        initialValue: false,
+      });
+      if (p.isCancel(result)) return null;
+      ci = result ? 'github' : 'none';
+    } else {
+      ci = 'none';
+    }
+  }
+
   return {
     mode: 'create',
     projectName,
     template,
     packageManager,
     skipInstall: args.skipInstall,
+    ci,
   };
 }
 
