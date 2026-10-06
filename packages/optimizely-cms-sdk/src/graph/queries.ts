@@ -37,8 +37,10 @@ const METADATA_QUERY_BODY = `{
   damAssetType: __type(name: "cmp_Asset") {
     __typename
   }
-  taxonomyType: __type(name: "_TaxonomyTerm") {
-    __typename
+  taxonomyType: __type(name: "_Metadata") {
+    fields(includeDeprecated: false) {
+      name
+    }
   }`;
 
 const FORM_CONTAINER_PREDICATE = `{ composition: { nodes: { type: { eq: "OptiFormsContainerData" } } } }`;
