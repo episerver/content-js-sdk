@@ -166,7 +166,7 @@ async function resolveFormNodes<T>(
       // Built here rather than delegating to `getContent`, which would spend a
       // metadata round trip rediscovering a content type we already know.
       const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
-        ...fragmentContext(context, options.damEnabled, options.taxonomyEnabled),
+        ...fragmentContext(context, options.damEnabled, false),
         formsEnabled: true,
         sectionTypes: options.sectionTypes,
         filterShape: filter.filterShape,
