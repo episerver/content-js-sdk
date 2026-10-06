@@ -22,8 +22,18 @@ Template mode projects come with the SDK already initialized. For fresh and scaf
 
 See the full guide in the [create-app README](../packages/optimizely-cms-create-app/README.md#sdk-initialization).
 
+## Deploying
+
+The Next.js templates are ready for Optimizely front-end hosting: they have a `deploy` script
+and declare their Node.js version. Pass `--ci github` to add a GitHub Actions workflow that
+deploys on each push to `main`. Front-end hosting installs with npm or yarn, so choose one of
+those as the package manager.
+
+See [Deploy to Front-end Hosting](./18-deploy-to-frontend-hosting.md).
+
 ## Next steps
 
 - [Installation](./1-installation.md) - Set up your development environment
 - [Setup](./2-setup.md) - Configure the SDK and CLI
 - [Modelling](./3-modelling.md) - Define your content types with TypeScript
+- [Deploy to Front-end Hosting](./18-deploy-to-frontend-hosting.md) - Put the site live
