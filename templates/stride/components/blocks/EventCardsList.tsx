@@ -31,7 +31,7 @@ export type EventCardsListProps = {
 function EventCardsList({ content }: EventCardsListProps) {
   return (
     <section>
-      <h2 className='text-4xl md:text-6xl font-bold mb-4 tracking-tight mb-8 border-b border-white/10 pb-4'>
+      <h2 className='text-4xl md:text-6xl font-bold mb-4 tracking-tight border-b border-white/10 pb-4'>
         {content.title}
       </h2>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
