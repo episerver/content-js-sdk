@@ -193,10 +193,17 @@ async function resolveFormNodes<T>(
   return item;
 }
 
-// TAXONOMY HIERARCHY RESOLUTION
+function hoistCategories(item: any): any {
+  if (!item) return item;
+  const categories = item.itemMetadata?.categories;
+  if (categories !== undefined && item._metadata) {
+    item._metadata.categories = categories;
+    delete item.itemMetadata;
+  }
+  return item;
+}
 
-const PARENT_FIELDS = 'key displayName';
-const PARENT_DEPTH = `{ ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} parent { ${PARENT_FIELDS} } } } } }`;
+// TAXONOMY HIERARCHY RESOLUTION
 
 const TAXONOMY_BATCH_SIZE = 100;
 
@@ -210,7 +217,7 @@ query ResolveTaxonomyTerms($keys: [String!]!) {
         description
         taxonomy
         usage
-        parent ${PARENT_DEPTH}
+        parent
       }
     }
   }
@@ -223,18 +230,11 @@ type TermMetadata = {
   description?: string | null;
   taxonomy?: string | null;
   usage?: string | null;
-  parent?: { key: string; displayName: string | null; parent?: TermMetadata['parent'] } | null;
+  parent?: string | null;
 };
 
 function buildPath(meta: TermMetadata): Array<{ key: string; displayName: string | null }> {
-  const chain: Array<{ key: string; displayName: string | null }> = [];
-  let current: TermMetadata['parent'] = { key: meta.key, displayName: meta.displayName, parent: meta.parent };
-  while (current) {
-    chain.push({ key: current.key, displayName: current.displayName });
-    current = current.parent;
-  }
-  chain.reverse();
-  return chain;
+  return [{ key: meta.key, displayName: meta.displayName }];
 }
 
 function metadataToTaxonomyTerm(key: string, meta: TermMetadata | undefined): TaxonomyTerm {
@@ -284,6 +284,11 @@ export function clearTaxonomyCache(): void {
   taxonomyTermCache.clear();
 }
 
+function extractTermKey(uri: string): string {
+  const lastSlash = uri.lastIndexOf('/');
+  return lastSlash >= 0 ? uri.slice(lastSlash + 1) : uri;
+}
+
 async function resolveTaxonomyTerms(
   context: GraphClientContext,
   termKeys: string[],
@@ -301,20 +306,23 @@ async function resolveTaxonomyTerms(
   const cached: TaxonomyTerm[] = [];
   const uncachedKeys: string[] = [];
 
-  for (const key of [...new Set(termKeys)]) {
-    const hit = localCache.get(key);
+  for (const uri of [...new Set(termKeys)]) {
+    const hit = localCache.get(uri);
     if (hit) {
       cached.push(hit);
     } else {
-      uncachedKeys.push(key);
+      uncachedKeys.push(uri);
     }
   }
 
   if (uncachedKeys.length > 0) {
     try {
+      const uriToKey = new Map(uncachedKeys.map(uri => [uri, extractTermKey(uri)]));
+      const queryKeys = [...new Set(uriToKey.values())];
+
       const batches: string[][] = [];
-      for (let i = 0; i < uncachedKeys.length; i += TAXONOMY_BATCH_SIZE) {
-        batches.push(uncachedKeys.slice(i, i + TAXONOMY_BATCH_SIZE));
+      for (let i = 0; i < queryKeys.length; i += TAXONOMY_BATCH_SIZE) {
+        batches.push(queryKeys.slice(i, i + TAXONOMY_BATCH_SIZE));
       }
 
       const batchResults = await Promise.all(
@@ -337,11 +345,12 @@ async function resolveTaxonomyTerms(
         }
       }
 
-      for (const key of uncachedKeys) {
-        const term = metadataToTaxonomyTerm(key, fetchedMap.get(key));
-        localCache.set(key, term);
+      for (const uri of uncachedKeys) {
+        const shortKey = uriToKey.get(uri)!;
+        const term = metadataToTaxonomyTerm(uri, fetchedMap.get(shortKey));
+        localCache.set(uri, term);
       }
-    } catch {
+    } catch (err) {
       logWarning('Taxonomy hierarchy resolution failed; resolvedCategories will be undefined');
       return undefined;
     }
@@ -409,10 +418,12 @@ async function getContentMetaData(
     : dam === 'off' ? false
     : data.damAssetType !== null;
 
+  const hasCategoriesField = Array.isArray(data.taxonomyType?.fields)
+    && data.taxonomyType.fields.some((f: { name: string }) => f.name === 'categories');
   const taxonomyEnabled =
     taxonomy === 'on' ? true
     : taxonomy === 'off' ? false
-    : data.taxonomyType !== null;
+    : hasCategoriesField;
 
   // The probe covers a form in a composition. Content type checks cover
   // the form container itself and forms in content areas.
@@ -501,7 +512,7 @@ export async function getContentByPath<T = any>(
 
       const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
-          resolveFormNodes(context, liftSectionNodes(removeTypePrefix(item)), {
+          resolveFormNodes(context, hoistCategories(liftSectionNodes(removeTypePrefix(item))), {
             damEnabled,
             taxonomyEnabled,
             sectionTypes,
@@ -583,7 +594,7 @@ export async function getPreviewContent(
     });
 
     const query = createSingleContentQuery(contentTypeName, {
-      ...fragmentContext(context, damEnabled),
+      ...fragmentContext(context, damEnabled, taxonomyEnabled),
       formsEnabled,
       sectionTypes,
       filterShape: filter.filterShape,
@@ -602,7 +613,7 @@ export async function getPreviewContent(
 
     const result = await resolveFormNodes(
       context,
-      liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+      hoistCategories(liftSectionNodes(removeTypePrefix(response?._Content?.item))),
       {
         damEnabled,
         taxonomyEnabled,
@@ -690,7 +701,7 @@ export async function getContent(
 
       const result = await resolveFormNodes(
         context,
-        liftSectionNodes(removeTypePrefix(response?._Content?.item)),
+        hoistCategories(liftSectionNodes(removeTypePrefix(response?._Content?.item))),
         {
           damEnabled,
           taxonomyEnabled,

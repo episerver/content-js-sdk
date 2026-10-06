@@ -12,6 +12,7 @@ import {
   type GraphGetContentOptions,
   type GraphGetItemOptions,
   type GraphGetLinksOptions,
+  type GraphGetPreviewOptions,
   type GraphOptions,
   type GraphQueryOptions,
   type GraphReference,
@@ -245,7 +246,7 @@ export class GraphClient {
     return operations.getContentByPath<T>(this, path, options);
   }
 
-  async getPreviewContent(params: PreviewParams, options?: GraphQueryOptions) {
+  async getPreviewContent(params: PreviewParams, options?: GraphGetPreviewOptions) {
     return operations.getPreviewContent(this, params, options);
   }
 

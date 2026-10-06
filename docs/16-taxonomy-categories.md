@@ -4,7 +4,7 @@ Content in Optimizely CMS can be assigned taxonomy categories — hierarchical t
 
 ## How taxonomy detection works
 
-By default, the SDK detects whether your Content Graph schema supports taxonomy and, when it does, adds the `categories` field to the `ItemMetadata` fragment. This detection rides along on the metadata request the SDK already makes, so it costs no extra round trip.
+By default, the SDK detects whether your Content Graph schema supports taxonomy by introspecting the `_Metadata` type for a `categories` field. When it finds one, it adds `_itemMetadata { categories }` to content queries. This detection rides along on the metadata request the SDK already makes, so it costs no extra round trip. The SDK then hoists the result to `_metadata.categories` so you always read it from a single location.
 
 You can control this behaviour with the `taxonomy` option, which accepts:
 
@@ -42,7 +42,7 @@ If the content has no categories assigned, this is an empty array `[]`. If taxon
 
 ## Resolving category hierarchy
 
-Raw category keys are useful for filtering, but to display names or breadcrumbs you need the full term data. Pass `resolveTaxonomy: true` on any content-fetching call:
+Raw category keys are URIs (e.g., `cms://taxonomy/categories/my-term`) useful for filtering, but to display names you need the full term data. Pass `resolveTaxonomy: true` on any content-fetching call:
 
 ```ts
 const page = await client.getContent(reference, {
@@ -56,13 +56,11 @@ console.log(page._metadata.resolvedCategories);
 //     displayName: 'Nordic',
 //     description: 'Nordic countries',
 //     taxonomy: 'Region',
-//     usage: null,
+//     usage: 'Public',
 //     sortOrder: null,
 //     isAvailable: null,
 //     isSelectable: null,
 //     path: [
-//       { key: 'region', displayName: 'Region' },
-//       { key: 'region-europe', displayName: 'Europe' },
 //       { key: 'region-europe-nordic', displayName: 'Nordic' },
 //     ],
 //   },
@@ -82,9 +80,7 @@ Each resolved term includes:
 | `sortOrder` | `number \| null` | Sort position within siblings |
 | `isAvailable` | `boolean \| null` | Whether the term is available for assignment |
 | `isSelectable` | `boolean \| null` | Whether the term can be selected by editors |
-| `path` | `Array<{ key, displayName }>` | Full breadcrumb from root to this term |
-
-The `path` array is ordered root-to-leaf, with the term itself as the last element. For a root-level term, `path` has a single entry.
+| `path` | `Array<{ key, displayName }>` | The term as a `{ key, displayName }` entry |
 
 ### When a term cannot be resolved
 

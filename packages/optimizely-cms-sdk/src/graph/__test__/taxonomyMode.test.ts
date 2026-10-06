@@ -24,7 +24,7 @@ function stubGraph(schemaHasTaxonomy: boolean, schemaHasDam = false) {
       return {
         _Content: { item: { _metadata: { types: ['ct1'] } } },
         damAssetType: schemaHasDam ? { __typename: '__Type' } : null,
-        taxonomyType: schemaHasTaxonomy ? { __typename: '__Type' } : null,
+        taxonomyType: schemaHasTaxonomy ? { fields: [{ name: 'categories' }] } : null,
       };
     }
     return contentResponse;
@@ -54,7 +54,7 @@ describe("taxonomy: 'automatic' (default)", () => {
 
     await client.getContent({ key: 'a' });
 
-    expect(metadataQuery()).toContain('__type(name: "_TaxonomyTerm")');
+    expect(metadataQuery()).toContain('__type(name: "_Metadata")');
     expect(contentQuery()).toContain('categories');
   });
 
@@ -63,7 +63,7 @@ describe("taxonomy: 'automatic' (default)", () => {
 
     await client.getContent({ key: 'a' });
 
-    expect(metadataQuery()).toContain('__type(name: "_TaxonomyTerm")');
+    expect(metadataQuery()).toContain('__type(name: "_Metadata")');
     expect(contentQuery()).not.toContain('categories');
   });
 });
@@ -91,7 +91,7 @@ describe("taxonomy: 'on'", () => {
 });
 
 describe('ItemMetadata fragment', () => {
-  test('categories is in the ItemMetadata fragment alongside changeset and displayOption', async () => {
+  test('categories is fetched via _itemMetadata alongside ItemMetadata changeset and displayOption', async () => {
     stubGraph(true);
 
     await client.getContent({ key: 'a' });
@@ -102,7 +102,8 @@ describe('ItemMetadata fragment', () => {
     const fields = itemMetadataMatch![1].trim();
     expect(fields).toContain('changeset');
     expect(fields).toContain('displayOption');
-    expect(fields).toContain('categories');
+    expect(query).toContain('_itemMetadata');
+    expect(query).toContain('categories');
   });
 
   test('ItemMetadata fragment omits categories when taxonomy disabled', async () => {
