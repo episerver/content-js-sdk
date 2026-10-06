@@ -131,6 +131,7 @@ describe('createPackage', () => {
       [
         'package.json',
         'package-lock.json',
+        'pnpm-lock.yaml',
         'src/app/page.tsx',
         'public/logo.svg',
         '.env.example',
