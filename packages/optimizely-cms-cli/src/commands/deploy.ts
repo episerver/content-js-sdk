@@ -8,6 +8,7 @@ import { join, resolve } from 'node:path';
 import { readHostingCredentials } from '../service/config.js';
 import {
   createDeploymentClient,
+  toLiveSiteUrl,
   type Deployment,
   type DeploymentClient,
 } from '../service/hosting/deploymentClient.js';
@@ -22,7 +23,7 @@ import { waitForDeployment } from '../service/hosting/waitForDeployment.js';
 const KNOWN_ENVIRONMENTS = ['Test1', 'Test2', 'Production1'];
 
 const FIRST_DEPLOYMENT_HINT =
-  'If this is the first deployment, add the hostname from the Hostnames tab of the DXP management portal to your application: in the hosts of optimizely.config.mjs followed by `config push`, or in CMS Settings > Applications';
+  'If this is the first deployment, add the site hostname (also on the Hostnames tab of the DXP management portal) to your application: in the hosts of optimizely.config.mjs followed by `config push`, or in CMS Settings > Applications';
 
 // By content, not position: the platform replaces the lists at each stage
 const newItems = (current: string[] = [], previous: string[] = []) =>
@@ -117,11 +118,15 @@ export default class Deploy extends Command {
       const { id } = await this.step(`Starting deployment to ${flags.env}`, () =>
         client.startDeployment(flags.env!, packageName),
       );
-      const deployment = await this.deploy(client, id, flags.complete, flags.timeout);
-
-      (deployment.validationLinks ?? []).forEach(link => this.log(`  ${chalk.cyan(link)}`));
+      const { verification, deployment } = await this.deploy(
+        client,
+        id,
+        flags.complete,
+        flags.timeout,
+      );
 
       if (deployment.status === 'AwaitingVerification') {
+        this.printUrls(deployment.validationLinks);
         this.log(
           `Deployment ${id} is awaiting verification. Complete or reset it in the DXP management portal`,
         );
@@ -129,6 +134,12 @@ export default class Deploy extends Command {
       }
 
       ora().succeed(`Deployment ${id} succeeded`);
+      // A completed deployment returns no links, so the live URL is derived from the slot URL
+      this.printUrls(
+        deployment.validationLinks?.length ?
+          deployment.validationLinks
+        : (verification.validationLinks ?? []).flatMap(link => toLiveSiteUrl(link) ?? []),
+      );
       this.log(chalk.dim(FIRST_DEPLOYMENT_HINT));
     } finally {
       await rm(tempDir, { recursive: true, force: true });
@@ -149,7 +160,7 @@ export default class Deploy extends Command {
     id: string,
     complete: boolean,
     timeoutMinutes: number,
-  ): Promise<Deployment> {
+  ): Promise<{ verification: Deployment; deployment: Deployment }> {
     const verification = await this.step(`Deploying ${id}`, spinner =>
       waitForDeployment(() => client.getDeployment(id), {
         until: ['AwaitingVerification', 'Succeeded'],
@@ -158,11 +169,12 @@ export default class Deploy extends Command {
       }),
     );
 
-    if (verification.status !== 'AwaitingVerification' || !complete) return verification;
+    if (verification.status !== 'AwaitingVerification' || !complete)
+      return { verification, deployment: verification };
 
     await client.completeDeployment(id);
 
-    return this.step('Completing deployment', spinner =>
+    const deployment = await this.step('Completing deployment', spinner =>
       waitForDeployment(() => client.getDeployment(id), {
         until: ['Succeeded'],
         timeoutMinutes,
@@ -170,6 +182,12 @@ export default class Deploy extends Command {
         onUpdate: this.reportProgress(spinner, 'Completing deployment'),
       }),
     );
+
+    return { verification, deployment };
+  }
+
+  private printUrls(urls: string[] = []) {
+    urls.forEach(url => this.log(`  ${chalk.cyan(url)}`));
   }
 
   /** Spinner text carries the percentage; status changes, warnings and errors are logged so CI output shows them */

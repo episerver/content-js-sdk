@@ -59,6 +59,17 @@ export function signRequest({
   return `epi-hmac ${clientKey}:${timestamp}:${nonce}:${signature}`;
 }
 
+/** Derive the live site URL from a verification slot URL, or return undefined if it is not a slot URL */
+export function toLiveSiteUrl(slotUrl: string): string | undefined {
+  const [schemeAndWebApp, ...domain] = slotUrl.split('.');
+
+  // Observed convention, not documented: the slot is served at <web app>-slot.<domain>
+  if (!schemeAndWebApp.toLowerCase().endsWith('-slot')) return undefined;
+
+  const liveUrl = [schemeAndWebApp.slice(0, -'-slot'.length), ...domain].join('.');
+  return new URL(liveUrl).toString();
+}
+
 const readErrors = async (response: Response): Promise<string[]> => {
   const text = await response.text();
 

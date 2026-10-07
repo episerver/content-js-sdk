@@ -101,7 +101,9 @@ site and starts it in a deployment slot before it completes. The command shows e
 deployment status, and any warnings or errors from the platform. It exits with a non-zero code
 if any step fails, so CI and coding agents can rely on it.
 
-Find the site URL on the **Hostnames** tab of the DXP management portal.
+When the deployment completes, the command prints the site URL. With `--no-complete`, it prints
+the URL of the verification slot instead. The site URLs are also on the **Hostnames** tab of the
+DXP management portal.
 
 See [CLI Commands](./13-cli-commands.md#deploy) for every flag.
 
@@ -126,8 +128,8 @@ npx optimizely-cms-cli deploy --output ./out
 
 Connect the deployed site to the CMS. You do this once for each environment:
 
-1. Copy the environment's hostname from the **Hostnames** tab of the DXP management portal,
-   for example `myproject9abc1t001.dxcloud.episerver.net` for `Test1`.
+1. Take the hostname from the URL that `deploy` printed, or from the **Hostnames** tab of the
+   DXP management portal, for example `myproject9abc1t001.dxcloud.episerver.net` for `Test1`.
 2. Add it to the `hosts` of your application in `optimizely.config.mjs`, and run
    `optimizely-cms-cli config push`. `config push` creates the application, or updates the
    hosts of an existing one:

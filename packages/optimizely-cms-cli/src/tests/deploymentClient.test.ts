@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createDeploymentClient, signRequest } from '../service/hosting/deploymentClient.js';
+import {
+  createDeploymentClient,
+  signRequest,
+  toLiveSiteUrl,
+} from '../service/hosting/deploymentClient.js';
 
 const credentials = {
   projectId: 'p1',
@@ -28,6 +32,25 @@ describe('signRequest', () => {
     expect(
       signRequest({ ...base, method: 'POST', pathAndQuery: '/api/v1.0/projects/p1/deployments', body: startBody }),
     ).toBe('epi-hmac test-key:1700000000000:abc123:+WZwgN0S5Xoa7ftamUaeeYJCvYrDaeljjW8OdWxthOw=');
+  });
+});
+
+describe('toLiveSiteUrl', () => {
+  it('drops the -slot suffix from the web app name', () => {
+    expect(toLiveSiteUrl('http://opin03head9xi14t001-slot.dxcloud.episerver.net/')).toBe(
+      'http://opin03head9xi14t001.dxcloud.episerver.net/',
+    );
+  });
+
+  it('matches the suffix regardless of case', () => {
+    expect(toLiveSiteUrl('HTTP://OPIN03HEAD-SLOT.dxcloud.episerver.net/')).toBe(
+      'http://opin03head.dxcloud.episerver.net/',
+    );
+  });
+
+  it('returns undefined for a URL that is not a slot URL', () => {
+    expect(toLiveSiteUrl('https://site.dxcloud.episerver.net/')).toBeUndefined();
+    expect(toLiveSiteUrl('https://www.slot-machine.com/')).toBeUndefined();
   });
 });
 
