@@ -1,5 +1,6 @@
 import {
   AnyContentType,
+  ContentType,
   PermittedTypes,
   MAIN_BASE_TYPES,
 } from '../model/contentTypes.js';
@@ -36,7 +37,14 @@ const getImplementedContracts = (contentType: AnyContentType): RegistryEntry[] =
   return Array.isArray(contentType.extends) ? contentType.extends : [contentType.extends];
 };
 
-const collectContracts = (type: RegistryEntry): string[] =>
+/**
+ * A registry entry, or the `contentType()` wrapper around one. The wrapper
+ * merges in contract properties, so it is not assignable back to the base-type
+ * union now that each base type narrows what `properties` may hold.
+ */
+type RegistryEntryLike = RegistryEntry | ContentType<AnyContentType>;
+
+const collectContracts = (type: RegistryEntryLike): string[] =>
   getImplementedContracts(type as AnyContentType)
     .filter((c): c is RegistryEntry => isContract(c))
     .map(c => c.key);
@@ -232,7 +240,7 @@ export const refreshCache = () => {
 
 // CONTENT TYPE UTILITIES
 
-const allPropertiesAreDisabled = (contentType: RegistryEntry): boolean => {
+const allPropertiesAreDisabled = (contentType: RegistryEntryLike): boolean => {
   if (!contentType?.properties) return false;
   const properties = Object.values(contentType.properties);
   return (

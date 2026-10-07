@@ -4,7 +4,8 @@ import {
   AnyContract,
   ContentType,
   Contract,
-  PropertiesRecord,
+  CommonProperties,
+  ExperienceProperties,
   SuppliedContractValues,
 } from './contentTypes.js';
 import { DisplayTemplate, DisplayTemplateVariant } from './displayTemplates.js';
@@ -12,7 +13,7 @@ import { getAllContentTypes } from './contentTypeRegistry.js';
 
 function getMergedProps<T extends AnyContentType>(
   options: T,
-): PropertiesRecord | undefined {
+): ExperienceProperties | undefined {
   if (!options.extends && !options.properties) return undefined;
 
   const contracts = Array.isArray(options.extends) ? options.extends : [options.extends];
@@ -23,7 +24,7 @@ function getMergedProps<T extends AnyContentType>(
   const props = options.properties;
   const merged = { ...mergedContractsProps, ...props };
 
-  if (Object.keys(merged).length) return merged as PropertiesRecord;
+  if (Object.keys(merged).length) return merged as ExperienceProperties;
   return undefined;
 }
 
@@ -70,9 +71,9 @@ export function contentType<T extends AnyContentType>(options: T): ContentType<T
  * });
  * ```
  */
-// `= {}` avoids falling back to `PropertiesRecord`'s index signature, which
+// `= {}` avoids falling back to `CommonProperties`' index signature, which
 // would swallow other properties once merged
-export function contract<P extends PropertiesRecord = {}>(
+export function contract<P extends CommonProperties = {}>(
   options: SuppliedContractValues<P>,
 ): Contract<P> {
   return { ...options, __type: 'contract', isContract: true };
@@ -171,7 +172,9 @@ export type {
   MediaStringTypes,
   PageContentType,
   PermittedTypes,
-  PropertiesRecord,
+  CommonProperty,
+  CommonProperties,
+  ExperienceProperties,
   SectionContentType,
   SuppliedContractValues,
 } from './contentTypes.js';

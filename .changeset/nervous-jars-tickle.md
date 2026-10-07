@@ -56,4 +56,4 @@ export default function ProductPage({ content }: Props) {
 
 `opti-cms config push` validates all of this before contacting the CMS, so a bad format or a type the layout cannot hold fails locally, naming the content type and the composition. `opti-cms config pull` writes both forms back into your models and imports the content types they reference.
 
-Composition properties require Optimizely CMS SaaS (and future CMS 14), and the CMS accepts them only on `_experience` content types.
+Composition properties require Optimizely CMS SaaS (and future CMS 14), and the CMS accepts them only on `_experience` content types. TypeScript now enforces that: declaring one on a page, section, media type, folder or contract is a compile error, as is setting `composition` on a content type that has no built-in one.
