@@ -1,4 +1,9 @@
-import { AnyProperty, CompositionConfiguration } from './properties.js';
+import {
+  AnyProperty,
+  ArrayItems,
+  ArrayProperty,
+  CompositionConfiguration,
+} from './properties.js';
 
 // Main base types
 export const MAIN_BASE_TYPES = [
@@ -24,25 +29,35 @@ export const ALL_BASE_TYPES = [
 export type BaseTypes = (typeof ALL_BASE_TYPES)[number];
 export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 
-export type PropertiesRecord = Record<string, AnyProperty>;
+/** Any property except a composition, which only an `_experience` may declare. */
+// Not `Exclude<AnyProperty, CompositionProperty>`: that conditional cycles back
+// through `AnyContentType` and collapses the content type to `any`.
+export type CommonProperty = ArrayProperty<ArrayItems> | ArrayItems;
+
+/** Properties of a content type that may not declare a composition. */
+export type CommonProperties = Record<string, CommonProperty>;
+
+/** Properties of a content type that may declare a composition. */
+export type ExperienceProperties = Record<string, AnyProperty>;
 
 /** A "Base" content type that includes all common attributes for all content types */
+// Each owner redeclares `properties`: making this generic collapses `AnyContentType` inference.
 type BaseContentType = {
   key: string;
   displayName: string;
   extends?: AnyContract | Array<AnyContract>;
-  properties?: PropertiesRecord;
+  properties?: CommonProperties;
 };
 
 /** Represents the required values to be provided to make a Contract type */
-export type SuppliedContractValues<P extends PropertiesRecord = PropertiesRecord> = {
+export type SuppliedContractValues<P extends CommonProperties = CommonProperties> = {
   key: string;
   displayName: string;
   properties?: P;
   baseType?: never;
 };
 
-type InnerContractValues<P extends PropertiesRecord = PropertiesRecord> = {
+type InnerContractValues<P extends CommonProperties = CommonProperties> = {
   isContract: true;
   __type: 'contract';
 
@@ -55,7 +70,7 @@ type InnerContractValues<P extends PropertiesRecord = PropertiesRecord> = {
 };
 
 /** Represents the Contract type in CMS */
-export type Contract<P extends PropertiesRecord = PropertiesRecord> =
+export type Contract<P extends CommonProperties = CommonProperties> =
   SuppliedContractValues<P> & InnerContractValues<P>;
 
 /** A contract with any properties. Use this when passing a contract around. */
@@ -84,6 +99,7 @@ type SkipCompositionBehaviors<T> = Omit<T, 'compositionBehaviors'>;
 export type PageContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: '_page';
+    composition?: never;
     mayContainTypes?: Array<
       | ContentType<PageContentType | ExperienceContentType | FolderContentType>
       | '_self'
@@ -94,7 +110,9 @@ export type PageContentType = SkipCompositionBehaviors<
 
 /** Represents the Experience type  in CMS */
 export type ExperienceContentType = SkipCompositionBehaviors<
-  BaseContentType & {
+  Omit<BaseContentType, 'properties'> & {
+    /** The only base type the CMS lets declare a composition property. */
+    properties?: ExperienceProperties;
     baseType: '_experience';
     /** Restrictions and layout for the built-in composition. */
     composition?: CompositionConfiguration;
@@ -110,13 +128,18 @@ export type ExperienceContentType = SkipCompositionBehaviors<
 export type FolderContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: '_folder';
+    composition?: never;
     mayContainTypes?: Array<ContentType<AnyContentType> | '_self' | string>;
   }
 >;
 
 /** Represents the "Component" type (also called "Block") in CMS */
-export type ComponentContentType = BaseContentType & {
+export type ComponentContentType = Omit<BaseContentType, 'properties'> & {
+  /** A `sectionEnabled` component may declare the reserved key `composition`. */
+  properties?: ExperienceProperties;
   baseType: '_component';
+
+  composition?: never;
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled' | 'formsElementEnabled')[];
   mayContainTypes?: Array<ContentType<ComponentContentType> | '_self' | string>;
 };
@@ -134,6 +157,7 @@ export type SectionContentType = SkipCompositionBehaviors<
 export type MediaContentType = SkipCompositionBehaviors<
   BaseContentType & {
     baseType: MediaStringTypes;
+    composition?: never;
   }
 >;
 

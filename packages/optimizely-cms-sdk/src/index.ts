@@ -95,7 +95,9 @@ export type {
   MediaStringTypes,
   PageContentType,
   PermittedTypes,
-  PropertiesRecord,
+  CommonProperty,
+  CommonProperties,
+  ExperienceProperties,
   SectionContentType,
   SuppliedContractValues,
 } from './model/contentTypes.js';
