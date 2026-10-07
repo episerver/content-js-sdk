@@ -96,7 +96,7 @@ npx optimizely-cms-cli deploy --env Test1 --no-complete
 Use the environment names shown on the **Deployments** tab of the DXP management portal, for
 example `Test1`, `Test2` and `Production1`.
 
-A deployment takes about 20–30 minutes: the platform installs the dependencies, builds the
+A deployment can take up to about 30 minutes: the platform installs the dependencies, builds the
 site and starts it in a deployment slot before it completes. The command shows each step, the
 deployment status, and any warnings or errors from the platform. It exits with a non-zero code
 if any step fails, so CI and coding agents can rely on it.
@@ -189,7 +189,7 @@ The workflow:
 | --- | --- |
 | `Front-end hosting credentials not provided` | Set the `OPTIMIZELY_DXP_*` variables the message names |
 | `The front-end hosting credentials were rejected` | Check the client key and secret. Create a new API key if the secret is lost |
-| `...have no access to this project or environment` | Create an API key with the target environment selected |
+| `...have no access to this project or environment` | Check the environment name against the **Deployments** tab, or create an API key with the target environment selected |
 | `No package-lock.json or yarn.lock found` | Run `npm install --package-lock-only` |
 | `Found package-lock.json and yarn.lock` | Delete the lock file of the package manager you do not use |
 | `package.json has no "start" script` | Add the script from [Project requirements](#project-requirements) |
@@ -198,6 +198,8 @@ The workflow:
 | `Deployment ... failed` | Read the errors listed under the message. Application logs are in the **Troubleshoot** tab of the DXP management portal |
 | `Deployment ... did not finish within 30 minutes` | The deployment may still be running. Check the portal, or raise `--timeout` |
 | `Failed to prepare container in repository 'frontend' on ACR` (in the portal) | The package has no lock file. Deploy with the CLI, which checks for one |
+| Warning: `Timed out waiting for all instances ... to become ready` | The site took long to start in the slot. The deployment continues; if it succeeds, the site is fine |
+| Warning: `Site with URL ... responded with error code: 404` | Expected before the CMS application has the hostname. See [After the first deploy](#after-the-first-deploy) |
 
 ## Next steps
 
