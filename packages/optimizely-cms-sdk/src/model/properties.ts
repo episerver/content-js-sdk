@@ -167,10 +167,15 @@ export type CompositionFormat = (typeof COMPOSITION_FORMATS)[number];
  *   components, `_section` content types, or `_component`
  *
  * `allowedTypes` and `restrictedTypes` are optional; left out, every composition
- * element is allowed. When present they may only name types the `format` permits
- * — the CMS rejects a `sectionEnabled` component in a `grid`, and an
- * `elementEnabled` one in an `outline`. Neither list narrows the generated query,
- * which always selects every composition element type.
+ * element is allowed.
+ *
+ * Only `allowedTypes` has to match the `format`: the CMS rejects a
+ * `sectionEnabled` component in a `grid`, and an `elementEnabled` one in an
+ * `outline`. `restrictedTypes` may name a type of either kind, since excluding
+ * one that could never appear is harmless.
+ *
+ * Neither list narrows the generated query, which always selects every
+ * composition element type.
  */
 export type CompositionProperty = BaseProperty & {
   type: 'composition';

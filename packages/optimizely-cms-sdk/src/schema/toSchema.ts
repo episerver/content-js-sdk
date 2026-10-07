@@ -514,6 +514,15 @@ function validateExperienceNode(value: unknown, path: string[], errors: Validati
     for (let i = 0; i < obj.nodes.length; i++) {
       validateExperienceNode(obj.nodes[i], [...path, 'nodes', String(i)], errors);
     }
+  } else if (obj.nodes !== undefined && obj.nodes !== null) {
+    // A leaf node omits `nodes` entirely; anything else present must be a list
+    addError(
+      errors,
+      [...path, 'nodes'],
+      `Expected array`,
+      'array',
+      typeOf(obj.nodes),
+    );
   }
 }
 

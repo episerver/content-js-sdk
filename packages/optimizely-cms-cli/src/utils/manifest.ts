@@ -33,7 +33,6 @@ export type ManifestDisplayTemplate = DisplayTemplates.DisplayTemplateVariant & 
 };
 
 /**
-/**
  * Built-in composition configuration (API format). Only the allowed and
  * restricted type lists differ from the SDK shape: the API takes keys.
  */

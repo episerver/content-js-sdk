@@ -221,6 +221,34 @@ export const validateContentAreaConstraints = (
       // `format` is mandatory on a composition. TypeScript enforces this already, so the
       // check is here for plain JS configs and casts.
       if (target.type === 'composition') {
+        // Only an experience may declare one. The CMS answers `Custom properties
+        // of type 'PropertyComposition' ... are only supported on Experience
+        // content types`; a section keeps its inherited built-in one.
+        if ((ct as any).baseType !== '_experience') {
+          errors.push(
+            `${location}: a composition property is only supported on an ` +
+              `"_experience" content type, not "${(ct as any).baseType}". Use a ` +
+              `content area ("type": "array" of "type": "content") instead.`,
+          );
+        }
+
+        // The CMS reserves the key for the built-in composition
+        if (propName === 'composition') {
+          errors.push(
+            `Content type "${ct.key}": the property name "composition" is reserved ` +
+              `for the built-in composition. Give the property another key, or ` +
+              `configure the built-in one with "composition" beside "properties".`,
+          );
+        }
+
+        // There is no array of compositions in the CMS
+        if (prop.type === 'array') {
+          errors.push(
+            `${location}: a composition cannot be an array item. Declare ` +
+              `"type": "composition" on the property itself.`,
+          );
+        }
+
         if (target.format === undefined) {
           errors.push(`${location}: missing "format". Declare ${formats}.`);
         } else if (!isKnownFormat(target.format)) {
@@ -275,7 +303,9 @@ export const validateContentAreaConstraints = (
  * `grid` is rows and columns of elements, an `outline` a flat list of sections.
  *
  * `undefined` means the type is not in this configuration — an external or
- * not-yet-pushed key — so the CMS is left to judge it.
+ * not-yet-pushed key — so the CMS is left to judge it. A known type that is
+ * neither an element nor a section returns an empty list: no layout can hold
+ * it, which is reported rather than skipped.
  */
 const permittedFormats = (
   entry: any,
@@ -299,7 +329,7 @@ const permittedFormats = (
   if (behaviors.includes('elementEnabled')) formats.push('grid');
   if (behaviors.includes('sectionEnabled')) formats.push('outline');
 
-  return formats.length > 0 ? formats : undefined;
+  return formats;
 };
 
 /**
@@ -328,6 +358,17 @@ const checkAllowedTypeFormats = (
 
     const key = typeof entry === 'string' ? entry : entry.key;
     const kind = format === 'grid' ? 'elements' : 'sections';
+
+    // Usable in neither layout, so pointing at the other one would not help
+    if (formats.length === 0) {
+      errors.push(
+        `${location}: "${key}" cannot be used in any composition. Declare ` +
+          `"compositionBehaviors": ["elementEnabled"] on it to allow it in a ` +
+          `"grid", or ["sectionEnabled"] to allow it in an "outline".`,
+      );
+      continue;
+    }
+
     errors.push(
       `${location}: "${key}" cannot be used in a "${format}" layout composition, ` +
         `which holds ${kind}. Use "format": "${other}", or allow a type that is ` +
