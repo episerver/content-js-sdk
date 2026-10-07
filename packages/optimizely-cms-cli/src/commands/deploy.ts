@@ -24,8 +24,9 @@ const KNOWN_ENVIRONMENTS = ['Test1', 'Test2', 'Production1'];
 const FIRST_DEPLOYMENT_HINT =
   'If this is the first deployment, add the hostname from the Hostnames tab of the DXP management portal to your application: in the hosts of optimizely.config.mjs followed by `config push`, or in CMS Settings > Applications';
 
+// By content, not position: the platform replaces the lists at each stage
 const newItems = (current: string[] = [], previous: string[] = []) =>
-  current.slice(previous.length);
+  current.filter(it => !previous.includes(it));
 
 export default class Deploy extends Command {
   static override description =
