@@ -66,8 +66,11 @@ export function toLiveSiteUrl(slotUrl: string): string | undefined {
   // Observed convention, not documented: the slot is served at <web app>-slot.<domain>
   if (!schemeAndWebApp.toLowerCase().endsWith('-slot')) return undefined;
 
-  const liveUrl = [schemeAndWebApp.slice(0, -'-slot'.length), ...domain].join('.');
-  return new URL(liveUrl).toString();
+  const liveUrl = new URL([schemeAndWebApp.slice(0, -'-slot'.length), ...domain].join('.'));
+
+  // The slot URL is http, but the live site redirects http to https
+  liveUrl.protocol = 'https:';
+  return liveUrl.toString();
 }
 
 const readErrors = async (response: Response): Promise<string[]> => {

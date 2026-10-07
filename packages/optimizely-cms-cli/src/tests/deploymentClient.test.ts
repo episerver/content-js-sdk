@@ -38,13 +38,13 @@ describe('signRequest', () => {
 describe('toLiveSiteUrl', () => {
   it('drops the -slot suffix from the web app name', () => {
     expect(toLiveSiteUrl('http://opin03head9xi14t001-slot.dxcloud.episerver.net/')).toBe(
-      'http://opin03head9xi14t001.dxcloud.episerver.net/',
+      'https://opin03head9xi14t001.dxcloud.episerver.net/',
     );
   });
 
   it('matches the suffix regardless of case', () => {
     expect(toLiveSiteUrl('HTTP://OPIN03HEAD-SLOT.dxcloud.episerver.net/')).toBe(
-      'http://opin03head.dxcloud.episerver.net/',
+      'https://opin03head.dxcloud.episerver.net/',
     );
   });
 
