@@ -303,58 +303,6 @@ export const checkApplication = async (
 };
 
 /**
- * Returns the authorities that are not yet assigned to any of the application's hosts.
- */
-export const findMissingHosts = (
-  hosts: { authority: string }[] | undefined,
-  authorities: string[],
-): string[] =>
-  [...new Set(authorities.map(it => it.toLowerCase()))].filter(
-    authority => !(hosts ?? []).some(host => host.authority.toLowerCase() === authority),
-  );
-
-/**
- * Lists the applications in the CMS (up to 100).
- */
-export const listApplications = async (host?: string): Promise<Application[]> => {
-  const client = await createApiClient(host);
-  const response = await client.GET('/applications', {
-    params: { query: { pageSize: 100 } },
-  });
-
-  if (!response.response.ok) throw formatApiError(response, 'list applications');
-
-  return [...(response.data?.items ?? [])];
-};
-
-/**
- * Adds https hosts to an existing application and returns the authorities that were added.
- */
-export const addApplicationHosts = async (
-  key: string,
-  authorities: string[],
-  host?: string,
-): Promise<string[]> => {
-  const existing = await getApplication(key, host);
-
-  if (!existing) throw new Error(`Application "${key}" was not found in the CMS`);
-
-  const missing = findMissingHosts(existing.hosts, authorities);
-
-  if (missing.length === 0) return [];
-
-  // A merge-patch replaces the whole array, so the existing hosts are sent too
-  const hosts = [
-    ...(existing.hosts ?? []),
-    ...missing.map(authority => ({ authority, preferredUrlScheme: 'https' })),
-  ];
-
-  await updateApplication(key, { hosts: hosts as any }, host);
-
-  return missing;
-};
-
-/**
  * Checks if applications exist and processes content/creates apps if needed.
  * Returns true if all apps already existed (skipped processing).
  */

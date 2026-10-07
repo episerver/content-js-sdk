@@ -263,7 +263,6 @@ dependency. The package leaves out `node_modules`, `.next`, `dist` and `.env` fi
 | `--no-complete` |       | Stop when the deployment awaits verification                            |
 | `--yes`         | `-y`  | Skip the confirmation prompt for Production environments                |
 | `--timeout`     |       | Minutes to wait for each deployment stage (default: 30)                 |
-| `--application` |       | CMS application to add the deployed hostname to (needs CMS credentials) |
 
 ### Content Type Operations
 
