@@ -128,3 +128,111 @@ describe('what is deliberately not checked', () => {
     ).toEqual([]);
   });
 });
+
+describe('a type no layout can hold', () => {
+  // A component with no `compositionBehaviors` is neither an element nor a
+  // section, so it is invalid in both layouts. Pointing at the other format
+  // would not help, so the message says what to declare instead.
+  const Plain = contentType({
+    key: 'PlainComponent',
+    displayName: 'Plain Component',
+    baseType: '_component',
+  });
+
+  const errorsWith = (format: string) =>
+    validateContentAreaConstraints([
+      Plain,
+      {
+        key: 'ProductPage',
+        displayName: 'Product Page',
+        baseType: '_experience',
+        composition: { format, allowedTypes: [Plain] },
+        properties: {},
+      } as any,
+    ]).errors;
+
+  it('is reported rather than skipped', () => {
+    expect(errorsWith('grid')).toEqual([
+      'Content type "ProductPage", built-in composition: "PlainComponent" cannot be used in any composition. Declare "compositionBehaviors": ["elementEnabled"] on it to allow it in a "grid", or ["sectionEnabled"] to allow it in an "outline".',
+    ]);
+  });
+
+  it('is reported for either layout', () => {
+    expect(errorsWith('outline')).toEqual(errorsWith('grid'));
+  });
+});
+
+describe('where a composition property may be declared', () => {
+  const Element = contentType({
+    key: 'CardEl',
+    displayName: 'Card',
+    baseType: '_component',
+    compositionBehaviors: ['elementEnabled'],
+  });
+
+  const composition = { type: 'composition', format: 'grid' };
+
+  const errorsFor = (ct: any) =>
+    validateContentAreaConstraints([Element, ct]).errors;
+
+  it('rejects one on a page', () => {
+    expect(
+      errorsFor({
+        key: 'Article',
+        displayName: 'Article',
+        baseType: '_page',
+        properties: { sidebar: composition },
+      }),
+    ).toEqual([
+      'Content type "Article", property "sidebar" (composition): a composition property is only supported on an "_experience" content type, not "_page". Use a content area ("type": "array" of "type": "content") instead.',
+    ]);
+  });
+
+  it('rejects one on a section, which keeps its inherited built-in composition', () => {
+    expect(
+      errorsFor({
+        key: 'HeroSection',
+        displayName: 'Hero Section',
+        baseType: '_section',
+        properties: { extra: composition },
+      })[0],
+    ).toContain('only supported on an "_experience" content type, not "_section"');
+  });
+
+  it('rejects the reserved key `composition`', () => {
+    expect(
+      errorsFor({
+        key: 'ProductPage',
+        displayName: 'Product Page',
+        baseType: '_experience',
+        properties: { composition },
+      }),
+    ).toEqual([
+      'Content type "ProductPage": the property name "composition" is reserved for the built-in composition. Give the property another key, or configure the built-in one with "composition" beside "properties".',
+    ]);
+  });
+
+  it('rejects an array of compositions', () => {
+    expect(
+      errorsFor({
+        key: 'ProductPage',
+        displayName: 'Product Page',
+        baseType: '_experience',
+        properties: { sidebars: { type: 'array', items: composition } },
+      }),
+    ).toEqual([
+      'Content type "ProductPage", property "sidebars" (composition): a composition cannot be an array item. Declare "type": "composition" on the property itself.',
+    ]);
+  });
+
+  it('accepts one on an experience under any other key', () => {
+    expect(
+      errorsFor({
+        key: 'ProductPage',
+        displayName: 'Product Page',
+        baseType: '_experience',
+        properties: { sidebar: composition },
+      }),
+    ).toEqual([]);
+  });
+});

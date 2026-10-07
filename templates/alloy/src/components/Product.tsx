@@ -2,11 +2,9 @@ import { contentType, ContentProps } from '@optimizely/cms-sdk';
 import { RichText } from '@optimizely/cms-sdk/react/richText';
 import {
   getPreviewUtils,
-  OptimizelyComponent,
   OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { SEOContentType } from './base/SEO';
-import { NoticeContentType } from './base/Notice';
 
 export const ProductContentType = contentType({
   key: 'Product',
