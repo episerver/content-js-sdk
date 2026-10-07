@@ -304,13 +304,13 @@ optimizely-cms-cli deploy --env Test1
 
 **Flags:**
 
-- `-e, --env <name>` - Target environment, for example `Test1`, `Test2` or `Production` (required unless `--output` is set)
+- `-e, --env <name>` - Target environment as named in the DXP management portal, for example `Test1`, `Test2` or `Production1` (required unless `--output` is set)
 - `--dir <path>` - Project directory (default: current directory)
 - `-o, --output <path>` - Write the package to this directory instead of deploying it
 - `--name <name>` - Package name (default: the `package.json` name)
 - `--version <version>` - Exact package version (default: the `package.json` version plus a UTC timestamp)
 - `--no-complete` - Stop when the deployment awaits verification
-- `-y, --yes` - Skip the confirmation prompt for Production
+- `-y, --yes` - Skip the confirmation prompt for Production environments
 - `--timeout <minutes>` - Minutes to wait for each deployment stage (default: 30)
 - `--application <key>` - CMS application to add the deployed hostname to. Needs `OPTIMIZELY_CMS_CLIENT_ID` and `OPTIMIZELY_CMS_CLIENT_SECRET`. If you leave out the flag, `deploy` asks in a terminal instead, as long as those credentials are set
 
@@ -319,8 +319,8 @@ optimizely-cms-cli deploy --env Test1
 **Examples:**
 
 ```bash
-# Deploy to Production from CI, without the prompt
-optimizely-cms-cli deploy --env Production --yes
+# Deploy to production from CI, without the prompt
+optimizely-cms-cli deploy --env Production1 --yes
 
 # Deploy and stop for verification
 optimizely-cms-cli deploy --env Test1 --no-complete

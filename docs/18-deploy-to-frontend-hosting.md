@@ -85,17 +85,23 @@ The Next.js templates from [Create App](./14-create-app.md) meet every requireme
 # Deploy to Test1
 npx optimizely-cms-cli deploy --env Test1
 
-# Deploy to Production. Asks for confirmation in a terminal; --yes skips it
-npx optimizely-cms-cli deploy --env Production
+# Deploy to production. Asks for confirmation in a terminal; --yes skips it
+npx optimizely-cms-cli deploy --env Production1
 
 # Stop when the deployment awaits verification, then check the site and
 # complete or reset it in the DXP management portal
 npx optimizely-cms-cli deploy --env Test1 --no-complete
 ```
 
-The command shows each step, the deployment status, and any warnings or errors from the
-platform. When it finishes, it prints the site URL. It exits with a non-zero code if any step
-fails, so CI and coding agents can rely on it.
+Use the environment names shown on the **Deployments** tab of the DXP management portal, for
+example `Test1`, `Test2` and `Production1`.
+
+A deployment takes about 20–30 minutes: the platform installs the dependencies, builds the
+site and starts it in a deployment slot before it completes. The command shows each step, the
+deployment status, and any warnings or errors from the platform. It exits with a non-zero code
+if any step fails, so CI and coding agents can rely on it.
+
+Find the site URL on the **Hostnames** tab of the DXP management portal.
 
 See [CLI Commands](./13-cli-commands.md#deploy) for every flag.
 

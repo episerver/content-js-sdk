@@ -19,8 +19,8 @@ import {
 } from '../service/hosting/package.js';
 import { waitForDeployment } from '../service/hosting/waitForDeployment.js';
 
-// Not enforced: the front-end hosting environment names are not publicly documented yet
-const KNOWN_ENVIRONMENTS = ['Test1', 'Test2', 'Production'];
+// Not enforced: the names come from the DXP management portal and are not publicly documented
+const KNOWN_ENVIRONMENTS = ['Test1', 'Test2', 'Production1'];
 
 const MANUAL_HOSTNAME_STEP =
   'If this is the first deployment, add the hostname to the application in CMS Settings > Applications, or deploy with --application';
@@ -42,7 +42,7 @@ export default class Deploy extends Command {
     'Package the project and deploy it to Optimizely front-end hosting. Reads the credentials from OPTIMIZELY_DXP_PROJECT_ID, OPTIMIZELY_DXP_CLIENT_KEY and OPTIMIZELY_DXP_CLIENT_SECRET';
   static override examples = [
     '<%= config.bin %> <%= command.id %> --env Test1',
-    '<%= config.bin %> <%= command.id %> --env Production --yes',
+    '<%= config.bin %> <%= command.id %> --env Production1 --yes',
     '<%= config.bin %> <%= command.id %> --env Test1 --no-complete',
     '<%= config.bin %> <%= command.id %> --env Test1 --application my-site',
     '<%= config.bin %> <%= command.id %> --output ./out',
@@ -70,7 +70,7 @@ export default class Deploy extends Command {
     }),
     yes: Flags.boolean({
       char: 'y',
-      description: 'do not ask for confirmation before deploying to Production',
+      description: 'do not ask for confirmation before deploying to a Production environment',
     }),
     timeout: Flags.integer({
       description: 'minutes to wait for each deployment stage',
@@ -133,9 +133,9 @@ export default class Deploy extends Command {
       );
       const deployment = await this.deploy(client, id, flags.complete, flags.timeout);
 
-      (deployment.validationLinks ?? []).forEach(link =>
-        this.log(`  ${chalk.cyan(link)}`),
-      );
+      const links = deployment.validationLinks ?? [];
+
+      links.forEach(link => this.log(`  ${chalk.cyan(link)}`));
 
       if (deployment.status === 'AwaitingVerification') {
         this.log(
@@ -144,6 +144,15 @@ export default class Deploy extends Command {
         return;
       }
 
+      ora().succeed(`Deployment ${id} succeeded`);
+
+      if (links.length === 0)
+        return this.log(
+          chalk.dim(
+            'Find the site URL in the Hostnames tab of the DXP management portal. If this is the first deployment, add it to the application in CMS Settings > Applications',
+          ),
+        );
+
       await this.connectApplication(deployment, flags.application);
     } finally {
       await rm(tempDir, { recursive: true, force: true });
@@ -151,9 +160,10 @@ export default class Deploy extends Command {
   }
 
   private async confirmProduction(env: string, yes: boolean) {
-    if (env.toLowerCase() !== 'production' || yes || !process.stdout.isTTY) return;
+    // Production environments are numbered (Production1), so match the prefix
+    if (!/^production/i.test(env) || yes || !process.stdout.isTTY) return;
 
-    const confirmed = await confirm({ message: 'Deploy to Production?', default: false });
+    const confirmed = await confirm({ message: `Deploy to ${env}?`, default: false });
 
     if (!confirmed) throw new Errors.CLIError('Deployment cancelled');
   }
@@ -180,6 +190,7 @@ export default class Deploy extends Command {
       waitForDeployment(() => client.getDeployment(id), {
         until: ['Succeeded'],
         timeoutMinutes,
+        previous: verification,
         onUpdate: this.reportProgress(spinner, 'Completing deployment'),
       }),
     );
@@ -200,8 +211,11 @@ export default class Deploy extends Command {
         ),
       ];
 
-      spinner.clear();
-      lines.forEach(line => this.log(line));
+      if (lines.length > 0) {
+        spinner.clear();
+        lines.forEach(line => this.log(line));
+      }
+
       spinner.text = `${label} (${deployment.percentComplete ?? 0}%)`;
     };
   }

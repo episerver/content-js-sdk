@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: Target environment (for example Test1, Test2 or Production)
+        description: Target environment as named in the DXP management portal (for example Test1, Test2 or Production1)
         required: true
         default: Test1
 

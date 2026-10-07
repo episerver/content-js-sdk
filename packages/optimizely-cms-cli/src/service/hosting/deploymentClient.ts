@@ -106,7 +106,8 @@ export function createDeploymentClient(
     });
 
     if (response.status === 401) throw new hostingErrors.InvalidHostingCredentials();
-    if (response.status === 403) throw new hostingErrors.ForbiddenHostingCredentials();
+    if (response.status === 403)
+      throw new hostingErrors.ForbiddenHostingCredentials(await readErrors(response));
     if (!response.ok)
       throw new hostingErrors.DeploymentApiError(
         action,

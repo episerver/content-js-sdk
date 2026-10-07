@@ -94,6 +94,16 @@ describe('createDeploymentClient', () => {
     await expect(client.getDeployment('d1')).rejects.toThrow(message);
   });
 
+  it('includes the API errors in the 403 message', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ success: false, errors: ['Access denied for the environment Production'] }, 403),
+    );
+
+    await expect(client.startDeployment('Production', 'a.zip')).rejects.toThrow(
+      /no access[\s\S]*- Access denied for the environment Production/,
+    );
+  });
+
   it('lists the API errors on failure', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ success: false, errors: ['Package not found'] }, 400));
 

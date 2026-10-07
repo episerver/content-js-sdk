@@ -50,9 +50,12 @@ export const hostingErrors = {
     }
   },
   ForbiddenHostingCredentials: class ForbiddenHostingCredentials extends CLIError {
-    constructor() {
+    constructor(errors: string[] = []) {
       super(
-        'The front-end hosting credentials have no access to this project or environment. In the API tab of the DXP management portal, create an API key with the target environment selected',
+        [
+          'The front-end hosting credentials have no access to this project or environment. Check the environment name against the DXP management portal, or create an API key there with the target environment selected',
+          ...errors.map(error => `  - ${error}`),
+        ].join('\n'),
       );
     }
   },

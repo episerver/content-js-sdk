@@ -237,8 +237,8 @@ OPTIMIZELY_DXP_CLIENT_SECRET=your-client-secret
 # Deploy to the Test1 environment
 optimizely-cms-cli deploy --env Test1
 
-# Deploy to Production without the confirmation prompt (CI)
-optimizely-cms-cli deploy --env Production --yes
+# Deploy to production without the confirmation prompt (CI)
+optimizely-cms-cli deploy --env Production1 --yes
 
 # Stop when the deployment awaits verification, and complete it in the portal
 optimizely-cms-cli deploy --env Test1 --no-complete
@@ -255,13 +255,13 @@ dependency. The package leaves out `node_modules`, `.next`, `dist` and `.env` fi
 
 | Flag            | Short | Effect                                                                  |
 | --------------- | ----- | ----------------------------------------------------------------------- |
-| `--env`         | `-e`  | Target environment, for example `Test1`, `Test2` or `Production`        |
+| `--env`         | `-e`  | Target environment, for example `Test1`, `Test2` or `Production1`       |
 | `--dir`         |       | Project directory (default: current directory)                          |
 | `--output`      | `-o`  | Write the package to this directory instead of deploying it             |
 | `--name`        |       | Package name (default: the `package.json` name)                         |
 | `--version`     |       | Exact package version (default: `package.json` version + UTC timestamp) |
 | `--no-complete` |       | Stop when the deployment awaits verification                            |
-| `--yes`         | `-y`  | Skip the Production confirmation prompt                                 |
+| `--yes`         | `-y`  | Skip the confirmation prompt for Production environments                |
 | `--timeout`     |       | Minutes to wait for each deployment stage (default: 30)                 |
 | `--application` |       | CMS application to add the deployed hostname to (needs CMS credentials) |
 

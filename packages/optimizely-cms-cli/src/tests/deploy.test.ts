@@ -42,6 +42,22 @@ describe('waitForDeployment', () => {
     );
   });
 
+  it('compares the first update with the state from an earlier wait', async () => {
+    const onUpdate = vi.fn();
+    const verification = deployment('AwaitingVerification', { deploymentWarnings: ['Slow slot'] });
+    const fetchDeployment = sequence(deployment('Succeeded', { deploymentWarnings: ['Slow slot'] }));
+
+    await waitForDeployment(fetchDeployment, {
+      until: ['Succeeded'],
+      timeoutMinutes: 30,
+      previous: verification,
+      onUpdate,
+      sleep: noSleep,
+    });
+
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ status: 'Succeeded' }), verification);
+  });
+
   it('throws with the deployment errors when it fails', async () => {
     const fetchDeployment = sequence(
       deployment('InProgress'),

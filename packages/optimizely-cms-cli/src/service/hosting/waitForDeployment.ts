@@ -7,6 +7,8 @@ import type { Deployment, DeploymentStatus } from './deploymentClient.js';
 type WaitOptions = {
   until: DeploymentStatus[];
   timeoutMinutes: number;
+  /** Last state seen by an earlier wait, so its status, warnings and errors are not reported again */
+  previous?: Deployment;
   intervalMs?: number;
   onUpdate?: (deployment: Deployment, previous?: Deployment) => void;
   sleep?: (ms: number) => Promise<unknown>;
@@ -21,6 +23,7 @@ export async function waitForDeployment(
   {
     until,
     timeoutMinutes,
+    previous,
     intervalMs = 5000,
     onUpdate,
     sleep = delay,
@@ -29,10 +32,10 @@ export async function waitForDeployment(
 ): Promise<Deployment> {
   const deadline = now() + timeoutMinutes * 60_000;
 
-  const poll = async (previous?: Deployment): Promise<Deployment> => {
+  const poll = async (last?: Deployment): Promise<Deployment> => {
     const deployment = await fetchDeployment();
 
-    onUpdate?.(deployment, previous);
+    onUpdate?.(deployment, last);
 
     if (FAILED_STATUSES.includes(deployment.status))
       throw new hostingErrors.DeploymentFailed(
@@ -48,6 +51,6 @@ export async function waitForDeployment(
     return poll(deployment);
   };
 
-  return poll();
+  return poll(previous);
 }
 
