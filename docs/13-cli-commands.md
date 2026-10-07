@@ -312,6 +312,7 @@ optimizely-cms-cli deploy --env Test1
 - `--no-complete` - Stop when the deployment awaits verification
 - `-y, --yes` - Skip the confirmation prompt for Production
 - `--timeout <minutes>` - Minutes to wait for each deployment stage (default: 30)
+- `--application <key>` - CMS application to add the deployed hostname to. Needs `OPTIMIZELY_CMS_CLIENT_ID` and `OPTIMIZELY_CMS_CLIENT_SECRET`. If you leave out the flag, `deploy` asks in a terminal instead, as long as those credentials are set
 
 `--host` does not apply: `deploy` talks to the DXP Deployment API, not to the CMS.
 

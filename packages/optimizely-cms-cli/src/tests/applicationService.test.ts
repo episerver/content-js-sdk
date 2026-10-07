@@ -3,6 +3,7 @@ import {
   areHostsEqual,
   arePreviewUrlFormatsEqual,
   detectApplicationChanges,
+  findMissingHosts,
 } from '../service/applicationService.js';
 import type { components } from '../service/apiSchema/openapi-schema-types.js';
 import type { ApplicationsType } from '@optimizely/cms-sdk/buildConfig';
@@ -383,5 +384,20 @@ describe('detectApplicationChanges', () => {
         BlogPage: '/blog-preview',
       },
     });
+  });
+});
+
+describe('findMissingHosts', () => {
+  const hosts = [{ authority: 'site-test1.dxcloud.episerver.net' }];
+
+  it('returns the authorities that are not assigned yet', () => {
+    expect(findMissingHosts(hosts, ['site-test1.dxcloud.episerver.net', 'site-test2.dxcloud.episerver.net'])).toEqual([
+      'site-test2.dxcloud.episerver.net',
+    ]);
+  });
+
+  it('compares authorities case-insensitively and removes duplicates', () => {
+    expect(findMissingHosts(hosts, ['Site-Test1.DXCloud.episerver.net'])).toEqual([]);
+    expect(findMissingHosts(undefined, ['a.example.com', 'A.example.com'])).toEqual(['a.example.com']);
   });
 });

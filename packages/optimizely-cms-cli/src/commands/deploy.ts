@@ -1,11 +1,12 @@
 import { Command, Errors, Flags } from '@oclif/core';
-import { confirm } from '@inquirer/prompts';
+import { confirm, select } from '@inquirer/prompts';
 import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { readHostingCredentials } from '../service/config.js';
+import { addApplicationHosts, listApplications } from '../service/applicationService.js';
+import { readEnvCredentials, readHostingCredentials } from '../service/config.js';
 import {
   createDeploymentClient,
   type Deployment,
@@ -21,8 +22,20 @@ import { waitForDeployment } from '../service/hosting/waitForDeployment.js';
 // Not enforced: the front-end hosting environment names are not publicly documented yet
 const KNOWN_ENVIRONMENTS = ['Test1', 'Test2', 'Production'];
 
+const MANUAL_HOSTNAME_STEP =
+  'If this is the first deployment, add the hostname to the application in CMS Settings > Applications, or deploy with --application';
+
 const newItems = (current: string[] = [], previous: string[] = []) =>
   current.slice(previous.length);
+
+const hasCmsCredentials = () => {
+  try {
+    readEnvCredentials();
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export default class Deploy extends Command {
   static override description =
@@ -31,6 +44,7 @@ export default class Deploy extends Command {
     '<%= config.bin %> <%= command.id %> --env Test1',
     '<%= config.bin %> <%= command.id %> --env Production --yes',
     '<%= config.bin %> <%= command.id %> --env Test1 --no-complete',
+    '<%= config.bin %> <%= command.id %> --env Test1 --application my-site',
     '<%= config.bin %> <%= command.id %> --output ./out',
   ];
   static override flags = {
@@ -62,6 +76,10 @@ export default class Deploy extends Command {
       description: 'minutes to wait for each deployment stage',
       default: 30,
       min: 1,
+    }),
+    application: Flags.string({
+      description:
+        'key of the CMS application to add the deployed hostname to (needs OPTIMIZELY_CMS_CLIENT_ID and OPTIMIZELY_CMS_CLIENT_SECRET)',
     }),
   };
 
@@ -115,7 +133,18 @@ export default class Deploy extends Command {
       );
       const deployment = await this.deploy(client, id, flags.complete, flags.timeout);
 
-      this.printResult(deployment, flags.complete);
+      (deployment.validationLinks ?? []).forEach(link =>
+        this.log(`  ${chalk.cyan(link)}`),
+      );
+
+      if (deployment.status === 'AwaitingVerification') {
+        this.log(
+          `Deployment ${id} is awaiting verification. Complete or reset it in the DXP management portal`,
+        );
+        return;
+      }
+
+      await this.connectApplication(deployment, flags.application);
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -191,23 +220,68 @@ export default class Deploy extends Command {
     }
   }
 
-  private printResult(deployment: Deployment, complete: boolean) {
-    const links = deployment.validationLinks ?? [];
-
-    links.forEach(link => this.log(`  ${chalk.cyan(link)}`));
-
-    if (deployment.status === 'AwaitingVerification' && !complete) {
-      this.log(
-        `Deployment ${deployment.id} is awaiting verification. Complete or reset it in the DXP management portal`,
-      );
-      return;
-    }
-
-    this.log(
-      chalk.dim(
-        'If this is the first deployment, add the hostname to the application in CMS Settings > Applications',
-      ),
+  /** Adds the deployed hostname to a CMS application: always with --application, otherwise only after asking in a terminal */
+  private async connectApplication(deployment: Deployment, applicationKey?: string) {
+    const authorities = (deployment.validationLinks ?? []).map(
+      link => new URL(link).host,
     );
+    const interactive = process.stdout.isTTY === true;
+
+    if (authorities.length === 0) return;
+    if (!applicationKey && !(interactive && hasCmsCredentials()))
+      return this.log(chalk.dim(MANUAL_HOSTNAME_STEP));
+
+    try {
+      const key = applicationKey ?? (await this.chooseApplication());
+
+      if (!key) return;
+      if (
+        !applicationKey &&
+        !(await confirm({
+          message: `Add ${authorities.join(', ')} to the CMS application "${key}"?`,
+          default: true,
+        }))
+      )
+        return this.log(chalk.dim(MANUAL_HOSTNAME_STEP));
+
+      const added = await this.step(`Adding the hostname to application "${key}"`, () =>
+        addApplicationHosts(key, authorities),
+      );
+
+      this.log(
+        chalk.dim(
+          added.length > 0 ?
+            `  Added ${added.join(', ')}`
+          : '  The hostname was already assigned',
+        ),
+      );
+    } catch (error) {
+      throw new Errors.CLIError(
+        `The deployment succeeded, but the hostname was not added to the CMS application: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private async chooseApplication(): Promise<string | undefined> {
+    const applications = await listApplications();
+
+    if (applications.length === 0) {
+      this.log(
+        chalk.dim(
+          'No CMS application found. Define one in optimizely.config.mjs, run `config push`, then deploy again with --application',
+        ),
+      );
+      return undefined;
+    }
+    if (applications.length === 1) return applications[0].key;
+
+    return select({
+      message: 'Add the hostname to which CMS application?',
+      choices: applications.map(app => ({
+        name: `${app.displayName} (${app.key})`,
+        value: app.key,
+      })),
+    });
   }
 }
 

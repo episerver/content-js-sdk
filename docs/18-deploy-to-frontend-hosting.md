@@ -120,8 +120,15 @@ npx optimizely-cms-cli deploy --output ./out
 
 Connect the deployed site to the CMS:
 
-1. In **Settings > Applications**, create the application, or open an existing one.
-2. Under **Hostnames**, add the hostname that `deploy` printed.
+1. Create the application, if it does not exist yet. Define it in `optimizely.config.mjs` and
+   run `config push`, or create it in **Settings > Applications**.
+2. Add the deployed hostname to the application. `deploy` does this for you when the CMS
+   credentials (`OPTIMIZELY_CMS_CLIENT_ID` / `OPTIMIZELY_CMS_CLIENT_SECRET`) are set:
+   - in a terminal, it asks which application to use and confirms before it changes anything;
+   - in CI, it adds the hostname only when you pass `--application <key>`.
+
+   Otherwise, add the hostname under **Hostnames** in **Settings > Applications**. A hostname
+   that is already assigned is left as it is.
 3. In **Settings > Scheduled jobs**, run the Optimizely Graph reindex job.
 
 ## Environment variables on the platform
@@ -171,6 +178,7 @@ The workflow:
 | `A package named ... was already uploaded` | Deploy again with a different `--version` |
 | `Deployment ... failed` | Read the errors listed under the message. Application logs are in the **Troubleshoot** tab of the DXP management portal |
 | `Deployment ... did not finish within 30 minutes` | The deployment may still be running. Check the portal, or raise `--timeout` |
+| `The deployment succeeded, but the hostname was not added` | The site is live. Fix the cause in the message (CMS credentials, application key), then add the hostname in **Settings > Applications** or deploy again |
 | `Failed to prepare container in repository 'frontend' on ACR` (in the portal) | The package has no lock file. Deploy with the CLI, which checks for one |
 
 ## Next steps
