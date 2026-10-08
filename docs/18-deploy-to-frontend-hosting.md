@@ -120,6 +120,10 @@ output (`node_modules`, `.next`, `dist`, `out`, `build`, `.astro`, `.yarn/cache`
 earlier packages, unsupported lock files, logs, CMS content exports (`*.episerverdata`), local
 HTTPS certificates, and `.env` files other than `.env.example` and `.env.template`.
 
+`.npmrc` is kept, so the platform can install private packages. If it contains a literal
+registry token, `deploy` warns: replace the token with `${NPM_TOKEN}` and set `NPM_TOKEN` in the
+**App Settings** tab of the DXP management portal.
+
 To check the package without deploying it:
 
 ```bash

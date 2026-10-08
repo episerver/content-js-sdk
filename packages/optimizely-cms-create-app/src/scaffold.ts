@@ -27,20 +27,26 @@ export async function createProject(options: CreateOptions): Promise<void> {
     process.exit(1);
   }
 
-  if (options.ci === 'github') addDeployWorkflow(targetDir);
+  const { projectName, packageManager, skipInstall, ci } = options;
+  const canDeploy = hasScript(targetDir, 'deploy');
+  const addsWorkflow = ci === 'github' && canDeploy;
 
-  if (!options.skipInstall) {
+  if (addsWorkflow) addDeployWorkflow(targetDir);
+  else if (ci === 'github')
+    p.log.warn(
+      'This template cannot be deployed to Optimizely front-end hosting, so no deploy workflow was added.',
+    );
+
+  if (!skipInstall) {
     s.start('Installing dependencies...');
     try {
-      exec(getInstallCommand(options.packageManager), targetDir);
+      exec(getInstallCommand(packageManager), targetDir);
       s.stop('Dependencies installed.');
     } catch {
       s.stop('Failed to install dependencies. Run install manually.');
     }
   }
 
-  const { projectName, packageManager, skipInstall, ci } = options;
-  const canDeploy = hasScript(targetDir, 'deploy');
   // Front-end hosting installs with npm or yarn, and `pnpm deploy` is a built-in pnpm command
   const needsLockFile = canDeploy && packageManager === 'pnpm';
 
@@ -51,7 +57,7 @@ export async function createProject(options: CreateOptions): Promise<void> {
       '# Configure your CMS credentials in .env',
       getRunCommand(packageManager, 'dev'),
       ...(canDeploy && !needsLockFile ? deployInstructions(packageManager) : []),
-      ...(ci === 'github' ? ['# Add the OPTIMIZELY_DXP_* values as GitHub repository secrets'] : []),
+      ...(addsWorkflow ? ['# Add the OPTIMIZELY_DXP_* values as GitHub repository secrets'] : []),
     ].join('\n'),
     'Next steps',
   );
