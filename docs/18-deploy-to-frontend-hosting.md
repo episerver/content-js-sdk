@@ -94,7 +94,8 @@ npx optimizely-cms-cli deploy --env Test1 --no-complete
 ```
 
 Use the environment names shown on the **Deployments** tab of the DXP management portal, for
-example `Test1`, `Test2` and `Production1`.
+example `Test1`, `Test2` and `Production1`. The command first checks that the credentials can
+use the environment, so a wrong name or API key fails before anything is uploaded.
 
 A deployment can take up to about 30 minutes: the platform installs the dependencies, builds the
 site and starts it in a deployment slot before it completes. The command shows each step, the

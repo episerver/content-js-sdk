@@ -90,6 +90,35 @@ describe('createDeploymentClient', () => {
     expect(headers.Authorization).not.toContain(credentials.clientSecret);
   });
 
+  describe('checkEnvironmentAccess', () => {
+    it('reads the environment storage containers', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ success: true, result: { storageContainers: [] } }));
+
+      await client.checkEnvironmentAccess('Test1');
+
+      expect(lastRequest().url).toBe(
+        'https://paas.test/api/v1.0/projects/p1/environments/Test1/storagecontainers',
+      );
+    });
+
+    it.each([
+      [401, /credentials were rejected/],
+      [403, /no access[\s\S]*Access denied for the environment Bogus/],
+    ])('fails on HTTP %i', async (status, message) => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({ success: false, errors: ['Access denied for the environment Bogus'] }, status),
+      );
+
+      await expect(client.checkEnvironmentAccess('Bogus')).rejects.toThrow(message);
+    });
+
+    it('leaves other failures to the deployment', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ success: false, errors: ['Not found'] }, 404));
+
+      await expect(client.checkEnvironmentAccess('Test1')).resolves.toBeUndefined();
+    });
+  });
+
   it('sends no body or content type when completing', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ success: true, result: { id: 'd1', status: 'Completing' } }));
 

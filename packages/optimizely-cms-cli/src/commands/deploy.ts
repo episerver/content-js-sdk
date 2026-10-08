@@ -102,6 +102,11 @@ export default class Deploy extends Command {
     const client = createDeploymentClient(credentials, {
       userAgent: `${this.config.name}/${this.config.version}`,
     });
+
+    await this.step(`Checking access to ${flags.env}`, () =>
+      client.checkEnvironmentAccess(flags.env!),
+    );
+
     const tempDir = await mkdtemp(join(tmpdir(), 'optimizely-deploy-'));
 
     try {

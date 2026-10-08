@@ -138,6 +138,25 @@ export function createDeploymentClient(
   };
 
   return {
+    /** Fail fast on credentials or an environment that cannot be used, before anything is uploaded */
+    checkEnvironmentAccess: async (environment: string) => {
+      try {
+        // The cheapest read-only call scoped to an environment
+        await request(
+          'check access to the environment',
+          'GET',
+          `/environments/${encodeURIComponent(environment)}/storagecontainers`,
+        );
+      } catch (error) {
+        // Other failures are left for the deployment itself to report
+        if (
+          error instanceof hostingErrors.InvalidHostingCredentials ||
+          error instanceof hostingErrors.ForbiddenHostingCredentials
+        )
+          throw error;
+      }
+    },
+
     getPackageLocation: async () =>
       (
         await request<{ location: string }>(
