@@ -408,9 +408,9 @@ sidebar: { type: 'composition', format: 'outline', allowedTypes: [CardElementTyp
 A composition needs nothing but a `format`. `allowedTypes` and `restrictedTypes` are optional; without them every composition element valid for the layout is allowed. Only `allowedTypes` is checked against the format — a `restrictedTypes` entry is accepted either way. Neither narrows the generated query, which still selects every composition element type. `minItems` and `maxItems` are not supported, and both format values are reserved: another property type using one is rejected on push.
 
 > [!IMPORTANT]
-> The CMS only accepts composition properties on `_experience` content types. Declaring one on a page, component or section makes `opti-cms config push` fail with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types` — use a content area there instead. Sections keep their inherited built-in `composition` and cannot add more.
+> The CMS only accepts composition properties on `_experience` content types — use a content area on a page, component or section instead. A section keeps the built-in `composition` it inherits and cannot add more, though a `sectionEnabled` component may declare the reserved key `composition` to type that inherited one.
 >
-> The key `composition` is reserved for the built-in property: using it fails with `The property name 'composition' is reserved for metadata for this content type`. Pick another key.
+> On an experience that key belongs to the built-in composition, so pick another.
 >
 > They also require Optimizely CMS SaaS (and future CMS 14).
 
