@@ -309,6 +309,10 @@ export const createFragment = (
     const isStandaloneSection =
       canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 
+    // Has one, not fetches one. `isStandaloneSection` here would alias the
+    // property on a nested section, cycling back via `_IComponent`.
+    const ownsBuiltInComposition = isExperience || holdsComposition(contentType);
+
     // Process properties (contracts and content types both have properties)
     const propResult = processUserTypeProperties(
       contentType as AnyContentType,
@@ -316,7 +320,7 @@ export const createFragment = (
       suffix,
       visited,
       ctx,
-      isExperience || isStandaloneSection,
+      ownsBuiltInComposition,
     );
     fields.push(...propResult.fields);
     extraFragments.push(...propResult.extraFragments);

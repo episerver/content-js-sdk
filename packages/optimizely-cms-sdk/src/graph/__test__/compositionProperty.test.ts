@@ -124,3 +124,59 @@ describe('alongside the built-in composition', () => {
     expect(section).not.toContain('RestrictedSection__composition');
   });
 });
+
+/**
+ * A `sectionEnabled` component may declare the reserved key `composition` to
+ * type the canvas it inherits. That property must never be aliased: the alias
+ * selects `ICompositionNode`, which spreads `_IComponent`, which spreads the
+ * component's own fragment — a named-fragment cycle, which GraphQL rejects.
+ *
+ * Ownership is therefore decided by whether the type *has* a built-in
+ * composition, not by whether this query fetches it.
+ */
+describe('an inherited composition property', () => {
+  const Element = contentType({
+    key: 'CycleElement',
+    displayName: 'Cycle Element',
+    baseType: '_component',
+    compositionBehaviors: ['elementEnabled'],
+    properties: { heading: { type: 'string' } },
+  });
+
+  const Section = contentType({
+    key: 'CycleSection',
+    displayName: 'Cycle Section',
+    baseType: '_component',
+    compositionBehaviors: ['sectionEnabled'],
+    properties: { composition: { type: 'composition', format: 'grid' } },
+  });
+
+  const Experience = contentType({
+    key: 'CycleExperience',
+    displayName: 'Cycle Experience',
+    baseType: '_experience',
+    properties: {},
+  });
+
+  beforeEach(() => {
+    initContentTypeRegistry([Element, Section, Experience]);
+    refreshCache();
+  });
+
+  test('is not aliased when the section is reached inside a composition', () => {
+    const fragments = fragmentsFor('CycleExperience');
+    const section = fragmentFor(fragments, 'CycleSection');
+
+    // `_IComponent` spreads the section, so the section must not spread back
+    expect(fragmentFor(fragments, '_IComponent')).toContain('...CycleSection');
+    expect(section).not.toContain('ICompositionNode');
+    expect(section).not.toContain('CycleSection__composition');
+  });
+
+  test('is still read directly when the section is queried on its own', () => {
+    const section = fragmentFor(fragmentsFor('CycleSection'), 'CycleSection');
+
+    expect(section).toContain('composition { ...ICompositionNode }');
+    expect(section).not.toContain('CycleSection__composition');
+  });
+});
