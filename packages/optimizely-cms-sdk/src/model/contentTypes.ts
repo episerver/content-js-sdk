@@ -135,7 +135,12 @@ export type FolderContentType = SkipCompositionBehaviors<
 
 /** Represents the "Component" type (also called "Block") in CMS */
 export type ComponentContentType = Omit<BaseContentType, 'properties'> & {
-  /** A `sectionEnabled` component may declare the reserved key `composition`. */
+  /**
+   * Only a `sectionEnabled` component may declare a composition, only under the
+   * reserved key `composition`, and only to type the canvas it inherits.
+   */
+  // Wider than that rule: TypeScript cannot exempt a single key from a `Record`
+  // index signature, so `config push` is what rejects the other cases.
   properties?: ExperienceProperties;
   baseType: '_component';
 

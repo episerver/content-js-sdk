@@ -332,9 +332,9 @@ Three things to know:
 - **`minItems` and `maxItems` are not supported**, and pushing them is rejected.
 
 > [!IMPORTANT]
-> Composition properties are only accepted on `_experience` content types. On a page, component or section, `opti-cms config push` fails with `Custom properties of type 'PropertyComposition' ... are only supported on Experience content types`. Use a content area (`type: 'array'` of `type: 'content'`) on those types instead. Sections keep their inherited built-in `composition` and cannot declare extra ones.
+> Composition properties are only accepted on `_experience` content types. Use a content area (`type: 'array'` of `type: 'content'`) on a page, component or section instead — a section keeps the built-in `composition` it inherits and cannot declare extra ones, though a `sectionEnabled` component may declare the reserved key `composition` to type that inherited one.
 >
-> The key `composition` is reserved on an experience for its built-in property; declaring it fails with `The property name 'composition' is reserved for metadata for this content type`. Give the property any other key.
+> On an experience the key `composition` is taken by the built-in composition, so give the property any other name.
 >
 > They also require Optimizely CMS SaaS (and future CMS 14).
 

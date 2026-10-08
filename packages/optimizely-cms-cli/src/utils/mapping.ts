@@ -221,19 +221,28 @@ export const validateContentAreaConstraints = (
       // `format` is mandatory on a composition. TypeScript enforces this already, so the
       // check is here for plain JS configs and casts.
       if (target.type === 'composition') {
-        // Only an experience may declare one. The CMS answers `Custom properties
-        // of type 'PropertyComposition' ... are only supported on Experience
-        // content types`; a section keeps its inherited built-in one.
-        if ((ct as any).baseType !== '_experience') {
+        const baseType = (ct as any).baseType;
+        const isReservedKey = propName === 'composition';
+
+        // A `sectionEnabled` component models the canvas it inherits under the
+        // reserved key, and the CMS accepts that one case.
+        const inheritedOnComponent =
+          baseType === '_component' &&
+          isReservedKey &&
+          ((ct as any).compositionBehaviors ?? []).includes('sectionEnabled');
+
+        if (baseType !== '_experience' && !inheritedOnComponent) {
           errors.push(
             `${location}: a composition property is only supported on an ` +
-              `"_experience" content type, not "${(ct as any).baseType}". Use a ` +
-              `content area ("type": "array" of "type": "content") instead.`,
+              `"_experience" content type, not "${baseType}". Use a content area ` +
+              `("type": "array" of "type": "content") instead, or — on a ` +
+              `"sectionEnabled" component — the reserved key "composition" to ` +
+              `model the one it inherits.`,
           );
         }
 
-        // The CMS reserves the key for the built-in composition
-        if (propName === 'composition') {
+        // An experience already has a built-in composition under that key
+        if (isReservedKey && !inheritedOnComponent) {
           errors.push(
             `Content type "${ct.key}": the property name "composition" is reserved ` +
               `for the built-in composition. Give the property another key, or ` +

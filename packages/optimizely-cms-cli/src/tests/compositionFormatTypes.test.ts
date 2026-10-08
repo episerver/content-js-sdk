@@ -184,7 +184,7 @@ describe('where a composition property may be declared', () => {
         properties: { sidebar: composition },
       }),
     ).toEqual([
-      'Content type "Article", property "sidebar" (composition): a composition property is only supported on an "_experience" content type, not "_page". Use a content area ("type": "array" of "type": "content") instead.',
+      'Content type "Article", property "sidebar" (composition): a composition property is only supported on an "_experience" content type, not "_page". Use a content area ("type": "array" of "type": "content") instead, or — on a "sectionEnabled" component — the reserved key "composition" to model the one it inherits.',
     ]);
   });
 
@@ -223,6 +223,44 @@ describe('where a composition property may be declared', () => {
     ).toEqual([
       'Content type "ProductPage", property "sidebars" (composition): a composition cannot be an array item. Declare "type": "composition" on the property itself.',
     ]);
+  });
+
+  it('accepts the reserved key on a `sectionEnabled` component', () => {
+    // The one case outside an experience the CMS allows: modelling the canvas
+    // a section-enabled component inherits.
+    expect(
+      errorsFor({
+        key: 'HeroSection',
+        displayName: 'Hero Section',
+        baseType: '_component',
+        compositionBehaviors: ['sectionEnabled'],
+        properties: { composition },
+      }),
+    ).toEqual([]);
+  });
+
+  it('rejects the reserved key on an `elementEnabled` component', () => {
+    expect(
+      errorsFor({
+        key: 'CardEl2',
+        displayName: 'Card',
+        baseType: '_component',
+        compositionBehaviors: ['elementEnabled'],
+        properties: { composition },
+      }).length,
+    ).toBe(2);
+  });
+
+  it('rejects any other key on a `sectionEnabled` component', () => {
+    expect(
+      errorsFor({
+        key: 'HeroSection2',
+        displayName: 'Hero Section',
+        baseType: '_component',
+        compositionBehaviors: ['sectionEnabled'],
+        properties: { sidebar: composition },
+      })[0],
+    ).toContain('only supported on an "_experience" content type, not "_component"');
   });
 
   it('accepts one on an experience under any other key', () => {
