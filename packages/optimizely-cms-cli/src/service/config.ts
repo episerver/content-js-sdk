@@ -55,17 +55,11 @@ export type HostingCredentials = Record<keyof typeof HOSTING_ENV_VARS, string>;
 
 /** Read the front-end hosting deployment credentials from environment variables */
 export function readHostingCredentials(): HostingCredentials {
-  const entries = Object.entries(HOSTING_ENV_VARS).map(
-    ([key, envVar]) => [key, envVar, process.env[envVar]] as const,
-  );
-  const missing = entries
-    .filter(([, , value]) => !value)
-    .map(([, envVar]) => envVar);
+  const missing = Object.values(HOSTING_ENV_VARS).filter(envVar => !process.env[envVar]);
 
-  if (missing.length > 0)
-    throw new hostingErrors.MissingHostingCredentials(missing);
+  if (missing.length > 0) throw new hostingErrors.MissingHostingCredentials(missing);
 
   return Object.fromEntries(
-    entries.map(([key, , value]) => [key, value]),
+    Object.entries(HOSTING_ENV_VARS).map(([key, envVar]) => [key, process.env[envVar]]),
   ) as HostingCredentials;
 }

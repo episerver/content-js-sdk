@@ -131,12 +131,6 @@ describe('createDeploymentClient', () => {
     expect(headers['Content-Type']).toBeUndefined();
   });
 
-  it('returns the package upload location', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ success: true, result: { location: 'https://blob.test/packages?sv=1' } }));
-
-    await expect(client.getPackageLocation()).resolves.toBe('https://blob.test/packages?sv=1');
-  });
-
   it.each([
     [401, /credentials were rejected/],
     [403, /no access to this project or environment/],
@@ -173,6 +167,9 @@ describe('createDeploymentClient', () => {
   describe('uploadPackage', () => {
     let dir: string;
 
+    const mockLocation = (location: string) =>
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, result: { location } }));
+
     beforeEach(async () => {
       dir = await mkdtemp(join(tmpdir(), 'cli-upload-'));
       await writeFile(join(dir, 'site.zip'), 'zip-content');
@@ -180,12 +177,16 @@ describe('createDeploymentClient', () => {
     afterEach(() => rm(dir, { recursive: true, force: true }));
 
     it('puts the blob into the SAS container without overwriting', async () => {
-      fetchMock.mockResolvedValue(new Response(null, { status: 201 }));
+      mockLocation('https://blob.test/packages/?sv=1&sig=abc');
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
 
-      await client.uploadPackage('https://blob.test/packages/?sv=1&sig=abc', 'site.head.app.1.0.0.zip', join(dir, 'site.zip'));
+      await client.uploadPackage('site.head.app.1.0.0.zip', join(dir, 'site.zip'));
 
       const { url, init, headers } = lastRequest();
 
+      expect(String(fetchMock.mock.calls[0][0])).toBe(
+        'https://paas.test/api/v1.0/projects/p1/packages/location',
+      );
       expect(url).toBe('https://blob.test/packages/site.head.app.1.0.0.zip?sv=1&sig=abc');
       expect(init.method).toBe('PUT');
       expect(headers['x-ms-blob-type']).toBe('BlockBlob');
@@ -194,10 +195,11 @@ describe('createDeploymentClient', () => {
     });
 
     it.each([409, 412])('reports an existing package on HTTP %i', async status => {
-      fetchMock.mockResolvedValue(new Response(null, { status }));
+      mockLocation('https://blob.test/packages?sv=1');
+      fetchMock.mockResolvedValueOnce(new Response(null, { status }));
 
       await expect(
-        client.uploadPackage('https://blob.test/packages?sv=1', 'site.head.app.1.0.0.zip', join(dir, 'site.zip')),
+        client.uploadPackage('site.head.app.1.0.0.zip', join(dir, 'site.zip')),
       ).rejects.toThrow(/already uploaded.*--version/);
     });
   });

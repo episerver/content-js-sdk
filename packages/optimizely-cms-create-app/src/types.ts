@@ -8,7 +8,9 @@ export type PackageManager = 'npm' | 'pnpm' | 'yarn';
 
 export type Mode = 'create' | 'scaffold' | 'fresh';
 
-export type CiProvider = 'github' | 'none';
+export const CI_PROVIDERS = ['github', 'none'] as const;
+
+export type CiProvider = (typeof CI_PROVIDERS)[number];
 
 export interface CreateOptions {
   mode: 'create';

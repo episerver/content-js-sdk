@@ -11,6 +11,7 @@ import {
   toLiveSiteUrl,
   type Deployment,
   type DeploymentClient,
+  type DeploymentStatus,
 } from '../service/hosting/deploymentClient.js';
 import {
   createPackage,
@@ -20,7 +21,7 @@ import {
 import { waitForDeployment } from '../service/hosting/waitForDeployment.js';
 
 // Not enforced: the names come from the DXP management portal and are not publicly documented
-const KNOWN_ENVIRONMENTS = ['Test1', 'Test2', 'Production1'];
+const ENVIRONMENT_EXAMPLES = ['Test1', 'Test2', 'Production1'].join(', ');
 
 const FIRST_DEPLOYMENT_HINT =
   'If this is the first deployment, add the site hostname (also on the Hostnames tab of the DXP management portal) to your application: in the hosts of optimizely.config.mjs followed by `config push`, or in CMS Settings > Applications';
@@ -41,7 +42,7 @@ export default class Deploy extends Command {
   static override flags = {
     env: Flags.string({
       char: 'e',
-      description: `target environment, for example ${KNOWN_ENVIRONMENTS.join(', ')} (required unless --output)`,
+      description: `target environment, for example ${ENVIRONMENT_EXAMPLES} (required unless --output)`,
     }),
     dir: Flags.string({ description: 'project directory', default: '.' }),
     output: Flags.string({
@@ -61,7 +62,8 @@ export default class Deploy extends Command {
     }),
     yes: Flags.boolean({
       char: 'y',
-      description: 'do not ask for confirmation before deploying to a Production environment',
+      description:
+        'do not ask for confirmation before deploying to a Production environment',
     }),
     timeout: Flags.integer({
       description: 'minutes to wait for each deployment stage',
@@ -90,21 +92,21 @@ export default class Deploy extends Command {
       return;
     }
 
-    if (!flags.env)
-      this.error(
-        `Missing required flag --env, for example ${KNOWN_ENVIRONMENTS.join(', ')}`,
-      );
+    const { env } = flags;
+
+    if (!env)
+      this.error(`Missing required flag --env, for example ${ENVIRONMENT_EXAMPLES}`);
 
     const credentials = readHostingCredentials();
 
-    await this.confirmProduction(flags.env, flags.yes);
+    await this.confirmProduction(env, flags.yes);
 
     const client = createDeploymentClient(credentials, {
       userAgent: `${this.config.name}/${this.config.version}`,
     });
 
-    await this.step(`Checking access to ${flags.env}`, () =>
-      client.checkEnvironmentAccess(flags.env!),
+    await this.step(`Checking access to ${env}`, () =>
+      client.checkEnvironmentAccess(env),
     );
 
     const tempDir = await mkdtemp(join(tmpdir(), 'optimizely-deploy-'));
@@ -116,12 +118,10 @@ export default class Deploy extends Command {
 
       this.log(chalk.dim(`  ${files.length} files`));
 
-      await this.step('Uploading package', async () =>
-        client.uploadPackage(await client.getPackageLocation(), packageName, path),
-      );
+      await this.step('Uploading package', () => client.uploadPackage(packageName, path));
 
-      const { id } = await this.step(`Starting deployment to ${flags.env}`, () =>
-        client.startDeployment(flags.env!, packageName),
+      const { id } = await this.step(`Starting deployment to ${env}`, () =>
+        client.startDeployment(env, packageName),
       );
       const { verification, deployment } = await this.deploy(
         client,
@@ -166,38 +166,41 @@ export default class Deploy extends Command {
     complete: boolean,
     timeoutMinutes: number,
   ): Promise<{ verification: Deployment; deployment: Deployment }> {
-    const verification = await this.step(`Deploying ${id}`, spinner =>
-      waitForDeployment(() => client.getDeployment(id), {
-        until: ['AwaitingVerification', 'Succeeded'],
-        timeoutMinutes,
-        onUpdate: this.reportProgress(spinner, `Deploying ${id}`),
-      }),
-    );
+    const report = this.progressReporter();
+    const waitFor = (label: string, until: DeploymentStatus[]) =>
+      this.step(label, spinner =>
+        waitForDeployment(() => client.getDeployment(id), {
+          until,
+          timeoutMinutes,
+          onUpdate: report(spinner, label),
+        }),
+      );
+
+    const verification = await waitFor(`Deploying ${id}`, [
+      'AwaitingVerification',
+      'Succeeded',
+    ]);
 
     if (verification.status !== 'AwaitingVerification' || !complete)
       return { verification, deployment: verification };
 
     await client.completeDeployment(id);
 
-    const deployment = await this.step('Completing deployment', spinner =>
-      waitForDeployment(() => client.getDeployment(id), {
-        until: ['Succeeded'],
-        timeoutMinutes,
-        previous: verification,
-        onUpdate: this.reportProgress(spinner, 'Completing deployment'),
-      }),
-    );
-
-    return { verification, deployment };
+    return {
+      verification,
+      deployment: await waitFor('Completing deployment', ['Succeeded']),
+    };
   }
 
   private printUrls(urls: string[] = []) {
     urls.forEach(url => this.log(`  ${chalk.cyan(url)}`));
   }
 
-  /** Spinner text carries the percentage; status changes, warnings and errors are logged so CI output shows them */
-  private reportProgress(spinner: Ora, label: string) {
-    return (deployment: Deployment, previous?: Deployment) => {
+  /** Spinner text carries the percentage; status changes, warnings and errors are logged once across all stages so CI output shows them */
+  private progressReporter() {
+    let previous: Deployment | undefined;
+
+    return (spinner: Ora, label: string) => (deployment: Deployment) => {
       const lines = [
         ...(deployment.status !== previous?.status ?
           [chalk.dim(`  Status: ${deployment.status}`)]
@@ -209,6 +212,8 @@ export default class Deploy extends Command {
           chalk.red(`  Error: ${error}`),
         ),
       ];
+
+      previous = deployment;
 
       if (lines.length > 0) {
         spinner.clear();

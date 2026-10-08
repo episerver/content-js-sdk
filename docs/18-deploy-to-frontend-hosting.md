@@ -115,9 +115,10 @@ without its npm scope or special characters. The version is the `package.json` v
 UTC timestamp, for example `my-site.head.app.1.0.0-20261006120000.zip`, because the platform
 rejects a second upload under the same name. `--name` and `--version` set them exactly.
 
-The package contains the project source and the lock file. It leaves out `node_modules`,
-`.next`, `dist`, `.astro`, `.git`, earlier packages, unsupported lock files, CMS content exports
-(`*.episerverdata`), and `.env` files other than `.env.example` and `.env.template`.
+The package contains the project source and the lock file. It leaves out dependencies and build
+output (`node_modules`, `.next`, `dist`, `out`, `build`, `.astro`, `.yarn/cache`), `.git`,
+earlier packages, unsupported lock files, logs, CMS content exports (`*.episerverdata`), local
+HTTPS certificates, and `.env` files other than `.env.example` and `.env.template`.
 
 To check the package without deploying it:
 

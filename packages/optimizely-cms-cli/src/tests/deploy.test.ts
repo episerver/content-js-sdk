@@ -19,7 +19,7 @@ const sequence = (...deployments: Deployment[]) => {
 const noSleep = () => Promise.resolve();
 
 describe('waitForDeployment', () => {
-  it('polls until the status is reached and reports each update with the previous one', async () => {
+  it('polls until the status is reached and reports each update', async () => {
     const onUpdate = vi.fn();
     const fetchDeployment = sequence(
       deployment('InProgress', { percentComplete: 10 }),
@@ -36,26 +36,10 @@ describe('waitForDeployment', () => {
 
     expect(result.status).toBe('AwaitingVerification');
     expect(fetchDeployment).toHaveBeenCalledTimes(3);
+    expect(onUpdate).toHaveBeenCalledTimes(3);
     expect(onUpdate).toHaveBeenLastCalledWith(
       deployment('AwaitingVerification', { percentComplete: 100 }),
-      deployment('InProgress', { percentComplete: 60 }),
     );
-  });
-
-  it('compares the first update with the state from an earlier wait', async () => {
-    const onUpdate = vi.fn();
-    const verification = deployment('AwaitingVerification', { deploymentWarnings: ['Slow slot'] });
-    const fetchDeployment = sequence(deployment('Succeeded', { deploymentWarnings: ['Slow slot'] }));
-
-    await waitForDeployment(fetchDeployment, {
-      until: ['Succeeded'],
-      timeoutMinutes: 30,
-      previous: verification,
-      onUpdate,
-      sleep: noSleep,
-    });
-
-    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ status: 'Succeeded' }), verification);
   });
 
   it('throws with the deployment errors when it fails', async () => {

@@ -100,19 +100,15 @@ async function runCreatePrompts(args: {
     packageManager = result as PackageManager;
   }
 
-  let ci = args.ci;
-  if (!ci) {
-    // Without a TTY the prompt would cancel scripted runs that used to need no input
-    if (process.stdin.isTTY && hasScript(getTemplateDir(template), 'deploy')) {
-      const result = await p.confirm({
-        message: 'Add a GitHub Actions workflow that deploys to Optimizely front-end hosting?',
-        initialValue: false,
-      });
-      if (p.isCancel(result)) return null;
-      ci = result ? 'github' : 'none';
-    } else {
-      ci = 'none';
-    }
+  let ci = args.ci ?? 'none';
+  // Without a TTY the prompt would cancel scripted runs that used to need no input
+  if (!args.ci && process.stdin.isTTY && hasScript(getTemplateDir(template), 'deploy')) {
+    const result = await p.confirm({
+      message: 'Add a GitHub Actions workflow that deploys to Optimizely front-end hosting?',
+      initialValue: false,
+    });
+    if (p.isCancel(result)) return null;
+    ci = result ? 'github' : 'none';
   }
 
   return {

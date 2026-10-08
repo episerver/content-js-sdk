@@ -34,6 +34,13 @@ const EXCLUDED_PATTERNS = [
   '.vercel/**',
   '.turbo/**',
   'coverage/**',
+  'out/**',
+  'build/**',
+  '.yarn/cache/**',
+  // Local HTTPS keys from `next dev --experimental-https`
+  'certificates/**',
+  '**/*.log',
+  '**/*.tsbuildinfo',
   '**/*.head.app.*.zip',
   // CMS content exports (Stride ships a 9 MB one); the site never reads them at runtime
   '**/*.episerverdata',

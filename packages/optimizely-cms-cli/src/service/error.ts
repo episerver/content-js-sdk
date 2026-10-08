@@ -24,21 +24,22 @@ export const credentialErrors = {
   },
 };
 
+const withDetails = (message: string, details: string[] = []) =>
+  [message, ...details.map(detail => `  - ${detail}`)].join('\n');
+
 export const hostingErrors = {
   DeploymentApiError: class DeploymentApiError extends CLIError {
-    constructor(action: string, status: number, errors: string[] = []) {
-      super(
-        [`Failed to ${action} (HTTP ${status})`, ...errors.map(error => `  - ${error}`)].join('\n'),
-      );
+    constructor(action: string, status: number, errors?: string[]) {
+      super(withDetails(`Failed to ${action} (HTTP ${status})`, errors));
     }
   },
   DeploymentFailed: class DeploymentFailed extends CLIError {
-    constructor(id: string, errors: string[] = []) {
+    constructor(id: string, errors?: string[]) {
       super(
-        [
+        withDetails(
           `Deployment ${id} failed. See the DXP management portal for the full log`,
-          ...errors.map(error => `  - ${error}`),
-        ].join('\n'),
+          errors,
+        ),
       );
     }
   },
@@ -50,12 +51,12 @@ export const hostingErrors = {
     }
   },
   ForbiddenHostingCredentials: class ForbiddenHostingCredentials extends CLIError {
-    constructor(errors: string[] = []) {
+    constructor(errors?: string[]) {
       super(
-        [
+        withDetails(
           'The front-end hosting credentials have no access to this project or environment. Check the environment name against the DXP management portal, or create an API key there with the target environment selected',
-          ...errors.map(error => `  - ${error}`),
-        ].join('\n'),
+          errors,
+        ),
       );
     }
   },
@@ -68,9 +69,7 @@ export const hostingErrors = {
   },
   InvalidProject: class InvalidProject extends CLIError {
     constructor(problems: string[]) {
-      super(
-        `The project cannot be deployed to front-end hosting:\n${problems.map((problem) => `  - ${problem}`).join('\n')}`,
-      );
+      super(withDetails('The project cannot be deployed to front-end hosting:', problems));
     }
   },
   InvalidHostingCredentials: class InvalidHostingCredentials extends CLIError {

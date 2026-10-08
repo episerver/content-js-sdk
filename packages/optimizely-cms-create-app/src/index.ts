@@ -7,7 +7,7 @@ import { augmentProject } from './augment.js';
 import { detectPackageManager } from './detect.js';
 import { TEMPLATE_NAMES } from './registry.js';
 import { isValidProjectName } from './utils.js';
-import type { ParsedArgs, TemplateName, PackageManager, CiProvider } from './types.js';
+import { CI_PROVIDERS, type ParsedArgs, type TemplateName, type PackageManager } from './types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,7 +18,6 @@ function getVersion(): string {
 }
 
 const PACKAGE_MANAGERS = ['npm', 'pnpm', 'yarn'];
-const CI_PROVIDERS = ['github', 'none'];
 
 function parseArgs(argv: string[]): ParsedArgs {
   const args: ParsedArgs = {
@@ -53,7 +52,7 @@ function parseArgs(argv: string[]): ParsedArgs {
       }
       case '--ci': {
         const val = argv[++i];
-        if (CI_PROVIDERS.includes(val)) args.ci = val as CiProvider;
+        args.ci = CI_PROVIDERS.find(provider => provider === val) ?? args.ci;
         break;
       }
       default:
@@ -79,7 +78,7 @@ function printHelp(): void {
     --pm <manager>      Package manager (npm, pnpm, yarn)
     --skip-install      Skip dependency installation
     --ci <provider>     Add a workflow that deploys to Optimizely front-end hosting (github, none)
-    -h, --help         Show help
+    -h, --help          Show help
     -v, --version       Show version
   `);
 }

@@ -157,17 +157,13 @@ export function createDeploymentClient(
       }
     },
 
-    getPackageLocation: async () =>
-      (
-        await request<{ location: string }>(
-          'get the package upload location',
-          'GET',
-          '/packages/location',
-        )
-      ).location,
-
     /** Upload to the SAS container URL; `If-None-Match` stops an existing package from being overwritten */
-    uploadPackage: async (location: string, packageName: string, path: string) => {
+    uploadPackage: async (packageName: string, path: string) => {
+      const { location } = await request<{ location: string }>(
+        'get the package upload location',
+        'GET',
+        '/packages/location',
+      );
       const url = new URL(location);
 
       url.pathname = `${url.pathname.replace(/\/$/, '')}/${encodeURIComponent(packageName)}`;
