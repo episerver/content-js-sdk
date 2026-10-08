@@ -115,8 +115,8 @@ UTC timestamp, for example `my-site.head.app.1.0.0-20261006120000.zip`, because 
 rejects a second upload under the same name. `--name` and `--version` set them exactly.
 
 The package contains the project source and the lock file. It leaves out `node_modules`,
-`.next`, `dist`, `.astro`, `.git`, earlier packages, unsupported lock files, and `.env` files
-other than `.env.example` and `.env.template`.
+`.next`, `dist`, `.astro`, `.git`, earlier packages, unsupported lock files, CMS content exports
+(`*.episerverdata`), and `.env` files other than `.env.example` and `.env.template`.
 
 To check the package without deploying it:
 

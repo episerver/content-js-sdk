@@ -144,6 +144,7 @@ describe('createPackage', () => {
         'dist/server/entry.mjs',
         '.git/HEAD',
         'old.head.app.1.0.0.zip',
+        'stride_content.episerverdata',
       ].map((file) => writeProjectFile(file, 'content')),
     );
 

@@ -35,6 +35,8 @@ const EXCLUDED_PATTERNS = [
   '.turbo/**',
   'coverage/**',
   '**/*.head.app.*.zip',
+  // CMS content exports (Stride ships a 9 MB one); the site never reads them at runtime
+  '**/*.episerverdata',
   // The platform needs exactly one lock file, and validation ensures a supported one exists
   ...UNSUPPORTED_LOCK_FILES,
 ];
