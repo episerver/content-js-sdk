@@ -46,7 +46,7 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       # pre enter/exit runs inside version-selective.sh, not as a step here:
       # changesets/action resets the branch before running the version command,

@@ -35,7 +35,7 @@ function NewsEventsList({ content }: NewsEventsListProps) {
     <div className='space-y-8'>
       {content.title && (
         <h2
-          className='text-4xl md:text-6xl font-bold mb-4 tracking-tight mt-16 mb-8'
+          className='text-4xl md:text-6xl font-bold mb-4 tracking-tight mt-16'
           {...pa('title')}
         >
           {content.title}

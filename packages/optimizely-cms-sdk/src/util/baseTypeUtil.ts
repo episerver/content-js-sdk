@@ -128,13 +128,10 @@ export const getFixedFragments = (
   )} }`,
 ];
 
-function buildCommonFragments(taxonomyEnabled: boolean) {
-  const itemMetadataFields = taxonomyEnabled
-    ? 'changeset displayOption categories'
-    : 'changeset displayOption';
+function buildCommonFragments() {
   return [
     'fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }',
-    `fragment ItemMetadata on ItemMetadata { ${itemMetadataFields} }`,
+    'fragment ItemMetadata on ItemMetadata { changeset displayOption }',
     'fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }',
     CONTENT_URL_FRAGMENT,
     'fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }',
@@ -151,7 +148,10 @@ export function getBaseTypeFragments(
 ): BaseTypeFragments {
   const prefix =
     contentTypeName && !isBaseType(contentTypeName) ? `${contentTypeName}__` : '';
-  const commonFragments = buildCommonFragments(taxonomyEnabled);
+  const commonFragments = buildCommonFragments();
+  const taxonomyField = taxonomyEnabled
+    ? [`${prefix}itemMetadata:_itemMetadata { categories }`]
+    : [];
 
   if (baseType === '_image') {
     return {
@@ -159,6 +159,7 @@ export function getBaseTypeFragments(
         COMMON_FIELDS,
         `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
         `${prefix}imageMetadata:_imageMetadata { width height }`,
+        ...taxonomyField,
       ],
       extraFragments: [...commonFragments],
     };
@@ -168,12 +169,13 @@ export function getBaseTypeFragments(
       fields: [
         COMMON_FIELDS,
         `${prefix}assetMetadata:_assetMetadata { fileSize mimeType url }`,
+        ...taxonomyField,
       ],
       extraFragments: [...commonFragments],
     };
   }
   return {
-    fields: [COMMON_FIELDS],
+    fields: [COMMON_FIELDS, ...taxonomyField],
     extraFragments: [...commonFragments],
   };
 }

@@ -11,11 +11,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         name: Install pnpm
         id: pnpm-install
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Build packages
         run: pnpm --filter "./packages/**" build
       - name: Build sample sites

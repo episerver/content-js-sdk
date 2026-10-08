@@ -21,9 +21,8 @@ describe('createSingleContentQuery with taxonomy', () => {
   test('includes categories in ItemMetadata when taxonomyEnabled is true', () => {
     const query = createSingleContentQuery('TestPage', { taxonomyEnabled: true });
 
-    const itemMetadataMatch = query.match(/fragment ItemMetadata on ItemMetadata \{([^}]+)\}/);
-    expect(itemMetadataMatch).not.toBeNull();
-    expect(itemMetadataMatch![1]).toContain('categories');
+    expect(query).toContain('_itemMetadata');
+    expect(query).toContain('categories');
   });
 
   test('excludes categories from ItemMetadata when taxonomyEnabled is false', () => {
@@ -47,9 +46,8 @@ describe('createMultipleContentQuery with taxonomy', () => {
   test('includes categories in ItemMetadata when taxonomyEnabled is true', () => {
     const query = createMultipleContentQuery('TestPage', { taxonomyEnabled: true });
 
-    const itemMetadataMatch = query.match(/fragment ItemMetadata on ItemMetadata \{([^}]+)\}/);
-    expect(itemMetadataMatch).not.toBeNull();
-    expect(itemMetadataMatch![1]).toContain('categories');
+    expect(query).toContain('_itemMetadata');
+    expect(query).toContain('categories');
   });
 
   test('excludes categories from ItemMetadata when taxonomyEnabled is false', () => {
