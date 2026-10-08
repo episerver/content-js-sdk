@@ -123,6 +123,18 @@ describe('resolvePackageName', () => {
       /Invalid package name ""/,
     );
   });
+
+  it.each(['1.0.0/rc1', '../../x', ''])('rejects the version override %j', version => {
+    expect(() => resolvePackageName(validPackageJson, { version })).toThrow(
+      /Invalid package version/,
+    );
+  });
+
+  it('accepts a prerelease version override', () => {
+    expect(resolvePackageName(validPackageJson, { version: '1.0.0-beta.1' })).toBe(
+      'my-site.head.app.1.0.0-beta.1.zip',
+    );
+  });
 });
 
 describe('createPackage', () => {
@@ -165,5 +177,23 @@ describe('createPackage', () => {
     ]);
     expect(path).toBe(join(outputDir, 'site.head.app.1.0.0.zip'));
     expect((await readFile(path)).subarray(0, 2).toString()).toBe('PK');
+  });
+
+  it('keeps .npmrc but warns when it holds a literal token', async () => {
+    await writeProjectFile('package.json', '{}');
+    await writeProjectFile('.npmrc', '//registry.npmjs.org/:_authToken=npm_abc123\n');
+
+    const { files, warnings } = await createPackage(projectDir, 'site.zip', join(projectDir, 'out'));
+
+    expect(files).toContain('.npmrc');
+    expect(warnings).toEqual([expect.stringMatching(/\.npmrc contains a registry token/)]);
+  });
+
+  it('does not warn about a token placeholder', async () => {
+    await writeProjectFile('.npmrc', '//registry.npmjs.org/:_authToken=${NPM_TOKEN}\n');
+
+    const { warnings } = await createPackage(projectDir, 'site.zip', join(projectDir, 'out'));
+
+    expect(warnings).toEqual([]);
   });
 });

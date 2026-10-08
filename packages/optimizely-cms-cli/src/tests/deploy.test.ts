@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import Deploy from '../commands/deploy.js';
+import { hostingErrors } from '../service/error.js';
 import type { Deployment, DeploymentStatus } from '../service/hosting/deploymentClient.js';
 import { waitForDeployment } from '../service/hosting/waitForDeployment.js';
 
@@ -40,6 +41,46 @@ describe('waitForDeployment', () => {
     expect(onUpdate).toHaveBeenLastCalledWith(
       deployment('AwaitingVerification', { percentComplete: 100 }),
     );
+  });
+
+  it('retries a failed status read and reports it', async () => {
+    const onRetry = vi.fn();
+    const fetchDeployment = vi
+      .fn<() => Promise<Deployment>>()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(deployment('Succeeded'));
+
+    const result = await waitForDeployment(fetchDeployment, {
+      until: ['Succeeded'],
+      timeoutMinutes: 30,
+      onRetry,
+      sleep: noSleep,
+    });
+
+    expect(result.status).toBe('Succeeded');
+    expect(onRetry).toHaveBeenCalledWith(expect.objectContaining({ message: 'fetch failed' }));
+  });
+
+  it('gives up after three failed status reads in a row', async () => {
+    const fetchDeployment = vi.fn(async (): Promise<Deployment> => {
+      throw new TypeError('fetch failed');
+    });
+
+    await expect(
+      waitForDeployment(fetchDeployment, { until: ['Succeeded'], timeoutMinutes: 30, sleep: noSleep }),
+    ).rejects.toThrow('fetch failed');
+    expect(fetchDeployment).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not retry a credentials error', async () => {
+    const fetchDeployment = vi.fn(async (): Promise<Deployment> => {
+      throw new hostingErrors.InvalidHostingCredentials();
+    });
+
+    await expect(
+      waitForDeployment(fetchDeployment, { until: ['Succeeded'], timeoutMinutes: 30, sleep: noSleep }),
+    ).rejects.toThrow(/credentials were rejected/);
+    expect(fetchDeployment).toHaveBeenCalledTimes(1);
   });
 
   it('throws with the deployment errors when it fails', async () => {

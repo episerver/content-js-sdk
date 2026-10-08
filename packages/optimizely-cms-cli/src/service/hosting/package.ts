@@ -3,6 +3,7 @@
 import { createWriteStream, existsSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
+import type { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { glob } from 'glob';
 import yazl from 'yazl';
@@ -24,6 +25,8 @@ const SUPPORTED_FRAMEWORKS = ['next', 'astro'];
 const REQUIRED_SCRIPTS = ['build', 'start'];
 const LOCAL_VERSION_PREFIXES = ['workspace:', 'link:', 'file:'];
 const PACKAGE_NAME_PATTERN = /^[A-Za-z0-9-]+$/;
+// No leading dot, so `..` cannot reach the file or blob path
+const PACKAGE_VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9.-]*$/;
 
 const EXCLUDED_PATTERNS = [
   '**/node_modules/**',
@@ -49,11 +52,25 @@ const EXCLUDED_PATTERNS = [
 ];
 const KEPT_ENV_FILES = ['.env.example', '.env.template'];
 
+// A literal registry token; an `${NPM_TOKEN}` placeholder does not match
+const NPMRC_TOKEN_PATTERN = /_auth(Token)?\s*=\s*(?!\$\{)\S/;
+
 const isSecretEnvFile = (path: string) => {
   const fileName = basename(path);
 
   return /^\.env(\..+)?$/.test(fileName) && !KEPT_ENV_FILES.includes(fileName);
 };
+
+// .npmrc ships with the package because the platform may need it to install private packages
+const findPackageWarnings = async (dir: string, files: string[]): Promise<string[]> =>
+  (
+    files.includes('.npmrc') &&
+    NPMRC_TOKEN_PATTERN.test(await readFile(join(dir, '.npmrc'), 'utf8'))
+  ) ?
+    [
+      '.npmrc contains a registry token and is uploaded with the package. Replace it with an ${NPM_TOKEN} placeholder and set NPM_TOKEN in the App Settings tab of the DXP management portal',
+    ]
+  : [];
 
 const present = (dir: string, files: string[]) =>
   files.filter(file => existsSync(join(dir, file)));
@@ -132,16 +149,18 @@ export function resolvePackageName(
     overrides.version ?? `${packageJson.version ?? '0.0.0'}-${timestamp(now)}`;
 
   if (!PACKAGE_NAME_PATTERN.test(name)) throw new hostingErrors.InvalidPackageName(name);
+  if (!PACKAGE_VERSION_PATTERN.test(version))
+    throw new hostingErrors.InvalidPackageVersion(version);
 
   return `${name}.head.app.${version}.zip`;
 }
 
-/** Zip the project into `outputDir`, leaving out build output, dependencies and secret env files */
+/** Zip the project into `outputDir`, leaving out build output, dependencies and secret env files; warns about other secrets it uploads */
 export async function createPackage(
   dir: string,
   packageName: string,
   outputDir: string,
-): Promise<{ path: string; files: string[] }> {
+): Promise<{ path: string; files: string[]; warnings: string[] }> {
   const path = join(outputDir, packageName);
   const files = (
     await glob('**/*', {
@@ -154,14 +173,17 @@ export async function createPackage(
   )
     .filter(file => !isSecretEnvFile(file))
     .sort();
+
+  await mkdir(outputDir, { recursive: true });
+
   const zip = new yazl.ZipFile();
 
+  // yazl reports file read errors on the ZipFile, which `pipeline` does not watch
+  zip.on('error', error => (zip.outputStream as Readable).destroy(error));
   files.forEach(file => zip.addFile(join(dir, file), file));
   zip.end();
 
-  await mkdir(outputDir, { recursive: true });
   await pipeline(zip.outputStream, createWriteStream(path));
 
-  return { path, files };
+  return { path, files, warnings: await findPackageWarnings(dir, files) };
 }
-

@@ -67,6 +67,13 @@ export const hostingErrors = {
       );
     }
   },
+  InvalidPackageVersion: class InvalidPackageVersion extends CLIError {
+    constructor(version: string) {
+      super(
+        `Invalid package version "${version}". Use only letters, numbers, dots and hyphens, or set it with --version`,
+      );
+    }
+  },
   InvalidProject: class InvalidProject extends CLIError {
     constructor(problems: string[]) {
       super(withDetails('The project cannot be deployed to front-end hosting:', problems));
@@ -85,6 +92,11 @@ export const hostingErrors = {
       super(
         `Front-end hosting credentials not provided. Define ${missing.map((name) => `\`${name}\``).join(', ')} with the values from the API tab of the DXP management portal. These are not the CMS credentials (\`OPTIMIZELY_CMS_CLIENT_ID\` / \`OPTIMIZELY_CMS_CLIENT_SECRET\`)`,
       );
+    }
+  },
+  RequestTimeout: class RequestTimeout extends CLIError {
+    constructor(action: string, seconds: number) {
+      super(`Timed out after ${seconds} s while trying to ${action}`);
     }
   },
   PackageExists: class PackageExists extends CLIError {

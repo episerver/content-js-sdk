@@ -1,6 +1,7 @@
 import { Command, Errors, Flags } from '@oclif/core';
 import { confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
+import { config as loadEnv } from 'dotenv';
 import ora, { type Ora } from 'ora';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -82,13 +83,14 @@ export default class Deploy extends Command {
     });
 
     if (flags.output) {
-      const { path, files } = await createPackage(
+      const { path, files, warnings } = await createPackage(
         dir,
         packageName,
         resolve(flags.output),
       );
 
       ora().succeed(`Wrote ${path} (${files.length} files)`);
+      this.printWarnings(warnings);
       return;
     }
 
@@ -96,6 +98,9 @@ export default class Deploy extends Command {
 
     if (!env)
       this.error(`Missing required flag --env, for example ${ENVIRONMENT_EXAMPLES}`);
+
+    // bin/run.js only loads the .env of the current directory
+    loadEnv({ path: join(dir, '.env') });
 
     const credentials = readHostingCredentials();
 
@@ -112,11 +117,12 @@ export default class Deploy extends Command {
     const tempDir = await mkdtemp(join(tmpdir(), 'optimizely-deploy-'));
 
     try {
-      const { path, files } = await this.step(`Packaging ${packageName}`, () =>
+      const { path, files, warnings } = await this.step(`Packaging ${packageName}`, () =>
         createPackage(dir, packageName, tempDir),
       );
 
       this.log(chalk.dim(`  ${files.length} files`));
+      this.printWarnings(warnings);
 
       await this.step('Uploading package', () => client.uploadPackage(packageName, path));
 
@@ -153,7 +159,8 @@ export default class Deploy extends Command {
 
   private async confirmProduction(env: string, yes: boolean) {
     // Production environments are numbered (Production1), so match the prefix
-    if (!/^production/i.test(env) || yes || !process.stdout.isTTY) return;
+    // stdin, not stdout: the prompt reads stdin, and `| tee deploy.log` must still ask
+    if (!/^production/i.test(env) || yes || !process.stdin.isTTY) return;
 
     const confirmed = await confirm({ message: `Deploy to ${env}?`, default: false });
 
@@ -173,6 +180,10 @@ export default class Deploy extends Command {
           until,
           timeoutMinutes,
           onUpdate: report(spinner, label),
+          onRetry: error => {
+            spinner.clear();
+            this.log(chalk.dim(`  Could not read the status, retrying: ${(error as Error).message}`));
+          },
         }),
       );
 
@@ -190,6 +201,10 @@ export default class Deploy extends Command {
       verification,
       deployment: await waitFor('Completing deployment', ['Succeeded']),
     };
+  }
+
+  private printWarnings(warnings: string[]) {
+    warnings.forEach(warning => this.log(chalk.yellow(`  Warning: ${warning}`)));
   }
 
   private printUrls(urls: string[] = []) {

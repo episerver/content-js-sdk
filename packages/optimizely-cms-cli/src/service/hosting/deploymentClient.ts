@@ -40,6 +40,23 @@ type ClientOptions = { apiUrl?: string; userAgent: string };
 
 const DEFAULT_API_URL = 'https://paasportal.episerver.net/api/v1.0';
 const BLOB_API_VERSION = '2021-08-06';
+const API_TIMEOUT_MS = 60_000;
+const UPLOAD_TIMEOUT_MS = 10 * 60_000;
+
+const fetchWithTimeout = async (
+  action: string,
+  url: URL,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> => {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  } catch (error) {
+    if ((error as Error).name === 'TimeoutError')
+      throw new hostingErrors.RequestTimeout(action, timeoutMs / 1000);
+    throw error;
+  }
+};
 
 /** Build the `epi-hmac` Authorization header value for a Deployment API request */
 export function signRequest({
@@ -59,19 +76,31 @@ export function signRequest({
   return `epi-hmac ${clientKey}:${timestamp}:${nonce}:${signature}`;
 }
 
-/** Derive the live site URL from a verification slot URL, or return undefined if it is not a slot URL */
+/** Derive the live site URL from a verification slot URL, or return undefined if it is not a valid slot URL */
 export function toLiveSiteUrl(slotUrl: string): string | undefined {
   const [schemeAndWebApp, ...domain] = slotUrl.split('.');
 
   // Observed convention, not documented: the slot is served at <web app>-slot.<domain>
   if (!schemeAndWebApp.toLowerCase().endsWith('-slot')) return undefined;
 
-  const liveUrl = new URL([schemeAndWebApp.slice(0, -'-slot'.length), ...domain].join('.'));
+  const candidate = [schemeAndWebApp.slice(0, -'-slot'.length), ...domain].join('.');
+
+  if (!URL.canParse(candidate)) return undefined;
+
+  const liveUrl = new URL(candidate);
 
   // The slot URL is http, but the live site redirects http to https
   liveUrl.protocol = 'https:';
   return liveUrl.toString();
 }
+
+const parseApiResponse = <T>(action: string, status: number, text: string): ApiResponse<T> => {
+  try {
+    return JSON.parse(text) as ApiResponse<T>;
+  } catch {
+    throw new hostingErrors.DeploymentApiError(action, status, ['The response was not valid JSON']);
+  }
+};
 
 const readErrors = async (response: Response): Promise<string[]> => {
   const text = await response.text();
@@ -108,16 +137,21 @@ export function createDeploymentClient(
       timestamp: Date.now(),
       nonce: randomUUID().replaceAll('-', ''),
     });
-    const response = await fetch(url, {
-      method,
-      headers: {
-        Authorization: authorization,
-        Accept: 'application/json',
-        'User-Agent': userAgent,
-        ...(body && { 'Content-Type': 'application/json' }),
+    const response = await fetchWithTimeout(
+      action,
+      url,
+      {
+        method,
+        headers: {
+          Authorization: authorization,
+          Accept: 'application/json',
+          'User-Agent': userAgent,
+          ...(body && { 'Content-Type': 'application/json' }),
+        },
+        body: body || undefined,
       },
-      body: body || undefined,
-    });
+      API_TIMEOUT_MS,
+    );
 
     if (response.status === 401) throw new hostingErrors.InvalidHostingCredentials();
     if (response.status === 403)
@@ -129,7 +163,12 @@ export function createDeploymentClient(
         await readErrors(response),
       );
 
-    const json = (await response.json()) as ApiResponse<T>;
+    const text = await response.text();
+
+    // Not observed so far, but a call such as complete may answer 204 with no body
+    if (!text) return undefined as T;
+
+    const json = parseApiResponse<T>(action, response.status, text);
 
     if (json.success === false)
       throw new hostingErrors.DeploymentApiError(action, response.status, json.errors);
@@ -168,16 +207,21 @@ export function createDeploymentClient(
 
       url.pathname = `${url.pathname.replace(/\/$/, '')}/${encodeURIComponent(packageName)}`;
 
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'x-ms-blob-type': 'BlockBlob',
-          'x-ms-version': BLOB_API_VERSION,
-          'If-None-Match': '*',
-          'Content-Type': 'application/zip',
+      const response = await fetchWithTimeout(
+        'upload the package',
+        url,
+        {
+          method: 'PUT',
+          headers: {
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-version': BLOB_API_VERSION,
+            'If-None-Match': '*',
+            'Content-Type': 'application/zip',
+          },
+          body: await readFile(path),
         },
-        body: await readFile(path),
-      });
+        UPLOAD_TIMEOUT_MS,
+      );
 
       if ([409, 412].includes(response.status))
         throw new hostingErrors.PackageExists(packageName);

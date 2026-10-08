@@ -48,6 +48,10 @@ describe('toLiveSiteUrl', () => {
     );
   });
 
+  it('returns undefined for a slot link without a scheme', () => {
+    expect(toLiveSiteUrl('myapp-slot.dxcloud.episerver.net')).toBeUndefined();
+  });
+
   it('returns undefined for a URL that is not a slot URL', () => {
     expect(toLiveSiteUrl('https://site.dxcloud.episerver.net/')).toBeUndefined();
     expect(toLiveSiteUrl('https://www.slot-machine.com/')).toBeUndefined();
@@ -148,6 +152,27 @@ describe('createDeploymentClient', () => {
     await expect(client.startDeployment('Production', 'a.zip')).rejects.toThrow(
       /no access[\s\S]*- Access denied for the environment Production/,
     );
+  });
+
+  it('gives every request a timeout and reports when it is hit', async () => {
+    fetchMock.mockRejectedValue(Object.assign(new Error('aborted'), { name: 'TimeoutError' }));
+
+    await expect(client.getDeployment('d1')).rejects.toThrow(
+      'Timed out after 60 s while trying to get the deployment status',
+    );
+    expect(lastRequest().init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('accepts a successful response without a body', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await expect(client.completeDeployment('d1')).resolves.toBeUndefined();
+  });
+
+  it('reports a response that is not JSON', async () => {
+    fetchMock.mockResolvedValue(new Response('<html>Bad gateway</html>', { status: 200 }));
+
+    await expect(client.getDeployment('d1')).rejects.toThrow(/not valid JSON/);
   });
 
   it('lists the API errors on failure', async () => {
