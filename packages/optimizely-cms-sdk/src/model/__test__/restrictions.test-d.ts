@@ -146,7 +146,7 @@ test('contentReference accepts contentType field with ContentType value', () => 
   });
 });
 
-test('content accepts contentType field with ContentType value', () => {
+test('content rejects contentType field', () => {
   const Article = contentType({
     key: 'article',
     displayName: 'Article',
@@ -161,7 +161,21 @@ test('content accepts contentType field with ContentType value', () => {
       area: {
         type: 'content',
         displayName: 'Content Area',
+        // @ts-expect-error - contentType is not supported on content properties
         contentType: Article,
+      },
+    },
+  });
+
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      areas: {
+        type: 'array',
+        // @ts-expect-error - contentType is not supported on content array items
+        items: { type: 'content', contentType: Article },
       },
     },
   });

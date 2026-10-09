@@ -84,13 +84,8 @@ export type FloatProperty = BaseProperty & {
   maximum?: number;
 } & WithEnum<number>;
 
-/** Represents type constraints for "content" and "contentReference" properties */
-type ContentAndRefBlock =
-  | {
-      contentType: AnyContentType | ContentType | string;
-      allowedTypes?: never;
-      restrictedTypes?: never;
-    }
+/** Represents type constraints for "content" properties */
+type ContentBlock =
   | {
       contentType?: never;
       allowedTypes: PermittedTypes[];
@@ -102,6 +97,15 @@ type ContentAndRefBlock =
       restrictedTypes: PermittedTypes[];
     };
 
+/** Represents type constraints for "contentReference" properties */
+type ContentReferenceBlock =
+  | {
+      contentType: AnyContentType | ContentType | string;
+      allowedTypes?: never;
+      restrictedTypes?: never;
+    }
+  | ContentBlock;
+
 type BaseContentReferenceProperty = BaseProperty & {
   type: 'contentReference';
 };
@@ -110,9 +114,9 @@ type BaseContentProperty = BaseProperty & {
   type: 'content';
 };
 
-export type ContentReferenceProperty = BaseContentReferenceProperty & ContentAndRefBlock;
+export type ContentReferenceProperty = BaseContentReferenceProperty & ContentReferenceBlock;
 
-export type ContentProperty = BaseContentProperty & ContentAndRefBlock;
+export type ContentProperty = BaseContentProperty & ContentBlock;
 
 export type ArrayItems =
   | StringProperty
