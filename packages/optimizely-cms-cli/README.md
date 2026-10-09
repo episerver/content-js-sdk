@@ -10,6 +10,7 @@ The official command-line tool for Optimizely CMS that enables code-first conten
 - **Code-first workflow** - Define content types in your preferred IDE with IntelliSense
 - **Version control** - Manage content types alongside your application code
 - **Simple CLI commands** - Intuitive interface for common tasks
+- **One-command deploys** - Package and deploy Next.js or Astro sites to Optimizely front-end hosting
 - **Seamless integration** - Works perfectly with [@optimizely/cms-sdk](https://www.npmjs.com/package/@optimizely/cms-sdk)
 
 ## Installation
@@ -213,8 +214,55 @@ optimizely-cms-cli login --verbose
 optimizely-cms-cli login --host https://my-instance.cms.optimizely.com
 ```
 
-> **Note:** `--host` is available on every command and takes precedence over
+> **Note:** `--host` is available on every command except `deploy` and takes precedence over
 > `OPTIMIZELY_CMS_API_URL`.
+
+### Deployment
+
+Deploy a Next.js or Astro site to Optimizely front-end hosting. The command packages the
+project, uploads the package, starts the deployment and completes it.
+
+Generate the credentials in the **API** tab of the DXP management portal, with the target
+environments selected. These are not the CMS credentials used by the other commands. See
+[Host a front end with Optimizely](https://docs.optimizely.com/cms-saas/docs/host-a-front-end-with-optimizely)
+for the access you need and how to create the credentials.
+
+```env
+OPTIMIZELY_DXP_PROJECT_ID=your-project-id
+OPTIMIZELY_DXP_CLIENT_KEY=your-client-key
+OPTIMIZELY_DXP_CLIENT_SECRET=your-client-secret
+```
+
+```bash
+# Deploy to the Test1 environment
+optimizely-cms-cli deploy --env Test1
+
+# Deploy to production without the confirmation prompt (CI)
+optimizely-cms-cli deploy --env Production1 --yes
+
+# Stop when the deployment awaits verification, and complete it in the portal
+optimizely-cms-cli deploy --env Test1 --no-complete
+
+# Write the package to disk without deploying it
+optimizely-cms-cli deploy --output ./out
+```
+
+The project must have `build` and `start` scripts, exactly one `package-lock.json` or
+`yarn.lock` (pnpm is not supported by front-end hosting), and `next` or `astro` as a
+dependency. The package leaves out `node_modules`, `.next`, `dist` and `.env` files.
+
+#### `deploy` flags
+
+| Flag            | Short | Effect                                                                  |
+| --------------- | ----- | ----------------------------------------------------------------------- |
+| `--env`         | `-e`  | Target environment, for example `Test1`, `Test2` or `Production1`       |
+| `--dir`         |       | Project directory (default: current directory)                          |
+| `--output`      | `-o`  | Write the package to this directory instead of deploying it             |
+| `--name`        |       | Package name (default: the `package.json` name)                         |
+| `--version`     |       | Exact package version (default: `package.json` version + UTC timestamp) |
+| `--no-complete` |       | Stop when the deployment awaits verification                            |
+| `--yes`         | `-y`  | Skip the confirmation prompt for Production environments                |
+| `--timeout`     |       | Minutes to wait for each deployment stage (default: 30)                 |
 
 ### Content Type Operations
 

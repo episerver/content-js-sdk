@@ -23,3 +23,85 @@ export const credentialErrors = {
     }
   },
 };
+
+const withDetails = (message: string, details: string[] = []) =>
+  [message, ...details.map(detail => `  - ${detail}`)].join('\n');
+
+export const hostingErrors = {
+  DeploymentApiError: class DeploymentApiError extends CLIError {
+    constructor(action: string, status: number, errors?: string[]) {
+      super(withDetails(`Failed to ${action} (HTTP ${status})`, errors));
+    }
+  },
+  DeploymentFailed: class DeploymentFailed extends CLIError {
+    constructor(id: string, errors?: string[]) {
+      super(
+        withDetails(
+          `Deployment ${id} failed. See the DXP management portal for the full log`,
+          errors,
+        ),
+      );
+    }
+  },
+  DeploymentTimeout: class DeploymentTimeout extends CLIError {
+    constructor(id: string, minutes: number) {
+      super(
+        `Deployment ${id} did not finish within ${minutes} minutes. It may still be running; check the DXP management portal or raise --timeout`,
+      );
+    }
+  },
+  ForbiddenHostingCredentials: class ForbiddenHostingCredentials extends CLIError {
+    constructor(errors?: string[]) {
+      super(
+        withDetails(
+          'The front-end hosting credentials have no access to this project or environment. Check the environment name against the DXP management portal, or create an API key there with the target environment selected',
+          errors,
+        ),
+      );
+    }
+  },
+  InvalidPackageName: class InvalidPackageName extends CLIError {
+    constructor(name: string) {
+      super(
+        `Invalid package name "${name}". Use only letters, numbers and hyphens, or set it with --name`,
+      );
+    }
+  },
+  InvalidPackageVersion: class InvalidPackageVersion extends CLIError {
+    constructor(version: string) {
+      super(
+        `Invalid package version "${version}". Use only letters, numbers, dots and hyphens, or set it with --version`,
+      );
+    }
+  },
+  InvalidProject: class InvalidProject extends CLIError {
+    constructor(problems: string[]) {
+      super(withDetails('The project cannot be deployed to front-end hosting:', problems));
+    }
+  },
+  InvalidHostingCredentials: class InvalidHostingCredentials extends CLIError {
+    constructor() {
+      super(
+        'The front-end hosting credentials were rejected. Check `OPTIMIZELY_DXP_CLIENT_KEY` and `OPTIMIZELY_DXP_CLIENT_SECRET` against the API tab of the DXP management portal',
+        { exit: 1 },
+      );
+    }
+  },
+  MissingHostingCredentials: class MissingHostingCredentials extends CLIError {
+    constructor(missing: string[]) {
+      super(
+        `Front-end hosting credentials not provided. Define ${missing.map((name) => `\`${name}\``).join(', ')} with the values from the API tab of the DXP management portal. These are not the CMS credentials (\`OPTIMIZELY_CMS_CLIENT_ID\` / \`OPTIMIZELY_CMS_CLIENT_SECRET\`)`,
+      );
+    }
+  },
+  RequestTimeout: class RequestTimeout extends CLIError {
+    constructor(action: string, seconds: number) {
+      super(`Timed out after ${seconds} s while trying to ${action}`);
+    }
+  },
+  PackageExists: class PackageExists extends CLIError {
+    constructor(name: string) {
+      super(`A package named ${name} was already uploaded. Deploy again with a different --version`);
+    }
+  },
+};

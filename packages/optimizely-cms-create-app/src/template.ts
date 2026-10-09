@@ -15,7 +15,7 @@ const EXCLUDE = new Set([
   '.npmrc',
 ]);
 
-function getTemplateDir(templateName: TemplateName): string {
+export function getTemplateDir(templateName: TemplateName): string {
   return path.resolve(__dirname, '..', 'templates', templateName);
 }
 

@@ -8,12 +8,17 @@ export type PackageManager = 'npm' | 'pnpm' | 'yarn';
 
 export type Mode = 'create' | 'scaffold' | 'fresh';
 
+export const CI_PROVIDERS = ['github', 'none'] as const;
+
+export type CiProvider = (typeof CI_PROVIDERS)[number];
+
 export interface CreateOptions {
   mode: 'create';
   projectName: string;
   template: TemplateName;
   packageManager: PackageManager;
   skipInstall: boolean;
+  ci: CiProvider;
 }
 
 export interface ScaffoldOptions {
@@ -40,6 +45,7 @@ export interface ParsedArgs {
   template?: TemplateName;
   packageManager?: PackageManager;
   skipInstall: boolean;
+  ci?: CiProvider;
   help: boolean;
   version: boolean;
 }

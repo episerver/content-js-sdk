@@ -56,6 +56,7 @@ npx @optimizely/cms-create-app
 | `--template <name>` | Template to use (`nextjs-starter`, `nextjs-stride`, `nextjs-alloy`, `tanstack-starter`) |
 | `--pm <manager>` | Package manager (`npm`, `pnpm`, `yarn`) |
 | `--skip-install` | Skip dependency installation |
+| `--ci <provider>` | Add a workflow that deploys to Optimizely front-end hosting on push to `main` (`github`, `none`). Asked interactively for the Next.js templates when omitted |
 | `-h, --help` | Show help |
 | `-v, --version` | Show version |
 

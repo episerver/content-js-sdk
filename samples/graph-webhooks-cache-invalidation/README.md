@@ -12,6 +12,7 @@ This is a [Next.js](https://nextjs.org) project that shows how to use Optimizely
 
 To try this project, you need an actual URL that can receive requests from Graph (`localhost` is not valid). Here are some options:
 
+- Deploy this project to Optimizely front-end hosting with `optimizely-cms-cli deploy`. See [Deploy to Front-end Hosting](../../docs/18-deploy-to-frontend-hosting.md). Copy the project out of this monorepo first: it needs its own `package-lock.json`, and published versions instead of `workspace:*`
 - Deploy this project to [Vercel](https://vercel.com)
 - Use a local tunneling service like [ngrok](https://ngrok.com)
 

@@ -17,7 +17,10 @@ const EXCLUDE = new Set([
   'next-env.d.ts',
   '.npmrc',
   '.git',
+  'dist',
+  '.cta.json',
 ]);
+const EXCLUDE_EXTENSIONS = /\.(log|tsbuildinfo)$/;
 
 function readVersion(pkgDir: string): string {
   const pkg = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf-8'));
@@ -27,7 +30,7 @@ function readVersion(pkgDir: string): string {
 function copyDir(src: string, dest: string): void {
   fs.mkdirSync(dest, { recursive: true });
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    if (EXCLUDE.has(entry.name)) continue;
+    if (EXCLUDE.has(entry.name) || EXCLUDE_EXTENSIONS.test(entry.name)) continue;
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {

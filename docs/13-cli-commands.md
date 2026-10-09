@@ -33,6 +33,7 @@ npx optimizely-cms-cli [command]
 | `login` | Verify authentication with CMS |
 | `content delete` | Delete a specific content type |
 | `danger delete-all-content-types` | Delete all user-defined content types (⚠️ destructive) |
+| `deploy` | Package the project and deploy it to Optimizely front-end hosting |
 
 ## Configuration Commands
 
@@ -286,6 +287,46 @@ optimizely-cms-cli danger delete-all-content-types
 > [!CAUTION]
 > This command is **extremely destructive**. It will delete ALL user-defined content types and their associated content from CMS. Use only when you need to completely reset your CMS schema. This operation cannot be undone.
 
+## Deployment Commands
+
+### `deploy`
+
+Package a Next.js or Astro project and deploy it to Optimizely front-end hosting. The command
+uploads the package, starts the deployment, waits for it, completes it and prints the site URL.
+See [Deploy to Front-end Hosting](./18-deploy-to-frontend-hosting.md) for the setup and the
+project requirements.
+
+**Basic usage:**
+
+```bash
+optimizely-cms-cli deploy --env Test1
+```
+
+**Flags:**
+
+- `-e, --env <name>` - Target environment as named in the DXP management portal, for example `Test1`, `Test2` or `Production1` (required unless `--output` is set)
+- `--dir <path>` - Project directory (default: current directory)
+- `-o, --output <path>` - Write the package to this directory instead of deploying it
+- `--name <name>` - Package name (default: the `package.json` name)
+- `--version <version>` - Exact package version (default: the `package.json` version plus a UTC timestamp)
+- `--no-complete` - Stop when the deployment awaits verification
+- `-y, --yes` - Skip the confirmation prompt for Production environments
+- `--timeout <minutes>` - Minutes to wait for each deployment stage (default: 30)
+`--host` does not apply: `deploy` talks to the DXP Deployment API, not to the CMS.
+
+**Examples:**
+
+```bash
+# Deploy to production from CI, without the prompt
+optimizely-cms-cli deploy --env Production1 --yes
+
+# Deploy and stop for verification
+optimizely-cms-cli deploy --env Test1 --no-complete
+
+# Check the package without deploying it
+optimizely-cms-cli deploy --output ./out
+```
+
 ## Environment Variables
 
 The CLI uses the following environment variables for configuration:
@@ -303,6 +344,14 @@ The CLI uses the following environment variables for configuration:
 
 > [!NOTE]
 > `OPTIMIZELY_CMS_URL` is **not** read by the CLI. It is an application-level variable used by your app at runtime (for example, to load the CMS preview communication script). See [Live Preview](./7-live-preview.md#step-2-configure-environment-variables).
+
+### Front-end hosting
+
+Used by `deploy` only. Create them in the **API** tab of the DXP management portal.
+
+- `OPTIMIZELY_DXP_PROJECT_ID` - Front-end hosting project ID (required for `deploy`)
+- `OPTIMIZELY_DXP_CLIENT_KEY` - Deployment API client key (required for `deploy`)
+- `OPTIMIZELY_DXP_CLIENT_SECRET` - Deployment API client secret (required for `deploy`)
 
 ### Development
 
@@ -401,7 +450,13 @@ optimizely-cms-cli config pull --output ./src/content-types --group
 
 # Or get JSON manifest for processing
 optimizely-cms-cli config pull --json > manifest.json
+
+# Deploy to front-end hosting
+optimizely-cms-cli deploy --env Test1 --yes
 ```
+
+For a ready-made GitHub Actions workflow, see
+[Deploy to Front-end Hosting](./18-deploy-to-frontend-hosting.md#deploy-from-github-actions).
 
 ## Troubleshooting
 
