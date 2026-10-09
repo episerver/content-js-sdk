@@ -57,6 +57,7 @@ The `type` field defines the data type and can be one of:
 - **`'contentReference'`** - References to content with additional constraints
 - **`'array'`** - Lists of values
 - **`'component'`** - Embedded component types
+- **`'composition'`** - A visual builder tree of rows, columns and components
 
 #### URL Property
 
@@ -235,6 +236,128 @@ const LandingPageType = contentType({
 ```
 
 The `component` type requires a `contentType` field specifying which component type to use.
+
+#### Composition Property
+
+For an extra visual builder area editors can fill with rows, columns and components, alongside the built-in one an experience already has:
+
+```ts
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_experience',
+  properties: {
+    sidebar: {
+      type: 'composition',
+      format: 'grid',
+      displayName: 'Sidebar',
+    },
+  },
+});
+```
+
+Render it with the same pipeline as the built-in composition, passing the property's `nodes`:
+
+```tsx
+<OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
+```
+
+##### Choosing a format
+
+`format` is required, and it is the decision everything else follows from. A composition holds either **elements** or **sections**, never both, and the format is what picks:
+
+| | `'grid'` | `'outline'` |
+| --- | --- | --- |
+| Editing | Rows and columns, arranged visually | A flat, ordered list |
+| Holds | **Elements** | **Sections** |
+| So `allowedTypes` may name | components with `compositionBehaviors: ['elementEnabled']`<br>the base type `_component` | components with `compositionBehaviors: ['sectionEnabled']`<br>`_section` content types<br>the base type `_component` |
+
+A component is an element or a section depending on how *it* was declared, so start there:
+
+```ts
+const CardElementType = contentType({
+  key: 'CardElement',
+  baseType: '_component',
+  compositionBehaviors: ['elementEnabled'],   // an element → belongs in a 'grid'
+});
+
+const HeroSectionType = contentType({
+  key: 'HeroSection',
+  baseType: '_component',
+  compositionBehaviors: ['sectionEnabled'],   // a section → belongs in an 'outline'
+});
+```
+
+Then the pairing follows:
+
+```ts
+// ✓ a grid of elements
+sidebar: { type: 'composition', format: 'grid', allowedTypes: [CardElementType] },
+
+// ✓ an outline of sections
+body:    { type: 'composition', format: 'outline', allowedTypes: [HeroSectionType] },
+
+// ✗ rejected: an outline holds sections, CardElement is an element
+sidebar: { type: 'composition', format: 'outline', allowedTypes: [CardElementType] },
+```
+
+`opti-cms config push` catches the mismatch before contacting the CMS:
+
+```
+✖ Content type "ProductPage", property "sidebar" (composition): "CardElement" cannot be
+  used in a "outline" layout composition, which holds sections. Use "format": "grid", or
+  allow a type that is valid in a "outline" layout.
+```
+
+Without that check the CMS rejects the push with `The type 'CardElement' cannot be used in a 'outline' layout composition.`
+
+`'grid'` and `'outline'` are reserved: another property type may declare a `format`, just not one of these. `opti-cms config push` rejects that too.
+
+##### Restricting what editors may add
+
+`allowedTypes` and `restrictedTypes` are optional. Leave them out and every composition element valid for the layout is allowed.
+
+```ts
+sidebar: {
+  type: 'composition',
+  format: 'grid',
+  allowedTypes: [CardElementType, '_component'],
+  restrictedTypes: [LegacyBannerType],
+},
+```
+
+Three things to know:
+
+- **Only `allowedTypes` is checked against the format.** A `restrictedTypes` entry is accepted in either layout, because excluding a type that could never appear there is harmless.
+- **They do not narrow the generated GraphQL query**, which always selects every composition element type.
+- **`minItems` and `maxItems` are not supported**, and pushing them is rejected.
+
+> [!IMPORTANT]
+> Composition properties are only accepted on `_experience` content types. Use a content area (`type: 'array'` of `type: 'content'`) on a page, component or section instead — a section keeps the built-in `composition` it inherits and cannot declare extra ones, though a `sectionEnabled` component may declare the reserved key `composition` to type that inherited one.
+>
+> On an experience the key `composition` is taken by the built-in composition, so give the property any other name.
+>
+> They also require Optimizely CMS SaaS (and future CMS 14).
+
+#### Configuring the Built-In Composition
+
+The built-in composition of an `_experience` or `_section` is configured through `composition`, beside `properties` — it is not a property, because the CMS reserves that key:
+
+```ts
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_experience',
+  composition: {
+    format: 'grid',
+    allowedTypes: [CardElementType, '_component'],
+    restrictedTypes: [LegacyBannerType],
+  },
+  properties: {
+    title: { type: 'string' },
+  },
+});
+```
+
+Every field is optional. Left out, `format` keeps the base type's own default layout, and an absent list allows everything. As with a composition property, the restrictions do not narrow the generated GraphQL query.
 
 ### Indexing Types
 

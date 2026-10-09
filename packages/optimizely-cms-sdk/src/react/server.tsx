@@ -218,10 +218,20 @@ export function OptimizelyComposition({
   nodes: ExperienceNode[];
   ComponentWrapper?: ComponentContainer;
 }) {
-  return planComposition(nodes).map(item => {
+  return planComposition<StructureContainer>(nodes).map(item => {
     if (item.kind === 'unknown') {
       // TODO: Error handling
       return <div>???</div>;
+    }
+
+    // A `format: 'grid'` composition property has no section level, so its
+    // top-level nodes are the rows an experience section would otherwise own.
+    if (item.kind === 'structure') {
+      return (
+        <React.Fragment key={item.key}>
+          {renderGridItems([item], { ComponentWrapper })}
+        </React.Fragment>
+      );
     }
 
     if (isWrappedComponent(item)) {
@@ -297,67 +307,79 @@ const fallbacks: Record<string, StructureContainer> = {
   column: FallbackColumn,
 };
 
+/**
+ * Renders planned grid items. Shared by {@linkcode OptimizelyGridSection} and by
+ * {@linkcode OptimizelyComposition}, which meets rows directly when a
+ * `type: 'composition'` property has no section above them.
+ */
+function renderGridItems(
+  items: GridRenderItem<StructureContainer>[],
+  {
+    overrides = {},
+    ComponentWrapper,
+  }: {
+    overrides?: Record<string, StructureContainer | undefined>;
+    ComponentWrapper?: ComponentContainer;
+  },
+): React.ReactNode[] {
+  return items.map(item => {
+    if (item.kind === 'component') {
+      const component = (
+        <OptimizelyComponent
+          content={item.content}
+          displaySettings={item.displaySettings}
+          {...(ComponentWrapper ? {} : item.previewAttrs)}
+        />
+      );
+
+      // we can only pass key, ref to fragments to avoid React warnings, so if there's a wrapper component, use that, otherwise render the component directly without a wrapper
+      if (ComponentWrapper) {
+        return (
+          <ComponentWrapper
+            key={item.key}
+            node={item.node as ExperienceComponentNode}
+            displaySettings={item.displaySettings}
+          >
+            {component}
+          </ComponentWrapper>
+        );
+      }
+
+      return <React.Fragment key={item.key}>{component}</React.Fragment>;
+    }
+
+    const Component = getStructureContainer(item, { overrides, fallbacks });
+    const childNodes = renderGridItems(item.children, { overrides, ComponentWrapper });
+
+    // Structure nodes other than rows and columns (form steps, for example) have no
+    // container to render into. A fragment accepts only `key`, `ref` and `children`,
+    // so the node props have to be dropped rather than spread onto it.
+    if (!Component) {
+      return <React.Fragment key={item.key}>{childNodes}</React.Fragment>;
+    }
+
+    return (
+      <Component
+        node={item.node as ExperienceStructureNode}
+        index={item.index}
+        key={item.key}
+        displaySettings={item.displaySettings}
+      >
+        {/* A single child, so containers using `Children.only`/`cloneElement` keep working */}
+        <>{childNodes}</>
+      </Component>
+    );
+  });
+}
+
 export function OptimizelyGridSection({
   nodes,
   row,
   column,
   ComponentWrapper,
 }: OptimizelyGridSectionProps) {
-  const locallyDefined: Record<string, StructureContainer | undefined> = {
-    row,
-    column,
-  };
-
-  const renderItems = (items: GridRenderItem<StructureContainer>[]): React.ReactNode[] =>
-    items.map(item => {
-      if (item.kind === 'component') {
-        const component = (
-          <OptimizelyComponent
-            content={item.content}
-            displaySettings={item.displaySettings}
-            {...(ComponentWrapper ? {} : item.previewAttrs)}
-          />
-        );
-
-        // we can only pass key, ref to fragments to avoid React warnings, so if there's a wrapper component, use that, otherwise render the component directly without a wrapper
-        if (ComponentWrapper) {
-          return (
-            <ComponentWrapper
-              key={item.key}
-              node={item.node as ExperienceComponentNode}
-              displaySettings={item.displaySettings}
-            >
-              {component}
-            </ComponentWrapper>
-          );
-        }
-
-        return <React.Fragment key={item.key}>{component}</React.Fragment>;
-      }
-
-      const Component = getStructureContainer(item, { overrides: locallyDefined, fallbacks });
-
-      const childNodes = renderItems(item.children);
-
-      // Structure nodes other than rows and columns (form steps, for example) have no
-      // container to render into. A fragment accepts only `key`, `ref` and `children`,
-      // so the node props have to be dropped rather than spread onto it.
-      if (!Component) {
-        return <React.Fragment key={item.key}>{childNodes}</React.Fragment>;
-      }
-
-      return (
-        <Component
-          node={item.node as ExperienceStructureNode}
-          index={item.index}
-          key={item.key}
-          displaySettings={item.displaySettings}
-        >
-          {/* A single child, so containers using `Children.only`/`cloneElement` keep working */}
-          <>{childNodes}</>
-        </Component>
-      );
-    });
-
-  return renderItems(planGridSection<StructureContainer>(nodes));
+  return renderGridItems(planGridSection<StructureContainer>(nodes), {
+    overrides: { row, column },
+    ComponentWrapper,
+  });
 }

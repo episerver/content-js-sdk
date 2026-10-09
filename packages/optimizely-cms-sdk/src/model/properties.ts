@@ -8,7 +8,8 @@ export type JsonArray = JsonValue[];
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
 /** All possible content type properties */
-export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems;
+// A composition is not an `ArrayItems`: the CMS takes no array of compositions.
+export type AnyProperty = ArrayProperty<ArrayItems> | ArrayItems | CompositionProperty;
 
 export type INDEX_TYPE = 'disabled' | 'queryable' | 'searchable';
 
@@ -143,5 +144,59 @@ export type ComponentProperty<T extends AnyContentType> = BaseProperty & {
 // - In the GUI is called
 export type LinkProperty = BaseProperty & {
   type: 'link';
+};
 
+/** The layouts a composition property can be edited and rendered in. */
+export const COMPOSITION_FORMATS = ['grid', 'outline'] as const;
+
+/** Layout of a composition property, validated by the CMS as a layout type. */
+export type CompositionFormat = (typeof COMPOSITION_FORMATS)[number];
+
+/**
+ * An extra visual builder area on an experience: a tree of rows, columns and
+ * components, the same shape as the built-in `composition`.
+ *
+ * Only an `_experience` may declare one, under any key except `composition`,
+ * which the CMS reserves for the built-in property.
+ *
+ * `format` picks the layout, and with it what the area can hold:
+ *
+ * - `grid` — rows and columns of **elements**: `elementEnabled` components, or
+ *   the base type `_component`
+ * - `outline` — a flat, ordered list of **sections**: `sectionEnabled`
+ *   components, `_section` content types, or `_component`
+ *
+ * `allowedTypes` and `restrictedTypes` are optional; left out, every composition
+ * element is allowed.
+ *
+ * Only `allowedTypes` has to match the `format`: the CMS rejects a
+ * `sectionEnabled` component in a `grid`, and an `elementEnabled` one in an
+ * `outline`. `restrictedTypes` may name a type of either kind, since excluding
+ * one that could never appear is harmless.
+ *
+ * Neither list narrows the generated query, which always selects every
+ * composition element type.
+ */
+export type CompositionProperty = BaseProperty & {
+  type: 'composition';
+  format: CompositionFormat;
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
+};
+
+/**
+ * Configures the built-in composition — the "canvas" — that an `_experience` or
+ * `_section` has without declaring it.
+ *
+ * This is not a property: it sits beside `properties` on the content type,
+ * because the CMS reserves the key `composition` and rejects it as a custom
+ * property. Everything else matches {@linkcode CompositionProperty}, including
+ * the layout-dependent restrictions and that they do not narrow the generated
+ * query.
+ */
+export type CompositionConfiguration = {
+  /** Editing layout. Left out, the base type's own default applies. */
+  format?: CompositionFormat;
+  allowedTypes?: PermittedTypes[];
+  restrictedTypes?: PermittedTypes[];
 };

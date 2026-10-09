@@ -346,6 +346,106 @@ initReactComponentRegistry({
 });
 ```
 
+## Composition Properties
+
+An experience gets a built-in `composition` field for free. It can also declare further composition properties with `type: 'composition'`, each an independent visual builder area:
+
+```tsx
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_experience',
+  properties: {
+    title: { type: 'string' },
+    sidebar: {
+      type: 'composition',
+      format: 'grid',
+      displayName: 'Sidebar',
+    },
+  },
+});
+```
+
+They hold the same node tree and render through the same pipeline:
+
+```tsx
+export default function ProductPage({ content }: Props) {
+  return (
+    <main>
+      <h1>{content.title}</h1>
+      <aside>
+        <OptimizelyComposition nodes={content.sidebar?.nodes ?? []} />
+      </aside>
+    </main>
+  );
+}
+```
+
+`format` is required, and it decides what the composition holds — **elements** or **sections**, never both:
+
+| | `'grid'` | `'outline'` |
+| --- | --- | --- |
+| Editing | Rows and columns, arranged visually | A flat, ordered list |
+| Holds | **Elements** | **Sections** |
+| So `allowedTypes` may name | components with `compositionBehaviors: ['elementEnabled']`<br>the base type `_component` | components with `compositionBehaviors: ['sectionEnabled']`<br>`_section` content types<br>the base type `_component` |
+
+Whether a component is an element or a section is set where the component itself is declared:
+
+```ts
+compositionBehaviors: ['elementEnabled']   // → belongs in a 'grid'
+compositionBehaviors: ['sectionEnabled']   // → belongs in an 'outline'
+```
+
+```ts
+// ✓ a grid of elements
+sidebar: { type: 'composition', format: 'grid', allowedTypes: [CardElementType] },
+
+// ✗ rejected: an outline holds sections, CardElement is an element
+sidebar: { type: 'composition', format: 'outline', allowedTypes: [CardElementType] },
+```
+
+`opti-cms config push` catches the mismatch locally, naming the content type and the composition, rather than letting the CMS answer `The type 'CardElement' cannot be used in a 'outline' layout composition.`
+
+A composition needs nothing but a `format`. `allowedTypes` and `restrictedTypes` are optional; without them every composition element valid for the layout is allowed. Only `allowedTypes` is checked against the format — a `restrictedTypes` entry is accepted either way. Neither narrows the generated query, which still selects every composition element type. `minItems` and `maxItems` are not supported, and both format values are reserved: another property type using one is rejected on push.
+
+> [!IMPORTANT]
+> The CMS only accepts composition properties on `_experience` content types — use a content area on a page, component or section instead. A section keeps the built-in `composition` it inherits and cannot add more, though a `sectionEnabled` component may declare the reserved key `composition` to type that inherited one.
+>
+> On an experience that key belongs to the built-in composition, so pick another.
+>
+> They also require Optimizely CMS SaaS (and future CMS 14).
+
+### Configuring the Built-In Composition
+
+The built-in `composition` is configured through a `composition` key beside `properties`. It is not a property — the CMS reserves that name — so it is declared at the content type level:
+
+```tsx
+const ProductPageType = contentType({
+  key: 'ProductPage',
+  baseType: '_experience',
+  composition: {
+    format: 'outline',
+    allowedTypes: [HeroSectionType, '_component'],
+    restrictedTypes: [LegacyBannerType],
+  },
+  properties: {
+    title: { type: 'string' },
+  },
+});
+```
+
+| Field | Effect |
+| --- | --- |
+| `format` | `'grid'` for rows and columns of elements, `'outline'` for a flat list of sections. Left out, the base type's default layout applies — and because only the CMS knows that default, nothing is validated locally. |
+| `allowedTypes` | What editors may place in the composition. Left out, every composition element is allowed. |
+| `restrictedTypes` | What they may not. |
+
+The `format`/`allowedTypes` pairing above applies here unchanged, so the example pairs `'outline'` with `HeroSectionType`, a `sectionEnabled` component. Pairing it with an `elementEnabled` one would be rejected.
+
+A `_section` takes the same configuration for its own composition. Neither list narrows the generated query.
+
+> [!NOTE]
+> The built-in composition and a composition property are independent. Restricting one does not restrict the other, and the CMS accepts lists that name completely different types — even contradictory ones. If a sidebar should be restricted the same way as the canvas, say so on both.
+
 ## Best Practices
 
 ### Mixing Static and Composed Content

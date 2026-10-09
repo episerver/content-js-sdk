@@ -5,7 +5,16 @@ import ora from 'ora';
 import chalk from 'chalk';
 
 type Application = components['schemas']['Application'];
-type ApplicationPatch = components['schemas']['ApplicationPatch'];
+
+/**
+ * `type` is still sent when an application changes kind, though the current
+ * OpenAPI schema no longer declares it on the patch body. Kept as an explicit
+ * widening rather than a cast at the assignment, so it is visible that the
+ * field outlives the generated type.
+ */
+type ApplicationPatch = components['schemas']['ApplicationPatch'] & {
+  type?: string;
+};
 
 // UTILITIES
 
@@ -31,7 +40,7 @@ const normalizeType = (type: any, defaultType = 'website'): string =>
   typeof type === 'string' ? type : defaultType;
 
 const isContentRef = (val: string | undefined) =>
-    val && (val.startsWith('cms://') || val.startsWith('content://'));
+  val && (val.startsWith('cms://') || val.startsWith('content://'));
 
 // COMPARISON HELPERS
 
@@ -181,7 +190,7 @@ const updateApplication = async (
       path: { key },
     },
     body: patch,
-    bodySerializer: (body) => JSON.stringify(body),
+    bodySerializer: body => JSON.stringify(body),
     headers: {
       'Content-Type': 'application/merge-patch+json',
     },

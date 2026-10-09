@@ -33,18 +33,32 @@ export type ManifestDisplayTemplate = DisplayTemplates.DisplayTemplateVariant & 
 };
 
 /**
+ * Built-in composition configuration (API format). Only the allowed and
+ * restricted type lists differ from the SDK shape: the API takes keys.
+ */
+export type ManifestCompositionConfiguration = Omit<
+  Properties.CompositionConfiguration,
+  'allowedTypes' | 'restrictedTypes'
+> & {
+  allowedTypes?: string[];
+  restrictedTypes?: string[];
+};
+
+/**
  * Content Type (API format)
  * Based on SDK's AnyContentType but adapted for API serialization:
  * - mayContainTypes uses string[] instead of ContentType<T>[] | string[]
  * - properties uses our adapted ContentTypeProperties.All
+ * - composition uses string[] for its allowed/restricted types
  * - compositionBehaviors added as optional (only on ComponentContentType in SDK, but needed at API level)
  * - contracts replaces extends and uses only the key of the contract
  */
 export type ManifestContentType = Omit<
   ContentTypes.AnyContentType,
-  'mayContainTypes' | 'properties' | 'extends' | 'baseType'
+  'mayContainTypes' | 'properties' | 'extends' | 'baseType' | 'composition'
 > & {
   mayContainTypes?: string[];
+  composition?: ManifestCompositionConfiguration;
   properties?: Record<string, ContentTypeProperties.All>;
   compositionBehaviors?: ('sectionEnabled' | 'elementEnabled')[];
   baseType?: string;
@@ -113,6 +127,15 @@ export namespace ContentTypeProperties {
     restrictedTypes?: string[];
   };
 
+  // Composition property - allowedTypes/restrictedTypes must be strings for API format
+  export type Composition = Omit<
+    Properties.CompositionProperty,
+    'allowedTypes' | 'restrictedTypes'
+  > & {
+    allowedTypes?: string[];
+    restrictedTypes?: string[];
+  };
+
   // Other properties can use SDK types directly
   export type Boolean = Properties.BooleanProperty;
   export type DateTime = Properties.DateTimeProperty;
@@ -148,7 +171,8 @@ export namespace ContentTypeProperties {
     | RichText
     | Json
     | Link
-    | Component;
+    | Component
+    | Composition;
 
   export type All = Array | NonArray;
 }
