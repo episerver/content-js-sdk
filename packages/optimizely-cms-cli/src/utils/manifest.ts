@@ -95,11 +95,7 @@ export namespace ContentTypeProperties {
   };
 
   // Content/ContentReference properties - allowedTypes/restrictedTypes/contentType must be strings for API format
-  export type Content = Omit<
-    Properties.ContentProperty,
-    'allowedTypes' | 'restrictedTypes' | 'contentType'
-  > & {
-    contentType?: string;
+  export type Content = Omit<Properties.ContentProperty, 'allowedTypes' | 'restrictedTypes'> & {
     allowedTypes?: string[];
     restrictedTypes?: string[];
   };

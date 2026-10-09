@@ -231,21 +231,63 @@ describe('validateContentAreaConstraints', () => {
     expect(errors[0]).toContain('missing type constraints');
   });
 
-  it('should return no errors when only contentType is set', () => {
+  it('should return no errors when only contentType is set on a contentReference', () => {
     const types = [
       contentType({
         key: 'PageType',
         baseType: '_page',
         displayName: 'Page',
         properties: {
-          image: { type: 'contentReference', contentType: 'ImageType' } as any,
-          area: { type: 'content', contentType: 'Banner' } as any,
+          image: { type: 'contentReference', contentType: 'ImageType' },
         },
       }),
     ];
 
     const { errors } = validateContentAreaConstraints(types);
     expect(errors).toHaveLength(0);
+  });
+
+  it('should error for contentType on content properties and array items', () => {
+    const types = [
+      contentType({
+        key: 'PageType',
+        baseType: '_page',
+        displayName: 'Page',
+        properties: {
+          area: { type: 'content', contentType: 'Banner' } as any,
+          sections: {
+            type: 'array',
+            items: { type: 'content', contentType: 'Banner' },
+          } as any,
+        },
+      }),
+    ];
+
+    const { errors } = validateContentAreaConstraints(types);
+    expect(errors).toHaveLength(2);
+    expect(errors[0]).toContain('area');
+    expect(errors[0]).toContain('unsupported type constraint');
+    expect(errors[1]).toContain('sections');
+    expect(errors[1]).toContain('unsupported type constraint');
+  });
+
+  it('should not suggest contentType for unconstrained content properties', () => {
+    const types = [
+      contentType({
+        key: 'PageType',
+        baseType: '_page',
+        displayName: 'Page',
+        properties: {
+          area: { type: 'content' } as any,
+          image: { type: 'contentReference' } as any,
+        },
+      }),
+    ];
+
+    const { errors } = validateContentAreaConstraints(types);
+    expect(errors).toHaveLength(2);
+    expect(errors[0]).not.toContain('"contentType"');
+    expect(errors[1]).toContain('"contentType"');
   });
 
   it('should error when contentType is combined with allowedTypes or restrictedTypes', () => {
@@ -274,9 +316,10 @@ describe('validateContentAreaConstraints', () => {
     expect(errors[0]).toContain('image');
     expect(errors[0]).toContain('conflicting type constraints');
     expect(errors[1]).toContain('area');
+    expect(errors[1]).toContain('unsupported type constraint');
   });
 
-  it('should error for array items combining contentType with allowedTypes', () => {
+  it('should error for contentReference array items combining contentType with allowedTypes', () => {
     const types = [
       contentType({
         key: 'PageType',
@@ -286,9 +329,9 @@ describe('validateContentAreaConstraints', () => {
           sections: {
             type: 'array',
             items: {
-              type: 'content',
-              contentType: 'Banner',
-              allowedTypes: ['Hero'],
+              type: 'contentReference',
+              contentType: 'ImageType',
+              allowedTypes: ['_image'],
             },
           } as any,
         },

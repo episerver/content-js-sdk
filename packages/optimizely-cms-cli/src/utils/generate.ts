@@ -456,7 +456,7 @@ const showProperty = (prop: string, value: any, parent: any): boolean =>
  * The CMS API pads every `content`/`contentReference` property with `allowedTypes` and
  * `restrictedTypes`, empty or not. Dropping an empty one is only safe while something else
  * still declares a constraint, otherwise the generated code fails to typecheck against
- * `ContentAndRefBlock`, which requires exactly one of the three. A fully unconstrained
+ * `ContentBlock`/`ContentReferenceBlock`, which require at least one. A fully unconstrained
  * property therefore keeps `allowedTypes: []` as the anchor, and `config push` reports it.
  */
 const isRedundantEmptyAllowedTypes = (value: any, parent: any): boolean =>
