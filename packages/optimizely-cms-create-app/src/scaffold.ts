@@ -19,7 +19,7 @@ export async function createProject(options: CreateOptions): Promise<void> {
 
   s.start('Copying template files...');
   try {
-    copyTemplate(options.template, targetDir, options.projectName);
+    await copyTemplate(options.template, targetDir, options.projectName);
     s.stop('Template files copied.');
   } catch (error) {
     s.stop('Failed to copy template.');
