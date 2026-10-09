@@ -97,6 +97,8 @@ describe('resolveTaxonomy: true', () => {
         isAvailable: null,
         isSelectable: null,
         path: [
+          { key: 'term-region', displayName: 'Region' },
+          { key: 'term-europe', displayName: 'Europe' },
           { key: 'term-nordic', displayName: 'Nordic' },
         ],
       },

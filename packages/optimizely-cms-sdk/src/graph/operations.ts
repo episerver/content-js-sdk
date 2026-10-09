@@ -224,20 +224,56 @@ query ResolveTaxonomyTerms($keys: [String!]!) {
 }
 `;
 
+type TermParent = {
+  key: string;
+  displayName: string | null;
+  parent?: TermParent | string | null;
+};
+
 type TermMetadata = {
   key: string;
   displayName: string | null;
   description?: string | null;
   taxonomy?: string | null;
   usage?: string | null;
-  parent?: string | null;
+  parent?: TermParent | string | null;
 };
 
-function buildPath(meta: TermMetadata): Array<{ key: string; displayName: string | null }> {
-  return [{ key: meta.key, displayName: meta.displayName }];
+function buildPath(
+  meta: TermMetadata,
+  allMeta: Map<string, TermMetadata>,
+): Array<{ key: string; displayName: string | null }> {
+  const path: Array<{ key: string; displayName: string | null }> = [];
+  const visited = new Set<string>();
+
+  path.push({ key: meta.key, displayName: meta.displayName });
+  visited.add(meta.key);
+
+  let parent: TermParent | string | null | undefined = meta.parent;
+  while (parent) {
+    if (typeof parent === 'object') {
+      if (visited.has(parent.key)) break;
+      visited.add(parent.key);
+      path.unshift({ key: parent.key, displayName: parent.displayName });
+      parent = parent.parent;
+    } else {
+      const parentKey = extractTermKey(parent);
+      const parentMeta = allMeta.get(parentKey);
+      if (!parentMeta || visited.has(parentMeta.key)) break;
+      visited.add(parentMeta.key);
+      path.unshift({ key: parentMeta.key, displayName: parentMeta.displayName });
+      parent = parentMeta.parent;
+    }
+  }
+
+  return path;
 }
 
-function metadataToTaxonomyTerm(key: string, meta: TermMetadata | undefined): TaxonomyTerm {
+function metadataToTaxonomyTerm(
+  key: string,
+  meta: TermMetadata | undefined,
+  allMeta?: Map<string, TermMetadata>,
+): TaxonomyTerm {
   if (!meta) {
     return {
       key,
@@ -261,7 +297,7 @@ function metadataToTaxonomyTerm(key: string, meta: TermMetadata | undefined): Ta
     sortOrder: null,
     isAvailable: null,
     isSelectable: null,
-    path: buildPath(meta),
+    path: buildPath(meta, allMeta ?? new Map()),
   };
 }
 
@@ -275,6 +311,7 @@ function metadataToTaxonomyTerm(key: string, meta: TermMetadata | undefined): Ta
  * Follows the same pattern as {@linkcode sectionTypesByEndpoint}.
  */
 const taxonomyTermCache = new Map<string, Map<string, TaxonomyTerm>>();
+const taxonomyMetadataByKey = new Map<string, Map<string, TermMetadata>>();
 
 function taxonomyCacheKey(context: GraphClientContext, locale: string | undefined): string {
   return `${context.graphUrl}::${context.apiKey}::${locale ?? ''}`;
@@ -282,6 +319,7 @@ function taxonomyCacheKey(context: GraphClientContext, locale: string | undefine
 
 export function clearTaxonomyCache(): void {
   taxonomyTermCache.clear();
+  taxonomyMetadataByKey.clear();
 }
 
 function extractTermKey(uri: string): string {
@@ -317,37 +355,60 @@ async function resolveTaxonomyTerms(
 
   if (uncachedKeys.length > 0) {
     try {
-      const uriToKey = new Map(uncachedKeys.map(uri => [uri, extractTermKey(uri)]));
-      const queryKeys = [...new Set(uriToKey.values())];
-
-      const batches: string[][] = [];
-      for (let i = 0; i < queryKeys.length; i += TAXONOMY_BATCH_SIZE) {
-        batches.push(queryKeys.slice(i, i + TAXONOMY_BATCH_SIZE));
+      let metaCache = taxonomyMetadataByKey.get(cacheKey);
+      if (!metaCache) {
+        metaCache = new Map();
+        taxonomyMetadataByKey.set(cacheKey, metaCache);
       }
 
-      const batchResults = await Promise.all(
-        batches.map(batch =>
-          context.request(
-            RESOLVE_TAXONOMY_QUERY,
-            { keys: batch, ...(locale && { locale }) },
-            undefined,
-            true,
-          ),
-        ),
-      );
+      const uriToKey = new Map(uncachedKeys.map(uri => [uri, extractTermKey(uri)]));
 
-      const fetchedMap = new Map<string, TermMetadata>();
-      for (const data of batchResults) {
-        const items: Array<{ _metadata: TermMetadata }> =
-          data?._TaxonomyTerm?.items ?? [];
-        for (const item of items) {
-          fetchedMap.set(item._metadata.key, item._metadata);
+      const keysToFetch = new Set<string>();
+      for (const shortKey of uriToKey.values()) {
+        if (!metaCache.has(shortKey)) {
+          keysToFetch.add(shortKey);
+        }
+      }
+
+      const MAX_ANCESTOR_DEPTH = 20;
+      for (let depth = 0; depth < MAX_ANCESTOR_DEPTH && keysToFetch.size > 0; depth++) {
+        const queryKeys = [...keysToFetch];
+        keysToFetch.clear();
+
+        const batches: string[][] = [];
+        for (let i = 0; i < queryKeys.length; i += TAXONOMY_BATCH_SIZE) {
+          batches.push(queryKeys.slice(i, i + TAXONOMY_BATCH_SIZE));
+        }
+
+        const batchResults = await Promise.all(
+          batches.map(batch =>
+            context.request(
+              RESOLVE_TAXONOMY_QUERY,
+              { keys: batch, ...(locale && { locale }) },
+              undefined,
+              true,
+            ),
+          ),
+        );
+
+        for (const data of batchResults) {
+          const items: Array<{ _metadata: TermMetadata }> =
+            data?._TaxonomyTerm?.items ?? [];
+          for (const item of items) {
+            metaCache.set(item._metadata.key, item._metadata);
+            if (item._metadata.parent && typeof item._metadata.parent === 'string') {
+              const parentKey = extractTermKey(item._metadata.parent);
+              if (!metaCache.has(parentKey)) {
+                keysToFetch.add(parentKey);
+              }
+            }
+          }
         }
       }
 
       for (const uri of uncachedKeys) {
         const shortKey = uriToKey.get(uri)!;
-        const term = metadataToTaxonomyTerm(uri, fetchedMap.get(shortKey));
+        const term = metadataToTaxonomyTerm(uri, metaCache.get(shortKey), metaCache);
         localCache.set(uri, term);
       }
     } catch (err) {
