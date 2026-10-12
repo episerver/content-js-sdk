@@ -347,9 +347,10 @@ const ProductPageType = contentType({
   key: 'ProductPage',
   baseType: '_experience',
   composition: {
-    format: 'grid',
-    allowedTypes: [CardElementType, '_component'],
-    restrictedTypes: [LegacyBannerType],
+    // `outline` is already the default for an experience; declared here only
+    // to make the pairing with `allowedTypes` explicit
+    format: 'outline',
+    allowedTypes: [HeroSectionType],
   },
   properties: {
     title: { type: 'string' },
@@ -357,7 +358,13 @@ const ProductPageType = contentType({
 });
 ```
 
-Every field is optional. Left out, `format` keeps the base type's own default layout, and an absent list allows everything. As with a composition property, the restrictions do not narrow the generated GraphQL query.
+Every field is optional, and the common case is to set `allowedTypes` alone:
+
+```ts
+composition: { allowedTypes: [HeroSectionType] },
+```
+
+An experience's composition is an **`outline` of sections**, each of which is a `grid` of elements — so `allowedTypes` there names section types unless you override `format`. Left out entirely, `format` keeps that default and an absent list allows everything. As with a composition property, the restrictions do not narrow the generated GraphQL query.
 
 ### Indexing Types
 

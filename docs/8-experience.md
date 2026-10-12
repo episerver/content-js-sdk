@@ -435,7 +435,7 @@ const ProductPageType = contentType({
 
 | Field | Effect |
 | --- | --- |
-| `format` | `'grid'` for rows and columns of elements, `'outline'` for a flat list of sections. Left out, the base type's default layout applies — and because only the CMS knows that default, nothing is validated locally. |
+| `format` | `'grid'` for rows and columns of elements, `'outline'` for a flat list of sections. An experience defaults to `'outline'`, so you only need this to override it. Left out, nothing is validated locally, since the default belongs to the CMS. |
 | `allowedTypes` | What editors may place in the composition. Left out, every composition element is allowed. |
 | `restrictedTypes` | What they may not. |
 

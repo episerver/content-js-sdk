@@ -17,22 +17,20 @@ const ProductPageType = contentType({
   key: 'ProductPage',
   baseType: '_experience',
 
-  // Configures the built-in composition
+  // Restricts the built-in composition, an outline of sections
   composition: {
-    format: 'grid',
-    allowedTypes: [HeroComponentType, '_component'],
-    restrictedTypes: [LegacyBannerType],
+    allowedTypes: [HeroSectionType],
   },
 
   properties: {
     title: { type: 'string' },
 
-    // A second, separate layout
+    // A second, separate layout: a grid of elements
     sidebar: {
       type: 'composition',
       format: 'grid',
       displayName: 'Sidebar',
-      allowedTypes: [HeroComponentType],
+      allowedTypes: [CardElementType],
     },
   },
 });
@@ -52,7 +50,7 @@ export default function ProductPage({ content }: Props) {
 }
 ```
 
-`format` sets the editing layout: `'grid'` for rows and columns of elements, `'outline'` for a flat ordered list of sections. It is required on a composition property, and optional on the built-in configuration, where the base type's default applies. `allowedTypes` and `restrictedTypes` limit what an editor can add. `allowedTypes` must name types the layout can hold — a `'grid'` takes elements, an `'outline'` takes sections — while `restrictedTypes` may name either, since excluding a type that could never appear is harmless. See [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md#composition-property) for which types go in which layout. Neither list changes the generated GraphQL query.
+`format` sets the editing layout: `'grid'` for rows and columns of elements, `'outline'` for a flat ordered list of sections. It is required on a composition property, and optional on the built-in configuration — an experience already defaults to `'outline'`. `allowedTypes` and `restrictedTypes` limit what an editor can add. `allowedTypes` must name types the layout can hold — a `'grid'` takes elements, an `'outline'` takes sections — while `restrictedTypes` may name either, since excluding a type that could never appear is harmless. See [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md#composition-property) for which types go in which layout. Neither list changes the generated GraphQL query.
 
 `opti-cms config push` validates all of this before contacting the CMS, so a bad format or a type the layout cannot hold fails locally, naming the content type and the composition. `opti-cms config pull` writes both forms back into your models and imports the content types they reference.
 
