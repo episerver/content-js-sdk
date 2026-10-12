@@ -94,6 +94,13 @@ export type GraphQueryOptions = {
    * @default true
    */
   publishedOnly?: boolean;
+  /**
+   * Resolve taxonomy category keys into full `TaxonomyTerm` objects and attach
+   * them as `_metadata.resolvedCategories` on each returned content item.
+   * Overrides the global `resolveTaxonomy` setting in `GraphOptions`.
+   * @default false
+   */
+  resolveTaxonomy?: boolean;
 };
 
 /**
@@ -300,7 +307,6 @@ export type GraphOptions = {
 
 export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
-  resolveTaxonomy?: boolean;
 };
 
 export type GraphGetLinksOptions = GraphQueryOptions & {
@@ -309,12 +315,9 @@ export type GraphGetLinksOptions = GraphQueryOptions & {
 
 export type GraphGetItemOptions = GraphQueryOptions & {
   previewToken?: string;
-  resolveTaxonomy?: boolean;
 };
 
-export type GraphGetPreviewOptions = GraphQueryOptions & {
-  resolveTaxonomy?: boolean;
-};
+export type GraphGetPreviewOptions = GraphQueryOptions;
 
 export type PreviewParams = {
   preview_token: string;
@@ -383,6 +386,7 @@ export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
   cache: true,
   stored: true,
   publishedOnly: true,
+  resolveTaxonomy: false,
 };
 
 /** The `query` defaults a client starts from, before its own `query` group is applied. */
@@ -419,10 +423,10 @@ export function resolveQueryOptions(
   options: GraphQueryOptions = {},
   fallbacks: Partial<ResolvedQueryOptions> = {},
 ): ResolvedQueryOptions {
-  const { cache, stored, slot, host, publishedOnly } = options;
+  const { cache, stored, slot, host, publishedOnly, resolveTaxonomy } = options;
   const defaults = { ...context.queryDefaults, ...fallbacks };
 
-  return withDefaults(defaults, { cache, stored, slot, host, publishedOnly });
+  return withDefaults(defaults, { cache, stored, slot, host, publishedOnly, resolveTaxonomy });
 }
 
 /**

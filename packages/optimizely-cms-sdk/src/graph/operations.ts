@@ -584,7 +584,7 @@ export async function getContentByPath<T = any>(
         ) ?? [],
       );
 
-      if (options?.resolveTaxonomy && taxonomyEnabled) {
+      if (queryOptions.resolveTaxonomy && taxonomyEnabled) {
         await Promise.all(
           items.map(async (item: any) => {
             const categories: string[] | undefined = item?._metadata?.categories;
@@ -686,7 +686,7 @@ export async function getPreviewContent(
       },
     );
 
-    if (result && options?.resolveTaxonomy && taxonomyEnabled) {
+    if (result && queryOptions.resolveTaxonomy && taxonomyEnabled) {
       const categories: string[] | undefined = result?._metadata?.categories;
       if (categories && categories.length > 0) {
         result._metadata.resolvedCategories = await resolveTaxonomyTerms(
@@ -774,7 +774,7 @@ export async function getContent(
         },
       );
 
-      if (result && options?.resolveTaxonomy && taxonomyEnabled) {
+      if (result && queryOptions.resolveTaxonomy && taxonomyEnabled) {
         const categories: string[] | undefined = result?._metadata?.categories;
         if (categories && categories.length > 0) {
           result._metadata.resolvedCategories = await resolveTaxonomyTerms(
