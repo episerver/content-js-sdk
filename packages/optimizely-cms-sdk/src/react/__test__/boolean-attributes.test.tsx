@@ -44,6 +44,16 @@ describe('Boolean attribute handling', () => {
   it('should drop selected, which React rejects on an option', () => {
     expect(toReactProps({ selected: '', value: 'uk' }, 'option')).toEqual({ value: 'uk' });
   });
+
+  it('should keep hidden="until-found", which is a value rather than a flag', () => {
+    expect(toReactProps({ hidden: 'until-found' }, 'div').hidden).toBe('until-found');
+    expect(toReactProps({ hidden: '' }, 'div').hidden).toBe(true);
+  });
+
+  it('should convert boolean attributes that React also renames', () => {
+    expect(toReactProps({ ismap: '' }, 'img').isMap).toBe(true);
+    expect(toReactProps({ itemscope: '' }, 'div').itemScope).toBe(true);
+  });
 });
 
 describe('Select default selection', () => {
@@ -68,6 +78,34 @@ describe('Select default selection', () => {
     );
 
     expect(container.querySelector('select')).toHaveValue(['us', 'vn']);
+  });
+
+  it('should hoist an option selected inside an optgroup', () => {
+    const Optgroup = createHtmlComponent('optgroup');
+    const { container } = render(
+      React.createElement(Select, { element: {} as never, attributes: {} }, [
+        option('us'),
+        React.createElement(
+          Optgroup,
+          { key: 'europe', element: {} as never, attributes: { label: 'Europe' } },
+          option('uk', { selected: '' }),
+        ),
+      ]),
+    );
+
+    expect(container.querySelector('select')).toHaveValue('uk');
+  });
+
+  it('should honour multiple coming from the component config', () => {
+    const MultiSelect = createSelectComponent({ attributes: { multiple: true } });
+    const { container } = render(
+      React.createElement(MultiSelect, { element: {} as never, attributes: {} }, [
+        option('us', { selected: '' }),
+        option('uk', { selected: '' }),
+      ]),
+    );
+
+    expect(container.querySelector('select')).toHaveValue(['us', 'uk']);
   });
 
   it('should leave a select with no selected option alone', () => {

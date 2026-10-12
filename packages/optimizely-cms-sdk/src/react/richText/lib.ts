@@ -151,6 +151,9 @@ export const HTML_TO_REACT_ATTRS: Record<string, string> = {
   // Media attributes commonly used in rich text
   crossorigin: 'crossOrigin',
   usemap: 'useMap',
+  ismap: 'isMap',
+  itemscope: 'itemScope',
+  nomodule: 'noModule',
   allowfullscreen: 'allowFullScreen',
   frameborder: 'frameBorder',
   playsinline: 'playsInline',
@@ -192,6 +195,8 @@ export function toReactProps(attributes: Record<string, unknown>, elementType?: 
     if (reactKey === 'className' && acc.className) return { ...acc, className: `${acc.className} ${value}` };
     // React rejects `selected` on an option; `createSelectComponent` has already hoisted it
     if (reactKey === 'selected') return acc;
+    // `hidden="until-found"` is a value rather than a presence flag, and React takes it as one
+    if (reactKey === 'hidden' && value === 'until-found') return { ...acc, hidden: value };
     // React binds boolean attributes as properties, and a string like `autofocus=""` hydrates
     // as a mismatch against the boolean the DOM reports
     if (isBooleanAttribute(key)) return { ...acc, [reactKey]: isAttributeSet(value) };
@@ -230,16 +235,13 @@ export function createHtmlComponent<T extends keyof JSX.IntrinsicElements>(
   return Component;
 }
 
-/**
- * The values of the options marked `selected`, in document order.
- * ponytail: direct children only — wrap options in an `optgroup` and the default is lost.
- */
+/** The values of the options marked `selected`, in document order, `optgroup` nesting included. */
 const selectedOptionValues = (children: React.ReactNode): string[] =>
   React.Children.toArray(children).flatMap(child => {
     if (!React.isValidElement<ElementRendererProps>(child)) return [];
-    const { attributes, text } = child.props;
-    if (!attributes || !isAttributeSet(attributes.selected ?? false)) return [];
-    return [String(attributes.value ?? text ?? '')];
+    const { attributes, text, children: nested } = child.props;
+    if (attributes && isAttributeSet(attributes.selected ?? false)) return [String(attributes.value ?? text ?? '')];
+    return selectedOptionValues(nested);
   });
 
 /**
@@ -253,7 +255,8 @@ export function createSelectComponent(config: HtmlComponentConfig = {}): Element
     const selected = selectedOptionValues(props.children);
     if (selected.length === 0) return React.createElement(Select, props);
 
-    const multiple = isAttributeSet(props.attributes?.multiple ?? false);
+    // `config.attributes` wins in the rendered props, so it has to win here too
+    const multiple = isAttributeSet(config.attributes?.multiple ?? props.attributes?.multiple ?? false);
     const defaultValue = multiple ? selected : selected[0];
     return React.createElement(Select, { ...props, attributes: { ...props.attributes, defaultValue } });
   };
