@@ -24,13 +24,11 @@ export default buildConfig({
       key: 'AboutExperienceContent',
       displayName: 'About Experience',
       contentType: 'AboutExperience',
-      mayContainTypes: ['*'],
     },
     {
       key: 'BlogExperienceContent',
       displayName: 'Blog Experience',
       contentType: 'BlogExperience',
-      mayContainTypes: ['*'],
     },
   ],
   applications: [
