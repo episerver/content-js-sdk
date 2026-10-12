@@ -1,9 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PACKAGES } from './registry.js';
 import type { TemplateName } from './types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const REGISTRY_URL = 'https://registry.npmjs.org';
+const REGISTRY_TIMEOUT_MS = 5000;
 
 const EXCLUDE = new Set([
   'node_modules',
@@ -47,7 +51,33 @@ function normalizeEnvFile(dir: string): void {
   }
 }
 
-export function copyTemplate(templateName: TemplateName, targetDir: string, projectName: string): void {
+async function fetchLatestVersion(name: string): Promise<string | undefined> {
+  try {
+    const response = await fetch(`${REGISTRY_URL}/${name}/latest`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT_MS) });
+    if (!response.ok) return undefined;
+    const { version } = (await response.json()) as { version?: string };
+    return version;
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchLatestVersions(): Promise<Record<string, string>> {
+  const names = Object.values(PACKAGES).map(it => it.name);
+  const versions = await Promise.all(names.map(fetchLatestVersion));
+
+  return Object.fromEntries(names.flatMap((name, index) => (versions[index] ? [[name, versions[index]]] : [])));
+}
+
+// Packages missing from `versions` keep the range bundled at build time
+function withLatestVersions(
+  deps: Record<string, string> | undefined,
+  versions: Record<string, string>,
+): Record<string, string> | undefined {
+  return deps && Object.fromEntries(Object.entries(deps).map(([name, range]) => [name, versions[name] ? `^${versions[name]}` : range]));
+}
+
+export async function copyTemplate(templateName: TemplateName, targetDir: string, projectName: string): Promise<void> {
   const templateDir = getTemplateDir(templateName);
 
   if (!fs.existsSync(templateDir)) {
@@ -60,7 +90,11 @@ export function copyTemplate(templateName: TemplateName, targetDir: string, proj
   const pkgPath = path.join(targetDir, 'package.json');
   if (fs.existsSync(pkgPath)) {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    const versions = await fetchLatestVersions();
+
     pkg.name = projectName;
+    pkg.dependencies = withLatestVersions(pkg.dependencies, versions);
+    pkg.devDependencies = withLatestVersions(pkg.devDependencies, versions);
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
   }
 }
