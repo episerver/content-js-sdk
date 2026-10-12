@@ -19,6 +19,13 @@ const usedGroupKeys = (contentTypes: ScopableManifest['contentTypes']) =>
     ),
   );
 
+/** Splits a comma-separated `--only` value into trimmed, non-empty keys */
+export const parseOnlyKeys = (value?: string) =>
+  value
+    ?.split(',')
+    .map(key => key.trim())
+    .filter(Boolean);
+
 /** Returns the keys that match no content type, contract or display template in the manifest */
 export const findUnknownKeys = (manifest: ScopableManifest, keys: string[]) => {
   const knownKeys = new Set(

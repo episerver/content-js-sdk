@@ -7,7 +7,7 @@ import { writeFile, access } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import {
   findMetaData,
-  logKeys,
+  logList,
   readFromPath,
   normalizePropertyGroups,
   validateApplications,
@@ -22,7 +22,11 @@ import {
   validateContentAreaConstraints,
 } from '../../utils/mapping.js';
 import { syncLocales } from '../../service/localeService.js';
-import { findUnknownKeys, scopeManifest } from '../../utils/scopeManifest.js';
+import {
+  findUnknownKeys,
+  parseOnlyKeys,
+  scopeManifest,
+} from '../../utils/scopeManifest.js';
 
 const exitWithOnlyError = (message: string): never => {
   console.error(chalk.red(message));
@@ -71,10 +75,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPush);
     const configFilePath = path.resolve(process.cwd(), args.file);
-    const onlyKeys = flags.only
-      ?.split(',')
-      .map(key => key.trim())
-      .filter(Boolean);
+    const onlyKeys = parseOnlyKeys(flags.only);
 
     if (onlyKeys?.length === 0) exitWithOnlyError('--only requires at least one key');
 
@@ -135,12 +136,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     // Validate and normalize property groups
     const normalizedPropertyGroups =
       propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
-    if (log) logKeys('Property Groups found', displayNamesOf(normalizedPropertyGroups));
+    if (log) logList('Property Groups found', displayNamesOf(normalizedPropertyGroups));
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
     const validatedApplications = applications ? validateApplications(applications) : [];
-    if (log) logKeys('Applications found', displayNamesOf(validatedApplications));
+    if (log) logList('Applications found', displayNamesOf(validatedApplications));
 
     // Check if apps have entryPoint set (will be mapped from content config)
     const hasAppsWithoutEntryPoint = validatedApplications.some(app => !app.entryPoint);
@@ -175,9 +176,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const metaData = onlyKeys ? scopeManifest(fullMetaData, onlyKeys) : fullMetaData;
 
     if (onlyKeys) {
-      logKeys('Pushing content types', keysOf(metaData.contentTypes));
-      logKeys('Pushing display templates', keysOf(metaData.displayTemplates));
-      logKeys('Pushing property groups', keysOf(metaData.propertyGroups));
+      logList('Pushing content types', keysOf(metaData.contentTypes));
+      logList('Pushing display templates', keysOf(metaData.displayTemplates));
+      logList('Pushing property groups', keysOf(metaData.propertyGroups));
     }
 
     const restClient = await createApiClient(flags.host);

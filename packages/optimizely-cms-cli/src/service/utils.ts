@@ -315,11 +315,11 @@ const deduplicatePropertyGroups = (groups: PropertyGroupType[]): PropertyGroupTy
 };
 
 /**
- * Logs a labelled list of keys, e.g. `Property Groups found: [SEO, Meta]`. Skips empty lists.
+ * Logs a labelled list, e.g. `Property Groups found: [SEO, Meta]`. Skips empty lists.
  */
-export const logKeys = (label: string, keys: string[]): void => {
-  if (keys.length > 0)
-    console.log(`${label}: ${chalk.bold.cyan(`[${keys.join(', ')}]`)}`);
+export const logList = (label: string, items: string[]): void => {
+  if (items.length > 0)
+    console.log(`${label}: ${chalk.bold.cyan(`[${items.join(', ')}]`)}`);
 };
 
 /**

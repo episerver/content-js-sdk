@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { findUnknownKeys, scopeManifest } from '../utils/scopeManifest.js';
+import { findUnknownKeys, parseOnlyKeys, scopeManifest } from '../utils/scopeManifest.js';
 
 const manifest: Parameters<typeof scopeManifest>[0] = {
   contentTypes: [
@@ -39,6 +39,29 @@ const manifest: Parameters<typeof scopeManifest>[0] = {
 };
 
 const keysOf = (items: { key: string }[]) => items.map(it => it.key);
+
+describe('parseOnlyKeys', () => {
+  it('returns undefined when the flag is not passed', () => {
+    expect(parseOnlyKeys(undefined)).toBeUndefined();
+  });
+
+  it('splits comma-separated keys', () => {
+    expect(parseOnlyKeys('Hero,LandingPage')).toEqual(['Hero', 'LandingPage']);
+  });
+
+  it('trims whitespace around keys', () => {
+    expect(parseOnlyKeys(' Hero , LandingPage ')).toEqual(['Hero', 'LandingPage']);
+  });
+
+  it('drops empty entries', () => {
+    expect(parseOnlyKeys('Hero,,LandingPage,')).toEqual(['Hero', 'LandingPage']);
+  });
+
+  it('returns an empty list when no key is given', () => {
+    expect(parseOnlyKeys('')).toEqual([]);
+    expect(parseOnlyKeys(' , ')).toEqual([]);
+  });
+});
 
 describe('scopeManifest', () => {
   it('keeps only the selected content type, its display templates and its property groups', () => {
