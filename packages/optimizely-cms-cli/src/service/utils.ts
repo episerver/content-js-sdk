@@ -189,6 +189,7 @@ const processFile = async (
   file: string,
   cwd: string,
   tmpDir: string,
+  log: boolean,
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
@@ -197,13 +198,15 @@ const processFile = async (
   const loaded = await compileAndImport(file, cwd, tmpDir);
   const { contentTypeData, displayTemplateData, contractData } = extractMetaData(loaded);
 
-  contentTypeData.forEach(contentType =>
-    printFileContent('Content Type', file, contentType),
-  );
-  displayTemplateData.forEach(template =>
-    printFileContent('Display Template', file, template),
-  );
-  contractData.forEach(contract => printFileContent('Contract', file, contract));
+  if (log) {
+    contentTypeData.forEach(contentType =>
+      printFileContent('Content Type', file, contentType),
+    );
+    displayTemplateData.forEach(template =>
+      printFileContent('Display Template', file, template),
+    );
+    contractData.forEach(contract => printFileContent('Contract', file, contract));
+  }
 
   return {
     contentTypes: contentTypeData,
@@ -218,6 +221,7 @@ const processFile = async (
 export const findMetaData = async (
   componentPaths: string[],
   cwd: string,
+  { log = true } = {},
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
@@ -231,7 +235,9 @@ export const findMetaData = async (
   validatePatterns(includePatterns, excludePatterns);
 
   const allFiles = await findFilesFromPatterns(includePatterns, excludePatterns, cwd);
-  const results = await Promise.all(allFiles.map(file => processFile(file, cwd, tmpDir)));
+  const results = await Promise.all(
+    allFiles.map(file => processFile(file, cwd, tmpDir, log)),
+  );
 
   return {
     contentTypes: results.flatMap(r => r.contentTypes),
@@ -318,13 +324,16 @@ const logPropertyGroups = (groups: PropertyGroupType[]): void => {
 /**
  * Validates and normalizes property groups, auto-generating missing fields and removing duplicates.
  */
-export const normalizePropertyGroups = (propertyGroups: any[]): PropertyGroupType[] => {
+export const normalizePropertyGroups = (
+  propertyGroups: any[],
+  { log = true } = {},
+): PropertyGroupType[] => {
   if (!Array.isArray(propertyGroups)) throw new Error('propertyGroups must be an array');
 
   const normalizedGroups = propertyGroups.map(normalizePropertyGroup);
   const deduplicatedGroups = deduplicatePropertyGroups(normalizedGroups);
 
-  logPropertyGroups(deduplicatedGroups);
+  if (log) logPropertyGroups(deduplicatedGroups);
 
   return deduplicatedGroups;
 };
@@ -371,6 +380,7 @@ const logApplications = (applications: ApplicationsType[]): void => {
  */
 export const validateApplications = (
   applications: ApplicationsType[],
+  { log = true } = {},
 ): ApplicationsType[] => {
   if (!Array.isArray(applications))
     throw new Error(
@@ -378,7 +388,7 @@ export const validateApplications = (
     );
 
   applications.forEach(validateApplication);
-  logApplications(applications);
+  if (log) logApplications(applications);
 
   return applications;
 };

@@ -33,6 +33,13 @@ const exitWithOnlyError = (message: string): never => {
   return process.exit(1);
 };
 
+const logKeys = (label: string, items: { key: string }[]) => {
+  if (items.length > 0)
+    console.log(
+      `  ${label}: ${chalk.bold.cyan(`[${items.map(it => it.key).join(', ')}]`)}`,
+    );
+};
+
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
     file: Args.string({
@@ -66,6 +73,15 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPush);
     const configFilePath = path.resolve(process.cwd(), args.file);
+    const onlyKeys = flags.only
+      ?.split(',')
+      .map(key => key.trim())
+      .filter(Boolean);
+
+    if (onlyKeys?.length === 0) exitWithOnlyError('--only requires at least one key');
+
+    // a scoped push lists only what it sends, not everything found in the config
+    const log = !onlyKeys;
 
     // Check if config file exists
     try {
@@ -96,6 +112,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const { contentTypes, displayTemplates, contracts } = await findMetaData(
       componentPaths,
       configPathDirectory,
+      { log },
     );
 
     // Validate content area constraints
@@ -119,11 +136,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Validate and normalize property groups
     const normalizedPropertyGroups =
-      propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
+      propertyGroups ? normalizePropertyGroups(propertyGroups, { log }) : [];
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
-    const validatedApplications = applications ? validateApplications(applications) : [];
+    const validatedApplications =
+      applications ? validateApplications(applications, { log }) : [];
 
     // Check if apps have entryPoint set (will be mapped from content config)
     const hasAppsWithoutEntryPoint = validatedApplications.some(app => !app.entryPoint);
@@ -150,17 +168,19 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     };
 
     // Scope the manifest to the --only keys
-    const onlyKeys = flags.only
-      ?.split(',')
-      .map(key => key.trim())
-      .filter(Boolean);
     const unknownKeys = onlyKeys ? findUnknownKeys(fullMetaData, onlyKeys) : [];
 
-    if (onlyKeys?.length === 0) exitWithOnlyError('--only requires at least one key');
     if (unknownKeys.length > 0)
       exitWithOnlyError(`Unknown keys in --only: ${unknownKeys.join(', ')}`);
 
     const metaData = onlyKeys ? scopeManifest(fullMetaData, onlyKeys) : fullMetaData;
+
+    if (onlyKeys) {
+      console.log('Scoped push:');
+      logKeys('Content Types', metaData.contentTypes);
+      logKeys('Display Templates', metaData.displayTemplates);
+      logKeys('Property Groups', metaData.propertyGroups);
+    }
 
     const restClient = await createApiClient(flags.host);
 
