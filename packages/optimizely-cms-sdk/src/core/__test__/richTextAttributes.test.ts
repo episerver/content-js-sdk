@@ -5,9 +5,27 @@ import {
   getMarkTag,
   getRichTextElement,
   getRichTextTree,
+  isAttributeSet,
+  isBooleanAttribute,
   splitAttributes,
   toStyleString,
 } from '../richText/attributes.js';
+
+describe('boolean attributes', () => {
+  test('recognises boolean attributes in any casing', () => {
+    expect(isBooleanAttribute('autofocus')).toBe(true);
+    expect(isBooleanAttribute('readOnly')).toBe(true);
+    expect(isBooleanAttribute('placeholder')).toBe(false);
+  });
+
+  test('treats presence as true and only the literal "false" as false', () => {
+    expect(isAttributeSet('')).toBe(true);
+    expect(isAttributeSet('autofocus')).toBe(true);
+    expect(isAttributeSet('false')).toBe(false);
+    expect(isAttributeSet(false)).toBe(false);
+    expect(isAttributeSet(undefined)).toBe(false);
+  });
+});
 
 describe('getRichTextTree', () => {
   const document = {
