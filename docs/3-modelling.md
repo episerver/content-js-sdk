@@ -323,7 +323,7 @@ const BlogPageContentType = contentType({
 **`restrictedTypes`** - Blacklist of content types that cannot be selected. Uses the same format as `allowedTypes`.
 
 > [!IMPORTANT]
-> Every `content` and `contentReference` property must declare exactly one form of constraint: either a single `contentType`, or a non-empty `allowedTypes`/`restrictedTypes`. Never both, and never an empty list. `opti-cms config push` fails before uploading anything when a property breaks this. Unconstrained properties make the SDK generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
+> Every `content` and `contentReference` property must declare exactly one form of constraint: either a single `contentType` (`contentReference` only), or a non-empty `allowedTypes`/`restrictedTypes`. Never both, and never an empty list. `opti-cms config push` fails before uploading anything when a property breaks this. Unconstrained properties make the SDK generate nested GraphQL fragments for all possible content types, causing severe performance issues and very slow queries.
 
 #### Migrating existing content types
 
@@ -338,8 +338,8 @@ properties: {
 
 // After - pick one form of constraint per property
 properties: {
-  featuredArticle: { type: 'contentReference', allowedTypes: [ArticleContentType] },
-  hero: { type: 'content', contentType: HeroContentType },
+  featuredArticle: { type: 'content', allowedTypes: [ArticleContentType] },
+  hero: { type: 'contentReference', contentType: HeroContentType },
 }
 ```
 

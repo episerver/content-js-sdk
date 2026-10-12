@@ -92,7 +92,7 @@ export const validateContentTypeKey = (key: string): void => {
 };
 
 const handleComponentType = (property: any): any =>
-  ['component', 'content'].includes(property.type) && property.contentType?.key ?
+  property.type === 'component' && property.contentType?.key ?
     { ...property, contentType: property.contentType.key }
   : property;
 
@@ -103,7 +103,7 @@ const handleArrayType = (property: any): any => {
 
   if (itemType === 'link') return { ...property, format: 'LinkCollection' };
 
-  if (['component', 'content'].includes(itemType) && property.items.contentType?.key)
+  if (itemType === 'component' && property.items.contentType?.key)
     return {
       ...property,
       items: { ...property.items, contentType: property.items.contentType.key },
@@ -166,9 +166,9 @@ const mapAllowedRestrictedTypes = (updatedValue: any, parentKey: string): any =>
  * Validates `content` and `contentReference` properties (including array items).
  *
  * Every such property must declare exactly one form of type constraint: either
- * `contentType`, or a non-empty `allowedTypes`/`restrictedTypes`. Declaring both is a
- * conflict, declaring neither leaves the property unbounded and causes excessive GraphQL
- * fragment generation at runtime.
+ * `contentType` (`contentReference` only), or a non-empty `allowedTypes`/`restrictedTypes`.
+ * Declaring both is a conflict, declaring neither leaves the property unbounded and causes
+ * excessive GraphQL fragment generation at runtime.
  */
 export const validateContentAreaConstraints = (
   contentTypes: ContentTypes.AnyContentType[],
@@ -184,13 +184,20 @@ export const validateContentAreaConstraints = (
       if (!target || !['content', 'contentReference'].includes(target.type)) continue;
 
       const location = `Content type "${ct.key}", property "${propName}" (${target.type})`;
+      const isContentReference = target.type === 'contentReference';
       const hasConstraints = hasTypeConstraints(target);
       const emptyLists = ['allowedTypes', 'restrictedTypes'].filter(
         name => Array.isArray(target[name]) && target[name].length === 0,
       );
 
-      // empty lists dropped only when unconstrained otherwise
-      if (emptyLists.length > 0 && !hasConstraints) {
+      // CMS silently drops `contentType` on content properties, leaving them unrestricted
+      if (!isContentReference && target.contentType) {
+        errors.push(
+          `${location}: unsupported type constraint. ` +
+            `"contentType" is only supported on contentReference properties, use "allowedTypes" or "restrictedTypes" instead.`,
+        );
+      } else if (emptyLists.length > 0 && !hasConstraints) {
+        // empty lists dropped only when unconstrained otherwise
         errors.push(
           `${location}: empty type constraints. ` +
             `${emptyLists.map(name => `"${name}"`).join(' and ')} must list at least one content type, or be removed.`,
@@ -203,7 +210,7 @@ export const validateContentAreaConstraints = (
       } else if (!target.contentType && !hasConstraints) {
         errors.push(
           `${location}: missing type constraints. ` +
-            `Declare "contentType", or "allowedTypes"/"restrictedTypes", to define which content types are permitted.`,
+            `Declare ${isContentReference ? '"contentType", or ' : ''}"allowedTypes"/"restrictedTypes", to define which content types are permitted.`,
         );
       }
     }
