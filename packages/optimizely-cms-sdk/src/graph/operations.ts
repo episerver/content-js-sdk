@@ -327,6 +327,13 @@ function extractTermKey(uri: string): string {
   return lastSlash >= 0 ? uri.slice(lastSlash + 1) : uri;
 }
 
+function shortenCategoryKeys(item: any): void {
+  const categories: string[] | undefined = item?._metadata?.categories;
+  if (categories) {
+    item._metadata.categories = categories.map(extractTermKey);
+  }
+}
+
 async function resolveTaxonomyTerms(
   context: GraphClientContext,
   termKeys: string[],
@@ -601,6 +608,8 @@ export async function getContentByPath<T = any>(
         );
       }
 
+      items.forEach(shortenCategoryKeys);
+
       return items;
     } catch (error) {
       if (error instanceof GraphMissingContentTypeError) {
@@ -699,6 +708,8 @@ export async function getPreviewContent(
       }
     }
 
+    shortenCategoryKeys(result);
+
     return decorateWithContext(result, params);
   });
 }
@@ -786,6 +797,8 @@ export async function getContent(
           result._metadata.resolvedCategories = [];
         }
       }
+
+      shortenCategoryKeys(result);
 
       return result;
     } catch (error) {
