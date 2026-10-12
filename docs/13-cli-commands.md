@@ -57,6 +57,7 @@ By default, reads `./optimizely.config.mjs` from your project root.
 - `--force` - Force update content types (⚠️ may result in data loss)
 - `--dryRun` - Build the manifest but send nothing to the server
 - `--output <path>` - Write the generated manifest JSON to a file
+- `--only <keys>` - Push only the given content types, contracts or display templates (comma-separated keys)
 - `--host <url>` - Override CMS host URL
 
 **Examples:**
@@ -74,8 +75,23 @@ optimizely-cms-cli config push --dryRun --output ./manifest.json
 # Force update (overwrites existing content types)
 optimizely-cms-cli config push --force
 
+# Push only selected content types
+optimizely-cms-cli config push --only Hero,LandingPage
+
 # Push to specific CMS instance
 optimizely-cms-cli config push --host https://example.cms.optimizely.com
+```
+
+**Scoped push:**
+
+`--only` limits the push to the listed keys. The manifest then contains the matching content types and contracts, the display templates for those content types, and the property groups their properties use. Display templates for a base type or a node (row/column) are included only when their own key is listed. Content types left out of the push are not changed or deleted in the CMS.
+
+The full configuration is still validated, and an unknown key stops the command before anything is sent. A scoped push does not sync locales or create applications.
+
+Combine it with `--force` to limit a breaking update to the types you changed:
+
+```bash
+optimizely-cms-cli config push --only Hero --force
 ```
 
 > [!WARNING]

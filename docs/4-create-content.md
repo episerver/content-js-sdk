@@ -83,7 +83,7 @@ The application creation operates on the following order with explicit dependenc
 
 2. **Applications** (defined in the `applications` array) establish the deployment context for content. Each application designates an `entryPoint` that references a content instance key, defining the application's start page. Applications also configure routing hosts, preview URL patterns, and application-level settings.
 
-The CLI enforces this dependency chain during `config push`: contentTypes must exist before content instances can reference them, and content instances must exist before applications can designate them as entry points.
+The CLI enforces this dependency chain during `config push`: contentTypes must exist before content instances can reference them, and content instances must exist before applications can designate them as entry points. A scoped push (`config push --only <keys>`) skips this step.
 
 > Note: The programmatic (config-based) approach does not currently support updating applications. To update an application, you must first delete the existing application and its start page content from the CMS, then run the push command again.
 
@@ -99,7 +99,7 @@ export default buildConfig({
 });
 ```
 
-Running `config push` creates missing locales and enables existing ones. Locales already enabled remain unchanged.
+Running `config push` creates missing locales and enables existing ones. Locales already enabled remain unchanged. A scoped push (`--only`) leaves locales untouched.
 
 ## Step 3. Change the "home" URL
 

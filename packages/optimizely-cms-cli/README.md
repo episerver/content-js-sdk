@@ -110,6 +110,9 @@ optimizely-cms-cli config push ./path/to/custom-config.mjs
 # Force update (may result in data loss)
 optimizely-cms-cli config push --force
 
+# Push only selected content types, contracts or display templates
+optimizely-cms-cli config push --only Hero,LandingPage
+
 # Validate and build the manifest without sending anything to the server
 optimizely-cms-cli config push --dryRun
 
