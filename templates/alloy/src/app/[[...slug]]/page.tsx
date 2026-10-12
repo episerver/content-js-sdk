@@ -7,15 +7,18 @@ import { notFound } from 'next/navigation';
 
 type Props = {
   params: Promise<{
-    slug: string[];
+    slug?: string[];
   }>;
 };
+
+/** The site root has no slug of its own, so it serves the English start page. */
+const defaultSlug = ['en'];
 
 export async function Page({ params }: Props) {
   const { slug } = await params;
 
   const client = getClient();
-  const path = `/${slug.join('/')}/`;
+  const path = `/${(slug ?? defaultSlug).join('/')}/`;
 
   const content = await client.getContentByPath(path);
 
