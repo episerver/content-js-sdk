@@ -36,11 +36,10 @@ export const scopeManifest = (
   manifest: ScopableManifest,
   keys: string[],
 ): ScopableManifest => {
-  const keySet = new Set(keys);
+  const keySet = new Set<string | undefined>(keys);
   const contentTypes = manifest.contentTypes.filter(it => keySet.has(it.key));
   const displayTemplates = manifest.displayTemplates.filter(
-    it =>
-      keySet.has(it.key) || (it.contentType !== undefined && keySet.has(it.contentType)),
+    it => keySet.has(it.key) || keySet.has(it.contentType),
   );
   const groupKeys = usedGroupKeys(contentTypes);
 

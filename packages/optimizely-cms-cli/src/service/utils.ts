@@ -314,28 +314,23 @@ const deduplicatePropertyGroups = (groups: PropertyGroupType[]): PropertyGroupTy
   return deduplicated;
 };
 
-const logPropertyGroups = (groups: PropertyGroupType[]): void => {
-  if (groups.length > 0) {
-    const groupKeys = groups.map(group => group.displayName).join(', ');
-    console.log(`Property Groups found: ${chalk.bold.cyan(`[${groupKeys}]`)}`);
-  }
+/**
+ * Logs a labelled list of keys, e.g. `Property Groups found: [SEO, Meta]`. Skips empty lists.
+ */
+export const logKeys = (label: string, keys: string[]): void => {
+  if (keys.length > 0)
+    console.log(`${label}: ${chalk.bold.cyan(`[${keys.join(', ')}]`)}`);
 };
 
 /**
  * Validates and normalizes property groups, auto-generating missing fields and removing duplicates.
  */
-export const normalizePropertyGroups = (
-  propertyGroups: any[],
-  { log = true } = {},
-): PropertyGroupType[] => {
+export const normalizePropertyGroups = (propertyGroups: any[]): PropertyGroupType[] => {
   if (!Array.isArray(propertyGroups)) throw new Error('propertyGroups must be an array');
 
   const normalizedGroups = propertyGroups.map(normalizePropertyGroup);
-  const deduplicatedGroups = deduplicatePropertyGroups(normalizedGroups);
 
-  if (log) logPropertyGroups(deduplicatedGroups);
-
-  return deduplicatedGroups;
+  return deduplicatePropertyGroups(normalizedGroups);
 };
 
 // VALIDATORS
@@ -368,19 +363,11 @@ const validateApplication = (app: ApplicationsType, applicationIndex: number): v
   app.hosts?.forEach((host, hostIndex) => validateHostFields(host, hostIndex));
 };
 
-const logApplications = (applications: ApplicationsType[]): void => {
-  if (applications.length > 0) {
-    const appNames = applications.map(app => app.displayName).join(', ');
-    console.log('Applications found: %s', chalk.bold.cyan(`[${appNames}]`));
-  }
-};
-
 /**
  * Validates application configuration, ensuring required fields are present and properly formatted.
  */
 export const validateApplications = (
   applications: ApplicationsType[],
-  { log = true } = {},
 ): ApplicationsType[] => {
   if (!Array.isArray(applications))
     throw new Error(
@@ -388,7 +375,6 @@ export const validateApplications = (
     );
 
   applications.forEach(validateApplication);
-  if (log) logApplications(applications);
 
   return applications;
 };

@@ -7,6 +7,7 @@ import { writeFile, access } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import {
   findMetaData,
+  logKeys,
   readFromPath,
   normalizePropertyGroups,
   validateApplications,
@@ -33,12 +34,9 @@ const exitWithOnlyError = (message: string): never => {
   return process.exit(1);
 };
 
-const logKeys = (label: string, items: { key: string }[]) => {
-  if (items.length > 0)
-    console.log(
-      `  ${label}: ${chalk.bold.cyan(`[${items.map(it => it.key).join(', ')}]`)}`,
-    );
-};
+const keysOf = (items: { key: string }[]) => items.map(it => it.key);
+const displayNamesOf = (items: { displayName: string }[]) =>
+  items.map(it => it.displayName);
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -136,12 +134,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Validate and normalize property groups
     const normalizedPropertyGroups =
-      propertyGroups ? normalizePropertyGroups(propertyGroups, { log }) : [];
+      propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
+    if (log) logKeys('Property Groups found', displayNamesOf(normalizedPropertyGroups));
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
-    const validatedApplications =
-      applications ? validateApplications(applications, { log }) : [];
+    const validatedApplications = applications ? validateApplications(applications) : [];
+    if (log) logKeys('Applications found', displayNamesOf(validatedApplications));
 
     // Check if apps have entryPoint set (will be mapped from content config)
     const hasAppsWithoutEntryPoint = validatedApplications.some(app => !app.entryPoint);
@@ -168,7 +167,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     };
 
     // Scope the manifest to the --only keys
-    const unknownKeys = onlyKeys ? findUnknownKeys(fullMetaData, onlyKeys) : [];
+    const unknownKeys = findUnknownKeys(fullMetaData, onlyKeys ?? []);
 
     if (unknownKeys.length > 0)
       exitWithOnlyError(`Unknown keys in --only: ${unknownKeys.join(', ')}`);
@@ -176,10 +175,9 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const metaData = onlyKeys ? scopeManifest(fullMetaData, onlyKeys) : fullMetaData;
 
     if (onlyKeys) {
-      console.log('Scoped push:');
-      logKeys('Content Types', metaData.contentTypes);
-      logKeys('Display Templates', metaData.displayTemplates);
-      logKeys('Property Groups', metaData.propertyGroups);
+      logKeys('Pushing content types', keysOf(metaData.contentTypes));
+      logKeys('Pushing display templates', keysOf(metaData.displayTemplates));
+      logKeys('Pushing property groups', keysOf(metaData.propertyGroups));
     }
 
     const restClient = await createApiClient(flags.host);
@@ -254,15 +252,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const data = response.data;
 
     // Locales and applications are global, so a scoped push leaves them alone
-    if (!onlyKeys) {
-      // Sync locales from config
-      if (locale && Array.isArray(locale) && locale.length > 0) {
-        await syncLocales(locale, restClient);
-      }
+    if (!onlyKeys && Array.isArray(locale) && locale.length > 0)
+      await syncLocales(locale, restClient);
 
-      // Check and ensure applications (skips if all exist)
-      await checkApplications(validatedApplications, content, flags.host);
-    }
+    // Check and ensure applications (skips if all exist)
+    if (!onlyKeys) await checkApplications(validatedApplications, content, flags.host);
+
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
       for (const r of data.outcomes) {
