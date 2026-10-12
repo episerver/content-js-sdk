@@ -17,7 +17,11 @@ const manifest: Parameters<typeof scopeManifest>[0] = {
         metaTitle: { type: 'string', group: 'seo' },
       },
     },
-    { key: 'SeoContract', isContract: true, properties: { keywords: { type: 'string' } } },
+    {
+      key: 'SeoContract',
+      isContract: true,
+      properties: { keywords: { type: 'string' } },
+    },
     { key: 'Empty' },
   ],
   displayTemplates: [
@@ -98,7 +102,9 @@ describe('scopeManifest', () => {
 
 describe('findUnknownKeys', () => {
   it('returns an empty list when every key exists', () => {
-    expect(findUnknownKeys(manifest, ['Hero', 'SeoContract', 'AnyComponent'])).toEqual([]);
+    expect(findUnknownKeys(manifest, ['Hero', 'SeoContract', 'AnyComponent'])).toEqual(
+      [],
+    );
   });
 
   it('returns the keys that match nothing', () => {
