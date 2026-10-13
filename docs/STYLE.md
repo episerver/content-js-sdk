@@ -227,14 +227,9 @@ Write "Optimizely CMS" in full the first time on a page, and "the CMS" after tha
 
 ## Moving or renaming a page
 
-Package READMEs link to these files by absolute GitHub URL, and those READMEs are
-published to npm, where they can't be updated. Never delete a page. Replace it with a
-stub:
+Update every link to the old path in the same change. Links live in other docs, the
+READMEs (the package READMEs use absolute GitHub URLs), the samples and source comments:
 
-```md
-# Installation
-
-This page has moved to [Installation](./learn/installation.md).
+```sh
+git grep -n "docs/old-page.md"
 ```
-
-If the page was split up, list each destination with a short note on what moved there.
