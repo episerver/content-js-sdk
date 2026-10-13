@@ -14,7 +14,13 @@ import {
   type TableElement,
   type TableCellElement,
 } from '../../components/richText/renderer.js';
-import { getImageAttributes, getLinkAttributes, splitAttributes } from '../../core/richText/attributes.js';
+import {
+  getImageAttributes,
+  getLinkAttributes,
+  isAttributeSet,
+  isBooleanAttribute,
+  splitAttributes,
+} from '../../core/richText/attributes.js';
 
 /**
  * React-specific element renderer props (extends shared props with React children)
@@ -134,6 +140,8 @@ export const HTML_TO_REACT_ATTRS: Record<string, string> = {
   minlength: 'minLength',
   autocomplete: 'autoComplete',
   autofocus: 'autoFocus',
+  // Rich text is static markup, so an initial state is all `checked` can mean to React
+  checked: 'defaultChecked',
   autoplay: 'autoPlay',
   contenteditable: 'contentEditable',
   'content-editable': 'contentEditable',
@@ -143,6 +151,9 @@ export const HTML_TO_REACT_ATTRS: Record<string, string> = {
   // Media attributes commonly used in rich text
   crossorigin: 'crossOrigin',
   usemap: 'useMap',
+  ismap: 'isMap',
+  itemscope: 'itemScope',
+  nomodule: 'noModule',
   allowfullscreen: 'allowFullScreen',
   frameborder: 'frameBorder',
   playsinline: 'playsInline',
@@ -182,6 +193,13 @@ export function toReactProps(attributes: Record<string, unknown>, elementType?: 
     const reactKey = HTML_TO_REACT_ATTRS[key.toLowerCase()] || key;
     // `class` and `className` both land on className
     if (reactKey === 'className' && acc.className) return { ...acc, className: `${acc.className} ${value}` };
+    // React rejects `selected` on an option; `createSelectComponent` has already hoisted it
+    if (reactKey === 'selected') return acc;
+    // `hidden="until-found"` is a value rather than a presence flag, and React takes it as one
+    if (reactKey === 'hidden' && value === 'until-found') return { ...acc, hidden: value };
+    // React binds boolean attributes as properties, and a string like `autofocus=""` hydrates
+    // as a mismatch against the boolean the DOM reports
+    if (isBooleanAttribute(key)) return { ...acc, [reactKey]: isAttributeSet(value) };
     return { ...acc, [reactKey]: value };
   }, {});
 
@@ -214,6 +232,36 @@ export function createHtmlComponent<T extends keyof JSX.IntrinsicElements>(
   };
 
   Component.displayName = `HtmlComponent(${tag})`;
+  return Component;
+}
+
+/** The values of the options marked `selected`, in document order, `optgroup` nesting included. */
+const selectedOptionValues = (children: React.ReactNode): string[] =>
+  React.Children.toArray(children).flatMap(child => {
+    if (!React.isValidElement<ElementRendererProps>(child)) return [];
+    const { attributes, text, children: nested } = child.props;
+    if (attributes && isAttributeSet(attributes.selected ?? false)) return [String(attributes.value ?? text ?? '')];
+    return selectedOptionValues(nested);
+  });
+
+/**
+ * Creates a React component for select elements, which carry their initial
+ * selection as `defaultValue` rather than `selected` on each option
+ */
+export function createSelectComponent(config: HtmlComponentConfig = {}): ElementRenderer {
+  const Select = createHtmlComponent('select', config);
+
+  const Component: ElementRenderer = props => {
+    const selected = selectedOptionValues(props.children);
+    if (selected.length === 0) return React.createElement(Select, props);
+
+    // `config.attributes` wins in the rendered props, so it has to win here too
+    const multiple = isAttributeSet(config.attributes?.multiple ?? props.attributes?.multiple ?? false);
+    const defaultValue = multiple ? selected : selected[0];
+    return React.createElement(Select, { ...props, attributes: { ...props.attributes, defaultValue } });
+  };
+
+  Component.displayName = 'SelectComponent(select)';
   return Component;
 }
 
@@ -361,6 +409,9 @@ export function generateDefaultElements(): ElementMap {
         break;
       case 'table':
         elementMap[type] = createTableComponent('table', config.config) as ElementRenderer;
+        break;
+      case 'select':
+        elementMap[type] = createSelectComponent(config.config);
         break;
       case 'td':
         elementMap[type] = createTableCellComponent('td', config.config) as ElementRenderer;

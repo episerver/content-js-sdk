@@ -120,6 +120,8 @@ export {
   getRichTextElement,
   getMarkTag,
   toStyleString,
+  isBooleanAttribute,
+  isAttributeSet,
 } from './richText/attributes.js';
 export type { RichTextElement } from './richText/attributes.js';
 

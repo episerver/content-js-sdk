@@ -8,6 +8,7 @@ export {
   createImageComponent,
   createTableComponent,
   createTableCellComponent,
+  createSelectComponent,
 } from './lib.js';
 
 export type {

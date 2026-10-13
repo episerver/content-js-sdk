@@ -229,6 +229,45 @@ const CSS_PROPERTIES = new Set([
   'counter-increment',
 ]);
 
+/**
+ * HTML attributes whose value carries no meaning: presence alone is the state.
+ * Frameworks that bind these as properties need a real boolean, not the `""`
+ * the CMS emits for a bare attribute.
+ */
+const BOOLEAN_ATTRIBUTES = new Set([
+  'allowfullscreen',
+  'async',
+  'autofocus',
+  'autoplay',
+  'checked',
+  'controls',
+  'defer',
+  'disabled',
+  'formnovalidate',
+  'hidden',
+  'inert',
+  'ismap',
+  'itemscope',
+  'loop',
+  'multiple',
+  'muted',
+  'nomodule',
+  'novalidate',
+  'open',
+  'playsinline',
+  'readonly',
+  'required',
+  'reversed',
+  'selected',
+]);
+
+/** Whether an attribute is a boolean one, by its HTML name in any casing. */
+export const isBooleanAttribute = (name: string): boolean => BOOLEAN_ATTRIBUTES.has(name.toLowerCase());
+
+/** A boolean attribute is true when present, whatever its value — except the literal "false". */
+export const isAttributeSet = (value: unknown): boolean =>
+  typeof value === 'boolean' ? value : value !== 'false' && value != null;
+
 /** Properties that can be either HTML attributes or CSS properties depending on context */
 const DUAL_PURPOSE_PROPERTIES = new Set(['border', 'width', 'height']);
 
