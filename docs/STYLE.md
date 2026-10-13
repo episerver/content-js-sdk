@@ -172,8 +172,16 @@ at most once per section:
 `> [!IMPORTANT]` is rarely needed. If something is important, it usually belongs in the
 main text.
 
-The alert marker must sit on its own line. GitHub does not support a custom title, so
-`> [!NOTE] My title` renders the marker literally.
+The alert marker must sit on its own line, followed by an empty `>` line. Without the
+empty line, Prettier joins the marker onto the text and GitHub renders it as a plain
+quote. GitHub also doesn't support custom titles, so `> [!NOTE] My title` renders the
+marker literally.
+
+```md
+> [!WARNING]
+>
+> The text of the warning.
+```
 
 Put background that most readers can skip in a collapsible **deep dive**:
 
