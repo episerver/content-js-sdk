@@ -71,7 +71,7 @@ You should see a list of commands. You will use them in the next step.
 >
 > To pin the CLI version for your team, install it as a dev dependency with
 > `npm install -D @optimizely/cms-cli` and run it as `npx optimizely-cms-cli`. See
-> [CLI commands](../13-cli-commands.md#installation).
+> [CLI commands](../reference/cli.md#running-the-cli).
 
 ## Recap
 

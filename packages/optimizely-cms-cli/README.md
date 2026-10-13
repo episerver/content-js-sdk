@@ -330,20 +330,16 @@ Guides and best practices:
 
 ### Getting Started
 
-- [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/1-installation.md) - Set up your development environment
-- [Setup](https://github.com/episerver/content-js-sdk/blob/main/docs/2-setup.md) - Configure the SDK and CLI
-- [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md) - Define your content types with TypeScript
-
-### Workflow Guides
-
-- [Create Content](https://github.com/episerver/content-js-sdk/blob/main/docs/4-create-content.md) - Add content in Optimizely CMS after syncing types
-- [Fetching Content](https://github.com/episerver/content-js-sdk/blob/main/docs/5-fetching.md) - Use the SDK to retrieve typed content
+- [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/installation.md) - Set up a project with the SDK and CLI
+- [Connect to the CMS](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/connect-to-cms.md) - Create an API key and check the connection
+- [Your first content type](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/first-content-type.md) - Define a content type and push it
 
 ### Reference
 
-- [CLI Commands](https://github.com/episerver/content-js-sdk/blob/main/docs/13-cli-commands.md) - Every command, flag and env var
-- [Create App](https://github.com/episerver/content-js-sdk/blob/main/docs/14-create-app.md) - Scaffold a new or existing project
-- [Agent Skills](https://github.com/episerver/content-js-sdk/blob/main/docs/16-agent-skills.md) - AI-powered development
+- [CLI commands](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/cli.md) - Every command, flag and env var
+- [`optimizely.config.mjs`](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/optimizely-config.md) - Every configuration option
+- [Quick start](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/quick-start.md) - Scaffold a new or existing project with `create-app`
+- [Agent skills](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/agent-skills.md) - AI-powered development
 
 ## Best Practices
 

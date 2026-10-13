@@ -52,16 +52,12 @@ Full guides and documentation in the main repository:
 
 ### Getting Started
 
-- [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/1-installation.md) - Set up your development environment
-- [Setup](https://github.com/episerver/content-js-sdk/blob/main/docs/2-setup.md) - Configure the SDK and CLI
-- [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md) - Define your content types with TypeScript
-- [Create Content](https://github.com/episerver/content-js-sdk/blob/main/docs/4-create-content.md) - Add content in Optimizely CMS
-
-### Core Features
-
-- [Fetching Content](https://github.com/episerver/content-js-sdk/blob/main/docs/5-fetching.md) - Query and retrieve content in your app
-- [Rendering (React)](https://github.com/episerver/content-js-sdk/blob/main/docs/6-rendering-react.md) - Display content in React components
-- [Live Preview](https://github.com/episerver/content-js-sdk/blob/main/docs/7-live-preview.md) - Enable real-time content editing
+- [Quick start](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/quick-start.md) - Scaffold a working site from a template
+- [Tutorial](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/installation.md) - Build a site step by step, from installation to live preview
+- [Your first content type](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/first-content-type.md) - Define content types in TypeScript
+- [Fetch content](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/fetch-content.md) - Configure the client and fetch content from Graph
+- [Render with React](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/render-with-react.md) - Render content with your own components
+- [Live preview](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/live-preview.md) - Let editors preview changes as they type
 
 ### Schema Validation
 
@@ -135,21 +131,26 @@ const result = strictSchema.safeParse({
 
 Top-level content properties (`p_string`, `p_xhtml`, etc.) are optional — `null` or `undefined` values are skipped. Sub-fields within complex types (e.g. `html`/`json` in richText, `key` in contentReference) are also optional and only validated when present and non-null.
 
-### Advanced Features
+### Guides
 
-- [Experience](https://github.com/episerver/content-js-sdk/blob/main/docs/8-experience.md) - Work with experiences and variations
-- [Display Settings](https://github.com/episerver/content-js-sdk/blob/main/docs/9-display-settings.md) - Configure content display options
-- [RichText Component (React)](https://github.com/episerver/content-js-sdk/blob/main/docs/10-richtext-component-react.md) - Render rich text content
-- [DAM Assets](https://github.com/episerver/content-js-sdk/blob/main/docs/11-dam-assets.md) - Manage digital assets
-- [Client Utils](https://github.com/episerver/content-js-sdk/blob/main/docs/12-client-utils.md) - `getPath`, `getItems` and helpers
-- [Forms](https://github.com/episerver/content-js-sdk/blob/main/docs/15-forms.md) - Model and render Optimizely Forms
-- [Observability](https://github.com/episerver/content-js-sdk/blob/main/docs/observability.md) - OpenTelemetry traces and metrics
+- [Content types](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/content-types.md) - Properties, validation, references and containers
+- [Experiences](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/experiences.md) - Pages composed in Visual Builder
+- [Display templates](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/display-templates.md) - Let editors pick a style for a component
+- [Rich text](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/rich-text.md) - Render and customise formatted text
+- [DAM assets](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/dam-assets.md) - Responsive images, video and files
+- [Navigation](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/navigation.md) - Breadcrumbs and menus with `getPath` and `getItems`
+- [Forms](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/forms.md) - Render Optimizely Forms
+- [Authentication](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/authentication.md) - Fetch restricted content and drafts
+- [Observability](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/observability.md) - OpenTelemetry traces and metrics
 
-### Tooling
+### Reference
 
-- [CLI Commands](https://github.com/episerver/content-js-sdk/blob/main/docs/13-cli-commands.md) - Every command, flag and env var
-- [Create App](https://github.com/episerver/content-js-sdk/blob/main/docs/14-create-app.md) - Scaffold a new or existing project
-- [Agent Skills](https://github.com/episerver/content-js-sdk/blob/main/docs/16-agent-skills.md) - AI-powered development
+- [`config()` and `getClient()`](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/config.md) - Every client option
+- [`GraphClient` methods](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/graph-client.md) - Every fetching method
+- [React components](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/react-components.md) - Every React export
+- [CLI commands](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/cli.md) - Every command, flag and env var
+- [Migrating to 3.0](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/migration-v3.md) - Breaking changes and how to update
+- [Agent skills](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/agent-skills.md) - AI-powered development
 
 ## Best Practices
 

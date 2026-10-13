@@ -105,8 +105,7 @@ Each entry in `hosts` has these fields:
 ### Caveats
 
 - **`config push` never deletes anything.** A content type that you remove from your code
-  stays in the CMS. Delete it with
-  [`content delete`](../13-cli-commands.md#content-delete).
+  stays in the CMS. Delete it with [`content delete`](./cli.md#content-delete).
 - **`content` items are created only if `applications` is set.** They are created once,
   empty, at the root of the content tree. Later pushes leave existing items untouched,
   even if the config changes.
@@ -150,8 +149,11 @@ export default buildConfig({
 
 ```ts
 // src/components/Article.tsx
+import { contentType } from '@optimizely/cms-sdk';
+
 export const ArticleContentType = contentType({
   key: 'Article',
+  displayName: 'Article',
   baseType: '_page',
   properties: {
     metaTitle: { type: 'string', group: 'seo' },
