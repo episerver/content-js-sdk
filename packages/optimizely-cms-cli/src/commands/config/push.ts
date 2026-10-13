@@ -7,6 +7,7 @@ import { writeFile, access } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import {
   findMetaData,
+  logList,
   readFromPath,
   normalizePropertyGroups,
   validateApplications,
@@ -21,6 +22,25 @@ import {
   validateContentAreaConstraints,
 } from '../../utils/mapping.js';
 import { syncLocales } from '../../service/localeService.js';
+import {
+  findUnknownKeys,
+  parseOnlyKeys,
+  scopeManifest,
+} from '../../utils/scopeManifest.js';
+
+const exitWithOnlyError = (message: string): never => {
+  console.error(chalk.red(message));
+  console.error(
+    chalk.dim(
+      'Use the keys of content types, contracts or display templates, separated by commas.',
+    ),
+  );
+  return process.exit(1);
+};
+
+const keysOf = (items: { key: string }[]) => items.map(it => it.key);
+const displayNamesOf = (items: { displayName: string }[]) =>
+  items.map(it => it.displayName);
 
 export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
   static override args = {
@@ -38,6 +58,10 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       description:
         'Force updates the content type even though the changes might result in data loss.',
     }),
+    only: Flags.string({
+      description:
+        'comma-separated keys of the content types, contracts or display templates to push',
+    }),
   };
   static override description =
     'Push content type definitions to the CMS from a configuration file';
@@ -45,11 +69,18 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> ./custom-config.mjs',
     '<%= config.bin %> <%= command.id %> --force',
+    '<%= config.bin %> <%= command.id %> --only Hero,LandingPage',
   ];
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(ConfigPush);
     const configFilePath = path.resolve(process.cwd(), args.file);
+    const onlyKeys = parseOnlyKeys(flags.only);
+
+    if (onlyKeys?.length === 0) exitWithOnlyError('--only requires at least one key');
+
+    // a scoped push lists only what it sends, not everything found in the config
+    const log = !onlyKeys;
 
     // Check if config file exists
     try {
@@ -80,6 +111,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const { contentTypes, displayTemplates, contracts } = await findMetaData(
       componentPaths,
       configPathDirectory,
+      { log },
     );
 
     // Validate content area constraints
@@ -104,10 +136,12 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     // Validate and normalize property groups
     const normalizedPropertyGroups =
       propertyGroups ? normalizePropertyGroups(propertyGroups) : [];
+    if (log) logList('Property Groups found', displayNamesOf(normalizedPropertyGroups));
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
     const validatedApplications = applications ? validateApplications(applications) : [];
+    if (log) logList('Applications found', displayNamesOf(validatedApplications));
 
     // Check if apps have entryPoint set (will be mapped from content config)
     const hasAppsWithoutEntryPoint = validatedApplications.some(app => !app.entryPoint);
@@ -127,11 +161,25 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       process.exit(1);
     }
 
-    const metaData = {
+    const fullMetaData = {
       contentTypes: mapContentToManifest(contentTypes).concat(manifestContracts),
       displayTemplates,
       propertyGroups: normalizedPropertyGroups,
     };
+
+    // Scope the manifest to the --only keys
+    const unknownKeys = findUnknownKeys(fullMetaData, onlyKeys ?? []);
+
+    if (unknownKeys.length > 0)
+      exitWithOnlyError(`Unknown keys in --only: ${unknownKeys.join(', ')}`);
+
+    const metaData = onlyKeys ? scopeManifest(fullMetaData, onlyKeys) : fullMetaData;
+
+    if (onlyKeys) {
+      logList('Pushing content types', keysOf(metaData.contentTypes));
+      logList('Pushing display templates', keysOf(metaData.displayTemplates));
+      logList('Pushing property groups', keysOf(metaData.propertyGroups));
+    }
 
     const restClient = await createApiClient(flags.host);
 
@@ -204,13 +252,13 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     const data = response.data;
 
-    // Sync locales from config
-    if (locale && Array.isArray(locale) && locale.length > 0) {
+    // Locales and applications are global, so a scoped push leaves them alone
+    if (!onlyKeys && Array.isArray(locale) && locale.length > 0)
       await syncLocales(locale, restClient);
-    }
 
     // Check and ensure applications (skips if all exist)
-    await checkApplications(validatedApplications, content, flags.host);
+    if (!onlyKeys) await checkApplications(validatedApplications, content, flags.host);
+
     if (data.outcomes && data.outcomes.length > 0) {
       console.log(chalk.cyan.bold('\nOutcomes:'));
       for (const r of data.outcomes) {

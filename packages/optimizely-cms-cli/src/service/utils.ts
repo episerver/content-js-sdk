@@ -189,6 +189,7 @@ const processFile = async (
   file: string,
   cwd: string,
   tmpDir: string,
+  log: boolean,
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
@@ -197,13 +198,15 @@ const processFile = async (
   const loaded = await compileAndImport(file, cwd, tmpDir);
   const { contentTypeData, displayTemplateData, contractData } = extractMetaData(loaded);
 
-  contentTypeData.forEach(contentType =>
-    printFileContent('Content Type', file, contentType),
-  );
-  displayTemplateData.forEach(template =>
-    printFileContent('Display Template', file, template),
-  );
-  contractData.forEach(contract => printFileContent('Contract', file, contract));
+  if (log) {
+    contentTypeData.forEach(contentType =>
+      printFileContent('Content Type', file, contentType),
+    );
+    displayTemplateData.forEach(template =>
+      printFileContent('Display Template', file, template),
+    );
+    contractData.forEach(contract => printFileContent('Contract', file, contract));
+  }
 
   return {
     contentTypes: contentTypeData,
@@ -218,6 +221,7 @@ const processFile = async (
 export const findMetaData = async (
   componentPaths: string[],
   cwd: string,
+  { log = true } = {},
 ): Promise<{
   contentTypes: AnyContentType[];
   displayTemplates: DisplayTemplate[];
@@ -231,7 +235,9 @@ export const findMetaData = async (
   validatePatterns(includePatterns, excludePatterns);
 
   const allFiles = await findFilesFromPatterns(includePatterns, excludePatterns, cwd);
-  const results = await Promise.all(allFiles.map(file => processFile(file, cwd, tmpDir)));
+  const results = await Promise.all(
+    allFiles.map(file => processFile(file, cwd, tmpDir, log)),
+  );
 
   return {
     contentTypes: results.flatMap(r => r.contentTypes),
@@ -308,11 +314,12 @@ const deduplicatePropertyGroups = (groups: PropertyGroupType[]): PropertyGroupTy
   return deduplicated;
 };
 
-const logPropertyGroups = (groups: PropertyGroupType[]): void => {
-  if (groups.length > 0) {
-    const groupKeys = groups.map(group => group.displayName).join(', ');
-    console.log(`Property Groups found: ${chalk.bold.cyan(`[${groupKeys}]`)}`);
-  }
+/**
+ * Logs a labelled list, e.g. `Property Groups found: [SEO, Meta]`. Skips empty lists.
+ */
+export const logList = (label: string, items: string[]): void => {
+  if (items.length > 0)
+    console.log(`${label}: ${chalk.bold.cyan(`[${items.join(', ')}]`)}`);
 };
 
 /**
@@ -322,11 +329,8 @@ export const normalizePropertyGroups = (propertyGroups: any[]): PropertyGroupTyp
   if (!Array.isArray(propertyGroups)) throw new Error('propertyGroups must be an array');
 
   const normalizedGroups = propertyGroups.map(normalizePropertyGroup);
-  const deduplicatedGroups = deduplicatePropertyGroups(normalizedGroups);
 
-  logPropertyGroups(deduplicatedGroups);
-
-  return deduplicatedGroups;
+  return deduplicatePropertyGroups(normalizedGroups);
 };
 
 // VALIDATORS
@@ -359,13 +363,6 @@ const validateApplication = (app: ApplicationsType, applicationIndex: number): v
   app.hosts?.forEach((host, hostIndex) => validateHostFields(host, hostIndex));
 };
 
-const logApplications = (applications: ApplicationsType[]): void => {
-  if (applications.length > 0) {
-    const appNames = applications.map(app => app.displayName).join(', ');
-    console.log('Applications found: %s', chalk.bold.cyan(`[${appNames}]`));
-  }
-};
-
 /**
  * Validates application configuration, ensuring required fields are present and properly formatted.
  */
@@ -378,7 +375,6 @@ export const validateApplications = (
     );
 
   applications.forEach(validateApplication);
-  logApplications(applications);
 
   return applications;
 };
