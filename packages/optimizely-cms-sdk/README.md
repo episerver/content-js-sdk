@@ -131,7 +131,7 @@ const result = strictSchema.safeParse({
 | **Constraints** | `minimum`/`maximum`, `minLength`/`maxLength`, `pattern` |
 | **Enum values** | Value must be one of the allowed enum values |
 | **Array bounds** | `minItems`/`maxItems` |
-| **Nested structures** | richText, contentReference, component, array validated recursively |
+| **Nested structures** | richText, contentReference, component, array, composition validated recursively |
 
 Top-level content properties (`p_string`, `p_xhtml`, etc.) are optional — `null` or `undefined` values are skipped. Sub-fields within complex types (e.g. `html`/`json` in richText, `key` in contentReference) are also optional and only validated when present and non-null.
 

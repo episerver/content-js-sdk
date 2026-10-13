@@ -245,11 +245,31 @@ const generateContentTypeArguments = (
             isImportable(c) ? markForImport(c, content.key, circularMap) : c,
           )
         : undefined,
+      composition: generateComposition(content, circularMap),
       properties: generateProperties(content, circularMap),
     },
     null,
     2,
   );
+
+/**
+ * The built-in composition configuration, with its type lists marked for import
+ * the same way a property's are. Empty lists are dropped: unlike a `content`
+ * property, nothing here needs an anchor to typecheck.
+ */
+const generateComposition = (
+  content: ManifestContentType,
+  circularMap?: CircularDependencyMap,
+) => {
+  if (!content.composition) return undefined;
+
+  const entries = Object.entries(content.composition).filter(
+    ([, value]) => value !== undefined && !(Array.isArray(value) && value.length === 0),
+  );
+  if (entries.length === 0) return undefined;
+
+  return remakeObject(Object.fromEntries(entries), content.key, circularMap);
+};
 
 const generateContractArguments = (
   content: ManifestContentType,

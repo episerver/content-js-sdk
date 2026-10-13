@@ -96,10 +96,25 @@ describe('planComposition', () => {
   });
 
   test('a node the CMS could not type is planned as unknown', () => {
-    const [item] = planComposition([structureNode({ type: null })]);
+    const [item] = planComposition([structureNode({ type: null, nodeType: 'section' })]);
 
     expect(item.kind).toBe('unknown');
     expect(item).not.toHaveProperty('content');
+  });
+
+  test('a row is planned as a grid, keeping its place among its siblings', () => {
+    // A `type: 'composition'` property with `format: 'grid'` has no section
+    // level, so its top-level nodes are rows carrying no content type.
+    const items = planComposition([
+      componentNode(),
+      structureNode({
+        key: 'row-2',
+        nodes: [structureNode({ key: 'col-1', nodeType: 'column' })],
+      }),
+    ]) as [ComponentRenderItem, StructureRenderItem<string>];
+
+    expect(items[1]).toMatchObject({ kind: 'structure', nodeType: 'row', index: 1 });
+    expect(items[1].children).toMatchObject([{ kind: 'structure', nodeType: 'column' }]);
   });
 
   test('display settings are parsed, and booleans come through as booleans', () => {
@@ -127,7 +142,7 @@ describe('planComposition', () => {
     const items = planComposition([
       componentNode(),
       structureNode({ type: 'ArticleSection', nodeType: 'section' }),
-      structureNode({ type: null }),
+      structureNode({ type: null, nodeType: 'section' }),
     ]);
 
     expect(items.map(isWrappedComponent)).toEqual([true, false, false]);

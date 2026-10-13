@@ -184,6 +184,72 @@ describe('toSchema', () => {
     });
   });
 
+  describe('composition properties', () => {
+    const leaf = (key: string) => ({
+      __typename: 'CompositionComponentNode',
+      key,
+      nodeType: 'component',
+    });
+    const node = (nodes: unknown[] = []) => ({
+      __typename: 'CompositionStructureNode',
+      key: 'root',
+      nodeType: 'grid',
+      nodes,
+    });
+
+    it('should validate a composition property and its nested nodes', () => {
+      const ct = contentType({
+        key: 'CompositionTest',
+        baseType: '_experience',
+        displayName: 'Composition Test',
+        properties: {
+          blocks: { type: 'composition', format: 'grid' },
+        },
+      });
+      const schema = toSchema(ct);
+
+      expect(schema.safeParse({ ...validBase, blocks: node([leaf('a')]) }).success).toBe(
+        true,
+      );
+      expect(schema.safeParse({ ...validBase, blocks: 'not-a-node' }).success).toBe(false);
+      expect(
+        schema.safeParse({ ...validBase, blocks: node(['not-a-node']) }).success,
+      ).toBe(false);
+    });
+
+    it('should reject a `nodes` that is present but not an array', () => {
+      const ct = contentType({
+        key: 'CompositionNodesTest',
+        baseType: '_experience',
+        displayName: 'Composition Nodes Test',
+        properties: {
+          blocks: { type: 'composition', format: 'grid' },
+        },
+      });
+      const schema = toSchema(ct);
+      const structure = (nodes: unknown) => ({
+        __typename: 'CompositionStructureNode',
+        key: 'root',
+        nodeType: 'grid',
+        nodes,
+      });
+
+      expect(
+        schema.safeParse({ ...validBase, blocks: structure('invalid') }).success,
+      ).toBe(false);
+      expect(schema.safeParse({ ...validBase, blocks: structure({}) }).success).toBe(
+        false,
+      );
+
+      // A leaf omits `nodes` entirely, and an explicit null is how Graph
+      // reports an empty one, so neither is an error.
+      expect(schema.safeParse({ ...validBase, blocks: leaf('a') }).success).toBe(true);
+      expect(schema.safeParse({ ...validBase, blocks: structure(null) }).success).toBe(
+        true,
+      );
+    });
+  });
+
   describe('array properties', () => {
     it('should validate array of strings', () => {
       const ct = contentType({
