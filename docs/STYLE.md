@@ -152,6 +152,9 @@ When one reference page documents several functions, repeat the `## Reference` /
 - **Avoid `any`.** Type props with `ContentProps<typeof X>`.
 - **Use the right fence language**: `ts`, `tsx`, `js` for `.mjs` files, `sh` for terminal
   commands, `ini` for `.env` files.
+- **Keep every snippet valid code.** Prettier formats code blocks as well, and it misreads
+  fragments: a bare `{ key: value }` is parsed as a block. Assign it to a variable
+  instead.
 - **Write CLI commands as `npx @optimizely/cms-cli@latest <command>`** in Learn pages, so
   they work without an install. Use the shorter `optimizely-cms-cli <command>` in guides
   and the reference.
