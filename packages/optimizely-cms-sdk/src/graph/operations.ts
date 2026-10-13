@@ -239,14 +239,26 @@ type TermMetadata = {
   parent?: TermParent | string | null;
 };
 
+type PathEntry = TaxonomyTerm['path'][number];
+
+function toPathEntry(m: TermMetadata): PathEntry {
+  return {
+    key: m.key,
+    displayName: m.displayName,
+    description: m.description ?? null,
+    taxonomy: m.taxonomy ?? null,
+    usage: m.usage ?? null,
+  };
+}
+
 function buildPath(
   meta: TermMetadata,
   allMeta: Map<string, TermMetadata>,
-): Array<{ key: string; displayName: string | null }> {
-  const path: Array<{ key: string; displayName: string | null }> = [];
+): PathEntry[] {
+  const path: PathEntry[] = [];
   const visited = new Set<string>();
 
-  path.push({ key: meta.key, displayName: meta.displayName });
+  path.push(toPathEntry(meta));
   visited.add(meta.key);
 
   let parent: TermParent | string | null | undefined = meta.parent;
@@ -254,14 +266,15 @@ function buildPath(
     if (typeof parent === 'object') {
       if (visited.has(parent.key)) break;
       visited.add(parent.key);
-      path.unshift({ key: parent.key, displayName: parent.displayName });
+      const parentMeta = allMeta.get(parent.key);
+      path.unshift(parentMeta ? toPathEntry(parentMeta) : { key: parent.key, displayName: parent.displayName, description: null, taxonomy: null, usage: null });
       parent = parent.parent;
     } else {
       const parentKey = extractTermKey(parent);
       const parentMeta = allMeta.get(parentKey);
       if (!parentMeta || visited.has(parentMeta.key)) break;
       visited.add(parentMeta.key);
-      path.unshift({ key: parentMeta.key, displayName: parentMeta.displayName });
+      path.unshift(toPathEntry(parentMeta));
       parent = parentMeta.parent;
     }
   }
@@ -284,7 +297,7 @@ function metadataToTaxonomyTerm(
       sortOrder: null,
       isAvailable: null,
       isSelectable: null,
-      path: [{ key, displayName: null }],
+      path: [{ key, displayName: null, description: null, taxonomy: null, usage: null }],
     };
   }
 
