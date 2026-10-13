@@ -27,6 +27,7 @@ import { AnyContentType, ExperienceContentType, MediaContentType, SectionContent
 import { Node } from './components/richText/renderer.js';
 import { PublicImageAsset, PublicRawFileAsset, PublicVideoAsset } from './model/assets.js';
 import { DisplayTemplate } from './model/displayTemplates.js';
+import type { TaxonomyTerm } from './graph/options.js';
 
 /** Forces Intellisense to resolve types */
 export type Prettify<T> = {
@@ -46,6 +47,7 @@ type InferredItemMetadata = {
   changeset: string | null;
   displayOption: string | null;
   categories: string[] | undefined;
+  resolvedCategories: TaxonomyTerm[] | undefined;
 };
 
 type InferredInstanceMetadata = {
