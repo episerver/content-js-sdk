@@ -415,7 +415,7 @@ async function resolveTaxonomyTerms(
 
       for (const uri of uncachedKeys) {
         const shortKey = uriToKey.get(uri)!;
-        const term = metadataToTaxonomyTerm(uri, metaCache.get(shortKey), metaCache);
+        const term = metadataToTaxonomyTerm(shortKey, metaCache.get(shortKey), metaCache);
         localCache.set(uri, term);
       }
     } catch (err) {
@@ -424,7 +424,7 @@ async function resolveTaxonomyTerms(
     }
   }
 
-  return termKeys.map(key => localCache!.get(key) ?? metadataToTaxonomyTerm(key, undefined));
+  return termKeys.map(key => localCache!.get(key) ?? metadataToTaxonomyTerm(extractTermKey(key), undefined));
 }
 
 // METADATA
