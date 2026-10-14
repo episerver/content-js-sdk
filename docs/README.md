@@ -19,14 +19,15 @@ path to a working app. The rest are reference, read as needed.
 
 ## Reference
 
-| Guide                                                          | Description                            |
-| -------------------------------------------------------------- | -------------------------------------- |
-| [RichText Component (React)](./10-richtext-component-react.md) | Render rich text content               |
-| [DAM Assets](./11-dam-assets.md)                               | Manage digital assets                  |
-| [Client Utils](./12-client-utils.md)                           | `getPath`, `getItems` and helpers      |
-| [CLI Commands](./13-cli-commands.md)                           | Every command, flag and env var        |
-| [Create App](./14-create-app.md)                               | Scaffold a new or existing project     |
-| [Forms](./15-forms.md)                                         | Model and render Optimizely Forms      |
-| [Agent Skills](./16-agent-skills.md)                           | AI-powered development                 |
-| [Framework-agnostic Core](./17-framework-agnostic-core.md)     | Render without React, build a binding  |
-| [Observability](./observability.md)                            | OpenTelemetry traces and metrics       |
+| Guide                                                             | Description                            |
+| ----------------------------------------------------------------- | -------------------------------------- |
+| [RichText Component (React)](./10-richtext-component-react.md)    | Render rich text content               |
+| [DAM Assets](./11-dam-assets.md)                                  | Manage digital assets                  |
+| [Client Utils](./12-client-utils.md)                              | `getPath`, `getItems` and helpers      |
+| [CLI Commands](./13-cli-commands.md)                              | Every command, flag and env var        |
+| [Create App](./14-create-app.md)                                  | Scaffold a new or existing project     |
+| [Forms](./15-forms.md)                                            | Model and render Optimizely Forms      |
+| [Agent Skills](./16-agent-skills.md)                              | AI-powered development                 |
+| [Framework-agnostic Core](./17-framework-agnostic-core.md)        | Render without React, build a binding  |
+| [Deploy to Front-end Hosting](./18-deploy-to-frontend-hosting.md) | Deploy with one CLI command or from CI |
+| [Observability](./observability.md)                               | OpenTelemetry traces and metrics       |
