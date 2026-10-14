@@ -19,8 +19,8 @@ const Page = contentType({
 
 const page = await client.getContent({ key });
 
-page.heroImage.item.AltText; // previously required a second query
-page.heroImage.item.imageMetadata; // { width, height }
+page.heroImage?.item?.AltText; // previously required a second query
+page.heroImage?.item?.imageMetadata; // { width, height }
 ```
 
 Applies to references that allow media, whether by content type or by `_image`, `_video` or

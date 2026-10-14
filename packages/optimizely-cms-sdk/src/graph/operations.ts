@@ -193,13 +193,25 @@ async function resolveFormNodes<T>(
   return item;
 }
 
+/**
+ * Moves the aliased `itemMetadata.categories` onto `_metadata`, for the item and
+ * for every piece of content nested in it — content areas and the `item` of a
+ * content reference carry the same alias.
+ */
 function hoistCategories(item: any): any {
-  if (!item) return item;
+  if (Array.isArray(item)) {
+    item.forEach(hoistCategories);
+    return item;
+  }
+  if (!item || typeof item !== 'object') return item;
+
   const categories = item.itemMetadata?.categories;
   if (categories !== undefined && item._metadata) {
     item._metadata.categories = categories;
     delete item.itemMetadata;
   }
+
+  Object.values(item).forEach(value => hoistCategories(value));
   return item;
 }
 

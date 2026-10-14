@@ -96,8 +96,11 @@ export type InferredReferencedMedia = InferredBase & {
 
 export type InferredContentReference = {
   url: InferredUrl;
-  /** The referenced asset: a DAM asset, or the CMS media itself. */
-  item: ((ContentReferenceItem | InferredReferencedMedia) & Record<string, any>) | null;
+  /**
+   * The referenced asset: a DAM asset, or the CMS media itself. Absent for a
+   * reference that allows no media, which the query does not resolve.
+   */
+  item?: ((ContentReferenceItem | InferredReferencedMedia) & Record<string, any>) | null;
   key: string;
 };
 
