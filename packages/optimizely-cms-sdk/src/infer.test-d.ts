@@ -232,5 +232,5 @@ test('TaxonomyTerm has the expected shape', () => {
   expectTypeOf<TaxonomyTerm['displayName']>().toEqualTypeOf<string | null>();
   expectTypeOf<TaxonomyTerm['sortOrder']>().toEqualTypeOf<number | null>();
   expectTypeOf<TaxonomyTerm['isAvailable']>().toEqualTypeOf<boolean | null>();
-  expectTypeOf<TaxonomyTerm['path']>().toEqualTypeOf<Array<{ key: string; displayName: string | null }>>();
+  expectTypeOf<TaxonomyTerm['path']>().toEqualTypeOf<Array<{ key: string; displayName: string | null; description: string | null; taxonomy: string | null; usage: string | null }>>();
 });
