@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import * as p from '@clack/prompts';
-import type { CreateOptions, FreshCreateOptions } from './types.js';
-import { copyTemplate } from './template.js';
-import { getInstallCommand } from './package-manager.js';
-import { exec } from './utils.js';
+import type { CreateOptions, FreshCreateOptions, PackageManager } from './types.js';
+import { copyTemplate, getScaffoldDir } from './template.js';
+import { getInstallCommand, getRunCommand } from './package-manager.js';
+import { exec, hasScript } from './utils.js';
 import { FRAMEWORKS } from './registry.js';
 
 export async function createProject(options: CreateOptions): Promise<void> {
@@ -27,27 +27,63 @@ export async function createProject(options: CreateOptions): Promise<void> {
     process.exit(1);
   }
 
-  if (!options.skipInstall) {
+  const { projectName, packageManager, skipInstall, ci } = options;
+  const canDeploy = hasScript(targetDir, 'deploy');
+  const addsWorkflow = ci === 'github' && canDeploy;
+
+  if (addsWorkflow) addDeployWorkflow(targetDir);
+  else if (ci === 'github')
+    p.log.warn(
+      'This template cannot be deployed to Optimizely front-end hosting, so no deploy workflow was added.',
+    );
+
+  if (!skipInstall) {
     s.start('Installing dependencies...');
     try {
-      exec(getInstallCommand(options.packageManager), targetDir);
+      exec(getInstallCommand(packageManager), targetDir);
       s.stop('Dependencies installed.');
     } catch {
       s.stop('Failed to install dependencies. Run install manually.');
     }
   }
 
+  // Front-end hosting installs with npm or yarn, and `pnpm deploy` is a built-in pnpm command
+  const needsLockFile = canDeploy && packageManager === 'pnpm';
+
   p.note(
     [
-      `cd ${options.projectName}`,
+      `cd ${projectName}`,
+      ...(skipInstall ? [getInstallCommand(packageManager)] : []),
       '# Configure your CMS credentials in .env',
-      `${options.packageManager === 'npm' ? 'npm run' : options.packageManager} dev`,
+      getRunCommand(packageManager, 'dev'),
+      ...(canDeploy && !needsLockFile ? deployInstructions(packageManager) : []),
+      ...(addsWorkflow ? ['# Add the OPTIMIZELY_DXP_* values as GitHub repository secrets'] : []),
     ].join('\n'),
     'Next steps',
   );
 
+  if (needsLockFile)
+    p.log.warn(
+      'Optimizely front-end hosting installs with npm or yarn. Before deploying, create a lock file with `npm install --package-lock-only`.',
+    );
+
   p.outro('Your project is ready!');
 }
+
+const addDeployWorkflow = (targetDir: string) => {
+  const workflowsDir = path.join(targetDir, '.github', 'workflows');
+
+  fs.mkdirSync(workflowsDir, { recursive: true });
+  fs.copyFileSync(
+    path.join(getScaffoldDir(), 'github', 'deploy-optimizely.yml'),
+    path.join(workflowsDir, 'deploy-optimizely.yml'),
+  );
+};
+
+const deployInstructions = (packageManager: PackageManager) => [
+  '# Deploy to Optimizely front-end hosting (credentials in .env)',
+  `${getRunCommand(packageManager, 'deploy')}${packageManager === 'npm' ? ' --' : ''} --env Test1`,
+];
 
 export async function createFreshProject(options: FreshCreateOptions): Promise<string> {
   const targetDir = path.resolve(process.cwd(), options.projectName);

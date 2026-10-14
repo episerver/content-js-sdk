@@ -47,7 +47,13 @@ export type TaxonomyTerm = {
   sortOrder: number | null;
   isAvailable: boolean | null;
   isSelectable: boolean | null;
-  path: Array<{ key: string; displayName: string | null }>;
+  path: Array<{
+    key: string;
+    displayName: string | null;
+    description: string | null;
+    taxonomy: string | null;
+    usage: string | null;
+  }>;
 };
 
 /** Query options shared by all query methods */

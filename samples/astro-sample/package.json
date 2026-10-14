@@ -2,11 +2,16 @@
   "name": "astro-sample",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0"
+  },
   "scripts": {
     "dev": "astro dev --host",
     "build": "astro build",
+    "start": "node ./dist/server/entry.mjs",
     "preview": "astro preview",
-    "opti-push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
+    "deploy": "optimizely-cms-cli deploy",
+    "opti-push": "optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
     "@astrojs/ts-plugin": "^1.10.12",

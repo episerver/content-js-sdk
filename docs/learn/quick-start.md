@@ -12,6 +12,7 @@ and start at [Installation](./installation.md).
 > - How to create a project from a template
 > - How to connect it to your CMS
 > - How to add the SDK to a project you already have
+> - How to deploy the site to Optimizely front-end hosting
 
 ## Create a project from a template
 
@@ -95,12 +96,29 @@ See the
 [create-app README](../../packages/optimizely-cms-create-app/README.md#sdk-initialization)
 for what that file contains and how to register your own components in it.
 
+## Deploy your site
+
+The Next.js templates are ready for Optimizely front-end hosting. They have a `deploy`
+script and declare their Node.js version. Front-end hosting installs with npm or yarn, so
+choose one of those as the package manager.
+
+Add `--ci github` to get a GitHub Actions workflow that deploys on every push to `main`:
+
+```sh
+npx @optimizely/cms-create-app my-site --template nextjs-starter --pm npm --ci github
+```
+
+See [Deploy to front-end hosting](../guides/deploy-to-frontend-hosting.md) for the
+credentials you need and how to connect the deployed site to the CMS.
+
 ## Recap
 
 - `npx @optimizely/cms-create-app` creates a working site from a template.
 - Add your CMS credentials to `.env`, then run `config push` to create the content types,
   a start page and an application.
 - The same command can add the SDK to a new or existing project.
+- The Next.js templates deploy to Optimizely front-end hosting with `--ci github` or the
+  `deploy` script.
 
 **Next:** to understand what the template set up, build the same site by hand, starting
 with [Installation →](./installation.md)

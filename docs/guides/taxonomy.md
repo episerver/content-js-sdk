@@ -83,27 +83,22 @@ const breadcrumbs = page._metadata.resolvedCategories?.map(term =>
 `resolvedCategories` has one entry per category, in the same order as
 `_metadata.categories`. Each entry is a `TaxonomyTerm`:
 
-| Field          | Type                                                  | Description                                             |
-| -------------- | ----------------------------------------------------- | ------------------------------------------------------- |
-| `key`          | `string`                                              | The category reference as Graph returned it (see below) |
-| `displayName`  | `string \| null`                                      | The term's label in the content item's locale           |
-| `description`  | `string \| null`                                      | The term's description                                  |
-| `taxonomy`     | `string \| null`                                      | The taxonomy the term belongs to                        |
-| `usage`        | `string \| null`                                      | Usage information                                       |
-| `path`         | `Array<{ key: string; displayName: string \| null }>` | The term's ancestors and the term itself, root first    |
-| `sortOrder`    | `number \| null`                                      | Always `null`. The SDK doesn't fetch it yet             |
-| `isAvailable`  | `boolean \| null`                                     | Always `null`. The SDK doesn't fetch it yet             |
-| `isSelectable` | `boolean \| null`                                     | Always `null`. The SDK doesn't fetch it yet             |
+| Field          | Type              | Description                                                     |
+| -------------- | ----------------- | --------------------------------------------------------------- |
+| `key`          | `string`          | The short term key, the same value as in `_metadata.categories` |
+| `displayName`  | `string \| null`  | The term's label in the content item's locale                   |
+| `description`  | `string \| null`  | The term's description                                          |
+| `taxonomy`     | `string \| null`  | The taxonomy the term belongs to                                |
+| `usage`        | `string \| null`  | Usage information                                               |
+| `path`         | `object[]`        | The term's ancestors and the term itself, root first. See below |
+| `sortOrder`    | `number \| null`  | Always `null`. The SDK doesn't fetch it yet                     |
+| `isAvailable`  | `boolean \| null` | Always `null`. The SDK doesn't fetch it yet                     |
+| `isSelectable` | `boolean \| null` | Always `null`. The SDK doesn't fetch it yet                     |
 
 `path` is the breadcrumb: it starts at the root of the taxonomy and ends with the term
 itself, so a top-level term has a one-entry path. The SDK follows up to 20 levels of
-parents.
-
-> [!WARNING]
->
-> `key` holds the full category reference, while `_metadata.categories` and the entries in
-> `path` hold the short term key. Match a resolved term to its category by position, not
-> by comparing keys.
+parents. Each entry carries the same `key`, `displayName`, `description`, `taxonomy` and
+`usage` fields as the term itself, so you can render any level of the breadcrumb in full.
 
 To resolve categories on every request, set it once in the client's `query` group instead:
 
@@ -130,7 +125,15 @@ still matches `_metadata.categories`. Every field except `key` and `path` is `nu
 const unresolved = {
   key: 'deleted-term',
   displayName: null,
-  path: [{ key: 'deleted-term', displayName: null }],
+  path: [
+    {
+      key: 'deleted-term',
+      displayName: null,
+      description: null,
+      taxonomy: null,
+      usage: null,
+    },
+  ],
   // description, taxonomy, usage, … are null
 };
 ```

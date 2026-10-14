@@ -1,20 +1,22 @@
 # CLI
 
 `@optimizely/cms-cli` uploads the content types you define in code to Optimizely CMS,
-pulls existing ones down as TypeScript, and deletes them.
+pulls existing ones down as TypeScript, deletes them, and deploys your site to Optimizely
+front-end hosting.
 
 ```sh
 optimizely-cms-cli <command> [arguments] [flags]
 ```
 
-| Command                                                               | What it does                                          |
-| --------------------------------------------------------------------- | ----------------------------------------------------- |
-| [`login`](#login)                                                     | Checks the credentials in your environment            |
-| [`config push`](#config-push)                                         | Pushes content types from your config file to the CMS |
-| [`config pull`](#config-pull)                                         | Generates TypeScript files, or JSON, from the CMS     |
-| [`config delete`](#config-delete)                                     | Deletes the content types defined in your config file |
-| [`content delete`](#content-delete)                                   | Deletes one content type                              |
-| [`danger delete-all-content-types`](#danger-delete-all-content-types) | Deletes every user-defined content type in the CMS    |
+| Command                                                               | What it does                                             |
+| --------------------------------------------------------------------- | -------------------------------------------------------- |
+| [`login`](#login)                                                     | Checks the credentials in your environment               |
+| [`config push`](#config-push)                                         | Pushes content types from your config file to the CMS    |
+| [`config pull`](#config-pull)                                         | Generates TypeScript files, or JSON, from the CMS        |
+| [`config delete`](#config-delete)                                     | Deletes the content types defined in your config file    |
+| [`content delete`](#content-delete)                                   | Deletes one content type                                 |
+| [`danger delete-all-content-types`](#danger-delete-all-content-types) | Deletes every user-defined content type in the CMS       |
+| [`deploy`](#deploy)                                                   | Packages the project and deploys it to front-end hosting |
 
 ## Running the CLI
 
@@ -61,6 +63,15 @@ The CLI treats a URL of the form `https://api.cms.optimizely.com` or
 `https://api.cmstest.optimizely.com` as the API gateway. It treats any other URL as a CMS
 instance and calls `<url>/_cms/v1`.
 
+`deploy` uses its own credentials instead, created in the **API** tab of the DXP
+management portal:
+
+| Variable                       | Required     | Description                            |
+| ------------------------------ | ------------ | -------------------------------------- |
+| `OPTIMIZELY_DXP_PROJECT_ID`    | For `deploy` | The front-end hosting project ID       |
+| `OPTIMIZELY_DXP_CLIENT_KEY`    | For `deploy` | The client key of a Deployment API key |
+| `OPTIMIZELY_DXP_CLIENT_SECRET` | For `deploy` | The client secret of the same key      |
+
 > [!NOTE]
 >
 > The CLI doesn't read `OPTIMIZELY_CMS_URL`. That variable belongs to your app, which uses
@@ -70,7 +81,7 @@ instance and calls `<url>/_cms/v1`.
 
 | Flag           | Description                                                                      |
 | -------------- | -------------------------------------------------------------------------------- |
-| `--host <url>` | The CMS to call, including the scheme. Accepted by every command                 |
+| `--host <url>` | The CMS to call, including the scheme. Accepted by every command except `deploy` |
 | `--help`       | Shows help for the CLI, a topic (`config`) or a command (`config push`)          |
 | `--version`    | Prints the CLI version. Use it without a command: `optimizely-cms-cli --version` |
 
@@ -456,6 +467,60 @@ optimizely-cms-cli danger delete-all-content-types [--host <url>]
 ```sh
 optimizely-cms-cli danger delete-all-content-types --host https://api.cmstest.optimizely.com
 ```
+
+## `deploy`
+
+Packages a Next.js or Astro project, uploads it to Optimizely front-end hosting, starts
+the deployment, waits for it, completes it and prints the site URL.
+
+```sh
+optimizely-cms-cli deploy --env <name> [flags]
+```
+
+### Reference
+
+#### Flags
+
+| Flag                  | Short | Default                                        | Description                                                                                                                |
+| --------------------- | ----- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `--env <name>`        | `-e`  |                                                | The environment as named in the DXP management portal, such as `Test1` or `Production1`. Required unless `--output` is set |
+| `--dir <path>`        |       | `.`                                            | The project directory                                                                                                      |
+| `--output <path>`     | `-o`  |                                                | Write the package to this directory instead of deploying it                                                                |
+| `--name <name>`       |       | The `package.json` name                        | The package name                                                                                                           |
+| `--version <version>` |       | The `package.json` version and a UTC timestamp | The exact package version                                                                                                  |
+| `--no-complete`       |       |                                                | Stop when the deployment awaits verification                                                                               |
+| `--yes`               | `-y`  |                                                | Skip the confirmation prompt for Production environments                                                                   |
+| `--timeout <minutes>` |       | `30`                                           | How long to wait for each deployment stage                                                                                 |
+
+#### Caveats
+
+- **It uses the DXP Deployment API, not the CMS.** It needs the `OPTIMIZELY_DXP_*`
+  variables, and `--host` doesn't apply.
+- **It checks the project before uploading.** It needs `next` or `astro` as a dependency,
+  `build` and `start` scripts, and exactly one `package-lock.json` or `yarn.lock`.
+
+### Usage
+
+#### Deploying to a test environment
+
+```sh
+optimizely-cms-cli deploy --env Test1
+```
+
+#### Deploying to production from CI
+
+```sh
+optimizely-cms-cli deploy --env Production1 --yes
+```
+
+#### Checking the package without deploying it
+
+```sh
+optimizely-cms-cli deploy --output ./out
+```
+
+See [Deploy to front-end hosting](../guides/deploy-to-frontend-hosting.md) for the project
+requirements, what goes in the package, and a GitHub Actions workflow.
 
 ## Troubleshooting
 

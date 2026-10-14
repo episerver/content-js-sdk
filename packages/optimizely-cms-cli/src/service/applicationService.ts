@@ -31,7 +31,7 @@ const normalizeType = (type: any, defaultType = 'website'): string =>
   typeof type === 'string' ? type : defaultType;
 
 const isContentRef = (val: string | undefined) =>
-    val && (val.startsWith('cms://') || val.startsWith('content://'));
+  val && (val.startsWith('cms://') || val.startsWith('content://'));
 
 // COMPARISON HELPERS
 
@@ -181,7 +181,7 @@ const updateApplication = async (
       path: { key },
     },
     body: patch,
-    bodySerializer: (body) => JSON.stringify(body),
+    bodySerializer: body => JSON.stringify(body),
     headers: {
       'Content-Type': 'application/merge-patch+json',
     },

@@ -97,9 +97,9 @@ describe('resolveTaxonomy: true', () => {
         isAvailable: null,
         isSelectable: null,
         path: [
-          { key: 'term-region', displayName: 'Region' },
-          { key: 'term-europe', displayName: 'Europe' },
-          { key: 'term-nordic', displayName: 'Nordic' },
+          { key: 'term-region', displayName: 'Region', description: null, taxonomy: null, usage: null },
+          { key: 'term-europe', displayName: 'Europe', description: null, taxonomy: null, usage: null },
+          { key: 'term-nordic', displayName: 'Nordic', description: 'Nordic countries', taxonomy: 'Region', usage: null },
         ],
       },
     ]);
@@ -139,7 +139,7 @@ describe('resolveTaxonomy: true', () => {
         sortOrder: null,
         isAvailable: null,
         isSelectable: null,
-        path: [{ key: 'term-deleted', displayName: null }],
+        path: [{ key: 'term-deleted', displayName: null, description: null, taxonomy: null, usage: null }],
       },
     ]);
   });
@@ -177,7 +177,7 @@ describe('resolveTaxonomy: true', () => {
     const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
     expect(result._metadata.resolvedCategories[0].path).toEqual([
-      { key: 'term-root', displayName: 'Root Category' },
+      { key: 'term-root', displayName: 'Root Category', description: null, taxonomy: null, usage: null },
     ]);
   });
 });

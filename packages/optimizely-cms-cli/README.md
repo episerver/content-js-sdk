@@ -10,6 +10,7 @@ The official command-line tool for Optimizely CMS that enables code-first conten
 - **Code-first workflow** - Define content types in your preferred IDE with IntelliSense
 - **Version control** - Manage content types alongside your application code
 - **Simple CLI commands** - Intuitive interface for common tasks
+- **One-command deploys** - Package and deploy Next.js or Astro sites to Optimizely front-end hosting
 - **Seamless integration** - Works perfectly with [@optimizely/cms-sdk](https://www.npmjs.com/package/@optimizely/cms-sdk)
 
 ## Installation
@@ -101,6 +102,7 @@ npx @optimizely/cms-cli config push ./optimizely.config.mjs
 | `config delete` | Delete the content types defined in your project from the CMS |
 | `content delete <key>` | Delete one content type from the CMS |
 | `danger delete-all-content-types` | Delete every user-defined content type in the CMS |
+| `deploy` | Package the project and deploy it to Optimizely front-end hosting |
 
 Run `optimizely-cms-cli <command> --help` for the flags of a command, or see the [CLI reference](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/cli.md) for every command, flag and environment variable.
 
@@ -118,6 +120,7 @@ Guides and best practices:
 
 - [CLI commands](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/cli.md) - Every command, flag and env var
 - [`optimizely.config.mjs`](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/optimizely-config.md) - Every configuration option
+- [Deploy to front-end hosting](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/deploy-to-frontend-hosting.md) - Credentials, project requirements and CI
 - [Quick start](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/quick-start.md) - Scaffold a new or existing project with `create-app`
 - [Agent skills](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/agent-skills.md) - AI-powered development
 

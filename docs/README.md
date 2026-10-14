@@ -78,6 +78,8 @@ Standalone pages, one topic each. Read them in any order.
 
 ### Beyond the basics
 
+- [Deploy to front-end hosting](./guides/deploy-to-frontend-hosting.md): put the site live
+  on Optimizely with one command or from CI
 - [The framework-agnostic core](./guides/framework-agnostic-core.md): render without
   React, or build a binding
 - [Observability](./guides/observability.md): OpenTelemetry traces and metrics
