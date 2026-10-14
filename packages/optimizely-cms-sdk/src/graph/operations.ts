@@ -14,7 +14,7 @@ import {
   getVariationVariables,
 } from './filters.js';
 import { setContext } from '../context/config.js';
-import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
+import { getContentType, isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
 import { SemanticAttributes, logWarning } from '../telemetry/index.js';
@@ -193,25 +193,58 @@ async function resolveFormNodes<T>(
   return item;
 }
 
+/** A piece of content as Graph answers it, rather than any other object. */
+const isContentNode = (value: any): boolean =>
+  typeof value?.__typename === 'string' &&
+  !!value._metadata &&
+  typeof value._metadata === 'object';
+
+/**
+ * The values of a content node to walk into.
+ *
+ * A `json` property holds whatever the editor put there, which may well look
+ * like content — walking into it risks rewriting somebody's data.
+ */
+function walkableValues(node: any): any[] {
+  const contentType = getContentType(node.__typename);
+  const properties: Record<string, any> =
+    contentType && 'properties' in contentType ? (contentType.properties ?? {}) : {};
+
+  return Object.entries(node)
+    .filter(([key]) => properties[key]?.type !== 'json')
+    .map(([, value]) => value);
+}
+
+/** Visits the content at the root of a response and every piece nested in it. */
+function forEachContentNode(value: any, visit: (node: any) => void): void {
+  if (Array.isArray(value)) {
+    value.forEach(entry => forEachContentNode(entry, visit));
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+
+  if (isContentNode(value)) {
+    visit(value);
+    walkableValues(value).forEach(nested => forEachContentNode(nested, visit));
+    return;
+  }
+
+  Object.values(value).forEach(nested => forEachContentNode(nested, visit));
+}
+
 /**
  * Moves the aliased `itemMetadata.categories` onto `_metadata`, for the item and
  * for every piece of content nested in it — content areas and the `item` of a
  * content reference carry the same alias.
  */
 function hoistCategories(item: any): any {
-  if (Array.isArray(item)) {
-    item.forEach(hoistCategories);
-    return item;
-  }
-  if (!item || typeof item !== 'object') return item;
-
-  const categories = item.itemMetadata?.categories;
-  if (categories !== undefined && item._metadata) {
-    item._metadata.categories = categories;
-    delete item.itemMetadata;
-  }
-
-  Object.values(item).forEach(value => hoistCategories(value));
+  forEachContentNode(item, node => {
+    const categories = node.itemMetadata?.categories;
+    if (categories !== undefined) {
+      node._metadata.categories = categories;
+      delete node.itemMetadata;
+    }
+  });
   return item;
 }
 
@@ -360,15 +393,11 @@ function shortenCategoryKeys(item: any): void {
 }
 
 /** Every piece of content in a response that carries categories, however deep. */
-function categorizedNodes(value: any, found: any[] = []): any[] {
-  if (Array.isArray(value)) {
-    value.forEach(entry => categorizedNodes(entry, found));
-    return found;
-  }
-  if (!value || typeof value !== 'object') return found;
-
-  if (value._metadata?.categories) found.push(value);
-  Object.values(value).forEach(nested => categorizedNodes(nested, found));
+function categorizedNodes(value: any): any[] {
+  const found: any[] = [];
+  forEachContentNode(value, node => {
+    if (node._metadata.categories) found.push(node);
+  });
   return found;
 }
 

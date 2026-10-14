@@ -18,8 +18,16 @@ const PageType = contentType({
   properties: {
     hero: { type: 'contentReference', allowedTypes: [ImageType] },
     body: { type: 'content', allowedTypes: [ImageType] },
+    payload: { type: 'json' },
   },
 });
+
+/** Editor-supplied JSON that happens to look like a piece of content. */
+const CONTENT_SHAPED_JSON = {
+  __typename: 'ctImage',
+  _metadata: { types: ['ctImage'] },
+  itemMetadata: { categories: ['https://example.com/taxonomy/json-category'] },
+};
 
 let client: GraphClient;
 
@@ -46,6 +54,7 @@ const graphResponse = () => ({
         _metadata: { types: ['ctImage'], locale: 'en' },
         ctImage__itemMetadata: { categories: [uri('body-category')] },
       },
+      ct1__payload: structuredClone(CONTENT_SHAPED_JSON),
     },
   },
 });
@@ -105,12 +114,22 @@ describe('taxonomy categories on nested content', () => {
     const content: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
     for (const [where, item, category] of everyNode(content)) {
+      // A resolved term is keyed the same way as the category it came from.
       expect(item._metadata.resolvedCategories, where).toEqual([
-        expect.objectContaining({ key: uri(category), displayName: `Term ${category}` }),
+        expect.objectContaining({ key: category, displayName: `Term ${category}` }),
       ]);
+      expect(item._metadata.resolvedCategories[0].key, where).toBe(
+        item._metadata.categories[0],
+      );
     }
 
     // One `_TaxonomyTerm` query for all three, not one per content item.
     expect(taxonomyQueries).toBe(1);
+  });
+
+  test('leave a content-shaped `json` property untouched', async () => {
+    const content: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
+
+    expect(content.payload).toEqual(CONTENT_SHAPED_JSON);
   });
 });
