@@ -12,7 +12,9 @@ import {
 } from '../model/contentTypeRegistry.js';
 import {
   CONTENT_URL_FRAGMENT,
+  DAM_ITEM_SPREADS,
   getKeyName,
+  isBaseMediaType,
   isBaseType,
   stripSourcePrefix,
 } from './baseTypeUtil.js';
@@ -411,15 +413,12 @@ const handleComponentProperty: PropertyHandler = (
   };
 };
 
-const handleContentProperty: PropertyHandler = (
-  name: string,
+/** The content types a `content` or `contentReference` property may hold. */
+const resolvePropertyTypes = (
   property: AnyProperty,
-  rootName: string,
-  suffix: string,
-  visited: Set<string>,
   ctx: QueryContext,
-) => {
-  const { expandContracts, typeFilter, ancestors } = ctx;
+): (PermittedTypes | AnyContentType)[] => {
+  const { expandContracts, typeFilter } = ctx;
   const contentTypeKey = (property as any).contentType;
   const allowedTypes = contentTypeKey ? [contentTypeKey] : (property as any).allowedTypes;
   const resolved = resolveAllowedTypes(
@@ -429,10 +428,18 @@ const handleContentProperty: PropertyHandler = (
     expandContracts,
     ctx.formsEnabled,
   );
-  const allowed =
-    typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
 
-  const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
+  return typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
+};
+
+/** The fragment spreads selecting every allowed type, plus their fragments. */
+const buildTypeSpreads = (
+  allowed: (PermittedTypes | AnyContentType)[],
+  rootName: string,
+  visited: Set<string>,
+  ctx: QueryContext,
+) => {
+  const { ancestors } = ctx;
 
   const { typesToInclude, contractsToInclude } = collectTypesAndContracts(
     allowed,
@@ -469,10 +476,33 @@ const handleContentProperty: PropertyHandler = (
     }
   });
 
-  const uniqueSubfields = [...new Set(subfields)].join(' ');
-  const fields = [`${nameInFragment} { ${uniqueSubfields} }`];
+  return {
+    subfields: [...new Set(subfields)].join(' '),
+    extraFragments,
+    includesDamAssetsFragments,
+  };
+};
 
-  return { fields, extraFragments, includesDamAssetsFragments };
+const handleContentProperty: PropertyHandler = (
+  name: string,
+  property: AnyProperty,
+  rootName: string,
+  suffix: string,
+  visited: Set<string>,
+  ctx: QueryContext,
+) => {
+  const { subfields, extraFragments, includesDamAssetsFragments } = buildTypeSpreads(
+    resolvePropertyTypes(property, ctx),
+    rootName,
+    visited,
+    ctx,
+  );
+
+  return {
+    fields: [`${rootName}${suffix}__${name}:${name} { ${subfields} }`],
+    extraFragments,
+    includesDamAssetsFragments,
+  };
 };
 
 const RICH_TEXT_SELECTION: Record<RichTextFormat, string> = {
@@ -524,22 +554,49 @@ const handleLinkProperty: PropertyHandler = (
   includesDamAssetsFragments: false,
 });
 
+/** True for a media content type, or for a media base type such as `_image`. */
+const isMediaType = (type: PermittedTypes | AnyContentType): boolean => {
+  const key = getKeyName(type);
+  if (isBaseMediaType(key)) return true;
+
+  const contentType = typeof type === 'object' ? type : getContentType(key);
+  return (
+    !!contentType &&
+    'baseType' in contentType &&
+    isBaseMediaType(contentType.baseType as string)
+  );
+};
+
 const handleContentReferenceProperty: PropertyHandler = (
   name: string,
-  _property: AnyProperty,
-  _rootName: string,
+  property: AnyProperty,
+  rootName: string,
   _suffix: string,
-  _visited: Set<string>,
+  visited: Set<string>,
   ctx: QueryContext,
 ) => {
   const { damEnabled } = ctx;
 
-  const itemFragment = damEnabled ? ' ...ContentReferenceItem' : '';
+  // Resolves `item` for references to media, leaving other references at key and url.
+  const mediaTypes = resolvePropertyTypes(property, ctx).filter(isMediaType);
+  const media =
+    mediaTypes.length ?
+      buildTypeSpreads(mediaTypes, rootName, visited, ctx)
+    : undefined;
+
+  const itemSpreads = [
+    ...(damEnabled ? DAM_ITEM_SPREADS : []),
+    ...(media ? media.subfields.split(' ') : []),
+  ];
+  const itemField =
+    itemSpreads.length ?
+      ` item { ${[...new Set(['__typename', ...itemSpreads])].join(' ')} }`
+    : '';
 
   return {
-    fields: [`${name} { key url { ...ContentUrl }${itemFragment} }`],
-    extraFragments: [CONTENT_URL_FRAGMENT],
-    includesDamAssetsFragments: damEnabled,
+    fields: [`${name} { key url { ...ContentUrl }${itemField} }`],
+    extraFragments: [CONTENT_URL_FRAGMENT, ...(media?.extraFragments ?? [])],
+    includesDamAssetsFragments: damEnabled || !!media?.includesDamAssetsFragments,
   };
 };
 

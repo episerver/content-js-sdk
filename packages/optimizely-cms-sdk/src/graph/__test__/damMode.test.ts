@@ -66,7 +66,7 @@ describe("dam: 'automatic' (default)", () => {
     await client.getContent({ key: 'a' });
 
     expect(metadataQuery()).toContain('__type(name: "cmp_Asset")');
-    expect(contentQuery()).toContain('ContentReferenceItem');
+    expect(contentQuery()).toContain('PublicImageAsset');
   });
 
   test('probes the schema and omits DAM fragments when absent', async () => {
@@ -75,7 +75,7 @@ describe("dam: 'automatic' (default)", () => {
     await client.getContent({ key: 'a' });
 
     expect(metadataQuery()).toContain('__type(name: "cmp_Asset")');
-    expect(contentQuery()).not.toContain('ContentReferenceItem');
+    expect(contentQuery()).not.toContain('PublicImageAsset');
   });
 });
 
@@ -86,7 +86,7 @@ describe("dam: 'off'", () => {
 
     await client.getContent({ key: 'a' });
 
-    expect(contentQuery()).not.toContain('ContentReferenceItem');
+    expect(contentQuery()).not.toContain('PublicImageAsset');
   });
 });
 
@@ -97,6 +97,6 @@ describe("dam: 'on'", () => {
 
     await client.getContent({ key: 'a' });
 
-    expect(contentQuery()).toContain('ContentReferenceItem');
+    expect(contentQuery()).toContain('PublicImageAsset');
   });
 });
