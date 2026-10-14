@@ -277,10 +277,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       content: generateContentCode(content, manifest, true, circularMap),
     }));
 
-    await Promise.all([
-      makeDirs(generateGroups(allContents), outputDir),
-      makeFiles(files),
-    ]);
+    await makeDirs(generateGroups(allContents), outputDir);
+    await makeFiles(files);
 
     this.logGeneratedFiles(files, outputDir);
     this.logManifestStats(manifest, spinner);
