@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mapContentToManifest } from '../mapper/contentToPackage.js';
 import { HeroComponentType, BannerComponentType } from './fixtures.js';
 import type { AnyContentType } from '../service/utils.js';
@@ -95,58 +95,39 @@ describe('mapContentToManifest', () => {
     expect(consoleWarnSpy).not.toHaveBeenCalled();
   });
 
-  it('should handle single content type without duplicates', () => {
-    const contentTypes = [HeroComponentType];
-
-    const result = mapContentToManifest(contentTypes);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].key).toBe('HeroComponent');
-    expect(consoleWarnSpy).not.toHaveBeenCalled();
-  });
-
-  it('should handle single content type with duplicate', () => {
-    const duplicate: AnyContentType = {
-      ...HeroComponentType,
-      displayName: 'Hero Duplicate',
-    };
-
-    const contentTypes = [HeroComponentType, duplicate];
-
-    const result = mapContentToManifest(contentTypes);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].key).toBe('HeroComponent');
-    expect(result[0].displayName).toBe('Hero Component'); // First kept
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Duplicate content type keys found: HeroComponent'),
-    );
-  });
-
   it('should transform properties correctly after deduplication', () => {
-    const contentTypes = [HeroComponentType];
+    const page = {
+      key: 'LandingPage',
+      displayName: 'Landing Page',
+      baseType: '_page',
+      extends: [{ key: 'SeoContract' }],
+      properties: {
+        hero: { type: 'contentReference', contentType: HeroComponentType },
+      },
+    } as unknown as AnyContentType;
 
-    const result = mapContentToManifest(contentTypes);
+    const result = mapContentToManifest([page, { ...page, displayName: 'Duplicate' }]);
 
-    expect(result[0]).toHaveProperty('key', 'HeroComponent');
-    expect(result[0]).toHaveProperty('displayName', 'Hero Component');
-    expect(result[0]).toHaveProperty('baseType', '_component');
-    expect(result[0]).toHaveProperty('properties');
-    expect(result[0].properties).toBeDefined();
+    expect(result).toEqual([
+      {
+        key: 'LandingPage',
+        displayName: 'Landing Page',
+        baseType: '_page',
+        mayContainTypes: ['*'],
+        contracts: ['SeoContract'],
+        properties: {
+          hero: { type: 'contentReference', contentType: 'HeroComponent' },
+        },
+      },
+    ]);
   });
 
   it('should deduplicate before validating allowed keys', () => {
-    // Create content types where one references another
     const pageType: AnyContentType = {
       key: 'PageType',
       displayName: 'Page Type',
       baseType: '_page',
-      properties: {
-        components: {
-          type: 'contentReference',
-          allowedTypes: [HeroComponentType],
-        },
-      },
+      mayContainTypes: ['HeroComponent'],
     };
 
     const duplicateHero: AnyContentType = {
@@ -154,65 +135,31 @@ describe('mapContentToManifest', () => {
       displayName: 'Hero Duplicate',
     };
 
-    const contentTypes = [pageType, HeroComponentType, duplicateHero];
+    const result = mapContentToManifest([pageType, HeroComponentType, duplicateHero]);
 
-    const result = mapContentToManifest(contentTypes);
-
-    // Should have 2 unique types
-    expect(result).toHaveLength(2);
-    expect(result[0].key).toBe('PageType');
-    expect(result[1].key).toBe('HeroComponent');
-
-    // Should warn about duplicate
+    expect(result.map(it => it.key)).toEqual(['PageType', 'HeroComponent']);
+    expect(result[0].mayContainTypes).toEqual(['HeroComponent']);
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       expect.stringContaining('Duplicate content type keys found: HeroComponent'),
     );
   });
 
-  it('should handle allowedTypes with wildcard by removing it', () => {
+  test('rejects mayContainTypes keys that are not among the pushed content types', () => {
     const pageType: AnyContentType = {
-      key: 'QAContentAreaPage',
-      displayName: 'QA Content Area Page',
+      key: 'PageType',
+      displayName: 'Page Type',
       baseType: '_page',
-      properties: {
-        anyContent: {
-          type: 'content',
-          allowedTypes: ['*'],
-        },
-      },
+      mayContainTypes: ['MissingComponent'],
     };
 
-    const result = mapContentToManifest([pageType]);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].key).toBe('QAContentAreaPage');
-    // Wildcard should be removed, leaving no allowedTypes property
-    expect(result[0].properties?.anyContent).toEqual({
-      type: 'content',
-    });
-    expect(result[0].properties?.anyContent).not.toHaveProperty('allowedTypes');
+    expect(() => mapContentToManifest([pageType, HeroComponentType])).toThrow(
+      'Unknown content types: MissingComponent',
+    );
   });
 
-  it('should filter out wildcard when mixed with other allowed types', () => {
-    const pageType: AnyContentType = {
-      key: 'MixedPage',
-      displayName: 'Mixed Page',
-      baseType: '_page',
-      properties: {
-        components: {
-          type: 'content',
-          allowedTypes: ['*', HeroComponentType, 'BannerComponent'],
-        },
-      },
-    };
+  test('rejects an invalid content type key', () => {
+    const invalid = { ...HeroComponentType, key: '1Hero' } as AnyContentType;
 
-    const result = mapContentToManifest([pageType]);
-
-    expect(result).toHaveLength(1);
-    // Wildcard should be filtered out, leaving only other types
-    expect(result[0].properties?.components?.allowedTypes).toEqual([
-      'HeroComponent',
-      'BannerComponent',
-    ]);
+    expect(() => mapContentToManifest([invalid])).toThrow('Invalid content type key: "1Hero"');
   });
 });

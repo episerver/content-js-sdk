@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   createFormController,
   createSubmissionStore,
@@ -162,6 +162,32 @@ describe('steps', () => {
     expect(controller.getSnapshot().currentStepIndex).toBe(2);
   });
 
+  test('nextStep lands on the first visible step after the current one', () => {
+    const controller = createFormController({
+      submission: createSubmissionStore(),
+      stepIds: [['a'], ['b'], ['c'], ['d'], ['e']],
+      stepRules: { getJumpTarget: () => null, isStepVisible: ids => !['b', 'd'].includes(ids[0]) },
+      effects: effects(),
+    });
+
+    controller.nextStep();
+    expect(controller.getSnapshot().currentStepIndex).toBe(2);
+
+    controller.nextStep();
+    expect(controller.getSnapshot().currentStepIndex).toBe(4);
+
+    controller.prevStep();
+    expect(controller.getSnapshot().currentStepIndex).toBe(2);
+  });
+
+  test('a form without steps stays on its only step', () => {
+    const controller = createFormController({ submission: createSubmissionStore(), effects: effects() });
+
+    controller.nextStep();
+
+    expect(controller.getSnapshot().currentStepIndex).toBe(0);
+  });
+
   test('revealPendingField reveals once and then clears', () => {
     const formEffects = effects();
     const controller = createFormController({
@@ -222,6 +248,63 @@ describe('submit', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('a built-in POST that cannot reach the server fails without a message', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const formEffects = effects();
+    const submission = createSubmissionStore();
+    const controller = createFormController({ submission, effects: formEffects });
+
+    await controller.submit(new FormData());
+
+    expect(submission.getSnapshot()).toMatchObject({ status: 'error', error: undefined, errorMessage: undefined });
+    expect(controller.getSnapshot().resetToken).toBe(0);
+    expect(formEffects.scrollToElementId).not.toHaveBeenCalled();
+  });
+
+  test('without an action the built-in POST goes to the current page, and a handler is given an empty one', async () => {
+    fetchMock.mockResolvedValue({ ok: true });
+    const submitHandler = vi.fn(async () => {});
+
+    await createFormController({ submission: createSubmissionStore(), effects: effects() }).submit(new FormData());
+    await createFormController({ submission: createSubmissionStore(), submitHandler, effects: effects() }).submit(
+      new FormData(),
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith('', { method: 'POST', body: expect.any(FormData) });
+    expect(submitHandler).toHaveBeenCalledWith(expect.any(FormData), { action: '' });
+  });
+
+  test('scrollToOnSuccess false skips the scroll after a successful submit', async () => {
+    fetchMock.mockResolvedValue({ ok: true });
+
+    const formEffects = effects();
+    const submission = createSubmissionStore();
+    const controller = createFormController({ submission, scrollToOnSuccess: false, effects: formEffects });
+
+    await controller.submit(new FormData());
+
+    expect(submission.getSnapshot().formSuccess).toBe(true);
+    expect(formEffects.scrollToElementId).not.toHaveBeenCalled();
+  });
+
+  test('a field revealed after it unregistered is skipped, and the reveal still clears', async () => {
+    const formEffects = effects();
+    const controller = createFormController({ submission: createSubmissionStore(), effects: formEffects });
+
+    controller.registerField('email', {} as HTMLElement, () => false);
+    await controller.submit(new FormData());
+    expect(controller.getSnapshot().fieldToReveal).toBe('email');
+
+    controller.unregisterField('email');
+    controller.revealPendingField();
+
+    expect(formEffects.revealField).not.toHaveBeenCalled();
+    expect(controller.getSnapshot().fieldToReveal).toBeNull();
   });
 
   test('an invalid form is not sent, and the offending step is shown', async () => {

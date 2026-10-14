@@ -217,3 +217,127 @@ export const styledSpanKebabCaseContent = {
     },
   ] as Node[],
 };
+
+export const imageContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'image',
+          url: 'https://example.com/photo.jpg',
+          alt: 'A photo',
+          title: 'Photo title',
+          width: '320',
+          children: [{ text: '' }],
+        },
+      ],
+    },
+  ] as Node[],
+};
+
+// The CMS sends `url`; the renderer exposes it as the anchor's `href`.
+export const linkContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'link',
+          url: 'https://example.com/page',
+          target: '_blank',
+          rel: 'noopener',
+          title: 'Example page',
+          children: [{ text: 'Example link' }],
+        },
+      ],
+    },
+  ] as Node[],
+};
+
+export const tableWithSpansContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'table',
+      children: [
+        {
+          type: 'tbody',
+          children: [
+            {
+              type: 'tr',
+              children: [{ type: 'th', colspan: 2, width: '50%', children: [{ text: 'Wide header' }] }],
+            },
+            {
+              type: 'tr',
+              children: [
+                { type: 'td', rowspan: 2, height: '40px', children: [{ text: 'Tall cell' }] },
+                { type: 'td', children: [{ text: 'Plain cell' }] },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ] as Node[],
+};
+
+// An element type the SDK has no default for.
+export const customElementContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'callout',
+      tone: 'info',
+      children: [{ text: 'Mind ' }, { text: 'the gap', bold: true }],
+    },
+  ] as Node[],
+};
+
+export const multiMarkContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'paragraph',
+      children: [
+        { text: 'bold italic', bold: true, italic: true },
+        { text: ' and ' },
+        { text: 'highlighted', highlight: true },
+      ],
+    },
+  ] as Node[],
+};
+
+export const nestedListContent = {
+  type: 'richText' as const,
+  children: [
+    {
+      type: 'bulleted-list',
+      children: [
+        {
+          type: 'list-item',
+          children: [
+            { text: 'Outer' },
+            {
+              type: 'numbered-list',
+              children: [
+                {
+                  type: 'list-item',
+                  children: [
+                    { text: 'Middle' },
+                    {
+                      type: 'bulleted-list',
+                      children: [{ type: 'list-item', children: [{ text: 'Deep' }] }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ] as Node[],
+};

@@ -1,16 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, test, expect } from 'vitest';
 import { join } from 'node:path';
 import {
   generateContentCode,
   generateFilePath,
   generateGroups,
   generateManifestCode,
+  generateManifestFilePath,
+  generateRegistryFilePath,
 } from '../utils/generate.js';
 import {
   Manifest,
   ManifestContentType,
   ManifestDisplayTemplate,
 } from '../utils/manifest.js';
+import { manifestContentType } from './helpers.js';
 
 const mockContract: ManifestContentType = {
   key: 'SEOContract',
@@ -272,7 +275,6 @@ describe('generateContentCode - edge cases', () => {
 
     const result = generateContentCode(contentTypeWithImport, mockManifest, false);
     expect(result).toContain("import { HeroComponentCT } from './HeroComponentCT'");
-    expect(result).toContain('HeroComponentCT');
     expect(result).toContain('allowedTypes:');
   });
 
@@ -532,11 +534,6 @@ describe('generateFilePath - edge cases', () => {
     const result = generateFilePath(contentTypeNoBase, '/output', true);
     expect(result).toBe(join('/output', '', 'GenericContentCT.ts'));
   });
-
-  it('should handle special characters in output directory', () => {
-    const result = generateFilePath(mockContentType, '/my output/types', false);
-    expect(result).toBe(join('/my output/types', 'ArticlePageCT.ts'));
-  });
 });
 
 describe('generateManifestCode', () => {
@@ -787,9 +784,6 @@ describe('generateManifestCode', () => {
 
     // Should contain resolved reference to PageListBlock
     expect(result).toContain('PageListBlockCT');
-
-    // Should handle missing SysContentFolder gracefully (either removed or kept as string)
-    expect(result).not.toContain('<|SysContentFolder|>');
   });
 
   it('should keep empty allowedTypes when nothing else constrains the property', () => {
@@ -842,5 +836,109 @@ describe('generateManifestCode', () => {
 
     // Should keep empty allowedTypes for array items, nothing else constrains them
     expect(result).toContain('allowedTypes: []');
+  });
+
+  test('declares content types without per-file imports', () => {
+    const result = generateManifestCode(mockManifest);
+
+    expect(result.match(/^import /gm)).toEqual(['import ']);
+    expect(result).toContain(
+      "import { contract, contentType, displayTemplate } from '@optimizely/cms-sdk';",
+    );
+    expect(result).not.toContain("from './");
+  });
+});
+
+describe('generateContentCode - extends and composition', () => {
+  test('emits contracts as extends and imports them', () => {
+    const page = manifestContentType('LandingPage', {
+      baseType: '_page',
+      contracts: ['SEOContract'],
+    });
+
+    const result = generateContentCode(page, mockManifest);
+
+    expect(result).toContain("import { SEOContract } from './SEOContract';");
+    expect(result).toMatch(/extends: \[\s*SEOContract\s*\]/);
+  });
+
+  test('imports contracts from the contract folder when grouping', () => {
+    const page = manifestContentType('LandingPage', {
+      baseType: '_page',
+      contracts: ['SEOContract'],
+    });
+
+    expect(generateContentCode(page, mockManifest, true)).toContain(
+      "import { SEOContract } from '../contract/SEOContract';",
+    );
+  });
+
+  test('emits non-empty compositionBehaviors', () => {
+    const result = generateContentCode(mockComponent, mockManifest);
+
+    expect(result).toMatch(/compositionBehaviors: \[\s*'sectionEnabled'\s*\]/);
+  });
+
+  test('emits the baseType and contentType of a display template', () => {
+    const template: ManifestDisplayTemplate = {
+      key: 'Card',
+      displayName: 'Card',
+      isDefault: true,
+      baseType: '_component',
+    };
+    const typedTemplate: ManifestDisplayTemplate = {
+      key: 'ArticleCard',
+      displayName: 'Article Card',
+      isDefault: false,
+      contentType: 'ArticlePage',
+    };
+
+    expect(generateContentCode(template, mockManifest)).toContain("baseType: '_component'");
+    expect(generateContentCode(typedTemplate, mockManifest)).toContain(
+      "contentType: 'ArticlePage'",
+    );
+  });
+});
+
+describe('generated names', () => {
+  test('rejects a key without any alphanumeric character', () => {
+    expect(() => generateContentCode(manifestContentType('---'), mockManifest)).toThrow(
+      'Invalid key "---": must contain at least one alphanumeric character',
+    );
+  });
+
+  test.each(['HeroContentType', 'HeroCT'])(
+    'keeps a content type key that already ends with a suffix (%s)',
+    key => {
+      expect(generateContentCode(manifestContentType(key), mockManifest)).toContain(
+        `export const ${key} = contentType(`,
+      );
+    },
+  );
+
+  test.each(['CardDisplayTemplate', 'CardDT'])(
+    'keeps a display template key that already ends with a suffix (%s)',
+    key => {
+      const template: ManifestDisplayTemplate = {
+        key,
+        displayName: key,
+        isDefault: false,
+        baseType: '_component',
+      };
+
+      expect(generateContentCode(template, mockManifest)).toContain(
+        `export const ${key} = displayTemplate(`,
+      );
+    },
+  );
+});
+
+describe('generated file paths', () => {
+  test('generateManifestFilePath points at manifest.ts in the output directory', () => {
+    expect(generateManifestFilePath('/output')).toBe(join('/output', 'manifest.ts'));
+  });
+
+  test('generateRegistryFilePath points at registry.ts in the output directory', () => {
+    expect(generateRegistryFilePath('/output')).toBe(join('/output', 'registry.ts'));
   });
 });

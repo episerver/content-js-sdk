@@ -8,7 +8,7 @@ import {
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 
 describe('createFragment() with damEnabled for contentReference properties', () => {
-  test('damEnabled = false should not include ContentReferenceItem fragment', async () => {
+  test('damEnabled = false should not include ContentReferenceItem fragment', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -20,7 +20,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1]);
 
     // DAM disabled
-    const result = await createFragment(
+    const result = createFragment(
       'ct1',
       new Set(),
       '',
@@ -57,7 +57,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     `);
   });
 
-  test('damEnabled = true should include ContentReferenceItem fragment', async () => {
+  test('damEnabled = true should include ContentReferenceItem fragment', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -69,7 +69,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1]);
 
     // DAM enabled
-    const result = await createFragment(
+    const result = createFragment(
       'ct1',
       new Set(),
       '',
@@ -107,7 +107,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     `);
   });
 
-  test('damEnabled = false with array of contentReference', async () => {
+  test('damEnabled = false with array of contentReference', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -122,7 +122,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1]);
 
     // DAM disabled
-    const result = await createFragment(
+    const result = createFragment(
       'ct1',
       new Set(),
       '',
@@ -151,7 +151,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     `);
   });
 
-  test('damEnabled = true with array of contentReference', async () => {
+  test('damEnabled = true with array of contentReference', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -165,7 +165,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     initContentTypeRegistry([ct1]);
 
-    const result = await createFragment(
+    const result = createFragment(
       'ct1',
       new Set(),
       '',
@@ -198,7 +198,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     `);
   });
 
-  test('damEnabled with nested component containing contentReference', async () => {
+  test('damEnabled with nested component containing contentReference', () => {
     const ctBlock = contentType({
       key: 'ctBlock',
       displayName: 'CTBlock',
@@ -218,7 +218,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1, ctBlock]);
 
     // Test with damEnabled = false
-    const resultDisabled = await createFragment(
+    const resultDisabled = createFragment(
       'ct1',
       new Set(),
       '',
@@ -235,7 +235,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     ).toBe(false);
 
     // Test with damEnabled = true
-    const resultEnabled = await createFragment(
+    const resultEnabled = createFragment(
       'ct1',
       new Set(),
       '',
@@ -268,7 +268,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     `);
   });
 
-  test('damEnabled with content property containing contentReference', async () => {
+  test('damEnabled with content property containing contentReference', () => {
     const ctRef = contentType({
       key: 'ctRef',
       displayName: 'CTRef',
@@ -288,7 +288,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1, ctRef]);
 
     // Test with damEnabled = true
-    const result = await createFragment(
+    const result = createFragment(
       'ct1',
       new Set(),
       '',
@@ -321,7 +321,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     `);
   });
 
-  test('damEnabled = true but NO contentReference properties should NOT include DAM fragments', async () => {
+  test('damEnabled = true but NO contentReference properties should NOT include DAM fragments', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -335,7 +335,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     initContentTypeRegistry([ct1]);
 
     // DAM enabled but no contentReference properties
-    const result = await createFragment(
+    const result = createFragment(
       'ct1',
       new Set(),
       '',
@@ -374,7 +374,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     `);
   });
 
-  test('damEnabled = true with nested content without contentReference should NOT include DAM fragments', async () => {
+  test('damEnabled = true with nested content without contentReference should NOT include DAM fragments', () => {
     const ctBlock = contentType({
       key: 'ctBlock',
       displayName: 'CTBlock',
@@ -393,7 +393,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
     });
     initContentTypeRegistry([ct1, ctBlock]);
 
-    const result = await createFragment(
+    const result = createFragment(
       'ct1',
       new Set(),
       '',
@@ -415,7 +415,7 @@ describe('createFragment() with damEnabled for contentReference properties', () 
 });
 
 describe('createSingleContentQuery() with damEnabled', () => {
-  test('createSingleContentQuery: damEnabled = false should not include DAM fragments', async () => {
+  test('createSingleContentQuery: damEnabled = false should not include DAM fragments', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -426,7 +426,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createSingleContentQuery('ct1', {
+    const query = createSingleContentQuery('ct1', {
       damEnabled: false,
       maxThreshold: 100,
       expandContracts: false,
@@ -439,7 +439,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
     expect(query).toContain('image { key url { ...ContentUrl } }');
   });
 
-  test('createSingleContentQuery: damEnabled = true should include DAM fragments', async () => {
+  test('createSingleContentQuery: damEnabled = true should include DAM fragments', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -450,7 +450,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createSingleContentQuery('ct1', {
+    const query = createSingleContentQuery('ct1', {
       damEnabled: true,
       maxThreshold: 100,
       expandContracts: false,
@@ -469,7 +469,7 @@ describe('createSingleContentQuery() with damEnabled', () => {
 });
 
 describe('createMultipleContentQuery() with damEnabled', () => {
-  test('createMultipleContentQuery: damEnabled = false should not include DAM fragments', async () => {
+  test('createMultipleContentQuery: damEnabled = false should not include DAM fragments', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -480,7 +480,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createMultipleContentQuery('ct1', {
+    const query = createMultipleContentQuery('ct1', {
       damEnabled: false,
       maxThreshold: 100,
       expandContracts: false,
@@ -492,7 +492,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
     expect(query.includes('ContentReferenceItem')).toBe(false);
   });
 
-  test('createMultipleContentQuery: damEnabled = true should include DAM fragments', async () => {
+  test('createMultipleContentQuery: damEnabled = true should include DAM fragments', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -503,7 +503,7 @@ describe('createMultipleContentQuery() with damEnabled', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const query = await createMultipleContentQuery('ct1', {
+    const query = createMultipleContentQuery('ct1', {
       damEnabled: true,
       maxThreshold: 100,
       expandContracts: false,

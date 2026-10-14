@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, test, expect } from 'vitest';
+import { posix } from 'node:path';
 import { generateRegistryCode } from '../utils/generate.js';
 import { Manifest } from '../utils/manifest.js';
+import { manifestContentType } from './helpers.js';
 
 const manifest: Manifest = {
   contentTypes: [
@@ -69,5 +71,40 @@ describe('generateRegistryCode', () => {
     expect(code).toContain(
       `import { ArticlePageCT, SEOContract, HeroDisplayDT } from './manifest';`,
     );
+  });
+
+  test('produces an empty initialize() without imports for an empty manifest', () => {
+    const code = generateRegistryCode({ contentTypes: [] });
+
+    expect(code).not.toMatch(/^import /m);
+    expect(code).toContain('{ ArticlePage: ArticlePageComponent }');
+    expect(code).toContain('export function initialize() {\n\n}');
+  });
+
+  test('registers only display templates when there are no content types', () => {
+    const code = generateRegistryCode({
+      contentTypes: [],
+      displayTemplates: manifest.displayTemplates,
+    });
+
+    expect(code).toContain(`import { initDisplayTemplateRegistry } from '@optimizely/cms-sdk';`);
+    expect(code).not.toContain('initContentTypeRegistry');
+  });
+
+  test('registers only content types when there are no display templates', () => {
+    const code = generateRegistryCode({ contentTypes: manifest.contentTypes });
+
+    expect(code).toContain(`import { initContentTypeRegistry } from '@optimizely/cms-sdk';`);
+    expect(code).not.toContain('initDisplayTemplateRegistry');
+  });
+
+  test('imports a grouped content type without baseType from the output root', () => {
+    const code = generateRegistryCode(
+      { contentTypes: [manifestContentType('Generic', { baseType: undefined })] },
+      { useGrouping: true },
+    );
+    const importPath = code.match(/import \{ GenericCT \} from '(.+)';/)?.[1];
+
+    expect(importPath && posix.normalize(importPath)).toBe('GenericCT');
   });
 });

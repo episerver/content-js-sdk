@@ -1,8 +1,9 @@
-import { describe, expect, test, vi, beforeEach } from 'vitest';
+import { describe, expect, test, beforeEach } from 'vitest';
 import { GraphClient } from '../index.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { refreshCache } from '../../util/queryUtils.js';
 import { clearTaxonomyCache } from '../operations.js';
+import { type GraphRequestSpy, metadataResponse, stubGraph } from './helpers.js';
 
 const PageType = contentType({
   key: 'ct1',
@@ -13,43 +14,53 @@ const PageType = contentType({
   },
 });
 
-let client: GraphClient;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let mockRequest: any;
+type TermMetadata = {
+  key: string;
+  displayName: string | null;
+  description?: string | null;
+  taxonomy?: string | null;
+  usage?: string | null;
+  parent?: any;
+};
 
-function stubGraph(options: {
+let client: GraphClient;
+let mockRequest: GraphRequestSpy;
+
+/** Answers `ResolveTaxonomyTerms` with the given terms whose key was asked for. */
+function stubTaxonomy(options: {
   categories?: string[];
-  taxonomyTerms?: Array<{ _metadata: { key: string; displayName: string | null; description?: string | null; taxonomy?: string | null; usage?: string | null; parent?: any } }>;
+  taxonomyTerms?: TermMetadata[];
   taxonomyQueryFails?: boolean;
+  item?: Record<string, unknown>;
 }) {
   const { categories = [], taxonomyTerms = [], taxonomyQueryFails = false } = options;
+  const item = options.item ?? {
+    __typename: 'ct1',
+    _metadata: { types: ['ct1'], categories, locale: 'en' },
+  };
 
-  mockRequest = vi.spyOn(client, 'request').mockImplementation(async (query: string) => {
-    if (query.includes('GetContentMetadata')) {
-      return {
-        _Content: { item: { _metadata: { types: ['ct1'] } } },
-        damAssetType: null,
-        taxonomyType: { __typename: '__Type' },
-      };
-    }
-    if (query.includes('ResolveTaxonomyTerms')) {
-      if (taxonomyQueryFails) throw new Error('Network error');
-      return { _TaxonomyTerm: { items: taxonomyTerms } };
-    }
-    return {
-      _Content: {
-        item: {
-          __typename: 'ct1',
-          _metadata: {
-            types: ['ct1'],
-            categories,
-            locale: 'en',
+  mockRequest = stubGraph(client, {
+    metadata: metadataResponse(['ct1'], { taxonomyType: { __typename: '__Type' } }),
+    operations: {
+      ResolveTaxonomyTerms: (variables: { keys: string[] }) => {
+        if (taxonomyQueryFails) throw new Error('Network error');
+        return {
+          _TaxonomyTerm: {
+            items: taxonomyTerms
+              .filter(term => variables.keys.includes(term.key))
+              .map(term => ({ _metadata: term })),
           },
-        },
+        };
       },
-    };
+    },
+    content: { _Content: { item } },
   });
 }
+
+const taxonomyCalls = () =>
+  mockRequest.mock.calls.filter(call => String(call[0]).includes('ResolveTaxonomyTerms'));
+
+const pathKeys = (term: { path: { key: string }[] }) => term.path.map(entry => entry.key);
 
 beforeEach(() => {
   initContentTypeRegistry([PageType]);
@@ -60,24 +71,22 @@ beforeEach(() => {
 
 describe('resolveTaxonomy: true', () => {
   test('resolves category hierarchy with breadcrumb path from parent chain', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-nordic'],
       taxonomyTerms: [
         {
-          _metadata: {
-            key: 'term-nordic',
-            displayName: 'Nordic',
-            description: 'Nordic countries',
-            taxonomy: 'Region',
-            usage: null,
+          key: 'term-nordic',
+          displayName: 'Nordic',
+          description: 'Nordic countries',
+          taxonomy: 'Region',
+          usage: null,
+          parent: {
+            key: 'term-europe',
+            displayName: 'Europe',
             parent: {
-              key: 'term-europe',
-              displayName: 'Europe',
-              parent: {
-                key: 'term-region',
-                displayName: 'Region',
-                parent: null,
-              },
+              key: 'term-region',
+              displayName: 'Region',
+              parent: null,
             },
           },
         },
@@ -106,11 +115,11 @@ describe('resolveTaxonomy: true', () => {
   });
 
   test('maintains 1:1 order with categories array', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-b', 'term-a'],
       taxonomyTerms: [
-        { _metadata: { key: 'term-a', displayName: 'A', parent: null } },
-        { _metadata: { key: 'term-b', displayName: 'B', parent: null } },
+        { key: 'term-a', displayName: 'A', parent: null },
+        { key: 'term-b', displayName: 'B', parent: null },
       ],
     });
 
@@ -122,7 +131,7 @@ describe('resolveTaxonomy: true', () => {
   });
 
   test('returns displayName: null for unresolvable terms', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-deleted'],
       taxonomyTerms: [],
     });
@@ -145,7 +154,7 @@ describe('resolveTaxonomy: true', () => {
   });
 
   test('returns empty array when content has no categories', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: [],
       taxonomyTerms: [],
     });
@@ -156,7 +165,7 @@ describe('resolveTaxonomy: true', () => {
   });
 
   test('returns undefined when taxonomy term query fails', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-a'],
       taxonomyQueryFails: true,
     });
@@ -167,11 +176,9 @@ describe('resolveTaxonomy: true', () => {
   });
 
   test('root-level term has single-element path', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-root'],
-      taxonomyTerms: [
-        { _metadata: { key: 'term-root', displayName: 'Root Category', parent: null } },
-      ],
+      taxonomyTerms: [{ key: 'term-root', displayName: 'Root Category', parent: null }],
     });
 
     const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
@@ -182,11 +189,126 @@ describe('resolveTaxonomy: true', () => {
   });
 });
 
+describe('category keys', () => {
+  test('categories arriving under itemMetadata are hoisted onto _metadata', async () => {
+    stubTaxonomy({
+      item: {
+        __typename: 'ct1',
+        _metadata: { types: ['ct1'] },
+        itemMetadata: { categories: ['term-a'] },
+      },
+    });
+
+    const result: any = await client.getContent({ key: 'a' });
+
+    expect(result._metadata.categories).toEqual(['term-a']);
+    expect(result).not.toHaveProperty('itemMetadata');
+  });
+
+  test('URI-form category keys are shortened to the term key', async () => {
+    stubTaxonomy({
+      categories: ['https://example.com/taxonomy/Region/term-a'],
+      taxonomyTerms: [{ key: 'term-a', displayName: 'A', parent: null }],
+    });
+
+    const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
+
+    expect(result._metadata.categories).toEqual(['term-a']);
+    expect(taxonomyCalls()[0][1]).toEqual({ keys: ['term-a'] });
+    expect(result._metadata.resolvedCategories[0]).toMatchObject({ key: 'term-a', displayName: 'A' });
+  });
+});
+
+describe('ancestor resolution', () => {
+  test('fetches string-URI parents level by level and builds the path from their metadata', async () => {
+    stubTaxonomy({
+      categories: ['term-c'],
+      taxonomyTerms: [
+        { key: 'term-c', displayName: 'C', parent: 'taxonomy/term-b' },
+        { key: 'term-b', displayName: 'B', taxonomy: 'Region', parent: 'taxonomy/term-a' },
+        { key: 'term-a', displayName: 'A', parent: null },
+      ],
+    });
+
+    const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
+
+    expect(taxonomyCalls().map(call => call[1].keys)).toEqual([['term-c'], ['term-b'], ['term-a']]);
+    expect(result._metadata.resolvedCategories[0].path).toEqual([
+      { key: 'term-a', displayName: 'A', description: null, taxonomy: null, usage: null },
+      { key: 'term-b', displayName: 'B', description: null, taxonomy: 'Region', usage: null },
+      { key: 'term-c', displayName: 'C', description: null, taxonomy: null, usage: null },
+    ]);
+  });
+
+  test('stops at a cycle in string-URI parents', async () => {
+    stubTaxonomy({
+      categories: ['term-a'],
+      taxonomyTerms: [
+        { key: 'term-a', displayName: 'A', parent: 'taxonomy/term-b' },
+        { key: 'term-b', displayName: 'B', parent: 'taxonomy/term-a' },
+      ],
+    });
+
+    const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
+
+    expect(taxonomyCalls()).toHaveLength(2);
+    expect(pathKeys(result._metadata.resolvedCategories[0])).toEqual(['term-b', 'term-a']);
+  });
+
+  test('stops at a cycle in object parents', async () => {
+    stubTaxonomy({
+      categories: ['term-a'],
+      taxonomyTerms: [
+        {
+          key: 'term-a',
+          displayName: 'A',
+          parent: { key: 'term-b', displayName: 'B', parent: { key: 'term-a', displayName: 'A' } },
+        },
+      ],
+    });
+
+    const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
+
+    expect(pathKeys(result._metadata.resolvedCategories[0])).toEqual(['term-b', 'term-a']);
+  });
+
+  test('caps the ancestor walk at 20 levels', async () => {
+    const chain = Array.from({ length: 30 }, (_, index) => ({
+      key: `term-${index}`,
+      displayName: `T${index}`,
+      parent: `taxonomy/term-${index + 1}`,
+    }));
+    stubTaxonomy({ categories: ['term-0'], taxonomyTerms: chain });
+
+    const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
+    const path = pathKeys(result._metadata.resolvedCategories[0]);
+
+    expect(taxonomyCalls()).toHaveLength(20);
+    expect(path).toHaveLength(20);
+    expect(path[0]).toBe('term-19');
+  });
+
+  test('splits more than 100 keys into batches of 100', async () => {
+    const terms = Array.from({ length: 150 }, (_, index) => ({
+      key: `term-${index}`,
+      displayName: `T${index}`,
+      parent: null,
+    }));
+    stubTaxonomy({ categories: terms.map(term => term.key), taxonomyTerms: terms });
+
+    const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
+
+    expect(taxonomyCalls().map(call => call[1].keys.length)).toEqual([100, 50]);
+    expect(result._metadata.resolvedCategories).toHaveLength(150);
+    expect(result._metadata.resolvedCategories[149]).toMatchObject({ key: 'term-149', displayName: 'T149' });
+  });
+});
+
 describe('resolveTaxonomy: false (default)', () => {
   test('does not resolve hierarchy and resolvedCategories is undefined', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-a'],
-      taxonomyTerms: [{ _metadata: { key: 'term-a', displayName: 'A' } }],
+      taxonomyTerms: [{ key: 'term-a', displayName: 'A' }],
     });
 
     const result: any = await client.getContent({ key: 'a' });
@@ -196,39 +318,23 @@ describe('resolveTaxonomy: false (default)', () => {
   });
 
   test('does not issue a taxonomy term query', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-a'],
       taxonomyTerms: [],
     });
 
     await client.getContent({ key: 'a' });
 
-    const taxonomyQueries = mockRequest.mock.calls
-      .map((call: unknown[]) => String(call[0]))
-      .filter((q: string) => q.includes('ResolveTaxonomyTerms'));
-    expect(taxonomyQueries).toHaveLength(0);
+    expect(taxonomyCalls()).toHaveLength(0);
   });
 });
 
 describe('resolveTaxonomy with taxonomy disabled', () => {
   test('silently ignores resolveTaxonomy when taxonomy is off', async () => {
     client = new GraphClient('test-key', { fragment: { taxonomy: 'off' } });
-    mockRequest = vi.spyOn(client, 'request').mockImplementation(async (query: string) => {
-      if (query.includes('GetContentMetadata')) {
-        return {
-          _Content: { item: { _metadata: { types: ['ct1'] } } },
-          damAssetType: null,
-          taxonomyType: null,
-        };
-      }
-      return {
-        _Content: {
-          item: {
-            __typename: 'ct1',
-            _metadata: { types: ['ct1'] },
-          },
-        },
-      };
+    mockRequest = stubGraph(client, {
+      metadata: metadataResponse(['ct1'], { taxonomyType: null }),
+      content: { _Content: { item: { __typename: 'ct1', _metadata: { types: ['ct1'] } } } },
     });
 
     const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
@@ -240,67 +346,49 @@ describe('resolveTaxonomy with taxonomy disabled', () => {
 
 describe('taxonomy term caching', () => {
   test('does not re-query already cached terms', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-a'],
-      taxonomyTerms: [
-        { _metadata: { key: 'term-a', displayName: 'A', parent: null } },
-      ],
+      taxonomyTerms: [{ key: 'term-a', displayName: 'A', parent: null }],
     });
 
     await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
     await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
-    const taxonomyQueries = mockRequest.mock.calls
-      .map((call: unknown[]) => String(call[0]))
-      .filter((q: string) => q.includes('ResolveTaxonomyTerms'));
-    expect(taxonomyQueries).toHaveLength(1);
+    expect(taxonomyCalls()).toHaveLength(1);
   });
 
   test('queries only uncached terms on second call', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-a'],
-      taxonomyTerms: [
-        { _metadata: { key: 'term-a', displayName: 'A', parent: null } },
-      ],
+      taxonomyTerms: [{ key: 'term-a', displayName: 'A', parent: null }],
     });
 
     await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
     mockRequest.mockClear();
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-a', 'term-b'],
-      taxonomyTerms: [
-        { _metadata: { key: 'term-b', displayName: 'B', parent: null } },
-      ],
+      taxonomyTerms: [{ key: 'term-b', displayName: 'B', parent: null }],
     });
 
     const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
-    const taxonomyQuery = mockRequest.mock.calls
-      .find((call: unknown[]) => String(call[0]).includes('ResolveTaxonomyTerms'));
-    expect(taxonomyQuery).toBeDefined();
-    expect(taxonomyQuery[1].keys).toEqual(['term-b']);
-
+    expect(taxonomyCalls().map(call => call[1])).toEqual([{ keys: ['term-b'] }]);
     expect(result._metadata.resolvedCategories).toHaveLength(2);
     expect(result._metadata.resolvedCategories[0].key).toBe('term-a');
     expect(result._metadata.resolvedCategories[1].key).toBe('term-b');
   });
 
   test('clearTaxonomyCache forces re-query', async () => {
-    stubGraph({
+    stubTaxonomy({
       categories: ['term-a'],
-      taxonomyTerms: [
-        { _metadata: { key: 'term-a', displayName: 'A', parent: null } },
-      ],
+      taxonomyTerms: [{ key: 'term-a', displayName: 'A', parent: null }],
     });
 
     await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
     clearTaxonomyCache();
     await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
-    const taxonomyQueries = mockRequest.mock.calls
-      .map((call: unknown[]) => String(call[0]))
-      .filter((q: string) => q.includes('ResolveTaxonomyTerms'));
-    expect(taxonomyQueries).toHaveLength(2);
+    expect(taxonomyCalls()).toHaveLength(2);
   });
 });

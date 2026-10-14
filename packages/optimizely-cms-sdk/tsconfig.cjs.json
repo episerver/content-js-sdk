@@ -6,5 +6,6 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "outDir": "./dist/cjs"
-  }
+  },
+  "exclude": ["src/**/__test__/**", "src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.test-d.ts"]
 }

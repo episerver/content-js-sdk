@@ -5,5 +5,6 @@
     "module": "NodeNext",
     "moduleResolution": "nodenext",
     "outDir": "./dist/esm"
-  }
+  },
+  "exclude": ["src/**/__test__/**", "src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.test-d.ts"]
 }

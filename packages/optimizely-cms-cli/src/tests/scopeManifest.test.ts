@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, test, expect } from 'vitest';
 import { findUnknownKeys, parseOnlyKeys, scopeManifest } from '../utils/scopeManifest.js';
 
 const manifest: Parameters<typeof scopeManifest>[0] = {
@@ -135,5 +135,38 @@ describe('findUnknownKeys', () => {
       'Heroo',
       'content',
     ]);
+  });
+
+  test('returns an empty list for no keys', () => {
+    expect(findUnknownKeys(manifest, [])).toEqual([]);
+  });
+
+  test('matches keys case-sensitively', () => {
+    expect(findUnknownKeys(manifest, ['hero', 'herowide'])).toEqual(['hero', 'herowide']);
+  });
+});
+
+describe('scopeManifest edge cases', () => {
+  test('matches keys case-sensitively', () => {
+    expect(scopeManifest(manifest, ['hero'])).toEqual({
+      contentTypes: [],
+      displayTemplates: [],
+      propertyGroups: [],
+    });
+  });
+
+  test('skips a property group that is referenced but not defined', () => {
+    const withUndefinedGroup = {
+      ...manifest,
+      contentTypes: [{ key: 'Card', properties: { title: { group: 'ghost' } } }],
+    };
+
+    expect(scopeManifest(withUndefinedGroup, ['Card']).propertyGroups).toEqual([]);
+  });
+
+  test('lists a display template once when selected by key and by its content type', () => {
+    const scoped = scopeManifest(manifest, ['Hero', 'HeroWide']);
+
+    expect(keysOf(scoped.displayTemplates)).toEqual(['HeroDefault', 'HeroWide']);
   });
 });

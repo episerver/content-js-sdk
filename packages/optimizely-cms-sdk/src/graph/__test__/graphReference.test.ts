@@ -156,6 +156,10 @@ describe('parseGraphReference()', () => {
       key: '880777d5a2824399b07e93e3ca70668e',
     });
   });
+
+  test('omits locale and version given as empty parameters', () => {
+    expect(parseGraphReference('graph://Page/abc?loc=&ver=')).toEqual({ type: 'Page', key: 'abc' });
+  });
 });
 
 describe('GraphClient.getContent() with GraphReference', () => {

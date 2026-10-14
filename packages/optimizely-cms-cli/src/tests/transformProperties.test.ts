@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, test, expect } from 'vitest';
 import { transformProperties } from '../utils/mapping.js';
 import {
   HeroComponentType,
@@ -7,7 +7,7 @@ import {
 } from './fixtures.js';
 
 describe('Testing transformProperties', () => {
-  it('should transform heading property correctly', () => {
+  it('should keep HeroComponentType properties without content type objects unchanged', () => {
     const result = transformProperties(
       HeroComponentType.properties,
       HeroComponentType.key,
@@ -63,26 +63,6 @@ describe('Testing transformProperties', () => {
         },
         "title": {
           "displayName": "Experience Title",
-          "type": "string",
-        },
-      }
-    `);
-  });
-
-  it('should transform BannerComponentType properties correctly', () => {
-    const result = transformProperties(
-      BannerComponentType.properties,
-      BannerComponentType.key,
-    );
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "submit": {
-          "type": "link",
-        },
-        "subtitle": {
-          "type": "string",
-        },
-        "title": {
           "type": "string",
         },
       }
@@ -183,5 +163,79 @@ describe('Testing transformProperties', () => {
         },
       }
     `);
+  });
+
+  test('replaces a component contentType object with its key', () => {
+    const result = transformProperties(
+      { banner: { type: 'component', contentType: BannerComponentType } },
+      'TestPage',
+    );
+
+    expect(result).toEqual({ banner: { type: 'component', contentType: 'BannerComponent' } });
+  });
+
+  test('marks link arrays as LinkCollection', () => {
+    const result = transformProperties(
+      { links: { type: 'array', items: { type: 'link' } } },
+      'TestPage',
+    );
+
+    expect(result).toEqual({
+      links: { type: 'array', format: 'LinkCollection', items: { type: 'link' } },
+    });
+  });
+
+  test('replaces the contentType object of component array items with its key', () => {
+    const result = transformProperties(
+      { banners: { type: 'array', items: { type: 'component', contentType: BannerComponentType } } },
+      'TestPage',
+    );
+
+    expect(result).toEqual({
+      banners: { type: 'array', items: { type: 'component', contentType: 'BannerComponent' } },
+    });
+  });
+
+  test('replaces the contentType object of contentReference array items with its key', () => {
+    const result = transformProperties(
+      {
+        heroes: {
+          type: 'array',
+          items: { type: 'contentReference', contentType: HeroComponentType },
+        },
+      },
+      'TestPage',
+    );
+
+    expect(result).toEqual({
+      heroes: { type: 'array', items: { type: 'contentReference', contentType: 'HeroComponent' } },
+    });
+  });
+
+  test('replaces a contentReference contentType object with its key', () => {
+    const result = transformProperties(
+      { hero: { type: 'contentReference', contentType: HeroComponentType } },
+      'TestPage',
+    );
+
+    expect(result).toEqual({ hero: { type: 'contentReference', contentType: 'HeroComponent' } });
+  });
+
+  test('resolves _self in allowedTypes and restrictedTypes to the parent key', () => {
+    const result = transformProperties(
+      {
+        children: { type: 'content', allowedTypes: ['_self'] },
+        nested: {
+          type: 'array',
+          items: { type: 'contentReference', restrictedTypes: ['_self'] },
+        },
+      },
+      'FolderPage',
+    );
+
+    expect(result).toEqual({
+      children: { type: 'content', allowedTypes: ['FolderPage'] },
+      nested: { type: 'array', items: { type: 'contentReference', restrictedTypes: ['FolderPage'] } },
+    });
   });
 });

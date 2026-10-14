@@ -1,84 +1,79 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { ReactContextAdapter } from '../reactContextAdapter.js';
+import {
+  configureAdapter,
+  getContext,
+  getContextData,
+  initializeRequestContext,
+  setContext,
+  setContextData,
+} from '../../../context/config.js';
 
-/**
- * IMPORTANT: React.cache() doesn't work in test environments.
- *
- * In React Server Components, React.cache() provides request-scoped memoization
- * that persists across function calls within the same request. In test environments,
- * React.cache() returns a NEW empty object on each call, making it impossible to
- * test data persistence.
- *
- * These tests verify:
- * 1. The adapter implements the required interface
- * 2. Methods don't throw errors
- * 3. The adapter is correctly configured in the global context system
- *
- * Actual functionality testing happens through integration tests that use the
- * global context configuration (getContextData/setContextData) which work correctly
- * in both test and RSC environments.
- */
+// Outside a server request React.cache does not memoise, so stand in for the per-request cache.
+vi.mock('react', async importOriginal => ({
+  ...(await importOriginal<typeof import('react')>()),
+  cache: <T>(factory: () => T) => {
+    const value = factory();
+    return () => value;
+  },
+}));
+
 describe('ReactContextAdapter', () => {
-  describe('API Contract', () => {
-    test('should implement ContextAdapter interface', () => {
-      const adapter = new ReactContextAdapter();
+  afterEach(() => new ReactContextAdapter().clear());
 
-      expect(adapter).toBeDefined();
-      expect(typeof adapter.initializeContext).toBe('function');
-      expect(typeof adapter.getData).toBe('function');
-      expect(typeof adapter.setData).toBe('function');
-      expect(typeof adapter.clear).toBe('function');
-    });
+  test('returns a value stored with set', () => {
+    const adapter = new ReactContextAdapter();
 
-    test('should not throw when calling methods', () => {
-      const adapter = new ReactContextAdapter();
+    adapter.set('previewToken', 'token-123');
 
-      expect(() => adapter.initializeContext()).not.toThrow();
-      expect(() => adapter.getData()).not.toThrow();
-      expect(() => adapter.setData({ previewToken: 'test' })).not.toThrow();
-      expect(() => adapter.clear()).not.toThrow();
-    });
-
-    test('should return object from getData()', () => {
-      const adapter = new ReactContextAdapter();
-      const data = adapter.getData();
-
-      expect(typeof data).toBe('object');
-      expect(data).not.toBeNull();
-    });
+    expect(adapter.get('previewToken')).toBe('token-123');
+    expect(adapter.get('locale')).toBeUndefined();
   });
 
-  describe('Implementation Note', () => {
-    test('should document React.cache() limitation in tests', () => {
-      // This test exists to document why we can't test data persistence:
-      //
-      // Problem: In test environments, React.cache() returns a NEW empty object
-      // on each call, so:
-      //   adapter.setData({ foo: 'bar' })  // Modifies object A
-      //   adapter.getData()                 // Returns NEW object B (empty)
-      //
-      // This makes it impossible to test that data persists between calls.
-      //
-      // Solution: Use the global context system (getContextData/setContextData)
-      // which is tested in contextWrapper.test.tsx and works in both environments.
+  test('merges setData into the existing data', () => {
+    const adapter = new ReactContextAdapter();
 
-      expect(true).toBe(true);
-    });
+    adapter.set('locale', 'en');
+    adapter.setData({ previewToken: 'token-123', mode: 'edit' });
+
+    expect(adapter.getData()).toEqual({ locale: 'en', previewToken: 'token-123', mode: 'edit' });
   });
 
-  describe('Real-world usage', () => {
-    test('should be used via global context configuration', () => {
-      // In actual usage:
-      // 1. ReactContextAdapter is configured automatically in contextWrapper.tsx
-      // 2. Components use getContext() and setContext() from config.ts
-      // 3. Those functions delegate to the configured adapter
-      // 4. In RSC, React.cache() ensures request-scoped isolation
-      //
-      // See contextWrapper.test.tsx for integration tests that verify the
-      // complete workflow works correctly.
+  test('initializeContext removes all stored data', () => {
+    const adapter = new ReactContextAdapter();
 
-      const adapter = new ReactContextAdapter();
-      expect(adapter).toBeInstanceOf(ReactContextAdapter);
-    });
+    adapter.setData({ locale: 'en', previewToken: 'token-123' });
+    adapter.initializeContext();
+
+    expect(adapter.getData()).toEqual({});
+  });
+
+  test('clear removes all stored data', () => {
+    const adapter = new ReactContextAdapter();
+
+    adapter.setData({ locale: 'en', key: 'abc' });
+    adapter.clear();
+
+    expect(adapter.getData()).toEqual({});
+  });
+
+  test('instances share the same request-scoped data', () => {
+    new ReactContextAdapter().set('locale', 'sv');
+
+    expect(new ReactContextAdapter().get('locale')).toBe('sv');
+  });
+
+  test('backs the global context functions when configured', () => {
+    configureAdapter(new ReactContextAdapter());
+
+    setContextData('locale', 'de');
+    setContext({ previewToken: 'token-456' });
+
+    expect(getContextData('locale')).toBe('de');
+    expect(getContext()).toEqual({ locale: 'de', previewToken: 'token-456' });
+
+    initializeRequestContext();
+
+    expect(getContext()).toEqual({});
   });
 });

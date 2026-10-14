@@ -1,10 +1,10 @@
-import { describe, expect, test, beforeEach, vi } from 'vitest';
-import { createFragment } from '../createQuery.js';
+import { describe, expect, test, beforeEach } from 'vitest';
 import { GraphClient } from '../index.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
-import { createQueryContext, refreshCache } from '../../util/queryUtils.js';
+import { refreshCache } from '../../util/queryUtils.js';
 import { configureAdapter } from '../../context/config.js';
-import { ReactContextAdapter } from '../../react/context/reactContextAdapter.js';
+import { MemoryAdapter } from '../../core/context/memoryAdapter.js';
+import { fragmentsFor, metadataResponse, stubGraph } from './helpers.js';
 
 /**
  * A section owns a composition, and Graph exposes it as a `composition` field on
@@ -49,10 +49,6 @@ const Page = contentType({
     },
   },
 });
-
-const fragmentsFor = (key: string): string[] =>
-  createFragment(key, new Set(), '', createQueryContext({ maxThreshold: 100 }))
-    .fragments;
 
 const sectionFragment = (fragments: string[]) =>
   fragments.find(f => f.startsWith('fragment PlainSection on')) ?? '';
@@ -100,15 +96,7 @@ describe('a section reached through an experience', () => {
 describe('a section-enabled component reached through a content area', () => {
   /** Fragments built as if Graph had reported these types as `_ISection`. */
   const fragmentsKnowing = (...sections: string[]): string[] =>
-    createFragment(
-      'HostPage',
-      new Set(),
-      '',
-      createQueryContext({
-        maxThreshold: 100,
-        sectionTypes: new Set(sections),
-      }),
-    ).fragments;
+    fragmentsFor('HostPage', { sectionTypes: new Set(sections) });
 
   // Declaring `sectionEnabled` does not make Graph give the type `_ISection`,
   // and asking a type without it for `composition` fails the whole query with
@@ -194,16 +182,9 @@ describe('previewing a section as a shared block', () => {
 
   const previewContent = async () => {
     // `getPreviewContent` records the current content in context as it resolves.
-    configureAdapter(new ReactContextAdapter());
+    configureAdapter(new MemoryAdapter());
     const client = new GraphClient('test-key');
-    vi.spyOn(client, 'request').mockImplementation(async (query: string) =>
-      query.includes('GetContentMetadata') ?
-        {
-          _Content: { item: { _metadata: { types: ['PlainSection'] } } },
-          damAssetType: null,
-        }
-      : sectionResponse,
-    );
+    stubGraph(client, { metadata: metadataResponse(['PlainSection']), content: sectionResponse });
 
     return (await client.getPreviewContent(previewParams)) as any;
   };
