@@ -359,6 +359,19 @@ function shortenCategoryKeys(item: any): void {
   }
 }
 
+/** Every piece of content in a response that carries categories, however deep. */
+function categorizedNodes(value: any, found: any[] = []): any[] {
+  if (Array.isArray(value)) {
+    value.forEach(entry => categorizedNodes(entry, found));
+    return found;
+  }
+  if (!value || typeof value !== 'object') return found;
+
+  if (value._metadata?.categories) found.push(value);
+  Object.values(value).forEach(nested => categorizedNodes(nested, found));
+  return found;
+}
+
 async function resolveTaxonomyTerms(
   context: GraphClientContext,
   termKeys: string[],
@@ -450,6 +463,57 @@ async function resolveTaxonomyTerms(
   }
 
   return termKeys.map(key => localCache!.get(key) ?? metadataToTaxonomyTerm(extractTermKey(key), undefined));
+}
+
+/**
+ * Resolves and shortens taxonomy categories on a response, for the content at
+ * its root and for everything nested in it — content areas and the `item` of a
+ * content reference carry categories of their own.
+ *
+ * @param resolve Fill in `_metadata.resolvedCategories`, which costs a
+ *   `_TaxonomyTerm` query for terms not already cached.
+ * @param locale Locale to resolve against for content that doesn't state one.
+ */
+async function applyTaxonomy(
+  context: GraphClientContext,
+  root: any,
+  { resolve, locale }: { resolve: boolean; locale?: string },
+): Promise<void> {
+  const nodes = categorizedNodes(root);
+
+  if (resolve) {
+    // Warm the term cache once per locale, so the per-node pass below resolves
+    // from memory instead of issuing one query per piece of content.
+    const keysByLocale = new Map<string | undefined, string[]>();
+    for (const node of nodes) {
+      const nodeLocale = node._metadata.locale ?? locale;
+      const keys = keysByLocale.get(nodeLocale) ?? [];
+      keys.push(...node._metadata.categories);
+      keysByLocale.set(nodeLocale, keys);
+    }
+
+    await Promise.all(
+      [...keysByLocale].map(([nodeLocale, keys]) =>
+        resolveTaxonomyTerms(context, keys, nodeLocale),
+      ),
+    );
+
+    await Promise.all(
+      nodes.map(async node => {
+        const categories: string[] = node._metadata.categories;
+        node._metadata.resolvedCategories =
+          categories.length ?
+            await resolveTaxonomyTerms(
+              context,
+              categories,
+              node._metadata.locale ?? locale,
+            )
+          : [];
+      }),
+    );
+  }
+
+  nodes.forEach(shortenCategoryKeys);
 }
 
 // METADATA
@@ -616,24 +680,9 @@ export async function getContentByPath<T = any>(
         ) ?? [],
       );
 
-      if (queryOptions.resolveTaxonomy && taxonomyEnabled) {
-        await Promise.all(
-          items.map(async (item: any) => {
-            const categories: string[] | undefined = item?._metadata?.categories;
-            if (categories && categories.length > 0) {
-              item._metadata.resolvedCategories = await resolveTaxonomyTerms(
-                context,
-                categories,
-                item?._metadata?.locale,
-              );
-            } else if (categories) {
-              item._metadata.resolvedCategories = [];
-            }
-          }),
-        );
-      }
-
-      items.forEach(shortenCategoryKeys);
+      await applyTaxonomy(context, items, {
+        resolve: !!queryOptions.resolveTaxonomy && taxonomyEnabled,
+      });
 
       return items;
     } catch (error) {
@@ -720,20 +769,10 @@ export async function getPreviewContent(
       },
     );
 
-    if (result && queryOptions.resolveTaxonomy && taxonomyEnabled) {
-      const categories: string[] | undefined = result?._metadata?.categories;
-      if (categories && categories.length > 0) {
-        result._metadata.resolvedCategories = await resolveTaxonomyTerms(
-          context,
-          categories,
-          params.loc,
-        );
-      } else if (categories) {
-        result._metadata.resolvedCategories = [];
-      }
-    }
-
-    shortenCategoryKeys(result);
+    await applyTaxonomy(context, result, {
+      resolve: !!queryOptions.resolveTaxonomy && taxonomyEnabled,
+      locale: params.loc,
+    });
 
     return decorateWithContext(result, params);
   });
@@ -810,20 +849,10 @@ export async function getContent(
         },
       );
 
-      if (result && queryOptions.resolveTaxonomy && taxonomyEnabled) {
-        const categories: string[] | undefined = result?._metadata?.categories;
-        if (categories && categories.length > 0) {
-          result._metadata.resolvedCategories = await resolveTaxonomyTerms(
-            context,
-            categories,
-            ref.locale,
-          );
-        } else if (categories) {
-          result._metadata.resolvedCategories = [];
-        }
-      }
-
-      shortenCategoryKeys(result);
+      await applyTaxonomy(context, result, {
+        resolve: !!queryOptions.resolveTaxonomy && taxonomyEnabled,
+        locale: ref.locale,
+      });
 
       return result;
     } catch (error) {
