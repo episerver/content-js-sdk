@@ -1,46 +1,44 @@
 import { describe, expect, test } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
-import FormWrapper, { useFormSteps } from '../forms/FormWrapper.js';
-import { FormSubmissionProvider } from '../forms/FormSubmissionProvider.js';
+import { screen, act } from '@testing-library/react';
 import { useFormButton } from '../forms/useFormButton.js';
+import { Probe, renderForm } from './formsTestUtils.js';
 
 function Button({
   id,
   label,
+  tooltip,
   labels,
   roleOverride,
 }: {
   id: string;
-  label: string;
+  label?: string;
+  tooltip?: string;
   labels?: { next?: string[]; previous?: string[] };
   roleOverride?: 'next' | 'previous' | 'submit' | 'reset';
 }) {
-  const { role, buttonProps } = useFormButton({ Label: label }, { labels, role: roleOverride });
+  const { role, label: text, buttonProps } = useFormButton({ Label: label, Tooltip: tooltip }, { labels, role: roleOverride });
 
   return (
     <button {...buttonProps} data-testid={id} data-role={role}>
-      {label}
+      {text}
     </button>
   );
 }
 
-function StepReadout() {
-  const { currentStepIndex } = useFormSteps();
-  return <span data-testid='step'>{currentStepIndex}</span>;
-}
-
-const renderButtons = (children: React.ReactNode) =>
-  render(
-    <FormSubmissionProvider>
-      <FormWrapper action='/submit' steps={[{}, {}] as never}>
-        {children}
-        <StepReadout />
-      </FormWrapper>
-    </FormSubmissionProvider>,
+const renderButtons = (children: React.ReactNode, submitHandler?: () => Promise<void>) =>
+  renderForm(
+    <>
+      {children}
+      <Probe />
+    </>,
+    undefined,
+    submitHandler ? { submitHandler } : undefined,
   );
 
-const roleOf = (label: string) => screen.getByTestId(label).getAttribute('data-role');
-const typeOf = (label: string) => screen.getByTestId(label).getAttribute('type');
+const button = (id: string) => screen.getByTestId(id);
+const roleOf = (id: string) => button(id).getAttribute('data-role');
+const typeOf = (id: string) => button(id).getAttribute('type');
+const step = () => screen.getByTestId('step').textContent;
 
 describe('useFormButton', () => {
   test('reads the role from the label, case and padding insensitively', () => {
@@ -48,17 +46,18 @@ describe('useFormButton', () => {
       <>
         <Button id='next' label='  NeXt ' />
         <Button id='prev' label='Previous' />
+        <Button id='back' label='Back' />
         <Button id='other' label='Send enquiry' />
       </>,
     );
 
     expect(roleOf('next')).toBe('next');
     expect(roleOf('prev')).toBe('previous');
+    expect(roleOf('back')).toBe('previous');
     expect(roleOf('other')).toBe('submit');
   });
 
-  // Only the real submit button may submit the form; a step button that submits
-  // sends a half-filled form instead of advancing.
+  // Only the real submit button may submit; a step button that submits sends a half-filled form.
   test('only the submit button gets type=submit', () => {
     renderButtons(
       <>
@@ -81,13 +80,13 @@ describe('useFormButton', () => {
       </>,
     );
 
-    expect(screen.getByTestId('step').textContent).toBe('0');
+    expect(step()).toBe('0');
 
-    act(() => screen.getByTestId('next').click());
-    expect(screen.getByTestId('step').textContent).toBe('1');
+    act(() => button('next').click());
+    expect(step()).toBe('1');
 
-    act(() => screen.getByTestId('prev').click());
-    expect(screen.getByTestId('step').textContent).toBe('0');
+    act(() => button('prev').click());
+    expect(step()).toBe('0');
   });
 
   // A form authored in another language would otherwise submit on "Nästa".
@@ -104,9 +103,7 @@ describe('useFormButton', () => {
   });
 
   test('a reset role override produces type=reset', () => {
-    renderButtons(
-      <Button id='reset' label='Reset' roleOverride='reset' />,
-    );
+    renderButtons(<Button id='reset' label='Reset' roleOverride='reset' />);
 
     expect(roleOf('reset')).toBe('reset');
     expect(typeOf('reset')).toBe('reset');
@@ -117,5 +114,30 @@ describe('useFormButton', () => {
 
     expect(roleOf('next')).toBe('submit');
     expect(typeOf('next')).toBe('submit');
+  });
+
+  test('a button without a label is a submit button labelled Submit', () => {
+    renderButtons(<Button id='unlabelled' />);
+
+    expect(roleOf('unlabelled')).toBe('submit');
+    expect(button('unlabelled').textContent).toBe('Submit');
+  });
+
+  test('the tooltip becomes the title', () => {
+    renderButtons(<Button id='submit' label='Send' tooltip='Sends the form' />);
+
+    expect(button('submit').getAttribute('title')).toBe('Sends the form');
+  });
+
+  test('is disabled while the form is submitting', async () => {
+    let finish: () => void = () => {};
+    const submitHandler = () => new Promise<void>(resolve => (finish = resolve));
+    renderButtons(<Button id='send' label='Send' />, submitHandler);
+
+    await act(async () => button('send').click());
+    expect(button('send')).toHaveProperty('disabled', true);
+
+    await act(async () => finish());
+    expect(button('send')).toHaveProperty('disabled', false);
   });
 });

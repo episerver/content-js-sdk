@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
 import { initReactComponentRegistry, OptimizelyComposition } from '../server.js';
 import { ExperienceNode } from '../../infer.js';
+import { renderServer } from './renderServer.js';
 
 function HeroSection({ content }: { content: any }) {
   return (
@@ -32,9 +32,7 @@ describe('Section nodes', () => {
       nodes: [],
     };
 
-    // `OptimizelyComponent` is an async server component, so resolve it before rendering
-    const [element] = OptimizelyComposition({ nodes: [node] }) as any[];
-    const { getByTestId } = render(await element.type(element.props));
+    const { getByTestId } = await renderServer(<OptimizelyComposition nodes={[node]} />);
 
     // properties are flat (`content.heading`), node fields are preserved
     expect(getByTestId('section')).toHaveTextContent('Welcome|section-1|0');

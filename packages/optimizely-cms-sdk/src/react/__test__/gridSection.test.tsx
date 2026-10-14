@@ -1,14 +1,23 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import React from 'react';
-import { render } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 
-import { initReactComponentRegistry, OptimizelyGridSection } from '../server.js';
-import { ExperienceNode } from '../../infer.js';
+import {
+  initReactComponentRegistry,
+  OptimizelyGridSection,
+  type ComponentContainerProps,
+  type StructureContainerProps,
+} from '../server.js';
+import type { DisplaySettingsType, ExperienceNode } from '../../infer.js';
+import { renderServer } from './renderServer.js';
+
+const editContext = { edit: true, preview_token: 'token' };
 
 const structureNode = (
   nodeType: string,
   key: string,
   nodes: ExperienceNode[] = [],
+  extra: Partial<ExperienceNode> = {},
 ): ExperienceNode => ({
   __typename: 'CompositionStructureNode',
   key,
@@ -19,38 +28,56 @@ const structureNode = (
   displayTemplateKey: null,
   displaySettings: null,
   nodes,
+  ...extra,
 });
+
+const componentNode = (key: string, extra: Record<string, unknown> = {}): ExperienceNode =>
+  ({
+    __typename: 'CompositionComponentNode',
+    key,
+    type: 'Card',
+    nodeType: 'component',
+    layoutType: null,
+    displayName: 'Card',
+    displayTemplateKey: null,
+    displaySettings: null,
+    component: { __typename: 'Card', title: key },
+    ...extra,
+  }) as ExperienceNode;
+
+const editableComponentNode = (key: string) =>
+  componentNode(key, {
+    __context: editContext,
+    component: { __typename: 'Card', title: key, __context: editContext },
+  });
+
+function Card({ content, displaySettings }: { content: { title: string }; displaySettings?: object }) {
+  return (
+    <p data-testid='card' data-settings={JSON.stringify(displaySettings ?? null)}>
+      {content.title}
+    </p>
+  );
+}
 
 function Row({ children }: { children?: React.ReactNode }) {
   return <div data-testid='row'>{children}</div>;
 }
 
-beforeEach(() => {
-  initReactComponentRegistry({ resolver: {} });
-});
+beforeEach(() => initReactComponentRegistry({ resolver: { Card } }));
 
 describe('OptimizelyGridSection with an unrecognised structure node', () => {
-  // Form containers nest their steps in structure nodes that are neither rows nor
-  // columns. These fell through to `React.Fragment`, which was then handed `node`,
-  // `index` and `displaySettings`, producing "Invalid prop `node` supplied to
-  // `React.Fragment`" on every render.
-  //
-  // The assertion inspects the element rather than watching for the warning itself:
-  // React only validates fragment props in its development JSX runtime, and vitest
-  // compiles the SDK with the production one.
+  // Form containers nest their steps in structure nodes that are neither rows nor columns.
   const nodes = [structureNode('section', 'step-1', [structureNode('row', 'row-1')])];
 
-  it('gives React.Fragment nothing but children', () => {
-    const [element] = OptimizelyGridSection({ nodes, row: Row }) as React.ReactElement[];
+  afterEach(() => vi.restoreAllMocks());
 
-    expect(element.type).toBe(React.Fragment);
-    expect(Object.keys(element.props as object)).toEqual(['children']);
-  });
+  test('renders its nested nodes without handing React.Fragment invalid props', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-  it('still renders the nodes nested inside it', () => {
-    const { getByTestId } = render(<>{OptimizelyGridSection({ nodes, row: Row })}</>);
+    const { getByTestId } = await renderServer(<OptimizelyGridSection nodes={nodes} row={Row} />);
 
-    expect(getByTestId('row')).toBeTruthy();
+    expect(getByTestId('row')).toBeInTheDocument();
+    expect(consoleError.mock.calls.flat().join(' ')).not.toContain('React.Fragment');
   });
 });
 
@@ -63,15 +90,98 @@ describe('OptimizelyGridSection containers', () => {
     return <div data-testid='column' />;
   }
 
-  it('pass a single child element to row and column containers', () => {
-    const nodes = [
-      structureNode('row', 'row-1', [structureNode('column', 'col-1'), structureNode('column', 'col-2')]),
-    ];
+  test('pass a single child element to row and column containers', async () => {
+    const nodes = [structureNode('row', 'row-1', [structureNode('column', 'col-1'), structureNode('column', 'col-2')])];
 
-    const { getByTestId } = render(
-      <>{OptimizelyGridSection({ nodes, row: SingleChildRow, column: Column })}</>,
+    const { getByTestId } = await renderServer(
+      <OptimizelyGridSection nodes={nodes} row={SingleChildRow} column={Column} />,
     );
 
     expect(getByTestId('row').querySelectorAll('[data-testid="column"]')).toHaveLength(2);
+  });
+
+  test('forward index and parsed display settings to structure containers', async () => {
+    const received: Pick<StructureContainerProps, 'index' | 'displaySettings'>[] = [];
+    const RecordingRow = ({ index, displaySettings, children }: StructureContainerProps) => {
+      received.push({ index, displaySettings });
+      return <div>{children}</div>;
+    };
+    const settings: DisplaySettingsType[] = [
+      { key: 'theme', value: 'dark' },
+      { key: 'wide', value: 'true' },
+    ];
+
+    await renderServer(
+      <OptimizelyGridSection
+        nodes={[structureNode('row', 'row-1'), structureNode('row', 'row-2', [], { displaySettings: settings })]}
+        row={RecordingRow}
+      />,
+    );
+
+    expect(received).toEqual([
+      { index: 0, displaySettings: undefined },
+      { index: 1, displaySettings: { theme: 'dark', wide: true } },
+    ]);
+  });
+
+  test('fall back to a flex row and column holding the components', async () => {
+    const nodes = [structureNode('row', 'row-1', [structureNode('column', 'col-1', [componentNode('card-1')])])];
+
+    const { getByTestId } = await renderServer(<OptimizelyGridSection nodes={nodes} />);
+    const column = getByTestId('card').parentElement!;
+
+    expect(getByTestId('card')).toHaveTextContent('card-1');
+    expect(column).toHaveStyle({ flex: '1' });
+    expect(column.parentElement).toHaveStyle({ display: 'flex' });
+    expect(column).not.toHaveAttribute('data-epi-block-id');
+  });
+
+  test('mark the fallback row and column for the editor in edit mode', async () => {
+    const nodes = [
+      structureNode('row', 'row-1', [structureNode('column', 'col-1', [], { __context: editContext })], {
+        __context: editContext,
+      }),
+    ];
+
+    const { container } = await renderServer(<OptimizelyGridSection nodes={nodes} />);
+
+    expect(container.querySelector('[data-epi-block-id="row-1"]')).toHaveStyle({ display: 'flex' });
+    expect(container.querySelector('[data-epi-block-id="col-1"]')).toHaveStyle({ flex: '1' });
+  });
+
+  test('render nothing for no nodes', async () => {
+    const { container } = await renderServer(<OptimizelyGridSection nodes={[]} />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('OptimizelyGridSection components', () => {
+  test('wrap the component itself in its preview attributes in edit mode', async () => {
+    const { getByTestId } = await renderServer(<OptimizelyGridSection nodes={[editableComponentNode('card-1')]} />);
+
+    expect(getByTestId('card').parentElement).toHaveAttribute('data-epi-block-id', 'card-1');
+  });
+
+  test('leave preview attributes to a ComponentWrapper when one is given', async () => {
+    const Wrapper = ({ node, displaySettings, children }: ComponentContainerProps) => (
+      <section data-testid='wrapper' data-node={node.key} data-settings={JSON.stringify(displaySettings)}>
+        {children}
+      </section>
+    );
+    const node = componentNode('card-1', {
+      __context: editContext,
+      displaySettings: [{ key: 'size', value: 'large' }],
+      component: { __typename: 'Card', title: 'card-1', __context: editContext },
+    });
+
+    const { container, getByTestId } = await renderServer(
+      <OptimizelyGridSection nodes={[node]} ComponentWrapper={Wrapper} />,
+    );
+
+    expect(getByTestId('wrapper')).toHaveAttribute('data-node', 'card-1');
+    expect(getByTestId('wrapper')).toHaveAttribute('data-settings', '{"size":"large"}');
+    expect(getByTestId('card')).toHaveAttribute('data-settings', '{"size":"large"}');
+    expect(container.querySelector('[data-epi-block-id]')).toBeNull();
   });
 });

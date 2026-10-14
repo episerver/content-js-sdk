@@ -4,7 +4,7 @@ import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createQueryContext } from '../../util/queryUtils.js';
 
 describe('createFragment() simple cases', () => {
-  test('works for scalar properties', async () => {
+  test('works for scalar properties', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -20,7 +20,7 @@ describe('createFragment() simple cases', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -34,7 +34,7 @@ describe('createFragment() simple cases', () => {
     `);
   });
 
-  test('works for arrays of scalar properties', async () => {
+  test('works for arrays of scalar properties', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -50,7 +50,7 @@ describe('createFragment() simple cases', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -64,7 +64,7 @@ describe('createFragment() simple cases', () => {
     `);
   });
 
-  test('works for compound properties', async () => {
+  test('works for compound properties', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -78,7 +78,7 @@ describe('createFragment() simple cases', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -92,7 +92,7 @@ describe('createFragment() simple cases', () => {
     `);
   });
 
-  test('richTextFormat restricts the Rich Text selection set', async () => {
+  test('richTextFormat restricts the Rich Text selection set', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -101,7 +101,7 @@ describe('createFragment() simple cases', () => {
     });
     initContentTypeRegistry([ct1]);
 
-    const htmlOnly = await createFragment(
+    const htmlOnly = createFragment(
       'ct1',
       new Set(),
       '',
@@ -109,7 +109,7 @@ describe('createFragment() simple cases', () => {
     );
     expect(htmlOnly.fragments.at(-1)).toContain('ct1__ric:ric { html }');
 
-    const jsonOnly = await createFragment(
+    const jsonOnly = createFragment(
       'ct1',
       new Set(),
       '',
@@ -117,7 +117,7 @@ describe('createFragment() simple cases', () => {
     );
     expect(jsonOnly.fragments.at(-1)).toContain('ct1__ric:ric { json }');
 
-    const both = await createFragment(
+    const both = createFragment(
       'ct1',
       new Set(),
       '',
@@ -147,11 +147,33 @@ describe('createFragment() simple cases', () => {
     expect(jsonQuery).not.toBe(htmlQuery);
   });
 
-  test('correct syntax with content types without properties', async () => {
+  test('compositionDepth is part of the query cache key', () => {
+    const Experience = contentType({
+      key: 'DepthExperience',
+      displayName: 'Depth Experience',
+      baseType: '_experience',
+      properties: {},
+    });
+    const Element = contentType({
+      key: 'DepthElement',
+      displayName: 'Depth Element',
+      baseType: '_component',
+      compositionBehaviors: ['elementEnabled'],
+      properties: { heading: { type: 'string' } },
+    });
+    initContentTypeRegistry([Experience, Element]);
+
+    const shallow = createSingleContentQuery('DepthExperience', { compositionDepth: 2 });
+    const deep = createSingleContentQuery('DepthExperience', { compositionDepth: 6 });
+
+    expect(deep.length).toBeGreaterThan(shallow.length);
+  });
+
+  test('correct syntax with content types without properties', () => {
     const ct1 = contentType({ key: 'ct1', displayName: 'CT1', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -167,7 +189,7 @@ describe('createFragment() simple cases', () => {
 });
 
 describe('createFragment() with `content` properties. Explicit reference via `allowedTypes`', () => {
-  test('one level', async () => {
+  test('one level', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const ct1 = contentType({
       key: 'ct1',
@@ -176,7 +198,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
       properties: { p1: { type: 'content', allowedTypes: [r1] } },
     });
     initContentTypeRegistry([r1, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -191,7 +213,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     `);
   });
 
-  test('two levels', async () => {
+  test('two levels', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({
       key: 'r2',
@@ -206,7 +228,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
       properties: { p1: { type: 'content', allowedTypes: [r2] } },
     });
     initContentTypeRegistry([r1, r2, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -222,7 +244,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
     `);
   });
 
-  test('repeated reference', async () => {
+  test('repeated reference', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const ct1 = contentType({
       key: 'r2',
@@ -240,7 +262,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
       },
     });
     initContentTypeRegistry([r1, ct1, ct2]);
-    const result = await createFragment('ct2');
+    const result = createFragment('ct2');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -258,7 +280,7 @@ describe('createFragment() with `content` properties. Explicit reference via `al
 });
 
 describe('createFragment() with `content` properties. Base types', () => {
-  test('one level', async () => {
+  test('one level', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const ct1 = contentType({
       key: 'ct1',
@@ -267,7 +289,7 @@ describe('createFragment() with `content` properties. Base types', () => {
       properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
     });
     initContentTypeRegistry([r1, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -282,7 +304,7 @@ describe('createFragment() with `content` properties. Base types', () => {
     `);
   });
 
-  test('two levels', async () => {
+  test('two levels', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({
       key: 'r2',
@@ -297,7 +319,7 @@ describe('createFragment() with `content` properties. Base types', () => {
       properties: { p1: { type: 'content', allowedTypes: ['_component'] } },
     });
     initContentTypeRegistry([r1, r2, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -313,7 +335,7 @@ describe('createFragment() with `content` properties. Base types', () => {
     `);
   });
 
-  test('resolve correctly when `allowedTypes` is a base type', async () => {
+  test('resolve correctly when `allowedTypes` is a base type', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
     const r3 = contentType({ key: 'r3', displayName: 'R3', baseType: '_component' });
@@ -330,7 +352,7 @@ describe('createFragment() with `content` properties. Base types', () => {
     });
 
     initContentTypeRegistry([r1, r2, r3, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -347,7 +369,7 @@ describe('createFragment() with `content` properties. Base types', () => {
     `);
   });
 
-  test('repeated reference', async () => {
+  test('repeated reference', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({
       key: 'r2',
@@ -365,7 +387,7 @@ describe('createFragment() with `content` properties. Base types', () => {
       },
     });
     initContentTypeRegistry([r1, r2, ct2]);
-    const result = await createFragment('ct2');
+    const result = createFragment('ct2');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -383,7 +405,7 @@ describe('createFragment() with `content` properties. Base types', () => {
 });
 
 describe('createFragment() with `content` properties. Allowed and restricted types', () => {
-  test('only restricted', async () => {
+  test('only restricted', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
     const r3 = contentType({ key: 'r3', displayName: 'R3', baseType: '_component' });
@@ -400,7 +422,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
     });
 
     initContentTypeRegistry([r1, r2, r3, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -416,7 +438,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
     `);
   });
 
-  test('allowed and restricted', async () => {
+  test('allowed and restricted', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
     const r3 = contentType({ key: 'r3', displayName: 'R3', baseType: '_component' });
@@ -434,7 +456,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
     });
 
     initContentTypeRegistry([r1, r2, r3, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -450,7 +472,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
     `);
   });
 
-  test('wildcard allowedTypes', async () => {
+  test('wildcard allowedTypes', () => {
     const r1 = contentType({ key: 'r1', displayName: 'R1', baseType: '_component' });
     const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
     const ct1 = contentType({
@@ -466,7 +488,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
     });
 
     initContentTypeRegistry([r1, r2, ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -484,7 +506,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
 });
 
 describe('createFragment() with self references', () => {
-  test('explicit self-reference', async () => {
+  test('explicit self-reference', () => {
     const r1 = contentType({
       key: 'r1',
       displayName: 'R1',
@@ -493,7 +515,7 @@ describe('createFragment() with self references', () => {
     });
 
     initContentTypeRegistry([r1]);
-    const result = await createFragment('r1');
+    const result = createFragment('r1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -507,7 +529,7 @@ describe('createFragment() with self references', () => {
     `);
   });
 
-  test('without any limitations', async () => {
+  test('without any limitations', () => {
     const r1 = contentType({
       key: 'r1',
       displayName: 'R1',
@@ -516,7 +538,7 @@ describe('createFragment() with self references', () => {
     });
 
     initContentTypeRegistry([r1]);
-    const result = await createFragment('r1');
+    const result = createFragment('r1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -530,7 +552,7 @@ describe('createFragment() with self references', () => {
     `);
   });
 
-  test('with allowed (its own base type)', async () => {
+  test('with allowed (its own base type)', () => {
     const r1 = contentType({
       key: 'r1',
       displayName: 'R1',
@@ -539,7 +561,7 @@ describe('createFragment() with self references', () => {
     });
 
     initContentTypeRegistry([r1]);
-    const result = await createFragment('r1');
+    const result = createFragment('r1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -553,7 +575,7 @@ describe('createFragment() with self references', () => {
     `);
   });
 
-  test('with allowed (its own base type)', async () => {
+  test('with allowed (its own base type) and a restricted type', () => {
     const r2 = contentType({ key: 'r2', displayName: 'R2', baseType: '_component' });
     const r1 = contentType({
       key: 'r1',
@@ -569,7 +591,7 @@ describe('createFragment() with self references', () => {
     });
 
     initContentTypeRegistry([r1]);
-    const result = await createFragment('r1');
+    const result = createFragment('r1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -585,7 +607,7 @@ describe('createFragment() with self references', () => {
 });
 
 describe('createFragment() empty objects', () => {
-  test('properties with indexType', async () => {
+  test('properties with indexType', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -597,7 +619,7 @@ describe('createFragment() empty objects', () => {
       },
     });
     initContentTypeRegistry([ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -611,7 +633,7 @@ describe('createFragment() empty objects', () => {
     `);
   });
 
-  test('only with disabled indexType', async () => {
+  test('only with disabled indexType', () => {
     const ct1 = contentType({
       key: 'ct1',
       displayName: 'CT1',
@@ -622,7 +644,7 @@ describe('createFragment() empty objects', () => {
       },
     });
     initContentTypeRegistry([ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -636,7 +658,7 @@ describe('createFragment() empty objects', () => {
     `);
   });
 
-  test('correct syntax when referring to an empty set', async () => {
+  test('correct syntax when referring to an empty set', () => {
     // In this test, there is one content type "ct1" that has a `content` property, with allowed types = "_component"
     // But there is no content type with base type '_component'.
     const ct1 = contentType({
@@ -648,7 +670,7 @@ describe('createFragment() empty objects', () => {
       },
     });
     initContentTypeRegistry([ct1]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
 
     // Make sure that the query is correct. The `p1 {}` part should have something between the curly braces
     expect(result.fragments).toMatchInlineSnapshot(`
@@ -666,7 +688,7 @@ describe('createFragment() empty objects', () => {
 });
 
 describe('createFragment() with component properties', () => {
-  test('simple case', async () => {
+  test('simple case', () => {
     const ctBlock = contentType({
       key: 'ctBlock',
       displayName: 'CTBlock',
@@ -684,7 +706,7 @@ describe('createFragment() with component properties', () => {
       },
     });
     initContentTypeRegistry([ct1, ctBlock]);
-    const result = await createFragment('ct1');
+    const result = createFragment('ct1');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -701,7 +723,7 @@ describe('createFragment() with component properties', () => {
 });
 
 describe('createFragment() with string key references', () => {
-  test('string key in allowedTypes resolves to correct fragment', async () => {
+  test('string key in allowedTypes resolves to correct fragment', () => {
     const ctA = contentType({
       key: 'ctA',
       displayName: 'CT A',
@@ -718,7 +740,7 @@ describe('createFragment() with string key references', () => {
     });
 
     initContentTypeRegistry([ctA, ctB]);
-    const result = await createFragment('ctB');
+    const result = createFragment('ctB');
     const ctBFragment = result.fragments.find((f: string) =>
       f.startsWith('fragment ctB '),
     );
@@ -726,10 +748,10 @@ describe('createFragment() with string key references', () => {
     const ctAFragment = result.fragments.find((f: string) =>
       f.startsWith('fragment ctA '),
     );
-    expect(ctAFragment).toBeDefined();
+    expect(ctAFragment).toContain('ctA__title:title');
   });
 
-  test('circular references using string keys', async () => {
+  test('circular references using string keys', () => {
     const ctA = contentType({
       key: 'ctA',
       displayName: 'CT A',
@@ -748,7 +770,7 @@ describe('createFragment() with string key references', () => {
     });
 
     initContentTypeRegistry([ctA, ctB]);
-    const result = await createFragment('ctA');
+    const result = createFragment('ctA');
     const ctAFragment = result.fragments.find((f: string) =>
       f.startsWith('fragment ctA '),
     );
@@ -759,7 +781,7 @@ describe('createFragment() with string key references', () => {
     expect(ctBFragment).not.toContain('...ctA');
   });
 
-  test('mix of ContentType objects and string keys', async () => {
+  test('mix of ContentType objects and string keys', () => {
     const ctA = contentType({
       key: 'ctA',
       displayName: 'CT A',
@@ -782,7 +804,7 @@ describe('createFragment() with string key references', () => {
     });
 
     initContentTypeRegistry([ctA, ctB, ctC]);
-    const result = await createFragment('ctC');
+    const result = createFragment('ctC');
     const ctCFragment = result.fragments.find((f: string) =>
       f.startsWith('fragment ctC '),
     );
@@ -792,7 +814,7 @@ describe('createFragment() with string key references', () => {
 });
 
 describe('createFragment() circular reference prevention', () => {
-  test('array of content without allowedTypes does not self-reference', async () => {
+  test('array of content without allowedTypes does not self-reference', () => {
     const mapPage = contentType({
       key: 'MapPage',
       displayName: 'Map Page',
@@ -823,7 +845,7 @@ describe('createFragment() circular reference prevention', () => {
     expect(articleFragment).not.toContain('...MapPage');
   });
 
-  test('sibling content properties still include all non-ancestor types', async () => {
+  test('sibling content properties still include all non-ancestor types', () => {
     const block = contentType({
       key: 'Block',
       displayName: 'Block',

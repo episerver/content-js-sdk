@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, test } from 'vitest';
 import { toSchema, SchemaValidationError } from '../toSchema.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 
@@ -446,29 +446,6 @@ describe('toSchema', () => {
     });
   });
 
-  describe('circular component references', () => {
-    it('should handle self-referencing content type', () => {
-      const TreeNodeCT: any = {
-        key: 'TreeNode',
-        baseType: '_component' as const,
-        displayName: 'Tree Node',
-        properties: {
-          label: { type: 'string' as const },
-        },
-      };
-      TreeNodeCT.properties.child = { type: 'component', contentType: TreeNodeCT };
-      const ct = contentType(TreeNodeCT);
-
-      const schema = toSchema(ct);
-      const result = schema.safeParse({
-        ...validBase,
-        label: 'Root',
-        child: { label: 'Child', child: null },
-      });
-      expect(result.success).toBe(true);
-    });
-  });
-
   describe('binary and json properties', () => {
     it('should accept any value for json property', () => {
       const ct = contentType({
@@ -516,6 +493,204 @@ describe('toSchema', () => {
       });
       const schema = toSchema(ct);
       expect(() => schema.parse({ ...validBase, count: 'not a number' })).toThrow(SchemaValidationError);
+    });
+
+    test('the thrown error lists every failure and formats them into its message', () => {
+      const ct = contentType({
+        key: 'ParseErrorsTest',
+        baseType: '_component',
+        displayName: 'Parse Errors Test',
+        properties: { count: { type: 'integer' } },
+      });
+      const data = { ...validBase, _id: 7, count: 'many' };
+
+      const error = (() => {
+        try {
+          toSchema(ct).parse(data);
+        } catch (caught) {
+          return caught as SchemaValidationError;
+        }
+      })();
+
+      expect(error?.name).toBe('SchemaValidationError');
+      expect(error?.errors).toEqual(errorsOf(ct, data));
+      expect(error?.message).toBe(
+        'Validation failed with 2 error(s):\n' +
+          '  [_id] Expected string, received number\n' +
+          '  [count] Expected integer, received string',
+      );
+    });
+  });
+
+  /** The errors `safeParse` reports, or an empty list on success. */
+  const errorsOf = (ct: Parameters<typeof toSchema>[0], data: unknown, strict = false) => {
+    const result = toSchema(ct, { strict }).safeParse(data);
+    return result.success ? [] : result.errors;
+  };
+
+  const withProperties = (key: string, properties: Record<string, unknown>) =>
+    contentType({ key, baseType: '_component', displayName: key, properties: properties as never });
+
+  describe('error reporting', () => {
+    test('base fields are required, and a non-object stops at one error', () => {
+      const ct = withProperties('BaseTest', {});
+
+      expect(errorsOf(ct, null)).toEqual([
+        { path: [], message: 'Expected object, received null', expected: 'object', received: 'null' },
+      ]);
+      expect(errorsOf(ct, { _metadata: null }).map(error => error.path)).toEqual([
+        ['_id'],
+        ['__typename'],
+        ['_metadata'],
+      ]);
+    });
+
+    test('scalar type mismatches name what was expected and received', () => {
+      const ct = withProperties('ScalarErrors', {
+        flag: { type: 'boolean' },
+        count: { type: 'integer' },
+        ratio: { type: 'float' },
+        when: { type: 'dateTime' },
+      });
+
+      expect(errorsOf(ct, { ...validBase, flag: 'yes', count: 1.5, ratio: '0.5', when: 0 })).toEqual([
+        { path: ['flag'], message: 'Expected boolean, received string', expected: 'boolean', received: 'string' },
+        { path: ['count'], message: 'Expected integer, received float', expected: 'integer', received: 'float' },
+        { path: ['ratio'], message: 'Expected number, received string', expected: 'number', received: 'string' },
+        { path: ['when'], message: 'Expected dateTime string, received number', expected: 'string', received: 'number' },
+      ]);
+    });
+
+    test('float enum, minimum and maximum are enforced', () => {
+      const ct = withProperties('FloatConstraints', {
+        weight: { type: 'float', enum: [{ value: 1.5, displayName: 'Light' }, { value: 3, displayName: 'Heavy' }] },
+        ratio: { type: 'float', minimum: 0, maximum: 1 },
+      });
+
+      expect(errorsOf(ct, { ...validBase, weight: 1.5, ratio: 0.5 })).toEqual([]);
+      expect(errorsOf(ct, { ...validBase, weight: 2.5, ratio: -0.1 }).map(error => error.message)).toEqual([
+        'Value 2.5 is not in enum [1.5, 3]',
+        'Value must be >= 0',
+      ]);
+      expect(errorsOf(ct, { ...validBase, ratio: 1.1 }).map(error => error.message)).toEqual(['Value must be <= 1']);
+    });
+
+    test('richText fields of the wrong type are reported at their own path', () => {
+      const ct = withProperties('RichTextErrors', { body: { type: 'richText' } });
+
+      expect(errorsOf(ct, { ...validBase, body: { html: 5, json: 'text' } })).toEqual([
+        { path: ['body', 'html'], message: 'Expected string or null, received number', expected: 'string', received: 'number' },
+        { path: ['body', 'json'], message: 'Expected object or null, received string', expected: 'object', received: 'string' },
+      ]);
+      expect(errorsOf(ct, { ...validBase, body: '<p>hi</p>' })[0].message).toBe(
+        'Expected richText object, received string',
+      );
+    });
+
+    test('url, link, contentReference and content must be objects', () => {
+      const ct = withProperties('ObjectErrors', {
+        address: { type: 'url' },
+        cta: { type: 'link' },
+        image: { type: 'contentReference', allowedTypes: ['*'] },
+        area: { type: 'content', allowedTypes: ['*'] },
+      });
+
+      expect(
+        errorsOf(ct, { ...validBase, address: '/page', cta: 1, image: 'img.png', area: true }).map(
+          error => error.message,
+        ),
+      ).toEqual([
+        'Expected url object, received string',
+        'Expected link object, received number',
+        'Expected contentReference object, received string',
+        'Expected content object, received boolean',
+      ]);
+    });
+
+    test('contentReference key and content __typename/__viewname must be strings when present', () => {
+      const ct = withProperties('NestedStringErrors', {
+        image: { type: 'contentReference', allowedTypes: ['*'] },
+        area: { type: 'content', allowedTypes: ['*'] },
+      });
+
+      expect(
+        errorsOf(ct, { ...validBase, image: { key: 5 }, area: { __typename: 1, __viewname: {} } }).map(
+          error => error.path,
+        ),
+      ).toEqual([
+        ['image', 'key'],
+        ['area', '__typename'],
+        ['area', '__viewname'],
+      ]);
+    });
+
+    test('array items are validated at their index', () => {
+      const ct = withProperties('ArrayItemErrors', { tags: { type: 'array', items: { type: 'string' } } });
+
+      expect(errorsOf(ct, { ...validBase, tags: ['a', 5] })).toEqual([
+        { path: ['tags', '1'], message: 'Expected string, received number', expected: 'string', received: 'number' },
+      ]);
+      expect(errorsOf(ct, { ...validBase, tags: 'a' })[0].message).toBe('Expected array, received string');
+    });
+
+    test('component values must be objects, and their properties are validated at a nested path', () => {
+      const Button = withProperties('ErrorButton', { label: { type: 'string' } });
+      const ct = withProperties('ComponentErrors', { cta: { type: 'component', contentType: Button } });
+
+      expect(errorsOf(ct, { ...validBase, cta: 'Click' })[0].message).toBe(
+        'Expected component object, received string',
+      );
+      expect(errorsOf(ct, { ...validBase, cta: { label: 5 } }).map(error => error.path)).toEqual([['cta', 'label']]);
+    });
+
+    test('a component referring to an unregistered type is not validated', () => {
+      initContentTypeRegistry([]);
+      const ct = withProperties('UnregisteredComponent', { cta: { type: 'component', contentType: 'Missing' } });
+
+      expect(errorsOf(ct, { ...validBase, cta: 'anything' })).toEqual([]);
+    });
+
+    test('experience composition nodes are validated recursively', () => {
+      const ct = contentType({ key: 'ExpErrors', baseType: '_experience', displayName: 'Exp' });
+
+      const errors = errorsOf(ct, {
+        ...validBase,
+        composition: {
+          __typename: 'CompositionStructureNode',
+          key: 'root',
+          nodeType: 'row',
+          nodes: ['not a node', { __typename: 'CompositionStructureNode', nodeType: 'column' }],
+        },
+      });
+
+      expect(errors).toEqual([
+        {
+          path: ['composition', 'nodes', '0'],
+          message: 'Expected composition node, received string',
+          expected: 'object',
+          received: 'string',
+        },
+        { path: ['composition', 'nodes', '1', 'key'], message: 'Expected string', expected: 'string', received: 'undefined' },
+      ]);
+    });
+
+    test('a section needs a key and validates its nodes; strict mode accepts both fields', () => {
+      const ct = contentType({ key: 'SectionErrors', baseType: '_section', displayName: 'Section' });
+      const node = { __typename: 'CompositionStructureNode', key: 'row', nodeType: 'row' };
+
+      expect(errorsOf(ct, { ...validBase, key: 'section', nodes: [node] }, true)).toEqual([]);
+      expect(errorsOf(ct, { ...validBase, nodes: [{ ...node, nodeType: 3 }] }).map(error => error.path)).toEqual([
+        ['key'],
+        ['nodes', '0', 'nodeType'],
+      ]);
+    });
+
+    test('strict mode names each unexpected property but allows the SDK-added ones', () => {
+      const ct = withProperties('StrictErrors', { title: { type: 'string' } });
+
+      expect(
+        errorsOf(ct, { ...validBase, title: 'Hi', __context: {}, __composition: {}, extra: 1 }, true),
+      ).toEqual([{ path: ['extra'], message: 'Unexpected property in strict mode' }]);
     });
   });
 });

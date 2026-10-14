@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { renderServer } from './renderServer.js';
 import {
   initReactComponentRegistry,
   OptimizelyGridSection,
@@ -55,12 +55,7 @@ beforeEach(() => {
 });
 
 /** Renders one composition node the way a form step does. */
-async function renderNode(node: ExperienceNode) {
-  const [element] = OptimizelyGridSection({ nodes: [node] }) as any[];
-  // The node renders through an async `OptimizelyComponent`, so resolve it first.
-  const inner = element.props.children;
-  return render(await inner.type(inner.props));
-}
+const renderNode = (node: ExperienceNode) => renderServer(<OptimizelyGridSection nodes={[node]} />);
 
 describe('preview attributes on a form field', () => {
   test('marks the block so the editor can select it', async () => {

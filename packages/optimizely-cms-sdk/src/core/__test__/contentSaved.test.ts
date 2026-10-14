@@ -84,6 +84,49 @@ describe('debouncing', () => {
 
     expect(onNavigate).toHaveBeenCalledTimes(2);
   });
+
+  test('the dupe guard lets the same item through again after 50ms', () => {
+    const onNavigate = vi.fn();
+    listen({ onNavigate, refreshTimeout: false });
+
+    save();
+    vi.advanceTimersByTime(49);
+    save();
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(1);
+    save();
+    expect(onNavigate).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('without onNavigate', () => {
+  // jsdom implements navigation for hash changes only, so the target differs by hash.
+  test('replaces the current location with the target URL', () => {
+    listen({});
+
+    save({ previewUrl: '/#saved' });
+    vi.advanceTimersByTime(50);
+
+    expect(window.location.href).toBe('http://localhost:3000/#saved');
+  });
+});
+
+describe('on the server', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('start subscribes to nothing and returns a no-op stop', () => {
+    const onNavigate = vi.fn();
+    const listener = createContentSavedListener({ onNavigate, refreshTimeout: false });
+
+    vi.stubGlobal('window', undefined);
+    const stop = listener.start();
+    vi.unstubAllGlobals();
+
+    save();
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(() => stop()).not.toThrow();
+  });
 });
 
 describe('the target URL', () => {

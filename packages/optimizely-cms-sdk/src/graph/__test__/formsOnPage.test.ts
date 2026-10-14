@@ -1,8 +1,14 @@
-import { describe, expect, test, vi, beforeEach } from 'vitest';
+import { describe, expect, test, beforeEach } from 'vitest';
 import { GraphClient } from '../index.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { refreshCache } from '../../util/queryUtils.js';
 import { FormContentTypes } from '../../model/formContentTypes.js';
+import {
+  type GraphRequestSpy,
+  contentQuery as lastContentQuery,
+  metadataResponse,
+  stubGraph,
+} from './helpers.js';
 
 /**
  * Form fragments more than double an experience query and are only useful on
@@ -22,38 +28,21 @@ const ExperienceType = contentType({
   properties: {},
 });
 
-const metadataResponse = {
-  _Content: { item: { _metadata: { types: ['Landing'] } } },
-  damAssetType: null,
+let client: GraphClient;
+let mockRequest: GraphRequestSpy;
+
+/** Stubs Graph as a page of `typeName` whose compositions hold `formsOnPage` form containers. */
+const stubFormsProbe = (formsOnPage: number, typeName = 'Landing') => {
+  mockRequest = stubGraph(client, {
+    metadata: metadataResponse([typeName], { formsOnPage: { total: formsOnPage } }),
+    content: { _Content: { item: { __typename: typeName } } },
+  });
 };
 
-const contentResponse = { _Content: { item: { __typename: 'Landing' } } };
-
-let client: GraphClient;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let mockRequest: any;
-
-/** Stubs Graph so this page reports the given number of form containers. */
-function stubGraph(formsOnPage: number) {
-  mockRequest = vi.spyOn(client, 'request').mockImplementation(async (query: string) => {
-    if (query.includes('GetContentMetadata')) {
-      return { ...metadataResponse, formsOnPage: { total: formsOnPage } };
-    }
-    return contentResponse;
-  });
-}
-
-/** The generated content query, i.e. the request that isn't the metadata one. */
-const contentQuery = (): string =>
-  mockRequest.mock.calls
-    .map((call: unknown[]) => String(call[0]))
-    .filter((q: string) => !q.includes('GetContentMetadata'))
-    .at(-1) ?? '';
+const contentQuery = () => lastContentQuery(mockRequest);
 
 const metadataCalls = () =>
-  mockRequest.mock.calls.filter((call: unknown[]) =>
-    String(call[0]).includes('GetContentMetadata'),
-  );
+  mockRequest.mock.calls.filter(call => String(call[0]).includes('GetContentMetadata'));
 
 /** Registers the form content types, as `initForms` would. */
 const withForms = () => {
@@ -75,7 +64,7 @@ describe('probing whether a page has a form', () => {
   // No schema lookup has to happen first, so there is no warm-up request that
   // misses out and no cached state to keep between requests.
   test('rides along on the very first request', async () => {
-    stubGraph(0);
+    stubFormsProbe(0);
 
     await client.getContent({ key: 'a' });
 
@@ -85,7 +74,7 @@ describe('probing whether a page has a form', () => {
   });
 
   test('costs exactly one request per page fetch', async () => {
-    stubGraph(0);
+    stubFormsProbe(0);
 
     await client.getContent({ key: 'a' });
 
@@ -95,7 +84,7 @@ describe('probing whether a page has a form', () => {
 
   test('is skipped when the application never registered the form types', async () => {
     withoutForms();
-    stubGraph(0);
+    stubFormsProbe(0);
 
     await client.getContent({ key: 'a' });
 
@@ -106,7 +95,7 @@ describe('probing whether a page has a form', () => {
   });
 
   test('narrows the page filter to compositions holding a form container', async () => {
-    stubGraph(1);
+    stubFormsProbe(1);
 
     await client.getContent({ key: 'b' });
 
@@ -137,19 +126,7 @@ describe('a form in a content area rather than a composition', () => {
     properties: { title: { type: 'string' } },
   });
 
-  /** Stubs Graph as a page of `typeName` with no form in any composition. */
-  const stubPage = (typeName: string) => {
-    mockRequest = vi.spyOn(client, 'request').mockImplementation(async (query: string) => {
-      if (query.includes('GetContentMetadata')) {
-        return {
-          _Content: { item: { _metadata: { types: [typeName] } } },
-          damAssetType: null,
-          formsOnPage: { total: 0 },
-        };
-      }
-      return { _Content: { item: { __typename: typeName } } };
-    });
-  };
+  const stubPage = (typeName: string) => stubFormsProbe(0, typeName);
 
   beforeEach(() => {
     initContentTypeRegistry([PageType, PlainPageType, ...FormContentTypes]);
@@ -214,7 +191,7 @@ describe('a form in a content area rather than a composition', () => {
 
 describe('the generated content query', () => {
   test('leaves out form fragments when the page has no form', async () => {
-    stubGraph(0);
+    stubFormsProbe(0);
 
     await client.getContent({ key: 'a' });
 
@@ -222,7 +199,7 @@ describe('the generated content query', () => {
   });
 
   test('includes form fragments when the page has a form', async () => {
-    stubGraph(1);
+    stubFormsProbe(1);
 
     await client.getContent({ key: 'a' });
 
@@ -233,12 +210,12 @@ describe('the generated content query', () => {
   // A fresh client per request is what a framework does; nothing may depend on
   // state carried over from a previous one.
   test('decides per page, whoever asks', async () => {
-    stubGraph(1);
+    stubFormsProbe(1);
     await client.getContent({ key: 'has-form' });
     expect(contentQuery()).toContain('fragment OptiFormsContainerData');
 
     client = new GraphClient('test-key');
-    stubGraph(0);
+    stubFormsProbe(0);
     await client.getContent({ key: 'no-form' });
     expect(contentQuery()).not.toContain('OptiForms');
   });
