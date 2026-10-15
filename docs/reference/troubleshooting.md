@@ -408,10 +408,8 @@ these spans only when it generates them, not when it reuses a cached one.
 The page returns a 500, and the log also shows `NEXT_STATIC_GEN_BAILOUT`, with
 `getComponent` in the stack.
 
-**Cause:** Next.js `cacheComponents` is on and an OpenTelemetry meter provider is
-registered. `OptimizelyComponent` records the `optimizely.component.*` metrics while
-Next.js prerenders the static shell, and the OpenTelemetry metrics SDK reads `Date.now()`
-for each measurement, which aborts the prerender.
+**Cause:** With `cacheComponents` on and an OpenTelemetry meter provider registered, the
+`optimizely.component.*` metrics abort the prerender of the static shell.
 
 **Fix:** Turn the component metrics off with
 `config({ …, telemetry: { componentMetrics: false } })`. See

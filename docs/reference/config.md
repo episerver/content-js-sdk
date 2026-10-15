@@ -26,8 +26,7 @@ config(options: GraphOptions & { telemetry?: TelemetryOptions }): void
 Stores `options` as the global configuration that `getClient()` reads.
 
 - `options` — the [options](#options). `apiKey` is required.
-- `options.telemetry` (optional) — the [telemetry settings](#telemetry). Only `config()`
-  takes them, and they apply to the whole app rather than to one client.
+- `options.telemetry` (optional) — the [telemetry settings](#telemetry).
 
 Returns nothing. Throws an `OptimizelyGraphError` if `apiKey` is missing or empty, or if
 `auth` is malformed.
@@ -63,7 +62,7 @@ is malformed.
 
 ### Options
 
-The options are grouped in three levels, plus `telemetry`, which only `config()` takes:
+The options are grouped in three levels:
 
 - **Top level** — how to connect to Graph.
 - **`fragment`** — the shape of the GraphQL query the SDK generates. These are fixed for
@@ -122,9 +121,9 @@ Which methods honour each `query` option is listed per method in
 
 Passed to `config()` only. See [Observability](../guides/observability.md).
 
-| Option             | Type      | Default | Description                                                                                                                                                                                                                     |
-| ------------------ | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `componentMetrics` | `boolean` | `true`  | Record the `optimizely.component.*` metrics on every component lookup. Set it to `false` with Next.js `cacheComponents`. See [Observability](../guides/observability.md#turn-off-component-metrics-for-nextjs-cache-components) |
+| Option             | Type      | Default | Description                                                                                                                                                                                     |
+| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `componentMetrics` | `boolean` | `true`  | Record the `optimizely.component.*` metrics. Set `false` with Next.js `cacheComponents`. See [Observability](../guides/observability.md#turn-off-component-metrics-for-nextjs-cache-components) |
 
 ### Caveats
 

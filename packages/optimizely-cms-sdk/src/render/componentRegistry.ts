@@ -116,7 +116,12 @@ class Registry<T> {
       }
 
       span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, found);
-      recordMetrics(componentResolveDuration, componentLookupCount, startTime, attributes);
+      recordMetrics(
+        componentResolveDuration,
+        componentLookupCount,
+        startTime,
+        attributes,
+      );
       span.end();
     };
 

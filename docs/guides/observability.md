@@ -101,9 +101,7 @@ config({
 ```
 
 The `optimizely.component.resolve` span is still emitted with the same attributes, so the
-lookups stay visible in your traces. Spans aren't affected because Next.js starts them
-outside the prerender, and the fragment and query metrics aren't affected because the SDK
-records them only after it has sent a request to Graph.
+lookups stay visible in your traces. The other spans and metrics aren't affected.
 
 You need this only when `OptimizelyComponent` renders in the static shell: with content
 fetched in a `'use cache'` function and no request-time API, such as `cookies()`,

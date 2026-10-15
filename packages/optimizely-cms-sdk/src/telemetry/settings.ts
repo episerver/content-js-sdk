@@ -1,12 +1,8 @@
 /** Telemetry settings passed to `config()` */
 export type TelemetryOptions = {
   /**
-   * Record the `optimizely.component.*` metrics on every component lookup.
-   *
-   * Turn this off when using Next.js `cacheComponents`: the OpenTelemetry metrics SDK reads
-   * `Date.now()` on every measurement, which aborts the prerender of the static shell.
-   * The `optimizely.component.resolve` span is still emitted.
-   *
+   * Record the `optimizely.component.*` metrics. Turn off with Next.js `cacheComponents`,
+   * where they abort the prerender. See `docs/guides/observability.md`.
    * @default true
    */
   componentMetrics?: boolean;

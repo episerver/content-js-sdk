@@ -2,7 +2,6 @@ import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { config, getGraphConfig } from '../../graph/index.js';
 import { ComponentRegistry } from '../componentRegistry.js';
 import { startComponentResolveSpan } from '../../telemetry/spans.js';
-import { setTelemetryOptions } from '../../telemetry/settings.js';
 
 const instruments = vi.hoisted(() => ({
   histogram: { record: vi.fn() },
@@ -28,7 +27,6 @@ describe('component lookup metrics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(startComponentResolveSpan).mockReturnValue(span as any);
-    setTelemetryOptions();
   });
 
   test('are recorded by default', () => {
