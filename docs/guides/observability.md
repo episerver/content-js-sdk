@@ -9,6 +9,7 @@ they show up next to the rest of your application in any OpenTelemetry backend.
 >
 > - What the SDK instruments
 > - How to collect its traces and metrics
+> - When to turn off component metrics in Next.js
 > - Why some spans only appear on a cache miss
 > - How to add your own spans and metrics
 > - Which spans, attributes and metrics the SDK emits
@@ -77,6 +78,36 @@ exporter in production.
 > In Next.js, start the OpenTelemetry SDK from the `register()` function in
 > `instrumentation.ts` instead of importing it yourself. See
 > [OpenTelemetry in Next.js](https://nextjs.org/docs/app/guides/open-telemetry).
+
+## Turn off component metrics for Next.js Cache Components
+
+With
+[`cacheComponents`](https://nextjs.org/docs/app/api-reference/config/next-config-js/cacheComponents)
+on, Next.js aborts the prerender of a page's static shell when anything reads the current
+time. The OpenTelemetry metrics SDK reads `Date.now()` for every measurement, and the SDK
+records the `optimizely.component.*` metrics each time `OptimizelyComponent` looks up a
+component. When that happens in the static shell, the page returns a 500.
+
+Turn the component metrics off in `config()`:
+
+```ts
+// src/app/layout.tsx
+import { config } from '@optimizely/cms-sdk';
+
+config({
+  apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+  telemetry: { componentMetrics: false },
+});
+```
+
+The `optimizely.component.resolve` span is still emitted with the same attributes, so the
+lookups stay visible in your traces. Spans aren't affected because Next.js starts them
+outside the prerender, and the fragment and query metrics aren't affected because the SDK
+records them only after it has sent a request to Graph.
+
+You need this only when `OptimizelyComponent` renders in the static shell: with content
+fetched in a `'use cache'` function and no request-time API, such as `cookies()`,
+`headers()` or `connection()`, called before it.
 
 ## Why some spans only appear on a cache miss
 
@@ -240,7 +271,9 @@ Each counter carries the same attributes as its histogram.
 | `optimizely.component.resolve.duration`   | `optimizely.component.lookups`         | `optimizely.component.type`, `optimizely.component.found`, `optimizely.component.tag` (when set) |
 
 The fragment and query metrics are recorded only when a query is built, not when a cached
-one is reused.
+one is reused. The component metrics are not recorded when `telemetry.componentMetrics` is
+`false`. See
+[Turn off component metrics for Next.js Cache Components](#turn-off-component-metrics-for-nextjs-cache-components).
 
 > [!NOTE]
 >
@@ -270,6 +303,12 @@ Some attributes are set partway through the operation. For example,
 `optimizely.content.found` only when it isn't. An operation that throws early has fewer
 attributes.
 
+### Pages return 500 with Next.js `cacheComponents`
+
+If the log shows `Next.js encountered the unstable value Date.now() while prerendering`,
+followed by `NEXT_STATIC_GEN_BAILOUT`, turn off the component metrics. See
+[Turn off component metrics for Next.js Cache Components](#turn-off-component-metrics-for-nextjs-cache-components).
+
 ### Telemetry is too expensive
 
 Configure sampling in your OpenTelemetry SDK, and avoid wrapping hot code paths in custom
@@ -280,6 +319,8 @@ spans.
 - The SDK emits OpenTelemetry spans and metrics for fetching, query generation and
   component resolution. Without an OpenTelemetry SDK they are no-ops.
 - Register your OpenTelemetry SDK before `@optimizely/cms-sdk` loads.
+- With Next.js `cacheComponents`, set `telemetry: { componentMetrics: false }` in
+  `config()`.
 - Query and fragment spans appear only when a query is built, not on a cache hit.
 - `@optimizely/cms-sdk/telemetry` exports the tracer, meter and attribute names for your
   own instrumentation.
