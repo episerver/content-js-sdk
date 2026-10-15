@@ -1,11 +1,13 @@
-:global(html):has(.preview) {
+:global(html):has(.preview),
+:global(body):has(.preview) {
   margin: 0;
   padding: 0;
+  scrollbar-width: none;
 }
 
 :global(body):has(.preview) {
+  height: 100vh;
   background-color: transparent;
   margin: 0;
   padding: 0;
-  height: 100vh;
 }

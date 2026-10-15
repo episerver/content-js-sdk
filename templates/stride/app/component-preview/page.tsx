@@ -45,9 +45,8 @@ async function ComponentPreviewPage({ searchParams }: Props) {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minWidth: '100%',
-        minHeight: '100%',
         boxSizing: 'border-box',
+        aspectRatio: 16 / 9,
       }}
     >
       <PreviewHeightReporter />
