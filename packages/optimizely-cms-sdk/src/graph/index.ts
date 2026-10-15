@@ -5,6 +5,7 @@ import {
 } from './error.js';
 import { logError, logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { withRequestSpan } from '../telemetry/spans.js';
+import { setTelemetryOptions, type TelemetryOptions } from '../telemetry/settings.js';
 import { DEFAULT_GRAPH_URL, DEFAULT_USER_AGENT } from './constants.js';
 import { authModeFor, resolveAuthHeaders, validateAuth } from './auth.js';
 import {
@@ -395,6 +396,7 @@ export function getGraphConfig(): GraphOptions | null {
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
  *   fragment: { richTextFormat: 'json' }, // optional
  *   query: { cache: true, host: 'example.com' }, // optional
+ *   telemetry: { componentMetrics: false }, // optional
  * });
  *
  * export default function RootLayout({ children }) {
@@ -402,7 +404,10 @@ export function getGraphConfig(): GraphOptions | null {
  * }
  * ```
  */
-export function config(options: GraphOptions) {
+export function config({
+  telemetry,
+  ...options
+}: GraphOptions & { telemetry?: TelemetryOptions }) {
   if (
     !options.apiKey ||
     typeof options.apiKey !== 'string' ||
@@ -419,6 +424,7 @@ export function config(options: GraphOptions) {
   validateAuth(options.auth, options.secrets);
 
   setGraphConfig(options);
+  setTelemetryOptions(telemetry);
 }
 
 const mergeGraphOptions = (
