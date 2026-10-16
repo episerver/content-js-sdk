@@ -267,7 +267,7 @@ export type GetLinksResponse = {
  * @param obj - The object to process (typically a GraphQL response)
  * @returns A new object with prefixes removed, or the original value for primitives
  *
- * Note: this function is exported only on this level for testing purposes.
+ * Note: exported for tests and platform packages (`@optimizely/cms-sdk/platform`).
  * It should not be exported in the user-facing API
  */
 export function removeTypePrefix(obj: any): any {

@@ -7,5 +7,16 @@
  * @module
  */
 
-export { saasPlatform } from '../graph/platform.js';
 export type { GraphPlatform, ContentMetadata } from '../graph/platform.js';
+export type { DamMode, TaxonomyMode } from '../graph/options.js';
+
+// Query building
+export {
+  type QueryOptions,
+  createSingleContentQuery,
+  createMultipleContentQuery,
+} from '../graph/createQuery.js';
+export { getMetadataQuery } from '../graph/queries.js';
+
+// Response normalisation
+export { liftSectionNodes, removeTypePrefix } from '../graph/queries.js';

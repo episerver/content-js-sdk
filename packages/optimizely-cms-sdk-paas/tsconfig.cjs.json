@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "outDir": "./dist/cjs",
+    // `node` resolution ignores package `exports`, so point the SDK subpath at its CJS types.
+    "paths": {
+      "@optimizely/cms-sdk/platform": [
+        "./node_modules/@optimizely/cms-sdk/dist/cjs/platform/index.d.ts"
+      ]
+    }
+  }
+}
