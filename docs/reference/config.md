@@ -3,7 +3,7 @@
 The three ways to set up a connection to Optimizely Graph. `config()` stores your options
 once for the whole app, `getClient()` returns a client built from them, and
 `new GraphClient()` builds a client from options you pass directly. All three take the
-same options object.
+same options object, and `config()` also takes app-wide `telemetry` settings.
 
 ```ts
 import { config, getClient } from '@optimizely/cms-sdk';
@@ -20,12 +20,13 @@ const client = getClient();
 ### `config(options)`
 
 ```ts
-config(options: GraphOptions): void
+config(options: GraphOptions & { telemetry?: TelemetryOptions }): void
 ```
 
 Stores `options` as the global configuration that `getClient()` reads.
 
 - `options` — the [options](#options). `apiKey` is required.
+- `options.telemetry` (optional) — the [telemetry settings](#telemetry).
 
 Returns nothing. Throws an `OptimizelyGraphError` if `apiKey` is missing or empty, or if
 `auth` is malformed.
@@ -115,6 +116,14 @@ The options are grouped in three levels:
 
 Which methods honour each `query` option is listed per method in
 [`GraphClient`](./graph-client.md).
+
+#### `telemetry`
+
+Passed to `config()` only. See [Observability](../guides/observability.md).
+
+| Option             | Type      | Default | Description                                                                                                                                                                                     |
+| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `componentMetrics` | `boolean` | `true`  | Record the `optimizely.component.*` metrics. Set `false` with Next.js `cacheComponents`. See [Observability](../guides/observability.md#turn-off-component-metrics-for-nextjs-cache-components) |
 
 ### Caveats
 

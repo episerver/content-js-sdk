@@ -402,3 +402,15 @@ See [Observability](../guides/observability.md).
 these spans only when it generates them, not when it reuses a cached one.
 
 **Fix:** None needed. To track cache use, add your own spans around the calls.
+
+### ``Next.js encountered the unstable value `Date.now()` while prerendering``
+
+The page returns a 500, and the log also shows `NEXT_STATIC_GEN_BAILOUT`, with
+`getComponent` in the stack.
+
+**Cause:** With `cacheComponents` on and an OpenTelemetry meter provider registered, the
+`optimizely.component.*` metrics abort the prerender of the static shell.
+
+**Fix:** Turn the component metrics off with
+`config({ …, telemetry: { componentMetrics: false } })`. See
+[Observability](../guides/observability.md#turn-off-component-metrics-for-nextjs-cache-components).

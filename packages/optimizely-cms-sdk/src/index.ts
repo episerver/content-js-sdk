@@ -44,6 +44,7 @@ export type {
   TaxonomyTerm,
   TaxonomyMode,
 } from './graph/index.js';
+export type { TelemetryOptions } from './telemetry/settings.js';
 
 // Provided content types and experiences
 export {
