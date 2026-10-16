@@ -140,6 +140,7 @@ export class GraphClient {
       slot || 'Current',
       !!previewToken,
       authModeFor(this.auth, previewToken),
+      this.platform.name,
       async span => {
         const url = new URL(this.graphUrl);
 

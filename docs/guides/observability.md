@@ -198,6 +198,7 @@ The module also exports:
 | `optimizely.graph.slot`    | The Graph index slot, `Current` or `New`                                                            |
 | `optimizely.preview.token` | Whether the request carried a preview token                                                         |
 | `optimizely.auth.mode`     | The credential used: `single`, `preview`, `custom`, `hmac` or `bearer`. Never the credential itself |
+| `optimizely.platform`      | The CMS product configured for the client: `saas` (the default) or `paas`                           |
 
 </details>
 
