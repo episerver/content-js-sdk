@@ -28,6 +28,7 @@ import {
   withDefaults,
 } from './options.js';
 import * as operations from './operations.js';
+import { type GraphPlatform, saasPlatform } from './platform.js';
 
 // PUBLIC TYPES
 
@@ -56,6 +57,7 @@ export type {
   TaxonomyTerm,
   TaxonomyMode,
 } from './options.js';
+export type { GraphPlatform } from './platform.js';
 
 // RESPONSES
 
@@ -102,6 +104,9 @@ export class GraphClient {
   /** The resolved `query` group: what every request uses unless it overrides it. */
   readonly queryDefaults: ResolvedQueryOptions;
 
+  /** The CMS product behind the endpoint. Defaults to SaaS. */
+  readonly platform: GraphPlatform;
+
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     validateAuth(options.auth, options.secrets);
@@ -114,6 +119,7 @@ export class GraphClient {
 
     this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
     this.queryDefaults = withDefaults(defaultQueryOptions(options.auth), options.query);
+    this.platform = options.platform ?? saasPlatform;
   }
 
   // TRANSPORT

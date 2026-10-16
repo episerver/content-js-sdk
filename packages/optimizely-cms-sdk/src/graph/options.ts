@@ -7,6 +7,7 @@ import {
   GRAPH_PATH,
 } from './constants.js';
 import { RichTextFormat } from '../util/queryUtils.js';
+import type { GraphPlatform } from './platform.js';
 
 // PUBLIC TYPES
 
@@ -309,6 +310,11 @@ export type GraphOptions = {
   fragment?: GraphFragmentOptions;
   /** Defaults for the per-request options, overridable on any single call. */
   query?: GraphQueryOptions;
+  /**
+   * The CMS product behind the Graph endpoint. Leave unset for CMS SaaS; pass
+   * `paas()` from `@optimizely/cms-sdk-paas` for CMS PaaS.
+   */
+  platform?: GraphPlatform;
 };
 
 export type GraphGetContentOptions = GraphQueryOptions & {
@@ -369,6 +375,7 @@ export interface GraphClientContext {
   readonly userAgent: string;
   readonly fragmentDefaults: ResolvedFragmentOptions;
   readonly queryDefaults: ResolvedQueryOptions;
+  readonly platform: GraphPlatform;
   request(
     query: string,
     variables: any,
