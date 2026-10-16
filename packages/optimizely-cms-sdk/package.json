@@ -118,6 +118,16 @@
         "types": "./dist/cjs/react/forms/index.d.ts",
         "default": "./dist/cjs/react/forms/index.js"
       }
+    },
+    "./platform": {
+      "import": {
+        "types": "./dist/esm/platform/index.d.ts",
+        "default": "./dist/esm/platform/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/platform/index.d.ts",
+        "default": "./dist/cjs/platform/index.js"
+      }
     }
   },
   "repository": {
