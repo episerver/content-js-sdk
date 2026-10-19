@@ -10,8 +10,13 @@ export {
   isContentTypeRegistered,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
+  getContentType,
+  getAllContentTypes,
   PropertyGroupType,
 } from './model/index.js';
+
+// Stand-in content, for previewing a component without a CMS round trip
+export { generateMockContent } from './render/mockContent.js';
 
 // GraphQL
 export {
