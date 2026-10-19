@@ -15,11 +15,61 @@ import type { AnyContentType, PermittedTypes } from '../model/contentTypes.js';
 import type { AnyProperty } from '../model/properties.js';
 import { isBaseMediaType } from '../util/baseTypeUtil.js';
 
+/**
+ * The slice of `@faker-js/faker` this uses.
+ *
+ * Structural, so the SDK does not depend on faker: an application that wants
+ * realistic copy passes `faker` in, and one that does not keeps the labels.
+ */
+export type FakerLike = {
+  seed(value: number): unknown;
+  lorem: { words(count?: number): string; paragraph(): string };
+  person: { fullName(): string };
+  internet: { email(): string; url(): string };
+  commerce: { productName(): string; price(): string };
+  number: { int(options: { min: number; max: number }): number };
+  /** `refDate` is always passed: without it faker measures from the current
+   *  time, and the same component would render a different date each reload. */
+  date: { past(options: { refDate: string }): Date };
+};
+
+/**
+ * Content supplied by the developer instead of generated: one entry per
+ * content type key, shallow-merged over the generated values, so a single
+ * awkward field can be pinned without writing the rest of the content.
+ */
+export type MockDataOverrides = Record<string, Record<string, unknown>>;
+
+/**
+ * Full control over one content type's stand-in content. Receives what the
+ * schema produced, so it can add to it, replace it, or hand it straight back.
+ */
+export type MockDataFactory = (
+  contentType: AnyContentType,
+  generated: Record<string, unknown>,
+) => Record<string, unknown> | undefined;
+
+/**
+ * Where stand-in content comes from. Any of:
+ *
+ * - `faker` from `@faker-js/faker`, to fill text from each property's name
+ * - a {@linkcode MockDataFactory}, for content built however the app likes
+ * - {@linkcode MockDataOverrides}, to pin fields per content type
+ */
+export type MockData = FakerLike | MockDataFactory | MockDataOverrides;
+
+export type MockContentOptions = {
+  mockData?: MockData;
+};
+
+/** Carried through the walk, so nothing reads module state. */
+type MockContext = { faker?: FakerLike; depth: number };
+
 /** How deep nested components and content references are followed. */
 const MAX_DEPTH = 3;
 
 /** Fixed so that a preview of the same component is byte-identical each time. */
-const MOCK_DATE = '2024-01-01T12:00:00Z';
+const MOCK_DATE = '2025-01-23T12:00:00Z';
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod ' +
@@ -72,15 +122,48 @@ function allowedKeys(property: AnyProperty): string[] {
   return types.map(keyOf).filter(Boolean);
 }
 
-function mockRichText(label: string) {
+/** True for a field long enough that an editor would write sentences in it. */
+const isLongText = (property: AnyProperty) =>
+  ('maxLength' in property ? (property.maxLength ?? 0) : 0) > 120;
+
+/**
+ * What a property is called, matched loosely against the kinds of copy faker
+ * can produce. Names are the only signal a content type gives about meaning:
+ * the schema says `string`, the name says whether it is an email or a heading.
+ */
+function fakeText(name: string, property: AnyProperty, faker: FakerLike): string {
+  const field = name.toLowerCase();
+  const long = isLongText(property);
+
+  if (/mail/.test(field)) return faker.internet.email();
+  if (/url|href|link|slug|website|domain/.test(field)) return faker.internet.url();
+  if (/price|amount|cost|total/.test(field)) return faker.commerce.price();
+  if (/author|person|customer|\bname\b/.test(field)) return faker.person.fullName();
+  if (long || /body|description|summary|intro|excerpt|content|text/.test(field))
+    return faker.lorem.paragraph();
+  if (/title|heading|headline|label|caption|cta|button|eyebrow/.test(field))
+    return faker.commerce.productName();
+
+  return faker.lorem.words(3);
+}
+
+/** The text a string-ish property gets: realistic with faker, its own name without. */
+function textFor(name: string, property: AnyProperty, ctx: MockContext): string {
+  if (ctx.faker) return fakeText(name, property, ctx.faker);
+
+  const label = labelOf(name, property);
+  // A long field reads as body copy; a short one is more useful naming itself.
+  return isLongText(property) ? `${label}. ${LOREM}` : label;
+}
+
+function mockRichText(label: string, ctx: MockContext) {
+  const text = ctx.faker ? label : `${label}. ${LOREM}`;
+
+  // A root node wrapping the blocks, as Graph returns it: the renderer reads
+  // `children` off the top level and sees nothing in a bare array.
   return {
-    json: [
-      {
-        type: 'paragraph',
-        children: [{ text: `${label}. ${LOREM}` }],
-      },
-    ],
-    html: `<p>${label}. ${LOREM}</p>`,
+    json: { type: 'richText', children: [{ type: 'paragraph', children: [{ text }] }] },
+    html: `<p>${text}</p>`,
   };
 }
 
@@ -108,7 +191,7 @@ function baseTypeOf(key: string): string | undefined {
 function mockProperty(
   name: string,
   property: AnyProperty,
-  depth: number,
+  ctx: MockContext,
 ): unknown {
   const label = labelOf(name, property);
   const enumValues = (property as { enum?: { value: unknown }[] }).enum;
@@ -116,49 +199,56 @@ function mockProperty(
   if (enumValues?.length) return enumValues[0].value;
 
   switch (property.type) {
-    case 'string': {
-      // A long field reads as body copy; a short one is more useful naming itself.
-      const long = (property.maxLength ?? 0) > 120;
-      return long ? `${label}. ${LOREM}` : label;
-    }
+    case 'string':
+      return textFor(name, property, ctx);
     case 'boolean':
       return true;
     case 'integer':
     case 'float':
-      return property.minimum ?? 1;
+      return (
+        property.minimum ??
+        ctx.faker?.number.int({ min: 1, max: property.maximum ?? 100 }) ??
+        1
+      );
     case 'dateTime':
-      return MOCK_DATE;
+      return ctx.faker ? ctx.faker.date.past({ refDate: MOCK_DATE }).toISOString() : MOCK_DATE;
     case 'json':
       return {};
     case 'binary':
       return null;
     case 'url':
       return contentUrl('/example');
-    case 'link':
+    case 'link': {
+      const text = textFor(name, property, ctx);
       return {
-        text: label,
-        title: label,
+        text,
+        title: text,
         target: '_self',
         url: contentUrl('/example'),
       };
+    }
     case 'richText':
-      return mockRichText(label);
+      return mockRichText(ctx.faker ? ctx.faker.lorem.paragraph() : label, ctx);
     case 'contentReference':
       return mockReference(label, property);
     case 'content': {
       const nested = allowedKeys(property).map(getContentType).find(isContentType);
-      return nested && depth < MAX_DEPTH ? build(nested, depth + 1) : null;
+      return nested && ctx.depth < MAX_DEPTH ?
+          build(nested, { ...ctx, depth: ctx.depth + 1 })
+        : null;
     }
     case 'component': {
       const nested = (property as { contentType?: AnyContentType }).contentType;
-      return nested && depth < MAX_DEPTH ? build(nested, depth + 1) : null;
+      return nested && ctx.depth < MAX_DEPTH ?
+          build(nested, { ...ctx, depth: ctx.depth + 1 })
+        : null;
     }
     case 'array': {
       const items = (property as { items: AnyProperty }).items;
       const count = Math.max(property.minItems ?? 0, 2);
       // One level of nesting per item would multiply, so arrays of components
       // are filled at the depth of the array itself.
-      return Array.from({ length: count }, () => mockProperty(name, items, depth));
+      return Array.from({ length: count }, () => mockProperty(name, items, ctx));
     }
     default:
       return null;
@@ -196,7 +286,10 @@ function holdsComposition(contentType: AnyContentType, baseType: string | undefi
   return Array.isArray(behaviors) && behaviors.includes('sectionEnabled');
 }
 
-function build(contentType: AnyContentType, depth: number): Record<string, unknown> {
+function build(
+  contentType: AnyContentType,
+  ctx: MockContext,
+): Record<string, unknown> {
   const { key, displayName, properties } = contentType as AnyContentType & {
     properties?: Record<string, AnyProperty>;
   };
@@ -205,7 +298,7 @@ function build(contentType: AnyContentType, depth: number): Record<string, unkno
   const values = Object.fromEntries(
     Object.entries(properties ?? {}).map(([name, property]) => [
       name,
-      mockProperty(name, property, depth),
+      mockProperty(name, property, ctx),
     ]),
   );
 
@@ -231,18 +324,74 @@ function build(contentType: AnyContentType, depth: number): Record<string, unkno
   };
 }
 
+/** A stable 32-bit number from a string, to seed faker with. */
+function hash(value: string): number {
+  let result = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    result = Math.imul(result ^ value.charCodeAt(i), 16777619);
+  }
+  return result >>> 0;
+}
+
+/** Faker is recognised by shape, so the SDK never imports it to check. */
+const isFaker = (mockData: MockData): mockData is FakerLike =>
+  typeof mockData === 'object' && 'lorem' in mockData;
+
 /**
- * Builds stand-in content for one content type, shaped the way Graph returns it,
- * so {@linkcode OptimizelyComponent} can render the component without a CMS.
+ * Builds stand-in content for one content type, shaped the way Graph returns
+ * it, so {@linkcode OptimizelyComponent} can render the component without a CMS.
  *
- * Values are derived from the property definitions and are the same on every
- * call, so a preview does not change between reloads.
+ * Values are derived from the schema: a `richText` property becomes a rich
+ * text document, a reference to an image becomes something an `<img>` can
+ * show, and a nested component is filled in turn. What the text *says* comes
+ * from `mockData`.
  *
- * @example
+ * With nothing passed, each property names itself — a `Headline` reads
+ * "Headline", which identifies the fields but shows nothing about how real
+ * copy wraps.
+ *
+ * @example Realistic copy, drawn from each property's name
  * ```ts
- * const content = generateMockContent(getContentType('HeroSection'));
+ * import { faker } from '@faker-js/faker';
+ *
+ * generateMockContent(type, { mockData: faker });
  * ```
+ *
+ * @example Pin the fields that matter, generate the rest
+ * ```ts
+ * generateMockContent(type, {
+ *   mockData: { HeroSection: { Headline: 'Set it. Sweat it.' } },
+ * });
+ * ```
+ *
+ * @example Build it however the application likes
+ * ```ts
+ * generateMockContent(type, {
+ *   mockData: (contentType, generated) => ({ ...generated, Locale: 'sv' }),
+ * });
+ * ```
+ *
+ * Faker is seeded from the content type key, so a component looks the same on
+ * every reload rather than reshuffling while you compare it with a design.
  */
-export function generateMockContent(contentType: AnyContentType) {
-  return build(contentType, 0);
+export function generateMockContent(
+  contentType: AnyContentType,
+  { mockData }: MockContentOptions = {},
+) {
+  const faker = mockData && isFaker(mockData) ? mockData : undefined;
+  faker?.seed(hash(contentType.key));
+
+  const generated = build(contentType, { faker, depth: 0 });
+
+  if (typeof mockData === 'function') {
+    return mockData(contentType, generated) ?? generated;
+  }
+
+  // Overrides are shallow: a field is either the application's or generated,
+  // never half of each, which would be hard to reason about from the outside.
+  if (mockData && !isFaker(mockData)) {
+    return { ...generated, ...mockData[contentType.key] };
+  }
+
+  return generated;
 }
