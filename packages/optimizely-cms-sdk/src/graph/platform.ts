@@ -1,4 +1,4 @@
-import type { DamMode, GraphPlatform, TaxonomyMode } from './options.js';
+import type { GraphPlatform } from './options.js';
 import {
   type QueryOptions,
   createSingleContentQuery,
@@ -11,11 +11,13 @@ import { paasPlatform } from './paas.js';
 // TYPES
 
 /** What the metadata query reveals about one piece of content and the instance serving it. */
-export type ContentMetadata = {
+type ContentMetadata = {
   /** The first entry of `_metadata.types`, unchecked. Absent when nothing matched. */
   contentTypeName: unknown;
-  damEnabled: boolean;
-  taxonomyEnabled: boolean;
+  /** The schema exposes DAM assets. */
+  damDetected: boolean;
+  /** The schema exposes taxonomy categories. */
+  taxonomyDetected: boolean;
   /** Graph found a form container among the page's top-level sections. */
   formsOnPage: boolean;
 };
@@ -30,10 +32,7 @@ export type PlatformAdapter = {
   /** The query that finds a content item's type and the instance's capabilities. */
   metadataQuery: typeof getMetadataQuery;
   /** Reads the answer to {@linkcode PlatformAdapter.metadataQuery}. */
-  readMetadata(
-    data: any,
-    modes: { dam: DamMode; taxonomy: TaxonomyMode },
-  ): ContentMetadata;
+  readMetadata(data: any): ContentMetadata;
   /** The content query for a content type already resolved by the metadata query. */
   contentQuery(
     kind: 'single' | 'multiple',
@@ -46,31 +45,22 @@ export type PlatformAdapter = {
 
 // SAAS
 
-const resolveMode = (mode: DamMode | TaxonomyMode, detected: boolean): boolean =>
-  mode === 'on' ? true
-  : mode === 'off' ? false
-  : detected;
-
 /** Optimizely CMS SaaS, the default platform. */
 export const saasPlatform: PlatformAdapter = {
   name: 'saas',
 
   metadataQuery: getMetadataQuery,
 
-  readMetadata(data, { dam, taxonomy }) {
-    const hasCategoriesField =
+  readMetadata: data => ({
+    contentTypeName: data._Content?.item?._metadata?.types?.[0],
+    damDetected: data.damAssetType !== null,
+    taxonomyDetected:
       Array.isArray(data.taxonomyType?.fields) &&
       data.taxonomyType.fields.some(
         (field: { name: string }) => field.name === 'categories',
-      );
-
-    return {
-      contentTypeName: data._Content?.item?._metadata?.types?.[0],
-      damEnabled: resolveMode(dam, data.damAssetType !== null),
-      taxonomyEnabled: resolveMode(taxonomy, hasCategoriesField),
-      formsOnPage: (data.formsOnPage?.total ?? 0) > 0,
-    };
-  },
+      ),
+    formsOnPage: (data.formsOnPage?.total ?? 0) > 0,
+  }),
 
   contentQuery: (kind, contentType, options) =>
     kind === 'single' ?

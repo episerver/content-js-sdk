@@ -134,4 +134,27 @@ describe('PaaS contract', () => {
     expect(queries()).toMatchSnapshot();
     expect(result).toMatchSnapshot();
   });
+
+  test('getPath and getItems', async () => {
+    const links = {
+      _Content: {
+        item: {
+          _id: 'article',
+          _metadata: { path: ['home', 'article'] },
+          _link: {
+            _Page: {
+              items: [{ _metadata: { key: 'article' } }, { _metadata: { key: 'home' } }],
+            },
+          },
+        },
+      },
+    };
+    const { client, queries } = stubClient(links, links);
+
+    const path = await client.getPath('/news/hello/');
+    const items = await client.getItems({ key: 'home', locale: 'en' });
+
+    expect(queries()).toMatchSnapshot();
+    expect({ path, items }).toMatchSnapshot();
+  });
 });

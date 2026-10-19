@@ -165,6 +165,102 @@ exports[`PaaS contract > getContentByPath 2`] = `
 ]
 `;
 
+exports[`PaaS contract > getPath and getItems 1`] = `
+[
+  "
+query GetPath($host: String, $path: String, $pathNoSlash: String, $locale: [Locales]) {
+  _Content(where: { _and: [{ _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }, { _metadata: { status: { eq: "Published" } } }] }, locale: $locale) {
+    item {
+      _id
+      _metadata {
+        ...on InstanceMetadata {
+          path
+        }
+      }
+      _link(type: PATH) {
+        _Page(locale: $locale) {
+          items {
+            _metadata {
+              key
+              sortOrder
+              displayName
+              locale
+              types
+              url {
+                base
+                hierarchical
+                default
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}",
+  "
+query GetItems($key: String, $version: String, $metadataLocale: String, $locale: [Locales]) {
+  _Content(where: { _and: [{ _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }, { _metadata: { status: { eq: "Published" } } }] }, locale: $locale) {
+    item {
+      _id
+      _metadata {
+        ...on InstanceMetadata {
+          path
+        }
+      }
+      _link(type: ITEMS) {
+        _Page(locale: $locale) {
+          items {
+            _metadata {
+              key
+              sortOrder
+              displayName
+              locale
+              types
+              url {
+                base
+                hierarchical
+                default
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}",
+]
+`;
+
+exports[`PaaS contract > getPath and getItems 2`] = `
+{
+  "items": [
+    {
+      "_metadata": {
+        "key": "article",
+      },
+    },
+    {
+      "_metadata": {
+        "key": "home",
+      },
+    },
+  ],
+  "path": [
+    {
+      "_metadata": {
+        "key": "home",
+      },
+    },
+    {
+      "_metadata": {
+        "key": "article",
+      },
+    },
+  ],
+}
+`;
+
 exports[`PaaS contract > getPreviewContent of an experience 1`] = `
 [
   "

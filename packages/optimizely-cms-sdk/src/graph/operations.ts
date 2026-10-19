@@ -20,6 +20,7 @@ import {
   withGetContentSpan,
 } from '../telemetry/spans.js';
 import {
+  type DamMode,
   type GraphClientContext,
   type GraphGetContentOptions,
   type GraphGetItemOptions,
@@ -29,6 +30,7 @@ import {
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type TaxonomyMode,
   type TaxonomyTerm,
   type ResolvedQueryOptions,
   fragmentContext,
@@ -435,6 +437,12 @@ async function resolveTaxonomyTerms(
 
 // METADATA
 
+/** Applies a `dam` or `taxonomy` setting to what the schema probe detected. */
+const resolveMode = (mode: DamMode | TaxonomyMode, detected: boolean): boolean =>
+  mode === 'on' ? true
+  : mode === 'off' ? false
+  : detected;
+
 /**
  * Fetches the content type metadata for a given content input.
  *
@@ -482,8 +490,11 @@ async function getContentMetaData(
     getSectionTypes(context),
   ]);
 
-  const { contentTypeName, damEnabled, taxonomyEnabled, formsOnPage } =
-    context.platform.readMetadata(data, context.fragmentDefaults);
+  const { contentTypeName, damDetected, taxonomyDetected, formsOnPage } =
+    context.platform.readMetadata(data);
+  const { dam, taxonomy } = context.fragmentDefaults;
+  const damEnabled = resolveMode(dam, damDetected);
+  const taxonomyEnabled = resolveMode(taxonomy, taxonomyDetected);
 
   // The probe covers a form in a composition. Content type checks cover
   // the form container itself and forms in content areas.

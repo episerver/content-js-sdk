@@ -36,8 +36,8 @@ describe('platform option', () => {
     vi.spyOn(paasPlatform, 'metadataQuery').mockReturnValue('METADATA');
     vi.spyOn(paasPlatform, 'readMetadata').mockReturnValue({
       contentTypeName: 'Article',
-      damEnabled: false,
-      taxonomyEnabled: false,
+      damDetected: false,
+      taxonomyDetected: false,
       formsOnPage: false,
     });
     const contentQuery = vi

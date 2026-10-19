@@ -22,8 +22,7 @@ config({
 });
 ```
 
-Every client that `getClient()` returns inherits the platform. Components, rich text,
-forms and live preview are imported from `@optimizely/cms-sdk` as usual.
+Every client that `getClient()` returns inherits the platform.
 
 > [!WARNING]
 >
@@ -35,4 +34,3 @@ forms and live preview are imported from `@optimizely/cms-sdk` as usual.
 
 - [`config()` options](../reference/config.md#top-level)
 - [Fetch content](../learn/fetch-content.md)
-- [CLI commands](../reference/cli.md)
