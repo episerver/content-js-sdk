@@ -35,7 +35,7 @@ import {
   getDisplayTemplateTag,
 } from '../model/displayTemplateRegistry.js';
 import { isContentType } from '../model/index.js';
-import { generateMockContent } from '../render/mockContent.js';
+import { generateMockContent, type MockData } from '../render/mockContent.js';
 import { PreviewHeightReporter } from './client.js';
 import { FormRulesProvider } from './forms/FormRulesContext.js';
 import { FormSubmissionProvider } from './forms/FormSubmissionProvider.js';
@@ -434,7 +434,17 @@ function defaultDisplaySettings(templateKey: string | undefined) {
  */
 export function createComponentPreviewPage({
   defaultLocale,
-}: { defaultLocale?: string } = {}) {
+  mockData,
+}: {
+  defaultLocale?: string;
+  /**
+   * Where stand-in content comes from: `faker` from `@faker-js/faker`, a
+   * factory, or predefined content per content type. Passed in rather than
+   * imported, so whatever it needs is only loaded by the module serving this
+   * page, and never by the application's own pages.
+   */
+  mockData?: MockData;
+} = {}) {
   async function ComponentPreviewPage({ searchParams }: ComponentPreviewPageProps) {
     const query = (await searchParams) ?? {};
     const locale = queryValue(query.locale) ?? defaultLocale;
@@ -448,7 +458,7 @@ export function createComponentPreviewPage({
         (() => {
           const definition = getContentType(contentTypeKey);
           return definition && isContentType(definition) ?
-              generateMockContent(definition)
+              generateMockContent(definition, { mockData })
             : null;
         })()
       : null;
@@ -494,6 +504,16 @@ export function createComponentPreviewPage({
           {'html,body{background:transparent}' +
             'body{box-sizing:border-box;min-height:100svh;display:flex;' +
             'flex-direction:column;justify-content:center;padding:min(1.5rem,5%)}' +
+            // The component sits inside this, not directly in the flex body: a
+            // flex item is stretched to full width, which silently widens
+            // anything sized by its content, such as an `inline-flex` button.
+            //
+            // `text-align` centres content-sized children horizontally without
+            // shrinking anything: `align-items:center` would centre a section
+            // by collapsing it to its content width. Block children reset it,
+            // so a component's own copy reads as it does on a real page.
+            '#optimizely-preview{width:100%;text-align:center}' +
+            '#optimizely-preview>*{text-align:initial}' +
             'nextjs-portal{display:none}'}
         </style>
         <PreviewHeightReporter />
@@ -503,13 +523,15 @@ export function createComponentPreviewPage({
         <FormSubmissionProvider>
           <FormValidationProvider>
             <FormRulesProvider>
-              <OptimizelyComponent
-                content={content}
-                tag={getDisplayTemplateTag(displayTemplateKey)}
-                displaySettings={
-                  Object.keys(displaySettings).length > 0 ? displaySettings : undefined
-                }
-              />
+              <div id='optimizely-preview'>
+                <OptimizelyComponent
+                  content={content}
+                  tag={getDisplayTemplateTag(displayTemplateKey)}
+                  displaySettings={
+                    Object.keys(displaySettings).length > 0 ? displaySettings : undefined
+                  }
+                />
+              </div>
             </FormRulesProvider>
           </FormValidationProvider>
         </FormSubmissionProvider>
