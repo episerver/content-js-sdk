@@ -75,3 +75,35 @@ export const PreviewComponent: FunctionComponent<
 
   return (showMask || busy) && children ? <>{children}</> : null;
 };
+
+/**
+ * Reports the document height to the embedding page, so an iframe around a
+ * preview can size itself to the component it is showing.
+ *
+ * Rendered by {@linkcode createComponentPreviewPage}; a page building its own
+ * preview route can render it directly.
+ */
+export function PreviewHeightReporter() {
+  useEffect(() => {
+    // Nothing to tell when the page is not in a frame.
+    if (window.parent === window) return;
+
+    const postHeight = () => {
+      const height = Math.ceil(document.documentElement.scrollHeight);
+      window.parent.postMessage({ type: 'preview-height', height }, '*');
+    };
+
+    postHeight();
+
+    const observer = new ResizeObserver(postHeight);
+    observer.observe(document.documentElement);
+    window.addEventListener('load', postHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('load', postHeight);
+    };
+  }, []);
+
+  return null;
+}

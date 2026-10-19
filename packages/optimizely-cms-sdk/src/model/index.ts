@@ -154,6 +154,8 @@ export {
 export {
   init as initContentTypeRegistry,
   isContentTypeRegistered,
+  getContentType,
+  getAllContentTypes,
 } from './contentTypeRegistry.js';
 export { init as initDisplayTemplateRegistry } from './displayTemplateRegistry.js';
 
