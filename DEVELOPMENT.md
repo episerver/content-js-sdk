@@ -106,6 +106,20 @@ Releases are managed through GitHub Actions workflows. Changesets accumulate unt
 
 Follow the stable release steps above. The version bump will go directly from the current version to the next stable version without a beta phase.
 
+## CMS SaaS and PaaS
+
+The SDK targets CMS SaaS by default, and `config({ platform: 'paas' })` switches it to CMS 13 PaaS. Everything that differs between the two goes through a platform adapter in `packages/optimizely-cms-sdk/src/graph/`:
+
+- `platform.ts`: the `PlatformAdapter` hooks (`metadataQuery`, `readMetadata`, `contentQuery`, `normalize`) and `saasPlatform`.
+- `paas.ts`: `paasPlatform`, a copy of the SaaS hooks rather than a spread of them, so SaaS changes don't reach PaaS by accident.
+
+PaaS keeps the behaviour it has unless a change is meant for it. When adding a feature, decide which platform it is for:
+
+- **Both platforms**: change the shared code. If PaaS queries or results change, `__test__/paasContract.test.ts` fails. Run `pnpm test -u` in the SDK package and commit the updated snapshot, so reviewers see exactly what changed for PaaS.
+- **SaaS only**: wire it in through `saasPlatform`'s hooks, or behind an option only `saasPlatform` sets. Never add it unconditionally to a shared query builder (`createQuery.ts`, `util/queryUtils.ts`, `util/baseTypeUtil.ts`), because `paasPlatform` calls those too. The PaaS snapshot must not change. If PaaS can't support a content type feature (such as a new property type), make `paasPlatform` throw an `OptimizelyGraphError` naming it, rather than send a query PaaS rejects.
+- **PaaS only, or a SaaS feature backported to PaaS**: change `paasPlatform` and update the snapshot.
+- **A difference no hook covers**: add a hook to `PlatformAdapter`, implement it in both adapters, and call it through `context.platform`. Keep hooks few and coarse.
+
 ## Project structure
 
 This repository is a mono-repo, meaning that multiple packages and artifacts are in the same repository.

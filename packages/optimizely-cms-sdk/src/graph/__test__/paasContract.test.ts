@@ -1,12 +1,15 @@
 /**
+ * @vitest-environment node
+ *
  * Pins what PaaS sends to Graph and returns to renderers. The query builders are
  * shared with SaaS, so a snapshot diff here means a shared change reached PaaS:
  * update the snapshot if PaaS should get it, otherwise move it behind a SaaS hook.
  */
 import { beforeAll, describe, expect, test, vi } from 'vitest';
-import { GraphClient, contentType, initContentTypeRegistry } from '@optimizely/cms-sdk';
-import { configureAdapter, MemoryAdapter } from '@optimizely/cms-sdk/core';
-import { paas } from '../index.js';
+import { GraphClient } from '../index.js';
+import { contentType, initContentTypeRegistry } from '../../model/index.js';
+import { configureAdapter } from '../../context/config.js';
+import { MemoryAdapter } from '../../core/context/memoryAdapter.js';
 
 const Teaser = contentType({
   key: 'Teaser',
@@ -55,7 +58,7 @@ const article = {
 
 /** A PaaS client whose requests return `responses` in order, recording each query. */
 function stubClient(...responses: unknown[]) {
-  const client = new GraphClient('key', { platform: paas() });
+  const client = new GraphClient('key', { platform: 'paas' });
   const request = vi.spyOn(client, 'request');
   responses.forEach(response => request.mockResolvedValueOnce(response));
   const queries = () => request.mock.calls.map(([query]) => query);

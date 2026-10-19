@@ -1,21 +1,16 @@
-import {
-  type DamMode,
-  type GraphPlatform,
-  type TaxonomyMode,
-  createMultipleContentQuery,
-  createSingleContentQuery,
-  getMetadataQuery,
-  liftSectionNodes,
-  removeTypePrefix,
-} from '@optimizely/cms-sdk/platform';
+import type { DamMode, TaxonomyMode } from './options.js';
+import type { PlatformAdapter } from './platform.js';
+import { createMultipleContentQuery, createSingleContentQuery } from './createQuery.js';
+import { getMetadataQuery, liftSectionNodes, removeTypePrefix } from './queries.js';
 
 const resolveMode = (mode: DamMode | TaxonomyMode, detected: boolean): boolean =>
   mode === 'on' ? true
   : mode === 'off' ? false
   : detected;
 
-// A copy of the SDK's SaaS platform, not a spread of it, so SaaS changes don't reach PaaS.
-const paasPlatform: GraphPlatform = {
+// A copy of `saasPlatform`, not a spread of it, so SaaS changes don't reach PaaS.
+/** Optimizely CMS 13 PaaS, selected with `platform: 'paas'`. */
+export const paasPlatform: PlatformAdapter = {
   name: 'paas',
 
   metadataQuery: getMetadataQuery,
@@ -42,16 +37,3 @@ const paasPlatform: GraphPlatform = {
 
   normalize: item => liftSectionNodes(removeTypePrefix(item)),
 };
-
-/**
- * Optimizely CMS 13 PaaS. Pass to `config()` or `getClient()` as `platform`.
- *
- * @example
- * ```ts
- * import { config } from '@optimizely/cms-sdk';
- * import { paas } from '@optimizely/cms-sdk-paas';
- *
- * config({ apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!, platform: paas() });
- * ```
- */
-export const paas = (): GraphPlatform => paasPlatform;

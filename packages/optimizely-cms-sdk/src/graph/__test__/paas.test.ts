@@ -1,14 +1,17 @@
+/**
+ * @vitest-environment node
+ */
 import { describe, expect, test } from 'vitest';
-import { config, getClient } from '@optimizely/cms-sdk';
-import { paas } from '../index.js';
+import { config, getClient } from '../index.js';
+import { paasPlatform } from '../paas.js';
 
 const AUTOMATIC = { dam: 'automatic', taxonomy: 'automatic' } as const;
 
-describe('paas()', () => {
-  test('is picked up by clients built from config()', () => {
-    config({ apiKey: 'key', platform: paas() });
+describe('paasPlatform', () => {
+  test("is picked up by clients built from config({ platform: 'paas' })", () => {
+    config({ apiKey: 'key', platform: 'paas' });
 
-    expect(getClient().platform.name).toBe('paas');
+    expect(getClient().platform).toBe(paasPlatform);
   });
 
   describe('readMetadata', () => {
@@ -20,7 +23,7 @@ describe('paas()', () => {
         formsOnPage: { total: 1 },
       };
 
-      expect(paas().readMetadata(data, AUTOMATIC)).toEqual({
+      expect(paasPlatform.readMetadata(data, AUTOMATIC)).toEqual({
         contentTypeName: 'Article',
         damEnabled: true,
         taxonomyEnabled: true,
@@ -31,7 +34,7 @@ describe('paas()', () => {
     test('reports nothing when the probe finds nothing', () => {
       const data = { _Content: { item: null }, damAssetType: null, taxonomyType: null };
 
-      expect(paas().readMetadata(data, AUTOMATIC)).toEqual({
+      expect(paasPlatform.readMetadata(data, AUTOMATIC)).toEqual({
         contentTypeName: undefined,
         damEnabled: false,
         taxonomyEnabled: false,
@@ -44,7 +47,7 @@ describe('paas()', () => {
         damAssetType: null,
         taxonomyType: { fields: [{ name: 'categories' }] },
       };
-      const metadata = paas().readMetadata(data, { dam: 'on', taxonomy: 'off' });
+      const metadata = paasPlatform.readMetadata(data, { dam: 'on', taxonomy: 'off' });
 
       expect(metadata.damEnabled).toBe(true);
       expect(metadata.taxonomyEnabled).toBe(false);
@@ -59,7 +62,7 @@ describe('paas()', () => {
       composition: { nodeType: 'section', nodes: [{ key: 'row' }] },
     };
 
-    expect(paas().normalize(item)).toMatchObject({
+    expect(paasPlatform.normalize(item)).toMatchObject({
       title: 'Hello',
       nodes: [{ key: 'row' }],
     });

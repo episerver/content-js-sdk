@@ -1,10 +1,12 @@
-import type { DamMode, TaxonomyMode } from './options.js';
+import type { DamMode, GraphPlatform, TaxonomyMode } from './options.js';
 import {
   type QueryOptions,
   createSingleContentQuery,
   createMultipleContentQuery,
 } from './createQuery.js';
 import { getMetadataQuery, liftSectionNodes, removeTypePrefix } from './queries.js';
+import { OptimizelyGraphError } from './error.js';
+import { paasPlatform } from './paas.js';
 
 // TYPES
 
@@ -22,12 +24,12 @@ export type ContentMetadata = {
  * Everything that differs between CMS products when talking to Graph: what to
  * ask for, and how to turn the answer into the shape renderers expect.
  */
-export type GraphPlatform = {
-  /** Identifies the platform in errors and telemetry. */
-  readonly name: string;
+export type PlatformAdapter = {
+  /** Identifies the platform in telemetry. */
+  readonly name: GraphPlatform;
   /** The query that finds a content item's type and the instance's capabilities. */
   metadataQuery: typeof getMetadataQuery;
-  /** Reads the answer to {@linkcode GraphPlatform.metadataQuery}. */
+  /** Reads the answer to {@linkcode PlatformAdapter.metadataQuery}. */
   readMetadata(
     data: any,
     modes: { dam: DamMode; taxonomy: TaxonomyMode },
@@ -50,7 +52,7 @@ const resolveMode = (mode: DamMode | TaxonomyMode, detected: boolean): boolean =
   : detected;
 
 /** Optimizely CMS SaaS, the default platform. */
-export const saasPlatform: GraphPlatform = {
+export const saasPlatform: PlatformAdapter = {
   name: 'saas',
 
   metadataQuery: getMetadataQuery,
@@ -77,3 +79,20 @@ export const saasPlatform: GraphPlatform = {
 
   normalize: item => liftSectionNodes(removeTypePrefix(item)),
 };
+
+// RESOLUTION
+
+const ADAPTERS: Record<GraphPlatform, PlatformAdapter> = {
+  saas: saasPlatform,
+  paas: paasPlatform,
+};
+
+/** The adapter for a `platform` option. Throws for a name the SDK doesn't know. */
+export function resolvePlatform(platform: GraphPlatform = 'saas'): PlatformAdapter {
+  if (!Object.hasOwn(ADAPTERS, platform))
+    throw new OptimizelyGraphError(
+      `Unknown platform '${platform}'. Use 'saas' (the default) or 'paas'.`,
+    );
+
+  return ADAPTERS[platform];
+}
