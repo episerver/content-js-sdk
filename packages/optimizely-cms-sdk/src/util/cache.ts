@@ -3,10 +3,14 @@ import {
   type FragmentOptions,
   type QueryContext,
 } from './queryUtils.js';
-import { getAllContentTypes } from '../model/contentTypeRegistry.js';
+import {
+  getAllContentTypes,
+  getRegistryVersion,
+} from '../model/contentTypeRegistry.js';
 import type { FilterShape, VariationMode } from '../graph/filters.js';
 
 const queryCache = new Map<string, string>();
+let cachedRegistryVersion = getRegistryVersion();
 
 /** The lenient option bag the query builders accept. */
 type QueryOptions = Partial<QueryContext> &
@@ -99,6 +103,12 @@ export const withQueryCaching = (
   generateQuery: QueryGenerator,
 ): QueryGenerator => {
   return (contentType: string, options?: QueryOptions): string => {
+    // Queries are built from the registry, so a change makes every entry stale.
+    if (cachedRegistryVersion !== getRegistryVersion()) {
+      queryCache.clear();
+      cachedRegistryVersion = getRegistryVersion();
+    }
+
     const cacheKey = createCacheKey(queryType, contentType, options);
     const cached = queryCache.get(cacheKey);
     if (cached) return cached;
