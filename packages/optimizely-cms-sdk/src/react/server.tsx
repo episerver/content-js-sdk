@@ -28,6 +28,20 @@ import { isDev } from '../util/environment.js';
 import { OptimizelyReactError } from './error.js';
 import { withComponentRenderSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
+import { getClient } from '../graph/index.js';
+import { getContentType } from '../model/contentTypeRegistry.js';
+import {
+  getDisplayTemplate,
+  getDisplayTemplateTag,
+} from '../model/displayTemplateRegistry.js';
+import { isContentType } from '../model/index.js';
+import { generateMockContent } from '../render/mockContent.js';
+import { PreviewHeightReporter } from './client.js';
+import { FormRulesProvider } from './forms/FormRulesContext.js';
+import { FormSubmissionProvider } from './forms/FormSubmissionProvider.js';
+import { FormValidationProvider } from './forms/FormValidationContext.js';
+import { setContext } from '../context/config.js';
+import { withAppContext } from './context/contextWrapper.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
   getContext,
@@ -360,4 +374,148 @@ export function OptimizelyGridSection({
     });
 
   return renderItems(planGridSection<StructureContainer>(nodes));
+}
+
+/** Props the router hands to a page built by {@linkcode createComponentPreviewPage} */
+type ComponentPreviewPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+/** Query parameters the page reads itself. Everything else is a display setting. */
+const PREVIEW_PARAMS = new Set(['contentType', 'key', 'displayTemplate', 'locale']);
+
+/** The first value of a query parameter, ignoring repeats. */
+function queryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+/** The settings a display template starts with: the first choice of each. */
+function defaultDisplaySettings(templateKey: string | undefined) {
+  const settings = templateKey ? getDisplayTemplate(templateKey)?.settings : undefined;
+  if (!settings) return {};
+
+  return Object.fromEntries(
+    Object.entries(settings).map(([key, setting]) => [
+      key,
+      Object.entries(setting.choices).sort(
+        ([, a], [, b]) => a.sortOrder - b.sortOrder,
+      )[0]?.[0],
+    ]),
+  );
+}
+
+/**
+ * Builds a page that renders one component on its own, without the page it
+ * normally lives in. Meant as the `src` of an iframe in a component catalog.
+ *
+ * It renders either a real content item (`?key=`) or, for a component no
+ * editor has created content for yet, stand-in content generated from the
+ * content type definition (`?contentType=`).
+ *
+ * Mount it at `app/preview/component/page.tsx`:
+ *
+ * @example
+ * ```tsx
+ * import { createComponentPreviewPage } from '@optimizely/cms-sdk/react/server';
+ *
+ * export default createComponentPreviewPage({ defaultLocale: 'en' });
+ * ```
+ *
+ * The iframe then loads one of:
+ *
+ * - `/preview/component?contentType=HeroSection&displayTemplate=HeroStyles&width=full`
+ * - `/preview/component?key=<content key>&locale=en`
+ *
+ * Any query parameter the page does not read itself is passed to the component
+ * as a display setting, so a catalog can flip one variant at a time.
+ *
+ * Only published content is reachable through `?key=`: this takes no preview
+ * token, so it exposes nothing the public site does not already serve.
+ */
+export function createComponentPreviewPage({
+  defaultLocale,
+}: { defaultLocale?: string } = {}) {
+  async function ComponentPreviewPage({ searchParams }: ComponentPreviewPageProps) {
+    const query = (await searchParams) ?? {};
+    const locale = queryValue(query.locale) ?? defaultLocale;
+    const contentTypeKey = queryValue(query.contentType);
+    const contentKey = queryValue(query.key);
+    const displayTemplateKey = queryValue(query.displayTemplate);
+
+    const content =
+      contentKey ? await getClient().getContent({ key: contentKey, locale })
+      : contentTypeKey ?
+        (() => {
+          const definition = getContentType(contentTypeKey);
+          return definition && isContentType(definition) ?
+              generateMockContent(definition)
+            : null;
+        })()
+      : null;
+
+    const displaySettings: Record<string, string> = {
+      ...defaultDisplaySettings(displayTemplateKey),
+    };
+
+    for (const [key, value] of Object.entries(query)) {
+      if (!PREVIEW_PARAMS.has(key) && typeof value === 'string') {
+        displaySettings[key] = value;
+      }
+    }
+
+    if (!content) {
+      return (
+        <FallbackComponent>
+          Nothing to preview for <b>{contentKey ?? contentTypeKey ?? '(no content)'}</b>
+        </FallbackComponent>
+      );
+    }
+
+    // Components reading `getContext()` (preview attributes, links) expect the
+    // same context a full page render sets up.
+    setContext({
+      currentContent: content,
+      key: content._metadata.key,
+      type: content._metadata.types[0],
+      locale: content._metadata.fallbackForLocale ?? content._metadata.locale,
+    });
+
+    return (
+      <>
+        {/* The frame paints no backdrop of its own, so the page embedding it
+            decides what the component sits on. One component on a page of its
+            own sits in the middle of it, rather than against the top edge of
+            whatever box the frame has been given, and keeps a margin off the
+            edges — proportional at small sizes, so a thumbnail-sized frame is
+            not mostly padding. The Next.js dev overlay is hidden here only, so
+            it still works on the application's own pages. Unlayered and
+            rendered after the stylesheet, so these win without `!important`. */}
+        <style>
+          {'html,body{background:transparent}' +
+            'body{box-sizing:border-box;min-height:100svh;display:flex;' +
+            'flex-direction:column;justify-content:center;padding:min(1.5rem,5%)}' +
+            'nextjs-portal{display:none}'}
+        </style>
+        <PreviewHeightReporter />
+        {/* A form element reads these from the container it sits in. Previewed
+            on its own it has no container, so the preview stands in as one. A
+            container previewed this way brings its own, which take over. */}
+        <FormSubmissionProvider>
+          <FormValidationProvider>
+            <FormRulesProvider>
+              <OptimizelyComponent
+                content={content}
+                tag={getDisplayTemplateTag(displayTemplateKey)}
+                displaySettings={
+                  Object.keys(displaySettings).length > 0 ? displaySettings : undefined
+                }
+              />
+            </FormRulesProvider>
+          </FormValidationProvider>
+        </FormSubmissionProvider>
+      </>
+    );
+  }
+
+  return withAppContext(ComponentPreviewPage);
 }
