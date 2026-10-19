@@ -27,3 +27,7 @@ config({
 
 `getClient({ platform: paas() })` and `new GraphClient(key, { platform: paas() })` work
 the same way.
+
+See
+[Use the SDK with CMS PaaS](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/cms-paas.md)
+for details.
