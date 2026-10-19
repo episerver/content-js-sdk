@@ -27,14 +27,14 @@ query GetContentMetadata($key: String, $version: String, $metadataLocale: String
 fragment PublicImageAsset on cmp_PublicImageAsset { Url Title AltText Description MimeType Height Width Renditions { Id Name Url Width Height } FocalPoint { X Y } Tags { Guid Name } }
 fragment PublicVideoAsset on cmp_PublicVideoAsset { Url Title AltText Description MimeType Renditions { Id Name Url Width Height } Tags { Guid Name } }
 fragment PublicRawFileAsset on cmp_PublicRawFileAsset { Url Title Description MimeType Tags { Guid Name } }
-fragment ContentReferenceItem on ContentReference { item { __typename ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset } }
 fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }
 fragment ItemMetadata on ItemMetadata { changeset displayOption }
 fragment InstanceMetadata on InstanceMetadata { changeset locales expired container owner routeSegment lastModifiedBy path createdBy }
 fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }
 fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }
 fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }
-fragment Teaser on Teaser { __typename Teaser__heading:heading image { key url { ...ContentUrl } ...ContentReferenceItem } ..._IContent Teaser__itemMetadata:_itemMetadata { categories } }
+fragment _image on _Image { __typename ..._IContent assetMetadata:_assetMetadata { fileSize mimeType url } imageMetadata:_imageMetadata { width height } itemMetadata:_itemMetadata { categories } }
+fragment Teaser on Teaser { __typename Teaser__heading:heading image { key url { ...ContentUrl } item { __typename ...PublicImageAsset ...PublicVideoAsset ...PublicRawFileAsset ..._image } } ..._IContent Teaser__itemMetadata:_itemMetadata { categories } }
 fragment ArticlePage on ArticlePage { __typename ArticlePage__title:title ArticlePage__body:body { json } ArticlePage__teasers:teasers { __typename ...Teaser } ..._IContent ArticlePage__itemMetadata:_itemMetadata { categories } }
 query GetContent($key: String, $version: String, $metadataLocale: String) {
   _Content(where: { _and: [{ _metadata: { key: { eq: $key }, version: { eq: $version }, locale: { eq: $metadataLocale } } }, { _metadata: { status: { eq: "Published" } } }] }) {
@@ -115,7 +115,8 @@ fragment InstanceMetadata on InstanceMetadata { changeset locales expired contai
 fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }
 fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }
 fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }
-fragment Teaser on Teaser { __typename Teaser__heading:heading image { key url { ...ContentUrl } } ..._IContent }
+fragment _image on _Image { __typename ..._IContent assetMetadata:_assetMetadata { fileSize mimeType url } imageMetadata:_imageMetadata { width height } }
+fragment Teaser on Teaser { __typename Teaser__heading:heading image { key url { ...ContentUrl } item { __typename ..._image } } ..._IContent }
 fragment ArticlePage on ArticlePage { __typename ArticlePage__title:title ArticlePage__body:body { json } ArticlePage__teasers:teasers { __typename ...Teaser } ..._IContent }
 query GetContentByPath($host: String, $path: String, $pathNoSlash: String) {
   _Content(where: { _and: [{ _or: [{ _metadata: { url: { base: { eq: $host }, default: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, default: { eq: $pathNoSlash } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $path } } } }, { _metadata: { url: { base: { eq: $host }, hierarchical: { eq: $pathNoSlash } } } }] }, { _metadata: { status: { eq: "Published" } } }] }) {
@@ -293,7 +294,8 @@ fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale ver
 fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }
 fragment _IExperience on _IExperience { composition {...ICompositionNode }}
 fragment ICompositionNode on ICompositionNode { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { component { ..._IComponent } nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { component { ..._IComponent } nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { component { ..._IComponent } nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionStructureNode { component { ..._IComponent } nodes { __typename key type nodeType layoutType displayName displayTemplateKey displaySettings {key value} ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } } } ...on CompositionComponentNode { nodeType component { ..._IComponent } } }
-fragment Teaser on Teaser { __typename Teaser__heading:heading image { key url { ...ContentUrl } } ..._IContent }
+fragment _image on _Image { __typename ..._IContent assetMetadata:_assetMetadata { fileSize mimeType url } imageMetadata:_imageMetadata { width height } }
+fragment Teaser on Teaser { __typename Teaser__heading:heading image { key url { ...ContentUrl } item { __typename ..._image } } ..._IContent }
 fragment _IComponent on _IComponent { __typename ...Teaser }
 fragment LandingPage on LandingPage { __typename LandingPage__title:title ..._IContent ..._IExperience }
 query GetContent($key: String, $version: String, $metadataLocale: String) {
