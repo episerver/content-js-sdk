@@ -3,17 +3,15 @@ import { getPreviewUtils, OptimizelyGridSection } from '@optimizely/cms-sdk/reac
 import {
   FormSubmissionProvider,
   FormStep,
-  FormWrapper,
   getFormButtonRole,
   isFormButtonNode,
-  partitionFormNodes,
 } from '@optimizely/cms-sdk/forms/react';
-import FormTitle from './FormTitle';
-import FormDescription from './FormDescription';
+import FormContainerClient from './FormContainerClient';
+import { cn } from '../../util/merge';
 import FormAlerts from './FormAlerts';
 import FormStepTracker from './FormStepTracker';
-import GridRow from './GridRow';
-import GridColumn from './GridColumn';
+import FormStepNavigation from './FormStepNavigation';
+import { GridColumn, GridRow } from './Grid';
 
 type FormContainerProps = {
   content: OptiFormsContainerContentType;
@@ -21,24 +19,63 @@ type FormContainerProps = {
 
 type Node = NonNullable<OptiFormsContainerContentType['nodes']>[number];
 
-/**
- * Footer holding a step's buttons: back on the left, forward on the right.
- * Alignment is done here, not via `ml-auto` on the button, since in edit mode
- * the CMS marker div around each button would swallow that margin.
- */
-function FormActions({ nodes }: { nodes: Node[] }) {
-  const goesBack = (node: Node) =>
-    getFormButtonRole(
-      (node as { component?: { Label?: string | null } }).component ?? {},
-    ) === 'previous';
+const FORM_ACTION_TYPES = new Set(['OptiFormsSubmitElement', 'OptiFormsResetElement']);
+
+function isFormActionNode(node: Node): boolean {
+  return (
+    node.nodeType === 'component' &&
+    FORM_ACTION_TYPES.has(
+      (node as { component?: { __typename?: string } }).component?.__typename ?? '',
+    )
+  );
+}
+
+function partitionStepNodes(nodes: Node[]): { content: Node[]; buttons: Node[] } {
+  const content: Node[] = [];
+  const buttons: Node[] = [];
+
+  for (const node of nodes) {
+    const childNodes = 'nodes' in node ? (node as { nodes?: Node[] }).nodes : undefined;
+
+    if (isFormActionNode(node)) {
+      buttons.push(node);
+    } else if (Array.isArray(childNodes)) {
+      const inner = partitionStepNodes(childNodes);
+      buttons.push(...inner.buttons);
+      if (inner.content.length > 0) content.push({ ...node, nodes: inner.content } as Node);
+    } else {
+      content.push(node);
+    }
+  }
+
+  return { content, buttons };
+}
+
+function FormActions({
+  nodes,
+  children,
+}: {
+  nodes: Node[];
+  children?: React.ReactNode;
+}) {
+  const goesStart = (node: Node) => {
+    const comp =
+      (node as { component?: { __typename?: string; Label?: string | null } }).component ?? {};
+    return (
+      getFormButtonRole(comp) === 'previous' ||
+      comp.__typename === 'OptiFormsResetElement'
+    );
+  };
 
   return (
     <div
-      className={`mt-6 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-5 ${
-        nodes.some(goesBack) ? 'justify-between' : 'justify-end'
-      }`}
+      className={cn(
+        'mt-6 flex flex-wrap items-center gap-3 border-t border-foreground/10 pt-5',
+        nodes.some(goesStart) ? 'justify-between' : 'justify-end',
+      )}
     >
       <OptimizelyGridSection nodes={nodes} row={GridRow} column={GridColumn} />
+      {children}
     </div>
   );
 }
@@ -57,36 +94,56 @@ export default function FormContainer({ content }: FormContainerProps) {
 
   return (
     <FormSubmissionProvider>
-      {/* Forms read better narrow. Long lines make a field look like a text block. */}
-      <div id='form-alert' className='max-w-2xl space-y-5'>
+      <div id='form-alert' className='max-w-2xl mx-auto space-y-5'>
         <div className='space-y-2'>
-          <FormTitle title={content.Title ?? null} previewAttributes={pa} />
-          <FormDescription
-            description={content.Description ?? null}
-            previewAttributes={pa}
-          />
+          {content.Title && (
+            <h2
+              {...pa('Title')}
+              className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'
+            >
+              {content.Title}
+            </h2>
+          )}
+          {content.Description && (
+            <p {...pa('Description')} className='text-base leading-relaxed text-foreground2'>
+              {content.Description}
+            </p>
+          )}
         </div>
 
         <FormAlerts
           submitConfirmationMessage={content.SubmitConfirmationMessage ?? null}
         />
 
-        <FormWrapper
+        <FormContainerClient
           scrollToOnSuccess='form-alert'
           scrollToOnError={false}
           action={content.SubmitUrl?.default ?? ''}
           steps={stepNodes}
           rules={content.DependencyRules}
         >
-          <div className='space-y-6 rounded-lg border border-gray-200 bg-white p-6 sm:p-8'>
+          <div className='card space-y-6 p-6 sm:p-8'>
             <FormStepTracker steps={stepNodes.length} />
 
             {stepNodes.map((node, index) => {
-              // Hoisted into a footer in every mode, so the form looks the same
-              // while editing as it does to a visitor. Each button keeps its own
-              // block marker; the row and column that held it are dropped, so
-              // those two nodes are not selectable in the CMS.
-              const step = partitionFormNodes([node]);
+              const step = partitionStepNodes([node]);
+
+              const isNavButton = (btn: Node) => {
+                const comp =
+                  (btn as { component?: { __typename?: string; Label?: string | null } })
+                    .component ?? {};
+                if (comp.__typename === 'OptiFormsResetElement') return true;
+                const role = getFormButtonRole(comp);
+                return role === 'previous' || role === 'next';
+              };
+
+              const navButtons = step.buttons.filter(isNavButton);
+              const actionButtons = step.buttons.filter(btn => !isNavButton(btn));
+              const excludeRoles = step.buttons.map(btn =>
+                getFormButtonRole(
+                  (btn as { component?: { Label?: string | null } }).component ?? {},
+                ),
+              );
 
               return (
                 <FormStep key={node.key} index={index} node={node as { key: string }}>
@@ -95,14 +152,28 @@ export default function FormContainer({ content }: FormContainerProps) {
                     row={GridRow}
                     column={GridColumn}
                   />
-                  {step.buttons.length > 0 && <FormActions nodes={step.buttons} />}
+                  {navButtons.length > 0 ? (
+                    <FormActions nodes={navButtons}>
+                      <FormStepNavigation
+                        totalSteps={stepNodes.length}
+                        excludeRoles={excludeRoles}
+                        bare
+                      />
+                    </FormActions>
+                  ) : (
+                    <FormStepNavigation
+                      totalSteps={stepNodes.length}
+                      excludeRoles={excludeRoles}
+                    />
+                  )}
+                  {actionButtons.length > 0 && <FormActions nodes={actionButtons} />}
                 </FormStep>
               );
             })}
 
             {buttonNodes.length > 0 && <FormActions nodes={buttonNodes} />}
           </div>
-        </FormWrapper>
+        </FormContainerClient>
       </div>
     </FormSubmissionProvider>
   );

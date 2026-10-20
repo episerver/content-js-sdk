@@ -7,11 +7,14 @@ import { useEffect, useState } from 'react';
 
 /** Render the elapsed time from a given `date` */
 export function ShowElapsed({ date }: { date: string }) {
-  const [elapsedTime, setElapsed] = useState(Date.now() - new Date(date).getTime());
+  // Starts at 0 rather than reading the clock during render: the server and the
+  // browser render at different instants, so a `Date.now()` initializer would
+  // produce a hydration mismatch. The first tick runs immediately in the effect.
+  const [elapsedTime, setElapsed] = useState(0);
   useEffect(() => {
-    const i = setInterval(() => {
-      setElapsed(Date.now() - new Date(date).getTime());
-    }, 1000);
+    const tick = () => setElapsed(Date.now() - new Date(date).getTime());
+    tick();
+    const i = setInterval(tick, 1000);
 
     return () => {
       clearInterval(i);

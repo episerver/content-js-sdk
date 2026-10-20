@@ -5,6 +5,10 @@ import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 config({
   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY || "your api key here",
   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+  fragment: {
+    // This sample renders body.html via dangerouslySetInnerHTML; the SDK default is 'json'.
+    richTextFormat: 'html',
+  },
 });
 
 initContentTypeRegistry([ArticleContentType]);

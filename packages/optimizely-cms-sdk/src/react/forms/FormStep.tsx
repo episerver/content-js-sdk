@@ -2,7 +2,7 @@
 
 import { createContext, ReactNode, useContext } from 'react';
 import { useFormSteps } from './FormWrapper.js';
-import { getPreviewUtils } from '../previewUtils.js';
+import { getPreviewUtils } from '../../core/preview/attributes.js';
 
 /**
  * The step a field belongs to, or `undefined` for fields outside any step.
@@ -40,14 +40,22 @@ export function FormStep({ index, node, children }: FormStepProps) {
   const { currentStepIndex } = useFormSteps();
   const { pa } = getPreviewUtils(node ?? {});
 
+  const isActive = currentStepIndex === index;
+
   return (
     <FormStepIndexContext.Provider value={index}>
-      <div
-        style={{ display: currentStepIndex === index ? 'block' : 'none' }}
+      <fieldset
+        style={{
+          display: isActive ? 'block' : 'none',
+          border: 'none',
+          padding: 0,
+          margin: 0,
+          minInlineSize: 'auto',
+        }}
         {...(node ? pa(node) : {})}
       >
         {children}
-      </div>
+      </fieldset>
     </FormStepIndexContext.Provider>
   );
 }

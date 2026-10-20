@@ -1,19 +1,23 @@
 {
   "name": "stride-template",
-  "version": "0.1.2",
+  "version": "0.1.3-beta.0",
   "license": "Apache-2.0",
   "private": true,
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0"
+  },
   "scripts": {
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "config:push": "pnpm exec optimizely-cms-cli config push optimizely.config.mjs"
+    "deploy": "optimizely-cms-cli deploy",
+    "config:push": "optimizely-cms-cli config push optimizely.config.mjs"
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
-    "next": "16.2.11",
+    "next": "16.3.6",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "tailwind-merge": "^3.6.0"

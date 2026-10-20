@@ -40,7 +40,7 @@ async function Page({ searchParams }: Props) {
       <NextPreviewComponent />
       <Header currentPath={path} />
       <ContentLayout content={content} currentPath={path} />
-      <Footer />
+      <Footer currentPath={path} />
     </>
   );
 }

@@ -1,26 +1,32 @@
 import React, { ReactNode } from 'react';
-import {
-  ComponentRegistry,
-  ComponentResolverOrObject,
-} from '../render/componentRegistry.js';
 import { JSX } from 'react';
-import { FormContentTypes } from '../model/formContentTypes.js';
-import { addToContentTypeRegistry } from '../model/contentTypeRegistry.js';
-import { mapFormHandlersToContentTypes } from './forms/setup.js';
-import type { FormHandlers, ComponentType, FormComponentEntry } from './forms/setup.js';
+import { ComponentResolverOrObject } from '../render/componentRegistry.js';
+import {
+  hasComponentRegistry,
+  initComponentRegistry,
+  initForms as initFormsCore,
+} from '../core/render/registry.js';
+import {
+  resolveContentComponent,
+  type OptimizelyContent,
+} from '../core/render/resolve.js';
+import {
+  planComposition,
+  planGridSection,
+  isWrappedComponent,
+  getStructureContainer,
+  type GridRenderItem,
+} from '../core/render/plan.js';
+import type { FormHandlers, ComponentType } from './forms/setup.js';
 import {
   ExperienceStructureNode,
   ExperienceNode,
   ExperienceComponentNode,
   DisplaySettingsType,
-  ExperienceCompositionNode,
 } from '../infer.js';
-import { isComponentNode } from '../util/baseTypeUtil.js';
-import { parseDisplaySettings } from '../model/displayTemplates.js';
-import { getDisplayTemplateTag } from '../model/displayTemplateRegistry.js';
 import { isDev } from '../util/environment.js';
 import { OptimizelyReactError } from './error.js';
-import { withReactComponentSpan } from '../telemetry/spans.js';
+import { withComponentRenderSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
 export { withAppContext } from './context/contextWrapper.js';
 export {
@@ -31,41 +37,10 @@ export {
   configureAdapter,
   getAdapter,
 } from '../context/config.js';
-export { ReactContextAdapter } from '../context/reactContextAdapter.js';
-import { getPreviewUtils } from './previewUtils.js';
+export { ReactContextAdapter } from './context/reactContextAdapter.js';
+import { getPreviewUtils } from '../core/preview/attributes.js';
 export { getPreviewUtils };
 export type { ContextAdapter, ContextData } from '../context/baseContext.js';
-
-/** Components registered by the application, through `initReactComponentRegistry`. */
-let componentRegistry: ComponentRegistry<ComponentType>;
-
-/**
- * Components registered for Optimizely Forms elements, through `initForms`.
- *
- * Held in a registry of its own rather than merged into `componentRegistry`, so
- * that the two `init` calls can happen in either order, and so that an
- * application using a resolver *function* keeps it. Merging meant reading the
- * application's components out of its resolver, which is only possible when the
- * resolver is a plain object.
- */
-let formComponentRegistry: ComponentRegistry<ComponentType> | undefined;
-let formComponents: Record<string, FormComponentEntry> = {};
-
-const addToReactComponentRegistry = (components: Record<string, FormComponentEntry>) => {
-  formComponents = { ...formComponents, ...components };
-  formComponentRegistry = new ComponentRegistry(formComponents);
-};
-
-/** Looks a component up in the application's registry, then in the forms one. */
-function resolveComponent(
-  contentType: string,
-  options: { tag?: string } = {},
-): ComponentType | undefined {
-  return (
-    componentRegistry?.getComponent(contentType, options) ??
-    formComponentRegistry?.getComponent(contentType, options)
-  );
-}
 
 /**
  * Initializes form content types and components in one call.
@@ -83,10 +58,7 @@ function resolveComponent(
  * });
  * ```
  */
-export function initForms(handlers: FormHandlers) {
-  addToContentTypeRegistry(FormContentTypes);
-  addToReactComponentRegistry(mapFormHandlersToContentTypes(handlers));
-}
+export const initForms: (handlers: FormHandlers) => void = initFormsCore;
 
 type InitOptions = {
   resolver: ComponentResolverOrObject<ComponentType>;
@@ -132,32 +104,8 @@ type InitOptions = {
  * ```
  */
 export function initReactComponentRegistry(options: InitOptions) {
-  componentRegistry = new ComponentRegistry(options.resolver);
+  initComponentRegistry(options);
 }
-
-/** Content data from CMS */
-type OptimizelyContent = {
-  /** Content type name */
-  __typename: string;
-
-  /** Display template tag (if any) */
-  __tag?: string;
-
-  displayTemplateKey?: string | null;
-
-  /** Preview context */
-  __context?: { edit: boolean; preview_token: string };
-
-  __composition?: ExperienceCompositionNode;
-
-  composition?: ExperienceCompositionNode;
-
-  /** metadata */
-  _metadata?: {
-    types?: string[];
-    displayOption?: string | null;
-  };
-};
 
 /** Props for the {@linkcode OptimizelyComponent} component */
 type OptimizelyComponentProps = {
@@ -169,59 +117,6 @@ type OptimizelyComponentProps = {
   /** Manual tag override for component lookup */
   tag?: string;
 };
-
-/**
- * Gets display template key from content, checking multiple sources.
- */
-function getDisplayTemplateKey(content: OptimizelyContent): string | null | undefined {
-  return (
-    content._metadata?.displayOption ??
-    content.composition?.displayTemplateKey ??
-    content.__composition?.displayTemplateKey ??
-    content.displayTemplateKey
-  );
-}
-
-/**
- * Resolves the tag to use for component lookup.
- * Checks tag override first, then falls back to content.__tag or display template tag.
- */
-function resolveTag(
-  content: OptimizelyContent,
-  componentTag: string | undefined,
-): string | undefined {
-  //  tag override priority for tag provided by caller (e.g. OptimizelyComponent's `tag` prop)
-  if (componentTag) {
-    return componentTag;
-  }
-
-  // Fall back to content tag or display template tag or displayOption
-  const dtKey = getDisplayTemplateKey(content);
-  return content.__tag ?? getDisplayTemplateTag(dtKey);
-}
-
-/**
- * Finds component by trying each type in _metadata.types array, falling back to __typename.
- * Returns both the matched component and the typename that resolved.
- */
-function findComponent(
-  content: OptimizelyContent,
-  options: { tag?: string },
-): { component: React.ComponentType<any> | undefined; typename: string | undefined } {
-  // Try _metadata.types array first
-  const types = content._metadata?.types;
-  if (Array.isArray(types)) {
-    for (const typename of types) {
-      const component = resolveComponent(typename, options);
-      if (component) return { component, typename };
-    }
-  }
-
-  // Fallback to __typename
-  const typename = content.__typename;
-  const component = typename ? resolveComponent(typename, options) : undefined;
-  return { component, typename };
-}
 
 export async function OptimizelyComponent({
   content,
@@ -236,22 +131,21 @@ export async function OptimizelyComponent({
   }
 
   // A forms-only application is legitimate, so either registry will do.
-  if (!componentRegistry && !formComponentRegistry) {
+  if (!hasComponentRegistry()) {
     throw new OptimizelyReactError(
       'The component registry is not initialized. Call `initReactComponentRegistry` in the application entry point.',
     );
   }
 
-  const resolvedTag = resolveTag(content, tag);
+  const resolved = resolveContentComponent<ComponentType>(content, { tag, props });
 
-  return withReactComponentSpan(
+  return withComponentRenderSpan(
+    'react',
     content.__typename,
-    !!resolvedTag,
+    !!resolved.tag,
     !!displaySettings,
     async span => {
-      const { component: Component, typename } = findComponent(content, {
-        tag: resolvedTag,
-      });
+      const { component: Component, typename, contentProps, componentProps } = resolved;
 
       if (!Component) {
         span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, false);
@@ -264,36 +158,17 @@ export async function OptimizelyComponent({
 
       span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, true);
 
-      const optiProps = {
-        ...content,
-      };
-
-      // Extract preview attrs (data-epi-*) from props
-      const previewAttrs: Record<string, unknown> = {};
-      const componentProps: Record<string, unknown> = {};
-
-      for (const [key, value] of Object.entries(props)) {
-        if (key.startsWith('data-epi-')) {
-          previewAttrs[key] = value;
-        } else {
-          componentProps[key] = value;
-        }
-      }
-
       const element = (
         <Component
-          content={optiProps}
+          content={contentProps}
           displaySettings={displaySettings}
           {...componentProps}
         />
       );
 
-      // Wrap in div with previewAttrs only in edit mode
-      if (content.__context?.edit && Object.keys(previewAttrs).length > 0) {
-        return <div {...previewAttrs}>{element}</div>;
-      }
-
-      return element;
+      return resolved.previewAttrs ?
+          <div {...resolved.previewAttrs}>{element}</div>
+        : element;
     },
   );
 }
@@ -343,48 +218,32 @@ export function OptimizelyComposition({
   nodes: ExperienceNode[];
   ComponentWrapper?: ComponentContainer;
 }) {
-  return nodes.map(node => {
-    const { pa } = getPreviewUtils(node);
-    const previewAttrs = pa(node);
-    const tag = getDisplayTemplateTag(node.displayTemplateKey);
-    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
-
-    if (isComponentNode(node)) {
-      const Wrapper = ComponentWrapper ?? DefaultComponentWrapper;
-
-      return (
-        <Wrapper node={node} key={node.key} displaySettings={parsedDisplaySettings}>
-          <OptimizelyComponent
-            content={{
-              ...node.component,
-              __tag: tag,
-            }}
-            displaySettings={parsedDisplaySettings}
-          />
-        </Wrapper>
-      );
-    }
-
-    const { type } = node;
-
-    if (type === null) {
+  return planComposition(nodes).map(item => {
+    if (item.kind === 'unknown') {
       // TODO: Error handling
       return <div>???</div>;
     }
 
-    const componentData = 'component' in node ? (node.component as object) : {};
+    if (isWrappedComponent(item)) {
+      const Wrapper = ComponentWrapper ?? DefaultComponentWrapper;
+
+      return (
+        <Wrapper
+          node={item.node as ExperienceComponentNode}
+          key={item.key}
+          displaySettings={item.displaySettings}
+        >
+          <OptimizelyComponent content={item.content} displaySettings={item.displaySettings} />
+        </Wrapper>
+      );
+    }
 
     return (
       <OptimizelyComponent
-        key={node.key}
-        content={{
-          ...componentData,
-          ...node,
-          __typename: type,
-          __tag: tag,
-        }}
-        displaySettings={parsedDisplaySettings}
-        {...previewAttrs}
+        key={item.key}
+        content={item.content}
+        displaySettings={item.displaySettings}
+        {...item.previewAttrs}
       />
     );
   });
@@ -449,85 +308,56 @@ export function OptimizelyGridSection({
     column,
   };
 
-  return nodes.map((node, i) => {
-    const { pa } = getPreviewUtils(node);
-    const previewAttrs = pa(node);
-    const tag = getDisplayTemplateTag(node.displayTemplateKey);
-    const parsedDisplaySettings = parseDisplaySettings(node.displaySettings);
-
-    if (isComponentNode(node)) {
-      const component = (
-        <OptimizelyComponent
-          content={{
-            // `node.component` contains user-defined properties
-            ...node.component,
-            __composition: node,
-            __tag: tag,
-          }}
-          displaySettings={parsedDisplaySettings}
-          {...(ComponentWrapper ? {} : previewAttrs)}
-        />
-      );
-
-      // we can only pass key, ref to fragments to avoid React warnings, so if there's a wrapper component, use that, otherwise render the component directly without a wrapper
-      if (ComponentWrapper) {
-        return (
-          <ComponentWrapper
-            key={node.key}
-            node={node}
-            displaySettings={parsedDisplaySettings}
-          >
-            {component}
-          </ComponentWrapper>
+  const renderItems = (items: GridRenderItem<StructureContainer>[]): React.ReactNode[] =>
+    items.map(item => {
+      if (item.kind === 'component') {
+        const component = (
+          <OptimizelyComponent
+            content={item.content}
+            displaySettings={item.displaySettings}
+            {...(ComponentWrapper ? {} : item.previewAttrs)}
+          />
         );
+
+        // we can only pass key, ref to fragments to avoid React warnings, so if there's a wrapper component, use that, otherwise render the component directly without a wrapper
+        if (ComponentWrapper) {
+          return (
+            <ComponentWrapper
+              key={item.key}
+              node={item.node as ExperienceComponentNode}
+              displaySettings={item.displaySettings}
+            >
+              {component}
+            </ComponentWrapper>
+          );
+        }
+
+        return <React.Fragment key={item.key}>{component}</React.Fragment>;
       }
 
-      return <React.Fragment key={node.key}>{component}</React.Fragment>;
-    }
+      const Component = getStructureContainer(item, { overrides: locallyDefined, fallbacks });
 
-    const { nodeType } = node;
-    const globalNames: Record<string, string> = {
-      row: '_Row',
-      column: '_Column',
-    };
+      const childNodes = renderItems(item.children);
 
-    // Pick the component in the following order:
-    // 1. Explicitly defined in this component
-    // 2. Globally defined (in the registry)
-    // 3. Fallback
-    // 4. React.Fragment
-    const globalName = globalNames[nodeType];
-    const Component =
-      locallyDefined[nodeType] ??
-      (globalName ? resolveComponent(globalName, { tag }) : undefined) ??
-      fallbacks[nodeType];
+      // Structure nodes other than rows and columns (form steps, for example) have no
+      // container to render into. A fragment accepts only `key`, `ref` and `children`,
+      // so the node props have to be dropped rather than spread onto it.
+      if (!Component) {
+        return <React.Fragment key={item.key}>{childNodes}</React.Fragment>;
+      }
 
-    const childNodes = (
-      <OptimizelyGridSection
-        row={row}
-        column={column}
-        ComponentWrapper={ComponentWrapper}
-        nodes={node.nodes ?? []}
-        {...previewAttrs}
-      />
-    );
+      return (
+        <Component
+          node={item.node as ExperienceStructureNode}
+          index={item.index}
+          key={item.key}
+          displaySettings={item.displaySettings}
+        >
+          {/* A single child, so containers using `Children.only`/`cloneElement` keep working */}
+          <>{childNodes}</>
+        </Component>
+      );
+    });
 
-    // Structure nodes other than rows and columns (form steps, for example) have no
-    // container to render into. A fragment accepts only `key`, `ref` and `children`,
-    // so the node props have to be dropped rather than spread onto it.
-    if (!Component) {
-      return <React.Fragment key={node.key}>{childNodes}</React.Fragment>;
-    }
-
-    return (
-      <Component
-        node={node}
-        index={i}
-        key={node.key}
-        displaySettings={parsedDisplaySettings}
-      >
-        {childNodes}
-      </Component>
-    );
-  });
+  return renderItems(planGridSection<StructureContainer>(nodes));
 }

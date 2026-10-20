@@ -3,16 +3,22 @@ import {
   type FragmentOptions,
   type QueryContext,
 } from './queryUtils.js';
-import { getAllContentTypes } from '../model/contentTypeRegistry.js';
+import {
+  getAllContentTypes,
+  getRegistryVersion,
+} from '../model/contentTypeRegistry.js';
 import type { FilterShape, VariationMode } from '../graph/filters.js';
 
 const queryCache = new Map<string, string>();
+let cachedRegistryVersion = getRegistryVersion();
 
 /** The lenient option bag the query builders accept. */
-type QueryOptions = Partial<QueryContext> & FragmentOptions & {
-  filterShape?: FilterShape;
-  variationMode?: VariationMode;
-};
+type QueryOptions = Partial<QueryContext> &
+  FragmentOptions & {
+    filterShape?: FilterShape;
+    variationMode?: VariationMode;
+    publishedOnly?: boolean;
+  };
 
 type QueryGenerator = (contentType: string, options?: QueryOptions) => string;
 
@@ -27,7 +33,7 @@ const getFilterHash = (typeFilter: (key: string) => boolean): string => {
 const getVariationModeKey = (mode?: VariationMode): string => {
   if (!mode || mode === 'none') return 'none';
   if (mode === 'all') return 'all';
-  return `some-${mode.count}`;
+  return `some-${mode.count}${mode.includeOriginal ? '-orig' : ''}`;
 };
 
 /**
@@ -44,34 +50,47 @@ function createCacheKey(
 ): string {
   const {
     damEnabled,
-    maxFragmentThreshold,
+    maxThreshold,
     expandContracts,
     formsEnabled,
+    taxonomyEnabled,
     typeFilter,
     sectionTypes,
+    richTextFormat,
+    compositionDepth,
   } = createQueryContext(options);
-  const { includeBaseFragments = true, filterShape, variationMode } = options;
+  const {
+    includeBaseFragments = true,
+    filterShape,
+    variationMode,
+    publishedOnly = false,
+  } = options;
 
   const filterPart = typeFilter ? `:${getFilterHash(typeFilter)}` : '';
   // Which types own a `composition` changes the query, and differs per endpoint.
   const sectionPart = sectionTypes ? `:${[...sectionTypes].sort().join(',')}` : '';
   const shapePart = filterShape ? `:${filterShape}` : '';
   const variationPart = `:${getVariationModeKey(variationMode)}`;
+  const publishedPart = publishedOnly ? ':published' : '';
 
   return (
     [
       queryType,
       contentType,
       damEnabled,
-      maxFragmentThreshold,
+      maxThreshold,
       expandContracts,
       formsEnabled,
+      taxonomyEnabled,
       includeBaseFragments,
+      richTextFormat,
+      compositionDepth,
     ].join(':') +
     filterPart +
     sectionPart +
     shapePart +
-    variationPart
+    variationPart +
+    publishedPart
   );
 }
 
@@ -84,6 +103,12 @@ export const withQueryCaching = (
   generateQuery: QueryGenerator,
 ): QueryGenerator => {
   return (contentType: string, options?: QueryOptions): string => {
+    // Queries are built from the registry, so a change makes every entry stale.
+    if (cachedRegistryVersion !== getRegistryVersion()) {
+      queryCache.clear();
+      cachedRegistryVersion = getRegistryVersion();
+    }
+
     const cacheKey = createCacheKey(queryType, contentType, options);
     const cached = queryCache.get(cacheKey);
     if (cached) return cached;

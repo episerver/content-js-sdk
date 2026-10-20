@@ -1,0 +1,512 @@
+import { GraphVariationInput } from './filters.js';
+import {
+  DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  DEFAULT_EXPAND_CONTRACTS,
+  DEFAULT_COMPOSITION_DEPTH,
+  DEFAULT_RICH_TEXT_FORMAT,
+  GRAPH_PATH,
+} from './constants.js';
+import { RichTextFormat } from '../util/queryUtils.js';
+
+// PUBLIC TYPES
+
+/** Slot values for selecting the Graph engine version */
+export type GraphSlot = 'Current' | 'New';
+
+/**
+ * Controls whether DAM (Digital Asset Management) asset fragments are included
+ * in generated content queries.
+ * - `'automatic'`: Include them when the Graph schema exposes DAM types (default).
+ * - `'on'`: Always include them, skipping schema detection.
+ * - `'off'`: Never include them, skipping schema detection.
+ */
+export type DamMode = 'automatic' | 'on' | 'off';
+
+/**
+ * Controls whether taxonomy category fields are included in generated content
+ * queries (specifically in the `ItemMetadata` fragment).
+ * - `'automatic'`: Include them when the Graph schema exposes taxonomy types (default).
+ * - `'on'`: Always include them, skipping schema detection.
+ * - `'off'`: Never include them, skipping schema detection.
+ */
+export type TaxonomyMode = 'automatic' | 'on' | 'off';
+
+/**
+ * A single resolved taxonomy term with its breadcrumb hierarchy.
+ *
+ * `displayName` is `string | null` to distinguish "the term exists but could
+ * not be resolved" (deleted/moved term — `null`) from "resolved data is not
+ * available at all" (`resolvedCategories: undefined`).
+ */
+export type TaxonomyTerm = {
+  key: string;
+  displayName: string | null;
+  description: string | null;
+  taxonomy: string | null;
+  usage: string | null;
+  sortOrder: number | null;
+  isAvailable: boolean | null;
+  isSelectable: boolean | null;
+  path: Array<{
+    key: string;
+    displayName: string | null;
+    description: string | null;
+    taxonomy: string | null;
+    usage: string | null;
+  }>;
+};
+
+/** Query options shared by all query methods */
+export type GraphQueryOptions = {
+  /**
+   * Enable or disable server-side caching for this request.
+   * Overrides the global `cache` setting in `GraphOptions`.
+   */
+  cache?: boolean;
+  /**
+   * Enable or disable server-side stored query registration for this request.
+   * When true (default), appends `stored=true` to the endpoint URL, allowing
+   * the server to reuse query plans for identical query strings.
+   * Set to false to bypass stored queries (useful for debugging schema changes).
+   * @default true
+   */
+  stored?: boolean;
+  /**
+   * Select which Graph index to query against.
+   * During a smooth rebuild, two indexes exist: the current (active) one and the new one being built.
+   * - `'Current'`: Query the current active index (default)
+   * - `'New'`: Query the new index that is being rebuilt
+   * Overrides the global `slot` setting in `GraphOptions`.
+   */
+  slot?: GraphSlot;
+  /**
+   * Application host to filter paths by, for a CMS instance serving several
+   * sites. Only applies to lookups by path; ignored when content is addressed
+   * by key.
+   * Overrides the global `host` setting in `GraphOptions`.
+   */
+  host?: string;
+  /**
+   * Return only content whose `_metadata.status` is `Published`, hiding drafts
+   * and superseded versions.
+   *
+   * A no-op for the single key, which never sees a draft in the first place.
+   * It matters under `auth`, where a credential with editorial access
+   * otherwise gets every version. Turn it off to fetch drafts deliberately.
+   *
+   * Ignored where a specific version is being asked for — a preview, or a
+   * reference carrying a `version` — since that version is rarely the
+   * published one.
+   * @default true
+   */
+  publishedOnly?: boolean;
+  /**
+   * Resolve taxonomy category keys into full `TaxonomyTerm` objects and attach
+   * them as `_metadata.resolvedCategories` on each returned content item.
+   * Overrides the global `resolveTaxonomy` setting in `GraphOptions`.
+   * @default false
+   */
+  resolveTaxonomy?: boolean;
+};
+
+/**
+ * Settings that shape the GraphQL query the SDK generates.
+ *
+ * Fixed for the lifetime of a client: unlike {@linkcode GraphQueryOptions},
+ * none of these can be overridden on an individual request.
+ */
+export type GraphFragmentOptions = {
+  /**
+   * Which Rich Text representation(s) to select in GraphQL queries: `'html'`,
+   * `'json'`, or `'both'`. Requesting only what the app renders shrinks query
+   * and response payloads.
+   *
+   * Defaults to `'json'` rather than `'both'` — set to `'html'` or `'both'` if
+   * the app renders the raw HTML string (e.g. `dangerouslySetInnerHTML`).
+   * @default 'json'
+   */
+  richTextFormat?: RichTextFormat;
+  /**
+   * Nesting depth for ordinary composition fragments. Raise it if a composition is nested deeper than the default.
+   *
+   * Temporary: only needed because Graph's `@recursive` directive doesn't retrieve
+   * DAM assets. Once it does, fragments recurse to any depth and this setting goes away.
+   * @default 4
+   */
+  compositionDepth?: number;
+  /**
+   * Enable or disable contract expansion.
+   * When true, contracts are expanded to include all implementing types.
+   * When false, only the contract itself is included without expansion.
+   */
+  expandContracts?: boolean;
+  /** Hard limit on generated fragments per content area. Throws GraphFragmentThresholdError when exceeded on unconstrained properties. */
+  maxThreshold?: number;
+  /**
+   * Whether the generated query includes DAM asset fragments.
+   * @default 'automatic'
+   */
+  dam?: DamMode;
+  /**
+   * Whether the generated query includes taxonomy category fields in the
+   * `ItemMetadata` fragment.
+   * @default 'automatic'
+   */
+  taxonomy?: TaxonomyMode;
+  /**
+   * Optional filter to exclude content types from fragment generation.
+   * Return true to include a content type, false to exclude it.
+   * Useful for skipping content types that have no registered component.
+   */
+  typeFilter?: (contentTypeKey: string) => boolean;
+};
+
+/** Headers an auth resolver contributes. Any header is allowed; these are the well-known ones. */
+export type GraphAuthHeaders = {
+  // `string & {}` rather than `string` so the literals survive the union and editors keep
+  // suggesting them.
+  [Name in ('Authorization' | 'cg-username' | 'cg-roles') | (string & {})]?: string;
+};
+
+/**
+ * The request about to be sent, in the form a signing scheme needs it.
+ */
+export type GraphAuthContext = {
+  /** Absolute URL the request goes to, query parameters included. */
+  url: string;
+  /** Always `POST`; Graph takes queries as POST bodies. */
+  method: 'POST';
+  /** The exact JSON body that will be sent, byte for byte. */
+  body: string;
+};
+
+/**
+ * Supplies the credentials for one Graph request, replacing the single key.
+ *
+ * Runs on every request, so the value may depend on the signed-in user — but only
+ * when the client was built per request with `getClient({ auth })`. A user-specific
+ * resolver handed to the global `config()` leaks across requests.
+ */
+export type GraphAuthResolver = (
+  request: GraphAuthContext,
+) => GraphAuthHeaders | Promise<GraphAuthHeaders>;
+
+/**
+ * The user a request acts as, sent as Graph's `cg-username` / `cg-roles` headers.
+ *
+ * Valid on the `hmac` mode. Graph takes the app credential's word for who this is.
+ *
+ * Both fields are individually optional, but one of them has to be there: naming no
+ * one would leave the request with the app credential's own full access.
+ */
+export type GraphActingUser = {
+  username?: string;
+  roles?: string[];
+};
+
+/**
+ * The app key and secret the `hmac` mode signs with.
+ *
+ * Kept out of {@linkcode GraphAuthMode} so it can be configured once, in
+ * `config()`, while each request still chooses how — or whether — to use it.
+ */
+export type GraphSecrets = {
+  appKey: string;
+  secret: string;
+};
+
+/** The modifiers Graph accepts alongside an app credential. */
+type GraphAppCredential = {
+  /**
+   * The user to act as. May be a callback, awaited on every request, since who is
+   * signed in is rarely known when `config()` runs. Read the current user in one only
+   * where the request is in scope — one given to the global `config()` serves whichever
+   * user asked first.
+   */
+  asUser?: GraphActingUser | (() => GraphActingUser | Promise<GraphActingUser>);
+  /** Also return content in the CMS trash. Maps to `cg-include-deleted`. @default false */
+  includeDeleted?: boolean;
+  /** Also return content whose stop-publish date has passed. Maps to `cg-include-expired`. @default false */
+  includeExpired?: boolean;
+};
+
+/**
+ * A built-in authentication scheme, as an alternative to writing a
+ * {@linkcode GraphAuthResolver} by hand.
+ *
+ * - `hmac` — the configured {@linkcode GraphSecrets}, signing each request so the secret
+ *   never travels. Also accepts `asUser`, `includeDeleted` and `includeExpired`, which
+ *   Graph honours only on a credential that is not the single key.
+ * - `bearer` — forwards a token you already hold. `token` may be a callback, since tokens
+ *   expire.
+ *
+ * Both run on every runtime, edge included. `hmac` is refused in a browser, though,
+ * since an app secret must not reach client code.
+ *
+ * Graph also accepts Basic, which the SDK deliberately leaves out: it puts the
+ * long-lived secret on the wire on every request. Write a {@linkcode GraphAuthResolver}
+ * if you need it anyway.
+ *
+ * @example
+ * ```ts
+ * config({
+ *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
+ *   secrets: {
+ *     appKey: process.env.OPTIMIZELY_GRAPH_APP_KEY!,
+ *     secret: process.env.OPTIMIZELY_GRAPH_SECRET!,
+ *   },
+ * });
+ *
+ * // Anonymous by default; sign only where it is needed.
+ * getClient({ auth: { type: 'hmac', asUser: { roles: ['WebDelivery'] } } });
+ * ```
+ */
+export type GraphAuthMode =
+  | ({ type: 'hmac' } & GraphAppCredential)
+  | { type: 'bearer'; token: string | (() => string | Promise<string>) };
+
+/** Everything accepted by the `auth` option: a built-in scheme or a resolver. */
+export type GraphAuth = GraphAuthMode | GraphAuthResolver;
+
+/**
+ * Configuration for initializing the Optimizely Graph Client.
+ */
+export type GraphOptions = {
+  /** Your Optimizely Graph API key (Single key in CMS) */
+  apiKey: string;
+  /** Optional custom Graph URL */
+  graphUrl?: string;
+  /**
+   * The app key and secret the `hmac` mode signs with.
+   *
+   * Configuring them does not authenticate anything on its own — requests stay on the
+   * single key until an `auth` mode asks for them, so this belongs in `config()` while
+   * `auth` is chosen per request.
+   */
+  secrets?: GraphSecrets;
+  /**
+   * Which credential each Graph request carries, replacing the single key.
+   * Use it to reach content that CMS access rights hide from the single key, by
+   * signing the request (`hmac`) or forwarding a token (`bearer`), optionally
+   * acting as a named user via `asUser`. Pass a
+   * {@linkcode GraphAuthResolver} instead for a scheme the built-in modes do not cover.
+   *
+   * `hmac` needs {@linkcode GraphSecrets} configured and is server-side only — a request
+   * throws if it runs in a browser, since it carries an app secret. `bearer` and a
+   * resolver may run anywhere; what they put in the header is the caller's to keep safe.
+   *
+   * Setting `auth` also turns `query.cache` and `query.stored` off, whichever credential is
+   * used, because the SDK generates the same query text for a given content type — a
+   * gated request and an anonymous one can share a cache entry. See {@linkcode GraphAuthMode}.
+   */
+  auth?: GraphAuth;
+  /**
+   * Custom User-Agent string for HTTP requests to Graph API.
+   * @default 'OptimizelySDK/{version} (JS)'
+   */
+  userAgent?: string;
+  /** Settings that shape the generated GraphQL query. */
+  fragment?: GraphFragmentOptions;
+  /** Defaults for the per-request options, overridable on any single call. */
+  query?: GraphQueryOptions;
+};
+
+export type GraphGetContentOptions = GraphQueryOptions & {
+  variation?: GraphVariationInput;
+};
+
+export type GraphGetLinksOptions = GraphQueryOptions & {
+  locales?: string[];
+};
+
+export type GraphGetItemOptions = GraphQueryOptions & {
+  previewToken?: string;
+};
+
+export type GraphGetPreviewOptions = GraphQueryOptions;
+
+export type PreviewParams = {
+  preview_token: string;
+  key: string;
+  ctx: string;
+  ver: string;
+  loc: string;
+};
+
+export type GraphReference = {
+  /** Content key/GUID (required) */
+  key: string;
+  /** Content locale/language (optional) */
+  locale?: string;
+  /** Content version for preview mode (optional) */
+  version?: string;
+  /** Content type name (optional) */
+  type?: string;
+  /** Source identifier - unused for now (optional) */
+  source?: string;
+};
+
+// OPTION RESOLUTION
+
+/** The `fragment` group once defaults are applied. Only `typeFilter` has no default. */
+export type ResolvedFragmentOptions = Required<Omit<GraphFragmentOptions, 'typeFilter'>> &
+  Pick<GraphFragmentOptions, 'typeFilter'>;
+
+/** The `query` group once defaults are applied. `slot` and `host` have no default. */
+export type ResolvedQueryOptions = Required<Omit<GraphQueryOptions, 'slot' | 'host'>> &
+  Pick<GraphQueryOptions, 'slot' | 'host'>;
+
+/**
+ * What a content operation needs from the client running it.
+ *
+ * `GraphClient` satisfies this structurally, so the operations can live outside
+ * the class without importing it — which keeps the dependencies between the
+ * graph modules pointing one way.
+ */
+export interface GraphClientContext {
+  readonly apiKey: string;
+  readonly graphUrl: string;
+  readonly userAgent: string;
+  readonly fragmentDefaults: ResolvedFragmentOptions;
+  readonly queryDefaults: ResolvedQueryOptions;
+  request(
+    query: string,
+    variables: any,
+    previewToken?: string,
+    cache?: boolean,
+    slot?: GraphSlot,
+    stored?: boolean,
+  ): Promise<any>;
+}
+
+export const DEFAULT_FRAGMENT_OPTIONS: ResolvedFragmentOptions = {
+  richTextFormat: DEFAULT_RICH_TEXT_FORMAT,
+  compositionDepth: DEFAULT_COMPOSITION_DEPTH,
+  expandContracts: DEFAULT_EXPAND_CONTRACTS,
+  maxThreshold: DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  dam: 'automatic',
+  taxonomy: 'automatic',
+};
+
+export const DEFAULT_QUERY_OPTIONS: ResolvedQueryOptions = {
+  cache: true,
+  stored: true,
+  publishedOnly: true,
+  resolveTaxonomy: false,
+};
+
+/** The `query` defaults a client starts from, before its own `query` group is applied. */
+export const defaultQueryOptions = (auth?: GraphAuth): ResolvedQueryOptions =>
+  auth ?
+    { ...DEFAULT_QUERY_OPTIONS, cache: false, stored: false }
+  : DEFAULT_QUERY_OPTIONS;
+
+// Skips keys explicitly set to `undefined`, which a plain spread would copy over
+// the default. Keeps `{ maxThreshold: undefined }` meaning "unset", not "clear it".
+export const withDefaults = <T extends object>(
+  defaults: T,
+  overrides: Partial<T> = {},
+): T => {
+  const set = Object.entries(overrides).filter(([, value]) => value !== undefined);
+  return { ...defaults, ...Object.fromEntries(set) };
+};
+
+/** Points a bare gateway URL at the content endpoint and drops trailing slashes. */
+export function normalizeGraphUrl(url: string): string {
+  const parsed = new URL(url);
+  if (parsed.pathname === '/' || parsed.pathname === '') {
+    parsed.pathname = GRAPH_PATH;
+  }
+  return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+}
+
+/**
+ * Resolves one request's options against the client's `query` defaults, so a
+ * method settles the whole group once instead of defaulting each key by hand.
+ */
+export function resolveQueryOptions(
+  context: GraphClientContext,
+  options: GraphQueryOptions = {},
+  fallbacks: Partial<ResolvedQueryOptions> = {},
+): ResolvedQueryOptions {
+  const { cache, stored, slot, host, publishedOnly, resolveTaxonomy } = options;
+  const defaults = { ...context.queryDefaults, ...fallbacks };
+
+  return withDefaults(defaults, { cache, stored, slot, host, publishedOnly, resolveTaxonomy });
+}
+
+/**
+ * The client's `fragment` settings in the shape the query builders take, with
+ * the tri-state `dam` already settled into a boolean.
+ */
+export function fragmentContext(
+  context: GraphClientContext,
+  damEnabled: boolean,
+  taxonomyEnabled: boolean = false,
+) {
+  const { dam, taxonomy, ...fragment } = context.fragmentDefaults;
+
+  return { ...fragment, damEnabled, taxonomyEnabled };
+}
+
+/**
+ * Parse GraphReference from string format.
+ * Supports format: `graph://source/type/key?loc=locale&ver=version`
+ *
+ * @param referenceString - String in graph:// format
+ * @returns Parsed GraphReference object
+ *
+ * @example
+ * ```typescript
+ * parseGraphReference('graph://cms/Page/880777d5a2824399b07e93e3ca70668e?loc=en&ver=123')
+ * // Returns: { source: 'cms', type: 'Page', key: '880777d5a2824399b07e93e3ca70668e', locale: 'en', version: '123' }
+ * ```
+ */
+export function parseGraphReference(referenceString: string): GraphReference {
+  const graphProtocol = 'graph://';
+
+  if (!referenceString.startsWith(graphProtocol)) {
+    throw new Error(
+      `Invalid graph reference format. Expected to start with "${graphProtocol}", got: "${referenceString}"`,
+    );
+  }
+
+  const withoutProtocol = referenceString.slice(graphProtocol.length);
+  const [pathPart, queryPart] = withoutProtocol.split('?');
+  const pathSegments = pathPart.split('/').filter(s => s.length > 0);
+
+  if (pathSegments.length < 1) {
+    throw new Error(
+      `Invalid graph reference format. Expected at least key to be present, got: "${referenceString}"`,
+    );
+  }
+
+  let source: string | undefined;
+  let type: string | undefined;
+  let key: string;
+
+  if (pathSegments.length === 3) {
+    [source, type, key] = pathSegments;
+  } else if (pathSegments.length === 2) {
+    [type, key] = pathSegments;
+  } else {
+    key = pathSegments[0];
+  }
+
+  let locale: string | undefined;
+  let version: string | undefined;
+
+  if (queryPart) {
+    const params = new URLSearchParams(queryPart);
+    locale = params.get('loc') || undefined;
+    version = params.get('ver') || undefined;
+  }
+
+  return {
+    key,
+    ...(locale && { locale }),
+    ...(version && { version }),
+    ...(type && { type }),
+    ...(source && { source }),
+  };
+}

@@ -53,7 +53,7 @@ export default function BlankSection({ content, displaySettings }: BlankSectionP
   const width = widthStyles[displaySettings?.width ?? 'default'];
 
   const fadeOut =
-    displaySettings?.fadeOut ?
+    displaySettings?.fadeOut === true ?
       ' -mb-20 [mask-image:linear-gradient(#000_60%,transparent_70%)]'
     : null;
 

@@ -13,8 +13,6 @@ export {
   PropertyGroupType,
 } from './model/index.js';
 
-export { initForms } from './react/server.js';
-
 // GraphQL
 export {
   GraphClient,
@@ -29,11 +27,24 @@ export {
 export type {
   PreviewParams,
   GraphReference,
+  GraphAuth,
+  GraphAuthContext,
+  GraphAuthHeaders,
+  GraphAuthMode,
+  GraphAuthResolver,
+  GraphActingUser,
+  GraphSecrets,
+  GraphOptions,
+  GraphFragmentOptions,
   GraphGetItemOptions,
+  GraphGetPreviewOptions,
   GraphQueryOptions,
   GraphSlot,
   DamMode,
+  TaxonomyTerm,
+  TaxonomyMode,
 } from './graph/index.js';
+export type { TelemetryOptions } from './telemetry/settings.js';
 
 // Provided content types and experiences
 export {

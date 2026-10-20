@@ -2,13 +2,59 @@
 set -e
 
 # Version only the changesets that touch $TARGET, holding the rest as pending.
-# Usage: version-selective.sh [package-name|all]
+# Usage: version-selective.sh [package-name|all] [none|enter|exit]
 #   all / empty -> normal `changeset version` (bumps every pending package)
 #   a package   -> only changesets naming that package are consumed; others
 #                  are moved aside and restored so they stay pending on main.
+#   2nd arg     -> enter/exit pre-release (beta) mode before versioning.
 TARGET="$1"
+PRE_MODE="$2"
+
+# `changeset version` reads .changeset/pre.json, so the enter/exit has to happen
+# in the same process tree. It cannot be a separate workflow step: changesets/action
+# runs `git.prepareBranch()` before invoking this script, which wipes any
+# uncommitted pre.json edit made earlier in the job.
+apply_pre_mode() {
+  case "$PRE_MODE" in
+    # Leaves "mode": "exit" behind; `changeset version` then deletes pre.json
+    # and writes stable versions.
+    exit) pnpm changeset pre exit ;;
+    enter) pnpm changeset pre enter beta ;;
+  esac
+}
+
+# Prepend each changeset's release note with a link to its Jira ticket, so
+# every changelog entry traces back to the ticket that introduced it. The
+# ticket ID is pulled from the branch name recorded in the merge commit that
+# added the changeset file (e.g. "Merge pull request #1 from org/CMS-123-foo").
+link_jira_tickets() {
+  local regex url
+  regex=$(sed -n 's/.*regex = "\(.*\)".*/\1/p' .issuetracker | sed 's/\\\\/\\/g; s/\\d/[0-9]/g')
+  url=$(sed -n 's/.*url = "\(.*\)".*/\1/p' .issuetracker)
+
+  for f in .changeset/*.md; do
+    [ "$(basename "$f")" = "README.md" ] && continue
+    local commit ticket id link
+    commit=$(git log --diff-filter=A --max-count=1 --pretty=format:%H -- "$f")
+    [ -z "$commit" ] && continue
+    ticket=$(git log -1 --format=%B "$commit" | grep -oE "$regex" | head -1)
+    [ -z "$ticket" ] && continue
+    # Already linked, by hand or by an earlier run of this script
+    grep -q "\[$ticket\]" "$f" && continue
+    id=${ticket#CMS-}
+    link="[$ticket](${url/\$1/$id})"
+    awk -v link="$link" '
+      { sub(/\r$/, "") }  # CRLF files would never match the "---" delimiter
+      $0 == "---" { fm++; print; next }
+      fm >= 2 && !inserted && NF > 0 { print link ": " $0; inserted=1; next }
+      { print }
+    ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  done
+}
 
 if [ -z "$TARGET" ] || [ "$TARGET" = "all" ]; then
+  link_jira_tickets
+  apply_pre_mode
   pnpm changeset version
   exit 0
 fi
@@ -21,6 +67,8 @@ for f in .changeset/*.md; do
   grep -q "'$TARGET'" "$f" || mv "$f" "$HOLD/"
 done
 
+link_jira_tickets
+apply_pre_mode
 pnpm changeset version
 
 # restore held changesets so they remain pending (unchanged in the PR diff)

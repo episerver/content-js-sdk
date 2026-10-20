@@ -1,5 +1,6 @@
 import { test, expectTypeOf } from 'vitest';
 import type { ContentProps, InferredAssetMetadata, InferredImageMetadata } from './infer.js';
+import type { TaxonomyTerm, TaxonomyMode } from './graph/index.js';
 import { contentType, contract } from './model/index.js';
 
 test('ContentProps works for non-content type', () => {
@@ -12,7 +13,7 @@ test('ContentProps works for basic properties', () => {
   type ExpectedType = {
     heading: string | null;
     subtitle: string | null;
-    body: { json: any; html: string } | null;
+    body: { json?: any; html?: string } | null;
     price: number | null;
     units: number | null;
     image: { url: { default: string | null; type: string | null } } | null;
@@ -39,7 +40,7 @@ test('ContentProps works for array properties', () => {
   type ExpectedType = {
     heading: string[] | null;
     subtitle: string[] | null;
-    body: { html: string; json: any }[] | null;
+    body: { html?: string; json?: any }[] | null;
     price: number[] | null;
     units: number[] | null;
     image: { url: { default: string | null; type: string | null } }[] | null;
@@ -211,4 +212,25 @@ test('ContentProps keeps every property when extending contracts without propert
   expectTypeOf<ContentProps<typeof withEmptyProps>['test']>().toEqualTypeOf<string | null>();
   expectTypeOf<ContentProps<typeof withNoProps>['foo']>().toEqualTypeOf<string | null>();
   expectTypeOf<ContentProps<typeof withNoProps>['test']>().toEqualTypeOf<string | null>();
+});
+
+test('TaxonomyMode is a tri-state type', () => {
+  expectTypeOf<TaxonomyMode>().toEqualTypeOf<'automatic' | 'on' | 'off'>();
+});
+
+test('TaxonomyTerm has the expected shape', () => {
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('key');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('displayName');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('description');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('taxonomy');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('usage');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('sortOrder');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('isAvailable');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('isSelectable');
+  expectTypeOf<TaxonomyTerm>().toHaveProperty('path');
+  expectTypeOf<TaxonomyTerm['key']>().toBeString();
+  expectTypeOf<TaxonomyTerm['displayName']>().toEqualTypeOf<string | null>();
+  expectTypeOf<TaxonomyTerm['sortOrder']>().toEqualTypeOf<number | null>();
+  expectTypeOf<TaxonomyTerm['isAvailable']>().toEqualTypeOf<boolean | null>();
+  expectTypeOf<TaxonomyTerm['path']>().toEqualTypeOf<Array<{ key: string; displayName: string | null; description: string | null; taxonomy: string | null; usage: string | null }>>();
 });

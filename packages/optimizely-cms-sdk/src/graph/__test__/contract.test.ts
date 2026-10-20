@@ -473,7 +473,7 @@ describe('Contract expansion in allowedTypes', () => {
       undefined,
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: true,
         formsEnabled: false,
       }),
@@ -568,7 +568,7 @@ describe('Contract expansion in allowedTypes', () => {
       undefined,
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: false,
         formsEnabled: false,
       }),
@@ -673,7 +673,7 @@ describe('Contract expansion in allowedTypes', () => {
       undefined,
       createQueryContext({
         damEnabled: false,
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         expandContracts: true,
         formsEnabled: false,
       }),

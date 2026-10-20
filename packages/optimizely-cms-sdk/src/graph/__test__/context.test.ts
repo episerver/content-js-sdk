@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeEach, vi, afterEach } from 'vitest';
-import { removeTypePrefix, GraphClient } from '../index.js';
+import { GraphClient } from '../index.js';
+import { removeTypePrefix } from '../queries.js';
 import {
   configureAdapter,
   getContext,

@@ -100,9 +100,115 @@ export const generateFilePath = (
 export const generateManifestFilePath = (outputDir: string) =>
   join(outputDir, 'manifest.ts');
 
+/** Generates the file path for the registry file */
+export const generateRegistryFilePath = (outputDir: string) =>
+  join(outputDir, 'registry.ts');
+
+/**
+ * Generates TypeScript code for a registry file: an `initialize()` function
+ * registering every content type and display template with the SDK
+ */
+export const generateRegistryCode = (
+  manifest: Manifest,
+  options: RegistryOptions = {},
+) => {
+  // Contracts belong in the registry: query generation resolves a contract
+  // fragment by key, so an unregistered one throws GraphMissingContentTypeError
+  // as soon as a content area holds a type that extends it.
+  const contentTypes = manifest.contentTypes;
+  const displayTemplates = manifest.displayTemplates || [];
+
+  return `${generateRegistryImports(contentTypes, displayTemplates, options)}
+${generateRegistryComment(contentTypes)}
+export function initialize() {
+${generateRegistryBody(contentTypes, displayTemplates, options)}
+}
+`;
+};
+
 /** Returns unique group names from content array */
 export const generateGroups = (contents: JSONContent[]) =>
   unique(contents.map(generateGroup));
+
+// REGISTRY GENERATION
+
+/** Options controlling how a registry file imports and initializes content */
+export type RegistryOptions = {
+  /** Resolve imports to `./<group>/<Name>` instead of `./<Name>` */
+  useGrouping?: boolean;
+  /** Import every name from this module instead of from one file per content */
+  singleFileModule?: string;
+  /** Include a `config({ apiKey })` call */
+  includeConfig?: boolean;
+};
+
+const generateRegistryImports = (
+  contentTypes: JSONContent[],
+  displayTemplates: JSONContent[],
+  { useGrouping = false, singleFileModule, includeConfig = false }: RegistryOptions,
+) => {
+  const sdkImports = [
+    includeConfig ? 'config' : undefined,
+    contentTypes.length ? 'initContentTypeRegistry' : undefined,
+    displayTemplates.length ? 'initDisplayTemplateRegistry' : undefined,
+  ].filter(Boolean);
+
+  const contents = [...contentTypes, ...displayTemplates];
+  const contentImports =
+    singleFileModule ?
+      [`import { ${contents.map(generateName).join(', ')} } from '${singleFileModule}';`]
+    : contents.map(
+        content =>
+          `import { ${generateName(content)} } from '${generateRegistryImportPath(content, useGrouping)}';`,
+      );
+
+  return [
+    sdkImports.length ?
+      `import { ${sdkImports.join(', ')} } from '@optimizely/cms-sdk';`
+    : undefined,
+    ...(contents.length ? contentImports : []),
+  ]
+    .filter(Boolean)
+    .join('\n');
+};
+
+const generateRegistryBody = (
+  contentTypes: JSONContent[],
+  displayTemplates: JSONContent[],
+  { includeConfig = false }: RegistryOptions,
+) =>
+  [
+    includeConfig ? configCall : undefined,
+    contentTypes.length ?
+      generateRegistryCall('initContentTypeRegistry', contentTypes)
+    : undefined,
+    displayTemplates.length ?
+      generateRegistryCall('initDisplayTemplateRegistry', displayTemplates)
+    : undefined,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+const generateRegistryCall = (initFunction: string, contents: JSONContent[]) =>
+  `  ${initFunction}([\n${contents.map(it => `    ${generateName(it)},`).join('\n')}\n  ]);`;
+
+const generateRegistryComment = (contentTypes: JSONContent[]) => {
+  const exampleKey =
+    contentTypes.find(it => !isContract(it))?.key ?? exampleContentTypeKey;
+
+  return `/**
+ * Registers the generated content types and display templates with the SDK.
+ *
+ * Call this once from the application entry point, before rendering content.
+ *
+ * To render content with React, register the components that implement each
+ * content type:
+ *
+ *   import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
+ *
+ *   initReactComponentRegistry({ resolver: { ${exampleKey}: ${exampleKey}Component } });
+ */`;
+};
 
 // ARGUMENT GENERATION
 
@@ -207,6 +313,11 @@ const generateImportPath = (
   if (fromGroup !== toGroup) return `../${toGroup}/${generateName(content)}`;
   return `./${generateName(content)}`;
 };
+
+const generateRegistryImportPath = (content: JSONContent, useGrouping: boolean) =>
+  useGrouping ?
+    `./${generateGroup(content)}/${generateName(content)}`
+  : `./${generateName(content)}`;
 
 const generateName = (content: JSONContent) => {
   const cleaned = cleanKey(content.key);
@@ -329,7 +440,7 @@ const remakeObject = (
   circularMap?: CircularDependencyMap,
 ): Record<string, unknown> =>
   Object.entries(item)
-    .filter(([key, value]) => showProperty(key, value))
+    .filter(([key, value]) => showProperty(key, value, item))
     .reduce((acc, [key, value]) => {
       const newValue =
         isObject(value) ?
@@ -338,8 +449,21 @@ const remakeObject = (
       return { ...acc, [key]: newValue };
     }, {});
 
-const showProperty = (prop: string, value: any): boolean =>
-  prop in skipPropertyConditions ? !skipPropertyConditions[prop](value) : true;
+const showProperty = (prop: string, value: any, parent: any): boolean =>
+  prop in skipPropertyConditions ? !skipPropertyConditions[prop](value, parent) : true;
+
+/**
+ * The CMS API pads every `content`/`contentReference` property with `allowedTypes` and
+ * `restrictedTypes`, empty or not. Dropping an empty one is only safe while something else
+ * still declares a constraint, otherwise the generated code fails to typecheck against
+ * `ContentBlock`/`ContentReferenceBlock`, which require at least one. A fully unconstrained
+ * property therefore keeps `allowedTypes: []` as the anchor, and `config push` reports it.
+ */
+const isRedundantEmptyAllowedTypes = (value: any, parent: any): boolean =>
+  value?.length === 0 && (!!parent?.contentType || parent?.restrictedTypes?.length > 0);
+
+const isRedundantEmptyRestrictedTypes = (value: any, parent: any): boolean =>
+  value?.length === 0 && (!!parent?.contentType || Array.isArray(parent?.allowedTypes));
 
 // STRING UTILITIES
 
@@ -374,6 +498,11 @@ const findContent = (key: string, manifest: Manifest) =>
 
 const commonKeyContents = ['Contract', 'CT', 'ContentType', 'DT', 'DisplayTemplate'];
 
+const configCall = `  config({\n    apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,\n  });`;
+
+/** Placeholder used in the registry comment when no content type was pulled */
+const exampleContentTypeKey = 'ArticlePage';
+
 const markedImportRegex = /\<\|(.+?)\|\>/g;
 
 const propertiesThatCanHoldImports = [
@@ -383,13 +512,15 @@ const propertiesThatCanHoldImports = [
   'extends',
 ];
 
-const skipPropertyConditions: Record<string, (it: any) => boolean> = {
+const skipPropertyConditions: Record<string, (it: any, parent?: any) => boolean> = {
   isLocalized: (it: any) => it === false,
   isRequired: (it: any) => it === false,
   sortOrder: (it: any) => it === 0,
   displayMode: (it: any) => it === 'available',
   mayContainTypes: (it: any) => it?.length === 0,
   extends: (it: any) => it?.length === 0,
+  allowedTypes: isRedundantEmptyAllowedTypes,
+  restrictedTypes: isRedundantEmptyRestrictedTypes,
   contentType: (it: any) => it === undefined,
   nodeType: (it: any) => it === undefined,
   baseType: (it: any) => it === undefined,

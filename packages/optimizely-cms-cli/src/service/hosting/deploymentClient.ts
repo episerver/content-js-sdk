@@ -1,0 +1,256 @@
+/** Client for the DXP Deployment API, which deploys packages to front-end hosting */
+
+import { createHash, createHmac, randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import type { HostingCredentials } from '../config.js';
+import { hostingErrors } from '../error.js';
+
+/** Expected deployment statuses; the API documents `status` as a plain string, so others may still arrive */
+export type DeploymentStatus =
+  | 'InProgress'
+  | 'AwaitingVerification'
+  | 'Completing'
+  | 'Succeeded'
+  | 'Failed'
+  | 'Resetting'
+  | 'Reset';
+
+export type Deployment = {
+  id: string;
+  status: DeploymentStatus;
+  percentComplete?: number;
+  validationLinks?: string[];
+  deploymentWarnings?: string[];
+  deploymentErrors?: string[];
+};
+
+type ApiResponse<T> = { success?: boolean; errors?: string[]; result?: T };
+
+type SignRequestInput = {
+  clientKey: string;
+  clientSecret: string;
+  method: string;
+  pathAndQuery: string;
+  body: string;
+  timestamp: number;
+  nonce: string;
+};
+
+type ClientOptions = { apiUrl?: string; userAgent: string };
+
+const DEFAULT_API_URL = 'https://paasportal.episerver.net/api/v1.0';
+const BLOB_API_VERSION = '2021-08-06';
+const API_TIMEOUT_MS = 60_000;
+const UPLOAD_TIMEOUT_MS = 10 * 60_000;
+
+const fetchWithTimeout = async (
+  action: string,
+  url: URL,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> => {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  } catch (error) {
+    if ((error as Error).name === 'TimeoutError')
+      throw new hostingErrors.RequestTimeout(action, timeoutMs / 1000);
+    throw error;
+  }
+};
+
+/** Build the `epi-hmac` Authorization header value for a Deployment API request */
+export function signRequest({
+  clientKey,
+  clientSecret,
+  method,
+  pathAndQuery,
+  body,
+  timestamp,
+  nonce,
+}: SignRequestInput): string {
+  const bodyHash = createHash('md5').update(body).digest('base64');
+  const signature = createHmac('sha256', Buffer.from(clientSecret, 'base64'))
+    .update(`${clientKey}${method}${pathAndQuery}${timestamp}${nonce}${bodyHash}`)
+    .digest('base64');
+
+  return `epi-hmac ${clientKey}:${timestamp}:${nonce}:${signature}`;
+}
+
+/** Derive the live site URL from a verification slot URL, or return undefined if it is not a valid slot URL */
+export function toLiveSiteUrl(slotUrl: string): string | undefined {
+  const [schemeAndWebApp, ...domain] = slotUrl.split('.');
+
+  // Observed convention, not documented: the slot is served at <web app>-slot.<domain>
+  if (!schemeAndWebApp.toLowerCase().endsWith('-slot')) return undefined;
+
+  const candidate = [schemeAndWebApp.slice(0, -'-slot'.length), ...domain].join('.');
+
+  if (!URL.canParse(candidate)) return undefined;
+
+  const liveUrl = new URL(candidate);
+
+  // The slot URL is http, but the live site redirects http to https
+  liveUrl.protocol = 'https:';
+  return liveUrl.toString();
+}
+
+const parseApiResponse = <T>(action: string, status: number, text: string): ApiResponse<T> => {
+  try {
+    return JSON.parse(text) as ApiResponse<T>;
+  } catch {
+    throw new hostingErrors.DeploymentApiError(action, status, ['The response was not valid JSON']);
+  }
+};
+
+const readErrors = async (response: Response): Promise<string[]> => {
+  const text = await response.text();
+
+  try {
+    return (JSON.parse(text) as ApiResponse<unknown>).errors ?? [];
+  } catch {
+    return text ? [text] : [];
+  }
+};
+
+/** Create a Deployment API client for one front-end hosting project */
+export function createDeploymentClient(
+  { projectId, clientKey, clientSecret }: HostingCredentials,
+  {
+    apiUrl = process.env.OPTIMIZELY_DXP_API_URL ?? DEFAULT_API_URL,
+    userAgent,
+  }: ClientOptions,
+) {
+  const request = async <T>(
+    action: string,
+    method: 'GET' | 'POST',
+    path: string,
+    payload?: unknown,
+  ): Promise<T> => {
+    const url = new URL(`${apiUrl.replace(/\/$/, '')}/projects/${projectId}${path}`);
+    const body = payload === undefined ? '' : JSON.stringify(payload);
+    const authorization = signRequest({
+      clientKey,
+      clientSecret,
+      method,
+      pathAndQuery: url.pathname + url.search,
+      body,
+      timestamp: Date.now(),
+      nonce: randomUUID().replaceAll('-', ''),
+    });
+    const response = await fetchWithTimeout(
+      action,
+      url,
+      {
+        method,
+        headers: {
+          Authorization: authorization,
+          Accept: 'application/json',
+          'User-Agent': userAgent,
+          ...(body && { 'Content-Type': 'application/json' }),
+        },
+        body: body || undefined,
+      },
+      API_TIMEOUT_MS,
+    );
+
+    if (response.status === 401) throw new hostingErrors.InvalidHostingCredentials();
+    if (response.status === 403)
+      throw new hostingErrors.ForbiddenHostingCredentials(await readErrors(response));
+    if (!response.ok)
+      throw new hostingErrors.DeploymentApiError(
+        action,
+        response.status,
+        await readErrors(response),
+      );
+
+    const text = await response.text();
+
+    // Not observed so far, but a call such as complete may answer 204 with no body
+    if (!text) return undefined as T;
+
+    const json = parseApiResponse<T>(action, response.status, text);
+
+    if (json.success === false)
+      throw new hostingErrors.DeploymentApiError(action, response.status, json.errors);
+
+    return json.result as T;
+  };
+
+  return {
+    /** Fail fast on credentials or an environment that cannot be used, before anything is uploaded */
+    checkEnvironmentAccess: async (environment: string) => {
+      try {
+        // The cheapest read-only call scoped to an environment
+        await request(
+          'check access to the environment',
+          'GET',
+          `/environments/${encodeURIComponent(environment)}/storagecontainers`,
+        );
+      } catch (error) {
+        // Other failures are left for the deployment itself to report
+        if (
+          error instanceof hostingErrors.InvalidHostingCredentials ||
+          error instanceof hostingErrors.ForbiddenHostingCredentials
+        )
+          throw error;
+      }
+    },
+
+    /** Upload to the SAS container URL; `If-None-Match` stops an existing package from being overwritten */
+    uploadPackage: async (packageName: string, path: string) => {
+      const { location } = await request<{ location: string }>(
+        'get the package upload location',
+        'GET',
+        '/packages/location',
+      );
+      const url = new URL(location);
+
+      url.pathname = `${url.pathname.replace(/\/$/, '')}/${encodeURIComponent(packageName)}`;
+
+      const response = await fetchWithTimeout(
+        'upload the package',
+        url,
+        {
+          method: 'PUT',
+          headers: {
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-version': BLOB_API_VERSION,
+            'If-None-Match': '*',
+            'Content-Type': 'application/zip',
+          },
+          body: await readFile(path),
+        },
+        UPLOAD_TIMEOUT_MS,
+      );
+
+      if ([409, 412].includes(response.status))
+        throw new hostingErrors.PackageExists(packageName);
+      if (!response.ok)
+        throw new hostingErrors.DeploymentApiError(
+          'upload the package',
+          response.status,
+          [await response.text()],
+        );
+    },
+
+    startDeployment: (targetEnvironment: string, packageName: string) =>
+      request<Deployment>('start the deployment', 'POST', '/deployments', {
+        targetEnvironment,
+        packages: [packageName],
+      }),
+
+    getDeployment: (id: string) =>
+      request<Deployment>('get the deployment status', 'GET', `/deployments/${id}`),
+
+    completeDeployment: (id: string) =>
+      request<Deployment>(
+        'complete the deployment',
+        'POST',
+        `/deployments/${id}/complete`,
+      ),
+  };
+}
+
+/** Deployment API client created by `createDeploymentClient` */
+export type DeploymentClient = ReturnType<typeof createDeploymentClient>;
+

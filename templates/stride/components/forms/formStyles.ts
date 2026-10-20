@@ -8,7 +8,6 @@ export const labelClass = 'block text-sm font-semibold text-foreground';
 
 export const requiredMarkClass = 'ml-0.5 text-red-600';
 
-export const helpTextClass = 'text-xs text-foreground2';
 
 export const errorTextClass = 'text-xs text-red-600';
 
@@ -30,4 +29,5 @@ export const buttonRoleClass = {
   submit: 'border-2 border-key1 bg-key1 text-foreground-inverted focus:ring-key1',
   next: 'border-2 border-key1 bg-key1 text-foreground-inverted focus:ring-key1',
   previous: 'border-2 border-foreground text-foreground focus:ring-foreground/30',
+  reset: 'border-2 border-foreground text-foreground focus:ring-foreground/30',
 };

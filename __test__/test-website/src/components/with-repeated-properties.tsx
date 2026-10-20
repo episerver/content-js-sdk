@@ -34,7 +34,7 @@ export const ctContentReference = contentType({
   baseType: '_component',
   key: 'ct_contentreference',
   displayName: 'CT Content Reference',
-  properties: { p1: { type: 'contentReference' } },
+  properties: { p1: { type: 'contentReference', allowedTypes: ['_image'] } },
 });
 export const ctArray = contentType({
   baseType: '_component',

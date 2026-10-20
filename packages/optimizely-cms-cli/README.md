@@ -10,6 +10,7 @@ The official command-line tool for Optimizely CMS that enables code-first conten
 - **Code-first workflow** - Define content types in your preferred IDE with IntelliSense
 - **Version control** - Manage content types alongside your application code
 - **Simple CLI commands** - Intuitive interface for common tasks
+- **One-command deploys** - Package and deploy Next.js or Astro sites to Optimizely front-end hosting
 - **Seamless integration** - Works perfectly with [@optimizely/cms-sdk](https://www.npmjs.com/package/@optimizely/cms-sdk)
 
 ## Installation
@@ -40,10 +41,16 @@ yarn add -D @optimizely/cms-cli
 Create a `.env` file in your project root with your CMS credentials:
 
 ```env
-OPTIMIZELY_CMS_URL=https://your-cms-instance.com
 OPTIMIZELY_CMS_CLIENT_ID=your-client-id
 OPTIMIZELY_CMS_CLIENT_SECRET=your-client-secret
+
+# Optional. Defaults to https://api.cms.optimizely.com
+OPTIMIZELY_CMS_API_URL=https://api.cms.optimizely.com
 ```
+
+> **Note:** `OPTIMIZELY_CMS_URL` is **not** read by the CLI. It is an application-level
+> variable your app uses at runtime. To point the CLI at a different instance, set
+> `OPTIMIZELY_CMS_API_URL` or pass `--host`.
 
 ### 2. Define your content types
 
@@ -87,199 +94,17 @@ npx @optimizely/cms-cli config push ./optimizely.config.mjs
 
 ## Commands
 
-All commands can be run using either the installed CLI or via `npx @optimizely/cms-cli`.
+| Command | Description |
+| --- | --- |
+| `login` | Check that your credentials are correct |
+| `config push` | Push your content types, contracts and display templates to the CMS |
+| `config pull` | Generate TypeScript files from the content types in the CMS |
+| `config delete` | Delete the content types defined in your project from the CMS |
+| `content delete <key>` | Delete one content type from the CMS |
+| `danger delete-all-content-types` | Delete every user-defined content type in the CMS |
+| `deploy` | Package the project and deploy it to Optimizely front-end hosting |
 
-### Configuration Management
-
-Sync your TypeScript content type definitions with Optimizely CMS:
-
-```bash
-# Push content types to CMS (reads ./optimizely.config.mjs from project root by default)
-optimizely-cms-cli config push
-# or: npx @optimizely/cms-cli config push
-
-# Push with custom config file path
-optimizely-cms-cli config push ./path/to/custom-config.mjs
-
-# Force update (may result in data loss)
-optimizely-cms-cli config push --force
-
-# Pull content types from CMS and generate TypeScript files (prompts for options)
-optimizely-cms-cli config pull
-
-# With output directory specified
-optimizely-cms-cli config pull --output ./src/content-types
-
-# With output file specified (automatic single-file mode)
-optimizely-cms-cli config pull --output ./src/cms-types.ts
-
-# Group generated files by content type base type (page/, component/, section/, etc.)
-optimizely-cms-cli config pull --output ./src/types --group
-
-# Output raw JSON manifest (useful for piping/processing)
-optimizely-cms-cli config pull --json
-
-# Save raw JSON manifest to file (automatically detects redirection)
-optimizely-cms-cli config pull > manifest.json
-
-# Or explicitly specify JSON output
-optimizely-cms-cli config pull --json > manifest.json
-
-# Pipe JSON output to other commands (automatically detects piping)
-optimizely-cms-cli config pull | jq .contentTypes
-optimizely-cms-cli config pull | grep -i "Article"
-
-# Include read-only system content types
-optimizely-cms-cli config pull --include-read-only
-
-# Delete content types defined in your project
-optimizely-cms-cli config delete
-
-# Delete with custom config file path
-optimizely-cms-cli config delete ./path/to/custom-config.mjs
-
-# With custom host
-optimizely-cms-cli config delete --host https://example.com
-```
-
-> **Tip:** `config delete` only removes content types defined in your project configuration. If you need to delete ALL user-defined content types in the CMS (including types created by other systems), use `optimizely-cms-cli danger delete-all-content-types` instead.
-
-> **Tip:** If `--output` ends with `.ts` or `.tsx`, the CLI automatically uses single-file mode and writes to that exact file path. For example, `--output ./src/cms-types.ts` creates a single file at `./src/cms-types.ts`.
-
-> **Note:** The command automatically detects when output is piped or redirected and outputs JSON without prompting. You can also explicitly use `--json` to force JSON output. The `--output` flag works in all environments, including CI/non-TTY contexts.
-
-> **Note:** Use `--include-read-only` to pull all content types including system-generated read-only types. By default, only user-editable content types are pulled. This flag is useful for:
->
-> - **PaaS environments** where content types may be created from C# or .NET applications
-> - Auditing or understanding the full CMS content type schema
-> - Generating TypeScript types for content types in CMS managed by other systems like CMP
-> 
->
-> Note that read-only types cannot be modified via the CLI or CMS REST API.
-
-> **Note:** When using `--group`:
->
-> - Display templates are co-located with their content types in the same file
-> - Orphaned display templates (without a matching content type) are placed in the `displayTemplates/` directory
->
-> See [File Organization](#file-organization) below for detailed examples.
-
-### Authentication
-
-Verify your CMS credentials are correctly configured:
-
-```bash
-# Test your credentials from environment variables
-optimizely-cms-cli login
-
-# Show detailed authentication output
-optimizely-cms-cli login --verbose
-```
-
-### Content Type Operations
-
-Manage individual content types:
-
-```bash
-# Delete a specific content type
-optimizely-cms-cli content delete ArticlePage
-
-# Delete with custom host
-optimizely-cms-cli content delete ProductPage --host https://example.com
-```
-
-### Dangerous Operations
-
-⚠️ **Use with extreme caution - these commands are destructive:**
-
-```bash
-# Delete ALL user-defined content types (interactive confirmation required)
-optimizely-cms-cli danger delete-all-content-types
-```
-
-> **Tip:** If you only want to delete content types defined in your project configuration, use `optimizely-cms-cli config delete` instead. This is safer because it only removes types you've defined, not all custom types in the CMS.
-
-### Get Help
-
-```bash
-# Show all available commands
-optimizely-cms-cli --help
-
-# Show help for a specific command
-optimizely-cms-cli config push --help
-
-# Show help for a topic
-optimizely-cms-cli config --help
-```
-
-## File Organization
-
-### Pull Command Output Structure
-
-When pulling content types from CMS, the CLI generates TypeScript files with different organization strategies:
-
-#### Without `--group` flag (default)
-
-```
-src/content-types/
-├── ArticlePage.ts
-├── ProductPage.ts
-├── HeroComponent.ts
-└── display-templates/
-    ├── ArticleDisplayTemplate.ts
-    └── HeroDisplayTemplate.ts
-```
-
-#### With `--group` flag
-
-Organizes files by content type base type (`_page`, `_component`, `_section`, etc.) and **co-locates display templates with their content types**:
-
-```
-src/types/
-├── page/
-│   ├── ArticlePage.ts      # Contains ArticlePageCT + ArticleDisplayTemplateDT
-│   └── ProductPage.ts       # Contains ProductPageCT + ProductDisplayTemplateDT
-├── component/
-│   ├── HeroComponent.ts     # Contains HeroComponentCT + HeroDisplayTemplateDT
-│   └── Teaser.ts            # Contains TeaserCT + TeaserDisplayTemplateDT
-├── section/
-│   └── ContentSection.ts    # Contains ContentSectionCT + ContentSectionDisplayTemplateDT
-└── displayTemplates/        # Only created if orphaned templates exist
-    └── LegacyTemplate.ts    # Display templates with no matching content type
-```
-
-**Example co-located file** ([page/ArticlePage.ts]()):
-
-```typescript
-import { contentType, displayTemplate } from '@optimizely/cms-sdk';
-
-/**
- * Article Page
- */
-export const ArticlePageCT = contentType({
-  key: 'ArticlePage',
-  baseType: '_page',
-  properties: {
-    /* ... */
-  },
-});
-
-/**
- * Article Display Template
- */
-export const ArticleDisplayTemplateDT = displayTemplate({
-  key: 'ArticleDisplayTemplate',
-  contentType: 'ArticlePage',
-  isDefault: true,
-});
-```
-
-**Benefits of grouping:**
-
-- Better organization by content type category
-- Related display templates are co-located with their content types
-- Fewer files to manage
-- Clear visibility of orphaned templates that may need attention
+Run `optimizely-cms-cli <command> --help` for the flags of a command, or see the [CLI reference](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/cli.md) for every command, flag and environment variable.
 
 ## Documentation
 
@@ -287,14 +112,17 @@ Guides and best practices:
 
 ### Getting Started
 
-- [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/1-installation.md) - Set up your development environment
-- [Setup](https://github.com/episerver/content-js-sdk/blob/main/docs/2-setup.md) - Configure the SDK and CLI
-- [Modelling](https://github.com/episerver/content-js-sdk/blob/main/docs/3-modelling.md) - Define your content types with TypeScript
+- [Installation](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/installation.md) - Set up a project with the SDK and CLI
+- [Connect to the CMS](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/connect-to-cms.md) - Create an API key and check the connection
+- [Your first content type](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/first-content-type.md) - Define a content type and push it
 
-### Workflow Guides
+### Reference
 
-- [Create Content](https://github.com/episerver/content-js-sdk/blob/main/docs/4-create-content.md) - Add content in Optimizely CMS after syncing types
-- [Fetching Content](https://github.com/episerver/content-js-sdk/blob/main/docs/5-fetching.md) - Use the SDK to retrieve typed content
+- [CLI commands](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/cli.md) - Every command, flag and env var
+- [`optimizely.config.mjs`](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/optimizely-config.md) - Every configuration option
+- [Deploy to front-end hosting](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/deploy-to-frontend-hosting.md) - Credentials, project requirements and CI
+- [Quick start](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/quick-start.md) - Scaffold a new or existing project with `create-app`
+- [Agent skills](https://github.com/episerver/content-js-sdk/blob/main/docs/guides/agent-skills.md) - AI-powered development
 
 ## Best Practices
 

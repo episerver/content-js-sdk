@@ -44,7 +44,6 @@ import {
 } from '../util/queryUtils.js';
 import { isContract } from '../model/index.js';
 import { isFormContentType } from '../model/formContentTypes.js';
-import { DEFAULT_MAX_FRAGMENT_THRESHOLD, DEFAULT_EXPAND_CONTRACTS } from './constants.js';
 
 // TYPE DEFINITIONS
 
@@ -108,7 +107,11 @@ const createExperienceFragments = (
   const experienceResult = buildFragmentsForKeys(experienceNodeKeys, visited, ctx);
   return {
     fragments: [
-      ...getFixedFragments(ctx.formsEnabled, includeExperienceFragment),
+      ...getFixedFragments(
+        ctx.formsEnabled,
+        includeExperienceFragment,
+        ctx.compositionDepth,
+      ),
       ...experienceResult.fragments,
       buildInterfaceFragment('_IComponent', experienceNodeKeys),
     ],
@@ -239,7 +242,7 @@ export const createFragment = (
 ): FragmentResult => {
   validateContentTypeName(contentTypeName, visited);
 
-  const { damEnabled, maxFragmentThreshold } = ctx;
+  const { damEnabled, maxThreshold } = ctx;
   const { includeBaseFragments = true, insideComposition = false } = options;
 
   const fragmentName = `${stripSourcePrefix(contentTypeName)}${suffix}`;
@@ -255,7 +258,7 @@ export const createFragment = (
   const isRootCall = visited.size === 1;
   const span =
     isRootCall ?
-      startFragmentSpan(contentTypeName, damEnabled, maxFragmentThreshold, suffix)
+      startFragmentSpan(contentTypeName, damEnabled, maxThreshold, suffix)
     : undefined;
   const startTime = isRootCall ? performance.now() : 0;
 
@@ -265,7 +268,7 @@ export const createFragment = (
   let contentType: RegistryEntry | undefined;
 
   if (isBaseType(contentTypeName)) {
-    const baseFragments = getBaseTypeFragments(contentTypeName);
+    const baseFragments = getBaseTypeFragments(contentTypeName, undefined, ctx.taxonomyEnabled);
     fields.push(...baseFragments.fields);
     extraFragments.push(...baseFragments.extraFragments);
   } else {
@@ -289,7 +292,7 @@ export const createFragment = (
     if (includeBaseFragments && !isNamespaced) {
       const baseType =
         'baseType' in contentType ? (contentType as AnyContentType).baseType : undefined;
-      const baseFragments = getBaseTypeFragments(baseType ?? '', contentTypeName);
+      const baseFragments = getBaseTypeFragments(baseType ?? '', contentTypeName, ctx.taxonomyEnabled);
       extraFragments.unshift(...baseFragments.extraFragments);
       fields.push(...baseFragments.fields);
     }
@@ -302,10 +305,9 @@ export const createFragment = (
     // must be known to exist; use caller's schema list if available,
     // otherwise fall back to the forms container.
     const canBeAsked =
-      isRootCall ||
-      (ctx.sectionTypes ?
+      ctx.sectionTypes ?
         ctx.sectionTypes.has(stripSourcePrefix(contentTypeName))
-      : isFormContentType(contentTypeName));
+      : isRootCall || isFormContentType(contentTypeName);
     const isStandaloneSection =
       canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 
@@ -340,7 +342,7 @@ export const createFragment = (
     recordMetrics(fragmentGenerationDuration, fragmentGenerationCount, startTime, {
       [SemanticAttributes.OPTI_CONTENT_TYPE]: contentTypeName,
       [SemanticAttributes.OPTI_DAM_ENABLED]: damEnabled,
-      [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: maxFragmentThreshold,
+      [SemanticAttributes.OPTI_FRAGMENT_THRESHOLD]: maxThreshold,
     });
 
     span.end();
@@ -357,10 +359,12 @@ export const createFragment = (
  * a caller only states what it cares about. It is turned into a strict
  * {@linkcode QueryContext} once, at the boundary, and never rebuilt after that.
  */
-export type QueryOptions = Partial<QueryContext> & FragmentOptions & {
-  filterShape?: FilterShape;
-  variationMode?: VariationMode;
-};
+export type QueryOptions = Partial<QueryContext> &
+  FragmentOptions & {
+    filterShape?: FilterShape;
+    variationMode?: VariationMode;
+    publishedOnly?: boolean;
+  };
 
 const SINGLE_OP_NAMES: Record<FilterShape, string> = {
   'by-key': 'GetContent',
@@ -384,7 +388,7 @@ const generateSingleContentQuery = (
   const filterVars = getFilterVarDecls(filterShape);
   const variationVars = getVariationVarDecls(variationMode);
   const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
-  const whereClause = getFilterWhereClause(filterShape);
+  const whereClause = getFilterWhereClause(filterShape, options.publishedOnly);
   const variationClause = getVariationClause(variationMode);
 
   const query = `
@@ -448,7 +452,7 @@ const generateMultipleContentQuery = (
   const filterVars = getFilterVarDecls(filterShape);
   const variationVars = getVariationVarDecls(variationMode);
   const allVars = [filterVars, variationVars].filter(Boolean).join(', ');
-  const whereClause = getFilterWhereClause(filterShape);
+  const whereClause = getFilterWhereClause(filterShape, options.publishedOnly);
   const variationClause = getVariationClause(variationMode);
 
   const query = `

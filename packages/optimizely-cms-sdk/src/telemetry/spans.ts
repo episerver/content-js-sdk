@@ -63,6 +63,13 @@ export function startMultipleQuerySpan(contentType: string, damEnabled: boolean,
 // GraphQL Request Helpers
 
 /**
+ * Which credential a Graph request carried. Never the credential itself.
+ *
+ * `custom` is a caller-supplied resolver; the named schemes are the built-in modes.
+ */
+export type AuthMode = 'single' | 'preview' | 'custom' | 'hmac' | 'bearer';
+
+/**
  * Wraps request operation in span.
  */
 export function withRequestSpan<T>(
@@ -71,6 +78,7 @@ export function withRequestSpan<T>(
   cache: boolean,
   slot: string,
   hasPreviewToken: boolean,
+  authMode: AuthMode,
   fn: (span: any) => Promise<T>,
 ): Promise<T> {
   return createSpan('optimizely.graph.request', async span => {
@@ -81,6 +89,7 @@ export function withRequestSpan<T>(
       [SemanticAttributes.OPTI_CACHE_ENABLED]: cache,
       [SemanticAttributes.OPTI_SLOT]: slot,
       [SemanticAttributes.OPTI_PREVIEW_TOKEN]: hasPreviewToken,
+      [SemanticAttributes.OPTI_AUTH_MODE]: authMode,
     });
     return fn(span);
   });
@@ -155,15 +164,16 @@ export function startComponentResolveSpan(contentType: string, tag?: string) {
 }
 
 /**
- * Wraps a React component in span.
+ * Wraps a component render in a span named `optimizely.<framework>.render_component`.
  */
-export function withReactComponentSpan<T>(
+export function withComponentRenderSpan<T>(
+  framework: string,
   contentType: string,
   hasTag: boolean,
   hasDisplaySettings: boolean,
   fn: (span: any) => Promise<T>,
 ): Promise<T> {
-  return createSpan('optimizely.react.render_component', async span => {
+  return createSpan(`optimizely.${framework}.render_component`, async span => {
     span.setAttributes({
       [SemanticAttributes.OPTI_COMPONENT_TYPE]: contentType,
       [SemanticAttributes.OPTI_COMPONENT_HAS_TAG]: hasTag,

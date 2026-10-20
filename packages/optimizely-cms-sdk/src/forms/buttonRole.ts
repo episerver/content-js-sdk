@@ -1,4 +1,4 @@
-export type FormButtonRole = 'next' | 'previous' | 'submit';
+export type FormButtonRole = 'next' | 'previous' | 'submit' | 'reset';
 
 /**
  * Optimizely Forms has no property marking a button as step navigation: Next,
@@ -20,6 +20,7 @@ export type FormButtonContent = {
 
 export type FormButtonLabelOptions = {
   labels?: { next?: string[]; previous?: string[] };
+  role?: FormButtonRole;
 };
 
 const matches = (label: string, candidates: string[]) =>
@@ -36,6 +37,8 @@ export function getFormButtonRole(
   content: FormButtonContent,
   options: FormButtonLabelOptions = {},
 ): FormButtonRole {
+  if (options.role) return options.role;
+
   const label = content.Label?.trim().toLowerCase() ?? '';
   const nextLabels = options.labels?.next ?? DEFAULT_STEP_BUTTON_LABELS.next;
   const previousLabels = options.labels?.previous ?? DEFAULT_STEP_BUTTON_LABELS.previous;

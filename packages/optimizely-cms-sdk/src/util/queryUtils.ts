@@ -12,7 +12,9 @@ import {
 } from '../model/contentTypeRegistry.js';
 import {
   CONTENT_URL_FRAGMENT,
+  DAM_ITEM_SPREADS,
   getKeyName,
+  isBaseMediaType,
   isBaseType,
   stripSourcePrefix,
 } from './baseTypeUtil.js';
@@ -24,7 +26,12 @@ import { isFormContentType } from '../model/formContentTypes.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
+  DEFAULT_COMPOSITION_DEPTH,
+  DEFAULT_RICH_TEXT_FORMAT,
 } from '../graph/constants.js';
+
+/** Which Rich Text representation(s) a query selects. */
+export type RichTextFormat = 'html' | 'json' | 'both';
 
 const getImplementedContracts = (contentType: AnyContentType): RegistryEntry[] => {
   if (!contentType.extends) return [];
@@ -88,7 +95,7 @@ export type QueryContext = {
    * Maximum number of fragments allowed before throwing an error.
    * Prevents excessive GraphQL query complexity from unrestricted content types.
    */
-  maxFragmentThreshold: number;
+  maxThreshold: number;
   /**
    * Enable or disable contract expansion.
    * When true, contracts are expanded to include all implementing types.
@@ -100,6 +107,16 @@ export type QueryContext = {
    * Auto-detected from GraphQL schema introspection.
    */
   formsEnabled: boolean;
+  /**
+   * Enable taxonomy category support in the ItemMetadata fragment.
+   * Auto-detected from GraphQL schema introspection.
+   */
+  taxonomyEnabled: boolean;
+  /**
+   * Nesting depth for ordinary composition fragments. Configurable via
+   * `config({ compositionDepth })`.
+   */
+  compositionDepth: number;
   /**
    * Optional filter to exclude content types from fragment generation.
    * Return true to include a content type, false to exclude it.
@@ -122,6 +139,12 @@ export type QueryContext = {
    * to prevent circular fragment references.
    */
   ancestors: Set<string>;
+  /**
+   * Which Rich Text representation(s) to select: `'html'`, `'json'`, or `'both'`.
+   * Configurable via `config({ richTextFormat })`.
+   * @default 'json'
+   */
+  richTextFormat: RichTextFormat;
 };
 
 /**
@@ -158,12 +181,15 @@ export const createQueryContext = (
   options: Partial<QueryContext> = {},
 ): QueryContext => ({
   damEnabled: options.damEnabled ?? false,
-  maxFragmentThreshold: options.maxFragmentThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD,
+  maxThreshold: options.maxThreshold ?? DEFAULT_MAX_FRAGMENT_THRESHOLD,
   expandContracts: options.expandContracts ?? DEFAULT_EXPAND_CONTRACTS,
   formsEnabled: options.formsEnabled ?? false,
+  taxonomyEnabled: options.taxonomyEnabled ?? false,
+  compositionDepth: options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH,
   typeFilter: options.typeFilter,
   sectionTypes: options.sectionTypes,
   ancestors: options.ancestors ?? new Set(),
+  richTextFormat: options.richTextFormat ?? DEFAULT_RICH_TEXT_FORMAT,
 });
 
 export type FragmentInfo = {
@@ -387,26 +413,33 @@ const handleComponentProperty: PropertyHandler = (
   };
 };
 
-const handleContentProperty: PropertyHandler = (
-  name: string,
+/** The content types a `content` or `contentReference` property may hold. */
+const resolvePropertyTypes = (
   property: AnyProperty,
-  rootName: string,
-  suffix: string,
-  visited: Set<string>,
   ctx: QueryContext,
-) => {
-  const { expandContracts, typeFilter, ancestors } = ctx;
+): (PermittedTypes | AnyContentType)[] => {
+  const { expandContracts, typeFilter } = ctx;
+  const contentTypeKey = (property as any).contentType;
+  const allowedTypes = contentTypeKey ? [contentTypeKey] : (property as any).allowedTypes;
   const resolved = resolveAllowedTypes(
-    (property as any).allowedTypes,
+    allowedTypes,
     (property as any).restrictedTypes,
     getCachedContentTypes(),
     expandContracts,
     ctx.formsEnabled,
   );
-  const allowed =
-    typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
 
-  const nameInFragment = `${rootName}${suffix}__${name}:${name}`;
+  return typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
+};
+
+/** The fragment spreads selecting every allowed type, plus their fragments. */
+const buildTypeSpreads = (
+  allowed: (PermittedTypes | AnyContentType)[],
+  rootName: string,
+  visited: Set<string>,
+  ctx: QueryContext,
+) => {
+  const { ancestors } = ctx;
 
   const { typesToInclude, contractsToInclude } = collectTypesAndContracts(
     allowed,
@@ -443,10 +476,39 @@ const handleContentProperty: PropertyHandler = (
     }
   });
 
-  const uniqueSubfields = [...new Set(subfields)].join(' ');
-  const fields = [`${nameInFragment} { ${uniqueSubfields} }`];
+  return {
+    subfields: [...new Set(subfields)].join(' '),
+    extraFragments,
+    includesDamAssetsFragments,
+  };
+};
 
-  return { fields, extraFragments, includesDamAssetsFragments };
+const handleContentProperty: PropertyHandler = (
+  name: string,
+  property: AnyProperty,
+  rootName: string,
+  suffix: string,
+  visited: Set<string>,
+  ctx: QueryContext,
+) => {
+  const { subfields, extraFragments, includesDamAssetsFragments } = buildTypeSpreads(
+    resolvePropertyTypes(property, ctx),
+    rootName,
+    visited,
+    ctx,
+  );
+
+  return {
+    fields: [`${rootName}${suffix}__${name}:${name} { ${subfields} }`],
+    extraFragments,
+    includesDamAssetsFragments,
+  };
+};
+
+const RICH_TEXT_SELECTION: Record<RichTextFormat, string> = {
+  html: 'html',
+  json: 'json',
+  both: 'html, json',
 };
 
 const handleRichTextProperty: PropertyHandler = (
@@ -455,9 +517,11 @@ const handleRichTextProperty: PropertyHandler = (
   rootName: string,
   suffix: string,
   _visited: Set<string>,
-  _ctx: QueryContext,
+  ctx: QueryContext,
 ) => ({
-  fields: [`${rootName}${suffix}__${name}:${name} { html, json }`],
+  fields: [
+    `${rootName}${suffix}__${name}:${name} { ${RICH_TEXT_SELECTION[ctx.richTextFormat]} }`,
+  ],
   extraFragments: [],
   includesDamAssetsFragments: false,
 });
@@ -490,22 +554,49 @@ const handleLinkProperty: PropertyHandler = (
   includesDamAssetsFragments: false,
 });
 
+/** True for a media content type, or for a media base type such as `_image`. */
+const isMediaType = (type: PermittedTypes | AnyContentType): boolean => {
+  const key = getKeyName(type);
+  if (isBaseMediaType(key)) return true;
+
+  const contentType = typeof type === 'object' ? type : getContentType(key);
+  return (
+    !!contentType &&
+    'baseType' in contentType &&
+    isBaseMediaType(contentType.baseType as string)
+  );
+};
+
 const handleContentReferenceProperty: PropertyHandler = (
   name: string,
-  _property: AnyProperty,
-  _rootName: string,
+  property: AnyProperty,
+  rootName: string,
   _suffix: string,
-  _visited: Set<string>,
+  visited: Set<string>,
   ctx: QueryContext,
 ) => {
   const { damEnabled } = ctx;
 
-  const itemFragment = damEnabled ? ' ...ContentReferenceItem' : '';
+  // Resolves `item` for references to media, leaving other references at key and url.
+  const mediaTypes = resolvePropertyTypes(property, ctx).filter(isMediaType);
+  const media =
+    mediaTypes.length ?
+      buildTypeSpreads(mediaTypes, rootName, visited, ctx)
+    : undefined;
+
+  const itemSpreads = [
+    ...(damEnabled ? DAM_ITEM_SPREADS : []),
+    ...(media ? media.subfields.split(' ') : []),
+  ];
+  const itemField =
+    itemSpreads.length ?
+      ` item { ${[...new Set(['__typename', ...itemSpreads])].join(' ')} }`
+    : '';
 
   return {
-    fields: [`${name} { key url { ...ContentUrl }${itemFragment} }`],
-    extraFragments: [CONTENT_URL_FRAGMENT],
-    includesDamAssetsFragments: damEnabled,
+    fields: [`${name} { key url { ...ContentUrl }${itemField} }`],
+    extraFragments: [CONTENT_URL_FRAGMENT, ...(media?.extraFragments ?? [])],
+    includesDamAssetsFragments: damEnabled || !!media?.includesDamAssetsFragments,
   };
 };
 
@@ -577,10 +668,10 @@ export const convertProperty: PropertyHandler = (
   // Remove the namespace prefix (e.g. `graph:`) from rootName so field aliases
   // (`{rootName}__{field}`) match the GraphQL __typename, which has no prefix.
   rootName = stripSourcePrefix(rootName);
-  const { maxFragmentThreshold } = ctx;
+  const { maxThreshold } = ctx;
   const result = convertPropertyField(name, property, rootName, suffix, visited, ctx);
 
-  checkTypeConstraintIssues(rootName, property, result, maxFragmentThreshold);
+  checkTypeConstraintIssues(rootName, property, result, maxThreshold);
 
   return result;
 };

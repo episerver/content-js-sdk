@@ -8,12 +8,14 @@ function Button({
   id,
   label,
   labels,
+  roleOverride,
 }: {
   id: string;
   label: string;
   labels?: { next?: string[]; previous?: string[] };
+  roleOverride?: 'next' | 'previous' | 'submit' | 'reset';
 }) {
-  const { role, buttonProps } = useFormButton({ Label: label }, { labels });
+  const { role, buttonProps } = useFormButton({ Label: label }, { labels, role: roleOverride });
 
   return (
     <button {...buttonProps} data-testid={id} data-role={role}>
@@ -99,6 +101,15 @@ describe('useFormButton', () => {
 
     expect(roleOf('next')).toBe('next');
     expect(roleOf('prev')).toBe('previous');
+  });
+
+  test('a reset role override produces type=reset', () => {
+    renderButtons(
+      <Button id='reset' label='Reset' roleOverride='reset' />,
+    );
+
+    expect(roleOf('reset')).toBe('reset');
+    expect(typeOf('reset')).toBe('reset');
   });
 
   test('an unrecognised label stays a submit button', () => {

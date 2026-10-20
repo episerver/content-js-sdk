@@ -2,25 +2,16 @@
 import {
   useState,
   useEffect,
-  useRef,
   type ReactNode,
   type FunctionComponent,
   type PropsWithChildren,
 } from 'react';
+import {
+  createContentSavedListener,
+  type NavigateCallback,
+} from '../core/preview/contentSaved.js';
 
-interface ContentSavedEvent {
-  contentLink: string;
-  editUrl?: string;
-  previewUrl: string;
-  previewToken: string;
-}
-
-/**
- * Callback for handling navigation/refresh when content is saved.
- * @param url - Target URL to navigate to
- * @param isSameUrl - True if URL matches current location (refresh), false if different (navigate)
- */
-export type NavigateCallback = (url: string, isSameUrl: boolean) => void | Promise<void>;
+export type { NavigateCallback };
 
 export interface PreviewComponentProps {
   /**
@@ -67,86 +58,20 @@ export const PreviewComponent: FunctionComponent<
   PropsWithChildren<PreviewComponentProps>
 > = ({ onNavigate, refreshTimeout = 50, children, busy = false }) => {
   const [showMask, setShowMask] = useState<boolean>(false);
-  const reloadDelay = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastProcessedRef = useRef<{ contentLink: string; timestamp: number } | null>(
-    null,
-  );
 
-  // Read through a ref so the listener effect never re-runs. Callers pass an inline
-  // arrow for `onNavigate`, and re-subscribing would clearTimeout a pending refresh.
-  const optionsRef = useRef({ onNavigate, refreshTimeout });
+  const [listener] = useState(createContentSavedListener);
+
+  // Pushed on every render rather than passed to `start`, so the subscription
+  // survives the inline arrow callers give for `onNavigate`.
   useEffect(() => {
-    optionsRef.current = { onNavigate, refreshTimeout };
+    listener.update({
+      onNavigate,
+      refreshTimeout,
+      onBusyChange: setShowMask,
+    });
   });
 
-  useEffect(() => {
-    const normalizeUrl = (url: string): string => {
-      const parsed = new URL(url);
-      parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
-      return parsed.toString();
-    };
-
-    const handleContentSaved = (eventData: ContentSavedEvent) => {
-      const { onNavigate, refreshTimeout } = optionsRef.current;
-
-      // With debouncing on, the timer already coalesces repeats. Only the
-      // `refreshTimeout={false}` path needs an explicit dupe guard.
-      if (!refreshTimeout) {
-        const now = Date.now();
-        if (
-          lastProcessedRef.current &&
-          lastProcessedRef.current.contentLink === eventData.contentLink &&
-          now - lastProcessedRef.current.timestamp < 50
-        ) {
-          return;
-        }
-        lastProcessedRef.current = { contentLink: eventData.contentLink, timestamp: now };
-      }
-
-      const currentUrl = window.location.href;
-
-      setShowMask(true);
-
-      if (reloadDelay.current) clearTimeout(reloadDelay.current);
-
-      let finalUrl: string;
-      try {
-        const url = new URL(eventData.previewUrl, window.location.origin);
-        finalUrl = url.toString();
-      } catch {
-        finalUrl = eventData.previewUrl;
-      }
-
-      const isSameUrl = normalizeUrl(currentUrl) === normalizeUrl(finalUrl);
-
-      const executeNavigation = () => {
-        if (onNavigate) {
-          Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
-            setShowMask(false),
-          );
-        } else {
-          // Fallback: hard reload
-          window.location.replace(finalUrl);
-        }
-      };
-
-      if (refreshTimeout) {
-        reloadDelay.current = setTimeout(executeNavigation, refreshTimeout);
-      } else {
-        executeNavigation();
-      }
-    };
-
-    const customEventListener = (event: Event) =>
-      handleContentSaved((event as CustomEvent).detail as ContentSavedEvent);
-
-    window.addEventListener('optimizely:cms:contentSaved', customEventListener);
-
-    return () => {
-      window.removeEventListener('optimizely:cms:contentSaved', customEventListener);
-      if (reloadDelay.current) clearTimeout(reloadDelay.current);
-    };
-  }, []);
+  useEffect(() => listener.start(), [listener]);
 
   return (showMask || busy) && children ? <>{children}</> : null;
 };

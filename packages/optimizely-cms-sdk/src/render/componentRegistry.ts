@@ -82,8 +82,19 @@ function getTagComponent<C>(entry: ComponentEntry<C>, tag: string): C | undefine
  */
 export type ComponentResolverOrObject<C> = ComponentResolver<C> | ComponentMap<C>;
 
+/** Every component in a {@linkcode ComponentEntry} union, variants included */
+type ComponentsOf<E> = E extends ComponentWithVariants<infer C> ? C : E;
+
+type ComponentRegistryConstructor = {
+  /** Infers the component type from the map, so entries may be any mix of one framework's components */
+  new <M extends ComponentMap<unknown>>(map: M): Registry<ComponentsOf<M[keyof M]>>;
+  new <T>(resolverOrObject: ComponentResolverOrObject<T>): Registry<T>;
+};
+
 /** A registry mapping content type names and components */
-export class ComponentRegistry<T> {
+export type ComponentRegistry<T> = Registry<T>;
+
+class Registry<T> {
   resolver: ComponentResolverOrObject<T>;
 
   constructor(resolverOrObject: ComponentResolverOrObject<T>) {
@@ -93,27 +104,24 @@ export class ComponentRegistry<T> {
   /** Returns the component given its content type name. Returns `undefined` if not found */
   getComponent(contentType: string, options: ResolverOptions = {}): T | undefined {
     const span = startComponentResolveSpan(contentType, options.tag);
-    const startTime = span ? performance.now() : 0;
+    const startTime = performance.now();
     const endSpan = (component?: any) => {
       const found = !!component;
-      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, found);
-
-      if (span) {
-        const attributes: Record<string, any> = {
-          [SemanticAttributes.OPTI_COMPONENT_TYPE]: contentType,
-          [SemanticAttributes.OPTI_COMPONENT_FOUND]: found,
-        };
-        if (options.tag) {
-          attributes[SemanticAttributes.OPTI_COMPONENT_TAG] = options.tag;
-        }
-        recordMetrics(
-          componentResolveDuration,
-          componentLookupCount,
-          startTime,
-          attributes,
-        );
+      const attributes: Record<string, any> = {
+        [SemanticAttributes.OPTI_COMPONENT_TYPE]: contentType,
+        [SemanticAttributes.OPTI_COMPONENT_FOUND]: found,
+      };
+      if (options.tag) {
+        attributes[SemanticAttributes.OPTI_COMPONENT_TAG] = options.tag;
       }
 
+      span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, found);
+      recordMetrics(
+        componentResolveDuration,
+        componentLookupCount,
+        startTime,
+        attributes,
+      );
       span.end();
     };
 
@@ -177,3 +185,5 @@ export class ComponentRegistry<T> {
     return undefined;
   }
 }
+
+export const ComponentRegistry: ComponentRegistryConstructor = Registry;

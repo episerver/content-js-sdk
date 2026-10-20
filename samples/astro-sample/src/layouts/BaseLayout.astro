@@ -1,0 +1,26 @@
+---
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Astro Sample - Optimizely CMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,450&family=Inter:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style is:global>
+      :root {
+        --font-serif: 'Bodoni Moda', serif;
+        --font-sans: 'Inter', sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

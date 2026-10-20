@@ -8,21 +8,20 @@
     "start": "next start",
     "cms:login": "npx @optimizely/cms-cli login",
     "cms:push-config": "npx @optimizely/cms-cli config push ./optimizely.config.mjs",
-    "lint": "next lint"
+    "lint": "eslint"
   },
   "dependencies": {
     "@optimizely/cms-sdk": "workspace:*",
-    "next": "16.2.1",
+    "next": "16.3.6",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.4.3",
+    "eslint-config-next": "16.3.6",
     "typescript": "^5"
   }
 }

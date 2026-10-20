@@ -4,12 +4,12 @@
 
 ### The official JavaScript SDK for building headless applications with Optimizely CMS
 
-[![Status](https://img.shields.io/badge/status-stable-green.svg)]()
+![Status](https://img.shields.io/badge/status-stable-green.svg)
 [![npm version - SDK](https://img.shields.io/npm/v/@optimizely/cms-sdk)](https://www.npmjs.com/package/@optimizely/cms-sdk)
 [![npm version - CLI](https://img.shields.io/npm/v/@optimizely/cms-cli)](https://www.npmjs.com/package/@optimizely/cms-cli)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE.md)
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Support](#support)
+[What's Included](#whats-included) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Support](#community--support)
 
 </div>
 
@@ -56,7 +56,7 @@ A collection of [Agent Skills](https://agentskills.io) that teach AI coding agen
 
 **Compatible with:** Claude Code, Cursor, GitHub Copilot, and others
 
-> **Learn more:** See the [packages/optimizely-cms-skills/](./packages/optimizely-cms-skills/README.md) package
+> **Learn more:** The skills live in the [episerver/optimizely-cms-skills](https://github.com/episerver/optimizely-cms-skills) repository. See the [Agent Skills guide](./docs/guides/agent-skills.md) for installation.
 >
 > **Framework Support:** While the SDK is designed to be framework-agnostic, this version currently includes first-class support for React and Next.js. Support for additional frameworks is coming soon.
 
@@ -131,29 +131,18 @@ await client.getContentByPath('/'); // Automatically creates spans
 - HTTP requests to Optimizely Graph
 - Component resolution and rendering (React)
 
-**Learn more:** See the complete [Observability Guide](./docs/observability.md) for setup, span details, and production configuration.
+**Learn more:** See the complete [Observability guide](./docs/guides/observability.md) for setup, span details, and production configuration.
 
 **Reference implementation:** See [samples/nextjs-template/src/instrumentation.ts](./samples/nextjs-template/src/instrumentation.ts) for a working example with Next.js.
 
 ## Documentation
 
-A step-by-step guides to build your headless application:
+Start at the [documentation home](./docs/README.md), or jump straight in:
 
-| Step | Guide                                                               | Description                               |
-| ---- | ------------------------------------------------------------------- | ----------------------------------------- |
-| 1    | [Installation](./docs/1-installation.md)                            | Set up your development environment       |
-| 2    | [Setup](./docs/2-setup.md)                                          | Configure the SDK and CLI                 |
-| 3    | [Modelling](./docs/3-modelling.md)                                  | Define your content types with TypeScript |
-| 4    | [Create Content](./docs/4-create-content.md)                        | Add content in Optimizely CMS             |
-| 5    | [Fetching Content](./docs/5-fetching.md)                            | Query and retrieve content in your app    |
-| 6    | [Rendering (React)](./docs/6-rendering-react.md)                    | Display content in React components       |
-| 7    | [Live Preview](./docs/7-live-preview.md)                            | Enable real-time content editing          |
-| 8    | [Experience](./docs/8-experience.md)                                | Work with experiences and variations      |
-| 9    | [Display Settings](./docs/9-display-settings.md)                    | Configure content display options         |
-| 10   | [RichText Component (React)](./docs/10-richtext-component-react.md) | Render rich text content                  |
-| 11   | [DAM Assets](./docs/11-dam-assets.md)                               | Manage digital assets                     |
-| 12   | [Client Utils](./docs/12-client-utils.md)                           | Utility functions and helpers             |
-| 13   | [Agent Skills](./docs/13-agent-skills.md)                           | AI-powered development                    |
+- **[Quick start](./docs/learn/quick-start.md)** - Scaffold a working site from a template
+- **[Tutorial](./docs/learn/installation.md)** - Build a site step by step: install, connect, model, fetch, render and preview
+- **[Guides](./docs/README.md#guides)** - Content types, experiences, display templates, rich text, forms, authentication and more
+- **[Reference](./docs/README.md#reference)** - `config()`, `GraphClient`, React components, CLI commands and every option
 
 ## Community & Support
 

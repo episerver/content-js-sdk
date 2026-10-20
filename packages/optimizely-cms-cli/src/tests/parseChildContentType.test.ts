@@ -56,7 +56,7 @@ describe('normalizeMayContainTypes', () => {
     `);
   });
 
-  it('should handle content types without mayContainTypes', () => {
+  it('should default mayContainTypes to ["*"] for container types without mayContainTypes', () => {
     const input = contentType({
       key: 'example',
       displayName: 'Example',
@@ -67,6 +67,26 @@ describe('normalizeMayContainTypes', () => {
       {
         "__type": "contentType",
         "baseType": "_component",
+        "displayName": "Example",
+        "key": "example",
+        "mayContainTypes": [
+          "*",
+        ],
+      }
+    `);
+  });
+
+  it('should not add mayContainTypes for non-container types', () => {
+    const input = contentType({
+      key: 'example',
+      displayName: 'Example',
+      baseType: '_section',
+    } as any);
+
+    expect(normalizeMayContainTypes(input)).toMatchInlineSnapshot(`
+      {
+        "__type": "contentType",
+        "baseType": "_section",
         "displayName": "Example",
         "key": "example",
       }

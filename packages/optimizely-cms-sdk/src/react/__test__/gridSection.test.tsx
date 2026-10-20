@@ -53,3 +53,25 @@ describe('OptimizelyGridSection with an unrecognised structure node', () => {
     expect(getByTestId('row')).toBeTruthy();
   });
 });
+
+describe('OptimizelyGridSection containers', () => {
+  function SingleChildRow({ children }: { children?: React.ReactNode }) {
+    return <div data-testid='row'>{React.Children.only(children)}</div>;
+  }
+
+  function Column() {
+    return <div data-testid='column' />;
+  }
+
+  it('pass a single child element to row and column containers', () => {
+    const nodes = [
+      structureNode('row', 'row-1', [structureNode('column', 'col-1'), structureNode('column', 'col-2')]),
+    ];
+
+    const { getByTestId } = render(
+      <>{OptimizelyGridSection({ nodes, row: SingleChildRow, column: Column })}</>,
+    );
+
+    expect(getByTestId('row').querySelectorAll('[data-testid="column"]')).toHaveLength(2);
+  });
+});

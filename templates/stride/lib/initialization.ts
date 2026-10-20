@@ -1,4 +1,5 @@
 import {
+  BlankExperienceContentType,
   config,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
@@ -9,6 +10,7 @@ import {
   initReactComponentRegistry,
   ReactContextAdapter,
 } from '@optimizely/cms-sdk/react/server';
+import BlankExperience from '../components/pages/BlankExperience';
 import Start, { StartPage } from '../components/pages/Start';
 import BlankSection from '../components/sections/Blank';
 import ImageCard, { ImageCardComponent } from '../components/elements/ImageCard';
@@ -48,20 +50,32 @@ import EventCardsList, {
   EventCardsListContentType,
 } from '../components/blocks/EventCardsList';
 import FormContainer from '../components/forms/FormContainer';
+import FormChoice from '../components/forms/FormChoice';
 import FormInput from '../components/forms/FormInput';
+import FormNumber from '../components/forms/FormNumber';
+import FormRange from '../components/forms/FormRange';
+import FormReset from '../components/forms/FormReset';
 import FormSelection from '../components/forms/FormSelection';
 import FormSubmit from '../components/forms/FormSubmit';
 import FormTextarea from '../components/forms/FormTextarea';
+import FormUrl from '../components/forms/FormUrl';
 
 export function initialize() {
   configureAdapter(new ReactContextAdapter());
 
   config({
     apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
-    host: process.env.APPLICATION_HOST,
+    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY!,
+    fragment: {
+      richTextFormat: 'json',
+    },
+    query: {
+      host: process.env.APPLICATION_HOST,
+    },
   });
 
   initContentTypeRegistry([
+    BlankExperienceContentType,
     ProductPage,
     StandardPage,
     StartPage,
@@ -83,6 +97,7 @@ export function initialize() {
 
   initReactComponentRegistry({
     resolver: {
+      BlankExperience,
       ProductPage: Product,
       StandardPage: Standard,
       StartPage: Start,
@@ -108,10 +123,15 @@ export function initialize() {
   // for it.
   initForms({
     container: FormContainer,
-    textbox: FormInput,
+    choice: FormChoice,
+    number: FormNumber,
+    range: FormRange,
+    reset: FormReset,
     selection: FormSelection,
-    textarea: FormTextarea,
     submit: FormSubmit,
+    textbox: FormInput,
+    textarea: FormTextarea,
+    url: FormUrl,
   });
 
   initDisplayTemplateRegistry([

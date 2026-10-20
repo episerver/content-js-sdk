@@ -16,7 +16,7 @@ This is the "Hello world" sample site for the headless Optimizely CMS SaaS, base
 
 ### Autentication
 
-Follow [this guide](https://github.com/episerver/content-js-sdk/blob/main/docs/2-setup.md) to connect your project to your CMS instance
+Follow [this guide](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/connect-to-cms.md) to connect your project to your CMS instance
 
 You can test the connection running the command:
 
@@ -34,7 +34,7 @@ npm run cms:push-config
 
 ### Create content and create an application in the CMS
 
-Follow [this guide to create content and an application](https://github.com/episerver/content-js-sdk/blob/main/docs/4-create-content.md)
+Follow [this guide to create content and an application](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/create-content.md)
 
 ## Run the application
 

@@ -5,10 +5,14 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    exclude: ['node_modules/**', 'dist/**', 'src/**/__integration__/**'],
-  },
-  esbuild: {
-    jsx: 'automatic',
+    // Scoped to src/ because vitest 5 dropped `**/dist/**` from its default
+    // exclude list, so the compiled tests under dist/cjs and dist/esm would
+    // otherwise be collected and run alongside the sources.
+    include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+    exclude: ['src/**/__integration__/**'],
+    typecheck: {
+      include: ['src/**/*.{test,spec}-d.?(c|m)[jt]s?(x)'],
+    },
   },
   resolve: {
     alias: {

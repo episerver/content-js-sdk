@@ -124,3 +124,59 @@ test('content/contentReference require allowedTypes or restrictedTypes', () => {
     },
   });
 });
+
+test('contentReference accepts contentType field with ContentType value', () => {
+  const Article = contentType({
+    key: 'article',
+    displayName: 'Article',
+    baseType: '_component',
+  });
+
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      ref: {
+        type: 'contentReference',
+        displayName: 'Content Reference',
+        contentType: Article,
+      },
+    },
+  });
+});
+
+test('content rejects contentType field', () => {
+  const Article = contentType({
+    key: 'article',
+    displayName: 'Article',
+    baseType: '_component',
+  });
+
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      area: {
+        type: 'content',
+        displayName: 'Content Area',
+        // @ts-expect-error - contentType is not supported on content properties
+        contentType: Article,
+      },
+    },
+  });
+
+  contentType({
+    key: 'page',
+    displayName: 'Page',
+    baseType: '_page',
+    properties: {
+      areas: {
+        type: 'array',
+        // @ts-expect-error - contentType is not supported on content array items
+        items: { type: 'content', contentType: Article },
+      },
+    },
+  });
+});

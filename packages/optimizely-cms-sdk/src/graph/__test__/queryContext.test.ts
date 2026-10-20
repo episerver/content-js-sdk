@@ -53,7 +53,7 @@ function fragmentsFor(
     'ContextPage',
     new Set(),
     '',
-    createQueryContext({ maxFragmentThreshold: 100, ...context }),
+    createQueryContext({ maxThreshold: 100, ...context }),
   ).fragments.join('\n');
 }
 

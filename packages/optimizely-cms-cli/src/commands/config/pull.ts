@@ -2,7 +2,7 @@ import { Flags } from '@oclif/core';
 import { resolve, dirname, basename } from 'node:path';
 import ora from 'ora';
 import chalk from 'chalk';
-import { input, select } from '@inquirer/prompts';
+import { confirm, input, select } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { mkdir } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
@@ -13,6 +13,8 @@ import {
   generateGroups,
   generateManifestCode,
   generateManifestFilePath,
+  generateRegistryCode,
+  generateRegistryFilePath,
 } from '../../utils/generate.js';
 import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make.js';
 import { formatCounts, validateManifest } from '../../utils/general.js';
@@ -24,7 +26,7 @@ const defaultOutput = './src/content-types';
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   static override flags = {
     includeReadOnly: Flags.boolean({
-      char: 'i',
+      char: 'r',
       aliases: ['include-read-only'],
       description:
         'Include read-only content types in the manifest. This may include system-generated content types that are not editable in the CMS.',
@@ -225,7 +227,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     this.logManifestStats(manifest, spinner);
     const fileName = hasProvidedFilename ? basename(resolvedOutput) : 'manifest.ts';
-    const displayLocation = hasProvidedFilename ?  dirname(providedOutput) : providedOutput;
+    const displayLocation =
+      hasProvidedFilename ? dirname(providedOutput) : providedOutput;
     spinner.succeed(` Generated ${fileName} file in ${displayLocation}`);
   }
 
@@ -284,6 +287,25 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     spinner.succeed(` Generated ${files.length} file(s) in ${outputPath}`);
   }
 
+  /**
+   * Writes registry.ts next to the generated content types (at the root of the
+   * output directory when files are grouped into subfolders)
+   */
+  private async writeRegistry(
+    outputDir: string,
+    manifest: Manifest,
+    options: { useGrouping: boolean; singleFileModule?: string; includeConfig: boolean },
+  ): Promise<void> {
+    const filePath = generateRegistryFilePath(outputDir);
+
+    await makeFile({
+      path: filePath,
+      content: generateRegistryCode(manifest, options),
+    });
+
+    ora().succeed(` Generated registry.ts in ${outputDir}`);
+  }
+
   // MAIN EXECUTION
 
   public async run(): Promise<void | any> {
@@ -333,6 +355,20 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
     const actualOutputType = isForcedSingleFileMode ? 'single-file' : outputType;
 
+    const wantsRegistry =
+      isInteractive &&
+      (await confirm({
+        message: 'Generate a registry file (registry.ts) for the generated types?',
+        default: false,
+      }));
+
+    const registryIncludesConfig =
+      wantsRegistry &&
+      (await confirm({
+        message: 'Include a config({ apiKey }) call in the registry file?',
+        default: false,
+      }));
+
     // Warn if conflicting flags are present
     if (isForcedSingleFileMode && (flags.group || flags.individual)) {
       this.warn(
@@ -361,17 +397,35 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
       switch (actualOutputType) {
         case 'single-file':
-          return this.handleSingleFileOutput(
+          await this.handleSingleFileOutput(
             resolvedOutput,
             providedOutput,
             manifest,
             isForcedSingleFileMode,
           );
+          break;
         case 'individual':
-          return this.handleIndividualOutput(resolvedOutput, providedOutput, manifest);
+          await this.handleIndividualOutput(resolvedOutput, providedOutput, manifest);
+          break;
         default:
-          return this.handleGroupOutput(resolvedOutput, providedOutput, manifest);
+          await this.handleGroupOutput(resolvedOutput, providedOutput, manifest);
       }
+
+      if (!wantsRegistry) return;
+
+      const isSingleFile = actualOutputType === 'single-file';
+      await this.writeRegistry(
+        isSingleFile && isForcedSingleFileMode ? dirname(resolvedOutput) : resolvedOutput,
+        manifest,
+        {
+          useGrouping: actualOutputType === 'group',
+          singleFileModule:
+            isSingleFile ?
+              `./${basename(isForcedSingleFileMode ? resolvedOutput : 'manifest.ts').replace(/\.tsx?$/, '')}`
+            : undefined,
+          includeConfig: registryIncludesConfig,
+        },
+      );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       spinner.fail(errorMessage);

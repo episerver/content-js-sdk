@@ -4,7 +4,7 @@ import { GraphClient } from '../index.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createQueryContext, refreshCache } from '../../util/queryUtils.js';
 import { configureAdapter } from '../../context/config.js';
-import { ReactContextAdapter } from '../../context/reactContextAdapter.js';
+import { ReactContextAdapter } from '../../react/context/reactContextAdapter.js';
 
 /**
  * A section owns a composition, and Graph exposes it as a `composition` field on
@@ -51,7 +51,7 @@ const Page = contentType({
 });
 
 const fragmentsFor = (key: string): string[] =>
-  createFragment(key, new Set(), '', createQueryContext({ maxFragmentThreshold: 100 }))
+  createFragment(key, new Set(), '', createQueryContext({ maxThreshold: 100 }))
     .fragments;
 
 const sectionFragment = (fragments: string[]) =>
@@ -105,7 +105,7 @@ describe('a section-enabled component reached through a content area', () => {
       new Set(),
       '',
       createQueryContext({
-        maxFragmentThreshold: 100,
+        maxThreshold: 100,
         sectionTypes: new Set(sections),
       }),
     ).fragments;

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { createFragment, createSingleContentQuery, createMultipleContentQuery } from '../createQuery.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
+import { createQueryContext } from '../../util/queryUtils.js';
 
 describe('createFragment() simple cases', () => {
   test('works for scalar properties', async () => {
@@ -86,9 +87,64 @@ describe('createFragment() simple cases', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment ct1 on ct1 { __typename ct1__lin:lin { text title target url { ...ContentUrl }} ct1__ric:ric { html, json } ct1__lin2:lin2 { text title target url { ...ContentUrl }} ct1__ric2:ric2 { html, json } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__lin:lin { text title target url { ...ContentUrl }} ct1__ric:ric { json } ct1__lin2:lin2 { text title target url { ...ContentUrl }} ct1__ric2:ric2 { json } ..._IContent }",
       ]
     `);
+  });
+
+  test('richTextFormat restricts the Rich Text selection set', async () => {
+    const ct1 = contentType({
+      key: 'ct1',
+      displayName: 'CT1',
+      baseType: '_page',
+      properties: { ric: { type: 'richText' } },
+    });
+    initContentTypeRegistry([ct1]);
+
+    const htmlOnly = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({ richTextFormat: 'html' }),
+    );
+    expect(htmlOnly.fragments.at(-1)).toContain('ct1__ric:ric { html }');
+
+    const jsonOnly = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({ richTextFormat: 'json' }),
+    );
+    expect(jsonOnly.fragments.at(-1)).toContain('ct1__ric:ric { json }');
+
+    const both = await createFragment(
+      'ct1',
+      new Set(),
+      '',
+      createQueryContext({ richTextFormat: 'both' }),
+    );
+    expect(both.fragments.at(-1)).toContain('ct1__ric:ric { html, json }');
+  });
+
+  test('richTextFormat is part of the query cache key, not shared across formats', () => {
+    const ct1 = contentType({
+      key: 'RichTextCacheTest',
+      displayName: 'RichTextCacheTest',
+      baseType: '_page',
+      properties: { ric: { type: 'richText' } },
+    });
+    initContentTypeRegistry([ct1]);
+
+    const jsonQuery = createSingleContentQuery('RichTextCacheTest', {
+      richTextFormat: 'json',
+    });
+    const htmlQuery = createSingleContentQuery('RichTextCacheTest', {
+      richTextFormat: 'html',
+    });
+
+    expect(jsonQuery).toContain('ric:ric { json }');
+    expect(htmlQuery).toContain('ric:ric { html }');
+    expect(jsonQuery).not.toBe(htmlQuery);
   });
 
   test('correct syntax with content types without properties', async () => {
@@ -797,8 +853,8 @@ describe('deterministic query output', () => {
     const ct1 = contentType({ key: 'DetTest', displayName: 'DetTest', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
-    const query1 = createSingleContentQuery('DetTest', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-key' });
-    const query2 = createSingleContentQuery('DetTest', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-key' });
+    const query1 = createSingleContentQuery('DetTest', { damEnabled: false, maxThreshold: 100, expandContracts: true, filterShape: 'by-key' });
+    const query2 = createSingleContentQuery('DetTest', { damEnabled: false, maxThreshold: 100, expandContracts: true, filterShape: 'by-key' });
 
     expect(query1).toBe(query2);
   });
@@ -807,8 +863,8 @@ describe('deterministic query output', () => {
     const ct1 = contentType({ key: 'DetTest2', displayName: 'DetTest2', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
-    const query1 = createMultipleContentQuery('DetTest2', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-path' });
-    const query2 = createMultipleContentQuery('DetTest2', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-path' });
+    const query1 = createMultipleContentQuery('DetTest2', { damEnabled: false, maxThreshold: 100, expandContracts: true, filterShape: 'by-path' });
+    const query2 = createMultipleContentQuery('DetTest2', { damEnabled: false, maxThreshold: 100, expandContracts: true, filterShape: 'by-path' });
 
     expect(query1).toBe(query2);
   });
@@ -817,7 +873,7 @@ describe('deterministic query output', () => {
     const ct1 = contentType({ key: 'ScalarTest', displayName: 'ScalarTest', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
-    const query = createSingleContentQuery('ScalarTest', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-key' });
+    const query = createSingleContentQuery('ScalarTest', { damEnabled: false, maxThreshold: 100, expandContracts: true, filterShape: 'by-key' });
 
     expect(query).toContain('$key: String');
     expect(query).not.toContain('_ContentWhereInput');
@@ -828,7 +884,7 @@ describe('deterministic query output', () => {
     const ct1 = contentType({ key: 'ScalarTest2', displayName: 'ScalarTest2', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
-    const query = createMultipleContentQuery('ScalarTest2', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-path' });
+    const query = createMultipleContentQuery('ScalarTest2', { damEnabled: false, maxThreshold: 100, expandContracts: true, filterShape: 'by-path' });
 
     expect(query).toContain('$path: String');
     expect(query).toContain('$pathNoSlash: String');
@@ -840,7 +896,7 @@ describe('deterministic query output', () => {
     const ct1 = contentType({ key: 'PreviewTest', displayName: 'PreviewTest', baseType: '_page' });
     initContentTypeRegistry([ct1]);
 
-    const query = createSingleContentQuery('PreviewTest', { damEnabled: false, maxFragmentThreshold: 100, expandContracts: true, filterShape: 'by-key', variationMode: 'all' });
+    const query = createSingleContentQuery('PreviewTest', { damEnabled: false, maxThreshold: 100, expandContracts: true, filterShape: 'by-key', variationMode: 'all' });
 
     expect(query).toContain('variation: { include: ALL }');
     expect(query).toContain('$key: String');
