@@ -16,10 +16,12 @@ import type { AnyProperty } from '../model/properties.js';
 import { isBaseMediaType } from '../util/baseTypeUtil.js';
 
 /**
- * The slice of `@faker-js/faker` this uses.
+ * A text source, shaped like the part of a faker-style library this uses.
  *
- * Structural, so the SDK does not depend on faker: an application that wants
- * realistic copy passes `faker` in, and one that does not keeps the labels.
+ * Matched structurally rather than by identity, so the SDK depends on no
+ * particular package: anything exposing these methods works, whether that is
+ * a faker build, a fixtures module, or an application's own content store.
+ * Supply one for realistic copy, or none and keep the property labels.
  */
 export type FakerLike = {
   seed(value: number): unknown;
@@ -28,8 +30,9 @@ export type FakerLike = {
   internet: { email(): string; url(): string };
   commerce: { productName(): string; price(): string };
   number: { int(options: { min: number; max: number }): number };
-  /** `refDate` is always passed: without it faker measures from the current
-   *  time, and the same component would render a different date each reload. */
+  /** `refDate` is always passed, so an implementation never has to read the
+   *  clock: measuring from the current time would render a different date on
+   *  every reload. */
   date: { past(options: { refDate: string }): Date };
 };
 
@@ -52,7 +55,7 @@ export type MockDataFactory = (
 /**
  * Where stand-in content comes from. Any of:
  *
- * - `faker` from `@faker-js/faker`, to fill text from each property's name
+ * - a {@linkcode FakerLike} text source, to fill text from each property's name
  * - a {@linkcode MockDataFactory}, for content built however the app likes
  * - {@linkcode MockDataOverrides}, to pin fields per content type
  */
@@ -63,7 +66,7 @@ export type MockContentOptions = {
 };
 
 /** Carried through the walk, so nothing reads module state. */
-type MockContext = { faker?: FakerLike; depth: number };
+type MockContext = { faker?: FakerLike; mockData?: MockData; depth: number };
 
 /** How deep nested components and content references are followed. */
 const MAX_DEPTH = 3;
@@ -127,8 +130,9 @@ const isLongText = (property: AnyProperty) =>
   ('maxLength' in property ? (property.maxLength ?? 0) : 0) > 120;
 
 /**
- * What a property is called, matched loosely against the kinds of copy faker
- * can produce. Names are the only signal a content type gives about meaning:
+ * What a property is called, matched loosely against the kinds of copy a text
+ * source can produce. Names are the only signal a content type gives about
+ * meaning:
  * the schema says `string`, the name says whether it is an email or a heading.
  */
 function fakeText(name: string, property: AnyProperty, faker: FakerLike): string {
@@ -147,7 +151,7 @@ function fakeText(name: string, property: AnyProperty, faker: FakerLike): string
   return faker.lorem.words(3);
 }
 
-/** The text a string-ish property gets: realistic with faker, its own name without. */
+/** The text a string-ish property gets: from the source, or its own name without one. */
 function textFor(name: string, property: AnyProperty, ctx: MockContext): string {
   if (ctx.faker) return fakeText(name, property, ctx.faker);
 
@@ -204,12 +208,21 @@ function mockProperty(
     case 'boolean':
       return true;
     case 'integer':
-    case 'float':
-      return (
-        property.minimum ??
-        ctx.faker?.number.int({ min: 1, max: property.maximum ?? 100 }) ??
-        1
-      );
+    case 'float': {
+      if (property.minimum !== undefined) return property.minimum;
+      if (!ctx.faker) return 1;
+
+      // `maximum` can be below the default floor, and a source is entitled to
+      // throw when handed an inverted range.
+      const max = property.maximum ?? 100;
+      const min = Math.min(1, max);
+      const whole = ctx.faker.number.int({ min, max });
+
+      // A float property reading as a whole number hides formatting bugs, so
+      // nudge it off the integer — downwards when the maximum is in the way.
+      if (property.type !== 'float') return whole;
+      return whole + 0.5 <= max ? whole + 0.5 : whole - 0.5;
+    }
     case 'dateTime':
       return ctx.faker ? ctx.faker.date.past({ refDate: MOCK_DATE }).toISOString() : MOCK_DATE;
     case 'json':
@@ -245,7 +258,12 @@ function mockProperty(
     }
     case 'array': {
       const items = (property as { items: AnyProperty }).items;
-      const count = Math.max(property.minItems ?? 0, 2);
+      // Two reads as a list without being a wall, but a property that allows
+      // fewer must not be handed more than it permits.
+      const count = Math.min(
+        Math.max(property.minItems ?? 0, 2),
+        property.maxItems ?? Number.MAX_SAFE_INTEGER,
+      );
       // One level of nesting per item would multiply, so arrays of components
       // are filled at the depth of the array itself.
       return Array.from({ length: count }, () => mockProperty(name, items, ctx));
@@ -258,10 +276,10 @@ function mockProperty(
 /**
  * An empty composition.
  *
- * ponytail: a section or experience is a container, and which components an
- * editor would drop into it is a guess. Rendering the container empty shows
- * its own chrome without inventing content; fill it from a real content item
- * (`?key=`) when the arrangement is what you need to see.
+ * A section or experience is a container, and which components an editor would
+ * drop into it is a guess. Rendering the container empty shows its own chrome
+ * without inventing content; fill it from a real content item (`?key=`) when
+ * the arrangement is what you need to see.
  */
 function emptyComposition(key: string) {
   return {
@@ -302,7 +320,7 @@ function build(
     ]),
   );
 
-  return {
+  const generated = {
     __typename: key,
     ...values,
     // A section reads its composition from `nodes`, lifted out of `composition`
@@ -322,9 +340,35 @@ function build(
       url: contentUrl(`/preview/${key}`),
     },
   };
+
+  return applyMockData(contentType, generated, ctx);
 }
 
-/** A stable 32-bit number from a string, to seed faker with. */
+/**
+ * Lets the caller's data win over what the schema produced.
+ *
+ * Applied at every level rather than only the outermost type, so an override
+ * for `Author` takes effect whether that type is being previewed directly or
+ * sits nested inside something else. Without this, "one entry per content type
+ * key" would silently mean "per *root* content type key".
+ */
+function applyMockData(
+  contentType: AnyContentType,
+  generated: Record<string, unknown>,
+  { mockData }: MockContext,
+): Record<string, unknown> {
+  if (!mockData || isFaker(mockData)) return generated;
+
+  if (typeof mockData === 'function') {
+    return mockData(contentType, generated) ?? generated;
+  }
+
+  // Shallow: a field is either the application's or generated, never half of
+  // each, which would be hard to reason about from the outside.
+  return { ...generated, ...mockData[contentType.key] };
+}
+
+/** A stable 32-bit number from a string, to seed the text source with. */
 function hash(value: string): number {
   let result = 2166136261;
   for (let i = 0; i < value.length; i++) {
@@ -333,7 +377,7 @@ function hash(value: string): number {
   return result >>> 0;
 }
 
-/** Faker is recognised by shape, so the SDK never imports it to check. */
+/** A text source is recognised by shape, so the SDK never imports one to check. */
 const isFaker = (mockData: MockData): mockData is FakerLike =>
   typeof mockData === 'object' && 'lorem' in mockData;
 
@@ -371,8 +415,9 @@ const isFaker = (mockData: MockData): mockData is FakerLike =>
  * });
  * ```
  *
- * Faker is seeded from the content type key, so a component looks the same on
- * every reload rather than reshuffling while you compare it with a design.
+ * The source is seeded from the content type key, so a component looks the
+ * same on every reload rather than reshuffling while you compare it with a
+ * design.
  */
 export function generateMockContent(
   contentType: AnyContentType,
@@ -381,17 +426,5 @@ export function generateMockContent(
   const faker = mockData && isFaker(mockData) ? mockData : undefined;
   faker?.seed(hash(contentType.key));
 
-  const generated = build(contentType, { faker, depth: 0 });
-
-  if (typeof mockData === 'function') {
-    return mockData(contentType, generated) ?? generated;
-  }
-
-  // Overrides are shallow: a field is either the application's or generated,
-  // never half of each, which would be hard to reason about from the outside.
-  if (mockData && !isFaker(mockData)) {
-    return { ...generated, ...mockData[contentType.key] };
-  }
-
-  return generated;
+  return build(contentType, { faker, mockData, depth: 0 });
 }

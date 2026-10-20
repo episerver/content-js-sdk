@@ -45,15 +45,25 @@ const HeadingStyles = displayTemplate({
 });
 
 function Heading({ content, displaySettings }: any) {
+  // `data-faded` records the raw type, so a boolean arriving as a string shows up.
   return (
     <>
-      <h2 data-size={displaySettings?.size}>{content.Text}</h2>
+      <h2
+        data-size={displaySettings?.size}
+        data-faded={typeof displaySettings?.fadeOut}
+      >
+        {content.Text}
+      </h2>
       <img src={content.Image?.url?.default} alt='' />
     </>
   );
 }
 
-// jsdom has no ResizeObserver, which the height reporter observes with.
+// jsdom has neither of these. Without `decode` the reporter correctly falls
+// back to waiting out its own image timeout, which would make every test slow.
+HTMLImageElement.prototype.decode ??= () => Promise.resolve();
+
+// jsdom has no ResizeObserver, which the reporter observes the component with.
 globalThis.ResizeObserver ??= class {
   observe() {}
   unobserve() {}
@@ -118,7 +128,10 @@ describe('createComponentPreviewPage', () => {
     const { container } = await renderPage({ key: 'abc123', locale: 'sv' });
 
     expect(container.querySelector('h2')?.textContent).toBe('Set it. Sweat it.');
-    expect(getContent).toHaveBeenCalledWith({ key: 'abc123', locale: 'sv' });
+    expect(getContent).toHaveBeenCalledWith(
+      { key: 'abc123', locale: 'sv' },
+      { publishedOnly: true },
+    );
   });
 
   test('a display template supplies its first choice, a query parameter overrides it', async () => {
@@ -136,28 +149,105 @@ describe('createComponentPreviewPage', () => {
     expect(overridden.container.querySelector('h2')?.dataset.size).toBe('small');
   });
 
-  test('reports its height so the embedding frame can size itself', async () => {
-    const heights: number[] = [];
-    const onMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'preview-height') heights.push(event.data.height);
-    };
-    window.addEventListener('message', onMessage);
-    // jsdom has no layout, so the reporter needs a height to find.
-    vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(420);
-    // `window.parent === window` in jsdom, which the reporter reads as "not framed".
+  /**
+   * jsdom has no layout engine, so the measured element reports a zero-sized
+   * box unless one is supplied. It also makes `window.parent === window`, which
+   * the reporter reads as "not framed", so the parent is stood in for too.
+   */
+  function framed({ height = 420, width = 1280 } = {}) {
+    const sent: any[] = [];
+
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width,
+      height,
+      left: 0,
+      top: 0,
+      right: width,
+      bottom: height,
+    } as DOMRect);
+
     vi.spyOn(window, 'parent', 'get').mockReturnValue({
-      postMessage: (data: unknown) => window.dispatchEvent(
-        Object.assign(new Event('message'), { data }),
-      ),
+      postMessage: (data: unknown, targetOrigin: string) =>
+        sent.push({ data, targetOrigin }),
     } as unknown as Window);
 
+    return sent;
+  }
+
+  test('reports the component box, not the full-width wrapper around it', async () => {
+    const sent = framed();
+
+    // The wrapper is full-width by design, so a component narrower than the
+    // page must still report its own width or every tile frames whitespace.
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: Element) {
+        const narrow = this.id !== 'optimizely-preview';
+        return {
+          width: narrow ? 150 : 1280,
+          height: narrow ? 60 : 420,
+          left: narrow ? 565 : 0,
+          top: narrow ? 330 : 0,
+          right: narrow ? 715 : 1280,
+          bottom: narrow ? 390 : 420,
+        } as DOMRect;
+      },
+    );
+
+    await renderPage({ contentType: 'Heading', parentOrigin: 'https://cms.test' });
+    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
+
+    expect(sent[0].data.payload).toMatchObject({
+      width: 150,
+      height: 60,
+      offsetX: 565,
+      offsetY: 330,
+    });
+  });
+
+  test('reports the component box so the embedding page can size a tile', async () => {
+    const sent = framed({ height: 420, width: 1280 });
+
+    await renderPage({ contentType: 'Heading', parentOrigin: 'https://cms.test' });
+    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
+
+    expect(sent[0].data.type).toBe('optimizely:preview:ready');
+    expect(sent[0].data.version).toBe(1);
+    expect(sent[0].data.payload).toMatchObject({
+      width: 1280,
+      height: 420,
+      offsetX: 0,
+      offsetY: 0,
+      element: 'optimizely-preview',
+      contentType: 'Heading',
+    });
+  });
+
+  test('posts to the origin it was given, never to a wildcard', async () => {
+    const sent = framed();
+
+    await renderPage({ contentType: 'Heading', parentOrigin: 'https://cms.test' });
+    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
+
+    expect(sent[0].targetOrigin).toBe('https://cms.test');
+  });
+
+  test('stays silent when no parent origin is given', async () => {
+    const sent = framed();
+
     await renderPage({ contentType: 'Heading' });
-    await new Promise(resolve => setTimeout(resolve));
+    await new Promise(resolve => setTimeout(resolve, 10));
 
-    expect(heights).toContain(420);
+    expect(sent).toHaveLength(0);
+  });
 
-    window.removeEventListener('message', onMessage);
-    vi.restoreAllMocks();
+  test('reports an error rather than leaving the parent to time out', async () => {
+    const sent = framed();
+
+    await renderPage({ contentType: 'NotRegistered', parentOrigin: 'https://cms.test' });
+    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
+
+    expect(sent[0].data.type).toBe('optimizely:preview:error');
+    expect(sent[0].data.payload.code).toBe('unknown-content-type');
   });
 
   test('an unknown content type renders a message instead of throwing', async () => {
@@ -196,3 +286,70 @@ describe('form elements previewed on their own', () => {
     expect(getByTestId('field').dataset.attempted).toBe('false');
   });
 });
+
+describe('router conventions', () => {
+  /** Routers differ in how they hand over the query; all three must work. */
+  async function renderWith(searchParams: unknown) {
+    const Page = createComponentPreviewPage({ defaultLocale: 'en' }) as any;
+    const element = await Page({ searchParams });
+    return render(await resolveAsync(element));
+  }
+
+  test('a plain object, as most routers pass it', async () => {
+    const { container } = await renderWith({ contentType: 'Heading' });
+    expect(container.querySelector('h2')?.textContent).toBe('Headline');
+  });
+
+  test('URLSearchParams, as `new URL(request.url).searchParams` gives', async () => {
+    const { container } = await renderWith(
+      new URLSearchParams({ contentType: 'Heading', size: 'small' }),
+    );
+    expect(container.querySelector('h2')?.dataset.size).toBe('small');
+  });
+
+  test('a promise, as the Next App Router passes it', async () => {
+    const { container } = await renderWith(Promise.resolve({ contentType: 'Heading' }));
+    expect(container.querySelector('h2')?.textContent).toBe('Headline');
+  });
+})
+
+describe('fixes from review', () => {
+  test('a boolean setting arrives as a boolean, as it does on a real page', async () => {
+    const { container } = await renderPage({
+      contentType: 'Heading',
+      fadeOut: 'false',
+    });
+
+    // Not the string 'false', which is truthy and would invert the setting.
+    expect(container.querySelector('h2')?.dataset.faded).toBe('boolean');
+  });
+
+  test('a missing content key is reported as such, not as an unknown type', async () => {
+    const sent: any[] = [];
+    vi.spyOn(window, 'parent', 'get').mockReturnValue({
+      postMessage: (data: unknown) => sent.push(data),
+    } as unknown as Window);
+    getContent.mockResolvedValue(null);
+
+    await renderPage({ key: 'does-not-exist', parentOrigin: 'https://cms.test' });
+    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
+
+    expect(sent[0].payload.code).toBe('content-not-found');
+    vi.restoreAllMocks();
+  });
+
+  test('a key lookup asks for published content, whatever the app configured', async () => {
+    getContent.mockResolvedValue({
+      __typename: 'Heading',
+      Text: 'x',
+      _metadata: { key: 'abc', types: ['Heading'], locale: 'en' },
+    });
+
+    await renderPage({ key: 'abc' });
+
+    expect(getContent).toHaveBeenCalledWith(
+      { key: 'abc', locale: 'en' },
+      { publishedOnly: true },
+    );
+  });
+})

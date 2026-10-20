@@ -35,8 +35,13 @@ import {
   getDisplayTemplateTag,
 } from '../model/displayTemplateRegistry.js';
 import { isContentType } from '../model/index.js';
+import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { generateMockContent, type MockData } from '../render/mockContent.js';
-import { PreviewHeightReporter } from './client.js';
+import {
+  PARENT_ORIGIN_PARAM,
+  PREVIEW_ELEMENT_ID,
+} from '../core/preview/protocol.js';
+import { PreviewReporter } from './client.js';
 import { FormRulesProvider } from './forms/FormRulesContext.js';
 import { FormSubmissionProvider } from './forms/FormSubmissionProvider.js';
 import { FormValidationProvider } from './forms/FormValidationContext.js';
@@ -377,12 +382,29 @@ export function OptimizelyGridSection({
 }
 
 /** Props the router hands to a page built by {@linkcode createComponentPreviewPage} */
+type PreviewQuery = Record<string, string | string[] | undefined>;
+
 type ComponentPreviewPageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  /**
+   * The request's query. Next's App Router hands this over as a promise;
+   * other routers pass a plain object, and `URL.searchParams` is a
+   * `URLSearchParams`. All three are accepted so the page is not tied to one
+   * framework's calling convention.
+   */
+  searchParams?:
+    | PreviewQuery
+    | URLSearchParams
+    | Promise<PreviewQuery | URLSearchParams>;
 };
 
 /** Query parameters the page reads itself. Everything else is a display setting. */
-const PREVIEW_PARAMS = new Set(['contentType', 'key', 'displayTemplate', 'locale']);
+const PREVIEW_PARAMS = new Set([
+  'contentType',
+  'key',
+  'displayTemplate',
+  'locale',
+  PARENT_ORIGIN_PARAM,
+]);
 
 /** The first value of a query parameter, ignoring repeats. */
 function queryValue(value: string | string[] | undefined) {
@@ -412,13 +434,25 @@ function defaultDisplaySettings(templateKey: string | undefined) {
  * editor has created content for yet, stand-in content generated from the
  * content type definition (`?contentType=`).
  *
- * Mount it at `app/preview/component/page.tsx`:
+ * The page is an async component, so it needs a framework that can render
+ * one on the server. Mount it wherever that framework puts routes — in Next's
+ * App Router, `app/preview/component/page.tsx`:
  *
  * @example
  * ```tsx
  * import { createComponentPreviewPage } from '@optimizely/cms-sdk/react/server';
  *
  * export default createComponentPreviewPage({ defaultLocale: 'en' });
+ * ```
+ *
+ * A router that passes the query as an object or `URLSearchParams` rather
+ * than a promise works the same way:
+ *
+ * @example
+ * ```tsx
+ * const Preview = createComponentPreviewPage({ defaultLocale: 'en' });
+ *
+ * export const Route = () => <Preview searchParams={new URL(request.url).searchParams} />;
  * ```
  *
  * The iframe then loads one of:
@@ -438,22 +472,34 @@ export function createComponentPreviewPage({
 }: {
   defaultLocale?: string;
   /**
-   * Where stand-in content comes from: `faker` from `@faker-js/faker`, a
-   * factory, or predefined content per content type. Passed in rather than
-   * imported, so whatever it needs is only loaded by the module serving this
-   * page, and never by the application's own pages.
+   * Where stand-in content comes from: a faker-style text source, a factory,
+   * or predefined content per content type. Passed in rather than imported, so
+   * whatever it needs is only loaded by the module serving this page, and
+   * never by the application's own pages.
    */
   mockData?: MockData;
 } = {}) {
   async function ComponentPreviewPage({ searchParams }: ComponentPreviewPageProps) {
-    const query = (await searchParams) ?? {};
+    const resolved = await searchParams;
+    const query: PreviewQuery =
+      resolved instanceof URLSearchParams ?
+        Object.fromEntries(resolved)
+      : (resolved ?? {});
     const locale = queryValue(query.locale) ?? defaultLocale;
     const contentTypeKey = queryValue(query.contentType);
     const contentKey = queryValue(query.key);
     const displayTemplateKey = queryValue(query.displayTemplate);
+    const parentOrigin = queryValue(query[PARENT_ORIGIN_PARAM]);
 
     const content =
-      contentKey ? await getClient().getContent({ key: contentKey, locale })
+      contentKey ?
+        await getClient().getContent(
+          { key: contentKey, locale },
+          // Stated rather than inherited: this route takes no preview token and
+          // performs no authorization, so it must not serve drafts even where
+          // the application has configured `publishedOnly: false` globally.
+          { publishedOnly: true },
+        )
       : contentTypeKey ?
         (() => {
           const definition = getContentType(contentTypeKey);
@@ -463,21 +509,44 @@ export function createComponentPreviewPage({
         })()
       : null;
 
-    const displaySettings: Record<string, string> = {
+    const rawSettings: Record<string, string> = {
       ...defaultDisplaySettings(displayTemplateKey),
     };
 
     for (const [key, value] of Object.entries(query)) {
       if (!PREVIEW_PARAMS.has(key) && typeof value === 'string') {
-        displaySettings[key] = value;
+        rawSettings[key] = value;
       }
     }
 
+    // Through the same parser a composition goes through, so `fadeOut=false`
+    // arrives as `false` and not as the truthy string `'false'`. Without it a
+    // boolean setting behaves the opposite way here to the real page.
+    const displaySettings = parseDisplaySettings(
+      Object.entries(rawSettings).map(([key, value]) => ({ key, value })),
+    );
+
     if (!content) {
+      const requested = contentKey ?? contentTypeKey;
+
       return (
-        <FallbackComponent>
-          Nothing to preview for <b>{contentKey ?? contentTypeKey ?? '(no content)'}</b>
-        </FallbackComponent>
+        <>
+          {/* Told rather than left to time out, so a tile can fail fast. */}
+          <PreviewReporter
+            contentType={contentTypeKey}
+            parentOrigin={parentOrigin}
+            error={{
+              code:
+                contentKey ? 'content-not-found'
+                : contentTypeKey ? 'unknown-content-type'
+                : 'render-failed',
+              message: `Nothing to preview for ${requested ?? '(no content)'}`,
+            }}
+          />
+          <FallbackComponent>
+            Nothing to preview for <b>{requested ?? '(no content)'}</b>
+          </FallbackComponent>
+        </>
       );
     }
 
@@ -495,15 +564,20 @@ export function createComponentPreviewPage({
         {/* The frame paints no backdrop of its own, so the page embedding it
             decides what the component sits on. One component on a page of its
             own sits in the middle of it, rather than against the top edge of
-            whatever box the frame has been given, and keeps a margin off the
-            edges — proportional at small sizes, so a thumbnail-sized frame is
-            not mostly padding. The Next.js dev overlay is hidden here only, so
-            it still works on the application's own pages. Unlayered and
-            rendered after the stylesheet, so these win without `!important`. */}
+            whatever box the frame has been given. No padding: the component is
+            measured and framed by the embedder, and space the component did
+            not ask for would be reported as part of it. A dev server's error
+            overlay is hidden in this frame only, so it still works on the
+            application's own pages. Unlayered and rendered after the
+            stylesheet, so these win without `!important`. */}
         <style>
           {'html,body{background:transparent}' +
-            'body{box-sizing:border-box;min-height:100svh;display:flex;' +
-            'flex-direction:column;justify-content:center;padding:min(1.5rem,5%)}' +
+            'body{margin:0;min-height:100svh;display:flex;' +
+            'flex-direction:column;justify-content:center}' +
+            // Inert on frameworks that have no such overlay; listed by
+            // element name rather than imported, so nothing here depends on
+            // the dev server that happens to be serving the page.
+            'nextjs-portal,vite-error-overlay{display:none}' +
             // The component sits inside this, not directly in the flex body: a
             // flex item is stretched to full width, which silently widens
             // anything sized by its content, such as an `inline-flex` button.
@@ -512,23 +586,28 @@ export function createComponentPreviewPage({
             // shrinking anything: `align-items:center` would centre a section
             // by collapsing it to its content width. Block children reset it,
             // so a component's own copy reads as it does on a real page.
-            '#optimizely-preview{width:100%;text-align:center}' +
-            '#optimizely-preview>*{text-align:initial}' +
-            'nextjs-portal{display:none}'}
+            `#${PREVIEW_ELEMENT_ID}{width:100%;text-align:center}` +
+            `#${PREVIEW_ELEMENT_ID}>*{text-align:initial}` +
+            ''}
         </style>
-        <PreviewHeightReporter />
+        <PreviewReporter
+          contentType={contentTypeKey ?? content._metadata.types[0]}
+          parentOrigin={parentOrigin}
+        />
         {/* A form element reads these from the container it sits in. Previewed
             on its own it has no container, so the preview stands in as one. A
             container previewed this way brings its own, which take over. */}
         <FormSubmissionProvider>
           <FormValidationProvider>
             <FormRulesProvider>
-              <div id='optimizely-preview'>
+              <div id={PREVIEW_ELEMENT_ID}>
                 <OptimizelyComponent
                   content={content}
                   tag={getDisplayTemplateTag(displayTemplateKey)}
                   displaySettings={
-                    Object.keys(displaySettings).length > 0 ? displaySettings : undefined
+                    displaySettings && Object.keys(displaySettings).length > 0 ?
+                      displaySettings
+                    : undefined
                   }
                 />
               </div>
