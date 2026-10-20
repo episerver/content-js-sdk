@@ -2,7 +2,7 @@
 '@optimizely/cms-sdk': minor
 ---
 
-Return image metadata with `contentReference` properties
+[CMS-57435](https://optimizely-ext.atlassian.net/browse/CMS-57435): Return image metadata with `contentReference` properties
 
 A reference to an image used to come back as `key` and `url` only, so alt text, photographer,
 width and height needed a second query — even though the same image in a content area already

@@ -1,5 +1,76 @@
 # @optimizely/cms-sdk
 
+## 3.1.0-beta.0
+
+### Minor Changes
+
+- ab10e89: [CMS-57435](https://optimizely-ext.atlassian.net/browse/CMS-57435): Return
+  image metadata with `contentReference` properties
+
+  A reference to an image used to come back as `key` and `url` only, so alt text,
+  photographer, width and height needed a second query — even though the same image in a
+  content area already arrived complete. References to media now resolve `item` as part of
+  the page request.
+
+  ```ts
+  const Page = contentType({
+    key: 'ArticlePage',
+    baseType: '_page',
+    properties: {
+      heroImage: { type: 'contentReference', allowedTypes: [ImageFile] },
+    },
+  });
+
+  const page = await client.getContent({ key });
+
+  page.heroImage?.item?.AltText; // previously required a second query
+  page.heroImage?.item?.imageMetadata; // { width, height }
+  ```
+
+  Applies to references that allow media, whether by content type or by `_image`, `_video`
+  or `_media`. References to pages and components are unchanged.
+
+- 5514541: [CMS-55718](https://optimizely-ext.atlassian.net/browse/CMS-55718): Add
+  framework-agnostic core module, with React bindings rebuilt on top of it.
+- 649de28: [CMS-57557](https://optimizely-ext.atlassian.net/browse/CMS-57557): Add
+  `platform` option.
+- 784755d: [CMS-57483](https://optimizely-ext.atlassian.net/browse/CMS-57483): Add
+  config({ telemetry: { componentMetrics: false } }) to turn off component metrics, which
+  break Next.js cacheComponents prerendering.
+- bafa411: [CMS-56217](https://optimizely-ext.atlassian.net/browse/CMS-56217): Support CMS
+  Taxonomy categories. The SDK now includes `categories` in the `ItemMetadata` fragment
+  when taxonomy is available, exposing `_metadata.categories` (array of term keys) on
+  every content fetch. Opt in to hierarchy resolution with `resolveTaxonomy: true` to get
+  `_metadata.resolvedCategories` with full breadcrumb paths, display names, and metadata —
+  without writing a separate `_TaxonomyTerm` query. Resolved terms are cached per-endpoint
+  for the process lifetime. Taxonomy detection follows the same tri-state pattern as DAM
+  (`'automatic' | 'on' | 'off'`).
+- b7e7e18: [CMS-56227](https://optimizely-ext.atlassian.net/browse/CMS-56227): Add auth
+  Add an `auth` option that authenticates Graph requests with an app credential (`basic`,
+  `hmac`), a bearer token or a custom resolver, optionally acting as a named user via
+  `asUser`, with responses filtered to published content by default.
+
+### Patch Changes
+
+- f8361fe: [CMS-56511](https://optimizely-ext.atlassian.net/browse/CMS-56511): Reject
+  `contentType` on `content` properties in types and `config push`, since CMS silently
+  drops it; use `allowedTypes`/`restrictedTypes`.
+- f8447dc: [CMS-56675](https://optimizely-ext.atlassian.net/browse/CMS-56675): Fix
+  `getItems()` and `getPath()` ignoring CMS language fallbacks when looking up content by
+  key.
+
+  Both operations filtered on `_metadata.locale`, which is the locale a document was
+  _authored_ in. A fallback document keeps its source locale there and announces the
+  requested one separately, so the filter excluded every fallback and the lookup came back
+  empty. The requested locale is now passed only as the `locale:` field argument, which is
+  what resolves fallbacks.
+
+  ```ts
+  // Previously returned null when `en-PH` had no own language version.
+  // Now returns the fallback content configured in the CMS.
+  await client.getItems({ key, locale: 'en-PH' });
+  ```
+
 ## 3.0.2
 
 ### Patch Changes

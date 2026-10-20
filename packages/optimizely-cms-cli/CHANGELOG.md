@@ -1,5 +1,30 @@
 # @optimizely/cms-cli
 
+## 3.1.0-beta.0
+
+### Minor Changes
+
+- e61a9db: [CMS-57357](https://optimizely-ext.atlassian.net/browse/CMS-57357): Add
+  `--only <keys>` to `config push` to push only the selected content types, contracts or
+  display templates.
+- 726be4f: [CMS-56835](https://optimizely-ext.atlassian.net/browse/CMS-56835): Add deploy
+  command to cli, add ci option to GH actions
+
+### Patch Changes
+
+- f8361fe: [CMS-56511](https://optimizely-ext.atlassian.net/browse/CMS-56511): Reject
+  `contentType` on `content` properties in types and `config push`, since CMS silently
+  drops it; use `allowedTypes`/`restrictedTypes`.
+- Updated dependencies [ab10e89]
+- Updated dependencies [5514541]
+- Updated dependencies [f8361fe]
+- Updated dependencies [649de28]
+- Updated dependencies [784755d]
+- Updated dependencies [f8447dc]
+- Updated dependencies [bafa411]
+- Updated dependencies [b7e7e18]
+  - @optimizely/cms-sdk@3.1.0-beta.0
+
 ## 3.0.2
 
 ### Patch Changes
