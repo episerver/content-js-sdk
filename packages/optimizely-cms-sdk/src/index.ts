@@ -40,6 +40,7 @@ export type {
   GraphGetPreviewOptions,
   GraphQueryOptions,
   GraphSlot,
+  GraphPlatform,
   DamMode,
   TaxonomyTerm,
   TaxonomyMode,

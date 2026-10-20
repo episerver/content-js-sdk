@@ -80,6 +80,7 @@ The options are grouped in three levels:
 | `userAgent` | `string`                             | `'OptimizelySDK/<version> (JS)'`         | The `User-Agent` header sent with every request                                                                                                  |
 | `secrets`   | `{ appKey: string; secret: string }` | None                                     | The app key and secret that the `hmac` auth mode signs with. Authenticates nothing on its own. See [Authentication](../guides/authentication.md) |
 | `auth`      | `GraphAuthMode \| GraphAuthResolver` | None (the single key)                    | The credential each request carries instead of the single key. See [Authentication](../guides/authentication.md)                                 |
+| `platform`  | `'saas' \| 'paas'`                   | `'saas'`                                 | The CMS product behind the endpoint. Set `'paas'` for CMS 13 PaaS. Any other value throws. See [CMS PaaS](../guides/cms-paas.md)                 |
 | `fragment`  | `GraphFragmentOptions`               | See below                                | Settings that shape the generated query                                                                                                          |
 | `query`     | `GraphQueryOptions`                  | See below                                | Defaults for the per-request options                                                                                                             |
 

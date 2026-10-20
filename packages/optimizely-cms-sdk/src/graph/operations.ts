@@ -1,8 +1,4 @@
-import {
-  createSingleContentQuery,
-  ItemsResponse,
-  createMultipleContentQuery,
-} from './createQuery.js';
+import { ItemsResponse } from './createQuery.js';
 import { GraphResponseError, GraphMissingContentTypeError } from './error.js';
 import {
   type ScalarFilter,
@@ -24,6 +20,7 @@ import {
   withGetContentSpan,
 } from '../telemetry/spans.js';
 import {
+  type DamMode,
   type GraphClientContext,
   type GraphGetContentOptions,
   type GraphGetItemOptions,
@@ -33,6 +30,7 @@ import {
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type TaxonomyMode,
   type TaxonomyTerm,
   type ResolvedQueryOptions,
   fragmentContext,
@@ -47,10 +45,7 @@ import {
   findUnresolvedForms,
   getItemsQuery,
   getLinksQuery,
-  getMetadataQuery,
   hasOwnSectionTypes,
-  liftSectionNodes,
-  removeTypePrefix,
   toLocaleEnumValues,
 } from './queries.js';
 
@@ -165,7 +160,7 @@ async function resolveFormNodes<T>(
 
       // Built here rather than delegating to `getContent`, which would spend a
       // metadata round trip rediscovering a content type we already know.
-      const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
+      const query = context.platform.contentQuery('single', FORM_CONTAINER_TYPE, {
         ...fragmentContext(context, options.damEnabled, false),
         formsEnabled: true,
         sectionTypes: options.sectionTypes,
@@ -182,7 +177,7 @@ async function resolveFormNodes<T>(
         queryOptions.slot,
       );
 
-      const container = liftSectionNodes(removeTypePrefix(response?._Content?.item));
+      const container = context.platform.normalize(response?._Content?.item);
       const nodes = container?.nodes ?? [];
       forms.forEach(form => {
         form.nodes = nodes;
@@ -547,6 +542,12 @@ async function applyTaxonomy(
 
 // METADATA
 
+/** Applies a `dam` or `taxonomy` setting to what the schema probe detected. */
+const resolveMode = (mode: DamMode | TaxonomyMode, detected: boolean): boolean =>
+  mode === 'on' ? true
+  : mode === 'off' ? false
+  : detected;
+
 /**
  * Fetches the content type metadata for a given content input.
  *
@@ -570,7 +571,7 @@ async function getContentMetaData(
   // Skip if forms aren't registered; local lookup, no round trip.
   const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-  const query = getMetadataQuery(
+  const query = context.platform.metadataQuery(
     filter.filterShape,
     getVariationMode(variation),
     mayRenderForms,
@@ -594,28 +595,17 @@ async function getContentMetaData(
     getSectionTypes(context),
   ]);
 
-  const contentTypeName = data._Content?.item?._metadata?.types?.[0];
-
-  // Determine if DAM is enabled based on the presence of cmp_Asset type
-  // The metadata query always probes for cmp_Asset; forced modes just ignore it.
+  const { contentTypeName, damDetected, taxonomyDetected, formsOnPage } =
+    context.platform.readMetadata(data);
   const { dam, taxonomy } = context.fragmentDefaults;
-  const damEnabled =
-    dam === 'on' ? true
-    : dam === 'off' ? false
-    : data.damAssetType !== null;
-
-  const hasCategoriesField = Array.isArray(data.taxonomyType?.fields)
-    && data.taxonomyType.fields.some((f: { name: string }) => f.name === 'categories');
-  const taxonomyEnabled =
-    taxonomy === 'on' ? true
-    : taxonomy === 'off' ? false
-    : hasCategoriesField;
+  const damEnabled = resolveMode(dam, damDetected);
+  const taxonomyEnabled = resolveMode(taxonomy, taxonomyDetected);
 
   // The probe covers a form in a composition. Content type checks cover
   // the form container itself and forms in content areas.
   const needsForms =
     mayRenderForms &&
-    ((data.formsOnPage?.total ?? 0) > 0 ||
+    (formsOnPage ||
       (typeof contentTypeName === 'string' &&
         (isFormContentType(contentTypeName) ||
           contentTypeCanHoldForms(contentTypeName))));
@@ -678,7 +668,7 @@ export async function getContentByPath<T = any>(
     span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
     try {
-      const query = createMultipleContentQuery(contentTypeName, {
+      const query = context.platform.contentQuery('multiple', contentTypeName, {
         ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
@@ -698,7 +688,7 @@ export async function getContentByPath<T = any>(
 
       const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
-          resolveFormNodes(context, hoistCategories(liftSectionNodes(removeTypePrefix(item))), {
+          resolveFormNodes(context, hoistCategories(context.platform.normalize(item)), {
             damEnabled,
             taxonomyEnabled,
             sectionTypes,
@@ -749,7 +739,7 @@ export async function getPreviewContent(
         {
           request: {
             variables: filter.variables,
-            query: getMetadataQuery(filter.filterShape, 'all'),
+            query: context.platform.metadataQuery(filter.filterShape, 'all'),
           },
         },
       );
@@ -766,7 +756,7 @@ export async function getPreviewContent(
       mode: params.ctx,
     });
 
-    const query = createSingleContentQuery(contentTypeName, {
+    const query = context.platform.contentQuery('single', contentTypeName, {
       ...fragmentContext(context, damEnabled, taxonomyEnabled),
       formsEnabled,
       sectionTypes,
@@ -786,7 +776,7 @@ export async function getPreviewContent(
 
     const result = await resolveFormNodes(
       context,
-      hoistCategories(liftSectionNodes(removeTypePrefix(response?._Content?.item))),
+      hoistCategories(context.platform.normalize(response?._Content?.item)),
       {
         damEnabled,
         taxonomyEnabled,
@@ -847,7 +837,7 @@ export async function getContent(
     span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
     try {
-      const query = createSingleContentQuery(contentTypeName, {
+      const query = context.platform.contentQuery('single', contentTypeName, {
         ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
@@ -866,7 +856,7 @@ export async function getContent(
 
       const result = await resolveFormNodes(
         context,
-        hoistCategories(liftSectionNodes(removeTypePrefix(response?._Content?.item))),
+        hoistCategories(context.platform.normalize(response?._Content?.item)),
         {
           damEnabled,
           taxonomyEnabled,

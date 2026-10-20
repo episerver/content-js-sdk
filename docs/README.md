@@ -83,6 +83,7 @@ Standalone pages, one topic each. Read them in any order.
 - [The framework-agnostic core](./guides/framework-agnostic-core.md): render without
   React, or build a binding
 - [Observability](./guides/observability.md): OpenTelemetry traces and metrics
+- [CMS PaaS](./guides/cms-paas.md): use the SDK with an Optimizely CMS 13 PaaS instance
 - [Agent skills](./guides/agent-skills.md): teach AI coding agents to use the SDK
 
 ## Reference

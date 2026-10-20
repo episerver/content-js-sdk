@@ -7,11 +7,15 @@ import {
   GRAPH_PATH,
 } from './constants.js';
 import { RichTextFormat } from '../util/queryUtils.js';
+import type { PlatformAdapter } from './platform.js';
 
 // PUBLIC TYPES
 
 /** Slot values for selecting the Graph engine version */
 export type GraphSlot = 'Current' | 'New';
+
+/** The CMS product behind a Graph endpoint: CMS SaaS, or CMS 13 PaaS. */
+export type GraphPlatform = 'saas' | 'paas';
 
 /**
  * Controls whether DAM (Digital Asset Management) asset fragments are included
@@ -309,6 +313,11 @@ export type GraphOptions = {
   fragment?: GraphFragmentOptions;
   /** Defaults for the per-request options, overridable on any single call. */
   query?: GraphQueryOptions;
+  /**
+   * The CMS product behind the Graph endpoint. Set `'paas'` for CMS 13 PaaS.
+   * @default 'saas'
+   */
+  platform?: GraphPlatform;
 };
 
 export type GraphGetContentOptions = GraphQueryOptions & {
@@ -369,6 +378,7 @@ export interface GraphClientContext {
   readonly userAgent: string;
   readonly fragmentDefaults: ResolvedFragmentOptions;
   readonly queryDefaults: ResolvedQueryOptions;
+  readonly platform: PlatformAdapter;
   request(
     query: string,
     variables: any,
