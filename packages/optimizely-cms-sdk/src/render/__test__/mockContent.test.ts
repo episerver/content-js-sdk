@@ -52,7 +52,11 @@ describe('generateMockContent', () => {
     expect(mock.Alignment).toBe('left');
     expect(mock.Body.json.children[0].children[0].text).toContain('Body');
     expect(mock.Cta).toMatchObject({ target: '_self', url: { default: '/example' } });
-    expect(mock.Published).toBe('2024-01-01T12:00:00Z');
+    // A fixed instant rather than `now`, and the same one the metadata carries,
+    // so two renders a second apart produce identical content. Asserted against
+    // the metadata rather than a literal, so tuning the date does not break this.
+    expect(mock.Published).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(mock.Published).toBe(mock._metadata.created);
     expect(mock.Featured).toBe(true);
     expect(mock.Rank).toBe(3);
   });
@@ -212,3 +216,54 @@ describe('developer-supplied mock data', () => {
     expect(mock.Headline).toBe('Headline');
   });
 });
+
+describe('fixes from review', () => {
+  test('an override reaches a nested content type, not just the root', () => {
+    const mock = generateMockContent(Article, {
+      mockData: { Author: { Name: 'Ada Lovelace' } },
+    }) as any;
+
+    expect(mock.Writer.Name).toBe('Ada Lovelace');
+  });
+
+  test('a maximum below the default floor does not throw', () => {
+    const Tiny = contentType({
+      key: 'Tiny',
+      displayName: 'Tiny',
+      baseType: '_component',
+      properties: { Weight: { type: 'integer', maximum: 0 } },
+    });
+    initContentTypeRegistry([Tiny]);
+
+    const mock = generateMockContent(Tiny, { mockData: faker }) as any;
+
+    expect(mock.Weight).toBeLessThanOrEqual(0);
+  });
+
+  test('a float does not read as a whole number', () => {
+    const Rated = contentType({
+      key: 'Rated',
+      displayName: 'Rated',
+      baseType: '_component',
+      properties: { Score: { type: 'float', maximum: 5 } },
+    });
+    initContentTypeRegistry([Rated]);
+
+    expect(Number.isInteger((generateMockContent(Rated, { mockData: faker }) as any).Score))
+      .toBe(false);
+  });
+
+  test('an array respects maxItems', () => {
+    const Single = contentType({
+      key: 'Single',
+      displayName: 'Single',
+      baseType: '_component',
+      properties: {
+        Tags: { type: 'array', maxItems: 1, items: { type: 'string' } },
+      },
+    });
+    initContentTypeRegistry([Single]);
+
+    expect((generateMockContent(Single) as any).Tags).toHaveLength(1);
+  });
+})
