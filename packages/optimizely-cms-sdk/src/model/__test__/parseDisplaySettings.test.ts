@@ -1,36 +1,43 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { parseDisplaySettings } from '../displayTemplates.js';
 
 describe('parseDisplaySettings', () => {
-  it('should parse valid display settings correctly', () => {
+  test('maps each key to its value', () => {
     const input = [
       { key: 'layout', value: 'grid' },
       { key: 'theme', value: 'dark' },
     ];
-    const result = parseDisplaySettings(input);
-    expect(result).toEqual({
-      layout: 'grid',
-      theme: 'dark',
-    });
+
+    expect(parseDisplaySettings(input)).toEqual({ layout: 'grid', theme: 'dark' });
   });
 
-  it('should handle missing properties gracefully', () => {
-    const input = [{ key: 'layout', value: 'grid' }];
-    const result = parseDisplaySettings(input);
-    expect(result).toEqual({
-      layout: 'grid',
-    });
+  test("converts 'true' and 'false' to booleans and leaves other strings alone", () => {
+    const input = [
+      { key: 'boxed', value: 'true' },
+      { key: 'rounded', value: 'false' },
+      { key: 'label', value: 'TRUE' },
+    ];
+
+    expect(parseDisplaySettings(input)).toEqual({ boxed: true, rounded: false, label: 'TRUE' });
   });
 
-  it('should return an empty object for null input', () => {
-    const input = null;
-    const result = parseDisplaySettings(input ?? undefined);
-    expect(result).toEqual(undefined);
+  test('a later entry for the same key wins', () => {
+    const input = [
+      { key: 'layout', value: 'grid' },
+      { key: 'layout', value: 'list' },
+    ];
+
+    expect(parseDisplaySettings(input)).toEqual({ layout: 'list' });
   });
 
-  it('should return an empty object for undefined input', () => {
-    const input = undefined;
-    const result = parseDisplaySettings(input);
-    expect(result).toEqual(undefined);
+  test('returns an empty object for an empty array', () => {
+    expect(parseDisplaySettings([])).toEqual({});
+  });
+
+  test.each([
+    ['null', null],
+    ['undefined', undefined],
+  ])('returns undefined for %s', (_label, input) => {
+    expect(parseDisplaySettings(input)).toBeUndefined();
   });
 });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createJsonSubmitHandler } from '../forms/jsonSubmitHandler.js';
 
 const fetchMock = vi.fn();
@@ -10,6 +10,8 @@ describe('createJsonSubmitHandler', () => {
     fetchMock.mockReset().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchMock);
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   test('posts the action, payload and form key as JSON', async () => {
     const data = new FormData();

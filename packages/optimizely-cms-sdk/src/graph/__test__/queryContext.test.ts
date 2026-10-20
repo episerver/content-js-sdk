@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { createFragment } from '../createQuery.js';
-import { contract, contentType, initContentTypeRegistry } from '../../model/index.js';
-import { createQueryContext, refreshCache } from '../../util/queryUtils.js';
+import { contentType, initContentTypeRegistry } from '../../model/index.js';
+import { refreshCache } from '../../util/queryUtils.js';
+import { BlogArticle, Categorizable, NewsArticle, fragmentsFor } from './helpers.js';
 
 /**
  * Settings in `QueryContext` are fixed for a whole query, so they have to reach
@@ -12,32 +12,10 @@ import { createQueryContext, refreshCache } from '../../util/queryUtils.js';
  * definitions of `ICompositionNode` and a rejected query.
  */
 
-const Categorizable = contract({
-  key: 'Categorizable',
-  displayName: 'Categorizable',
-  properties: { category: { type: 'string' } },
-});
-
-const BlogArticle = contentType({
-  key: 'BlogArticle',
-  displayName: 'Blog Article',
-  baseType: '_page',
-  extends: Categorizable,
-  properties: { title: { type: 'string' } },
-});
-
-const NewsArticle = contentType({
-  key: 'NewsArticle',
-  displayName: 'News Article',
-  baseType: '_page',
-  extends: Categorizable,
-  properties: { headline: { type: 'string' } },
-});
-
 /** Builds a page whose single property has the given shape, and returns its fragments. */
-function fragmentsFor(
+function pageFragmentsFor(
   property: unknown,
-  context: Parameters<typeof createQueryContext>[0],
+  context: Parameters<typeof fragmentsFor>[1],
 ): string {
   const Page = contentType({
     key: 'ContextPage',
@@ -49,12 +27,7 @@ function fragmentsFor(
   initContentTypeRegistry([Categorizable, BlogArticle, NewsArticle, Page]);
   refreshCache();
 
-  return createFragment(
-    'ContextPage',
-    new Set(),
-    '',
-    createQueryContext({ maxThreshold: 100, ...context }),
-  ).fragments.join('\n');
+  return fragmentsFor('ContextPage', context).join('\n');
 }
 
 const shapes = {
@@ -67,17 +40,20 @@ const shapes = {
 
 describe.each(Object.entries(shapes))('%s', (_label, property) => {
   test('honours expandContracts', () => {
-    const collapsed = fragmentsFor(property, { expandContracts: false });
-    const expanded = fragmentsFor(property, { expandContracts: true });
+    const collapsed = pageFragmentsFor(property, { expandContracts: false });
+    const expanded = pageFragmentsFor(property, { expandContracts: true });
 
     expect(collapsed).not.toContain('fragment BlogArticle');
     expect(expanded).toContain('fragment BlogArticle');
     expect(expanded).toContain('fragment NewsArticle');
+    expect(expanded).toMatch(
+      /ContextPage__field:field \{[^}]*\.\.\.Categorizable[^}]*\.\.\.BlogArticle[^}]*\.\.\.NewsArticle/,
+    );
   });
 
   test('honours typeFilter', () => {
-    const everything = fragmentsFor(property, { expandContracts: true });
-    const filtered = fragmentsFor(property, {
+    const everything = pageFragmentsFor(property, { expandContracts: true });
+    const filtered = pageFragmentsFor(property, {
       expandContracts: true,
       typeFilter: key => key !== 'NewsArticle',
     });

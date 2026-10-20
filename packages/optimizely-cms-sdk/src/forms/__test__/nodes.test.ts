@@ -113,19 +113,21 @@ describe('partitionFormNodes', () => {
     expect(buttons).toEqual([]);
     expect(content).toEqual(tree);
   });
-});
 
-describe('getFormButtonRole', () => {
-  // A server component needs this to align a button footer, so it must work
-  // without React. `useFormButton` is a client hook and cannot be called there.
-  test('reads the role from a label without any React involvement', async () => {
-    const { getFormButtonRole } = await import('../buttonRole.js');
+  test('returns nothing for an empty composition', () => {
+    expect(partitionFormNodes([])).toEqual({ content: [], buttons: [] });
+  });
 
-    expect(getFormButtonRole({ Label: 'Next' })).toBe('next');
-    expect(getFormButtonRole({ Label: '  PREVIOUS ' })).toBe('previous');
-    expect(getFormButtonRole({ Label: 'Send' })).toBe('submit');
-    expect(getFormButtonRole({ Label: 'Tillbaka' }, { labels: { previous: ['tillbaka'] } })).toBe(
-      'previous',
-    );
+  test('keeps a node whose children are not an array as content', () => {
+    const node = { ...base, key: 'r1', nodeType: 'row', nodes: null } as unknown as ExperienceNode;
+
+    expect(partitionFormNodes([node])).toEqual({ content: [node], buttons: [] });
+  });
+
+  test('keeps a component node without a component as content', () => {
+    const node = { ...component('empty', 'x'), component: null } as unknown as ExperienceNode;
+
+    expect(isFormButtonNode(node)).toBe(false);
+    expect(partitionFormNodes([node])).toEqual({ content: [node], buttons: [] });
   });
 });

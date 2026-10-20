@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { normalizePropertyGroups } from '../service/utils.js';
 
 describe('normalizePropertyGroups', () => {
@@ -13,41 +13,6 @@ describe('normalizePropertyGroups', () => {
   });
 
   it('should handle duplicate keys by keeping the first occurrence', () => {
-    const input = [
-      {
-        key: 'seo',
-        displayName: 'SEO',
-        sortOrder: 1,
-      },
-      {
-        key: 'seo',
-        displayName: 'SEO Updated',
-        sortOrder: 5,
-      },
-      {
-        key: 'meta',
-        displayName: 'Meta',
-        sortOrder: 2,
-      },
-    ];
-
-    const result = normalizePropertyGroups(input);
-
-    expect(result).toHaveLength(2);
-    expect(result[0]).toEqual({
-      key: 'seo',
-      displayName: 'SEO',
-      sortOrder: 1,
-    });
-    expect(result[1]).toEqual({
-      key: 'meta',
-      displayName: 'Meta',
-      sortOrder: 2,
-    });
-    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Duplicate property group keys found: seo'));
-  });
-
-  it('should handle multiple duplicates correctly', () => {
     const input = [
       {
         key: 'seo',
@@ -78,13 +43,31 @@ describe('normalizePropertyGroups', () => {
 
     const result = normalizePropertyGroups(input);
 
-    expect(result).toHaveLength(3);
-    expect(result.find(g => g.key === 'seo')).toEqual({
-      key: 'seo',
-      displayName: 'SEO 1',
-      sortOrder: 1,
-    });
-    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Duplicate property group keys found: seo'));
+    expect(result).toEqual([
+      { key: 'seo', displayName: 'SEO 1', sortOrder: 1 },
+      { key: 'meta', displayName: 'Meta', sortOrder: 2 },
+      { key: 'layout', displayName: 'Layout', sortOrder: 4 },
+    ]);
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Duplicate property group keys found: seo. Keeping'),
+    );
+  });
+
+  test('falls back to the capitalised key when displayName is only whitespace', () => {
+    expect(normalizePropertyGroups([{ key: 'media', displayName: '   ' }])).toEqual([
+      { key: 'media', displayName: 'Media', sortOrder: 1 },
+    ]);
+  });
+
+  test('keeps an explicit sortOrder of 0', () => {
+    expect(normalizePropertyGroups([{ key: 'seo', sortOrder: 0 }])[0].sortOrder).toBe(0);
+  });
+
+  test('rejects a non-string key with its index', () => {
+    expect(() => normalizePropertyGroups([{ key: 'seo' }, { key: 42 }])).toThrow(
+      'Property group at index 1 has an empty or missing "key" field',
+    );
   });
 
   it('should auto-generate displayName from key if missing', () => {

@@ -8,12 +8,13 @@
   },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "!templates/__test-fixture__"
   ],
   "scripts": {
     "build": "tsx scripts/prepare-templates.ts && tsc",
     "clean": "rimraf dist templates/nextjs-starter templates/nextjs-stride templates/nextjs-alloy templates/tanstack-starter",
-    "test": "vitest --passWithNoTests"
+    "test": "vitest"
   },
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git",

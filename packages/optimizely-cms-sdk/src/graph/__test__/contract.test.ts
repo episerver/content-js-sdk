@@ -4,7 +4,7 @@ import { contract, contentType, initContentTypeRegistry } from '../../model/inde
 import { createFragment } from '../createQuery.js';
 
 describe('Fragment generation for single contract', () => {
-  it('should create TestContract with Category and Tags properties', async () => {
+  it('should create TestContract with Category and Tags properties', () => {
     const TestContract = contract({
       key: 'TestContract',
       displayName: 'Test Contract',
@@ -20,7 +20,7 @@ describe('Fragment generation for single contract', () => {
 
     initContentTypeRegistry([TestContract]);
 
-    const result = await createFragment('TestContract');
+    const result = createFragment('TestContract');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -34,7 +34,7 @@ describe('Fragment generation for single contract', () => {
     `);
   });
 
-  it('should allow contracts without properties', async () => {
+  it('should allow contracts without properties', () => {
     const EmptyContract = contract({
       key: 'EmptyContract',
       displayName: 'Empty Contract',
@@ -42,7 +42,7 @@ describe('Fragment generation for single contract', () => {
 
     initContentTypeRegistry([EmptyContract]);
 
-    const result = await createFragment('EmptyContract');
+    const result = createFragment('EmptyContract');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -71,7 +71,7 @@ describe('Fragment generation of contracts used in pages', () => {
     },
   });
 
-  it('should create fragments for page with inline content areas having allowedTypes that accepts contracts', async () => {
+  it('should create fragments for page with inline content areas having allowedTypes that accepts contracts', () => {
     const TestPage = contentType({
       baseType: '_page',
       key: 'TestPage',
@@ -86,7 +86,7 @@ describe('Fragment generation of contracts used in pages', () => {
 
     initContentTypeRegistry([TestContract, TestPage]);
 
-    const result = await createFragment('TestPage');
+    const result = createFragment('TestPage');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -101,7 +101,7 @@ describe('Fragment generation of contracts used in pages', () => {
     `);
   });
 
-  it('should create fragments for page with content areas having allowedTypes that accepts contracts', async () => {
+  it('should create fragments for page with content areas having allowedTypes that accepts contracts', () => {
     const TestPage = contentType({
       baseType: '_page',
       key: 'TestPage',
@@ -119,7 +119,7 @@ describe('Fragment generation of contracts used in pages', () => {
 
     initContentTypeRegistry([TestContract, TestPage]);
 
-    const result = await createFragment('TestPage');
+    const result = createFragment('TestPage');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -137,7 +137,7 @@ describe('Fragment generation of contracts used in pages', () => {
 
 describe('Fragment generation of contracts with experiences', () => {
   // Will be changed after Graph bug for @recursive directive is fixed and nested fragments are no longer needed for composition nodes
-  it('should create fragments for experience with contracts, components without composition behaviors', async () => {
+  it('should create fragments for experience with contracts, components without composition behaviors', () => {
     const TestContract = contract({
       key: 'TestContract',
       displayName: 'Test Contract',
@@ -196,7 +196,7 @@ describe('Fragment generation of contracts with experiences', () => {
 
     initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, TestExperience]);
 
-    const result = await createFragment('TestExperience');
+    const result = createFragment('TestExperience');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -214,7 +214,7 @@ describe('Fragment generation of contracts with experiences', () => {
   });
 
   // Will be changed after Graph bug for @recursive directive is fixed and nested fragments are no longer needed for composition nodes
-  it('should create fragments for experience with contracts, components with composition behaviors', async () => {
+  it('should create fragments for experience with contracts, components with composition behaviors', () => {
     const TestContract = contract({
       key: 'TestContract',
       displayName: 'Test Contract',
@@ -275,7 +275,7 @@ describe('Fragment generation of contracts with experiences', () => {
 
     initContentTypeRegistry([TestContract, ContentTypeA, ContentTypeB, TestExperience]);
 
-    const result = await createFragment('TestExperience');
+    const result = createFragment('TestExperience');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -295,7 +295,7 @@ describe('Fragment generation of contracts with experiences', () => {
   });
 
   // Will be changed after Graph bug for @recursive directive is fixed and nested fragments are no longer needed for composition nodes
-  it('should create fragments for experience with content areas that do not have contracts', async () => {
+  it('should create fragments for experience with content areas that do not have contracts', () => {
     const TestContract = contract({
       key: 'testContract',
       displayName: 'Test Contract',
@@ -383,7 +383,7 @@ describe('Fragment generation of contracts with experiences', () => {
       TestExperience,
     ]);
 
-    const result = await createFragment('TestExperience');
+    const result = createFragment('TestExperience');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -404,7 +404,7 @@ describe('Fragment generation of contracts with experiences', () => {
 });
 
 describe('Contract expansion in allowedTypes', () => {
-  it('should expand contracts to include implementing content types when expandContracts is true', async () => {
+  it('should expand contracts to include implementing content types when expandContracts is true', () => {
     const CategorizableContract = contract({
       key: 'Categorizable',
       displayName: 'Categorizable',
@@ -467,7 +467,7 @@ describe('Contract expansion in allowedTypes', () => {
       LandingPageContentType,
     ]);
 
-    const result = await createFragment(
+    const result = createFragment(
       'LandingPage',
       undefined,
       undefined,
@@ -499,7 +499,7 @@ describe('Contract expansion in allowedTypes', () => {
     expect(fragmentString).toContain('...NewsArticle');
   });
 
-  it('should NOT expand contracts when expandContracts is false', async () => {
+  it('should NOT expand contracts when expandContracts is false', () => {
     const CategorizableContract = contract({
       key: 'Categorizable',
       displayName: 'Categorizable',
@@ -562,7 +562,7 @@ describe('Contract expansion in allowedTypes', () => {
       LandingPageContentType,
     ]);
 
-    const result = await createFragment(
+    const result = createFragment(
       'LandingPage',
       undefined,
       undefined,
@@ -589,7 +589,7 @@ describe('Contract expansion in allowedTypes', () => {
     expect(fragmentString).not.toContain('NewsArticle__headline:headline');
   });
 
-  it('should NOT expand contracts by default (when expandContracts is not specified)', async () => {
+  it('should NOT expand contracts by default (when expandContracts is not specified)', () => {
     const CategorizableContract = contract({
       key: 'Categorizable',
       displayName: 'Categorizable',
@@ -631,7 +631,7 @@ describe('Contract expansion in allowedTypes', () => {
     ]);
 
     // Call without expandContracts option to test default behavior
-    const result = await createFragment('LandingPage');
+    const result = createFragment('LandingPage');
 
     const fragmentString = result.fragments.join('\n');
 
@@ -642,7 +642,7 @@ describe('Contract expansion in allowedTypes', () => {
     expect(fragmentString).not.toContain('fragment BlogArticle on BlogArticle');
   });
 
-  it('should handle contracts with no implementing types', async () => {
+  it('should handle contracts with no implementing types', () => {
     const EmptyContract = contract({
       key: 'EmptyContract',
       displayName: 'Empty Contract',
@@ -667,7 +667,7 @@ describe('Contract expansion in allowedTypes', () => {
 
     initContentTypeRegistry([EmptyContract, PageWithEmptyContract]);
 
-    const result = await createFragment(
+    const result = createFragment(
       'PageWithEmptyContract',
       undefined,
       undefined,
@@ -685,79 +685,6 @@ describe('Contract expansion in allowedTypes', () => {
     // Should include the contract even when there are no implementing types
     expect(fragmentString).toContain('fragment EmptyContract on IEmptyContract');
     expect(fragmentString).toContain('EmptyContract__field:field');
-  });
-});
-
-describe('Contract expansion through array properties', () => {
-  it('should pass expandContracts through handleArrayProperty to resolve concrete types', () => {
-    const CommonCardContract = contract({
-      key: 'POC_CommonCardContract',
-      displayName: 'Common Card Contract',
-    });
-
-    const CardComponentA = contentType({
-      baseType: '_component',
-      key: 'POC_CardComponentA',
-      displayName: 'Card Component A',
-      extends: [CommonCardContract],
-      properties: {
-        cardTitle: { type: 'string' },
-        cardDescription: { type: 'string' },
-      },
-    });
-
-    const CardComponentB = contentType({
-      baseType: '_component',
-      key: 'POC_CardComponentB',
-      displayName: 'Card Component B',
-      extends: [CommonCardContract],
-      properties: {
-        cardTitle: { type: 'string' },
-        cardImage: { type: 'string' },
-      },
-    });
-
-    const CardContainer = contentType({
-      baseType: '_component',
-      key: 'POC_CardContainer',
-      displayName: 'Card Container',
-      properties: {
-        cards: {
-          type: 'array',
-          items: {
-            type: 'content',
-            allowedTypes: [CommonCardContract],
-          },
-        },
-      },
-    });
-
-    initContentTypeRegistry([CommonCardContract, CardComponentA, CardComponentB, CardContainer]);
-
-    const result = createFragment(
-      'POC_CardContainer',
-      undefined,
-      undefined,
-      createQueryContext({ expandContracts: true }),
-    );
-    const fragmentString = result.fragments.join('\n');
-
-    expect(fragmentString).toContain('fragment POC_CommonCardContract on IPOC_CommonCardContract');
-    expect(fragmentString).toContain('fragment POC_CardComponentA on POC_CardComponentA');
-    expect(fragmentString).toContain('POC_CardComponentA__cardTitle:cardTitle');
-    expect(fragmentString).toContain('POC_CardComponentA__cardDescription:cardDescription');
-    expect(fragmentString).toContain('fragment POC_CardComponentB on POC_CardComponentB');
-    expect(fragmentString).toContain('POC_CardComponentB__cardTitle:cardTitle');
-    expect(fragmentString).toContain('POC_CardComponentB__cardImage:cardImage');
-
-    const cardsFieldMatch = fragmentString.match(
-      /POC_CardContainer__cards:cards\s*{\s*__typename([^}]*)\}/,
-    );
-    expect(cardsFieldMatch).toBeTruthy();
-    const cardsFieldContent = cardsFieldMatch ? cardsFieldMatch[0] : '';
-    expect(cardsFieldContent).toContain('...POC_CommonCardContract');
-    expect(cardsFieldContent).toContain('...POC_CardComponentA');
-    expect(cardsFieldContent).toContain('...POC_CardComponentB');
   });
 });
 

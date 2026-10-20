@@ -95,6 +95,15 @@ describe('planComposition', () => {
     });
   });
 
+  test('a section node without a component still plans its own fields as content', () => {
+    const section = structureNode({ type: 'PlainSection', nodeType: 'section', key: 'section-key' });
+
+    const [item] = planComposition([section]) as ComponentRenderItem[];
+
+    expect(item).toMatchObject({ kind: 'component', source: 'section' });
+    expect(item.content).toEqual({ ...section, __typename: 'PlainSection', __tag: undefined });
+  });
+
   test('a node the CMS could not type is planned as unknown', () => {
     const [item] = planComposition([structureNode({ type: null })]);
 

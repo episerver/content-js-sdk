@@ -74,6 +74,17 @@ describe('the resolved headers', () => {
     expect(sentHeaders().Authorization).toBe('epi-hmac key:1:nonce:sig');
   });
 
+  test('a lower-case authorization header from a resolver still replaces the single key', async () => {
+    const client = new GraphClient('test-key', {
+      auth: () => ({ authorization: 'Bearer user-token' }),
+    });
+
+    await client.request(QUERY, {});
+
+    expect(sentHeaders().authorization).toBe('Bearer user-token');
+    expect(sentHeaders()).not.toHaveProperty('Authorization');
+  });
+
   test('acting-user headers reach Graph alongside the credential', async () => {
     const client = new GraphClient('test-key', {
       auth: () => ({
@@ -633,6 +644,8 @@ describe('configuration validation', () => {
     ['hmac without a secret', { type: 'hmac' }, { appKey: 'app-key' }],
     ['hmac with a blank secret', { type: 'hmac' }, { appKey: 'app-key', secret: '  ' }],
     ['bearer with an empty token', { type: 'bearer', token: '' }, undefined],
+    ['null', null, undefined],
+    ['a bare string', 'bearer', undefined],
   ];
 
   test.each(invalid)('rejects %s when the client is built', (_name, auth, secrets) => {

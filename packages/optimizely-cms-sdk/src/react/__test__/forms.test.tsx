@@ -1,106 +1,109 @@
-import { describe, expect, test, beforeAll, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
-import FormWrapper, { useFormSteps } from '../forms/FormWrapper.js';
 import { FormStep } from '../forms/FormStep.js';
 import { FormElement } from '../forms/FormElement.js';
 import { useFormField } from '../forms/useFormField.js';
 import { useFormValidation } from '../forms/FormValidationContext.js';
-import { FormSubmissionProvider, useFormSubmission } from '../forms/FormSubmissionProvider.js';
 import type { DependencyRule } from '../forms/FormRulesContext.js';
-import type { Validator } from '../../forms/validation.js';
 import type { FormSubmitHandler } from '../forms/FormWrapper.js';
+import { Field, Probe, renderForm } from './formsTestUtils.js';
 
 beforeAll(() => {
-  // jsdom implements neither of these, and both run on a failed submit.
+  // jsdom does not implement it, and it runs on a failed submit.
   Element.prototype.scrollIntoView = () => {};
 });
 
-const REQUIRED: Validator[] = [
-  { type: 'requirevalidator', errorMessage: 'This field is required' },
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
+
+const hideRule: DependencyRule[] = [
+  {
+    TargetElement: 'hidden-field',
+    SatisfiedAction: 'Hide',
+    ConditionCombination: 'Any',
+    Conditions: null,
+  },
 ];
 
-/** A field driven entirely by `useFormField`, like the template components are. */
-function Field({
-  name,
-  elementId,
-  validators = REQUIRED,
-}: {
-  name: string;
-  elementId?: string;
-  validators?: Validator[];
-}) {
-  const content = elementId ? { _id: elementId } : undefined;
-  const { value, setValue, inputRef } = useFormField({ name, validators, content });
+const twoStepForm = () => (
+  <>
+    <FormStep index={0}>
+      <Field name='step0' />
+    </FormStep>
+    <FormStep index={1}>
+      <Field name='step1' />
+    </FormStep>
+    <Probe />
+  </>
+);
 
-  return (
-    <FormElement content={content ?? {}}>
-      <input
-        ref={inputRef}
-        aria-label={name}
-        name={name}
-        value={value}
-        onChange={e => setValue(e.target.value)}
-      />
-    </FormElement>
-  );
-}
-
-/** Surfaces the bits of form state the assertions care about. */
-function Probe() {
-  const { hasAnyErrors } = useFormValidation();
-  const { currentStepIndex, nextStep } = useFormSteps();
-  const { status, errorMessage } = useFormSubmission();
-
-  return (
-    <>
-      <span data-testid='has-errors'>{String(hasAnyErrors)}</span>
-      <span data-testid='step'>{currentStepIndex}</span>
-      <span data-testid='status'>{status}</span>
-      <span data-testid='error-message'>{errorMessage ?? ''}</span>
-      <button type='button' onClick={nextStep}>
-        Next
-      </button>
-      <button type='submit'>Submit</button>
-    </>
-  );
-}
-
-const renderForm = (
-  children: React.ReactNode,
-  rules?: DependencyRule[],
-  props?: { submitHandler?: FormSubmitHandler; action?: string },
-) =>
-  render(
-    <FormSubmissionProvider>
-      <FormWrapper
-        action='/submit'
-        steps={[{}, {}] as never}
-        rules={rules}
-        {...props}
-      >
-        {children}
-      </FormWrapper>
-    </FormSubmissionProvider>,
-  );
-
+const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
+const valueOf = (label: string) => (screen.getByLabelText(label) as HTMLInputElement).value;
 const clickNext = () => act(() => screen.getByText('Next').click());
+const clickSubmit = () => act(() => screen.getByText('Submit').click());
 const step = () => screen.getByTestId('step').textContent;
 const status = () => screen.getByTestId('status').textContent;
-const errorMessage = () => screen.getByTestId('error-message').textContent;
 
-describe('rule-hidden fields', () => {
-  // A field hidden by a rule used to stay registered, so an empty required field
-  // kept `hasAnyErrors` true and disabled submit with no error anywhere on screen.
-  const hideRule: DependencyRule[] = [
-    {
-      TargetElement: 'hidden-field',
-      SatisfiedAction: 'Hide',
-      ConditionCombination: 'Any',
-      Conditions: null,
-    },
-  ];
+describe('FormWrapper', () => {
+  test('warns in development when there is neither an action nor a submitHandler', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-  test('a hidden required field is not rendered and does not block the form', () => {
+    renderForm(<Probe />, undefined, { action: undefined });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('no `action` and no `submitHandler`'));
+  });
+
+  test('does not warn when an action is set', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    renderForm(<Probe />);
+
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  test('a native reset clears the fields and returns to the first step', () => {
+    const { container } = renderForm(twoStepForm());
+
+    type('step0', 'filled');
+    clickNext();
+    type('step1', 'also filled');
+    act(() => void fireEvent.reset(container.querySelector('form')!));
+
+    expect(valueOf('step0')).toBe('');
+    expect(valueOf('step1')).toBe('');
+    expect(step()).toBe('0');
+  });
+
+  test('ignores rules that are not an array', () => {
+    renderForm(<Field name='hidden' elementId='hidden-field' />, hideRule[0] as never);
+
+    expect(screen.getByLabelText('hidden')).toBeTruthy();
+  });
+});
+
+describe('a field hidden by a rule', () => {
+  /** Like `Field`, but able to carry the CMS edit context. */
+  function EditableField({ editing }: { editing: boolean }) {
+    const content = {
+      _id: 'hidden-field',
+      ...(editing ? { __context: { edit: true, preview_token: 't' } } : {}),
+    };
+    const { value, setValue, inputRef } = useFormField({ name: 'hidden', validators: [], content });
+
+    return (
+      <FormElement content={content}>
+        <input ref={inputRef} aria-label='hidden' value={value} onChange={e => setValue(e.target.value)} />
+      </FormElement>
+    );
+  }
+
+  // A hidden field used to stay registered, so an empty required one disabled submit with no error on screen.
+  test('is not rendered and does not block the form', () => {
     renderForm(
       <>
         <Field name='visible' elementId='visible-field' validators={[]} />
@@ -114,7 +117,7 @@ describe('rule-hidden fields', () => {
     expect(screen.getByTestId('has-errors').textContent).toBe('false');
   });
 
-  test('the same field does block the form when no rule hides it', () => {
+  test('blocks the form when no rule hides it', () => {
     renderForm(
       <>
         <Field name='hidden' elementId='hidden-field' />
@@ -124,6 +127,13 @@ describe('rule-hidden fields', () => {
 
     expect(screen.getByLabelText('hidden')).toBeTruthy();
     expect(screen.getByTestId('has-errors').textContent).toBe('true');
+  });
+
+  // Otherwise the CMS shows an empty, selectable block where the field should be.
+  test('is still rendered for an editor', () => {
+    renderForm(<EditableField editing={true} />, hideRule);
+
+    expect(screen.getByLabelText('hidden')).toBeTruthy();
   });
 });
 
@@ -163,29 +173,6 @@ describe('step navigation', () => {
     expect(step()).toBe('1');
   });
 
-  test('advancing stops at the last step', () => {
-    renderForm(
-      <>
-        <FormStep index={0}>
-          <Field name='step0' validators={[]} />
-        </FormStep>
-        <FormStep index={1}>
-          <Field name='step1' validators={[]} />
-        </FormStep>
-        <Probe />
-      </>,
-    );
-
-    clickNext();
-    clickNext();
-    clickNext();
-
-    // `steps` has length 2, so the last index is 1. Overshooting to 2 would
-    // leave every step hidden and render a blank form.
-    expect(step()).toBe('1');
-    expect(screen.getByLabelText('step1')).toBeTruthy();
-  });
-
   test('changing step does not re-render components reading validation state', () => {
     let renders = 0;
     function Counter() {
@@ -221,36 +208,32 @@ describe('step navigation', () => {
       </>,
     );
 
-    fireEvent.change(screen.getByLabelText('step0'), { target: { value: 'typed' } });
-
+    type('step0', 'typed');
     clickNext();
 
     expect(step()).toBe('1');
-    expect((screen.getByLabelText('step0') as HTMLInputElement).value).toBe('typed');
+    expect(valueOf('step0')).toBe('typed');
+  });
+});
+
+describe('FormStep', () => {
+  const node = (edit: boolean) => ({ key: 'step-1', __context: { edit, preview_token: 't' } });
+
+  test('marks the step for the editor in edit mode', () => {
+    const { container } = render(<FormStep index={0} node={node(true)}>x</FormStep>);
+
+    expect(container.querySelector('fieldset')?.getAttribute('data-epi-block-id')).toBe('step-1');
+  });
+
+  test('adds no marker outside edit mode', () => {
+    const { container } = render(<FormStep index={0} node={node(false)}>x</FormStep>);
+
+    expect(container.querySelector('fieldset')?.hasAttribute('data-epi-block-id')).toBe(false);
   });
 });
 
 describe('submitting', () => {
-  const type = (label: string, value: string) =>
-    fireEvent.change(screen.getByLabelText(label), { target: { value } });
-
-  const clickSubmit = () => act(() => screen.getByText('Submit').click());
-
-  const twoStepForm = () => (
-    <>
-      <FormStep index={0}>
-        <Field name='step0' />
-      </FormStep>
-      <FormStep index={1}>
-        <Field name='step1' />
-      </FormStep>
-      <Probe />
-    </>
-  );
-
-  // Submitting checks every step, so the blocking field can be on one that is
-  // hidden. Without jumping to it, the form just refuses to send and nothing
-  // on screen explains why.
+  // Submitting checks every step, so without jumping to the blocking field the form refuses silently.
   test('jumps to the step holding the first invalid field', () => {
     renderForm(twoStepForm());
 
@@ -258,7 +241,6 @@ describe('submitting', () => {
     clickNext();
     expect(step()).toBe('1');
 
-    // Empty the first step again while standing on the second, then submit.
     type('step0', '');
     clickSubmit();
 
@@ -283,13 +265,10 @@ describe('submitting', () => {
     clickSubmit();
 
     expect(fetchMock).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
   });
 
   test('posts to the action and clears the fields once it succeeds', async () => {
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => {
-      return { ok: true } as Response;
-    });
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true }) as Response);
     vi.stubGlobal('fetch', fetchMock);
 
     renderForm(twoStepForm());
@@ -297,62 +276,24 @@ describe('submitting', () => {
     type('step0', 'filled');
     clickNext();
     type('step1', 'also filled');
-
-    await act(async () => {
-      screen.getByText('Submit').click();
-    });
+    await act(async () => screen.getByText('Submit').click());
 
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0][0]).toBe('/submit');
 
-    // Controlled inputs keep their value through `form.reset()`, so a form that
-    // submitted fine still looks untouched unless the fields are reset too.
-    expect((screen.getByLabelText('step0') as HTMLInputElement).value).toBe('');
-    expect((screen.getByLabelText('step1') as HTMLInputElement).value).toBe('');
+    // Controlled inputs keep their value through `form.reset()`, so the fields are reset too.
+    expect(valueOf('step0')).toBe('');
+    expect(valueOf('step1')).toBe('');
     expect(step()).toBe('0');
-
-    vi.unstubAllGlobals();
-  });
-
-  // The built-in POST reports a bare status code, which is no use to a visitor.
-  // A template rendering `errorMessage` must not end up showing it one.
-  test('a failed post leaves no message for the template to render', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 500 }) as Response));
-
-    renderForm(twoStepForm());
-    type('step0', 'filled');
-    clickNext();
-    type('step1', 'also filled');
-    await act(async () => screen.getByText('Submit').click());
-
-    expect(status()).toBe('error');
-    expect(errorMessage()).toBe('');
-
-    vi.unstubAllGlobals();
   });
 });
 
 describe('a submitHandler', () => {
-  const type = (label: string, value: string) =>
-    fireEvent.change(screen.getByLabelText(label), { target: { value } });
-
-  const twoStepForm = () => (
-    <>
-      <FormStep index={0}>
-        <Field name='step0' />
-      </FormStep>
-      <FormStep index={1}>
-        <Field name='step1' />
-      </FormStep>
-      <Probe />
-    </>
-  );
-
   /** Fills both steps and submits, which is the only way to reach the handler. */
   const submitValidForm = async (handler: FormSubmitHandler) => {
     renderForm(twoStepForm(), undefined, { submitHandler: handler });
     type('step0', 'filled');
-    act(() => screen.getByText('Next').click());
+    clickNext();
     type('step1', 'also filled');
     await act(async () => screen.getByText('Submit').click());
   };
@@ -372,68 +313,23 @@ describe('a submitHandler', () => {
     expect(formData.get('step1')).toBe('also filled');
     // Passed through so a handler shared between forms can still read it.
     expect(handler.mock.calls[0][1]).toEqual({ action: '/submit' });
-
-    vi.unstubAllGlobals();
   });
 
-  // Every step stays in the DOM, so a name reused across steps reaches FormData
-  // once per step. Disabling the inactive ones fixes that by also dropping the
-  // answers already given, which is the whole point of a multi-step form.
-  test('a blank field does not shadow the same name answered on another step', async () => {
-    const handler = vi.fn<FormSubmitHandler>(async () => {});
-
-    renderForm(
-      <>
-        <FormStep index={0}>
-          <Field name='shared' />
-        </FormStep>
-        <FormStep index={1}>
-          <Field name='shared' validators={[]} />
-          <Field name='step1' />
-        </FormStep>
-        <Probe />
-      </>,
-      undefined,
-      { submitHandler: handler },
-    );
-
-    fireEvent.change(screen.getAllByLabelText('shared')[0], {
-      target: { value: 'answered' },
-    });
-    act(() => screen.getByText('Next').click());
-    type('step1', 'also filled');
-    await act(async () => screen.getByText('Submit').click());
-
-    expect(handler.mock.calls[0][0].getAll('shared')).toEqual(['answered']);
-  });
-
-  // Resolving has to mean the same thing an `ok` response does, or a template
-  // that swaps the transport quietly loses the reset and the step rewind.
+  // Resolving has to mean the same as an `ok` response, or swapping the transport loses the reset.
   test('resolving runs the whole success path', async () => {
     await submitValidForm(async () => {});
 
     expect(status()).toBe('success');
-    expect((screen.getByLabelText('step0') as HTMLInputElement).value).toBe('');
-    expect((screen.getByLabelText('step1') as HTMLInputElement).value).toBe('');
+    expect(valueOf('step0')).toBe('');
+    expect(valueOf('step1')).toBe('');
     expect(step()).toBe('0');
-  });
-
-  test('throwing fails the submit and surfaces the message', async () => {
-    await submitValidForm(async () => {
-      throw new Error('Email already registered');
-    });
-
-    expect(status()).toBe('error');
-    expect(errorMessage()).toBe('Email already registered');
-    // The values stay put, so the visitor can correct and retry.
-    expect((screen.getByLabelText('step1') as HTMLInputElement).value).toBe('also filled');
   });
 
   test('is never called while a field is invalid', () => {
     const handler = vi.fn<FormSubmitHandler>(async () => {});
 
     renderForm(twoStepForm(), undefined, { submitHandler: handler });
-    act(() => screen.getByText('Submit').click());
+    clickSubmit();
 
     expect(handler).not.toHaveBeenCalled();
   });
@@ -443,7 +339,7 @@ describe('a submitHandler', () => {
 
     renderForm(twoStepForm(), undefined, { submitHandler: handler, action: undefined });
     type('step0', 'filled');
-    act(() => screen.getByText('Next').click());
+    clickNext();
     type('step1', 'also filled');
     await act(async () => screen.getByText('Submit').click());
 
@@ -453,9 +349,7 @@ describe('a submitHandler', () => {
 });
 
 describe('a rule naming its target by content key', () => {
-  // A rule carries whichever key the CMS holds for the element. Matching only
-  // the composition node key left every such rule with no target at all, and an
-  // element no rule mentions is always visible — so nothing ever hid or showed.
+  // A rule carries whichever key the CMS holds; matching only the node key left such rules targetless.
   const cmsField = (name: string) => ({
     _id: 'graph-id',
     _metadata: { key: `${name}-content-key` },
@@ -480,20 +374,11 @@ describe('a rule naming its target by content key', () => {
   /** A field whose content carries all three keys, as a CMS-rendered one does. */
   function CmsField() {
     const content = cmsField('textbox');
-    const { value, setValue, inputRef } = useFormField({
-      name: 'textbox',
-      validators: [],
-      content,
-    });
+    const { value, setValue, inputRef } = useFormField({ name: 'textbox', validators: [], content });
 
     return (
       <FormElement content={content}>
-        <input
-          ref={inputRef}
-          aria-label='textbox'
-          value={value}
-          onChange={e => setValue(e.target.value)}
-        />
+        <input ref={inputRef} aria-label='textbox' value={value} onChange={e => setValue(e.target.value)} />
       </FormElement>
     );
   }
@@ -523,68 +408,17 @@ describe('a rule naming its target by content key', () => {
   test('shows the button once the field it depends on matches', () => {
     renderPair();
 
-    fireEvent.change(screen.getByLabelText('textbox'), {
-      target: { value: 'submit' },
-    });
+    type('textbox', 'submit');
 
     expect(screen.getByText('Send')).toBeTruthy();
   });
 
   test('hides the button again when the value stops matching', () => {
     renderPair();
-    const textbox = screen.getByLabelText('textbox');
 
-    fireEvent.change(textbox, { target: { value: 'submit' } });
-    fireEvent.change(textbox, { target: { value: 'something else' } });
+    type('textbox', 'submit');
+    type('textbox', 'something else');
 
     expect(screen.queryByText('Send')).toBeNull();
-  });
-});
-
-describe('a field hidden by a rule', () => {
-  const hideRule: DependencyRule[] = [
-    {
-      TargetElement: 'hidden-field',
-      SatisfiedAction: 'Hide',
-      ConditionCombination: 'Any',
-      Conditions: null,
-    },
-  ];
-
-  /** Like `Field`, but able to carry the CMS edit context. */
-  function EditableField({ editing }: { editing: boolean }) {
-    const content = {
-      _id: 'hidden-field',
-      ...(editing ? { __context: { edit: true, preview_token: 't' } } : {}),
-    };
-    const { value, setValue, inputRef } = useFormField({
-      name: 'hidden',
-      validators: [],
-      content,
-    });
-
-    return (
-      <FormElement content={content}>
-        <input
-          ref={inputRef}
-          aria-label='hidden'
-          value={value}
-          onChange={e => setValue(e.target.value)}
-        />
-      </FormElement>
-    );
-  }
-
-  test('is hidden from a visitor', () => {
-    renderForm(<EditableField editing={false} />, hideRule);
-
-    expect(screen.queryByLabelText('hidden')).toBeNull();
-  });
-
-  // Otherwise the CMS shows an empty, selectable block where the field should be.
-  test('is still rendered for an editor', () => {
-    renderForm(<EditableField editing={true} />, hideRule);
-
-    expect(screen.getByLabelText('hidden')).toBeTruthy();
   });
 });

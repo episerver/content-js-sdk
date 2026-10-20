@@ -1,9 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  test,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type MockInstance,
+} from 'vitest';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { findMetaData } from '../service/utils.js';
+import { componentSource, printed } from './helpers.js';
 
 const contentTypeSource = (key: string, displayName = key) =>
   `export const ${key} = { __type: 'contentType', key: '${key}', displayName: '${displayName}', baseType: 'component', properties: {} };\n`;
@@ -57,5 +67,81 @@ describe('findMetaData', () => {
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
+  });
+
+  describe('with a component folder', () => {
+    let tempDir: string;
+    let cwd: string;
+    let consoleLog: MockInstance;
+
+    beforeEach(async () => {
+      tempDir = await mkdtemp(join(tmpdir(), 'cli-metadata-'));
+      cwd = pathToFileURL(tempDir).href;
+      await mkdir(join(tempDir, 'comp'));
+      await writeFile(join(tempDir, 'comp', 'Hero.ts'), contentTypeSource('Hero'));
+      consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await rm(tempDir, { recursive: true, force: true });
+    });
+
+    test('rejects a list made only of exclusion patterns', async () => {
+      await expect(findMetaData(['!comp'], cwd)).rejects.toThrow(
+        'cannot have only exclusion patterns',
+      );
+    });
+
+    test('ignores surrounding whitespace and blank entries', async () => {
+      const { contentTypes } = await findMetaData(['', ' comp/*.ts ', '   '], cwd);
+
+      expect(contentTypes.map(it => it.key)).toEqual(['Hero']);
+    });
+
+    test('returns empty lists when no file matches', async () => {
+      await expect(findMetaData(['missing/**/*.ts'], cwd)).resolves.toEqual({
+        contentTypes: [],
+        displayTemplates: [],
+        contracts: [],
+      });
+    });
+
+    test('loads a file matched by several patterns only once', async () => {
+      const { contentTypes } = await findMetaData(['comp/*.ts', 'comp/Hero.ts'], cwd);
+
+      expect(contentTypes.map(it => it.key)).toEqual(['Hero']);
+    });
+
+    test('logs each definition found by default', async () => {
+      await findMetaData(['comp/*.ts'], cwd);
+
+      expect(printed(consoleLog)).toContain('Content Type Hero found in ./comp/Hero.ts');
+    });
+
+    test('stays silent with log: false', async () => {
+      await findMetaData(['comp/*.ts'], cwd, { log: false });
+
+      expect(consoleLog).not.toHaveBeenCalled();
+    });
+
+    test('extracts display templates and contracts without SDK markers', async () => {
+      await writeFile(
+        join(tempDir, 'comp', 'Extras.ts'),
+        componentSource([
+          { __type: 'displayTemplate', key: 'HeroWide', contentType: 'Hero', tag: 'x' },
+          { __type: 'contract', key: 'SeoContract', displayName: 'SEO' },
+          { key: 'NotADefinition' },
+        ]),
+      );
+
+      const result = await findMetaData(['comp/Extras.ts'], cwd, { log: false });
+
+      expect(result).toEqual({
+        contentTypes: [],
+        displayTemplates: [{ key: 'HeroWide', contentType: 'Hero' }],
+        contracts: [{ key: 'SeoContract', displayName: 'SEO' }],
+      });
+    });
   });
 });

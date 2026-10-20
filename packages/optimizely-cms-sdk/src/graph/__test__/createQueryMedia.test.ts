@@ -22,7 +22,7 @@ describe('createFragment() creates types for base types', () => {
     properties: { p1: { type: 'float' } },
   });
 
-  test('should not create extra fragments when referred explicitly', async () => {
+  test('should not create extra fragments when referred explicitly', () => {
     const ctPage = contentType({
       key: 'ctPage',
       displayName: 'CT Page',
@@ -34,7 +34,7 @@ describe('createFragment() creates types for base types', () => {
 
     initContentTypeRegistry([ctImage, ctVideo, ctMedia, ctPage]);
 
-    const result = await createFragment('ctPage');
+    const result = createFragment('ctPage');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",
@@ -51,7 +51,7 @@ describe('createFragment() creates types for base types', () => {
     `);
   });
 
-  test('should create base types when referred by base type', async () => {
+  test('should create base types when referred by base type', () => {
     const ctPage = contentType({
       key: 'ctPage',
       displayName: 'CT Page',
@@ -63,7 +63,7 @@ describe('createFragment() creates types for base types', () => {
 
     initContentTypeRegistry([ctImage, ctVideo, ctMedia, ctPage]);
 
-    const result = await createFragment('ctPage');
+    const result = createFragment('ctPage');
     expect(result.fragments).toMatchInlineSnapshot(`
       [
         "fragment MediaMetadata on MediaMetadata { mimeType thumbnail content }",

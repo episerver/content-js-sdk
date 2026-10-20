@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { configureAdapter } from '../../context/config.js';
+import type { ContextAdapter } from '../../context/baseContext.js';
 import { MemoryAdapter } from '../context/memoryAdapter.js';
 import {
   getMarkTag,
@@ -24,6 +25,11 @@ describe('boolean attributes', () => {
     expect(isAttributeSet('false')).toBe(false);
     expect(isAttributeSet(false)).toBe(false);
     expect(isAttributeSet(undefined)).toBe(false);
+  });
+
+  test('takes a real boolean as is and treats null as absent', () => {
+    expect(isAttributeSet(true)).toBe(true);
+    expect(isAttributeSet(null)).toBe(false);
   });
 });
 
@@ -51,6 +57,13 @@ describe('getRichTextTree', () => {
       { children: [{ content: 'a &amp; b' }] },
     ]);
   });
+
+  test('invalid JSON, a missing document and one without children give an empty tree', () => {
+    expect(getRichTextTree('{"type": "richText", ')).toEqual([]);
+    expect(getRichTextTree(null as never)).toEqual([]);
+    expect(getRichTextTree(undefined)).toEqual([]);
+    expect(getRichTextTree({ type: 'richText' } as never)).toEqual([]);
+  });
 });
 
 describe('splitAttributes', () => {
@@ -69,6 +82,28 @@ describe('splitAttributes', () => {
     expect(splitAttributes({ width: '100px' }, 'div')).toEqual({
       attributes: {},
       style: { width: '100px' },
+    });
+  });
+
+  test('border is an attribute on a table and a style elsewhere', () => {
+    expect(splitAttributes({ border: '1' }, 'table')).toEqual({ attributes: { border: '1' }, style: {} });
+    expect(splitAttributes({ border: '1px solid' }, 'p')).toEqual({
+      attributes: {},
+      style: { border: '1px solid' },
+    });
+  });
+
+  test('malformed declarations in a style string are skipped', () => {
+    expect(splitAttributes({ style: 'color red; : 0; margin:; ;padding: 1px; background-color: #fff' }).style).toEqual({
+      padding: '1px',
+      backgroundColor: '#fff',
+    });
+  });
+
+  test('a style that is not a string stays an attribute', () => {
+    expect(splitAttributes({ style: { color: 'red' } })).toEqual({
+      attributes: { style: { color: 'red' } },
+      style: {},
     });
   });
 
@@ -118,6 +153,12 @@ describe('getRichTextElement', () => {
       alt: 'A',
       width: '100',
     });
+  });
+
+  test('an image source is left alone when no context adapter is configured', () => {
+    configureAdapter(null as unknown as ContextAdapter);
+
+    expect(element('image', { src: '/a.png' }).attributes.src).toBe('/a.png');
   });
 
   describe('in preview', () => {

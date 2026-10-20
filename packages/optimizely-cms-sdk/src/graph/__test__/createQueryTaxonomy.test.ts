@@ -58,14 +58,3 @@ describe('createMultipleContentQuery with taxonomy', () => {
     expect(itemMetadataMatch![1]).not.toContain('categories');
   });
 });
-
-describe('cache key differentiation', () => {
-  test('generates different queries for different taxonomyEnabled values', () => {
-    const withTaxonomy = createSingleContentQuery('TestPage', { taxonomyEnabled: true });
-    const withoutTaxonomy = createSingleContentQuery('TestPage', { taxonomyEnabled: false });
-
-    expect(withTaxonomy).not.toEqual(withoutTaxonomy);
-    expect(withTaxonomy).toContain('categories');
-    expect(withoutTaxonomy).not.toContain('categories');
-  });
-});

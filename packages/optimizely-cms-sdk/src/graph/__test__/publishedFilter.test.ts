@@ -1,9 +1,16 @@
-import { describe, expect, test, vi, beforeEach } from 'vitest';
+import { describe, expect, test, beforeEach } from 'vitest';
 import { GraphClient } from '../index.js';
 import { contentType, initContentTypeRegistry } from '../../model/index.js';
 import { createSingleContentQuery } from '../createQuery.js';
 import { configureAdapter } from '../../context/config.js';
+import { MemoryAdapter } from '../../core/context/memoryAdapter.js';
 import { refreshCache } from '../../util/queryUtils.js';
+import {
+  type GraphRequestSpy,
+  metadataResponse,
+  sentQueries as allSentQueries,
+  stubGraph,
+} from './helpers.js';
 
 /**
  * The single key never sees a draft, so this filter is a no-op there. It matters
@@ -20,11 +27,6 @@ const ArticleType = contentType({
   properties: {},
 });
 
-const metadataResponse = {
-  _Content: { item: { _metadata: { types: ['Article'] } } },
-  damAssetType: null,
-};
-
 const linksResponse = {
   _Content: {
     item: { _id: 'a', _metadata: { path: [] }, _link: { _Page: { items: [] } } },
@@ -32,36 +34,26 @@ const linksResponse = {
 };
 
 let client: GraphClient;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let mockRequest: any;
+let mockRequest: GraphRequestSpy;
 
-// Matched on the operation name: a content query mentions `InstanceMetadata` too.
-const stubGraph = (target: GraphClient) => {
-  mockRequest = vi.spyOn(target, 'request').mockImplementation(async (query: string) => {
-    if (query.includes('query GetContentMetadata')) return metadataResponse;
-    if (query.includes('query GetPath') || query.includes('query GetItems'))
-      return linksResponse;
-    return { _Content: { item: { __typename: 'Article' }, items: [] } };
+const stubArticle = (target: GraphClient) => {
+  mockRequest = stubGraph(target, {
+    metadata: metadataResponse(['Article']),
+    operations: { GetPath: linksResponse, GetItems: linksResponse },
+    content: { _Content: { item: { __typename: 'Article' }, items: [] } },
   });
 };
 
 /** Every query text the client sent, metadata requests included. */
-const sentQueries = (): string[] =>
-  mockRequest.mock.calls.map((call: unknown[]) => String(call[0]));
+const sentQueries = () => allSentQueries(mockRequest);
 
 beforeEach(() => {
   initContentTypeRegistry([ArticleType]);
   refreshCache();
-  // `getPreviewContent` stores what it fetched; nothing here reads it back.
-  configureAdapter({
-    initializeContext: () => {},
-    getData: () => undefined,
-    setData: () => {},
-    set: () => {},
-    get: () => undefined,
-  });
+  // `getPreviewContent` stores what it fetched
+  configureAdapter(new MemoryAdapter());
   client = new GraphClient('test-key');
-  stubGraph(client);
+  stubArticle(client);
 });
 
 describe('by default', () => {
@@ -95,7 +87,7 @@ describe('opting out', () => {
 
   test('per client', async () => {
     const draftClient = new GraphClient('test-key', { query: { publishedOnly: false } });
-    stubGraph(draftClient);
+    stubArticle(draftClient);
 
     await draftClient.getContentByPath('/news/');
 

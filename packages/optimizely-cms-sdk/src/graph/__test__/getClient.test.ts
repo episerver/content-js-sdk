@@ -1,5 +1,27 @@
-import { describe, expect, test, beforeEach, vi } from 'vitest';
+import { describe, expect, test, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 import { config, getClient, GraphClient } from '../index.js';
+import { contentType, initContentTypeRegistry } from '../../model/index.js';
+import { refreshCache } from '../../util/queryUtils.js';
+import { configureAdapter } from '../../context/config.js';
+import { MemoryAdapter } from '../../core/context/memoryAdapter.js';
+import {
+  BlogArticle,
+  Categorizable,
+  NewsArticle,
+  contentQuery,
+  metadataResponse,
+  stubGraph,
+} from './helpers.js';
+
+const HomePage = contentType({
+  key: 'HomePage',
+  displayName: 'Home Page',
+  baseType: '_page',
+  properties: {
+    body: { type: 'richText' },
+    related: { type: 'content', allowedTypes: [Categorizable] },
+  },
+});
 
 describe('getClient - Critical Edge Cases', () => {
   describe('Basic functionality', () => {
@@ -32,15 +54,11 @@ describe('getClient - Critical Edge Cases', () => {
 
   describe('CRITICAL: getClient called without config', () => {
     test('should throw error when getClient() is called without config()', async () => {
-      // Reset module state to clear globalGraphGlobalOptions
+      // Fresh module state: config() above already set the global options
       vi.resetModules();
-
-      // Dynamically import to get fresh module state
       const { getClient: freshGetClient } = await import('../index.js');
 
-      expect(() => {
-        freshGetClient();
-      }).toThrow(
+      expect(() => freshGetClient()).toThrow(
         'The Graph client is not configured. Call config() in the application entry point.',
       );
     });
@@ -48,36 +66,26 @@ describe('getClient - Critical Edge Cases', () => {
 
   describe('CRITICAL: undefined/null key validation', () => {
     test('should throw error for empty string key in config', () => {
-      expect(() => {
-        config({ apiKey: '' });
-      }).toThrow('Invalid Optimizely Graph API key');
+      expect(() => config({ apiKey: '' })).toThrow('Invalid Optimizely Graph API key');
     });
 
     test('should throw error for whitespace-only key in config', () => {
-      expect(() => {
-        config({ apiKey: '   ' });
-      }).toThrow('Invalid Optimizely Graph API key');
+      expect(() => config({ apiKey: '   ' })).toThrow('Invalid Optimizely Graph API key');
     });
 
     test('should throw error for undefined key in config (runtime behavior)', () => {
-      expect(() => {
-        // @ts-expect-error - Testing runtime behavior
-        config({ apiKey: undefined });
-      }).toThrow('Invalid Optimizely Graph API key');
+      // @ts-expect-error - Testing runtime behavior
+      expect(() => config({ apiKey: undefined })).toThrow('Invalid Optimizely Graph API key');
     });
 
     test('should throw error for null key in config (runtime behavior)', () => {
-      expect(() => {
-        // @ts-expect-error - Testing runtime behavior
-        config({ apiKey: null });
-      }).toThrow('Invalid Optimizely Graph API key');
+      // @ts-expect-error - Testing runtime behavior
+      expect(() => config({ apiKey: null })).toThrow('Invalid Optimizely Graph API key');
     });
 
     test('should throw error with helpful message mentioning environment variables', () => {
-      expect(() => {
-        // @ts-expect-error - Testing runtime behavior
-        config({ apiKey: undefined });
-      }).toThrow('process.env.OPTIMIZELY_GRAPH_SINGLE_KEY');
+      // @ts-expect-error - Testing runtime behavior
+      expect(() => config({ apiKey: undefined })).toThrow('process.env.OPTIMIZELY_GRAPH_SINGLE_KEY');
     });
   });
 
@@ -130,14 +138,12 @@ describe('getClient - Critical Edge Cases', () => {
     test('should override with undefined graphUrl and use default', () => {
       const client = getClient({ graphUrl: undefined });
 
-      // Undefined override replaces config value, then constructor applies default
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
     });
 
     test('should override with empty graphUrl and use default', () => {
       const client = getClient({ graphUrl: '' });
 
-      // Empty string override replaces config value, then constructor applies default
       expect(client.graphUrl).toBe('https://cg.optimizely.com/content/v2');
     });
 
@@ -145,6 +151,74 @@ describe('getClient - Critical Edge Cases', () => {
       const client = getClient({ query: { host: undefined } });
 
       expect(client.queryDefaults.host).toBeUndefined();
+    });
+  });
+
+  describe('getClient overrides merge into a group', () => {
+    beforeEach(() => {
+      config({
+        apiKey: 'base-key',
+        fragment: { richTextFormat: 'html', compositionDepth: 2, maxThreshold: 42 },
+        query: { cache: false, slot: 'New' },
+      });
+    });
+
+    test('overriding one fragment field keeps the rest of the group', () => {
+      const overridden = getClient({ fragment: { compositionDepth: 8 } });
+
+      expect(overridden.fragmentDefaults.compositionDepth).toBe(8);
+      expect(overridden.fragmentDefaults.richTextFormat).toBe('html');
+      expect(overridden.fragmentDefaults.maxThreshold).toBe(42);
+    });
+
+    test('overriding one query field keeps the rest of the group', () => {
+      const overridden = getClient({ query: { cache: true } });
+
+      expect(overridden.queryDefaults.cache).toBe(true);
+      expect(overridden.queryDefaults.slot).toBe('New');
+    });
+
+    test('an untouched group is inherited whole', () => {
+      const overridden = getClient({ userAgent: 'MyApp/1.0' });
+
+      expect(overridden.userAgent).toBe('MyApp/1.0');
+      expect(overridden.fragmentDefaults.richTextFormat).toBe('html');
+      expect(overridden.queryDefaults.slot).toBe('New');
+    });
+  });
+
+  describe('fragment options reach the generated query', () => {
+    beforeEach(() => {
+      initContentTypeRegistry([Categorizable, BlogArticle, NewsArticle, HomePage]);
+      refreshCache();
+    });
+
+    const fetchHomePage = async (client: GraphClient) => {
+      const spy = stubGraph(client, {
+        metadata: metadataResponse(['HomePage']),
+        content: { _Content: { item: { __typename: 'HomePage' } } },
+      });
+      await client.getContent({ key: 'a' });
+      return contentQuery(spy);
+    };
+
+    test('typeFilter excludes a content type from the fragments', async () => {
+      const query = await fetchHomePage(
+        new GraphClient('test-key', {
+          fragment: { expandContracts: true, typeFilter: key => key !== 'NewsArticle' },
+        }),
+      );
+
+      expect(query).toContain('fragment BlogArticle');
+      expect(query).not.toContain('fragment NewsArticle');
+    });
+
+    test('expandContracts pulls in the implementing types', async () => {
+      const query = await fetchHomePage(
+        new GraphClient('test-key', { fragment: { expandContracts: true } }),
+      );
+
+      expect(query).toContain('fragment NewsArticle');
     });
   });
 
@@ -214,8 +288,11 @@ describe('getClient - Critical Edge Cases', () => {
   });
 
   describe('stored URL parameter', () => {
-    let client: any;
-    let mockFetch: any;
+    let client: GraphClient;
+    let mockFetch: MockInstance<typeof fetch>;
+
+    const requestUrl = (index = 0) => new URL(mockFetch.mock.calls[index][0].toString());
+    const requestHeaders = (index = 0) => mockFetch.mock.calls[index][1]?.headers as Record<string, string>;
 
     beforeEach(() => {
       config({ apiKey: 'test-key' });
@@ -223,55 +300,67 @@ describe('getClient - Critical Edge Cases', () => {
       mockFetch = vi.spyOn(global, 'fetch').mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: {} }),
-      } as any);
+      } as Response);
     });
+
+    afterEach(() => mockFetch.mockRestore());
 
     test('should omit stored from URL by default for request()', async () => {
       await client.request('query { test }', {});
 
-      const url = new URL(mockFetch.mock.calls[0][0].toString());
-      expect(url.searchParams.has('stored')).toBe(false);
-      mockFetch.mockRestore();
+      expect(requestUrl().searchParams.has('stored')).toBe(false);
     });
 
     test('should omit stored from URL when stored is false', async () => {
       await client.request('query { test }', {}, undefined, true, undefined, false);
 
-      const url = new URL(mockFetch.mock.calls[0][0].toString());
-      expect(url.searchParams.has('stored')).toBe(false);
-      mockFetch.mockRestore();
+      expect(requestUrl().searchParams.has('stored')).toBe(false);
     });
 
     test('should have cache and stored in URL together', async () => {
       await client.request('query { test }', {}, undefined, true, undefined, true);
 
-      const url = new URL(mockFetch.mock.calls[0][0].toString());
-      expect(url.searchParams.get('cache')).toBe('true');
-      expect(url.searchParams.get('stored')).toBe('true');
-      mockFetch.mockRestore();
+      expect(requestUrl().searchParams.get('cache')).toBe('true');
+      expect(requestUrl().searchParams.get('stored')).toBe('true');
     });
 
-    test('preview requests should have cache=false and stored=true', async () => {
-      await client.request('query { test }', {}, 'preview-token', false, undefined, true);
+    test('getPreviewContent sends every request with cache=false and stored=true', async () => {
+      initContentTypeRegistry([Categorizable, HomePage]);
+      refreshCache();
+      configureAdapter(new MemoryAdapter());
+      mockFetch.mockImplementation(async (_url, init) => {
+        const data =
+          String(init?.body).includes('GetContentMetadata') ?
+            metadataResponse(['HomePage'])
+          : { _Content: { item: { __typename: 'HomePage' } } };
+        return { ok: true, json: async () => ({ data }) } as Response;
+      });
 
-      const url = new URL(mockFetch.mock.calls[0][0].toString());
-      expect(url.searchParams.get('cache')).toBe('false');
-      expect(url.searchParams.get('stored')).toBe('true');
-      mockFetch.mockRestore();
+      await client.getPreviewContent({
+        preview_token: 'preview-token',
+        key: 'a',
+        ctx: 'edit',
+        ver: '1',
+        loc: 'en',
+      });
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      [0, 1].forEach(index => {
+        expect(requestUrl(index).searchParams.get('cache')).toBe('false');
+        expect(requestUrl(index).searchParams.get('stored')).toBe('true');
+      });
     });
 
     test('should send cg-stored-query header when stored is true', async () => {
       await client.request('query { test }', {}, undefined, true, undefined, true);
 
-      expect(mockFetch.mock.calls[0][1].headers['cg-stored-query']).toBe('template');
-      mockFetch.mockRestore();
+      expect(requestHeaders()['cg-stored-query']).toBe('template');
     });
 
     test('should omit cg-stored-query header when stored is false', async () => {
       await client.request('query { test }', {}, undefined, true, undefined, false);
 
-      expect(mockFetch.mock.calls[0][1].headers['cg-stored-query']).toBeUndefined();
-      mockFetch.mockRestore();
+      expect(requestHeaders()['cg-stored-query']).toBeUndefined();
     });
   });
 });

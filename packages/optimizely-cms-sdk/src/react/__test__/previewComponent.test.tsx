@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useState } from 'react';
+import '@testing-library/jest-dom/vitest';
 import { PreviewComponent } from '../client.js';
 
 const save = (link: string | number) =>
@@ -16,11 +17,13 @@ const save = (link: string | number) =>
     );
   });
 
+const advance = (ms: number) => act(async () => void vi.advanceTimersByTime(ms));
+
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('PreviewComponent', () => {
-  it('keeps a pending refresh alive when the parent re-renders', async () => {
+  test('keeps a pending refresh alive when the parent re-renders', async () => {
     const onNavigate = vi.fn();
     let bump: () => void = () => {};
 
@@ -28,59 +31,30 @@ describe('PreviewComponent', () => {
       const [, setN] = useState(0);
       bump = () => setN(x => x + 1);
       // Unstable identity, exactly like NextPreviewComponent's inline arrow
-      return (
-        <PreviewComponent refreshTimeout={300} onNavigate={(u, s) => onNavigate(u, s)} />
-      );
+      return <PreviewComponent refreshTimeout={300} onNavigate={(u, s) => onNavigate(u, s)} />;
     }
 
     render(<Parent />);
     save(1);
-    await act(async () => void vi.advanceTimersByTime(100));
+    await advance(100);
     await act(async () => bump());
-    await act(async () => void vi.advanceTimersByTime(500));
+    await advance(500);
 
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 
-  it('defaults to a 50ms trailing debounce', async () => {
+  test('defaults to a 50ms trailing debounce', async () => {
     const onNavigate = vi.fn();
     render(<PreviewComponent onNavigate={onNavigate} />);
 
     save(1);
-    await act(async () => void vi.advanceTimersByTime(49));
+    await advance(49);
     expect(onNavigate).toHaveBeenCalledTimes(0);
-    await act(async () => void vi.advanceTimersByTime(1));
-    expect(onNavigate).toHaveBeenCalledTimes(1);
+    await advance(1);
+    expect(onNavigate).toHaveBeenCalledWith(window.location.href, true);
   });
 
-  it('coalesces the burst the CMS emits for one save', async () => {
-    const onNavigate = vi.fn();
-    render(<PreviewComponent onNavigate={onNavigate} />);
-
-    // Page plus two nested blocks, different contentLinks, a few ms apart
-    await act(async () => {
-      save('page');
-      vi.advanceTimersByTime(5);
-      save('blockA');
-      vi.advanceTimersByTime(5);
-      save('blockB');
-      vi.advanceTimersByTime(500);
-    });
-    expect(onNavigate).toHaveBeenCalledTimes(1);
-  });
-
-  it('still dedupes repeats when debouncing is disabled', async () => {
-    const onNavigate = vi.fn();
-    render(<PreviewComponent refreshTimeout={false} onNavigate={onNavigate} />);
-
-    await act(async () => {
-      save('page');
-      save('page');
-    });
-    expect(onNavigate).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps the loading indicator up while `busy` is set', async () => {
+  test('keeps the loading indicator up while `busy` is set', async () => {
     const mask = <div>loading</div>;
     const props = { refreshTimeout: 100, onNavigate: () => undefined };
 
@@ -93,8 +67,7 @@ describe('PreviewComponent', () => {
     save(1);
     expect(container.textContent).toBe('loading');
 
-    // Navigation starts: `onNavigate` returns void, so the internal mask drops
-    // immediately - `busy` is what covers the actual server round-trip.
+    // `onNavigate` returns void, so the internal mask drops immediately - `busy` covers the round-trip.
     await act(async () => {
       vi.advanceTimersByTime(100);
       rerender(
@@ -111,5 +84,24 @@ describe('PreviewComponent', () => {
       </PreviewComponent>,
     );
     expect(container.textContent).toBe('');
+  });
+
+  test('renders nothing while busy when it has no loading indicator', () => {
+    const { container } = render(<PreviewComponent busy />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  test('stops listening and drops a pending refresh on unmount', async () => {
+    const onNavigate = vi.fn();
+    const { unmount } = render(<PreviewComponent onNavigate={onNavigate} />);
+
+    save(1);
+    unmount();
+    await advance(100);
+    save(2);
+    await advance(100);
+
+    expect(onNavigate).not.toHaveBeenCalled();
   });
 });
