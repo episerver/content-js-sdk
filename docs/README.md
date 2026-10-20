@@ -1,33 +1,105 @@
-# Optimizely CMS JavaScript SDK — Documentation
+# Optimizely CMS JavaScript SDK
 
-Start at [Installation](./1-installation.md) and work down; docs 1–9 are a step-by-step
-path to a working app. The rest are reference, read as needed.
+The SDK lets you build a site on Optimizely CMS (SaaS) with TypeScript and React. You
+define your content types in code, push them to the CMS, and render the content editors
+create with your own components, including a live preview while they edit.
 
-## Getting started
+## How it fits together
 
-| Step | Guide                                            | Description                               |
-| ---- | ------------------------------------------------ | ----------------------------------------- |
-| 1    | [Installation](./1-installation.md)              | Set up your development environment       |
-| 2    | [Setup](./2-setup.md)                            | Configure the SDK and CLI                 |
-| 3    | [Modelling](./3-modelling.md)                    | Define your content types with TypeScript |
-| 4    | [Create Content](./4-create-content.md)          | Add content in Optimizely CMS             |
-| 5    | [Fetching Content](./5-fetching.md)              | Query and retrieve content in your app    |
-| 6    | [Rendering (React)](./6-rendering-react.md)      | Display content in React components       |
-| 7    | [Live Preview](./7-live-preview.md)              | Enable real-time content editing          |
-| 8    | [Experience](./8-experience.md)                  | Work with experiences and variations      |
-| 9    | [Display Settings](./9-display-settings.md)      | Configure content display options         |
+```text
+        your code                            Optimizely
+┌────────────────────────┐   config push   ┌─────────────┐
+│ content types          │ ──────────────▶ │     CMS     │  editors write
+│ React components       │                 └──────┬──────┘  and publish
+└────────────────────────┘                        │
+            ▲                                     ▼
+            │       getClient()            ┌─────────────┐
+            └───────────────────────────── │    Graph    │
+                                           └─────────────┘
+```
+
+1. **Content types** describe your content. You write them in TypeScript, and the **CLI**
+   pushes them to the CMS.
+2. Editors create and publish content in the **CMS**. It is published to **Optimizely
+   Graph**.
+3. Your app fetches content from Graph with the **SDK**, and renders each piece with the
+   component registered for its content type.
+
+## Get started
+
+Choose one:
+
+- **[Quick start](./learn/quick-start.md):** scaffold a working site from a template in a
+  few minutes.
+- **[Tutorial](./learn/installation.md):** build a site step by step and learn how each
+  piece works.
+
+## Learn
+
+A step-by-step tutorial. Each page builds on the one before.
+
+| Step | Page                                                     | You will                                     |
+| ---- | -------------------------------------------------------- | -------------------------------------------- |
+| 1    | [Installation](./learn/installation.md)                  | Create a Next.js project and install the SDK |
+| 2    | [Connect to the CMS](./learn/connect-to-cms.md)          | Give the CLI access to your CMS              |
+| 3    | [Your first content type](./learn/first-content-type.md) | Define an `Article` and push it to the CMS   |
+| 4    | [Create content](./learn/create-content.md)              | Write and publish your first article         |
+| 5    | [Fetch content](./learn/fetch-content.md)                | Load the article from Graph                  |
+| 6    | [Render with React](./learn/render-with-react.md)        | Turn the article into a page                 |
+| 7    | [Live preview](./learn/live-preview.md)                  | Let editors see their changes as they type   |
+
+## Guides
+
+Standalone pages, one topic each. Read them in any order.
+
+### Modelling content
+
+- [Content types](./guides/content-types.md): properties, validation, references and
+  containers
+- [Contracts](./guides/contracts.md): share sets of properties between content types
+- [Display templates](./guides/display-templates.md): let editors pick a style for a
+  component
+
+### Building pages
+
+- [Experiences](./guides/experiences.md): pages composed in Visual Builder
+- [Rich text](./guides/rich-text.md): render and customise formatted text
+- [DAM assets](./guides/dam-assets.md): responsive images, video and files
+- [Forms](./guides/forms.md): render Optimizely Forms
+- [Navigation](./guides/navigation.md): breadcrumbs and menus
+- [Taxonomy](./guides/taxonomy.md): read and resolve categories
+
+### Fetching content
+
+- [Authentication](./guides/authentication.md): fetch restricted content and drafts
+- [Request context](./guides/request-context.md): share per-request data with components
+- [Validating external data](./guides/validating-external-data.md): check data from other
+  GraphQL clients
+
+### Beyond the basics
+
+- [Deploy to front-end hosting](./guides/deploy-to-frontend-hosting.md): put the site live
+  on Optimizely with one command or from CI
+- [The framework-agnostic core](./guides/framework-agnostic-core.md): render without
+  React, or build a binding
+- [Observability](./guides/observability.md): OpenTelemetry traces and metrics
+- [CMS PaaS](./guides/cms-paas.md): use the SDK with an Optimizely CMS 13 PaaS instance
+- [Agent skills](./guides/agent-skills.md): teach AI coding agents to use the SDK
 
 ## Reference
 
-| Guide                                                             | Description                            |
-| ----------------------------------------------------------------- | -------------------------------------- |
-| [RichText Component (React)](./10-richtext-component-react.md)    | Render rich text content               |
-| [DAM Assets](./11-dam-assets.md)                                  | Manage digital assets                  |
-| [Client Utils](./12-client-utils.md)                              | `getPath`, `getItems` and helpers      |
-| [CLI Commands](./13-cli-commands.md)                              | Every command, flag and env var        |
-| [Create App](./14-create-app.md)                                  | Scaffold a new or existing project     |
-| [Forms](./15-forms.md)                                            | Model and render Optimizely Forms      |
-| [Agent Skills](./16-agent-skills.md)                              | AI-powered development                 |
-| [Framework-agnostic Core](./17-framework-agnostic-core.md)        | Render without React, build a binding  |
-| [Deploy to Front-end Hosting](./18-deploy-to-frontend-hosting.md) | Deploy with one CLI command or from CI |
-| [Observability](./observability.md)                               | OpenTelemetry traces and metrics       |
+Exact signatures and every option.
+
+- [`config()` and `getClient()`](./reference/config.md)
+- [`GraphClient` methods](./reference/graph-client.md)
+- [`optimizely.config.mjs`](./reference/optimizely-config.md)
+- [Property types](./reference/property-types.md)
+- [React components](./reference/react-components.md)
+- [`RichText` component](./reference/rich-text-component.md)
+- [CLI commands](./reference/cli.md)
+- [Migrating to 3.0](./reference/migration-v3.md)
+- [Troubleshooting](./reference/troubleshooting.md)
+
+## Contributing to the docs
+
+See [Writing the docs](./STYLE.md) for how pages are organised and written.

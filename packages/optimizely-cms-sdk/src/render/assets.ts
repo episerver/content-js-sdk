@@ -1,5 +1,10 @@
 import type { InferredContentReference } from '../infer.js';
-import type { PublicImageAsset, PublicVideoAsset, PublicRawFileAsset } from '../model/assets.js';
+import type {
+  PublicImageAsset,
+  PublicVideoAsset,
+  PublicRawFileAsset,
+  Renditions,
+} from '../model/assets.js';
 import { appendToken } from '../util/preview.js';
 
 /**
@@ -23,7 +28,7 @@ function appendPreviewTokenToRenditions(
   if (result.item && 'Renditions' in result.item && result.item.Renditions) {
     result.item = {
       ...result.item,
-      Renditions: result.item.Renditions.map(r => ({
+      Renditions: result.item.Renditions.map((r: Renditions) => ({
         ...r,
         Url: r.Url ? appendToken(r.Url, previewToken) : r.Url,
       })),
@@ -88,14 +93,14 @@ export function getSrcset<T extends Record<string, any>>(
   const seenWidths = new Set<number>();
 
   const srcsetEntries = renditions
-    .filter(r => {
+    .filter((r: Renditions) => {
       if (!r.Url || !r.Width) return false;
       // Skip if we've already seen this width
       if (seenWidths.has(r.Width)) return false;
       seenWidths.add(r.Width);
       return true;
     })
-    .map(r => `${r.Url!} ${r.Width}w`);
+    .map((r: Renditions) => `${r.Url!} ${r.Width}w`);
 
   return srcsetEntries.length > 0 ? srcsetEntries.join(', ') : undefined;
 }

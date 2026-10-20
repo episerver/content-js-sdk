@@ -40,10 +40,12 @@ export type {
   GraphGetPreviewOptions,
   GraphQueryOptions,
   GraphSlot,
+  GraphPlatform,
   DamMode,
   TaxonomyTerm,
   TaxonomyMode,
 } from './graph/index.js';
+export type { TelemetryOptions } from './telemetry/settings.js';
 
 // Provided content types and experiences
 export {

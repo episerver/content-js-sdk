@@ -27,7 +27,7 @@ const modes = [
   {
     flag: 'dam',
     probe: '__type(name: "cmp_Asset")',
-    marker: 'ContentReferenceItem',
+    marker: 'PublicImageAsset',
     schema: (present: boolean) => ({ damAssetType: present ? { __typename: '__Type' } : null }),
     fragment: (mode: Mode) => ({ dam: mode }),
   },

@@ -79,6 +79,7 @@ export function withRequestSpan<T>(
   slot: string,
   hasPreviewToken: boolean,
   authMode: AuthMode,
+  platform: string,
   fn: (span: any) => Promise<T>,
 ): Promise<T> {
   return createSpan('optimizely.graph.request', async span => {
@@ -90,6 +91,7 @@ export function withRequestSpan<T>(
       [SemanticAttributes.OPTI_SLOT]: slot,
       [SemanticAttributes.OPTI_PREVIEW_TOKEN]: hasPreviewToken,
       [SemanticAttributes.OPTI_AUTH_MODE]: authMode,
+      [SemanticAttributes.OPTI_PLATFORM]: platform,
     });
     return fn(span);
   });

@@ -88,9 +88,19 @@ type InferredRichText = {
 /** Asset types that can be returned in ContentReference */
 export type ContentReferenceItem = PublicImageAsset | PublicVideoAsset | PublicRawFileAsset;
 
+/** CMS media returned in `item`, with its own properties left untyped. */
+export type InferredReferencedMedia = InferredBase & {
+  assetMetadata?: InferredAssetMetadata;
+  imageMetadata?: InferredImageMetadata;
+};
+
 export type InferredContentReference = {
   url: InferredUrl;
-  item: ContentReferenceItem | null;
+  /**
+   * The referenced asset: a DAM asset, or the CMS media itself. Absent for a
+   * reference that allows no media, which the query does not resolve.
+   */
+  item?: ((ContentReferenceItem | InferredReferencedMedia) & Record<string, any>) | null;
   key: string;
 };
 

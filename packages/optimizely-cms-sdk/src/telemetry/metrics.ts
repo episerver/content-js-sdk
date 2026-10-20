@@ -1,5 +1,6 @@
 import { Histogram, Counter } from '@opentelemetry/api';
 import { getMeter } from './meter.js';
+import { isComponentMetricsEnabled } from './settings.js';
 
 const meter = getMeter();
 
@@ -61,13 +62,20 @@ export const contentFetchDuration: Histogram = meter.createHistogram(
   },
 );
 
-export const componentResolveDuration: Histogram = meter.createHistogram(
+const componentResolveHistogram = meter.createHistogram(
   'optimizely.component.resolve.duration',
   {
     description: 'Time to resolve components in ComponentRegistry',
     unit: 'ms',
   },
 );
+
+// No-op while `componentMetrics` is off; checked per call because config() runs after this module loads
+export const componentResolveDuration: Histogram = {
+  record: (...args) => {
+    if (isComponentMetricsEnabled()) componentResolveHistogram.record(...args);
+  },
+};
 
 // Counters
 
@@ -96,12 +104,16 @@ export const contentFetchCount: Counter = meter.createCounter(
   },
 );
 
-export const componentLookupCount: Counter = meter.createCounter(
-  'optimizely.component.lookups',
-  {
-    description: 'Total component resolution attempts',
+const componentLookupCounter = meter.createCounter('optimizely.component.lookups', {
+  description: 'Total component resolution attempts',
+});
+
+// No-op while `componentMetrics` is off, like componentResolveDuration
+export const componentLookupCount: Counter = {
+  add: (...args) => {
+    if (isComponentMetricsEnabled()) componentLookupCounter.add(...args);
   },
-);
+};
 
 export const recordMetrics = (
   histogram: Histogram,

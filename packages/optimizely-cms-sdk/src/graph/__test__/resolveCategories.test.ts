@@ -214,7 +214,7 @@ describe('category keys', () => {
     const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
     expect(result._metadata.categories).toEqual(['term-a']);
-    expect(taxonomyCalls()[0][1]).toEqual({ keys: ['term-a'] });
+    expect(taxonomyCalls()[0][1]).toEqual({ keys: ['term-a'], locale: 'en' });
     expect(result._metadata.resolvedCategories[0]).toMatchObject({ key: 'term-a', displayName: 'A' });
   });
 });
@@ -373,7 +373,7 @@ describe('taxonomy term caching', () => {
 
     const result: any = await client.getContent({ key: 'a' }, { resolveTaxonomy: true });
 
-    expect(taxonomyCalls().map(call => call[1])).toEqual([{ keys: ['term-b'] }]);
+    expect(taxonomyCalls().map(call => call[1])).toEqual([{ keys: ['term-b'], locale: 'en' }]);
     expect(result._metadata.resolvedCategories).toHaveLength(2);
     expect(result._metadata.resolvedCategories[0].key).toBe('term-a');
     expect(result._metadata.resolvedCategories[1].key).toBe('term-b');

@@ -1,8 +1,4 @@
-import {
-  createSingleContentQuery,
-  ItemsResponse,
-  createMultipleContentQuery,
-} from './createQuery.js';
+import { ItemsResponse } from './createQuery.js';
 import { GraphResponseError, GraphMissingContentTypeError } from './error.js';
 import {
   type ScalarFilter,
@@ -14,7 +10,7 @@ import {
   getVariationVariables,
 } from './filters.js';
 import { setContext } from '../context/config.js';
-import { isContentTypeRegistered } from '../model/contentTypeRegistry.js';
+import { getContentType, isContentTypeRegistered } from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
 import { SemanticAttributes, logWarning } from '../telemetry/index.js';
@@ -24,6 +20,7 @@ import {
   withGetContentSpan,
 } from '../telemetry/spans.js';
 import {
+  type DamMode,
   type GraphClientContext,
   type GraphGetContentOptions,
   type GraphGetItemOptions,
@@ -33,6 +30,7 @@ import {
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type TaxonomyMode,
   type TaxonomyTerm,
   type ResolvedQueryOptions,
   fragmentContext,
@@ -47,10 +45,7 @@ import {
   findUnresolvedForms,
   getItemsQuery,
   getLinksQuery,
-  getMetadataQuery,
   hasOwnSectionTypes,
-  liftSectionNodes,
-  removeTypePrefix,
   toLocaleEnumValues,
 } from './queries.js';
 
@@ -165,7 +160,7 @@ async function resolveFormNodes<T>(
 
       // Built here rather than delegating to `getContent`, which would spend a
       // metadata round trip rediscovering a content type we already know.
-      const query = createSingleContentQuery(FORM_CONTAINER_TYPE, {
+      const query = context.platform.contentQuery('single', FORM_CONTAINER_TYPE, {
         ...fragmentContext(context, options.damEnabled, false),
         formsEnabled: true,
         sectionTypes: options.sectionTypes,
@@ -182,7 +177,7 @@ async function resolveFormNodes<T>(
         queryOptions.slot,
       );
 
-      const container = liftSectionNodes(removeTypePrefix(response?._Content?.item));
+      const container = context.platform.normalize(response?._Content?.item);
       const nodes = container?.nodes ?? [];
       forms.forEach(form => {
         form.nodes = nodes;
@@ -193,13 +188,58 @@ async function resolveFormNodes<T>(
   return item;
 }
 
-function hoistCategories(item: any): any {
-  if (!item) return item;
-  const categories = item.itemMetadata?.categories;
-  if (categories !== undefined && item._metadata) {
-    item._metadata.categories = categories;
-    delete item.itemMetadata;
+/** A piece of content as Graph answers it, rather than any other object. */
+const isContentNode = (value: any): boolean =>
+  typeof value?.__typename === 'string' &&
+  !!value._metadata &&
+  typeof value._metadata === 'object';
+
+/**
+ * The values of a content node to walk into.
+ *
+ * A `json` property holds whatever the editor put there, which may well look
+ * like content — walking into it risks rewriting somebody's data.
+ */
+function walkableValues(node: any): any[] {
+  const contentType = getContentType(node.__typename);
+  const properties: Record<string, any> =
+    contentType && 'properties' in contentType ? (contentType.properties ?? {}) : {};
+
+  return Object.entries(node)
+    .filter(([key]) => properties[key]?.type !== 'json')
+    .map(([, value]) => value);
+}
+
+/** Visits the content at the root of a response and every piece nested in it. */
+function forEachContentNode(value: any, visit: (node: any) => void): void {
+  if (Array.isArray(value)) {
+    value.forEach(entry => forEachContentNode(entry, visit));
+    return;
   }
+  if (!value || typeof value !== 'object') return;
+
+  if (isContentNode(value)) {
+    visit(value);
+    walkableValues(value).forEach(nested => forEachContentNode(nested, visit));
+    return;
+  }
+
+  Object.values(value).forEach(nested => forEachContentNode(nested, visit));
+}
+
+/**
+ * Moves the aliased `itemMetadata.categories` onto `_metadata`, for the item and
+ * for every piece of content nested in it — content areas and the `item` of a
+ * content reference carry the same alias.
+ */
+function hoistCategories(item: any): any {
+  forEachContentNode(item, node => {
+    const categories = node.itemMetadata?.categories;
+    if (categories !== undefined) {
+      node._metadata.categories = categories;
+      delete node.itemMetadata;
+    }
+  });
   return item;
 }
 
@@ -347,6 +387,15 @@ function shortenCategoryKeys(item: any): void {
   }
 }
 
+/** Every piece of content in a response that carries categories, however deep. */
+function categorizedNodes(value: any): any[] {
+  const found: any[] = [];
+  forEachContentNode(value, node => {
+    if (node._metadata.categories) found.push(node);
+  });
+  return found;
+}
+
 async function resolveTaxonomyTerms(
   context: GraphClientContext,
   termKeys: string[],
@@ -440,7 +489,64 @@ async function resolveTaxonomyTerms(
   return termKeys.map(key => localCache!.get(key) ?? metadataToTaxonomyTerm(extractTermKey(key), undefined));
 }
 
+/**
+ * Resolves and shortens taxonomy categories on a response, for the content at
+ * its root and for everything nested in it — content areas and the `item` of a
+ * content reference carry categories of their own.
+ *
+ * @param resolve Fill in `_metadata.resolvedCategories`, which costs a
+ *   `_TaxonomyTerm` query for terms not already cached.
+ * @param locale Locale to resolve against for content that doesn't state one.
+ */
+async function applyTaxonomy(
+  context: GraphClientContext,
+  root: any,
+  { resolve, locale }: { resolve: boolean; locale?: string },
+): Promise<void> {
+  const nodes = categorizedNodes(root);
+
+  if (resolve) {
+    // Warm the term cache once per locale, so the per-node pass below resolves
+    // from memory instead of issuing one query per piece of content.
+    const keysByLocale = new Map<string | undefined, string[]>();
+    for (const node of nodes) {
+      const nodeLocale = node._metadata.locale ?? locale;
+      const keys = keysByLocale.get(nodeLocale) ?? [];
+      keys.push(...node._metadata.categories);
+      keysByLocale.set(nodeLocale, keys);
+    }
+
+    await Promise.all(
+      [...keysByLocale].map(([nodeLocale, keys]) =>
+        resolveTaxonomyTerms(context, keys, nodeLocale),
+      ),
+    );
+
+    await Promise.all(
+      nodes.map(async node => {
+        const categories: string[] = node._metadata.categories;
+        node._metadata.resolvedCategories =
+          categories.length ?
+            await resolveTaxonomyTerms(
+              context,
+              categories,
+              node._metadata.locale ?? locale,
+            )
+          : [];
+      }),
+    );
+  }
+
+  nodes.forEach(shortenCategoryKeys);
+}
+
 // METADATA
+
+/** Applies a `dam` or `taxonomy` setting to what the schema probe detected. */
+const resolveMode = (mode: DamMode | TaxonomyMode, detected: boolean): boolean =>
+  mode === 'on' ? true
+  : mode === 'off' ? false
+  : detected;
 
 /**
  * Fetches the content type metadata for a given content input.
@@ -465,7 +571,7 @@ async function getContentMetaData(
   // Skip if forms aren't registered; local lookup, no round trip.
   const mayRenderForms = isContentTypeRegistered(FORM_CONTAINER_TYPE);
 
-  const query = getMetadataQuery(
+  const query = context.platform.metadataQuery(
     filter.filterShape,
     getVariationMode(variation),
     mayRenderForms,
@@ -489,28 +595,17 @@ async function getContentMetaData(
     getSectionTypes(context),
   ]);
 
-  const contentTypeName = data._Content?.item?._metadata?.types?.[0];
-
-  // Determine if DAM is enabled based on the presence of cmp_Asset type
-  // The metadata query always probes for cmp_Asset; forced modes just ignore it.
+  const { contentTypeName, damDetected, taxonomyDetected, formsOnPage } =
+    context.platform.readMetadata(data);
   const { dam, taxonomy } = context.fragmentDefaults;
-  const damEnabled =
-    dam === 'on' ? true
-    : dam === 'off' ? false
-    : data.damAssetType !== null;
-
-  const hasCategoriesField = Array.isArray(data.taxonomyType?.fields)
-    && data.taxonomyType.fields.some((f: { name: string }) => f.name === 'categories');
-  const taxonomyEnabled =
-    taxonomy === 'on' ? true
-    : taxonomy === 'off' ? false
-    : hasCategoriesField;
+  const damEnabled = resolveMode(dam, damDetected);
+  const taxonomyEnabled = resolveMode(taxonomy, taxonomyDetected);
 
   // The probe covers a form in a composition. Content type checks cover
   // the form container itself and forms in content areas.
   const needsForms =
     mayRenderForms &&
-    ((data.formsOnPage?.total ?? 0) > 0 ||
+    (formsOnPage ||
       (typeof contentTypeName === 'string' &&
         (isFormContentType(contentTypeName) ||
           contentTypeCanHoldForms(contentTypeName))));
@@ -573,7 +668,7 @@ export async function getContentByPath<T = any>(
     span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
     try {
-      const query = createMultipleContentQuery(contentTypeName, {
+      const query = context.platform.contentQuery('multiple', contentTypeName, {
         ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
@@ -593,7 +688,7 @@ export async function getContentByPath<T = any>(
 
       const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
-          resolveFormNodes(context, hoistCategories(liftSectionNodes(removeTypePrefix(item))), {
+          resolveFormNodes(context, hoistCategories(context.platform.normalize(item)), {
             damEnabled,
             taxonomyEnabled,
             sectionTypes,
@@ -604,24 +699,9 @@ export async function getContentByPath<T = any>(
         ) ?? [],
       );
 
-      if (queryOptions.resolveTaxonomy && taxonomyEnabled) {
-        await Promise.all(
-          items.map(async (item: any) => {
-            const categories: string[] | undefined = item?._metadata?.categories;
-            if (categories && categories.length > 0) {
-              item._metadata.resolvedCategories = await resolveTaxonomyTerms(
-                context,
-                categories,
-                item?._metadata?.locale,
-              );
-            } else if (categories) {
-              item._metadata.resolvedCategories = [];
-            }
-          }),
-        );
-      }
-
-      items.forEach(shortenCategoryKeys);
+      await applyTaxonomy(context, items, {
+        resolve: !!queryOptions.resolveTaxonomy && taxonomyEnabled,
+      });
 
       return items;
     } catch (error) {
@@ -659,7 +739,7 @@ export async function getPreviewContent(
         {
           request: {
             variables: filter.variables,
-            query: getMetadataQuery(filter.filterShape, 'all'),
+            query: context.platform.metadataQuery(filter.filterShape, 'all'),
           },
         },
       );
@@ -676,7 +756,7 @@ export async function getPreviewContent(
       mode: params.ctx,
     });
 
-    const query = createSingleContentQuery(contentTypeName, {
+    const query = context.platform.contentQuery('single', contentTypeName, {
       ...fragmentContext(context, damEnabled, taxonomyEnabled),
       formsEnabled,
       sectionTypes,
@@ -696,7 +776,7 @@ export async function getPreviewContent(
 
     const result = await resolveFormNodes(
       context,
-      hoistCategories(liftSectionNodes(removeTypePrefix(response?._Content?.item))),
+      hoistCategories(context.platform.normalize(response?._Content?.item)),
       {
         damEnabled,
         taxonomyEnabled,
@@ -708,20 +788,10 @@ export async function getPreviewContent(
       },
     );
 
-    if (result && queryOptions.resolveTaxonomy && taxonomyEnabled) {
-      const categories: string[] | undefined = result?._metadata?.categories;
-      if (categories && categories.length > 0) {
-        result._metadata.resolvedCategories = await resolveTaxonomyTerms(
-          context,
-          categories,
-          params.loc,
-        );
-      } else if (categories) {
-        result._metadata.resolvedCategories = [];
-      }
-    }
-
-    shortenCategoryKeys(result);
+    await applyTaxonomy(context, result, {
+      resolve: !!queryOptions.resolveTaxonomy && taxonomyEnabled,
+      locale: params.loc,
+    });
 
     return decorateWithContext(result, params);
   });
@@ -767,7 +837,7 @@ export async function getContent(
     span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
     try {
-      const query = createSingleContentQuery(contentTypeName, {
+      const query = context.platform.contentQuery('single', contentTypeName, {
         ...fragmentContext(context, damEnabled, taxonomyEnabled),
         formsEnabled,
         sectionTypes,
@@ -786,7 +856,7 @@ export async function getContent(
 
       const result = await resolveFormNodes(
         context,
-        hoistCategories(liftSectionNodes(removeTypePrefix(response?._Content?.item))),
+        hoistCategories(context.platform.normalize(response?._Content?.item)),
         {
           damEnabled,
           taxonomyEnabled,
@@ -798,20 +868,10 @@ export async function getContent(
         },
       );
 
-      if (result && queryOptions.resolveTaxonomy && taxonomyEnabled) {
-        const categories: string[] | undefined = result?._metadata?.categories;
-        if (categories && categories.length > 0) {
-          result._metadata.resolvedCategories = await resolveTaxonomyTerms(
-            context,
-            categories,
-            ref.locale,
-          );
-        } else if (categories) {
-          result._metadata.resolvedCategories = [];
-        }
-      }
-
-      shortenCategoryKeys(result);
+      await applyTaxonomy(context, result, {
+        resolve: !!queryOptions.resolveTaxonomy && taxonomyEnabled,
+        locale: ref.locale,
+      });
 
       return result;
     } catch (error) {

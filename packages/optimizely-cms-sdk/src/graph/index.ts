@@ -5,6 +5,7 @@ import {
 } from './error.js';
 import { logError, logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { withRequestSpan } from '../telemetry/spans.js';
+import { setTelemetryOptions, type TelemetryOptions } from '../telemetry/settings.js';
 import { DEFAULT_GRAPH_URL, DEFAULT_USER_AGENT } from './constants.js';
 import { authModeFor, resolveAuthHeaders, validateAuth } from './auth.js';
 import {
@@ -27,6 +28,7 @@ import {
   withDefaults,
 } from './options.js';
 import * as operations from './operations.js';
+import { type PlatformAdapter, resolvePlatform } from './platform.js';
 
 // PUBLIC TYPES
 
@@ -51,6 +53,7 @@ export type {
   GraphAuthMode,
   GraphAuthResolver,
   GraphFragmentOptions,
+  GraphPlatform,
   GraphSecrets,
   TaxonomyTerm,
   TaxonomyMode,
@@ -101,6 +104,9 @@ export class GraphClient {
   /** The resolved `query` group: what every request uses unless it overrides it. */
   readonly queryDefaults: ResolvedQueryOptions;
 
+  /** How requests are built and responses read for the configured CMS product. */
+  readonly platform: PlatformAdapter;
+
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     validateAuth(options.auth, options.secrets);
@@ -113,6 +119,7 @@ export class GraphClient {
 
     this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
     this.queryDefaults = withDefaults(defaultQueryOptions(options.auth), options.query);
+    this.platform = resolvePlatform(options.platform);
   }
 
   // TRANSPORT
@@ -133,6 +140,7 @@ export class GraphClient {
       slot || 'Current',
       !!previewToken,
       authModeFor(this.auth, previewToken),
+      this.platform.name,
       async span => {
         const url = new URL(this.graphUrl);
 
@@ -395,6 +403,7 @@ export function getGraphConfig(): GraphOptions | null {
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
  *   fragment: { richTextFormat: 'json' }, // optional
  *   query: { cache: true, host: 'example.com' }, // optional
+ *   telemetry: { componentMetrics: false }, // optional
  * });
  *
  * export default function RootLayout({ children }) {
@@ -402,7 +411,10 @@ export function getGraphConfig(): GraphOptions | null {
  * }
  * ```
  */
-export function config(options: GraphOptions) {
+export function config({
+  telemetry,
+  ...options
+}: GraphOptions & { telemetry?: TelemetryOptions }) {
   if (
     !options.apiKey ||
     typeof options.apiKey !== 'string' ||
@@ -417,8 +429,10 @@ export function config(options: GraphOptions) {
   // Checked here as well as in the constructor so a malformed `auth` fails when the app
   // starts up rather than on whichever request happens to build a client first.
   validateAuth(options.auth, options.secrets);
+  resolvePlatform(options.platform);
 
   setGraphConfig(options);
+  setTelemetryOptions(telemetry);
 }
 
 const mergeGraphOptions = (
