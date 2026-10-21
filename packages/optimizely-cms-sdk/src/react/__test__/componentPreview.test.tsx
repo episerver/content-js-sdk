@@ -95,8 +95,11 @@ async function resolveAsync(node: any): Promise<any> {
 }
 
 /** Runs the page the way the router does. */
-async function renderPage(searchParams: Record<string, string>) {
-  const Page = createComponentPreviewPage({ defaultLocale: 'en' }) as any;
+async function renderPage(
+  searchParams: Record<string, string>,
+  options: Record<string, unknown> = {},
+) {
+  const Page = createComponentPreviewPage({ defaultLocale: 'en', ...options }) as any;
   const element = await Page({ searchParams: Promise.resolve(searchParams) });
 
   return render(await resolveAsync(element));
@@ -193,7 +196,10 @@ describe('createComponentPreviewPage', () => {
       },
     );
 
-    await renderPage({ contentType: 'Heading', parentOrigin: 'https://cms.test' });
+    await renderPage(
+      { contentType: 'Heading' },
+      { parentOrigin: 'https://cms.test' },
+    );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
     expect(sent[0].data.payload).toMatchObject({
@@ -207,7 +213,10 @@ describe('createComponentPreviewPage', () => {
   test('reports the component box so the embedding page can size a tile', async () => {
     const sent = framed({ height: 420, width: 1280 });
 
-    await renderPage({ contentType: 'Heading', parentOrigin: 'https://cms.test' });
+    await renderPage(
+      { contentType: 'Heading' },
+      { parentOrigin: 'https://cms.test' },
+    );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
     expect(sent[0].data.type).toBe('optimizely:preview:ready');
@@ -225,13 +234,16 @@ describe('createComponentPreviewPage', () => {
   test('posts to the origin it was given, never to a wildcard', async () => {
     const sent = framed();
 
-    await renderPage({ contentType: 'Heading', parentOrigin: 'https://cms.test' });
+    await renderPage(
+      { contentType: 'Heading' },
+      { parentOrigin: 'https://cms.test' },
+    );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
     expect(sent[0].targetOrigin).toBe('https://cms.test');
   });
 
-  test('stays silent when no parent origin is given', async () => {
+  test('stays silent when the page names no parent origin', async () => {
     const sent = framed();
 
     await renderPage({ contentType: 'Heading' });
@@ -243,7 +255,10 @@ describe('createComponentPreviewPage', () => {
   test('reports an error rather than leaving the parent to time out', async () => {
     const sent = framed();
 
-    await renderPage({ contentType: 'NotRegistered', parentOrigin: 'https://cms.test' });
+    await renderPage(
+      { contentType: 'NotRegistered' },
+      { parentOrigin: 'https://cms.test' },
+    );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
     expect(sent[0].data.type).toBe('optimizely:preview:error');
@@ -331,7 +346,7 @@ describe('fixes from review', () => {
     } as unknown as Window);
     getContent.mockResolvedValue(null);
 
-    await renderPage({ key: 'does-not-exist', parentOrigin: 'https://cms.test' });
+    await renderPage({ key: 'does-not-exist' }, { parentOrigin: 'https://cms.test' });
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
     expect(sent[0].payload.code).toBe('content-not-found');
@@ -351,5 +366,90 @@ describe('fixes from review', () => {
       { key: 'abc', locale: 'en' },
       { publishedOnly: true },
     );
+  });
+})
+
+describe('parentOrigin', () => {
+  function listening() {
+    const sent: any[] = [];
+    vi.spyOn(HTMLImageElement.prototype, 'decode').mockResolvedValue(undefined);
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 200, height: 40, left: 0, top: 0, right: 200, bottom: 40,
+    } as DOMRect);
+    vi.spyOn(window, 'parent', 'get').mockReturnValue({
+      postMessage: (data: unknown, targetOrigin: string) => sent.push({ data, targetOrigin }),
+    } as unknown as Window);
+    return sent;
+  }
+
+  async function renderFor(parentOrigin?: string | string[]) {
+    const Page = createComponentPreviewPage({ defaultLocale: 'en', parentOrigin }) as any;
+    const element = await Page({
+      searchParams: Promise.resolve({ contentType: 'Heading' }),
+    });
+    render(await resolveAsync(element));
+  }
+
+  test('reports to the origin the page names', async () => {
+    const sent = listening();
+
+    await renderFor('https://cms.test');
+    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
+
+    expect(sent[0].targetOrigin).toBe('https://cms.test');
+    vi.restoreAllMocks();
+  });
+
+  test('posts once per origin when several are named', async () => {
+    const sent = listening();
+
+    await renderFor(['https://cms.test', 'https://staging.test']);
+    await vi.waitFor(() => expect(sent).toHaveLength(2));
+
+    expect(sent.map(m => m.targetOrigin)).toEqual([
+      'https://cms.test',
+      'https://staging.test',
+    ]);
+    vi.restoreAllMocks();
+  });
+
+  test('a request cannot name itself: the query parameter is ignored', async () => {
+    const sent = listening();
+
+    const Page = createComponentPreviewPage({ defaultLocale: 'en' }) as any;
+    const element = await Page({
+      searchParams: Promise.resolve({
+        contentType: 'Heading',
+        parentOrigin: 'https://evil.test',
+      }),
+    });
+    render(await resolveAsync(element));
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    expect(sent).toHaveLength(0);
+    vi.restoreAllMocks();
+  });
+})
+
+describe('a framed preview with nowhere to report', () => {
+  test('says so while developing, instead of going quiet', async () => {
+    vi.spyOn(window, 'parent', 'get').mockReturnValue({
+      postMessage: () => {},
+    } as unknown as Window);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv('NODE_ENV', 'development');
+
+    const Page = createComponentPreviewPage({ defaultLocale: 'en' }) as any;
+    render(
+      await resolveAsync(
+        await Page({ searchParams: Promise.resolve({ contentType: 'Heading' }) }),
+      ),
+    );
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('parentOrigin'));
+
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 })
