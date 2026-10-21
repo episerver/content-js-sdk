@@ -38,10 +38,7 @@ import {
 import { isContentType } from '../model/index.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { generateMockContent, type MockData } from '../render/mockContent.js';
-import {
-  PARENT_ORIGIN_PARAM,
-  PREVIEW_ELEMENT_ID,
-} from '../core/preview/protocol.js';
+import { PREVIEW_ELEMENT_ID } from '../core/preview/protocol.js';
 import { PreviewReporter } from './client.js';
 import { FormRulesProvider } from './forms/FormRulesContext.js';
 import { FormSubmissionProvider } from './forms/FormSubmissionProvider.js';
@@ -409,7 +406,9 @@ const PREVIEW_PARAMS = new Set([
   'key',
   'displayTemplate',
   'locale',
-  PARENT_ORIGIN_PARAM,
+  // Ignored, but reserved: the parent origin is configured on the page, not
+  // requested, and a stray value must not become a display setting.
+  'parentOrigin',
 ]);
 
 /** The first value of a query parameter, ignoring repeats. */
@@ -475,8 +474,23 @@ function defaultDisplaySettings(templateKey: string | undefined) {
 export function createComponentPreviewPage({
   defaultLocale,
   mockData,
+  parentOrigin,
 }: {
   defaultLocale?: string;
+  /**
+   * The origin, or origins, this preview reports its size to. Without one it
+   * stays silent.
+   *
+   * Configured by the site rather than read from the request, so the page
+   * being framed decides who hears from it. An embedder cannot name itself
+   * into the conversation. Pass several when more than one environment embeds
+   * the same site — each message is posted per origin and the browser
+   * delivers only to the one actually framing the page.
+   *
+   * This is not a substitute for a `frame-ancestors` CSP, which is what stops
+   * another page framing the preview at all. It decides who may *hear* it.
+   */
+  parentOrigin?: string | string[];
   /**
    * Where stand-in content comes from: a faker-style text source, a factory,
    * or predefined content per content type. Passed in rather than imported, so
@@ -495,7 +509,7 @@ export function createComponentPreviewPage({
     const contentTypeKey = queryValue(query.contentType);
     const contentKey = queryValue(query.key);
     const displayTemplateKey = queryValue(query.displayTemplate);
-    const parentOrigin = queryValue(query[PARENT_ORIGIN_PARAM]);
+    const parentOrigins = parentOrigin ? [parentOrigin].flat() : [];
 
     const content =
       contentKey ?
@@ -540,7 +554,7 @@ export function createComponentPreviewPage({
           {/* Told rather than left to time out, so a tile can fail fast. */}
           <PreviewReporter
             contentType={contentTypeKey}
-            parentOrigin={parentOrigin}
+            parentOrigins={parentOrigins}
             error={{
               code:
                 contentKey ? 'content-not-found'
@@ -598,7 +612,7 @@ export function createComponentPreviewPage({
         </style>
         <PreviewReporter
           contentType={contentTypeKey ?? content._metadata.types[0]}
-          parentOrigin={parentOrigin}
+          parentOrigins={parentOrigins}
         />
         {/* A form element reads these from the container it sits in. Previewed
             on its own it has no container, so the preview stands in as one. A

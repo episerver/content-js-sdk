@@ -53,7 +53,6 @@ export {
   PREVIEW_PROTOCOL_VERSION,
   PREVIEW_MESSAGE_PREFIX,
   PREVIEW_ELEMENT_ID,
-  PARENT_ORIGIN_PARAM,
   RESIZE_MIN_DELTA,
   MAX_PREVIEW_DIMENSION,
   PreviewMessageType,
@@ -64,7 +63,6 @@ export type {
   PreviewMessage,
   PreviewDimensions,
   PreviewReadyMessage,
-  PreviewDimensionsMessage,
   PreviewResizeMessage,
   PreviewErrorMessage,
 } from './preview/protocol.js';
