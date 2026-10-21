@@ -272,7 +272,9 @@ function isUnset(value: any): boolean {
  * guessing between them would be worse than leaving the node alone.
  */
 function resolveContentType(name?: string) {
-  if (!name) return undefined;
+  // A Graph base type is never registered, and scanning for one costs more
+  // than the lookup it would save.
+  if (!name || name.startsWith('_')) return undefined;
 
   const exact = getContentType(name);
   if (exact) return exact;
@@ -281,6 +283,31 @@ function resolveContentType(name?: string) {
     entry => stripSourcePrefix(entry.key) === name,
   );
   return namespaced.length === 1 ? namespaced[0] : undefined;
+}
+
+/**
+ * The properties declared for a response node.
+ *
+ * `_metadata.types` is read alongside `__typename` because a content area may
+ * select a contract whose concrete implementations are never registered: Graph
+ * answers with the concrete type name, and only the contract knows what its
+ * properties are. `removeTypePrefix` un-aliases those fields from the same
+ * list. The concrete type wins where both declare a name.
+ */
+function declaredProperties(node: any, typeKey?: string): Record<string, any> {
+  const names: string[] =
+    typeKey ? [typeKey] : [node.__typename, ...(node._metadata?.types ?? [])];
+
+  const declared: Record<string, any> = {};
+  for (const name of names) {
+    const contentType = resolveContentType(name);
+    if (!contentType || !('properties' in contentType)) continue;
+
+    for (const [property, definition] of Object.entries(contentType.properties ?? {})) {
+      declared[property] ??= definition;
+    }
+  }
+  return declared;
 }
 
 /**
@@ -302,9 +329,7 @@ function dropUnsetProperties(value: any, typeKey?: string): any {
   }
   if (!value || typeof value !== 'object') return value;
 
-  const contentType = resolveContentType(typeKey ?? value.__typename);
-  const properties: Record<string, any> =
-    contentType && 'properties' in contentType ? (contentType.properties ?? {}) : {};
+  const properties = declaredProperties(value, typeKey);
 
   for (const [name, nested] of Object.entries(value)) {
     const property = properties[name];
