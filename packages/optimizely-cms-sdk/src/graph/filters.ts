@@ -71,6 +71,33 @@ export function previewScalarFilter(params: {
   };
 }
 
+/**
+ * Converts a BCP-47 locale to the `Locales` enum's identifier syntax, in the
+ * casing the enum uses: `en-BE` and `en-be` both become `en_BE`.
+ *
+ * A tag without subtags is left alone, so `ALL` and `NEUTRAL` survive.
+ */
+export function toLocaleEnumValues(locales?: string[]): string[] | undefined {
+  return locales?.map(locale =>
+    locale.includes('-') ? canonicalLocale(locale).replace(/-/g, '_') : locale,
+  );
+}
+
+/** A locale in its canonical BCP-47 casing, or unchanged if it is not a valid tag. */
+function canonicalLocale(locale: string): string {
+  try {
+    return Intl.getCanonicalLocales(locale)[0];
+  } catch {
+    return locale;
+  }
+}
+
+/**
+ * The filter identifying one content item by key.
+ *
+ * The locale goes to the `locale:` field argument, not to a `_metadata.locale`
+ * predicate, which would exclude language fallbacks.
+ */
 export function referenceScalarFilter(reference: {
   key: string;
   locale?: string;
@@ -81,7 +108,7 @@ export function referenceScalarFilter(reference: {
     variables: {
       key: reference.key,
       ...(reference.version ? { version: reference.version } : {}),
-      ...(reference.locale ? { metadataLocale: reference.locale } : {}),
+      ...(reference.locale ? { locale: toLocaleEnumValues([reference.locale]) } : {}),
     },
   };
 }
@@ -114,11 +141,18 @@ const PUBLISHED_PREDICATE = `{ _metadata: { status: { eq: "Published" } } }`;
 export function getFilterVarDecls(shape: FilterShape): string {
   switch (shape) {
     case 'by-key':
-      return '$key: String, $version: String, $metadataLocale: String';
+      return '$key: String, $version: String, $metadataLocale: String, $locale: [Locales]';
     case 'by-path':
-      return '$host: String, $path: String, $pathNoSlash: String';
+      return '$host: String, $path: String, $pathNoSlash: String, $locale: [Locales]';
   }
 }
+
+/**
+ * The `locale:` field argument, which resolves language fallback. Always
+ * emitted: a null `$locale` means "any locale", so one query template covers
+ * both the localized and the locale-agnostic lookup.
+ */
+export const LOCALE_CLAUSE = ', locale: $locale';
 
 /**
  * The `where` argument identifying the content a query is about.

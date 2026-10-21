@@ -30,7 +30,7 @@ describe('GraphReference type and filters', () => {
         filterShape: 'by-key',
         variables: {
           key: '880777d5a2824399b07e93e3ca70668e',
-          metadataLocale: 'en',
+          locale: ['en'],
         },
       });
     });
@@ -59,7 +59,7 @@ describe('GraphReference type and filters', () => {
       expect(result.variables).toEqual({
         key: '880777d5a2824399b07e93e3ca70668e',
         version: '123',
-        metadataLocale: 'en',
+        locale: ['en'],
       });
     });
   });
@@ -250,7 +250,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
       expect.any(String),
       {
         key: '880777d5a2824399b07e93e3ca70668e',
-        metadataLocale: 'en',
+        locale: ['en'],
       },
       undefined,
       true,
@@ -329,7 +329,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
       {
         key: '880777d5a2824399b07e93e3ca70668e',
         version: '123',
-        metadataLocale: 'en',
+        locale: ['en'],
       },
       undefined,
       true,
@@ -369,7 +369,7 @@ describe('GraphClient.getContent() with GraphReference', () => {
       {
         key: '880777d5a2824399b07e93e3ca70668e',
         version: '123',
-        metadataLocale: 'en',
+        locale: ['en'],
       },
       undefined,
       true,

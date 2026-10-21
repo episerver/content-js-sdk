@@ -1,6 +1,7 @@
 import {
   type FilterShape,
   type VariationMode,
+  LOCALE_CLAUSE,
   getFilterVarDecls,
   getFilterWhereClause,
   getVariationVarDecls,
@@ -77,7 +78,7 @@ export function getMetadataQuery(
   const probe = withForms ? formsProbe(shape, publishedOnly) : '';
   return `
 query ${METADATA_OP_NAMES[shape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) ${METADATA_QUERY_BODY}${probe}
+  _Content(${whereClause}${LOCALE_CLAUSE}${variationClause}) ${METADATA_QUERY_BODY}${probe}
 }
 `;
 }
@@ -188,23 +189,17 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
     }
   }`;
 
-/** Converts a BCP-47 locale (e.g. "en-BE") to the `Locales` enum's identifier syntax (e.g. "en_BE"). */
-export function toLocaleEnumValues(locales?: string[]): string[] | undefined {
-  return locales?.map(locale => locale.replace(/-/g, '_'));
-}
-
 /** The ancestors of one piece of content. */
 export function getLinksQuery(
   opName: string,
   shape: FilterShape,
   publishedOnly = false,
 ): string {
-  const filterVars = getFilterVarDecls(shape);
+  const allVars = getFilterVarDecls(shape);
   const whereClause = getFilterWhereClause(shape, publishedOnly);
-  const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
   return `
 query ${opName}(${allVars}) {
-  _Content(${whereClause}, locale: $locale) ${LINKS_BODY('PATH')}
+  _Content(${whereClause}${LOCALE_CLAUSE}) ${LINKS_BODY('PATH')}
 }`;
 }
 
@@ -214,12 +209,11 @@ export function getItemsQuery(
   shape: FilterShape,
   publishedOnly = false,
 ): string {
-  const filterVars = getFilterVarDecls(shape);
+  const allVars = getFilterVarDecls(shape);
   const whereClause = getFilterWhereClause(shape, publishedOnly);
-  const allVars = [filterVars, '$locale: [Locales]'].sort().join(', ');
   return `
 query ${opName}(${allVars}) {
-  _Content(${whereClause}, locale: $locale) ${LINKS_BODY('ITEMS')}
+  _Content(${whereClause}${LOCALE_CLAUSE}) ${LINKS_BODY('ITEMS')}
 }`;
 }
 
@@ -315,6 +309,61 @@ export function removeTypePrefix(obj: any): any {
   }
 
   return obj;
+}
+
+// UNSET PROPERTIES
+
+/** The fields of the `ContentUrl` fragment, the shape of a `url` property. */
+const CONTENT_URL_KEYS = ['type', 'default', 'hierarchical', 'internal', 'graph', 'base'];
+
+/** The fields of a `link` property. */
+const LINK_KEYS = ['text', 'title', 'target', 'url'];
+
+const hasOnlyKeysFrom = (value: object, allowed: string[]) =>
+  Object.keys(value).every(key => allowed.includes(key));
+
+/** Whether a value has the shape of a content reference, a `url` or a `link`. */
+function isPropertyReference(value: any): value is object {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if ('__typename' in value) return false;
+
+  return (
+    ('key' in value && 'url' in value) ||
+    hasOnlyKeysFrom(value, CONTENT_URL_KEYS) ||
+    hasOnlyKeysFrom(value, LINK_KEYS)
+  );
+}
+
+/** Whether every field is null. `__typename` does not count as a value. */
+function isUnset(value: any): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'object' || Array.isArray(value)) return false;
+
+  return Object.entries(value).every(
+    ([key, entry]) => key === '__typename' || isUnset(entry),
+  );
+}
+
+/**
+ * Replaces a reference, `url` or `link` property with `null` when it holds no
+ * value. Graph answers those with the full shape and every field null, which
+ * is truthy, so a `content.image &&` guard would pass.
+ *
+ * `_metadata` is skipped: its `url` has the same shape and may legitimately be
+ * empty, on a block for instance.
+ */
+export function dropUnsetReferences(item: any): any {
+  if (Array.isArray(item)) return item.map(dropUnsetReferences);
+  if (typeof item !== 'object' || item === null) return item;
+
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(item)) {
+    result[key] =
+      key === '_metadata' ? value
+      : isPropertyReference(value) && isUnset(value) ? null
+      : dropUnsetReferences(value);
+  }
+  return result;
 }
 
 /**

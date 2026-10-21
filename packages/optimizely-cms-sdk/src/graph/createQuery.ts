@@ -27,6 +27,7 @@ import { GraphMissingContentTypeError, GraphQueryGenerationError } from './error
 import {
   type FilterShape,
   type VariationMode,
+  LOCALE_CLAUSE,
   getFilterVarDecls,
   getFilterWhereClause,
   getVariationVarDecls,
@@ -394,7 +395,7 @@ const generateSingleContentQuery = (
   const query = `
 ${fragments.join('\n')}
 query ${SINGLE_OP_NAMES[filterShape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) {
+  _Content(${whereClause}${LOCALE_CLAUSE}${variationClause}) {
     item {
       __typename
       ${fragmentName}
@@ -458,7 +459,7 @@ const generateMultipleContentQuery = (
   const query = `
 ${fragments.join('\n')}
 query ${MULTIPLE_OP_NAMES[filterShape]}(${allVars}) {
-  _Content(${whereClause}${variationClause}) {
+  _Content(${whereClause}${LOCALE_CLAUSE}${variationClause}) {
     items {
       __typename
       ${fragmentName}

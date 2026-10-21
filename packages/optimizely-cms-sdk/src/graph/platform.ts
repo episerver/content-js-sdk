@@ -4,7 +4,12 @@ import {
   createSingleContentQuery,
   createMultipleContentQuery,
 } from './createQuery.js';
-import { getMetadataQuery, liftSectionNodes, removeTypePrefix } from './queries.js';
+import {
+  dropUnsetReferences,
+  getMetadataQuery,
+  liftSectionNodes,
+  removeTypePrefix,
+} from './queries.js';
 import { OptimizelyGraphError } from './error.js';
 import { paasPlatform } from './paas.js';
 
@@ -67,7 +72,7 @@ export const saasPlatform: PlatformAdapter = {
       createSingleContentQuery(contentType, options)
     : createMultipleContentQuery(contentType, options),
 
-  normalize: item => liftSectionNodes(removeTypePrefix(item)),
+  normalize: item => liftSectionNodes(dropUnsetReferences(removeTypePrefix(item))),
 };
 
 // RESOLUTION
