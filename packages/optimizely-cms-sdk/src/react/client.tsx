@@ -10,6 +10,7 @@ import {
   createContentSavedListener,
   type NavigateCallback,
 } from '../core/preview/contentSaved.js';
+import { isDev } from '../util/environment.js';
 import {
   PREVIEW_ELEMENT_ID,
   PREVIEW_PROTOCOL_VERSION,
@@ -90,12 +91,16 @@ export type PreviewReporterProps = {
   contentType?: string;
 
   /**
-   * The origin allowed to receive these messages, from the preview URL. Without
-   * one the reporter stays silent: posting to `'*'` would hand the measurement
-   * to whatever happens to be embedding the page, and a preview opened directly
+   * The origins allowed to receive these messages, configured by the page.
+   * Empty means silence: posting to `'*'` would hand the measurement to
+   * whatever happens to be embedding the page, and a preview opened directly
    * in a tab has no parent to talk to.
+   *
+   * Each message is posted once per origin. The browser delivers only to the
+   * one actually framing the page and drops the rest, so listing several
+   * environments is safe.
    */
-  parentOrigin?: string;
+  parentOrigins?: string[];
 
   /** Reported instead of a measurement when the preview could not render. */
   error?: { code: string; message: string };
@@ -150,24 +155,42 @@ async function settled(element: Element) {
  * later changes by more than {@linkcode RESIZE_MIN_DELTA}.
  *
  * Rendered by {@linkcode createComponentPreviewPage}; a page building its own
- * preview route can render it directly. See `specs/003-preview-iframe-protocol`.
+ * preview route can render it directly.
  */
 export function PreviewReporter({
   contentType,
-  parentOrigin,
+  parentOrigins,
   error,
 }: PreviewReporterProps) {
+  // A new array each render would restart the effect every time.
+  const targets = (parentOrigins ?? []).join(' ');
+
   useEffect(() => {
-    // Nothing to tell when the page is not framed, and nowhere safe to send it
-    // when the parent has not identified itself.
-    if (window.parent === window || !parentOrigin) return;
+    // Nothing to tell when the page is not framed.
+    if (window.parent === window) return;
+
+    // Framed, but the site named nobody. Staying silent is correct — a
+    // measurement must not go to an origin the site has not approved — but
+    // from the outside silence is indistinguishable from a broken preview.
+    if (targets.length === 0) {
+      if (isDev()) {
+        console.warn(
+          '[optimizely] This preview is embedded but reports nothing: no ' +
+            '`parentOrigin` is configured on the preview page, so there is no ' +
+            'origin it is allowed to post to.',
+        );
+      }
+      return;
+    }
 
     const post = (message: PreviewMessage) => {
-      try {
-        window.parent.postMessage(message, parentOrigin);
-      } catch {
-        // A malformed `parentOrigin` throws rather than delivering. The parent
-        // has a timeout for exactly this, so staying quiet is the right failure.
+      for (const origin of targets.split(' ')) {
+        try {
+          window.parent.postMessage(message, origin);
+        } catch {
+          // A malformed origin throws rather than delivering. The parent has a
+          // timeout for exactly this, so staying quiet is the right failure.
+        }
       }
     };
 
@@ -269,7 +292,7 @@ export function PreviewReporter({
       cancelled = true;
       observer?.disconnect();
     };
-  }, [contentType, parentOrigin, error?.code, error?.message]);
+  }, [contentType, targets, error?.code, error?.message]);
 
   return null;
 }

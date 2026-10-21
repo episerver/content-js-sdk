@@ -26,9 +26,6 @@ export const PREVIEW_MESSAGE_PREFIX = 'optimizely:preview:';
 /** The element a preview measures. Its box is the component's, not the document's. */
 export const PREVIEW_ELEMENT_ID = 'optimizely-preview';
 
-/** Query parameter naming the origin a preview is allowed to post to. */
-export const PARENT_ORIGIN_PARAM = 'parentOrigin';
-
 /**
  * Height change, in CSS pixels, below which no `resize` is sent. Smaller moves
  * are sub-pixel reflow, scrollbar jitter or font smoothing, none of which are
@@ -41,7 +38,6 @@ export const MAX_PREVIEW_DIMENSION = 20000;
 
 export const PreviewMessageType = {
   ready: `${PREVIEW_MESSAGE_PREFIX}ready`,
-  dimensions: `${PREVIEW_MESSAGE_PREFIX}dimensions`,
   resize: `${PREVIEW_MESSAGE_PREFIX}resize`,
   error: `${PREVIEW_MESSAGE_PREFIX}error`,
 } as const;
@@ -83,13 +79,6 @@ export type PreviewReadyMessage = {
   payload: PreviewDimensions;
 };
 
-/** Reserved for a parent-initiated measurement. Nothing emits it in v1. */
-export type PreviewDimensionsMessage = {
-  type: typeof PreviewMessageType.dimensions;
-  version: number;
-  payload: PreviewDimensions;
-};
-
 /** The component changed height after `ready`: late fonts, lazy images, animation. */
 export type PreviewResizeMessage = {
   type: typeof PreviewMessageType.resize;
@@ -102,7 +91,15 @@ export type PreviewErrorMessage = {
   type: typeof PreviewMessageType.error;
   version: number;
   payload: {
-    code: 'unknown-content-type' | 'no-component' | 'render-failed' | (string & {});
+    /**
+     * Why the preview could not render. Open-ended so a sender can add cases;
+     * treat anything unrecognised as `render-failed`.
+     */
+    code:
+      | 'unknown-content-type'
+      | 'content-not-found'
+      | 'render-failed'
+      | (string & {});
     /** Untrusted text. Render it as text, never as HTML. */
     message: string;
     contentType?: string;
@@ -111,7 +108,6 @@ export type PreviewErrorMessage = {
 
 export type PreviewMessage =
   | PreviewReadyMessage
-  | PreviewDimensionsMessage
   | PreviewResizeMessage
   | PreviewErrorMessage;
 
