@@ -8,6 +8,7 @@ import {
   referenceScalarFilter,
   getVariationMode,
   getVariationVariables,
+  toLocaleEnumValues,
 } from './filters.js';
 import { setContext } from '../context/config.js';
 import { getContentType, isContentTypeRegistered } from '../model/contentTypeRegistry.js';
@@ -46,7 +47,6 @@ import {
   getItemsQuery,
   getLinksQuery,
   hasOwnSectionTypes,
-  toLocaleEnumValues,
 } from './queries.js';
 
 // SECTION TYPES
