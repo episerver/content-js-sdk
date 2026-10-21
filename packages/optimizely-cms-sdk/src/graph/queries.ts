@@ -311,61 +311,6 @@ export function removeTypePrefix(obj: any): any {
   return obj;
 }
 
-// UNSET PROPERTIES
-
-/** The fields of the `ContentUrl` fragment, the shape of a `url` property. */
-const CONTENT_URL_KEYS = ['type', 'default', 'hierarchical', 'internal', 'graph', 'base'];
-
-/** The fields of a `link` property. */
-const LINK_KEYS = ['text', 'title', 'target', 'url'];
-
-const hasOnlyKeysFrom = (value: object, allowed: string[]) =>
-  Object.keys(value).every(key => allowed.includes(key));
-
-/** Whether a value has the shape of a content reference, a `url` or a `link`. */
-function isPropertyReference(value: any): value is object {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  if ('__typename' in value) return false;
-
-  return (
-    ('key' in value && 'url' in value) ||
-    hasOnlyKeysFrom(value, CONTENT_URL_KEYS) ||
-    hasOnlyKeysFrom(value, LINK_KEYS)
-  );
-}
-
-/** Whether every field is null. `__typename` does not count as a value. */
-function isUnset(value: any): boolean {
-  if (value === null || value === undefined) return true;
-  if (typeof value !== 'object' || Array.isArray(value)) return false;
-
-  return Object.entries(value).every(
-    ([key, entry]) => key === '__typename' || isUnset(entry),
-  );
-}
-
-/**
- * Replaces a reference, `url` or `link` property with `null` when it holds no
- * value. Graph answers those with the full shape and every field null, which
- * is truthy, so a `content.image &&` guard would pass.
- *
- * `_metadata` is skipped: its `url` has the same shape and may legitimately be
- * empty, on a block for instance.
- */
-export function dropUnsetReferences(item: any): any {
-  if (Array.isArray(item)) return item.map(dropUnsetReferences);
-  if (typeof item !== 'object' || item === null) return item;
-
-  const result: Record<string, any> = {};
-  for (const [key, value] of Object.entries(item)) {
-    result[key] =
-      key === '_metadata' ? value
-      : isPropertyReference(value) && isUnset(value) ? null
-      : dropUnsetReferences(value);
-  }
-  return result;
-}
-
 /**
  * Puts a section's child nodes where the renderer looks for them.
  *

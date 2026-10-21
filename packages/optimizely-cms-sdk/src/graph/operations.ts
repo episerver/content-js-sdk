@@ -243,6 +243,69 @@ function hoistCategories(item: any): any {
   return item;
 }
 
+/** The property types Graph answers with a hollow object rather than with null. */
+const HOLLOW_PROPERTY_TYPES = ['contentReference', 'url', 'link'];
+
+/** Whether a value holds nothing at all. `__typename` does not count as a value. */
+function isUnset(value: any): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'object' || Array.isArray(value)) return false;
+
+  return Object.entries(value).every(
+    ([key, entry]) => key === '__typename' || isUnset(entry),
+  );
+}
+
+/**
+ * Replaces a reference, `url` or `link` property with `null` when nothing was
+ * filled in. Graph answers those with the full shape and every field null,
+ * which is truthy, so a `content.image &&` guard would pass.
+ *
+ * Which properties those are comes from the content type, not from the shape of
+ * the response: an authored `json` payload may look like anything, and the
+ * `url` nested inside a reference that does point somewhere must survive.
+ *
+ * @param typeKey - The content type describing this value, for a component
+ *   property, whose fragment carries no `__typename` to look it up by.
+ */
+function dropUnsetProperties(value: any, typeKey?: string): any {
+  if (Array.isArray(value)) {
+    value.forEach(entry => dropUnsetProperties(entry, typeKey));
+    return value;
+  }
+  if (!value || typeof value !== 'object') return value;
+
+  const contentType = getContentType(typeKey ?? value.__typename);
+  const properties: Record<string, any> =
+    contentType && 'properties' in contentType ? (contentType.properties ?? {}) : {};
+
+  for (const [name, nested] of Object.entries(value)) {
+    const property = properties[name];
+    // An array of references is declared once, on its items.
+    const declared = property?.type === 'array' ? property.items : property;
+
+    if (declared?.type === 'json') {
+      // Whatever the editor put there. Not ours to rewrite.
+      continue;
+    }
+
+    if (declared && HOLLOW_PROPERTY_TYPES.includes(declared.type)) {
+      // An empty slot in an array is dropped rather than nulled: the inferred
+      // element type is not nullable, and a hole is nothing anyone can render.
+      value[name] =
+        Array.isArray(nested) ? nested.filter(entry => !isUnset(entry))
+        : isUnset(nested) ? null
+        : nested;
+    }
+
+    // Keep walking: a composition, a content area or a reference's `item` all
+    // hold content of their own.
+    dropUnsetProperties(value[name], declared?.contentType?.key);
+  }
+
+  return value;
+}
+
 // TAXONOMY HIERARCHY RESOLUTION
 
 const TAXONOMY_BATCH_SIZE = 100;
@@ -688,7 +751,10 @@ export async function getContentByPath<T = any>(
 
       const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
-          resolveFormNodes(context, hoistCategories(context.platform.normalize(item)), {
+          resolveFormNodes(
+            context,
+            dropUnsetProperties(hoistCategories(context.platform.normalize(item))),
+            {
             damEnabled,
             taxonomyEnabled,
             sectionTypes,
@@ -776,7 +842,9 @@ export async function getPreviewContent(
 
     const result = await resolveFormNodes(
       context,
-      hoistCategories(context.platform.normalize(response?._Content?.item)),
+      dropUnsetProperties(
+        hoistCategories(context.platform.normalize(response?._Content?.item)),
+      ),
       {
         damEnabled,
         taxonomyEnabled,
@@ -856,7 +924,9 @@ export async function getContent(
 
       const result = await resolveFormNodes(
         context,
-        hoistCategories(context.platform.normalize(response?._Content?.item)),
+        dropUnsetProperties(
+          hoistCategories(context.platform.normalize(response?._Content?.item)),
+        ),
         {
           damEnabled,
           taxonomyEnabled,

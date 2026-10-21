@@ -20,7 +20,7 @@ A locale is also canonicalized before it is sent, so a lowercase one taken from 
 await client.getContent({ key, locale: 'en-us' });
 ```
 
-A `contentReference`, `url` or `link` property with no value is now `null` instead of an object with every field null. Graph answers the hollow shape, which is truthy, so the usual guard passed and the element rendered empty. The inferred types already allowed `null` for any property; the response now agrees with them.
+A `contentReference`, `url` or `link` property with no value is now `null` instead of an object with every field null. Graph answers the hollow shape, which is truthy, so the usual guard passed and the element rendered empty. The inferred types already allowed `null` for any property; the response now agrees with them. Which properties those are comes from the content type, so an authored `json` payload keeps its own empty objects.
 
 ```ts
 // Previously truthy: { key: null, url: { default: null, ... } }
