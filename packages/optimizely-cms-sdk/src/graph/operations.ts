@@ -11,9 +11,14 @@ import {
   toLocaleEnumValues,
 } from './filters.js';
 import { setContext } from '../context/config.js';
-import { getContentType, isContentTypeRegistered } from '../model/contentTypeRegistry.js';
+import {
+  getAllContentTypes,
+  getContentType,
+  isContentTypeRegistered,
+} from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
+import { stripSourcePrefix } from '../util/baseTypeUtil.js';
 import { SemanticAttributes, logWarning } from '../telemetry/index.js';
 import {
   withGetContentByPathSpan,
@@ -177,7 +182,9 @@ async function resolveFormNodes<T>(
         queryOptions.slot,
       );
 
-      const container = context.platform.normalize(response?._Content?.item);
+      const container = dropUnsetProperties(
+        context.platform.normalize(response?._Content?.item),
+      );
       const nodes = container?.nodes ?? [];
       forms.forEach(form => {
         form.nodes = nodes;
@@ -257,6 +264,26 @@ function isUnset(value: any): boolean {
 }
 
 /**
+ * The content type a response node belongs to.
+ *
+ * A registry key may be namespaced (`graph:Teaser`) while Graph answers with
+ * the bare type name, the same mismatch `stripSourcePrefix` handles when
+ * queries are generated. Two namespaced keys can share a bare name, and
+ * guessing between them would be worse than leaving the node alone.
+ */
+function resolveContentType(name?: string) {
+  if (!name) return undefined;
+
+  const exact = getContentType(name);
+  if (exact) return exact;
+
+  const namespaced = getAllContentTypes().filter(
+    entry => stripSourcePrefix(entry.key) === name,
+  );
+  return namespaced.length === 1 ? namespaced[0] : undefined;
+}
+
+/**
  * Replaces a reference, `url` or `link` property with `null` when nothing was
  * filled in. Graph answers those with the full shape and every field null,
  * which is truthy, so a `content.image &&` guard would pass.
@@ -265,8 +292,8 @@ function isUnset(value: any): boolean {
  * the response: an authored `json` payload may look like anything, and the
  * `url` nested inside a reference that does point somewhere must survive.
  *
- * @param typeKey - The content type describing this value, for a component
- *   property, whose fragment carries no `__typename` to look it up by.
+ * @param typeKey - The content type describing this value. Only an embedded
+ *   component needs it; its fragment carries no `__typename` to look it up by.
  */
 function dropUnsetProperties(value: any, typeKey?: string): any {
   if (Array.isArray(value)) {
@@ -275,7 +302,7 @@ function dropUnsetProperties(value: any, typeKey?: string): any {
   }
   if (!value || typeof value !== 'object') return value;
 
-  const contentType = getContentType(typeKey ?? value.__typename);
+  const contentType = resolveContentType(typeKey ?? value.__typename);
   const properties: Record<string, any> =
     contentType && 'properties' in contentType ? (contentType.properties ?? {}) : {};
 
@@ -299,8 +326,13 @@ function dropUnsetProperties(value: any, typeKey?: string): any {
     }
 
     // Keep walking: a composition, a content area or a reference's `item` all
-    // hold content of their own.
-    dropUnsetProperties(value[name], declared?.contentType?.key);
+    // hold content of their own. Only a component is described by the declared
+    // type — a reference's `{ key, url, item }` wrapper is not, and reading the
+    // target's schema onto it would null the wrapper's own `url`.
+    dropUnsetProperties(
+      value[name],
+      declared?.type === 'component' ? declared.contentType?.key : undefined,
+    );
   }
 
   return value;
