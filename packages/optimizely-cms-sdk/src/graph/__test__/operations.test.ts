@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { GraphClient } from '../index.js';
 import { GraphResponseError } from '../error.js';
 import { clearTaxonomyCache } from '../operations.js';
-import { contentType, initContentTypeRegistry } from '../../model/index.js';
+import { contentType, contract, initContentTypeRegistry } from '../../model/index.js';
 import { FormContentTypes } from '../../model/formContentTypes.js';
 import { refreshCache } from '../../util/queryUtils.js';
 import { configureAdapter } from '../../context/config.js';
@@ -273,5 +273,136 @@ describe('getItems', () => {
 
     await expect(client.getItems('graph://cms/Page/root?loc=en', { locales: ['sv'] })).resolves.toEqual([]);
     expect(callsTo(spy, 'GetItems')[0][1]).toEqual({ key: 'root', locale: ['sv'] });
+  });
+});
+
+describe('unset property normalization', () => {
+  /** A `ContentUrl` with nothing filled in, which is how Graph answers an empty one. */
+  const hollowUrl = {
+    type: null,
+    default: null,
+    hierarchical: null,
+    internal: null,
+    graph: null,
+    base: null,
+  };
+
+  const Linked = contentType({
+    key: 'Linked',
+    displayName: 'Linked',
+    baseType: '_page',
+    // A reference target declaring a `url` of its own, which must not be read
+    // onto the `{ key, url, item }` wrapper pointing at it.
+    properties: { url: { type: 'url' } },
+  });
+
+  const Promo = contentType({
+    key: 'graph:Promo',
+    displayName: 'Promo',
+    baseType: '_component',
+    properties: { link: { type: 'url' } },
+  });
+
+  const Card = contract({
+    key: 'Card',
+    displayName: 'Card',
+    properties: { thumbnail: { type: 'contentReference', allowedTypes: ['_image'] } },
+  });
+
+  const Landing = contentType({
+    key: 'Landing',
+    displayName: 'Landing',
+    baseType: '_page',
+    properties: {
+      image: { type: 'contentReference', allowedTypes: ['_image'] },
+      target: { type: 'contentReference', contentType: Linked },
+      cta: { type: 'url' },
+      gallery: { type: 'array', items: { type: 'contentReference', allowedTypes: ['_image'] } },
+      settings: { type: 'json' },
+      promo: { type: 'component', contentType: Promo },
+      cards: { type: 'array', items: { type: 'content', allowedTypes: [Card] } },
+    },
+  });
+
+  /** `Card`'s implementations are deliberately left unregistered. */
+  beforeEach(() => {
+    initContentTypeRegistry([Landing, Linked, Promo, Card, ...FormContentTypes]);
+    refreshCache();
+  });
+
+  const fetchLanding = async (item: Record<string, unknown>) => {
+    stubGraph(client, {
+      metadata: metadataResponse(['Landing']),
+      content: {
+        _Content: {
+          item: { __typename: 'Landing', _metadata: { types: ['Landing'] }, ...item },
+        },
+      },
+    });
+
+    return client.getContent({ key: 'landing' });
+  };
+
+  test('nulls a reference, url or link that was never filled in', async () => {
+    const content = await fetchLanding({
+      image: { key: null, url: { ...hollowUrl }, item: { __typename: 'Data' } },
+      cta: { ...hollowUrl },
+    });
+
+    expect(content.image).toBeNull();
+    expect(content.cta).toBeNull();
+  });
+
+  test('keeps the url of a reference that points somewhere', async () => {
+    const item = { __typename: 'Linked' };
+    const content = await fetchLanding({
+      target: { key: 'linked-1', url: { ...hollowUrl }, item },
+    });
+
+    // The target has no URL of its own, but the wrapper's `url` is not the
+    // target's `url` property and stays an object either way.
+    expect(content.target).toEqual({ key: 'linked-1', url: hollowUrl, item });
+  });
+
+  test('drops hollow entries from an array of references', async () => {
+    const filled = { key: 'image-1', url: { ...hollowUrl, default: '/a.png' } };
+    const content = await fetchLanding({
+      gallery: [{ key: null, url: { ...hollowUrl } }, filled],
+    });
+
+    expect(content.gallery).toEqual([filled]);
+  });
+
+  test('leaves an authored json payload alone', async () => {
+    const settings = { options: {}, title: null, nested: { url: null } };
+
+    await expect(fetchLanding({ settings })).resolves.toMatchObject({ settings });
+  });
+
+  test('normalizes an embedded component through its declared type', async () => {
+    const content = await fetchLanding({ promo: { link: { ...hollowUrl } } });
+
+    expect(content.promo).toEqual({ link: null });
+  });
+
+  test('normalizes a contract property when the concrete type is unregistered', async () => {
+    const content = await fetchLanding({
+      cards: [
+        {
+          __typename: 'UnregisteredCard',
+          _metadata: { key: 'card-1', types: ['UnregisteredCard', 'Card', '_Component'] },
+          Card__thumbnail: { key: null, url: { ...hollowUrl }, item: { __typename: 'Data' } },
+        },
+      ],
+    });
+
+    expect(content.cards[0].thumbnail).toBeNull();
+  });
+
+  test('leaves content whose type is not registered at all untouched', async () => {
+    const stranger = { __typename: 'Stranger', _metadata: { types: ['Stranger'] }, link: { ...hollowUrl } };
+    const content = await fetchLanding({ cards: [stranger] });
+
+    expect(content.cards[0]).toEqual(stranger);
   });
 });

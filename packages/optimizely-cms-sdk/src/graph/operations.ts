@@ -11,9 +11,14 @@ import {
   toLocaleEnumValues,
 } from './filters.js';
 import { setContext } from '../context/config.js';
-import { getContentType, isContentTypeRegistered } from '../model/contentTypeRegistry.js';
+import {
+  getAllContentTypes,
+  getContentType,
+  isContentTypeRegistered,
+} from '../model/contentTypeRegistry.js';
 import { isFormContentType } from '../model/formContentTypes.js';
 import { contentTypeCanHoldForms } from '../util/queryUtils.js';
+import { stripSourcePrefix } from '../util/baseTypeUtil.js';
 import { SemanticAttributes, logWarning } from '../telemetry/index.js';
 import {
   withGetContentByPathSpan,
@@ -177,7 +182,9 @@ async function resolveFormNodes<T>(
         queryOptions.slot,
       );
 
-      const container = context.platform.normalize(response?._Content?.item);
+      const container = dropUnsetProperties(
+        context.platform.normalize(response?._Content?.item),
+      );
       const nodes = container?.nodes ?? [];
       forms.forEach(form => {
         form.nodes = nodes;
@@ -241,6 +248,119 @@ function hoistCategories(item: any): any {
     }
   });
   return item;
+}
+
+/** The property types Graph answers with a hollow object rather than with null. */
+const HOLLOW_PROPERTY_TYPES = ['contentReference', 'url', 'link'];
+
+/** Whether a value holds nothing at all. `__typename` does not count as a value. */
+function isUnset(value: any): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'object' || Array.isArray(value)) return false;
+
+  return Object.entries(value).every(
+    ([key, entry]) => key === '__typename' || isUnset(entry),
+  );
+}
+
+/**
+ * The content type a response node belongs to.
+ *
+ * A registry key may be namespaced (`graph:Teaser`) while Graph answers with
+ * the bare type name, the same mismatch `stripSourcePrefix` handles when
+ * queries are generated. Two namespaced keys can share a bare name, and
+ * guessing between them would be worse than leaving the node alone.
+ */
+function resolveContentType(name?: string) {
+  // A Graph base type is never registered, and scanning for one costs more
+  // than the lookup it would save.
+  if (!name || name.startsWith('_')) return undefined;
+
+  const exact = getContentType(name);
+  if (exact) return exact;
+
+  const namespaced = getAllContentTypes().filter(
+    entry => stripSourcePrefix(entry.key) === name,
+  );
+  return namespaced.length === 1 ? namespaced[0] : undefined;
+}
+
+/**
+ * The properties declared for a response node.
+ *
+ * `_metadata.types` is read alongside `__typename` because a content area may
+ * select a contract whose concrete implementations are never registered: Graph
+ * answers with the concrete type name, and only the contract knows what its
+ * properties are. `removeTypePrefix` un-aliases those fields from the same
+ * list. The concrete type wins where both declare a name.
+ */
+function declaredProperties(node: any, typeKey?: string): Record<string, any> {
+  const names: string[] =
+    typeKey ? [typeKey] : [node.__typename, ...(node._metadata?.types ?? [])];
+
+  const declared: Record<string, any> = {};
+  for (const name of names) {
+    const contentType = resolveContentType(name);
+    if (!contentType || !('properties' in contentType)) continue;
+
+    for (const [property, definition] of Object.entries(contentType.properties ?? {})) {
+      declared[property] ??= definition;
+    }
+  }
+  return declared;
+}
+
+/**
+ * Replaces a reference, `url` or `link` property with `null` when nothing was
+ * filled in. Graph answers those with the full shape and every field null,
+ * which is truthy, so a `content.image &&` guard would pass.
+ *
+ * Which properties those are comes from the content type, not from the shape of
+ * the response: an authored `json` payload may look like anything, and the
+ * `url` nested inside a reference that does point somewhere must survive.
+ *
+ * @param typeKey - The content type describing this value. Only an embedded
+ *   component needs it; its fragment carries no `__typename` to look it up by.
+ */
+function dropUnsetProperties(value: any, typeKey?: string): any {
+  if (Array.isArray(value)) {
+    value.forEach(entry => dropUnsetProperties(entry, typeKey));
+    return value;
+  }
+  if (!value || typeof value !== 'object') return value;
+
+  const properties = declaredProperties(value, typeKey);
+
+  for (const [name, nested] of Object.entries(value)) {
+    const property = properties[name];
+    // An array of references is declared once, on its items.
+    const declared = property?.type === 'array' ? property.items : property;
+
+    if (declared?.type === 'json') {
+      // Whatever the editor put there. Not ours to rewrite.
+      continue;
+    }
+
+    if (declared && HOLLOW_PROPERTY_TYPES.includes(declared.type)) {
+      // An empty slot in an array is dropped rather than nulled: the inferred
+      // element type is not nullable, and a hole is nothing anyone can render.
+      value[name] =
+        Array.isArray(nested) ? nested.filter(entry => !isUnset(entry))
+        : isUnset(nested) ? null
+        : nested;
+    }
+
+    // Keep walking: a composition, a content area or a reference's `item` all
+    // hold content of their own. Only a component is described by the declared
+    // type — a reference's `{ key, url, item }` wrapper is not, and reading the
+    // target's schema onto it would null the wrapper's own `url`.
+    dropUnsetProperties(
+      value[name],
+      declared?.type === 'component' ? declared.contentType?.key : undefined,
+    );
+  }
+
+  return value;
 }
 
 // TAXONOMY HIERARCHY RESOLUTION
@@ -688,7 +808,10 @@ export async function getContentByPath<T = any>(
 
       const items = await Promise.all(
         response?._Content?.items.map((item: unknown) =>
-          resolveFormNodes(context, hoistCategories(context.platform.normalize(item)), {
+          resolveFormNodes(
+            context,
+            dropUnsetProperties(hoistCategories(context.platform.normalize(item))),
+            {
             damEnabled,
             taxonomyEnabled,
             sectionTypes,
@@ -776,7 +899,9 @@ export async function getPreviewContent(
 
     const result = await resolveFormNodes(
       context,
-      hoistCategories(context.platform.normalize(response?._Content?.item)),
+      dropUnsetProperties(
+        hoistCategories(context.platform.normalize(response?._Content?.item)),
+      ),
       {
         damEnabled,
         taxonomyEnabled,
@@ -856,7 +981,9 @@ export async function getContent(
 
       const result = await resolveFormNodes(
         context,
-        hoistCategories(context.platform.normalize(response?._Content?.item)),
+        dropUnsetProperties(
+          hoistCategories(context.platform.normalize(response?._Content?.item)),
+        ),
         {
           damEnabled,
           taxonomyEnabled,
