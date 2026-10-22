@@ -129,7 +129,8 @@
     "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
     "postbuild": "node scripts/postbuild.js",
     "clean": "rimraf dist",
-    "test": "vitest --typecheck"
+    "test": "vitest --typecheck",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "files": [
     "dist"
