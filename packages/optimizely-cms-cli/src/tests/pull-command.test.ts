@@ -87,7 +87,7 @@ describe('config pull', () => {
   describe('without a TTY', () => {
     beforeEach(() => setTTY(false));
 
-    test('prints the unfiltered manifest as JSON without prompting', async () => {
+    test('prints the unfiltered manifest as JSON when no output flag is given', async () => {
       await pull('--host', 'https://cms.example.com');
 
       expect(createApiClient).toHaveBeenCalledWith('https://cms.example.com');
@@ -99,6 +99,35 @@ describe('config pull', () => {
         ' Downloaded configuration from CMS (4 content types, 1 property group, 1 display template)',
       ]);
       expect(confirm).not.toHaveBeenCalled();
+    });
+
+    test('writes grouped files without prompting when only --output is given', async () => {
+      await pull('--output', tempDir);
+
+      expect(await listFiles(tempDir)).toEqual([
+        'component/HeroCT.ts',
+        'displayTemplates/HeroWideDT.ts',
+        'page/ArticlePageCT.ts',
+      ]);
+      expect(input).not.toHaveBeenCalled();
+      expect(select).not.toHaveBeenCalled();
+      expect(confirm).not.toHaveBeenCalled();
+      expect(commandLog).not.toHaveBeenCalledWith(JSON.stringify(cmsManifest(), null, 2));
+    });
+
+    test('writes into the default output directory when only a layout flag is given', async () => {
+      vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+
+      await pull('--single-file');
+
+      expect(await listFiles(tempDir)).toEqual(['src/content-types/manifest.ts']);
+      expect(input).not.toHaveBeenCalled();
+    });
+
+    test('writes the file named by --output', async () => {
+      await pull('--output', join(tempDir, 'types.ts'));
+
+      expect(await listFiles(tempDir)).toEqual(['types.ts']);
     });
 
     test('requests read-only content types with --include-read-only', async () => {

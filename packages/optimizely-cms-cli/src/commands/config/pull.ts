@@ -309,7 +309,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
     const isInteractive = process.stdout.isTTY === true;
-    const shouldOutputJson = flags.json || !isInteractive;
+    const hasOutputFlag =
+      Boolean(flags.output) || flags['single-file'] || flags.individual || flags.group;
+    const shouldOutputJson = flags.json || (!isInteractive && !hasOutputFlag);
     const includeReadOnly = flags.includeReadOnly;
 
     if (shouldOutputJson) return this.handleJsonOutput(flags, includeReadOnly);
