@@ -52,7 +52,10 @@ describe('config pull flags', () => {
 });
 
 describe('config pull', () => {
-  const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+  const streams = [process.stdout, process.stdin];
+  const ttyDescriptors = streams.map(stream =>
+    Object.getOwnPropertyDescriptor(stream, 'isTTY'),
+  );
 
   let tempDir: string;
   let client: MockApiClient;
@@ -60,8 +63,10 @@ describe('config pull', () => {
   let commandWarn: MockInstance;
 
   const pull = (...args: string[]) => ConfigPull.run(args, import.meta.url);
-  const setTTY = (value: boolean) =>
-    Object.defineProperty(process.stdout, 'isTTY', { value, configurable: true });
+  const setTTY = (stdout: boolean, stdin = stdout) =>
+    [stdout, stdin].forEach((value, index) =>
+      Object.defineProperty(streams[index], 'isTTY', { value, configurable: true }),
+    );
   const requestedQuery = () => client.GET.mock.calls[0][1].params.query;
 
   beforeEach(async () => {
@@ -79,8 +84,11 @@ describe('config pull', () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     process.exitCode = undefined;
-    if (ttyDescriptor) Object.defineProperty(process.stdout, 'isTTY', ttyDescriptor);
-    else delete (process.stdout as { isTTY?: boolean }).isTTY;
+    streams.forEach((stream, index) => {
+      const descriptor = ttyDescriptors[index];
+      if (descriptor) Object.defineProperty(stream, 'isTTY', descriptor);
+      else delete (stream as { isTTY?: boolean }).isTTY;
+    });
     await rm(tempDir, { recursive: true, force: true });
   });
 
@@ -120,6 +128,15 @@ describe('config pull', () => {
       await pull('--single-file');
 
       expect(await listFiles(tempDir)).toEqual(['src/content-types/manifest.ts']);
+      expect(input).not.toHaveBeenCalled();
+    });
+
+    test('does not prompt when only stdin is not a TTY', async () => {
+      setTTY(true, false);
+
+      await pull();
+
+      expect(commandLog).toHaveBeenCalledWith(JSON.stringify(cmsManifest(), null, 2));
       expect(input).not.toHaveBeenCalled();
     });
 

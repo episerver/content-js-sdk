@@ -282,12 +282,12 @@ be combined with `--output`.
 
 #### Interactive and non-interactive mode
 
-What `config pull` does depends on whether stdout is a terminal:
+What `config pull` does depends on whether stdin and stdout are both a terminal:
 
 - **In a terminal**, it asks for anything the flags leave open: the output directory, how
   to organise the files, and whether to generate a `registry.ts` file (optionally with a
   `config()` call).
-- **When stdout is not a terminal**, such as in CI or when you pipe or redirect the
+- **When either is not a terminal**, such as in CI or when you pipe or redirect input or
   output, it never prompts:
   - With none of `--output`, `--group`, `--individual` or `--single-file`, it prints JSON
     to stdout, as if you passed `--json`. Progress messages go to stderr.

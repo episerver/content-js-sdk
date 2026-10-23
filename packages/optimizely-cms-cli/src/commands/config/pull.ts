@@ -65,7 +65,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }),
   };
   static override description =
-    'Pull content types from CMS. Generates TypeScript files interactively or outputs JSON with --json flag';
+    'Pull content types from CMS. Generates TypeScript files, prompting in a terminal for anything the flags leave open. Outputs JSON with --json, or outside a terminal when no output flag is given';
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --output ./src/types',
@@ -306,14 +306,14 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
-    const isInteractive = process.stdout.isTTY === true;
+    const isInteractive = process.stdout.isTTY === true && process.stdin.isTTY === true;
     const hasOutputFlag = outputFlags.some(flag => Boolean(flags[flag]));
     const shouldOutputJson = flags.json || (!isInteractive && !hasOutputFlag);
     const includeReadOnly = flags.includeReadOnly;
 
     if (shouldOutputJson) return this.handleJsonOutput(flags.host, includeReadOnly);
 
-    // Warn only after json output, to avoid crowding sdtout
+    // Warn only after json output, to avoid crowding stdout
     this.warnAboutReadOnly(includeReadOnly);
 
     // Prompt for output directory if not provided
