@@ -3,6 +3,7 @@
 export const prerender = false;
 
 import type { PreviewParams } from '@optimizely/cms-sdk';
+import { ClientRouter } from 'astro:transitions';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
 import ContentPage from '@/components/react/ContentPage';
@@ -21,7 +22,8 @@ const injectorUrl = new URL('/util/javascript/communicationinjector.js', cmsUrl)
 ---
 
 <BaseLayout>
+  <ClientRouter slot="head" />
   <script is:inline src={injectorUrl}></script>
-  <PreviewListener client:only="react" />
+  <PreviewListener client:only="react" transition:persist />
   <ContentPage content={content} />
 </BaseLayout>
