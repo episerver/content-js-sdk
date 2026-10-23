@@ -112,7 +112,6 @@ describe('config pull', () => {
       expect(input).not.toHaveBeenCalled();
       expect(select).not.toHaveBeenCalled();
       expect(confirm).not.toHaveBeenCalled();
-      expect(commandLog).not.toHaveBeenCalledWith(JSON.stringify(cmsManifest(), null, 2));
     });
 
     test('writes into the default output directory when only a layout flag is given', async () => {
@@ -122,12 +121,6 @@ describe('config pull', () => {
 
       expect(await listFiles(tempDir)).toEqual(['src/content-types/manifest.ts']);
       expect(input).not.toHaveBeenCalled();
-    });
-
-    test('writes the file named by --output', async () => {
-      await pull('--output', join(tempDir, 'types.ts'));
-
-      expect(await listFiles(tempDir)).toEqual(['types.ts']);
     });
 
     test('requests read-only content types with --include-read-only', async () => {

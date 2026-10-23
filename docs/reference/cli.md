@@ -345,14 +345,6 @@ optimizely-cms-cli config pull --output ./src/content-types --group
 optimizely-cms-cli config pull --output ./src/content-types/all-content-types.ts
 ```
 
-#### Generating TypeScript in CI or a script
-
-Pass an output flag, or the command prints JSON instead:
-
-```sh
-optimizely-cms-cli config pull --output ./src/content-types --group
-```
-
 #### Saving or processing the JSON manifest
 
 ```sh

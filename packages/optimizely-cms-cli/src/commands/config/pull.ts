@@ -22,6 +22,7 @@ import { filterOutBuiltinTypes } from '../../utils/mapping.js';
 import { buildCircularDependencyMap } from '../../utils/dependency.js';
 
 const defaultOutput = './src/content-types';
+const outputFlags = ['output', 'single-file', 'individual', 'group'] as const;
 
 export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   static override flags = {
@@ -40,7 +41,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     json: Flags.boolean({
       char: 'j',
       description: 'Output manifest as JSON to stdout (useful for piping)',
-      exclusive: ['individual', 'single-file', 'group', 'output'],
+      exclusive: [...outputFlags],
       default: false,
     }),
     'single-file': Flags.boolean({
@@ -172,20 +173,17 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   /**
    * Handles JSON output mode - fetches and outputs manifest as JSON to stdout
    */
-  private async handleJsonOutput(flags: any, includeReadOnly: boolean): Promise<void> {
-    if (flags.json && (flags.output || flags.group)) {
-      this.warn(
-        'Flags --output and --group are ignored when --json is used. Remove --json to generate TypeScript files.',
-      );
-    }
-
+  private async handleJsonOutput(
+    host: string | undefined,
+    includeReadOnly: boolean,
+  ): Promise<void> {
     const spinner = ora({
       stream: process.stderr,
       text: 'Downloading configuration from CMS',
     }).start();
 
     try {
-      const response = await this.fetchManifest(flags.host, includeReadOnly);
+      const response = await this.fetchManifest(host, includeReadOnly);
       if (!this.handleEmptyResponse(response, spinner)) return;
 
       spinner.succeed(` Downloaded configuration from CMS (${formatCounts(response)})`);
@@ -309,12 +307,11 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
     const isInteractive = process.stdout.isTTY === true;
-    const hasOutputFlag =
-      Boolean(flags.output) || flags['single-file'] || flags.individual || flags.group;
+    const hasOutputFlag = outputFlags.some(flag => Boolean(flags[flag]));
     const shouldOutputJson = flags.json || (!isInteractive && !hasOutputFlag);
     const includeReadOnly = flags.includeReadOnly;
 
-    if (shouldOutputJson) return this.handleJsonOutput(flags, includeReadOnly);
+    if (shouldOutputJson) return this.handleJsonOutput(flags.host, includeReadOnly);
 
     // Warn only after json output, to avoid crowding sdtout
     this.warnAboutReadOnly(includeReadOnly);
