@@ -288,8 +288,11 @@ What `config pull` does depends on whether stdout is a terminal:
   to organise the files, and whether to generate a `registry.ts` file (optionally with a
   `config()` call).
 - **When stdout is not a terminal**, such as in CI or when you pipe or redirect the
-  output, it always prints JSON to stdout, as if you passed `--json`. Progress messages go
-  to stderr.
+  output, it never prompts:
+  - With none of `--output`, `--group`, `--individual` or `--single-file`, it prints JSON
+    to stdout, as if you passed `--json`. Progress messages go to stderr.
+  - With any of them, it writes the files. The output directory defaults to
+    `./src/content-types` and the layout to `--group`.
 
 #### Output layout
 
@@ -340,6 +343,14 @@ optimizely-cms-cli config pull --output ./src/content-types --group
 
 ```sh
 optimizely-cms-cli config pull --output ./src/content-types/all-content-types.ts
+```
+
+#### Generating TypeScript in CI or a script
+
+Pass an output flag, or the command prints JSON instead:
+
+```sh
+optimizely-cms-cli config pull --output ./src/content-types --group
 ```
 
 #### Saving or processing the JSON manifest
