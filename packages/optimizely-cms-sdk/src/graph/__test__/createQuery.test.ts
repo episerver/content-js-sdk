@@ -329,7 +329,7 @@ describe('createFragment() with `content` properties. Base types', () => {
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
-        "fragment r2 on r2 { __typename r2__p1:p1 { __typename ...r1 } ..._IContent }",
+        "fragment r2 on r2 { __typename r2__p1:p1 { __typename ...r1 ...r2 } ..._IContent }",
         "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r2 } ..._IContent }",
       ]
     `);
@@ -433,7 +433,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r3 on r3 { __typename ..._IContent }",
-        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r3 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r3 ...ct1 } ..._IContent }",
       ]
     `);
   });
@@ -499,7 +499,7 @@ describe('createFragment() with `content` properties. Allowed and restricted typ
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
         "fragment r1 on r1 { __typename ..._IContent }",
         "fragment r2 on r2 { __typename ..._IContent }",
-        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r2 } ..._IContent }",
+        "fragment ct1 on ct1 { __typename ct1__p1:p1 { __typename ...r1 ...r2 ...ct1 } ..._IContent }",
       ]
     `);
   });
@@ -524,7 +524,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename r1__p1:p1 { __typename } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -547,7 +547,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename r1__p1:p1 { __typename } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -570,7 +570,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename r1__p1:p1 { __typename } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -600,7 +600,7 @@ describe('createFragment() with self references', () => {
         "fragment ContentUrl on ContentUrl { type default hierarchical internal graph base }",
         "fragment IContentMetadata on IContentMetadata { key locale fallbackForLocale version displayName url {...ContentUrl} types published status created lastModified sortOrder variation ...MediaMetadata ...ItemMetadata ...InstanceMetadata }",
         "fragment _IContent on _IContent { _id _metadata {...IContentMetadata} }",
-        "fragment r1 on r1 { __typename r1__p1:p1 { __typename } ..._IContent }",
+        "fragment r1 on r1 { __typename r1__p1:p1 { __typename ...r1 } ..._IContent }",
       ]
     `);
   });
@@ -778,7 +778,7 @@ describe('createFragment() with string key references', () => {
       f.startsWith('fragment ctB '),
     );
     expect(ctAFragment).toContain('...ctB');
-    expect(ctBFragment).not.toContain('...ctA');
+    expect(ctBFragment).toContain('...ctA');
   });
 
   test('mix of ContentType objects and string keys', () => {
@@ -813,8 +813,10 @@ describe('createFragment() with string key references', () => {
   });
 });
 
-describe('createFragment() circular reference prevention', () => {
-  test('array of content without allowedTypes does not self-reference', () => {
+// Optimizely Graph supports cyclic fragments:
+// https://docs.optimizely.com/graph/docs/recursive-queries#circular-referenced-queries-cyclic-fragments
+describe('createFragment() cyclic fragments', () => {
+  test('array of content without allowedTypes references itself and its siblings', () => {
     const mapPage = contentType({
       key: 'MapPage',
       displayName: 'Map Page',
@@ -840,9 +842,60 @@ describe('createFragment() circular reference prevention', () => {
     );
 
     expect(mapFragment).toContain('...ArticlePage');
-    expect(mapFragment).not.toContain('...MapPage');
-    expect(articleFragment).not.toContain('...ArticlePage');
-    expect(articleFragment).not.toContain('...MapPage');
+    expect(mapFragment).toContain('...MapPage');
+    expect(articleFragment).toContain('...ArticlePage');
+    expect(articleFragment).toContain('...MapPage');
+  });
+
+  test('a fragment is the same whichever type the query starts from', () => {
+    const person = contentType({
+      key: 'Person',
+      displayName: 'Person',
+      baseType: '_page',
+      properties: {
+        name: { type: 'string' },
+        testimonials: { type: 'content', allowedTypes: ['Testimonial'] },
+      },
+    });
+    const testimonial = contentType({
+      key: 'Testimonial',
+      displayName: 'Testimonial',
+      baseType: '_component',
+      properties: {
+        quote: { type: 'string' },
+        author: { type: 'content', allowedTypes: ['Person'] },
+      },
+    });
+
+    initContentTypeRegistry([person, testimonial]);
+    const findTestimonial = (fragments: string[]) =>
+      fragments.find(f => f.startsWith('fragment Testimonial '));
+
+    // Starting from Person, Testimonial is built inside Person's fragment. It
+    // must still select the author rather than depend on where it was reached.
+    const viaPerson = findTestimonial(createFragment('Person').fragments);
+    const direct = findTestimonial(createFragment('Testimonial').fragments);
+
+    expect(viaPerson).toContain('Testimonial__author:author { __typename ...Person }');
+    expect(viaPerson).toBe(direct);
+  });
+
+  test('each fragment is defined once', () => {
+    const category = contentType({
+      key: 'Category',
+      displayName: 'Category',
+      baseType: '_component',
+      properties: {
+        children: { type: 'array', items: { type: 'content', allowedTypes: ['_self'] } },
+        related: { type: 'content', allowedTypes: ['_self'] },
+      },
+    });
+
+    initContentTypeRegistry([category]);
+    const names = createFragment('Category').fragments.map(f => f.split(' ')[1]);
+
+    expect(names.filter(name => name === 'Category')).toHaveLength(1);
+    expect(new Set(names).size).toBe(names.length);
   });
 
   test('sibling content properties still include all non-ancestor types', () => {
