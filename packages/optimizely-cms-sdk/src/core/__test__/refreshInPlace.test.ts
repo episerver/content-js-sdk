@@ -126,6 +126,63 @@ describe('media', () => {
   });
 });
 
+describe('Astro islands', () => {
+  const island = (attributes: string, content = '') =>
+    `<astro-island component-url="/Counter.js" component-export="default" ${attributes}>${content}</astro-island>`;
+
+  test('a hydrated island with the same props is kept as it is', async () => {
+    const root = render(island(`props="{}"`, '<button>3</button>'));
+    const live = root.querySelector('astro-island');
+    respondWith(page(island(`props="{}" ssr`, '<button>0</button>')));
+
+    await refresh();
+
+    expect(root.querySelector('astro-island')).toBe(live);
+    expect(live!.textContent).toBe('3');
+  });
+
+  test('changed props are handed to the live island', async () => {
+    const root = render(island(`props="{}"`));
+    const live = root.querySelector('astro-island');
+    respondWith(page(island(`props='{"label":[0,"New"]}' ssr`)));
+
+    await refresh();
+
+    expect(root.querySelector('astro-island')).toBe(live);
+    expect(live!.getAttribute('props')).toBe('{"label":[0,"New"]}');
+  });
+
+  test('an island replaced by another component is unmounted', async () => {
+    const root = render(island(`props="{}"`));
+    const onUnmount = vi.fn();
+    root.querySelector('astro-island')!.addEventListener('astro:unmount', onUnmount);
+    respondWith(
+      page(
+        `<astro-island component-url="/Other.js" component-export="default" ssr></astro-island>`,
+      ),
+    );
+
+    await refresh();
+
+    expect(onUnmount).toHaveBeenCalledOnce();
+    expect(root.querySelector('astro-island')!.getAttribute('component-url')).toBe(
+      '/Other.js',
+    );
+  });
+
+  test('islands inside removed nodes are unmounted', async () => {
+    const root = render(`<p>Kept</p><section>${island(`props="{}"`)}</section>`);
+    const onUnmount = vi.fn();
+    root.querySelector('astro-island')!.addEventListener('astro:unmount', onUnmount);
+    respondWith(page('<p>Kept</p>'));
+
+    await refresh();
+
+    expect(onUnmount).toHaveBeenCalledOnce();
+    expect(root.innerHTML).toBe('<p>Kept</p>');
+  });
+});
+
 describe('request', () => {
   test('fetches the target path from the page origin', async () => {
     render('<h1>Old</h1>');

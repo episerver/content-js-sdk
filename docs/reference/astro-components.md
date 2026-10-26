@@ -44,7 +44,8 @@ on your preview route, wrapped around the rendered content.
   [`refreshInPlace`](../guides/framework-agnostic-core.md#refreshing-without-a-client-side-router),
   which describes what survives a refresh and when it reloads the page instead. Anything
   outside the component keeps its first render.
-- Hydrated islands inside the content render again on every refresh.
+- Hydrated islands inside the content keep their state. When their props change, they
+  re-render with the new props. Islands that leave the page are unmounted.
 - It runs no UI framework in the browser, so it works the same with React, Svelte or plain
   Astro components.
 

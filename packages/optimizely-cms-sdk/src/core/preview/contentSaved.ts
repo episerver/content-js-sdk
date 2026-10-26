@@ -69,6 +69,7 @@ export function createContentSavedListener(
   let options = initialOptions;
   let reloadDelay: ReturnType<typeof setTimeout> | undefined;
   let lastProcessed: { contentLink: string; timestamp: number } | null = null;
+  let latestNavigation = 0;
 
   const handleContentSaved = (eventData: ContentSavedEvent) => {
     const { onNavigate, refreshTimeout = 50, onBusyChange } = options;
@@ -104,7 +105,11 @@ export function createContentSavedListener(
 
     const executeNavigation = () => {
       if (onNavigate) {
-        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => onBusyChange?.(false));
+        const navigation = ++latestNavigation;
+        // An earlier navigation settling must not lower busy while a later one runs
+        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => {
+          if (navigation === latestNavigation) onBusyChange?.(false);
+        });
       } else {
         // Fallback: hard reload
         window.location.replace(finalUrl);

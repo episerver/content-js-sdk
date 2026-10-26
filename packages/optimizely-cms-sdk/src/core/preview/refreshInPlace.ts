@@ -39,17 +39,46 @@ const sameShell = (node: Node, nextNode: Node) =>
   nextNode instanceof Element &&
   node.cloneNode(false).isEqualNode(nextNode.cloneNode(false));
 
+const isIsland = (node: Node): node is Element =>
+  node instanceof Element && node.localName === 'astro-island';
+
+const sameComponent = (island: Element, nextIsland: Element) =>
+  ['component-url', 'component-export'].every(
+    name => island.getAttribute(name) === nextIsland.getAttribute(name),
+  );
+
+/** Astro unmounts removed islands only after its own page swaps, so it never happens here. */
+const unmountIslands = (node: Node) => {
+  if (!(node instanceof Element)) return;
+  [node, ...node.querySelectorAll('astro-island')]
+    .filter(isIsland)
+    .forEach(it => it.dispatchEvent(new CustomEvent('astro:unmount')));
+};
+
+/** `props` is observed: Astro re-renders the live island with it and keeps its state. */
+const patchIsland = (island: Element, nextIsland: Element) => {
+  const props = nextIsland.getAttribute('props') ?? '';
+  if (island.getAttribute('props') !== props) island.setAttribute('props', props);
+};
+
 const patchNode = (node: ChildNode, nextNode: ChildNode) => {
   if (node.isEqualNode(nextNode)) return;
+  // Hydrating rewrites an island's own attributes, so it never equals a fresh render
+  if (isIsland(node) && isIsland(nextNode) && sameComponent(node, nextNode))
+    return patchIsland(node, nextNode);
   if (sameShell(node, nextNode)) return patchChildren(node, nextNode);
   node.replaceWith(nextNode);
+  unmountIslands(node);
 };
 
 /** Positional diff: unchanged nodes stay in the DOM, so images and island state survive. */
 const patchChildren = (current: Node, next: Node) => {
   const nextNodes = [...next.childNodes];
 
-  [...current.childNodes].slice(nextNodes.length).forEach(it => it.remove());
+  [...current.childNodes].slice(nextNodes.length).forEach(it => {
+    it.remove();
+    unmountIslands(it);
+  });
   nextNodes.forEach((nextNode, index) => {
     const node = current.childNodes[index];
     if (node) patchNode(node, nextNode);
