@@ -243,6 +243,42 @@ const stop = listener.start();
   which would cancel a pending refresh.
 - Without `onNavigate`, the page hard-reloads.
 
+### Refreshing without a client-side router
+
+Without a client-side router, as in Astro or any other server-rendered site, the only
+thing `onNavigate` can do is reload the page. That loses the scroll position and reloads
+every image. `refreshInPlace()` returns an `onNavigate` that fetches the new preview URL
+and patches only what changed.
+
+```ts
+import { createContentSavedListener, refreshInPlace } from '@optimizely/cms-sdk/core';
+
+createContentSavedListener({ onNavigate: refreshInPlace() }).start();
+```
+
+Wrap the rendered content in an element marked as the preview root:
+
+```html
+<div data-optimizely-preview-root>
+  <!-- rendered content -->
+</div>
+```
+
+- The root is looked up in both the current page and the fetched one. Pass
+  `refreshInPlace({ root: '#content' })` to use another selector.
+- Nodes that didn't change stay in the DOM, so scroll position, images and the editor's
+  overlays survive. Image URLs that differ only by their `preview_token` keep their
+  current value, so the image doesn't download again.
+- A request still pending when the next save arrives is cancelled.
+- The address bar switches to the new preview URL, so a manual reload shows the latest
+  draft.
+- It falls back to a full reload when either page has no root, the target is another path,
+  or the request fails.
+- `<script>` tags in the fetched content don't run.
+
+In Astro, the [`OptimizelyPreview`](../reference/astro-components.md#optimizelypreview)
+component sets all of this up, including the communication injector script.
+
 ## Forms
 
 ### The submission store

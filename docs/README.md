@@ -95,6 +95,7 @@ Exact signatures and every option.
 - [`optimizely.config.mjs`](./reference/optimizely-config.md)
 - [Property types](./reference/property-types.md)
 - [React components](./reference/react-components.md)
+- [Astro components](./reference/astro-components.md)
 - [`RichText` component](./reference/rich-text-component.md)
 - [CLI commands](./reference/cli.md)
 - [Migrating to 3.0](./reference/migration-v3.md)

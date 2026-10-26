@@ -489,6 +489,9 @@ route. In Next.js, use [`NextPreviewComponent`](#nextpreviewcomponent) instead.
   [Live preview](../learn/live-preview.md).
 - It is a Client Component, but you can render it from a Server Component.
 - When `onNavigate` returns a promise, `children` stay visible until it settles.
+- Without a client-side router, pass
+  [`refreshInPlace()`](../guides/framework-agnostic-core.md#refreshing-without-a-client-side-router)
+  as `onNavigate` to patch the page instead of reloading it.
 
 ### Usage
 
