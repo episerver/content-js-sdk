@@ -1,4 +1,4 @@
-import { createComponentPreviewPage } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
 import { faker } from '@faker-js/faker';
 
 /** The origin part of a URL, or nothing if it is unset or unparseable. */
@@ -22,7 +22,7 @@ const parentOrigin = [
   ...(process.env.PREVIEW_PARENT_ORIGIN?.split(',') ?? []).map(origin => origin.trim()),
 ].filter(Boolean) as string[];
 
-export default createComponentPreviewPage({
+export default createStandalonePreview({
   defaultLocale: 'en',
   mockData: faker,
   parentOrigin,
