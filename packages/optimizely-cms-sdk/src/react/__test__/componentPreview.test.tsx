@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { useFormValidation } from '../forms/index.js';
-import { createComponentPreviewPage, initReactComponentRegistry } from '../server.js';
+import { createStandalonePreview, initReactComponentRegistry } from '../server.js';
 import {
   contentType,
   displayTemplate,
@@ -99,13 +99,13 @@ async function renderPage(
   searchParams: Record<string, string>,
   options: Record<string, unknown> = {},
 ) {
-  const Page = createComponentPreviewPage({ defaultLocale: 'en', ...options }) as any;
+  const Page = createStandalonePreview({ defaultLocale: 'en', ...options }) as any;
   const element = await Page({ searchParams: Promise.resolve(searchParams) });
 
   return render(await resolveAsync(element));
 }
 
-describe('createComponentPreviewPage', () => {
+describe('createStandalonePreview', () => {
   test('renders a content type from generated stand-in content', async () => {
     const { container } = await renderPage({ contentType: 'Heading' });
 
@@ -411,7 +411,7 @@ describe('form elements previewed on their own', () => {
 describe('router conventions', () => {
   /** Routers differ in how they hand over the query; all three must work. */
   async function renderWith(searchParams: unknown) {
-    const Page = createComponentPreviewPage({ defaultLocale: 'en' }) as any;
+    const Page = createStandalonePreview({ defaultLocale: 'en' }) as any;
     const element = await Page({ searchParams });
     return render(await resolveAsync(element));
   }
@@ -489,7 +489,7 @@ describe('parentOrigin', () => {
   }
 
   async function renderFor(parentOrigin?: string | string[]) {
-    const Page = createComponentPreviewPage({ defaultLocale: 'en', parentOrigin }) as any;
+    const Page = createStandalonePreview({ defaultLocale: 'en', parentOrigin }) as any;
     const element = await Page({
       searchParams: Promise.resolve({ contentType: 'Heading' }),
     });
@@ -522,7 +522,7 @@ describe('parentOrigin', () => {
   test('a request cannot name itself: the query parameter is ignored', async () => {
     const sent = listening();
 
-    const Page = createComponentPreviewPage({ defaultLocale: 'en' }) as any;
+    const Page = createStandalonePreview({ defaultLocale: 'en' }) as any;
     const element = await Page({
       searchParams: Promise.resolve({
         contentType: 'Heading',
@@ -545,7 +545,7 @@ describe('a framed preview with nowhere to report', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubEnv('NODE_ENV', 'development');
 
-    const Page = createComponentPreviewPage({ defaultLocale: 'en' }) as any;
+    const Page = createStandalonePreview({ defaultLocale: 'en' }) as any;
     render(
       await resolveAsync(
         await Page({ searchParams: Promise.resolve({ contentType: 'Heading' }) }),
@@ -562,7 +562,7 @@ describe('a framed preview with nowhere to report', () => {
 
 describe('fit', () => {
   const styleOf = async (options: Record<string, unknown>) => {
-    const Page = createComponentPreviewPage({ defaultLocale: 'en', ...options }) as any;
+    const Page = createStandalonePreview({ defaultLocale: 'en', ...options }) as any;
     const { container } = render(
       await resolveAsync(
         await Page({ searchParams: Promise.resolve({ contentType: 'Heading' }) }),

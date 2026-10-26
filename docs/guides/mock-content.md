@@ -16,15 +16,20 @@ what `mockData` controls.
 > - How to build content with a factory
 > - How to write your own data source
 
+`createStandalonePreview` needs React Server Components. It returns an async server
+component, and reports its size from a client component, so your framework has to render
+async components on the server and understand `'use client'`. Next's App Router does; its
+Pages Router and plain client-side React do not. Nothing in it imports Next itself.
+
 ## Preview without any mock data
 
 Pass nothing and every property names itself:
 
 ```tsx
 // app/preview/component/page.tsx
-import { createComponentPreviewPage } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
 
-export default createComponentPreviewPage({ defaultLocale: 'en' });
+export default createStandalonePreview({ defaultLocale: 'en' });
 ```
 
 A `Headline` property reads "Headline". That tells you which field is which, but it shows
@@ -35,10 +40,10 @@ you nothing about how real copy wraps, so the layout you see is not the layout y
 Install [`@faker-js/faker`](https://fakerjs.dev) and pass it in:
 
 ```tsx
-import { createComponentPreviewPage } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
 import { faker } from '@faker-js/faker';
 
-export default createComponentPreviewPage({ defaultLocale: 'en', mockData: faker });
+export default createStandalonePreview({ defaultLocale: 'en', mockData: faker });
 ```
 
 Faker is never imported by the SDK. You pass it, so it loads only in the module that
@@ -69,7 +74,7 @@ Pass an object keyed by content type to replace individual fields. Everything yo
 out is still generated:
 
 ```tsx
-export default createComponentPreviewPage({
+export default createStandalonePreview({
   defaultLocale: 'en',
   mockData: {
     HeroSection: { Headline: 'Set it. Sweat it. Send it.' },
@@ -88,7 +93,7 @@ Pass a function for full control. It receives the content type and what the sche
 produced, so you can add to it, replace it, or hand it straight back:
 
 ```tsx
-export default createComponentPreviewPage({
+export default createStandalonePreview({
   defaultLocale: 'en',
   mockData: (contentType, generated) => {
     if (contentType.key === 'ProductCard') {
@@ -192,7 +197,7 @@ const catalogue: FakerLike = {
 Then pass it where you would have passed faker:
 
 ```tsx
-export default createComponentPreviewPage({
+export default createStandalonePreview({
   defaultLocale: 'en',
   mockData: catalogue,
 });
@@ -219,7 +224,7 @@ When you need that, use a factory. It receives the content type, so you can look
 per field, and calling `generateMockContent` inside it keeps the schema-shaped base:
 
 ```tsx
-import { createComponentPreviewPage } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
 import { generateMockContent } from '@optimizely/cms-sdk';
 
 const byField: Record<string, Record<string, unknown>> = {
@@ -227,7 +232,7 @@ const byField: Record<string, Record<string, unknown>> = {
   ButtonElement: { label: 'Shop now' },
 };
 
-export default createComponentPreviewPage({
+export default createStandalonePreview({
   defaultLocale: 'en',
   mockData: contentType => ({
     // The generated base, with your source filling the text…
