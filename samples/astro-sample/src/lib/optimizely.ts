@@ -4,7 +4,6 @@ import {
   initDisplayTemplateRegistry,
   getClient,
   BlankExperienceContentType,
-  type PreviewParams,
 } from '@optimizely/cms-sdk';
 import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';
 
@@ -130,13 +129,6 @@ export function initOptimizely() {
   ]);
 
   initialized = true;
-}
-
-/** Fetches the content for a preview URL sent by the CMS. */
-export function getPreviewContent(url: URL) {
-  initOptimizely();
-  const previewParams = Object.fromEntries(url.searchParams.entries());
-  return getClient().getPreviewContent(previewParams as PreviewParams);
 }
 
 export { getClient };
