@@ -57,14 +57,15 @@ export {
   MAX_PREVIEW_DIMENSION,
   PreviewMessageType,
   isPreviewMessage,
+  isMeasureRequest,
   isValidDimensions,
 } from './preview/protocol.js';
 export type {
   PreviewMessage,
   PreviewDimensions,
-  PreviewReadyMessage,
-  PreviewResizeMessage,
+  PreviewDimensionsMessage,
   PreviewErrorMessage,
+  PreviewMeasureRequest,
 } from './preview/protocol.js';
 export type {
   ContentSavedEvent,

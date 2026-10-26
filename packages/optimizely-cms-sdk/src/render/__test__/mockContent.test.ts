@@ -267,3 +267,35 @@ describe('fixes from review', () => {
     expect((generateMockContent(Single) as any).Tags).toHaveLength(1);
   });
 })
+
+describe('what a property is called', () => {
+  const build = (properties: Record<string, any>) => {
+    const Type = contentType({
+      key: 'Widget',
+      displayName: 'Widget',
+      baseType: '_component',
+      properties,
+    });
+    initContentTypeRegistry([Type]);
+    return generateMockContent(Type, { mockData: faker }) as any;
+  };
+
+  test('a display name sharpens a vague property name', () => {
+    // `text` alone says nothing; "Button Text" says it is a label.
+    const mock = build({ text: { type: 'string', displayName: 'Button Text' } });
+
+    expect(mock.text.split(' ').length).toBeLessThan(6);
+  });
+
+  test('`text` is not treated as prose', () => {
+    const mock = build({ text: { type: 'string' } });
+
+    expect(mock.text.split(' ').length).toBeLessThan(6);
+  });
+
+  test('a description still reads as prose', () => {
+    const mock = build({ description: { type: 'string' } });
+
+    expect(mock.description.split(' ').length).toBeGreaterThan(5);
+  });
+})

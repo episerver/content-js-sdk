@@ -1,10 +1,6 @@
 /**
- * Stand-in content for a content type, shaped like what Graph returns.
- *
- * A component catalog wants to show every component the application registers,
- * including the ones no editor has created content for yet. This fills each
- * property with a plausible value of the right shape, so a component can be
- * rendered without a CMS round trip.
+ * Stand-in content for a content type, shaped like what Graph returns, so a
+ * component can be rendered before anyone has authored content for it.
  *
  * @module
  */
@@ -17,11 +13,8 @@ import { isBaseMediaType } from '../util/baseTypeUtil.js';
 
 /**
  * A text source, shaped like the part of a faker-style library this uses.
- *
- * Matched structurally rather than by identity, so the SDK depends on no
- * particular package: anything exposing these methods works, whether that is
- * a faker build, a fixtures module, or an application's own content store.
- * Supply one for realistic copy, or none and keep the property labels.
+ * Matched by shape, not identity, so any store with these methods works.
+ * Without one, each property names itself.
  */
 export type FakerLike = {
   seed(value: number): unknown;
@@ -36,17 +29,10 @@ export type FakerLike = {
   date: { past(options: { refDate: string }): Date };
 };
 
-/**
- * Content supplied by the developer instead of generated: one entry per
- * content type key, shallow-merged over the generated values, so a single
- * awkward field can be pinned without writing the rest of the content.
- */
+/** Values pinned per content type, merged over the generated ones. */
 export type MockDataOverrides = Record<string, Record<string, unknown>>;
 
-/**
- * Full control over one content type's stand-in content. Receives what the
- * schema produced, so it can add to it, replace it, or hand it straight back.
- */
+/** Full control: receives what the schema produced, returns what to use. */
 export type MockDataFactory = (
   contentType: AnyContentType,
   generated: Record<string, unknown>,
@@ -130,20 +116,23 @@ const isLongText = (property: AnyProperty) =>
   ('maxLength' in property ? (property.maxLength ?? 0) : 0) > 120;
 
 /**
- * What a property is called, matched loosely against the kinds of copy a text
- * source can produce. Names are the only signal a content type gives about
- * meaning:
+ * What a property is called, matched against the kinds of copy a source can
+ * produce. The name is the only signal a content type gives about meaning:
  * the schema says `string`, the name says whether it is an email or a heading.
  */
 function fakeText(name: string, property: AnyProperty, faker: FakerLike): string {
-  const field = name.toLowerCase();
+  // The label an editor sees is often the clearer signal: a property named
+  // `text` says nothing, while its display name "Button Text" does.
+  const field = `${name} ${property.displayName ?? ''}`.toLowerCase();
   const long = isLongText(property);
 
   if (/mail/.test(field)) return faker.internet.email();
   if (/url|href|link|slug|website|domain/.test(field)) return faker.internet.url();
   if (/price|amount|cost|total/.test(field)) return faker.commerce.price();
   if (/author|person|customer|\bname\b/.test(field)) return faker.person.fullName();
-  if (long || /body|description|summary|intro|excerpt|content|text/.test(field))
+  // `text` is deliberately absent: it is the most common name for a short
+  // label — a button's, a link's — and reads as nonsense as a paragraph.
+  if (long || /body|description|summary|intro|excerpt|content|paragraph/.test(field))
     return faker.lorem.paragraph();
   if (/title|heading|headline|label|caption|cta|button|eyebrow/.test(field))
     return faker.commerce.productName();
@@ -266,7 +255,12 @@ function mockProperty(
       );
       // One level of nesting per item would multiply, so arrays of components
       // are filled at the depth of the array itself.
-      return Array.from({ length: count }, () => mockProperty(name, items, ctx));
+      //
+      // Nulls dropped: a component mapping over them would hand `null` to
+      // `OptimizelyComponent`, which throws.
+      return Array.from({ length: count }, () =>
+        mockProperty(name, items, ctx),
+      ).filter(item => item !== null);
     }
     default:
       return null;
@@ -274,12 +268,8 @@ function mockProperty(
 }
 
 /**
- * An empty composition.
- *
- * A section or experience is a container, and which components an editor would
- * drop into it is a guess. Rendering the container empty shows its own chrome
- * without inventing content; fill it from a real content item (`?key=`) when
- * the arrangement is what you need to see.
+ * An empty composition. Which components an editor would place inside is a
+ * guess, so the container renders its own chrome and nothing else.
  */
 function emptyComposition(key: string) {
   return {
@@ -345,12 +335,8 @@ function build(
 }
 
 /**
- * Lets the caller's data win over what the schema produced.
- *
- * Applied at every level rather than only the outermost type, so an override
- * for `Author` takes effect whether that type is being previewed directly or
- * sits nested inside something else. Without this, "one entry per content type
- * key" would silently mean "per *root* content type key".
+ * Lets the caller's data win over the generated values. Applied at every
+ * level, so an override for `Author` works nested as well as standalone.
  */
 function applyMockData(
   contentType: AnyContentType,
@@ -383,41 +369,28 @@ const isFaker = (mockData: MockData): mockData is FakerLike =>
 
 /**
  * Builds stand-in content for one content type, shaped the way Graph returns
- * it, so {@linkcode OptimizelyComponent} can render the component without a CMS.
+ * it, so {@linkcode OptimizelyComponent} can render it without a CMS.
  *
- * Values are derived from the schema: a `richText` property becomes a rich
- * text document, a reference to an image becomes something an `<img>` can
- * show, and a nested component is filled in turn. What the text *says* comes
- * from `mockData`.
- *
- * With nothing passed, each property names itself — a `Headline` reads
- * "Headline", which identifies the fields but shows nothing about how real
- * copy wraps.
+ * Values come from the schema. What the text *says* comes from `mockData`,
+ * and without it each property names itself.
  *
  * @example Realistic copy, drawn from each property's name
  * ```ts
- * import { faker } from '@faker-js/faker';
- *
  * generateMockContent(type, { mockData: faker });
  * ```
  *
- * @example Pin the fields that matter, generate the rest
+ * @example Pin some fields, generate the rest
  * ```ts
- * generateMockContent(type, {
- *   mockData: { HeroSection: { Headline: 'Set it. Sweat it.' } },
- * });
+ * generateMockContent(type, { mockData: { HeroSection: { Headline: 'Set it.' } } });
  * ```
  *
  * @example Build it however the application likes
  * ```ts
- * generateMockContent(type, {
- *   mockData: (contentType, generated) => ({ ...generated, Locale: 'sv' }),
- * });
+ * generateMockContent(type, { mockData: (type, generated) => ({ ...generated }) });
  * ```
  *
  * The source is seeded from the content type key, so a component looks the
- * same on every reload rather than reshuffling while you compare it with a
- * design.
+ * same on every reload.
  */
 export function generateMockContent(
   contentType: AnyContentType,

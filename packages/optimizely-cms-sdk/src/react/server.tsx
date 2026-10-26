@@ -378,16 +378,45 @@ export function OptimizelyGridSection({
   return renderItems(planGridSection<StructureContainer>(nodes));
 }
 
+/**
+ * The preview page's styling. One string, so the page needs no stylesheet;
+ * unlayered and rendered after the app's CSS, so it wins without `!important`.
+ */
+function previewStyles(fit: PreviewFit | undefined) {
+  return [
+    // The embedder decides what the component sits on.
+    'html,body{background:transparent}',
+
+    // A scrollbar would narrow the measurement and show up in the thumbnail.
+    'html{scrollbar-width:none}',
+    'html::-webkit-scrollbar{display:none}',
+
+    // Fitted content belongs inside the viewport; clip anything still over.
+    fit === 'none' ? '' : 'html,body{overflow:hidden}',
+
+    // One component on a page of its own sits in the middle of it.
+    'body{margin:0;min-height:100svh;display:flex;flex-direction:column;justify-content:center}',
+
+    // Inert where there is no such overlay, and depends on no dev server.
+    'nextjs-portal,vite-error-overlay{display:none}',
+
+    // Inside this, not the flex body directly, which would stretch it.
+    `#${PREVIEW_ELEMENT_ID}{width:100%;text-align:center}`,
+
+    // `text-align` centres an inline child, `margin-inline` a block one.
+    // Children reset it so their copy reads as on a real page.
+    `#${PREVIEW_ELEMENT_ID}>*{text-align:initial;margin-inline:auto}`,
+  ].join('');
+}
+
+/** How a component is sized inside the preview's viewport. */
+export type PreviewFit = 'contain' | 'none';
+
 /** Props the router hands to a page built by {@linkcode createComponentPreviewPage} */
 type PreviewQuery = Record<string, string | string[] | undefined>;
 
 type ComponentPreviewPageProps = {
-  /**
-   * The request's query. Next's App Router hands this over as a promise;
-   * other routers pass a plain object, and `URL.searchParams` is a
-   * `URLSearchParams`. All three are accepted so the page is not tied to one
-   * framework's calling convention.
-   */
+  /** A promise (Next's App Router), a plain object, or `URLSearchParams`. */
   searchParams?:
     | PreviewQuery
     | URLSearchParams
@@ -426,41 +455,20 @@ function defaultDisplaySettings(templateKey: string | undefined) {
 }
 
 /**
- * Builds a page that renders one component on its own, without the page it
- * normally lives in. Meant as the `src` of an iframe in a component catalog.
+ * Builds a page that renders one component on its own, for an iframe to embed.
  *
- * It renders either a real content item (`?key=`) or, for a component no
- * editor has created content for yet, stand-in content generated from the
- * content type definition (`?contentType=`).
+ * Renders real content (`?key=`) or, for a component nobody has authored yet,
+ * stand-in content generated from the content type (`?contentType=`). Any
+ * query parameter the page does not read itself becomes a display setting, so
+ * a catalogue can show one variant per tile.
  *
- * The page is an async component, so it needs a framework that can render
- * one on the server. Mount it wherever that framework puts routes — in Next's
- * App Router, `app/preview/component/page.tsx`:
+ * The page is an async component, so it needs a framework that can render one
+ * on the server. Mount it wherever that framework puts routes:
  *
- * @example
+ * @example `app/preview/component/page.tsx` in Next's App Router
  * ```tsx
- * import { createComponentPreviewPage } from '@optimizely/cms-sdk/react/server';
- *
  * export default createComponentPreviewPage({ defaultLocale: 'en' });
  * ```
- *
- * A router that passes the query as an object or `URLSearchParams` rather
- * than a promise works the same way:
- *
- * @example
- * ```tsx
- * const Preview = createComponentPreviewPage({ defaultLocale: 'en' });
- *
- * export const Route = () => <Preview searchParams={new URL(request.url).searchParams} />;
- * ```
- *
- * The iframe then loads one of:
- *
- * - `/preview/component?contentType=HeroSection&displayTemplate=HeroStyles&width=full`
- * - `/preview/component?key=<content key>&locale=en`
- *
- * Any query parameter the page does not read itself is passed to the component
- * as a display setting, so a catalog can flip one variant at a time.
  *
  * Only published content is reachable through `?key=`: this takes no preview
  * token, so it exposes nothing the public site does not already serve.
@@ -469,20 +477,24 @@ export function createComponentPreviewPage({
   defaultLocale,
   mockData,
   parentOrigin,
+  fit,
 }: {
   defaultLocale?: string;
   /**
-   * The origin, or origins, this preview reports its size to. Without one it
-   * stays silent.
+   * How the component sits in the preview's viewport. Defaults to
+   * `'contain'`: scaled down if it is larger, centred, never enlarged — so a
+   * fixed-size frame shows the whole component rather than cropping it.
    *
-   * Configured by the site rather than read from the request, so the page
-   * being framed decides who hears from it. An embedder cannot name itself
-   * into the conversation. Pass several when more than one environment embeds
-   * the same site — each message is posted per origin and the browser
-   * delivers only to the one actually framing the page.
+   * `'none'` renders at natural size and lets the page scroll, for an
+   * embedder that wants a scrollable frame rather than a thumbnail.
+   */
+  fit?: PreviewFit;
+  /**
+   * Origins this preview reports to. Without one it stays silent.
    *
-   * This is not a substitute for a `frame-ancestors` CSP, which is what stops
-   * another page framing the preview at all. It decides who may *hear* it.
+   * Configured by the site, not read from the request, so an embedder cannot
+   * name itself into the conversation. Decides who may *hear* the preview —
+   * a `frame-ancestors` CSP is what stops it being framed at all.
    */
   parentOrigin?: string | string[];
   /**
@@ -509,9 +521,8 @@ export function createComponentPreviewPage({
       contentKey ?
         await getClient().getContent(
           { key: contentKey, locale },
-          // Stated rather than inherited: this route takes no preview token and
-          // performs no authorization, so it must not serve drafts even where
-          // the application has configured `publishedOnly: false` globally.
+          // Stated, not inherited: this route has no token and no
+          // authorization, so it must not serve drafts.
           { publishedOnly: true },
         )
       : contentTypeKey ?
@@ -533,9 +544,8 @@ export function createComponentPreviewPage({
       }
     }
 
-    // Through the same parser a composition goes through, so `fadeOut=false`
-    // arrives as `false` and not as the truthy string `'false'`. Without it a
-    // boolean setting behaves the opposite way here to the real page.
+    // The same parser a composition uses, so `fadeOut=false` arrives as a
+    // boolean and not as the truthy string `'false'`.
     const displaySettings = parseDisplaySettings(
       Object.entries(rawSettings).map(([key, value]) => ({ key, value })),
     );
@@ -545,7 +555,7 @@ export function createComponentPreviewPage({
 
       return (
         <>
-          {/* Told rather than left to time out, so a tile can fail fast. */}
+          {/* Told, rather than left to time out. */}
           <PreviewReporter
             contentType={contentTypeKey}
             parentOrigins={parentOrigins}
@@ -575,42 +585,14 @@ export function createComponentPreviewPage({
 
     return (
       <>
-        {/* The frame paints no backdrop of its own, so the page embedding it
-            decides what the component sits on. One component on a page of its
-            own sits in the middle of it, rather than against the top edge of
-            whatever box the frame has been given. No padding: the component is
-            measured and framed by the embedder, and space the component did
-            not ask for would be reported as part of it. A dev server's error
-            overlay is hidden in this frame only, so it still works on the
-            application's own pages. Unlayered and rendered after the
-            stylesheet, so these win without `!important`. */}
-        <style>
-          {'html,body{background:transparent}' +
-            'body{margin:0;min-height:100svh;display:flex;' +
-            'flex-direction:column;justify-content:center}' +
-            // Inert on frameworks that have no such overlay; listed by
-            // element name rather than imported, so nothing here depends on
-            // the dev server that happens to be serving the page.
-            'nextjs-portal,vite-error-overlay{display:none}' +
-            // The component sits inside this, not directly in the flex body: a
-            // flex item is stretched to full width, which silently widens
-            // anything sized by its content, such as an `inline-flex` button.
-            //
-            // `text-align` centres content-sized children horizontally without
-            // shrinking anything: `align-items:center` would centre a section
-            // by collapsing it to its content width. Block children reset it,
-            // so a component's own copy reads as it does on a real page.
-            `#${PREVIEW_ELEMENT_ID}{width:100%;text-align:center}` +
-            `#${PREVIEW_ELEMENT_ID}>*{text-align:initial}` +
-            ''}
-        </style>
+        <style>{previewStyles(fit)}</style>
         <PreviewReporter
           contentType={contentTypeKey ?? content._metadata.types[0]}
           parentOrigins={parentOrigins}
+          fit={fit !== 'none'}
         />
-        {/* A form element reads these from the container it sits in. Previewed
-            on its own it has no container, so the preview stands in as one. A
-            container previewed this way brings its own, which take over. */}
+        {/* A form element reads these from its container. Previewed alone it
+            has none, so the preview stands in; a container brings its own. */}
         <FormSubmissionProvider>
           <FormValidationProvider>
             <FormRulesProvider>

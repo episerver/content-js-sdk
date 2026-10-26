@@ -219,16 +219,122 @@ describe('createComponentPreviewPage', () => {
     );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
-    expect(sent[0].data.type).toBe('optimizely:preview:ready');
+    expect(sent[0].data.type).toBe('optimizely:preview:dimensions');
     expect(sent[0].data.version).toBe(1);
     expect(sent[0].data.payload).toMatchObject({
       width: 1280,
       height: 420,
       offsetX: 0,
       offsetY: 0,
-      element: 'optimizely-preview',
       contentType: 'Heading',
     });
+  });
+
+  /** A `message` from an embedder, as the frame's window would receive it. */
+  function request(origin: string, data: unknown) {
+    window.dispatchEvent(new MessageEvent('message', { origin, data }));
+  }
+
+  test('answers a measure request, so a resized frame is not left stale', async () => {
+    const sent = framed({ width: 150, height: 60 });
+
+    await renderPage(
+      { contentType: 'Heading' },
+      { parentOrigin: 'https://cms.test' },
+    );
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+
+    // Nothing about the component changed — the frame around it did, which
+    // it cannot see. The answer comes because it was asked for.
+    request('https://cms.test', {
+      type: 'optimizely:preview:measure',
+      version: 1,
+    });
+
+    await vi.waitFor(() => expect(sent).toHaveLength(2));
+    expect(sent[1].data.type).toBe('optimizely:preview:dimensions');
+    expect(sent[1].data.payload).toMatchObject({ width: 150, height: 60 });
+  });
+
+  test('ignores a measure request from an origin the page does not trust', async () => {
+    const sent = framed();
+
+    await renderPage(
+      { contentType: 'Heading' },
+      { parentOrigin: 'https://cms.test' },
+    );
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+
+    request('https://evil.test', {
+      type: 'optimizely:preview:measure',
+      version: 1,
+    });
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    expect(sent).toHaveLength(1);
+  });
+
+  test('reports a component that moved without changing size', async () => {
+    const sent = framed();
+
+    // Same 150×60 button, recentred by a frame that changed width. Its own
+    // box never changes, so the resize observer stays quiet; an embedder
+    // cropping to the old offset would frame the wrong region.
+    let left = 565;
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: Element) {
+        const narrow = this.id !== 'optimizely-preview';
+        return {
+          width: narrow ? 150 : 1280,
+          height: narrow ? 60 : 420,
+          left: narrow ? left : 0,
+          top: narrow ? 330 : 0,
+          right: narrow ? left + 150 : 1280,
+          bottom: narrow ? 390 : 420,
+        } as DOMRect;
+      },
+    );
+
+    await renderPage(
+      { contentType: 'Heading' },
+      { parentOrigin: 'https://cms.test' },
+    );
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+
+    // The frame resizing, not the embedder asking: nothing here is forced,
+    // so this only arrives if a moved box counts as a change.
+    left = 365;
+    window.dispatchEvent(new Event('resize'));
+
+    await vi.waitFor(() => expect(sent).toHaveLength(2));
+    expect(sent[1].data.payload).toMatchObject({
+      width: 150,
+      height: 60,
+      offsetX: 365,
+    });
+  });
+
+  test('a drag of the frame costs one measurement, not one per event', async () => {
+    const sent = framed();
+
+    const measured = vi.spyOn(Element.prototype, 'getBoundingClientRect');
+
+    await renderPage(
+      { contentType: 'Heading' },
+      { parentOrigin: 'https://cms.test' },
+    );
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+
+    measured.mockClear();
+    for (let event = 0; event < 20; event++) {
+      window.dispatchEvent(new Event('resize'));
+    }
+    await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    // Refitting reads layout back, so a dragged panel firing continuously
+    // would otherwise thrash every frame on the page.
+    expect(measured.mock.calls.length).toBeLessThan(20);
   });
 
   test('posts to the origin it was given, never to a wildcard', async () => {
@@ -450,6 +556,46 @@ describe('a framed preview with nowhere to report', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('parentOrigin'));
 
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+})
+
+describe('fit', () => {
+  const styleOf = async (options: Record<string, unknown>) => {
+    const Page = createComponentPreviewPage({ defaultLocale: 'en', ...options }) as any;
+    const { container } = render(
+      await resolveAsync(
+        await Page({ searchParams: Promise.resolve({ contentType: 'Heading' }) }),
+      ),
+    );
+    return container.querySelector('style')?.textContent ?? '';
+  };
+
+  test('contains the component by default, so nothing is cropped', async () => {
+    expect(await styleOf({})).toContain('overflow:hidden');
+  });
+
+  test('`none` lets the page scroll instead', async () => {
+    expect(await styleOf({ fit: 'none' })).not.toContain('overflow:hidden');
+  });
+
+  test('fits inside the edges, not flush against them', async () => {
+    vi.spyOn(HTMLImageElement.prototype, 'decode').mockResolvedValue(undefined);
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 1000, height: 100, left: 0, top: 0, right: 1000, bottom: 100,
+    } as DOMRect);
+    // 516 wide fits a 1000px component flush at 0.516; the 8px inset per side
+    // leaves 500 for it, so a gap at the edge shows up as a rounder number.
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(516);
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(1000);
+
+    await styleOf({});
+
+    await vi.waitFor(() =>
+      expect(document.getElementById('optimizely-preview')?.style.transform).toBe(
+        'scale(0.5)',
+      ),
+    );
     vi.restoreAllMocks();
   });
 })

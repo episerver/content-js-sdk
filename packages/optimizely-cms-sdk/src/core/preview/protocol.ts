@@ -1,123 +1,113 @@
 /**
  * The message protocol between a preview document and the page embedding it.
  *
- * A parent cannot measure across origins, so a preview tells it how big the
- * component is. This module is the contract: the message types, the payload
- * shapes, and the checks a receiver runs before trusting one.
- *
- * The parent keeps the frame at a fixed layout width and scales it with a CSS
- * transform rather than resizing it. That is what keeps the exchange from
- * feeding back on itself: a transform does not change layout width, so a
- * component cannot reflow because it was scaled, and cannot report a new size
- * in response.
- *
- * Framework-agnostic: types and constants only, so a parent written against any
- * framework can import them to validate what it receives.
+ * A parent cannot measure across origins, so a preview reports its own size.
+ * Types and constants only, so a parent on any framework can import them.
  *
  * @module
  */
 
-/** Bumped only for breaking changes. Adding a message or a field is not one. */
+/** Bumped only for breaking changes. Adding a message or field is not one. */
 export const PREVIEW_PROTOCOL_VERSION = 1;
 
-/** Every message type starts with this, so other messaging on the page cannot collide. */
+/** Namespaced, so other messaging on the page cannot collide. */
 export const PREVIEW_MESSAGE_PREFIX = 'optimizely:preview:';
 
-/** The element a preview measures. Its box is the component's, not the document's. */
+/** The element a preview measures: the component's box, not the document's. */
 export const PREVIEW_ELEMENT_ID = 'optimizely-preview';
 
-/**
- * Height change, in CSS pixels, below which no `resize` is sent. Smaller moves
- * are sub-pixel reflow, scrollbar jitter or font smoothing, none of which are
- * worth a re-scale.
- */
+/** Below this, a change is jitter rather than a resize worth reporting. */
 export const RESIZE_MIN_DELTA = 8;
 
-/** Past any real component, short of anything that breaks layout arithmetic. */
+/** Past any real component, short of breaking layout arithmetic. */
 export const MAX_PREVIEW_DIMENSION = 20000;
 
 export const PreviewMessageType = {
-  ready: `${PREVIEW_MESSAGE_PREFIX}ready`,
-  resize: `${PREVIEW_MESSAGE_PREFIX}resize`,
+  dimensions: `${PREVIEW_MESSAGE_PREFIX}dimensions`,
   error: `${PREVIEW_MESSAGE_PREFIX}error`,
+  /** Parent → preview. The one message that travels that way. */
+  measure: `${PREVIEW_MESSAGE_PREFIX}measure`,
 } as const;
 
-/**
- * The box a component actually occupies, and where it sits.
- *
- * `width`/`height` describe the component, not the page around it: a button
- * in a 1280px-wide preview reports its own ~150px, so a tile can frame it
- * instead of showing a sliver adrift in whitespace. `offsetX`/`offsetY` say
- * where that box is within the preview, which is what lets a parent translate
- * it into the corner of a tile before scaling.
- */
+/** The box a component occupies, and where it sits in the preview. */
 export type PreviewDimensions = {
-  /** The component's own width, in CSS pixels. */
+  /** The component's own width, in CSS pixels. Not the page's. */
   width: number;
   /** The component's own height, in CSS pixels. */
   height: number;
-  /** Distance from the preview's left edge to the component's, in CSS pixels. */
+  /** Offset from the preview's left edge, so a tile can frame the component. */
   offsetX: number;
-  /** Distance from the preview's top edge to the component's, in CSS pixels. */
+  /** Offset from the preview's top edge. */
   offsetY: number;
-  /**
-   * The layout width the preview was rendered at. Fixed by the parent and
-   * never changed in response to a measurement — that is what makes the
-   * scaling loop impossible. Reported so the message is self-describing.
-   */
-  viewportWidth: number;
-  /** Which element was measured. {@linkcode PREVIEW_ELEMENT_ID} in v1. */
-  element: string;
-  /** The content type being previewed, so a parent can correlate. */
+  /** Echoed back so a parent can correlate. */
   contentType?: string;
 };
 
-/** Sent once, when fonts, images and layout have settled. */
-export type PreviewReadyMessage = {
-  type: typeof PreviewMessageType.ready;
+/**
+ * The component's box, as it is now.
+ *
+ * The first one is the readiness signal: fonts, images and layout have
+ * settled, and a screenshot taken at that point is of a finished component.
+ * Later ones mean it moved or changed size — a late font, a lazy image, or a
+ * frame the embedder resized.
+ *
+ * One message rather than a `ready`/`resize` pair, because the payload is the
+ * same either way and the parent already knows which it is: it is the first
+ * if nothing has been received yet.
+ */
+export type PreviewDimensionsMessage = {
+  type: typeof PreviewMessageType.dimensions;
   version: number;
   payload: PreviewDimensions;
 };
 
-/** The component changed height after `ready`: late fonts, lazy images, animation. */
-export type PreviewResizeMessage = {
-  type: typeof PreviewMessageType.resize;
-  version: number;
-  payload: PreviewDimensions & { previousHeight: number };
-};
-
-/** The preview could not render, so the parent can fail fast instead of waiting. */
+/** The preview could not render, so the parent can fail fast. */
 export type PreviewErrorMessage = {
   type: typeof PreviewMessageType.error;
   version: number;
   payload: {
-    /**
-     * Why the preview could not render. Open-ended so a sender can add cases;
-     * treat anything unrecognised as `render-failed`.
-     */
+    /** Open-ended: treat anything unrecognised as `render-failed`. */
     code:
       | 'unknown-content-type'
       | 'content-not-found'
       | 'render-failed'
       | (string & {});
-    /** Untrusted text. Render it as text, never as HTML. */
+    /** Untrusted text. Render as text, never as HTML. */
     message: string;
     contentType?: string;
   };
 };
 
-export type PreviewMessage =
-  | PreviewReadyMessage
-  | PreviewResizeMessage
-  | PreviewErrorMessage;
+export type PreviewMessage = PreviewDimensionsMessage | PreviewErrorMessage;
 
 /**
- * True when a `MessageEvent`'s data is one of ours.
+ * Asks the preview to measure itself again and answer, whether or not
+ * anything moved.
  *
- * Only a shape check: the page's `message` channel is shared with every other
- * library, so a parent needs to recognise its own traffic before reading it.
- * It says nothing about whether the sender is trusted — check `event.origin`
- * and `event.source` for that.
+ * A preview refits itself when its own box changes, which covers a late font
+ * or a component that reflows. It cannot see everything: a frame that only
+ * grew taller, or a fixed-size component recentred in a frame that changed
+ * width, leaves its box untouched and reports nothing. The embedder is the
+ * one that knows it resized the frame, so it says so.
+ */
+export type PreviewMeasureRequest = {
+  type: typeof PreviewMessageType.measure;
+  version: number;
+};
+
+/** True for a measure request from an embedder. Shape only — check the origin. */
+export function isMeasureRequest(data: unknown): data is PreviewMeasureRequest {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    (data as PreviewMeasureRequest).type === PreviewMessageType.measure
+  );
+}
+
+/**
+ * True when a message is one of ours. A shape check only — the channel is
+ * shared with every other library. Check `event.origin` and `event.source`
+ * for whether the sender is trusted.
  */
 export function isPreviewMessage(data: unknown): data is PreviewMessage {
   return (
@@ -129,12 +119,8 @@ export function isPreviewMessage(data: unknown): data is PreviewMessage {
 }
 
 /**
- * Checks a reported measurement before a parent acts on it.
- *
- * A preview is a separate document, so its payload is untrusted even when the
- * sender is: a buggy component reporting a billion pixels should be rejected
- * rather than clamped, because a clamped value is indistinguishable from a real
- * one and would be stored as the last good measurement.
+ * Checks a measurement before acting on it. Rejected rather than clamped: a
+ * clamped value looks real and would be kept as the last good one.
  */
 export function isValidDimensions(value: unknown): value is PreviewDimensions {
   const { width, height } = (value ?? {}) as PreviewDimensions;
