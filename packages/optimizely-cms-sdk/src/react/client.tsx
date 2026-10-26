@@ -158,7 +158,7 @@ async function settled(element: Element) {
  *
  * Sends a measurement once the layout settles, then again whenever the box
  * moves by at least {@linkcode RESIZE_MIN_DELTA}. Rendered by
- * {@linkcode createComponentPreviewPage}.
+ * {@linkcode createStandalonePreview}.
  */
 export function PreviewReporter({
   contentType,

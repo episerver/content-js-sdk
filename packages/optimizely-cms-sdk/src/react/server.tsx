@@ -412,10 +412,10 @@ function previewStyles(fit: PreviewFit | undefined) {
 /** How a component is sized inside the preview's viewport. */
 export type PreviewFit = 'contain' | 'none';
 
-/** Props the router hands to a page built by {@linkcode createComponentPreviewPage} */
+/** Props the router hands to a page built by {@linkcode createStandalonePreview} */
 type PreviewQuery = Record<string, string | string[] | undefined>;
 
-type ComponentPreviewPageProps = {
+type StandalonePreviewProps = {
   /** A promise (Next's App Router), a plain object, or `URLSearchParams`. */
   searchParams?:
     | PreviewQuery
@@ -462,18 +462,23 @@ function defaultDisplaySettings(templateKey: string | undefined) {
  * query parameter the page does not read itself becomes a display setting, so
  * a catalogue can show one variant per tile.
  *
- * The page is an async component, so it needs a framework that can render one
- * on the server. Mount it wherever that framework puts routes:
+ * Needs React Server Components. The page it returns is an async server
+ * component, and the part that measures and reports is a client component, so
+ * the framework has to render async components on the server and understand
+ * `'use client'`. Next's App Router does; its Pages Router and plain
+ * client-side React do not. Nothing here imports Next itself.
+ *
+ * Mount it wherever your framework puts routes:
  *
  * @example `app/preview/component/page.tsx` in Next's App Router
  * ```tsx
- * export default createComponentPreviewPage({ defaultLocale: 'en' });
+ * export default createStandalonePreview({ defaultLocale: 'en' });
  * ```
  *
  * Only published content is reachable through `?key=`: this takes no preview
  * token, so it exposes nothing the public site does not already serve.
  */
-export function createComponentPreviewPage({
+export function createStandalonePreview({
   defaultLocale,
   mockData,
   parentOrigin,
@@ -505,7 +510,7 @@ export function createComponentPreviewPage({
    */
   mockData?: MockData;
 } = {}) {
-  async function ComponentPreviewPage({ searchParams }: ComponentPreviewPageProps) {
+  async function StandalonePreview({ searchParams }: StandalonePreviewProps) {
     const resolved = await searchParams;
     const query: PreviewQuery =
       resolved instanceof URLSearchParams ?
@@ -614,5 +619,5 @@ export function createComponentPreviewPage({
     );
   }
 
-  return withAppContext(ComponentPreviewPage);
+  return withAppContext(StandalonePreview);
 }
