@@ -55,6 +55,8 @@ export type {
   ContentSavedListenerOptions,
   NavigateCallback,
 } from './preview/contentSaved.js';
+export { refreshInPlace } from './preview/refreshInPlace.js';
+export type { RefreshInPlaceOptions } from './preview/refreshInPlace.js';
 
 // Context
 export {
