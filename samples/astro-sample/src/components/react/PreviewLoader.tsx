@@ -9,6 +9,9 @@ export default function PreviewLoader() {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 10000,
+        // Hidden for quick refreshes, so the two refreshes per save do not flash the overlay
+        opacity: 0,
+        animation: 'fade-in 0s 300ms forwards',
       }}
     >
       <div
@@ -37,6 +40,9 @@ export default function PreviewLoader() {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @keyframes fade-in {
+          to { opacity: 1; }
         }
       `}</style>
     </div>

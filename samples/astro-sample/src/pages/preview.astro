@@ -2,28 +2,22 @@
 // Skip pre-rendering for preview page since it's dynamic
 export const prerender = false;
 
-import type { PreviewParams } from '@optimizely/cms-sdk';
-import { ClientRouter } from 'astro:transitions';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { initOptimizely, getClient as getInitializedClient } from '@/lib/optimizely';
+import { getPreviewContent } from '@/lib/optimizely';
 import ContentPage from '@/components/react/ContentPage';
 import PreviewListener from '@/components/react/PreviewListener';
 
-initOptimizely();
-
-const searchParams = Astro.url.searchParams;
-const previewParams = Object.fromEntries(searchParams.entries());
-
-const client = getInitializedClient();
-const content = await client.getPreviewContent(previewParams as PreviewParams);
+const content = await getPreviewContent(Astro.url);
 
 const cmsUrl = import.meta.env.OPTIMIZELY_CMS_URL;
 const injectorUrl = new URL('/util/javascript/communicationinjector.js', cmsUrl).href;
 ---
 
 <BaseLayout>
-  <ClientRouter slot="head" />
   <script is:inline src={injectorUrl}></script>
-  <PreviewListener client:only="react" transition:persist />
-  <ContentPage content={content} />
+  <PreviewListener client:only="react" />
+  <!-- PreviewListener replaces this element's children with /preview/partial on save -->
+  <div id="preview-root">
+    <ContentPage content={content} />
+  </div>
 </BaseLayout>

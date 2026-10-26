@@ -1,0 +1,12 @@
+---
+// Renders only the preview content, which PreviewListener swaps in on save
+export const prerender = false;
+export const partial = true;
+
+import { getPreviewContent } from '@/lib/optimizely';
+import ContentPage from '@/components/react/ContentPage';
+
+const content = await getPreviewContent(Astro.url);
+---
+
+<ContentPage content={content} />
