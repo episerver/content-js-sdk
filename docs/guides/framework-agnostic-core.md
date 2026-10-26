@@ -251,12 +251,17 @@ every image. `refreshInPlace()` returns an `onNavigate` that fetches the new pre
 and patches only what changed.
 
 ```ts
-import { createContentSavedListener, refreshInPlace } from '@optimizely/cms-sdk/core';
+import {
+  createContentSavedListener,
+  refreshInPlace,
+} from '@optimizely/cms-sdk/core/preview';
 
 createContentSavedListener({ onNavigate: refreshInPlace() }).start();
 ```
 
-Wrap the rendered content in an element marked as the preview root:
+`@optimizely/cms-sdk/core/preview` exports only the listener and `refreshInPlace`, so the
+browser doesn't load the rest of core. Wrap the rendered content in an element marked as
+the preview root:
 
 ```html
 <div data-optimizely-preview-root>
@@ -264,11 +269,10 @@ Wrap the rendered content in an element marked as the preview root:
 </div>
 ```
 
-- The root is looked up in both the current page and the fetched one. Pass
-  `refreshInPlace({ root: '#content' })` to use another selector.
+- Pass `refreshInPlace({ root: '#content' })` to use another selector.
 - Nodes that didn't change stay in the DOM, so scroll position, images and the editor's
-  overlays survive. Image URLs that differ only by their `preview_token` keep their
-  current value, so the image doesn't download again.
+  overlays survive. Preview image URLs carry a token that changes on every save, so URLs
+  that differ only by that token keep their current value and don't download again.
 - A request still pending when the next save arrives is cancelled.
 - The address bar switches to the new preview URL, so a manual reload shows the latest
   draft.

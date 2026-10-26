@@ -33,6 +33,16 @@
         "default": "./dist/cjs/core/index.js"
       }
     },
+    "./core/preview": {
+      "import": {
+        "types": "./dist/esm/core/preview/index.d.ts",
+        "default": "./dist/esm/core/preview/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/core/preview/index.d.ts",
+        "default": "./dist/cjs/core/preview/index.js"
+      }
+    },
     "./react/server": {
       "import": {
         "types": "./dist/esm/react/server.d.ts",
@@ -140,17 +150,19 @@
     "astro/*.astro",
     "astro/index.*"
   ],
-  "keywords": [
-    "astro-component"
-  ],
+  "keywords": [],
   "author": "",
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.7.0",
   "peerDependencies": {
+    "astro": ">=5.0.0",
     "next": ">=14.0.0",
     "react": ">=19.0.0"
   },
   "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    },
     "next": {
       "optional": true
     },

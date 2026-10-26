@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { normalizePathname } from '../../util/preview.js';
 
 export interface ContentSavedEvent {
   contentLink: string;
@@ -37,10 +38,9 @@ export type ContentSavedListenerOptions = {
 
 const EVENT_NAME = 'optimizely:cms:contentSaved';
 
-/** Two URLs pointing at the same page differ only by a trailing slash often enough to matter. */
 const normalizeUrl = (url: string): string => {
   const parsed = new URL(url);
-  parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
+  parsed.pathname = normalizePathname(parsed.pathname);
   return parsed.toString();
 };
 

@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { normalizePathname, stripToken } from '../../util/preview.js';
 import type { NavigateCallback } from './contentSaved.js';
 
 export type RefreshInPlaceOptions = {
@@ -14,11 +15,6 @@ export type RefreshInPlaceOptions = {
    */
   root?: string;
 };
-
-const TOKEN_PATTERN = /preview_token=[^&\s,]*/g;
-
-/** Comparison key only; the stripped URL is never requested. */
-const stripToken = (value: string) => value.replace(TOKEN_PATTERN, '');
 
 const mediaAttributes = (root: Element) =>
   [...root.querySelectorAll('img, source')].flatMap(element =>
@@ -67,6 +63,9 @@ const fetchDocument = async (url: URL, signal: AbortSignal) => {
   return new DOMParser().parseFromString(await response.text(), 'text/html');
 };
 
+const isSamePage = (target: URL) =>
+  normalizePathname(target.pathname) === normalizePathname(window.location.pathname);
+
 // Module-level so callers can create the callback inline on every render
 let inFlight: AbortController | undefined;
 
@@ -81,32 +80,29 @@ export function refreshInPlace({
   root = '[data-optimizely-preview-root]',
 }: RefreshInPlaceOptions = {}): NavigateCallback {
   return async url => {
+    const reload = () => window.location.replace(url);
     const target = new URL(url, window.location.href);
     const current = document.querySelector(root);
-
-    if (!current || target.pathname !== window.location.pathname) {
-      window.location.replace(url);
-      return;
-    }
+    if (!current || !isSamePage(target)) return reload();
 
     // A slow response for an earlier save must not overwrite a newer one
     inFlight?.abort();
-    const controller = new AbortController();
-    inFlight = controller;
+    inFlight = new AbortController();
+    const { signal } = inFlight;
 
     try {
       // Same origin as the page, in case the CMS reports a different host for it
       const path = target.pathname + target.search;
       const nextUrl = new URL(path, window.location.origin);
-      const next = (await fetchDocument(nextUrl, controller.signal)).querySelector(root);
-      if (!next) throw new Error(`Preview root ${root} missing from the refreshed page`);
+      const next = (await fetchDocument(nextUrl, signal)).querySelector(root);
+      if (!next) return reload();
 
       reuseMediaUrls(current, next);
       patchChildren(current, next);
       // A manual reload then uses the latest preview token
       window.history.replaceState(window.history.state, '', path);
     } catch {
-      if (!controller.signal.aborted) window.location.replace(url);
+      if (!signal.aborted) reload();
     }
   };
 }

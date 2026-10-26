@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { refreshInPlace } from '../preview/refreshInPlace.js';
+import { refreshInPlace, type RefreshInPlaceOptions } from '../preview/refreshInPlace.js';
 
 const CURRENT_URL = 'http://localhost:3000/preview?token=old';
+const NEXT_URL = 'http://localhost:3000/preview?token=new';
 
 /** A full page as the server renders it, with `content` inside the preview root. */
 const page = (content: string) =>
@@ -25,6 +26,10 @@ const respondWith = (...bodies: string[]) => {
   return fetchMock;
 };
 
+/** Runs one refresh, as the listener does after a save. */
+const refresh = (url = NEXT_URL, options?: RefreshInPlaceOptions) =>
+  refreshInPlace(options)(url, false);
+
 beforeEach(() => window.history.replaceState({}, '', CURRENT_URL));
 
 afterEach(() => {
@@ -37,7 +42,7 @@ describe('patching', () => {
     const root = render('<h1>Old</h1>');
     respondWith(page('<h1>New</h1>'));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(root.innerHTML).toBe('<h1>New</h1>');
   });
@@ -49,7 +54,7 @@ describe('patching', () => {
     const [paragraph, footer] = [root.querySelector('p'), root.querySelector('footer')];
     respondWith(page('<section><h2>New</h2><p>Same</p></section><footer>Same</footer>'));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(root.querySelector('h2')!.textContent).toBe('New');
     expect(root.querySelector('p')).toBe(paragraph);
@@ -60,7 +65,7 @@ describe('patching', () => {
     const root = render('<p>One</p><p>Two</p><p>Three</p>');
     respondWith(page('<p>One</p><div>Added</div>'));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(root.innerHTML).toBe('<p>One</p><div>Added</div>');
   });
@@ -69,7 +74,7 @@ describe('patching', () => {
     render('<h1>Old</h1>');
     respondWith(page('<h1>New</h1>'));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(document.querySelector('aside')!.textContent).toBe('Outside');
     expect(document.querySelector('nav')).toBeNull();
@@ -79,10 +84,7 @@ describe('patching', () => {
     document.body.innerHTML = '<div id="content"><h1>Old</h1></div>';
     respondWith('<div id="content"><h1>New</h1></div>');
 
-    await refreshInPlace({ root: '#content' })(
-      'http://localhost:3000/preview?token=new',
-      false,
-    );
+    await refresh(NEXT_URL, { root: '#content' });
 
     expect(document.querySelector('#content')!.innerHTML).toBe('<h1>New</h1>');
   });
@@ -94,7 +96,7 @@ describe('media', () => {
     const image = root.querySelector('img');
     respondWith(page('<img src="/a.png?preview_token=new"><p>New</p>'));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(root.querySelector('img')).toBe(image);
     expect(image!.getAttribute('src')).toBe('/a.png?preview_token=old');
@@ -107,7 +109,7 @@ describe('media', () => {
     const source = root.querySelector('source');
     respondWith(page(`<picture><source srcset="${srcset('new')}"></picture>`));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(root.querySelector('source')).toBe(source);
   });
@@ -116,7 +118,7 @@ describe('media', () => {
     const root = render('<img src="/a.png?preview_token=old">');
     respondWith(page('<img src="/b.png?preview_token=new">'));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(root.querySelector('img')!.getAttribute('src')).toBe(
       '/b.png?preview_token=new',
@@ -129,18 +131,25 @@ describe('request', () => {
     render('<h1>Old</h1>');
     const fetchMock = respondWith(page('<h1>New</h1>'));
 
-    await refreshInPlace()('https://cms-host:4000/preview?token=new', false);
+    await refresh('https://cms-host:4000/preview?token=new');
 
-    expect(String(fetchMock.mock.calls[0][0])).toBe(
-      'http://localhost:3000/preview?token=new',
-    );
+    expect(String(fetchMock.mock.calls[0][0])).toBe(NEXT_URL);
+  });
+
+  test('a trailing slash still counts as the same page', async () => {
+    const root = render('<h1>Old</h1>');
+    respondWith(page('<h1>New</h1>'));
+
+    await refresh('http://localhost:3000/preview/?token=new');
+
+    expect(root.innerHTML).toBe('<h1>New</h1>');
   });
 
   test('updates the address so a manual reload uses the latest token', async () => {
     render('<h1>Old</h1>');
     respondWith(page('<h1>New</h1>'));
 
-    await refreshInPlace()('http://localhost:3000/preview?token=new', false);
+    await refresh();
 
     expect(window.location.search).toBe('?token=new');
   });
@@ -163,9 +172,8 @@ describe('request', () => {
       ),
     );
 
-    const refresh = refreshInPlace();
-    const first = refresh('http://localhost:3000/preview?token=first', false);
-    const second = refresh('http://localhost:3000/preview?token=second', false);
+    const first = refresh('http://localhost:3000/preview?token=first');
+    const second = refresh('http://localhost:3000/preview?token=second');
     resolvers.second();
     resolvers.first();
     await Promise.all([first, second]);
@@ -183,7 +191,7 @@ describe('falling back to a full reload', () => {
     document.body.innerHTML = '<h1>Old</h1>';
     const fetchMock = respondWith();
 
-    await refreshInPlace()(fallbackUrl, false);
+    await refresh(fallbackUrl);
 
     expect(window.location.hash).toBe('#reloaded');
     expect(fetchMock).not.toHaveBeenCalled();
@@ -193,7 +201,7 @@ describe('falling back to a full reload', () => {
     render('<h1>Old</h1>');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response('', 500)));
 
-    await refreshInPlace()(fallbackUrl, false);
+    await refresh(fallbackUrl);
 
     expect(window.location.hash).toBe('#reloaded');
   });
@@ -202,7 +210,7 @@ describe('falling back to a full reload', () => {
     render('<h1>Old</h1>');
     respondWith('<html><body><h1>New</h1></body></html>');
 
-    await refreshInPlace()(fallbackUrl, false);
+    await refresh(fallbackUrl);
 
     expect(window.location.hash).toBe('#reloaded');
   });
@@ -212,7 +220,7 @@ describe('falling back to a full reload', () => {
     const fetchMock = respondWith();
 
     // jsdom logs "Not implemented: navigation to another Document" here
-    await refreshInPlace()('http://localhost:3000/about', false);
+    await refresh('http://localhost:3000/about');
 
     expect(fetchMock).not.toHaveBeenCalled();
   });

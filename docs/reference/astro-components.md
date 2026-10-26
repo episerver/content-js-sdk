@@ -40,17 +40,13 @@ on your preview route, wrapped around the rendered content.
 #### Caveats
 
 - It loads the communication injector script itself. Don't add a second one to the page.
-- On save, it fetches the new preview URL and patches the wrapped content in place.
-  Elements that didn't change stay as they are, so the scroll position, images and the
-  editor's overlays survive. Anything outside the component keeps its first render.
-- It reloads the whole page instead when the saved content is on another page, or when the
-  request fails.
-- `<script>` tags inside the refreshed content don't run. Hydrated islands render again.
+- On save, it patches the wrapped content in place with
+  [`refreshInPlace`](../guides/framework-agnostic-core.md#refreshing-without-a-client-side-router),
+  which describes what survives a refresh and when it reloads the page instead. Anything
+  outside the component keeps its first render.
+- Hydrated islands inside the content render again on every refresh.
 - It runs no UI framework in the browser, so it works the same with React, Svelte or plain
   Astro components.
-- It is built on
-  [`refreshInPlace`](../guides/framework-agnostic-core.md#refreshing-without-a-client-side-router),
-  which you can use directly for anything the component doesn't cover.
 
 ### Usage
 

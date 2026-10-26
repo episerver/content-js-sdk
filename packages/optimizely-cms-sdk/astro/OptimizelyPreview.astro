@@ -15,21 +15,15 @@ const injectorUrl = new URL('/util/javascript/communicationinjector.js', cmsUrl)
 ---
 
 <script is:inline src={injectorUrl}></script>
-{
-  Astro.slots.has('loading') && (
-    <div data-optimizely-preview-loading hidden>
-      <slot name='loading' />
-    </div>
-  )
-}
+<div data-optimizely-preview-loading hidden>
+  <slot name='loading' />
+</div>
 <div data-optimizely-preview-root {...attributes}>
   <slot />
 </div>
 
 <script>
-  // Direct paths rather than `@optimizely/cms-sdk/core`, so the page does not load the whole core barrel
-  import { createContentSavedListener } from '../dist/esm/core/preview/contentSaved.js';
-  import { refreshInPlace } from '../dist/esm/core/preview/refreshInPlace.js';
+  import { createContentSavedListener, refreshInPlace } from '@optimizely/cms-sdk/core/preview';
 
   const loading = document.querySelector('[data-optimizely-preview-loading]');
 
