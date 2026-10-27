@@ -404,13 +404,13 @@ An object with two functions:
   - Returns `{}` outside edit mode or without an argument.
 - `src(reference)` — returns the URL of an image. It accepts a content reference or a URL
   string and returns `string | undefined`. The URL carries the `preview_token` query
-  parameter only when the preview was fetched with `getPreviewContent(params, { usePreviewToken: true })`.
+  parameter only when the preview was fetched with `getPreviewContent(params, { forceMediaToken: true })`.
   Otherwise, [`PreviewComponent`](#previewcomponent) adds the token to images that fail to
   load.
 
 #### Caveats
 
-- Edit mode, the preview token and `usePreviewToken` come from `content.__context`, which
+- Edit mode and the media token come from `content.__context`, which
   `getPreviewContent()` adds to every item it returns. Content fetched any other way gets
   no attributes and no token.
 - `pa()` doesn't check the property name. Use the key from the content type definition.
@@ -656,16 +656,16 @@ declare function setContextData<K extends keyof ContextData>(
 
 #### `ContextData`
 
-| Field             | Type      | Set by `getPreviewContent()` from |
-| ----------------- | --------- | --------------------------------- |
-| `previewToken`    | `string`  | The `preview_token` parameter     |
-| `usePreviewToken` | `boolean` | The `usePreviewToken` option      |
-| `version`         | `string`  | The `ver` parameter               |
-| `locale`          | `string`  | The `loc` parameter               |
-| `key`             | `string`  | The `key` parameter               |
-| `mode`            | `string`  | The `ctx` parameter               |
-| `type`            | `string`  | The content type of the item      |
-| `currentContent`  | `unknown` | Not set. Yours to use             |
+| Field            | Type      | Set by `getPreviewContent()` from      |
+| ---------------- | --------- | -------------------------------------- |
+| `previewToken`   | `string`  | The `preview_token` parameter          |
+| `mediaToken`     | `string`  | `preview_token` with `forceMediaToken` |
+| `version`        | `string`  | The `ver` parameter                    |
+| `locale`         | `string`  | The `loc` parameter                    |
+| `key`            | `string`  | The `key` parameter                    |
+| `mode`           | `string`  | The `ctx` parameter                    |
+| `type`           | `string`  | The content type of the item           |
+| `currentContent` | `unknown` | Not set. Yours to use                  |
 
 Every field is optional.
 
@@ -674,7 +674,7 @@ Every field is optional.
 - `setContext()` merges into the existing data. `setContextData()` sets one field.
 - The data lives in `React.cache()`, so it is shared only within one request, in Server
   Components. Client Components don't see it.
-- `RichText` adds `previewToken` to image URLs when `usePreviewToken` is set.
+- `RichText` adds `mediaToken` to image URLs. It is set only with `forceMediaToken`.
 
 ### Usage
 

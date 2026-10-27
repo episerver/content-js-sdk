@@ -175,7 +175,7 @@ describe('getRichTextElement', () => {
     });
 
     test('an image source gets the preview token when the preview opted in', () => {
-      adapter.set('usePreviewToken', true);
+      adapter.set('mediaToken', 'token');
 
       expect(element('image', { src: '/a.png' }).attributes.src).toBe('/a.png?preview_token=token');
     });

@@ -377,7 +377,7 @@ the component doesn't know the CMS host.
 
 **Fix:** Render `NextPreviewComponent` or `PreviewComponent` on the preview route and pass
 `cmsUrl={process.env.OPTIMIZELY_CMS_URL}`, or load the communication injector script from
-that host. On a route that runs no client code, pass `{ usePreviewToken: true }` to
+that host. On a route that runs no client code, pass `{ forceMediaToken: true }` to
 `getPreviewContent()` instead. See
 [Images and videos in preview](../learn/live-preview.md#images-and-videos-in-preview).
 

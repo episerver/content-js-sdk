@@ -57,9 +57,9 @@ describe('GraphClient - Context Integration', () => {
       const client = new GraphClient('test-key');
       stubPreview(client);
 
-      await client.getPreviewContent(previewParams, { usePreviewToken: true });
+      await client.getPreviewContent(previewParams, { forceMediaToken: true });
 
-      expect(getContext()?.usePreviewToken).toBe(true);
+      expect(getContext()?.mediaToken).toBe('token-123');
     });
 
     test('should throw error if adapter is broken', async () => {

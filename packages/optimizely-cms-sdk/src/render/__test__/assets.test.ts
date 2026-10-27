@@ -35,7 +35,7 @@ const assetOfType = (__typename: string) => ({ ...imageAsset(), item: { __typena
 
 const page = { __typename: 'TestPage' };
 const previewPage = { __typename: 'TestPage', __context: { edit: true, preview_token: 'token-123' } };
-const tokenPage = { ...previewPage, __context: { ...previewPage.__context, usePreviewToken: true } };
+const tokenPage = { ...previewPage, __context: { ...previewPage.__context, media_token: 'token-123' } };
 
 describe('getSrcset', () => {
   test('lists each rendition width once, keeping the first rendition of a width', () => {

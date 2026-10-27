@@ -263,7 +263,7 @@ const stop = startMediaTokenRetry({ cmsUrl: 'https://<your-instance>.cms.optimiz
   page URL's `preview_token`.
 - It replaces a stale token, and never requests media again with the token it already
   failed with.
-- A preview route that runs no client code can't retry. Pass `{ usePreviewToken: true }`
+- A preview route that runs no client code can't retry. Pass `{ forceMediaToken: true }`
   to `getPreviewContent()` to put the token in every media URL instead.
 
 ## Forms
@@ -375,7 +375,7 @@ on a host serving one request at a time, but not on a server handling concurrent
 `getRichTextTree(content)` turns a rich-text field into a tree of `RenderNode`s. A binding
 walks it with three helpers: `getRichTextElement(node)` gives an element node's `tag`,
 `selfClosing`, `attributes` and `style` (with the image preview token applied when the
-preview opted in with `usePreviewToken`);
+preview opted in with `forceMediaToken`);
 `getMarkTag(mark)` gives a text mark's tag; and `toStyleString(style)` writes the style
 for frameworks that take a string.
 

@@ -1,5 +1,5 @@
 import { InferredContentReference, type PreviewContext } from '../../infer.js';
-import { appendToken, mediaToken } from '../../util/preview.js';
+import { appendToken } from '../../util/preview.js';
 
 /** The parts of a content item the preview helpers read. */
 type PreviewableContent = {
@@ -32,7 +32,7 @@ export function getPreviewUtils(content: PreviewableContent) {
 
     /**
      * The URL of a ContentReference's asset, or of a plain URL string.
-     * Carries the preview token only when the preview opted in with `usePreviewToken`.
+     * Carries the preview token only when the preview opted in with `forceMediaToken`.
      *
      * @param input - ContentReference from a DAM asset
      * @returns The asset URL, or undefined when there is none
@@ -47,7 +47,7 @@ export function getPreviewUtils(content: PreviewableContent) {
      * ```
      */
     src(input: InferredContentReference | string | null | undefined): string | undefined {
-      const previewToken = mediaToken(content.__context);
+      const previewToken = content.__context?.media_token;
 
       // if input is an object with a URL
       if (typeof input === 'object' && input) {

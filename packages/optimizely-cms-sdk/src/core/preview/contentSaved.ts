@@ -55,6 +55,14 @@ const normalizeUrl = (url: string): string => {
   return parsed.toString();
 };
 
+const startRetry = (
+  { mediaTokenRetry, cmsUrl }: ContentSavedListenerOptions,
+  token: string | undefined,
+) =>
+  mediaTokenRetry === false ? undefined : (
+    startMediaTokenRetry({ cmsUrl, getToken: () => token })
+  );
+
 export type ContentSavedListener = {
   /** Subscribes to the event. Returns the unsubscribe. */
   start(): () => void;
@@ -118,7 +126,9 @@ export function createContentSavedListener(
 
     const executeNavigation = () => {
       if (onNavigate) {
-        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => onBusyChange?.(false));
+        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
+          onBusyChange?.(false),
+        );
       } else {
         // Fallback: hard reload
         window.location.replace(finalUrl);
@@ -147,8 +157,7 @@ export function createContentSavedListener(
 
       if (subscribers === 0) {
         window.addEventListener(EVENT_NAME, listener);
-        if (options.mediaTokenRetry !== false)
-          stopMediaTokenRetry = startMediaTokenRetry({ cmsUrl: options.cmsUrl, getToken: () => latestToken });
+        stopMediaTokenRetry = startRetry(options, latestToken);
       }
       subscribers++;
 

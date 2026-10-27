@@ -129,7 +129,7 @@ communication injector script loads from.
 >
 > If your preview route renders none of `NextPreviewComponent`, `PreviewComponent` or
 > `createContentSavedListener`, nothing loads unpublished media again. Pass
-> `{ usePreviewToken: true }` to `getPreviewContent()` to put the token in every media URL
+> `{ forceMediaToken: true }` to `getPreviewContent()` to put the token in every media URL
 > instead.
 
 ## Let editors click to edit

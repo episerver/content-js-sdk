@@ -1,13 +1,9 @@
 /**
  * Retries preview media that failed to load, this time with the preview token.
  *
- * Media URLs are rendered without the token so they stay the same across saves.
- * Only media that needs the token (unpublished or restricted) fails, and only
- * that media is requested again.
- *
  * @module
  */
-import { withToken } from '../../util/preview.js';
+import { appendToken } from '../../util/preview.js';
 
 export type MediaTokenRetryOptions = {
   /**
@@ -30,9 +26,6 @@ const INJECTOR_SCRIPT = 'script[src*="/util/javascript/communicationinjector.js"
 
 const tokenFromLocation = () => new URLSearchParams(window.location.search).get('preview_token');
 
-// Image optimizers fetch the CMS URL themselves: Next's `/_next/image?url=`, Astro's `/_image?href=`
-const OPTIMIZER_PARAMS = ['url', 'href'];
-
 const parseUrl = (url: string | undefined) => {
   if (!url) return undefined;
   try {
@@ -48,28 +41,23 @@ const originOf = (url: string | undefined) => parseUrl(url)?.origin;
 const cmsOrigin = (cmsUrl: string | undefined) =>
   originOf(cmsUrl ?? document.querySelector<HTMLScriptElement>(INJECTOR_SCRIPT)?.src);
 
-/** Applies `tokenize` to the source URL of a same-origin image optimizer URL. */
+// Same-origin image optimizers take the CMS URL as a parameter: Next's `/_next/image?url=`, Astro's `/_image?href=`
 const tokenizeOptimizerUrl = (url: string, tokenize: Tokenize) => {
   const parsed = parseUrl(url);
-  const name = OPTIMIZER_PARAMS.find(it => parsed?.searchParams.has(it));
-  if (!parsed || !name || parsed.origin !== window.location.origin) return url;
+  if (!parsed || parsed.origin !== window.location.origin) return url;
 
-  const source = parsed.searchParams.get(name)!;
-  const next = tokenize(source);
-  if (next === source) return url;
+  const changed = [...parsed.searchParams]
+    .map(([name, value]) => [name, value, tokenize(value)])
+    .filter(([, value, next]) => next !== value);
+  if (changed.length === 0) return url;
 
-  parsed.searchParams.set(name, next);
+  changed.forEach(([name, , next]) => parsed.searchParams.set(name, next));
   return parsed.href;
 };
 
-/** Adds the token to URLs on the CMS host, directly or through an image optimizer, and leaves every other URL alone. */
 const tokenizer = (token: string, origin: string): Tokenize => {
-  const tokenizeCmsUrl: Tokenize = url => (originOf(url) === origin ? withToken(url, token) : url);
-
-  return url => {
-    const direct = tokenizeCmsUrl(url);
-    return direct === url ? tokenizeOptimizerUrl(url, tokenizeCmsUrl) : direct;
-  };
+  const tokenizeCmsUrl: Tokenize = url => (originOf(url) === origin ? appendToken(url, token) : url);
+  return url => tokenizeOptimizerUrl(tokenizeCmsUrl(url), tokenizeCmsUrl);
 };
 
 const tokenizeSrcset = (srcset: string, tokenize: Tokenize) =>
@@ -83,45 +71,38 @@ const tokenizeSrcset = (srcset: string, tokenize: Tokenize) =>
     })
     .join(', ');
 
-const REWRITERS: Record<string, (value: string, tokenize: Tokenize) => string> = {
-  src: (value, tokenize) => tokenize(value),
-  srcset: tokenizeSrcset,
+/** Rewrites one attribute. Returns whether it changed. */
+const rewriteAttribute = (element: Element, name: string, rewriter: (value: string) => string) => {
+  const value = element.getAttribute(name);
+  const next = value && rewriter(value);
+  if (!next || next === value) return false;
+
+  element.setAttribute(name, next);
+  return true;
 };
 
-/** Rewrites the URL attributes of each element. Returns whether any of them changed. */
-const rewrite = (elements: Element[], tokenize: Tokenize): boolean =>
+// Every attribute is rewritten, so `some` runs only after the map
+const rewrite = (elements: Element[], tokenize: Tokenize) =>
   elements
-    .flatMap(element =>
-      Object.entries(REWRITERS).map(([name, rewriter]) => {
-        const value = element.getAttribute(name);
-        if (!value) return false;
-
-        const next = rewriter(value, tokenize);
-        if (next === value) return false;
-
-        element.setAttribute(name, next);
-        return true;
-      }),
-    )
+    .flatMap(element => [
+      rewriteAttribute(element, 'src', tokenize),
+      rewriteAttribute(element, 'srcset', srcset => tokenizeSrcset(srcset, tokenize)),
+    ])
     .some(Boolean);
 
 const sourcesOf = (parent: Element | null) =>
   parent ? [...parent.children].filter(it => it instanceof HTMLSourceElement) : [];
 
 // Sources inside <picture> report their failure on the <img>, but the browser may have picked any of them
-const retryImage = (image: HTMLImageElement, tokenize: Tokenize) => {
-  const picture = image.parentElement instanceof HTMLPictureElement ? image.parentElement : null;
-  rewrite([image, ...sourcesOf(picture)], tokenize);
+const retry = (element: MediaElement, tokenize: Tokenize) => {
+  const sourceParent =
+    element instanceof HTMLImageElement ?
+      element.parentElement instanceof HTMLPictureElement ? element.parentElement : null
+    : element;
+  if (rewrite([element, ...sourcesOf(sourceParent)], tokenize) && element instanceof HTMLMediaElement)
+    element.load();
 };
 
-const retryMedia = (media: HTMLMediaElement, tokenize: Tokenize) => {
-  if (rewrite([media, ...sourcesOf(media)], tokenize)) media.load();
-};
-
-const retry = (element: MediaElement, tokenize: Tokenize) =>
-  element instanceof HTMLImageElement ? retryImage(element, tokenize) : retryMedia(element, tokenize);
-
-/** The element whose sources to rewrite, given the target of an `error` event. */
 const mediaElementOf = (target: EventTarget | null): MediaElement | null => {
   if (target instanceof HTMLImageElement || target instanceof HTMLMediaElement) return target;
   if (target instanceof HTMLSourceElement && target.parentElement instanceof HTMLMediaElement)
@@ -138,9 +119,11 @@ const hasFailed = (element: MediaElement) =>
  * Listens for images and videos that fail to load and retries them with the
  * preview token, replacing a stale token if the URL already has one.
  *
- * Only URLs on the CMS host get the token. Without a known CMS host nothing is
- * retried. Media that already failed before the call is retried straight away.
- * A retry that would not change the URL is skipped, so media that fails with the
+ * Media URLs are rendered without the token so they stay the same across saves;
+ * only media that needs it (unpublished or restricted) fails and is requested again.
+ * Only URLs on the CMS host get the token, and without a known CMS host nothing is
+ * retried. Media that already failed before the call is retried straight away. A
+ * retry that would not change the URL is skipped, so media that fails with the
  * current token is not requested again until the token changes.
  *
  * @returns Stops listening.
@@ -149,9 +132,10 @@ export function startMediaTokenRetry({ getToken, cmsUrl }: MediaTokenRetryOption
   if (typeof document === 'undefined') return () => {};
 
   const retryWithToken = (element: MediaElement | null) => {
+    if (!element) return;
     const token = getToken?.() ?? tokenFromLocation();
     const origin = cmsOrigin(cmsUrl);
-    if (element && token && origin) retry(element, tokenizer(token, origin));
+    if (token && origin) retry(element, tokenizer(token, origin));
   };
 
   // `error` does not bubble, so it has to be caught on the way down

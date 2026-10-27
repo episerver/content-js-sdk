@@ -1,14 +1,17 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { startMediaTokenRetry } from '../preview/mediaTokenRetry.js';
+import { startMediaTokenRetry, type MediaTokenRetryOptions } from '../preview/mediaTokenRetry.js';
 
 const CMS = 'https://cms.example.com';
 const IMAGE = `${CMS}/globalassets/cat.jpg`;
 const OTHER = 'https://images.example.org/cat.jpg';
 
+const optimized = (url: string, width: number) => `/_next/image?url=${encodeURIComponent(url)}&w=${width}&q=75`;
+const sourceOf = (url: string, name = 'url') => new URL(url, window.location.href).searchParams.get(name);
+
 let stops: (() => void)[] = [];
 
 /** Starts the retry and stops it when the test ends. */
-const start = (...args: Parameters<typeof startMediaTokenRetry>) => stops.push(startMediaTokenRetry(...args));
+const start = (options?: MediaTokenRetryOptions) => stops.push(startMediaTokenRetry(options));
 
 const render = (html: string) => {
   document.body.innerHTML = html;
@@ -16,6 +19,14 @@ const render = (html: string) => {
 };
 
 const fail = (element: Element) => element.dispatchEvent(new Event('error'));
+
+/** The `src` of an image after it failed once with the retry running. */
+const failedSrc = (src: string, options?: MediaTokenRetryOptions) => {
+  const image = render(`<img src="${src}">`);
+  start(options);
+  fail(image);
+  return image.getAttribute('src');
+};
 
 const markFailed = (image: HTMLImageElement) => {
   Object.defineProperty(image, 'complete', { value: true });
@@ -37,13 +48,34 @@ afterEach(() => {
 });
 
 describe('startMediaTokenRetry', () => {
-  test('retries a failed image with the token from the page URL', () => {
-    const image = render(`<img src="${IMAGE}">`);
-    start();
+  test.each<[string, string, MediaTokenRetryOptions, string]>([
+    ['retries a failed image with the token from the page URL', IMAGE, {}, `${IMAGE}?preview_token=token-1`],
+    ['replaces a stale token instead of adding a second one', `${IMAGE}?w=500&preview_token=old`, {}, `${IMAGE}?w=500&preview_token=token-1`],
+    ['reads the token from getToken when given', IMAGE, { getToken: () => 'from-event' }, `${IMAGE}?preview_token=from-event`],
+    ['falls back to the page URL when getToken returns nothing', IMAGE, { getToken: () => undefined }, `${IMAGE}?preview_token=token-1`],
+    ['prefers cmsUrl over the injector script host', IMAGE, { cmsUrl: 'https://other-cms.example.com' }, IMAGE],
+    ['leaves an optimized image from another host alone', optimized(OTHER, 640), {}, optimized(OTHER, 640)],
+    ['leaves an optimizer on another origin alone', `https://cdn.example.org${optimized(IMAGE, 640)}`, {}, `https://cdn.example.org${optimized(IMAGE, 640)}`],
+  ])('%s', (_, src, options, expected) => {
+    expect(failedSrc(src, options)).toBe(expected);
+  });
 
-    fail(image);
+  test('takes the CMS host from cmsUrl without an injector script', () => {
+    document.head.innerHTML = '';
 
-    expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=token-1`);
+    expect(failedSrc(IMAGE, { cmsUrl: `${CMS}/` })).toBe(`${IMAGE}?preview_token=token-1`);
+  });
+
+  test('does nothing without a known CMS host', () => {
+    document.head.innerHTML = '';
+
+    expect(failedSrc(IMAGE)).toBe(IMAGE);
+  });
+
+  test('does nothing without a token', () => {
+    window.history.replaceState({}, '', '/preview');
+
+    expect(failedSrc(IMAGE)).toBe(IMAGE);
   });
 
   test('leaves images that load alone', () => {
@@ -51,15 +83,6 @@ describe('startMediaTokenRetry', () => {
     start();
 
     expect(image.getAttribute('src')).toBe(IMAGE);
-  });
-
-  test('replaces a stale token instead of adding a second one', () => {
-    const image = render(`<img src="${IMAGE}?w=500&preview_token=old">`);
-    start();
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(`${IMAGE}?w=500&preview_token=token-1`);
   });
 
   test('rewrites every srcset candidate, keeping its descriptor', () => {
@@ -71,6 +94,16 @@ describe('startMediaTokenRetry', () => {
     expect(image.getAttribute('srcset')).toBe(
       `${IMAGE}?w=100&preview_token=token-1 100w, ${IMAGE}?w=500&preview_token=token-1 500w`,
     );
+  });
+
+  test('leaves media on other hosts alone', () => {
+    const image = render(`<img src="${OTHER}" srcset="${OTHER} 1x, ${IMAGE} 2x">`);
+    start();
+
+    fail(image);
+
+    expect(image.getAttribute('src')).toBe(OTHER);
+    expect(image.getAttribute('srcset')).toBe(`${OTHER} 1x, ${IMAGE}?preview_token=token-1 2x`);
   });
 
   test('rewrites the sources of a picture when its image fails', () => {
@@ -113,38 +146,7 @@ describe('startMediaTokenRetry', () => {
     expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=token-2`);
   });
 
-  test('reads the token from getToken when given', () => {
-    const image = render(`<img src="${IMAGE}">`);
-    start({ getToken: () => 'from-event' });
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=from-event`);
-  });
-
-  test('falls back to the page URL when getToken returns nothing', () => {
-    const image = render(`<img src="${IMAGE}">`);
-    start({ getToken: () => undefined });
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=token-1`);
-  });
-
-  test('leaves media on other hosts alone', () => {
-    const image = render(`<img src="${OTHER}" srcset="${OTHER} 1x, ${IMAGE} 2x">`);
-    start();
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(OTHER);
-    expect(image.getAttribute('srcset')).toBe(`${OTHER} 1x, ${IMAGE}?preview_token=token-1 2x`);
-  });
-
   describe('through an image optimizer', () => {
-    const optimized = (url: string, width: number) => `/_next/image?url=${encodeURIComponent(url)}&w=${width}&q=75`;
-    const sourceOf = (url: string, name = 'url') => new URL(url, window.location.href).searchParams.get(name);
-
     test('adds the token to the CMS URL inside src and every srcset candidate', () => {
       const image = render(
         `<img src="${optimized(IMAGE, 1080)}" srcset="${optimized(IMAGE, 640)} 1x, ${optimized(IMAGE, 1080)} 2x">`,
@@ -159,73 +161,11 @@ describe('startMediaTokenRetry', () => {
       expect(new URL(image.getAttribute('src')!).searchParams.get('w')).toBe('1080');
     });
 
-    test('reads the source from an href parameter', () => {
-      const image = render(`<img src="/_image?href=${encodeURIComponent(IMAGE)}&w=640">`);
-      start();
+    test('reads the source from any parameter, such as href', () => {
+      const src = failedSrc(`/_image?href=${encodeURIComponent(IMAGE)}&w=640`);
 
-      fail(image);
-
-      expect(sourceOf(image.getAttribute('src')!, 'href')).toBe(`${IMAGE}?preview_token=token-1`);
+      expect(sourceOf(src!, 'href')).toBe(`${IMAGE}?preview_token=token-1`);
     });
-
-    test('leaves an optimized image from another host alone', () => {
-      const src = optimized(OTHER, 640);
-      const image = render(`<img src="${src}">`);
-      start();
-
-      fail(image);
-
-      expect(image.getAttribute('src')).toBe(src);
-    });
-
-    test('leaves an optimizer on another origin alone', () => {
-      const src = `https://cdn.example.org${optimized(IMAGE, 640)}`;
-      const image = render(`<img src="${src}">`);
-      start();
-
-      fail(image);
-
-      expect(image.getAttribute('src')).toBe(src);
-    });
-  });
-
-  test('prefers cmsUrl over the injector script host', () => {
-    const image = render(`<img src="${IMAGE}">`);
-    start({ cmsUrl: 'https://other-cms.example.com' });
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(IMAGE);
-  });
-
-  test('takes the CMS host from cmsUrl without an injector script', () => {
-    document.head.innerHTML = '';
-    const image = render(`<img src="${IMAGE}">`);
-    start({ cmsUrl: `${CMS}/` });
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=token-1`);
-  });
-
-  test('does nothing without a known CMS host', () => {
-    document.head.innerHTML = '';
-    const image = render(`<img src="${IMAGE}">`);
-    start();
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(IMAGE);
-  });
-
-  test('does nothing without a token', () => {
-    window.history.replaceState({}, '', '/preview');
-    const image = render(`<img src="${IMAGE}">`);
-    start();
-
-    fail(image);
-
-    expect(image.getAttribute('src')).toBe(IMAGE);
   });
 
   test('retries images that failed before it started', () => {

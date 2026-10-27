@@ -232,7 +232,7 @@ describe('RichText images', () => {
   test('adds the preview token from context to the image source when the preview opted in', () => {
     const adapter = new MemoryAdapter();
     adapter.set('previewToken', 'token-1');
-    adapter.set('usePreviewToken', true);
+    adapter.set('mediaToken', 'token-1');
     configureAdapter(adapter);
 
     const { container } = render(<RichText content={imageContent} />);

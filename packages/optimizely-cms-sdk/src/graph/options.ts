@@ -334,14 +334,14 @@ export type GraphGetItemOptions = GraphQueryOptions & {
 
 export type GraphGetPreviewOptions = GraphQueryOptions & {
   /**
-   * Adds the preview token to media URLs (`src()`, `getSrcset`, rich-text images).
+   * Forces the preview token into every media URL (`src()`, `getSrcset`, rich-text images).
    *
-   * Leave off when the preview runs the SDK's content-saved listener, which adds the
-   * token only to media that fails to load. Turn on for setups without it, or media
-   * that needs the token will not load.
+   * Not recommended: the token changes on every save, so every image and video reloads
+   * each time. The SDK's content-saved listener adds the token only to media that fails
+   * to load. Use this only on a preview route that runs no client code.
    * @default false
    */
-  usePreviewToken?: boolean;
+  forceMediaToken?: boolean;
 };
 
 export type PreviewParams = {

@@ -138,8 +138,8 @@ export type InferredImageMetadata = {
 export type PreviewContext = {
   edit: boolean;
   preview_token: string;
-  /** Media URLs carry `preview_token`. See `GraphGetPreviewOptions.usePreviewToken`. */
-  usePreviewToken?: boolean;
+  /** The token media URLs carry. Set only with `GraphGetPreviewOptions.forceMediaToken`. */
+  media_token?: string;
 };
 
 /** Attributes included in the response from Graph in every content type */

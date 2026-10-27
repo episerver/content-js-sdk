@@ -5,7 +5,7 @@ import type {
   PublicRawFileAsset,
   Renditions,
 } from '../model/assets.js';
-import { appendToken, mediaToken } from '../util/preview.js';
+import { appendToken } from '../util/preview.js';
 
 /**
  * Appends a preview token to a ContentReference's rendition URLs.
@@ -43,7 +43,7 @@ function appendPreviewTokenToRenditions(
  *
  * This handles all the messy details:
  * - Removes duplicate widths if you have multiple renditions at the same size
- * - Adds the preview token when the preview opted in with `usePreviewToken`
+ * - Adds the preview token when the preview opted in with `forceMediaToken`
  * - Returns undefined if there's no image or no renditions (attribute won't be rendered)
  *
  * @param content - Your content object with __context for preview tokens
@@ -79,7 +79,7 @@ export function getSrcset<T extends Record<string, any>>(
   property: InferredContentReference | null | undefined,
 ): string | undefined {
   const input = property;
-  const previewToken = mediaToken(content?.__context);
+  const previewToken = content?.__context?.media_token;
 
   // Apply preview token to renditions if provided
   const processedInput = previewToken ? appendPreviewTokenToRenditions(input, previewToken) : input;
@@ -362,7 +362,7 @@ export function getDamAssetType(
  *
  * Returns helper functions for asset manipulation and type checking. The `getSrcset` function
  * returned includes the preview token from the content's __context when the preview opted in
- * with `usePreviewToken`.
+ * with `forceMediaToken`.
  *
  * @param content - Content object with optional __context for preview tokens
  * @returns Object containing utility functions: getSrcset, getAlt, isDamImageAsset, isDamVideoAsset, isDamRawFileAsset, isDamAsset, getDamAssetType

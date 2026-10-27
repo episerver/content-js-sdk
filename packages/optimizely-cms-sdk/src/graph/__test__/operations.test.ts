@@ -179,9 +179,9 @@ describe('getPreviewContent', () => {
       content: { _Content: { item: { __typename: 'Article', Article__title: 'Draft' } } },
     });
 
-    const content: any = await client.getPreviewContent(previewParams, { usePreviewToken: true });
+    const content: any = await client.getPreviewContent(previewParams, { forceMediaToken: true });
 
-    expect(content.__context).toEqual({ edit: true, preview_token: 'token', usePreviewToken: true });
+    expect(content.__context).toEqual({ edit: true, preview_token: 'token', media_token: 'token' });
   });
 
   test('throws a GraphResponseError naming the key when the content is not found', async () => {

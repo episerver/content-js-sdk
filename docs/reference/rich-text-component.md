@@ -158,7 +158,7 @@ Some rules apply on top of that:
 - **`selected`** is removed. A `select` gets a `defaultValue` from the options marked
   `selected` instead, as React expects.
 - **`image` elements** get the request's preview token appended to `src` when the preview
-  was fetched with `usePreviewToken: true`. Otherwise the preview component adds it to
+  was fetched with `forceMediaToken: true`. Otherwise the preview component adds it to
   images that fail to load.
 
 <details>
