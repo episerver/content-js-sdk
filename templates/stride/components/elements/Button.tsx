@@ -1,9 +1,5 @@
-import {
-  ContentProps,
-  contentType,
-  displayTemplate,
-  withMock,
-} from '@optimizely/cms-sdk';
+import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
+import { withMock } from '@optimizely/cms-sdk/mock';
 import { CmsField } from '../shared/CmsField';
 import Link from 'next/link';
 import { cn } from '../../lib/utils';

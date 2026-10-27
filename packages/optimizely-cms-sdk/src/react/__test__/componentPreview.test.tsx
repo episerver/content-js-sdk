@@ -1,7 +1,8 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { useFormValidation } from '../forms/index.js';
-import { createStandalonePreview, initReactComponentRegistry } from '../server.js';
+import { createStandalonePreview } from '../standalone.js';
+import { initReactComponentRegistry } from '../server.js';
 import {
   contentType,
   displayTemplate,
