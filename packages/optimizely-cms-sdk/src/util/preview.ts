@@ -14,6 +14,14 @@ export const appendToken = (url: string, previewToken?: string): string => {
   return `${url}${separator}preview_token=${previewToken}`;
 };
 
+const TOKEN_PARAM = /([?&])preview_token=[^&#]*/;
+
+/** Sets the preview token on a URL, replacing one it already carries. */
+export const withToken = (url: string, previewToken: string): string =>
+  TOKEN_PARAM.test(url) ?
+    url.replace(TOKEN_PARAM, `$1preview_token=${previewToken}`)
+  : appendToken(url, previewToken);
+
 /** The token for media URLs: only set when the preview opted in with `usePreviewToken`. */
 export const mediaToken = (context?: Partial<PreviewContext>): string | undefined =>
   context?.usePreviewToken ? context.preview_token : undefined;
