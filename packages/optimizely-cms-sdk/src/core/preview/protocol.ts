@@ -67,11 +67,7 @@ export type PreviewErrorMessage = {
   version: number;
   payload: {
     /** Open-ended: treat anything unrecognised as `render-failed`. */
-    code:
-      | 'unknown-content-type'
-      | 'content-not-found'
-      | 'render-failed'
-      | (string & {});
+    code: 'unknown-content-type' | 'render-failed' | (string & {});
     /** Untrusted text. Render as text, never as HTML. */
     message: string;
     contentType?: string;
