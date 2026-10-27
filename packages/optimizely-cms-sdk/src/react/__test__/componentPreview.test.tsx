@@ -107,7 +107,7 @@ async function renderPage(
 
 describe('createStandalonePreview', () => {
   test('renders a content type from generated stand-in content', async () => {
-    const { container } = await renderPage({ contentType: 'Heading' });
+    const { container } = await renderPage({ type: 'Heading' });
 
     expect(container.querySelector('h2')?.textContent).toBe('Headline');
     // The placeholder is inline, so the frame needs nothing from the network.
@@ -121,32 +121,26 @@ describe('createStandalonePreview', () => {
     );
   });
 
-  test('renders real content when given a key', async () => {
-    getContent.mockResolvedValue({
-      __typename: 'Heading',
-      Text: 'Set it. Sweat it.',
-      _metadata: { key: 'abc123', types: ['Heading'], locale: 'sv' },
-    });
+  test('never fetches real content, whatever the URL asks for', async () => {
+    // This route takes no preview token and does no authorization, so it
+    // serves generated content only. `key` stays a reserved parameter so an
+    // old URL fails loudly rather than becoming a display setting.
+    const { container } = await renderPage({ key: 'abc123', loc: 'sv' });
 
-    const { container } = await renderPage({ key: 'abc123', locale: 'sv' });
-
-    expect(container.querySelector('h2')?.textContent).toBe('Set it. Sweat it.');
-    expect(getContent).toHaveBeenCalledWith(
-      { key: 'abc123', locale: 'sv' },
-      { publishedOnly: true },
-    );
+    expect(getContent).not.toHaveBeenCalled();
+    expect(container.querySelector('h2')).toBeNull();
   });
 
   test('a display template supplies its first choice, a query parameter overrides it', async () => {
     const asDefault = await renderPage({
-      contentType: 'Heading',
-      displayTemplate: 'HeadingStyles',
+      type: 'Heading',
+      template: 'HeadingStyles',
     });
     expect(asDefault.container.querySelector('h2')?.dataset.size).toBe('large');
 
     const overridden = await renderPage({
-      contentType: 'Heading',
-      displayTemplate: 'HeadingStyles',
+      type: 'Heading',
+      template: 'HeadingStyles',
       size: 'small',
     });
     expect(overridden.container.querySelector('h2')?.dataset.size).toBe('small');
@@ -197,7 +191,7 @@ describe('createStandalonePreview', () => {
     );
 
     await renderPage(
-      { contentType: 'Heading' },
+      { type: 'Heading' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
@@ -214,7 +208,7 @@ describe('createStandalonePreview', () => {
     const sent = framed({ height: 420, width: 1280 });
 
     await renderPage(
-      { contentType: 'Heading' },
+      { type: 'Heading' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
@@ -226,6 +220,7 @@ describe('createStandalonePreview', () => {
       height: 420,
       offsetX: 0,
       offsetY: 0,
+      // The payload field keeps its full name; only the URL is short.
       contentType: 'Heading',
     });
   });
@@ -239,7 +234,7 @@ describe('createStandalonePreview', () => {
     const sent = framed({ width: 150, height: 60 });
 
     await renderPage(
-      { contentType: 'Heading' },
+      { type: 'Heading' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).toHaveLength(1));
@@ -260,7 +255,7 @@ describe('createStandalonePreview', () => {
     const sent = framed();
 
     await renderPage(
-      { contentType: 'Heading' },
+      { type: 'Heading' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).toHaveLength(1));
@@ -296,7 +291,7 @@ describe('createStandalonePreview', () => {
     );
 
     await renderPage(
-      { contentType: 'Heading' },
+      { type: 'Heading' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).toHaveLength(1));
@@ -320,7 +315,7 @@ describe('createStandalonePreview', () => {
     const measured = vi.spyOn(Element.prototype, 'getBoundingClientRect');
 
     await renderPage(
-      { contentType: 'Heading' },
+      { type: 'Heading' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).toHaveLength(1));
@@ -341,7 +336,7 @@ describe('createStandalonePreview', () => {
     const sent = framed();
 
     await renderPage(
-      { contentType: 'Heading' },
+      { type: 'Heading' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
@@ -352,7 +347,7 @@ describe('createStandalonePreview', () => {
   test('stays silent when the page names no parent origin', async () => {
     const sent = framed();
 
-    await renderPage({ contentType: 'Heading' });
+    await renderPage({ type: 'Heading' });
     await new Promise(resolve => setTimeout(resolve, 10));
 
     expect(sent).toHaveLength(0);
@@ -362,7 +357,7 @@ describe('createStandalonePreview', () => {
     const sent = framed();
 
     await renderPage(
-      { contentType: 'NotRegistered' },
+      { type: 'NotRegistered' },
       { parentOrigin: 'https://cms.test' },
     );
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
@@ -375,7 +370,7 @@ describe('createStandalonePreview', () => {
     // The shared fallback only shows itself in development, as elsewhere.
     vi.stubEnv('NODE_ENV', 'development');
 
-    const { container } = await renderPage({ contentType: 'NotRegistered' });
+    const { container } = await renderPage({ type: 'NotRegistered' });
 
     expect(container.textContent).toContain('NotRegistered');
     expect(container.querySelector('h2')).toBeNull();
@@ -402,7 +397,7 @@ describe('form elements previewed on their own', () => {
     initContentTypeRegistry([FieldType]);
     initReactComponentRegistry({ resolver: { Field } });
 
-    const { getByTestId } = await renderPage({ contentType: 'Field' });
+    const { getByTestId } = await renderPage({ type: 'Field' });
 
     expect(getByTestId('field').dataset.attempted).toBe('false');
   });
@@ -417,19 +412,19 @@ describe('router conventions', () => {
   }
 
   test('a plain object, as most routers pass it', async () => {
-    const { container } = await renderWith({ contentType: 'Heading' });
+    const { container } = await renderWith({ type: 'Heading' });
     expect(container.querySelector('h2')?.textContent).toBe('Headline');
   });
 
   test('URLSearchParams, as `new URL(request.url).searchParams` gives', async () => {
     const { container } = await renderWith(
-      new URLSearchParams({ contentType: 'Heading', size: 'small' }),
+      new URLSearchParams({ type: 'Heading', size: 'small' }),
     );
     expect(container.querySelector('h2')?.dataset.size).toBe('small');
   });
 
   test('a promise, as the Next App Router passes it', async () => {
-    const { container } = await renderWith(Promise.resolve({ contentType: 'Heading' }));
+    const { container } = await renderWith(Promise.resolve({ type: 'Heading' }));
     expect(container.querySelector('h2')?.textContent).toBe('Headline');
   });
 })
@@ -437,7 +432,7 @@ describe('router conventions', () => {
 describe('fixes from review', () => {
   test('a boolean setting arrives as a boolean, as it does on a real page', async () => {
     const { container } = await renderPage({
-      contentType: 'Heading',
+      type: 'Heading',
       fadeOut: 'false',
     });
 
@@ -445,33 +440,19 @@ describe('fixes from review', () => {
     expect(container.querySelector('h2')?.dataset.faded).toBe('boolean');
   });
 
-  test('a missing content key is reported as such, not as an unknown type', async () => {
+  test('a URL asking only for a content key reports that it rendered nothing', async () => {
     const sent: any[] = [];
     vi.spyOn(window, 'parent', 'get').mockReturnValue({
       postMessage: (data: unknown) => sent.push(data),
     } as unknown as Window);
-    getContent.mockResolvedValue(null);
 
     await renderPage({ key: 'does-not-exist' }, { parentOrigin: 'https://cms.test' });
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
-    expect(sent[0].payload.code).toBe('content-not-found');
+    // No content type named, so there was never anything to render.
+    expect(sent[0].payload.code).toBe('render-failed');
+    expect(getContent).not.toHaveBeenCalled();
     vi.restoreAllMocks();
-  });
-
-  test('a key lookup asks for published content, whatever the app configured', async () => {
-    getContent.mockResolvedValue({
-      __typename: 'Heading',
-      Text: 'x',
-      _metadata: { key: 'abc', types: ['Heading'], locale: 'en' },
-    });
-
-    await renderPage({ key: 'abc' });
-
-    expect(getContent).toHaveBeenCalledWith(
-      { key: 'abc', locale: 'en' },
-      { publishedOnly: true },
-    );
   });
 })
 
@@ -488,10 +469,10 @@ describe('parentOrigin', () => {
     return sent;
   }
 
-  async function renderFor(parentOrigin?: string | string[]) {
+  async function renderFor(parentOrigin?: string) {
     const Page = createStandalonePreview({ defaultLocale: 'en', parentOrigin }) as any;
     const element = await Page({
-      searchParams: Promise.resolve({ contentType: 'Heading' }),
+      searchParams: Promise.resolve({ type: 'Heading' }),
     });
     render(await resolveAsync(element));
   }
@@ -506,16 +487,15 @@ describe('parentOrigin', () => {
     vi.restoreAllMocks();
   });
 
-  test('posts once per origin when several are named', async () => {
+  test('keeps only the origin, so a URL with a path still matches', async () => {
     const sent = listening();
 
-    await renderFor(['https://cms.test', 'https://staging.test']);
-    await vi.waitFor(() => expect(sent).toHaveLength(2));
+    // `event.origin` on the receiving side is always bare, so a configured
+    // URL carrying a path would otherwise match nothing.
+    await renderFor('https://cms.test/some/path');
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
 
-    expect(sent.map(m => m.targetOrigin)).toEqual([
-      'https://cms.test',
-      'https://staging.test',
-    ]);
+    expect(sent[0].targetOrigin).toBe('https://cms.test');
     vi.restoreAllMocks();
   });
 
@@ -525,7 +505,7 @@ describe('parentOrigin', () => {
     const Page = createStandalonePreview({ defaultLocale: 'en' }) as any;
     const element = await Page({
       searchParams: Promise.resolve({
-        contentType: 'Heading',
+        type: 'Heading',
         parentOrigin: 'https://evil.test',
       }),
     });
@@ -548,7 +528,7 @@ describe('a framed preview with nowhere to report', () => {
     const Page = createStandalonePreview({ defaultLocale: 'en' }) as any;
     render(
       await resolveAsync(
-        await Page({ searchParams: Promise.resolve({ contentType: 'Heading' }) }),
+        await Page({ searchParams: Promise.resolve({ type: 'Heading' }) }),
       ),
     );
     await new Promise(resolve => setTimeout(resolve, 20));
@@ -565,7 +545,7 @@ describe('fit', () => {
     const Page = createStandalonePreview({ defaultLocale: 'en', ...options }) as any;
     const { container } = render(
       await resolveAsync(
-        await Page({ searchParams: Promise.resolve({ contentType: 'Heading' }) }),
+        await Page({ searchParams: Promise.resolve({ type: 'Heading' }) }),
       ),
     );
     return container.querySelector('style')?.textContent ?? '';

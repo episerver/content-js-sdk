@@ -28,7 +28,6 @@ import { isDev } from '../util/environment.js';
 import { OptimizelyReactError } from './error.js';
 import { withComponentRenderSpan } from '../telemetry/spans.js';
 import { SemanticAttributes } from '../telemetry/index.js';
-import { getClient } from '../graph/index.js';
 import { getContentType } from '../model/contentTypeRegistry.js';
 import {
   getDisplayTemplate,
@@ -425,14 +424,32 @@ type StandalonePreviewProps = {
 
 /** Query parameters the page reads itself. Everything else is a display setting. */
 const PREVIEW_PARAMS = new Set([
+  'type',
+  'template',
+  'loc',
+  // Ignored, but reserved, so a stray value cannot quietly become a display
+  // setting. `parentOrigin` is configured on the page and never requested.
+  // The rest are names this route used to read: an old URL should render
+  // nothing rather than render a component with a setting called `key`.
+  'parentOrigin',
   'contentType',
-  'key',
   'displayTemplate',
   'locale',
-  // Ignored, but reserved: the parent origin is configured on the page, not
-  // requested, and a stray value must not become a display setting.
-  'parentOrigin',
+  'key',
 ]);
+
+/**
+ * The origin of a URL, or nothing if it is unset or unparseable. Origins are
+ * what `event.origin` is compared against, so a configured URL carrying a
+ * path would never match.
+ */
+function originOf(url: string | undefined) {
+  try {
+    return url ? new URL(url).origin : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /** The first value of a query parameter, ignoring repeats. */
 function queryValue(value: string | string[] | undefined) {
@@ -457,10 +474,10 @@ function defaultDisplaySettings(templateKey: string | undefined) {
 /**
  * Builds a page that renders one component on its own, for an iframe to embed.
  *
- * Renders real content (`?key=`) or, for a component nobody has authored yet,
- * stand-in content generated from the content type (`?contentType=`). Any
- * query parameter the page does not read itself becomes a display setting, so
- * a catalogue can show one variant per tile.
+ * Renders stand-in content generated from the content type (`?type=`),
+ * so a component works here before any editor has authored one. Any query
+ * parameter the page does not read itself becomes a display setting, so a
+ * catalogue can show one variant per tile.
  *
  * Needs React Server Components. The page it returns is an async server
  * component, and the part that measures and reports is a client component, so
@@ -475,8 +492,8 @@ function defaultDisplaySettings(templateKey: string | undefined) {
  * export default createStandalonePreview({ defaultLocale: 'en' });
  * ```
  *
- * Only published content is reachable through `?key=`: this takes no preview
- * token, so it exposes nothing the public site does not already serve.
+ * It never fetches real content. The route takes no preview token and does no
+ * authorization, so there is nothing on it to protect.
  */
 export function createStandalonePreview({
   defaultLocale,
@@ -495,13 +512,18 @@ export function createStandalonePreview({
    */
   fit?: PreviewFit;
   /**
-   * Origins this preview reports to. Without one it stays silent.
+   * The origin this preview reports to. Without it, it stays silent.
    *
-   * Configured by the site, not read from the request, so an embedder cannot
-   * name itself into the conversation. Decides who may *hear* the preview —
-   * a `frame-ancestors` CSP is what stops it being framed at all.
+   * Usually the CMS. Passed in rather than read from the environment, so the
+   * site decides where its configuration comes from and this works wherever
+   * there is no environment to read.
+   *
+   * Configured by the site, never taken from the request, so an embedder
+   * cannot name itself into the conversation. Decides who may *hear* the
+   * preview — a `frame-ancestors` CSP is what stops it being framed at all.
+   * A full URL is fine; only its origin is kept.
    */
-  parentOrigin?: string | string[];
+  parentOrigin?: string;
   /**
    * Where stand-in content comes from: a faker-style text source, a factory,
    * or predefined content per content type. Passed in rather than imported, so
@@ -516,28 +538,26 @@ export function createStandalonePreview({
       resolved instanceof URLSearchParams ?
         Object.fromEntries(resolved)
       : (resolved ?? {});
-    const locale = queryValue(query.locale) ?? defaultLocale;
-    const contentTypeKey = queryValue(query.contentType);
-    const contentKey = queryValue(query.key);
-    const displayTemplateKey = queryValue(query.displayTemplate);
-    const parentOrigins = parentOrigin ? [parentOrigin].flat() : [];
+    const locale = queryValue(query.loc) ?? defaultLocale;
+    const contentTypeKey = queryValue(query.type);
+    const displayTemplateKey = queryValue(query.template);
 
-    const content =
-      contentKey ?
-        await getClient().getContent(
-          { key: contentKey, locale },
-          // Stated, not inherited: this route has no token and no
-          // authorization, so it must not serve drafts.
-          { publishedOnly: true },
-        )
-      : contentTypeKey ?
-        (() => {
-          const definition = getContentType(contentTypeKey);
-          return definition && isContentType(definition) ?
-              generateMockContent(definition, { mockData })
-            : null;
-        })()
-      : null;
+    const parentOrigins = [parentOrigin]
+      .map(originOf)
+      .filter((origin): origin is string => Boolean(origin));
+
+    // Stand-in content only. This route has no token and no authorization, so
+    // it never reaches for real content — there is nothing here to protect.
+    const content = ((): OptimizelyContent | null => {
+      if (!contentTypeKey) return null;
+
+      const definition = getContentType(contentTypeKey);
+      if (!definition || !isContentType(definition)) return null;
+
+      // Built from the content type's own schema, so it is the shape a
+      // component expects even though no editor has authored it.
+      return generateMockContent(definition, { mockData }) as OptimizelyContent;
+    })();
 
     const rawSettings: Record<string, string> = {
       ...defaultDisplaySettings(displayTemplateKey),
@@ -556,8 +576,6 @@ export function createStandalonePreview({
     );
 
     if (!content) {
-      const requested = contentKey ?? contentTypeKey;
-
       return (
         <>
           {/* Told, rather than left to time out. */}
@@ -565,34 +583,35 @@ export function createStandalonePreview({
             contentType={contentTypeKey}
             parentOrigins={parentOrigins}
             error={{
-              code:
-                contentKey ? 'content-not-found'
-                : contentTypeKey ? 'unknown-content-type'
-                : 'render-failed',
-              message: `Nothing to preview for ${requested ?? '(no content)'}`,
+              code: contentTypeKey ? 'unknown-content-type' : 'render-failed',
+              message: `Nothing to preview for ${contentTypeKey ?? '(no content type)'}`,
             }}
           />
           <FallbackComponent>
-            Nothing to preview for <b>{requested ?? '(no content)'}</b>
+            Nothing to preview for <b>{contentTypeKey ?? '(no content type)'}</b>
           </FallbackComponent>
         </>
       );
     }
 
+    // `OptimizelyContent` types `_metadata` loosely, because what a real
+    // fetch returns varies. Generated content always carries these.
+    const metadata = content._metadata as { key: string; types: string[] };
+
     // Components reading `getContext()` (preview attributes, links) expect the
     // same context a full page render sets up.
     setContext({
       currentContent: content,
-      key: content._metadata.key,
-      type: content._metadata.types[0],
-      locale: content._metadata.fallbackForLocale ?? content._metadata.locale,
+      key: metadata.key,
+      type: metadata.types[0],
+      locale,
     });
 
     return (
       <>
         <style>{previewStyles(fit)}</style>
         <PreviewReporter
-          contentType={contentTypeKey ?? content._metadata.types[0]}
+          contentType={contentTypeKey}
           parentOrigins={parentOrigins}
           fit={fit !== 'none'}
         />
