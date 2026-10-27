@@ -587,9 +587,14 @@ export function createStandalonePreview({
               message: `Nothing to preview for ${contentTypeKey ?? '(no content type)'}`,
             }}
           />
-          <FallbackComponent>
-            Nothing to preview for <b>{contentTypeKey ?? '(no content type)'}</b>
-          </FallbackComponent>
+          {/* The same wrapper a rendered component gets, so a tool looking
+              for the preview element finds one either way — and finds the
+              error attribute on it. */}
+          <div id={PREVIEW_ELEMENT_ID}>
+            <FallbackComponent>
+              Nothing to preview for <b>{contentTypeKey ?? '(no content type)'}</b>
+            </FallbackComponent>
+          </div>
         </>
       );
     }

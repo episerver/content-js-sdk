@@ -225,6 +225,36 @@ describe('createStandalonePreview', () => {
     });
   });
 
+  test('writes the measurement onto the element, for tools that cannot listen', async () => {
+    // A screenshot runner loads the preview as a page of its own, so it is
+    // never framed and `postMessage` reaches nobody. The DOM is its channel.
+    vi.spyOn(HTMLImageElement.prototype, 'decode').mockResolvedValue(undefined);
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 257, height: 48, left: 43, top: 72, right: 300, bottom: 120,
+    } as DOMRect);
+
+    await renderPage({ type: 'Heading' });
+
+    const element = () => document.getElementById('optimizely-preview');
+    await vi.waitFor(() => expect(element()?.hasAttribute('data-preview-ready')).toBe(true));
+
+    expect(element()?.getAttribute('data-preview-width')).toBe('257');
+    expect(element()?.getAttribute('data-preview-height')).toBe('48');
+    expect(element()?.getAttribute('data-preview-x')).toBe('43');
+    expect(element()?.getAttribute('data-preview-y')).toBe('72');
+    vi.restoreAllMocks();
+  });
+
+  test('marks a component that could not render, so a runner can skip it', async () => {
+    await renderPage({ type: 'NotRegistered' });
+
+    await vi.waitFor(() =>
+      expect(
+        document.getElementById('optimizely-preview')?.getAttribute('data-preview-error'),
+      ).toBe('unknown-content-type'),
+    );
+  });
+
   /** A `message` from an embedder, as the frame's window would receive it. */
   function request(origin: string, data: unknown) {
     window.dispatchEvent(new MessageEvent('message', { origin, data }));

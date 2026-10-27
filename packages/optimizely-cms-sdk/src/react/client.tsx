@@ -14,6 +14,7 @@ import { isDev } from '../util/environment.js';
 import {
   isMeasureRequest,
   PREVIEW_ELEMENT_ID,
+  PreviewAttribute,
   PREVIEW_PROTOCOL_VERSION,
   PreviewMessageType,
   RESIZE_MIN_DELTA,
@@ -211,6 +212,9 @@ export function PreviewReporter({
         version: PREVIEW_PROTOCOL_VERSION,
         payload: { ...error, contentType },
       });
+      document
+        .getElementById(PREVIEW_ELEMENT_ID)
+        ?.setAttribute(PreviewAttribute.error, error.code);
       return;
     }
 
@@ -314,6 +318,16 @@ export function PreviewReporter({
         version: PREVIEW_PROTOCOL_VERSION,
         payload: next,
       });
+
+      // `postMessage` only reaches a parent. A screenshot runner loads this
+      // page on its own, so the same numbers go onto the element, where
+      // anything that can query the DOM can wait for them and read them.
+      element.setAttribute(PreviewAttribute.width, String(next.width));
+      element.setAttribute(PreviewAttribute.height, String(next.height));
+      element.setAttribute(PreviewAttribute.x, String(next.offsetX));
+      element.setAttribute(PreviewAttribute.y, String(next.offsetY));
+      // Last, so all four are readable the moment this one appears.
+      element.setAttribute(PreviewAttribute.ready, '');
     };
 
     /**
