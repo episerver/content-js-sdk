@@ -36,6 +36,8 @@ import {
 import { isContentType } from '../model/index.js';
 import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { generateMockContent, type MockData } from '../render/mockContent.js';
+import { mockOf } from '../render/withMock.js';
+import { resolveComponent } from '../core/render/registry.js';
 import { PREVIEW_ELEMENT_ID } from '../core/preview/protocol.js';
 import { PreviewReporter } from './client.js';
 import { FormRulesProvider } from './forms/FormRulesContext.js';
@@ -556,7 +558,14 @@ export function createStandalonePreview({
 
       // Built from the content type's own schema, so it is the shape a
       // component expects even though no editor has authored it.
-      return generateMockContent(definition, { mockData }) as OptimizelyContent;
+      return generateMockContent(definition, {
+        mockData,
+        // A component declares its own stand-in content with `withMock`, and
+        // is found the same way it is found for rendering: by content type
+        // key. Asked for nested types too, so a mock fills a component
+        // wherever it appears.
+        mockFor: key => mockOf(resolveComponent(key)),
+      }) as OptimizelyContent;
     })();
 
     const rawSettings: Record<string, string> = {

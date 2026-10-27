@@ -17,12 +17,15 @@ export {
 
 // Stand-in content, for previewing a component without a CMS round trip
 export { generateMockContent } from './render/mockContent.js';
+export { withMock, mockOf } from './render/withMock.js';
 export type {
+  ComponentMock,
   FakerLike,
   MockContentOptions,
   MockData,
   MockDataFactory,
   MockDataOverrides,
+  MockDataSource,
 } from './render/mockContent.js';
 
 // GraphQL

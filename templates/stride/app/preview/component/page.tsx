@@ -10,4 +10,5 @@ export default createStandalonePreview({
   defaultLocale: 'en',
   mockData: faker,
   parentOrigin: process.env.OPTIMIZELY_CMS_URL,
+
 });
