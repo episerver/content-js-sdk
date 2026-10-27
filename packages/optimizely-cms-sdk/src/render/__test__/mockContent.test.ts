@@ -217,6 +217,81 @@ describe('developer-supplied mock data', () => {
   });
 });
 
+describe('layered sources', () => {
+  const Hero = contentType({
+    key: 'Hero',
+    displayName: 'Hero',
+    baseType: '_component',
+    properties: { Headline: { type: 'string' }, Kicker: { type: 'string' } },
+  });
+
+  test('a text source and pinned values compose, which they could not before', () => {
+    const mock = generateMockContent(Hero, {
+      mockData: [faker, { Hero: { Headline: 'Set it. Sweat it.' } }],
+    }) as any;
+
+    expect(mock.Headline).toBe('Set it. Sweat it.');
+    // Passing values used to turn the text source off for everything else,
+    // leaving this as the property's own name.
+    expect(mock.Kicker).not.toBe('Kicker');
+  });
+
+  test('later sources win over earlier ones', () => {
+    const mock = generateMockContent(Hero, {
+      mockData: [{ Hero: { Headline: 'first' } }, { Hero: { Headline: 'second' } }],
+    }) as any;
+
+    expect(mock.Headline).toBe('second');
+  });
+});
+
+describe('a mock declared by the component', () => {
+  test('fills the component it belongs to', () => {
+    const mock = generateMockContent(Article, {
+      mockFor: key => (key === 'Article' ? { Title: 'Declared on the component' } : undefined),
+    }) as any;
+
+    expect(mock.Title).toBe('Declared on the component');
+    // Only the field it names; the rest still comes from the schema.
+    expect(mock.Summary).toContain('Summary');
+  });
+
+  test('fills a nested component too, not just the one being previewed', () => {
+    const mock = generateMockContent(Article, {
+      mockFor: key => (key === 'Author' ? { Name: 'Ada Lovelace' } : undefined),
+    }) as any;
+
+    expect(mock.Writer.Name).toBe('Ada Lovelace');
+  });
+
+  test('can build from the text source', () => {
+    const mock = generateMockContent(Article, {
+      mockData: faker,
+      mockFor: key =>
+        key === 'Article' ?
+          ({ faker }) => ({ Title: `by ${faker?.person.fullName()}` })
+        : undefined,
+    }) as any;
+
+    expect(mock.Title).toMatch(/^by \w+/);
+  });
+
+  test('the preview page has the last word over what a component declares', () => {
+    const mock = generateMockContent(Article, {
+      mockData: { Article: { Title: 'from the page' } },
+      mockFor: () => ({ Title: 'from the component' }),
+    }) as any;
+
+    expect(mock.Title).toBe('from the page');
+  });
+
+  test('a component without one is generated as usual', () => {
+    const mock = generateMockContent(Article, { mockFor: () => undefined }) as any;
+
+    expect(mock.Title).toBe('Headline');
+  });
+});
+
 describe('fixes from review', () => {
   test('an override reaches a nested content type, not just the root', () => {
     const mock = generateMockContent(Article, {

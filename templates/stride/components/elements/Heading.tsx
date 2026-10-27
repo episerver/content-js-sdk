@@ -1,4 +1,9 @@
-import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
+import {
+  ContentProps,
+  contentType,
+  displayTemplate,
+  withMock,
+} from '@optimizely/cms-sdk';
 import { Check, CheckCheck, Globe, Flag, Sparkles, Wallet } from 'lucide-react';
 import { CmsField } from '../shared/CmsField';
 
@@ -90,7 +95,7 @@ const stylesMap: Record<string, string> = {
   h5: 'text-md md:text-sm font-semibold mb-4 tracking-tight',
 };
 
-export default function Heading({ content, displaySettings }: HeadingComponentProps) {
+function Heading({ content, displaySettings }: HeadingComponentProps) {
   const level = displaySettings?.level ? levelMap[displaySettings.level] : 'h2';
   const HeadingTag = level as React.ElementType;
   const IconComponent = displaySettings?.icon ? iconMap[displaySettings.icon] : null;
@@ -106,3 +111,9 @@ export default function Heading({ content, displaySettings }: HeadingComponentPr
     </CmsField>
   );
 }
+
+// What this looks like in a preview, before anyone has authored one. Read
+// only by the component preview page; a published page never sees it.
+export default withMock(Heading, HeadingComponent, {
+  heading: 'Built for the long run',
+});
