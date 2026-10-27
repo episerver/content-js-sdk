@@ -110,6 +110,7 @@ const mediaElementOf = (target: EventTarget | null): MediaElement | null => {
   return null;
 };
 
+// An SVG without intrinsic size also reports naturalWidth 0; it is retried once, harmlessly
 const hasFailed = (element: MediaElement) =>
   element instanceof HTMLImageElement ?
     element.complete && element.naturalWidth === 0 && !!element.getAttribute('src')
