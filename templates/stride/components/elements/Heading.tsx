@@ -1,9 +1,5 @@
-import {
-  ContentProps,
-  contentType,
-  displayTemplate,
-  withMock,
-} from '@optimizely/cms-sdk';
+import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
+import { withMock } from '@optimizely/cms-sdk/mock';
 import { Check, CheckCheck, Globe, Flag, Sparkles, Wallet } from 'lucide-react';
 import { CmsField } from '../shared/CmsField';
 

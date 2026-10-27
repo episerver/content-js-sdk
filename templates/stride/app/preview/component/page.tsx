@@ -1,4 +1,4 @@
-import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/standalone';
 import { faker } from '@faker-js/faker';
 
 /**

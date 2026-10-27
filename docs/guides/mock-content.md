@@ -27,7 +27,7 @@ Pass nothing and every property names itself:
 
 ```tsx
 // app/preview/component/page.tsx
-import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/standalone';
 
 export default createStandalonePreview({ defaultLocale: 'en' });
 ```
@@ -40,7 +40,7 @@ you nothing about how real copy wraps, so the layout you see is not the layout y
 Install [`@faker-js/faker`](https://fakerjs.dev) and pass it in:
 
 ```tsx
-import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/standalone';
 import { faker } from '@faker-js/faker';
 
 export default createStandalonePreview({ defaultLocale: 'en', mockData: faker });
@@ -224,7 +224,7 @@ When you need that, use a factory. It receives the content type, so you can look
 per field, and calling `generateMockContent` inside it keeps the schema-shaped base:
 
 ```tsx
-import { createStandalonePreview } from '@optimizely/cms-sdk/react/server';
+import { createStandalonePreview } from '@optimizely/cms-sdk/react/standalone';
 import { generateMockContent } from '@optimizely/cms-sdk';
 
 const byField: Record<string, Record<string, unknown>> = {

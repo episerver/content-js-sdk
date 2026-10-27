@@ -15,18 +15,10 @@ export {
   PropertyGroupType,
 } from './model/index.js';
 
-// Stand-in content, for previewing a component without a CMS round trip
-export { generateMockContent } from './render/mockContent.js';
-export { withMock, mockOf } from './render/withMock.js';
-export type {
-  ComponentMock,
-  FakerLike,
-  MockContentOptions,
-  MockData,
-  MockDataFactory,
-  MockDataOverrides,
-  MockDataSource,
-} from './render/mockContent.js';
+// Previewing one component on its own splits by who reads it:
+// `@optimizely/cms-sdk/mock` declares its stand-in content,
+// `@optimizely/cms-sdk/react/standalone` serves the page, and
+// `@optimizely/cms-sdk/protocol` is the contract an embedder reads.
 
 // GraphQL
 export {
