@@ -56,6 +56,7 @@ export {
   RESIZE_MIN_DELTA,
   MAX_PREVIEW_DIMENSION,
   PreviewMessageType,
+  PreviewAttribute,
   isPreviewMessage,
   isMeasureRequest,
   isValidDimensions,

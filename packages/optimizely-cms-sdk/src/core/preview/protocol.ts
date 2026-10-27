@@ -22,6 +22,30 @@ export const RESIZE_MIN_DELTA = 8;
 /** Past any real component, short of breaking layout arithmetic. */
 export const MAX_PREVIEW_DIMENSION = 20000;
 
+/**
+ * The same measurement, written onto {@linkcode PREVIEW_ELEMENT_ID} as it is
+ * sent.
+ *
+ * `postMessage` only reaches a parent, so a tool that loads the preview as a
+ * page of its own — a screenshot runner, usually — would otherwise have no
+ * way to learn the box or to know when the component had settled. Attributes
+ * are readable by anything that can query the DOM.
+ *
+ * Wait for `ready`, read the four numbers, and use them as the capture's clip
+ * rectangle. `error` appears instead when the component could not render, so
+ * a runner can skip it rather than capture an empty page.
+ */
+export const PreviewAttribute = {
+  /** Present once the first measurement is taken. Values are CSS pixels. */
+  ready: 'data-preview-ready',
+  width: 'data-preview-width',
+  height: 'data-preview-height',
+  x: 'data-preview-x',
+  y: 'data-preview-y',
+  /** The error code, when there is one. */
+  error: 'data-preview-error',
+} as const;
+
 export const PreviewMessageType = {
   dimensions: `${PREVIEW_MESSAGE_PREFIX}dimensions`,
   error: `${PREVIEW_MESSAGE_PREFIX}error`,
