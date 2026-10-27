@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { startMediaTokenRetry } from '../preview/mediaTokenRetry.js';
 
-const IMAGE = 'https://cms.example.com/globalassets/cat.jpg';
+const CMS = 'https://cms.example.com';
+const IMAGE = `${CMS}/globalassets/cat.jpg`;
+const OTHER = 'https://images.example.org/cat.jpg';
 
 let stops: (() => void)[] = [];
 
@@ -22,12 +24,14 @@ const markFailed = (image: HTMLImageElement) => {
 
 beforeEach(() => {
   window.history.replaceState({}, '', '/preview?preview_token=token-1');
+  document.head.innerHTML = `<script src="${CMS}/util/javascript/communicationinjector.js"></script>`;
   vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {});
 });
 
 afterEach(() => {
   stops.forEach(stop => stop());
   stops = [];
+  document.head.innerHTML = '';
   document.body.innerHTML = '';
   vi.restoreAllMocks();
 });
@@ -116,6 +120,54 @@ describe('startMediaTokenRetry', () => {
     fail(image);
 
     expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=from-event`);
+  });
+
+  test('falls back to the page URL when getToken returns nothing', () => {
+    const image = render(`<img src="${IMAGE}">`);
+    start({ getToken: () => undefined });
+
+    fail(image);
+
+    expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=token-1`);
+  });
+
+  test('leaves media on other hosts alone', () => {
+    const image = render(`<img src="${OTHER}" srcset="${OTHER} 1x, ${IMAGE} 2x">`);
+    start();
+
+    fail(image);
+
+    expect(image.getAttribute('src')).toBe(OTHER);
+    expect(image.getAttribute('srcset')).toBe(`${OTHER} 1x, ${IMAGE}?preview_token=token-1 2x`);
+  });
+
+  test('prefers cmsUrl over the injector script host', () => {
+    const image = render(`<img src="${IMAGE}">`);
+    start({ cmsUrl: 'https://other-cms.example.com' });
+
+    fail(image);
+
+    expect(image.getAttribute('src')).toBe(IMAGE);
+  });
+
+  test('takes the CMS host from cmsUrl without an injector script', () => {
+    document.head.innerHTML = '';
+    const image = render(`<img src="${IMAGE}">`);
+    start({ cmsUrl: `${CMS}/` });
+
+    fail(image);
+
+    expect(image.getAttribute('src')).toBe(`${IMAGE}?preview_token=token-1`);
+  });
+
+  test('does nothing without a known CMS host', () => {
+    document.head.innerHTML = '';
+    const image = render(`<img src="${IMAGE}">`);
+    start();
+
+    fail(image);
+
+    expect(image.getAttribute('src')).toBe(IMAGE);
   });
 
   test('does nothing without a token', () => {
