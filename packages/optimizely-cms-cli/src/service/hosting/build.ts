@@ -1,17 +1,10 @@
-/** Local build of a project, run before packaging so build errors surface before the upload */
-
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { hostingErrors } from '../error.js';
+import type { PackageManager } from './package.js';
 
-// The same package manager the platform picks from the lock file
-const buildCommand = (dir: string) =>
-  existsSync(join(dir, 'yarn.lock')) ? 'yarn build' : 'npm run build';
-
-/** Run the project's `build` script, and throw with its output when it fails */
-export function buildProject(dir: string): Promise<void> {
-  const command = buildCommand(dir);
+/** Run the project's `build` script locally, so build errors surface before the upload */
+export function buildProject(dir: string, packageManager: PackageManager): Promise<void> {
+  const command = `${packageManager} run build`;
 
   return new Promise((resolve, reject) => {
     // A shell resolves npm.cmd and yarn.cmd on Windows

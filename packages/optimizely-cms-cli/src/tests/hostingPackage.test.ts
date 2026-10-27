@@ -34,11 +34,14 @@ afterEach(async () => {
 });
 
 describe('validateProject', () => {
-  it('returns package.json for a valid npm project', async () => {
+  it('returns package.json and npm for a valid npm project', async () => {
     await writePackageJson(validPackageJson);
     await writeProjectFile('package-lock.json', '{}');
 
-    await expect(validateProject(projectDir)).resolves.toEqual(validPackageJson);
+    await expect(validateProject(projectDir)).resolves.toEqual({
+      packageJson: validPackageJson,
+      packageManager: 'npm',
+    });
   });
 
   it('accepts a yarn project with Astro as a dev dependency', async () => {
@@ -49,7 +52,9 @@ describe('validateProject', () => {
     });
     await writeProjectFile('yarn.lock');
 
-    await expect(validateProject(projectDir)).resolves.toBeDefined();
+    await expect(validateProject(projectDir)).resolves.toMatchObject({
+      packageManager: 'yarn',
+    });
   });
 
   it('fails when package.json is missing', async () => {

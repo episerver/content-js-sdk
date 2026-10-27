@@ -84,14 +84,16 @@ export default class Deploy extends Command {
   public async run(): Promise<void> {
     const { flags } = await this.parse(Deploy);
     const dir = resolve(flags.dir);
-    const packageJson = await validateProject(dir);
+    const { packageJson, packageManager } = await validateProject(dir);
     const packageName = resolvePackageName(packageJson, {
       name: flags.name,
       version: flags.version,
     });
+    const build = () =>
+      this.step('Building the project', () => buildProject(dir, packageManager));
 
     if (flags.output) {
-      await this.build(dir, flags.build);
+      if (flags.build) await build();
 
       const { path, files, warnings } = await createPackage(
         dir,
@@ -124,7 +126,7 @@ export default class Deploy extends Command {
       client.checkEnvironmentAccess(env),
     );
     // After the access check, so a wrong environment name fails without waiting for the build
-    await this.build(dir, flags.build);
+    if (flags.build) await build();
 
     const tempDir = await mkdtemp(join(tmpdir(), 'optimizely-deploy-'));
 
@@ -177,10 +179,6 @@ export default class Deploy extends Command {
     const confirmed = await confirm({ message: `Deploy to ${env}?`, default: false });
 
     if (!confirmed) throw new Errors.CLIError('Deployment cancelled');
-  }
-
-  private async build(dir: string, enabled: boolean) {
-    if (enabled) await this.step('Building the project', () => buildProject(dir));
   }
 
   private async deploy(

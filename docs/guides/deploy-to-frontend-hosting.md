@@ -109,8 +109,8 @@ for example `Test1`, `Test2` and `Production1`. The command first checks that th
 credentials can use the environment, so a wrong name or API key fails before anything is
 uploaded.
 
-Then it runs the `build` script locally (`npm run build`, or `yarn build` in a yarn
-project), so type and build errors fail in a minute or two instead of after the upload.
+Then it runs the `build` script locally (`npm run build`, or `yarn run build` in a
+yarn project), so type and build errors fail in a minute or two instead of after the upload.
 Install the dependencies first. If the build fails, the command prints its output and
 stops. `--no-build` skips the local build, for example when CI has already built the
 site.

@@ -21,13 +21,13 @@ describe('buildProject', () => {
   it('resolves when the build script succeeds', async () => {
     await writeBuildScript('node -e "process.exit(0)"');
 
-    await expect(buildProject(projectDir)).resolves.toBeUndefined();
+    await expect(buildProject(projectDir, 'npm')).resolves.toBeUndefined();
   });
 
   it('throws with the command, exit code and build output when the build fails', async () => {
     await writeBuildScript(`node -e "console.error('Type error: oops'); process.exit(2)"`);
 
-    await expect(buildProject(projectDir)).rejects.toThrow(
+    await expect(buildProject(projectDir, 'npm')).rejects.toThrow(
       /`npm run build` failed with exit code 2[\s\S]*--no-build[\s\S]*Type error: oops/,
     );
   });
