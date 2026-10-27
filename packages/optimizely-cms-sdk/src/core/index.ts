@@ -49,25 +49,8 @@ export type {
 // Preview
 export { getPreviewUtils } from './preview/attributes.js';
 export { createContentSavedListener } from './preview/contentSaved.js';
-export {
-  PREVIEW_PROTOCOL_VERSION,
-  PREVIEW_MESSAGE_PREFIX,
-  PREVIEW_ELEMENT_ID,
-  RESIZE_MIN_DELTA,
-  MAX_PREVIEW_DIMENSION,
-  PreviewMessageType,
-  PreviewAttribute,
-  isPreviewMessage,
-  isMeasureRequest,
-  isValidDimensions,
-} from './preview/protocol.js';
-export type {
-  PreviewMessage,
-  PreviewDimensions,
-  PreviewDimensionsMessage,
-  PreviewErrorMessage,
-  PreviewMeasureRequest,
-} from './preview/protocol.js';
+// The component preview contract is exported from
+// `@optimizely/cms-sdk/protocol`, not from here.
 export type {
   ContentSavedEvent,
   ContentSavedListener,
