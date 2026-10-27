@@ -39,20 +39,57 @@ export type MockDataFactory = (
 ) => Record<string, unknown> | undefined;
 
 /**
- * Where stand-in content comes from. Any of:
+ * One place stand-in content can come from. Any of:
  *
  * - a {@linkcode FakerLike} text source, to fill text from each property's name
  * - a {@linkcode MockDataFactory}, for content built however the app likes
  * - {@linkcode MockDataOverrides}, to pin fields per content type
  */
-export type MockData = FakerLike | MockDataFactory | MockDataOverrides;
+export type MockDataSource = FakerLike | MockDataFactory | MockDataOverrides;
+
+/**
+ * Where stand-in content comes from. A list is applied left to right, so a
+ * text source and specific values compose:
+ *
+ * ```ts
+ * mockData: [faker, { Heading: { heading: 'Shop the winter range' } }]
+ * ```
+ *
+ * Passed alone, a source behaves as it always has.
+ */
+export type MockData = MockDataSource | MockDataSource[];
+
+/**
+ * What one component contributes about itself, found through
+ * {@linkcode MockContentOptions.mockFor} rather than passed in.
+ */
+export type ComponentMock =
+  | Record<string, unknown>
+  | ((ctx: {
+      faker?: FakerLike;
+      generated: Record<string, unknown>;
+    }) => Record<string, unknown>);
 
 export type MockContentOptions = {
   mockData?: MockData;
+  /**
+   * The mock a component declares about itself, by content type key.
+   *
+   * Asked for every type the walk meets, so a component's own stand-in
+   * content fills it when nested as well as when previewed directly. The
+   * core has no idea where these come from; the React binding answers from
+   * its component registry.
+   */
+  mockFor?: (contentTypeKey: string) => ComponentMock | undefined;
 };
 
 /** Carried through the walk, so nothing reads module state. */
-type MockContext = { faker?: FakerLike; mockData?: MockData; depth: number };
+type MockContext = {
+  faker?: FakerLike;
+  sources: MockDataSource[];
+  mockFor?: (contentTypeKey: string) => ComponentMock | undefined;
+  depth: number;
+};
 
 /** How deep nested components and content references are followed. */
 const MAX_DEPTH = 3;
@@ -335,23 +372,44 @@ function build(
 }
 
 /**
- * Lets the caller's data win over the generated values. Applied at every
- * level, so an override for `Author` works nested as well as standalone.
+ * Lets declared data win over the generated values. Applied at every level,
+ * so a mock for `Author` works nested as well as standalone.
+ *
+ * Order is component first, then whatever the preview page passed: the
+ * component's mock is its default, and the application gets the last word.
  */
 function applyMockData(
   contentType: AnyContentType,
   generated: Record<string, unknown>,
-  { mockData }: MockContext,
+  { sources, mockFor, faker }: MockContext,
 ): Record<string, unknown> {
-  if (!mockData || isFaker(mockData)) return generated;
+  let content = generated;
 
-  if (typeof mockData === 'function') {
-    return mockData(contentType, generated) ?? generated;
+  const declared = mockFor?.(contentType.key);
+  if (declared) {
+    content = {
+      ...content,
+      ...(typeof declared === 'function' ?
+        declared({ faker, generated: content })
+      : declared),
+    };
   }
 
-  // Shallow: a field is either the application's or generated, never half of
-  // each, which would be hard to reason about from the outside.
-  return { ...generated, ...mockData[contentType.key] };
+  for (const source of sources) {
+    // The text source was used while generating; it has nothing to add here.
+    if (isFaker(source)) continue;
+
+    if (typeof source === 'function') {
+      content = source(contentType, content) ?? content;
+      continue;
+    }
+
+    // Shallow: a field is either declared or generated, never half of each,
+    // which would be hard to reason about from the outside.
+    content = { ...content, ...source[contentType.key] };
+  }
+
+  return content;
 }
 
 /** A stable 32-bit number from a string, to seed the text source with. */
@@ -364,8 +422,8 @@ function hash(value: string): number {
 }
 
 /** A text source is recognised by shape, so the SDK never imports one to check. */
-const isFaker = (mockData: MockData): mockData is FakerLike =>
-  typeof mockData === 'object' && 'lorem' in mockData;
+const isFaker = (source: MockDataSource): source is FakerLike =>
+  typeof source === 'object' && 'lorem' in source;
 
 /**
  * Builds stand-in content for one content type, shaped the way Graph returns
@@ -394,10 +452,11 @@ const isFaker = (mockData: MockData): mockData is FakerLike =>
  */
 export function generateMockContent(
   contentType: AnyContentType,
-  { mockData }: MockContentOptions = {},
+  { mockData, mockFor }: MockContentOptions = {},
 ) {
-  const faker = mockData && isFaker(mockData) ? mockData : undefined;
+  const sources = mockData === undefined ? [] : [mockData].flat();
+  const faker = sources.find(isFaker);
   faker?.seed(hash(contentType.key));
 
-  return build(contentType, { faker, mockData, depth: 0 });
+  return build(contentType, { faker, sources, mockFor, depth: 0 });
 }
