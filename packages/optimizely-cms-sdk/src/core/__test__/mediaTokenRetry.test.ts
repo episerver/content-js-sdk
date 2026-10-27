@@ -141,6 +141,54 @@ describe('startMediaTokenRetry', () => {
     expect(image.getAttribute('srcset')).toBe(`${OTHER} 1x, ${IMAGE}?preview_token=token-1 2x`);
   });
 
+  describe('through an image optimizer', () => {
+    const optimized = (url: string, width: number) => `/_next/image?url=${encodeURIComponent(url)}&w=${width}&q=75`;
+    const sourceOf = (url: string, name = 'url') => new URL(url, window.location.href).searchParams.get(name);
+
+    test('adds the token to the CMS URL inside src and every srcset candidate', () => {
+      const image = render(
+        `<img src="${optimized(IMAGE, 1080)}" srcset="${optimized(IMAGE, 640)} 1x, ${optimized(IMAGE, 1080)} 2x">`,
+      );
+      start();
+
+      fail(image);
+
+      const candidates = image.getAttribute('srcset')!.split(', ').map(it => it.split(' ')[0]);
+      expect(sourceOf(image.getAttribute('src')!)).toBe(`${IMAGE}?preview_token=token-1`);
+      expect(candidates.map(it => sourceOf(it))).toEqual([`${IMAGE}?preview_token=token-1`, `${IMAGE}?preview_token=token-1`]);
+      expect(new URL(image.getAttribute('src')!).searchParams.get('w')).toBe('1080');
+    });
+
+    test('reads the source from an href parameter', () => {
+      const image = render(`<img src="/_image?href=${encodeURIComponent(IMAGE)}&w=640">`);
+      start();
+
+      fail(image);
+
+      expect(sourceOf(image.getAttribute('src')!, 'href')).toBe(`${IMAGE}?preview_token=token-1`);
+    });
+
+    test('leaves an optimized image from another host alone', () => {
+      const src = optimized(OTHER, 640);
+      const image = render(`<img src="${src}">`);
+      start();
+
+      fail(image);
+
+      expect(image.getAttribute('src')).toBe(src);
+    });
+
+    test('leaves an optimizer on another origin alone', () => {
+      const src = `https://cdn.example.org${optimized(IMAGE, 640)}`;
+      const image = render(`<img src="${src}">`);
+      start();
+
+      fail(image);
+
+      expect(image.getAttribute('src')).toBe(src);
+    });
+  });
+
   test('prefers cmsUrl over the injector script host', () => {
     const image = render(`<img src="${IMAGE}">`);
     start({ cmsUrl: 'https://other-cms.example.com' });

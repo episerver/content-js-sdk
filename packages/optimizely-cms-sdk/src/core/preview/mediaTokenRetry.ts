@@ -30,24 +30,47 @@ const INJECTOR_SCRIPT = 'script[src*="/util/javascript/communicationinjector.js"
 
 const tokenFromLocation = () => new URLSearchParams(window.location.search).get('preview_token');
 
-const originOf = (url: string | undefined) => {
+// Image optimizers fetch the CMS URL themselves: Next's `/_next/image?url=`, Astro's `/_image?href=`
+const OPTIMIZER_PARAMS = ['url', 'href'];
+
+const parseUrl = (url: string | undefined) => {
   if (!url) return undefined;
   try {
-    return new URL(url, document.baseURI).origin;
+    return new URL(url, document.baseURI);
   } catch {
     return undefined;
   }
 };
 
+const originOf = (url: string | undefined) => parseUrl(url)?.origin;
+
 // Looked up on every failure: frameworks may add the injector script after the media
 const cmsOrigin = (cmsUrl: string | undefined) =>
   originOf(cmsUrl ?? document.querySelector<HTMLScriptElement>(INJECTOR_SCRIPT)?.src);
 
-/** Adds the token to URLs on the CMS host and leaves every other URL alone. */
-const tokenizer =
-  (token: string, origin: string): Tokenize =>
-  url =>
-    originOf(url) === origin ? withToken(url, token) : url;
+/** Applies `tokenize` to the source URL of a same-origin image optimizer URL. */
+const tokenizeOptimizerUrl = (url: string, tokenize: Tokenize) => {
+  const parsed = parseUrl(url);
+  const name = OPTIMIZER_PARAMS.find(it => parsed?.searchParams.has(it));
+  if (!parsed || !name || parsed.origin !== window.location.origin) return url;
+
+  const source = parsed.searchParams.get(name)!;
+  const next = tokenize(source);
+  if (next === source) return url;
+
+  parsed.searchParams.set(name, next);
+  return parsed.href;
+};
+
+/** Adds the token to URLs on the CMS host, directly or through an image optimizer, and leaves every other URL alone. */
+const tokenizer = (token: string, origin: string): Tokenize => {
+  const tokenizeCmsUrl: Tokenize = url => (originOf(url) === origin ? withToken(url, token) : url);
+
+  return url => {
+    const direct = tokenizeCmsUrl(url);
+    return direct === url ? tokenizeOptimizerUrl(url, tokenizeCmsUrl) : direct;
+  };
+};
 
 const tokenizeSrcset = (srcset: string, tokenize: Tokenize) =>
   srcset
