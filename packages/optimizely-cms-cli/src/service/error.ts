@@ -28,6 +28,13 @@ const withDetails = (message: string, details: string[] = []) =>
   [message, ...details.map(detail => `  - ${detail}`)].join('\n');
 
 export const hostingErrors = {
+  BuildFailed: class BuildFailed extends CLIError {
+    constructor(command: string, code: number | null, output: string) {
+      super(
+        `\`${command}\` failed with exit code ${code}. Fix the build, or deploy without building locally with --no-build\n\n${output.trim()}`,
+      );
+    }
+  },
   DeploymentApiError: class DeploymentApiError extends CLIError {
     constructor(action: string, status: number, errors?: string[]) {
       super(withDetails(`Failed to ${action} (HTTP ${status})`, errors));

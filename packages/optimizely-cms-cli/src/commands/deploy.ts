@@ -7,6 +7,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { readHostingCredentials } from '../service/config.js';
+import { buildProject } from '../service/hosting/build.js';
 import {
   createDeploymentClient,
   toLiveSiteUrl,
@@ -38,6 +39,7 @@ export default class Deploy extends Command {
     '<%= config.bin %> <%= command.id %> --env Test1',
     '<%= config.bin %> <%= command.id %> --env Production1 --yes',
     '<%= config.bin %> <%= command.id %> --env Test1 --no-complete',
+    '<%= config.bin %> <%= command.id %> --env Test1 --no-build',
     '<%= config.bin %> <%= command.id %> --output ./out',
   ];
   static override flags = {
@@ -54,6 +56,12 @@ export default class Deploy extends Command {
     version: Flags.string({
       description:
         'exact package version (default: the package.json version plus a UTC timestamp)',
+    }),
+    build: Flags.boolean({
+      description:
+        'run the build script locally before packaging, so build errors fail before the upload; use --no-build to skip it',
+      default: true,
+      allowNo: true,
     }),
     complete: Flags.boolean({
       description:
@@ -83,6 +91,8 @@ export default class Deploy extends Command {
     });
 
     if (flags.output) {
+      await this.build(dir, flags.build);
+
       const { path, files, warnings } = await createPackage(
         dir,
         packageName,
@@ -113,6 +123,8 @@ export default class Deploy extends Command {
     await this.step(`Checking access to ${env}`, () =>
       client.checkEnvironmentAccess(env),
     );
+    // After the access check, so a wrong environment name fails without waiting for the build
+    await this.build(dir, flags.build);
 
     const tempDir = await mkdtemp(join(tmpdir(), 'optimizely-deploy-'));
 
@@ -165,6 +177,10 @@ export default class Deploy extends Command {
     const confirmed = await confirm({ message: `Deploy to ${env}?`, default: false });
 
     if (!confirmed) throw new Errors.CLIError('Deployment cancelled');
+  }
+
+  private async build(dir: string, enabled: boolean) {
+    if (enabled) await this.step('Building the project', () => buildProject(dir));
   }
 
   private async deploy(

@@ -491,6 +491,7 @@ optimizely-cms-cli deploy --env <name> [flags]
 | `--output <path>`     | `-o`  |                                                | Write the package to this directory instead of deploying it                                                                |
 | `--name <name>`       |       | The `package.json` name                        | The package name                                                                                                           |
 | `--version <version>` |       | The `package.json` version and a UTC timestamp | The exact package version                                                                                                  |
+| `--no-build`          |       |                                                | Skip the local `build` script run before packaging                                                                         |
 | `--no-complete`       |       |                                                | Stop when the deployment awaits verification                                                                               |
 | `--yes`               | `-y`  |                                                | Skip the confirmation prompt for Production environments                                                                   |
 | `--timeout <minutes>` |       | `30`                                           | How long to wait for each deployment stage                                                                                 |
@@ -501,6 +502,9 @@ optimizely-cms-cli deploy --env <name> [flags]
   variables, and `--host` doesn't apply.
 - **It checks the project before uploading.** It needs `next` or `astro` as a dependency,
   `build` and `start` scripts, and exactly one `package-lock.json` or `yarn.lock`.
+- **It builds the project locally before uploading.** It runs the `build` script, so the
+  dependencies must be installed. A failing build stops the command before the upload.
+  `--no-build` skips it.
 
 ### Usage
 

@@ -118,4 +118,8 @@ describe('Deploy command', () => {
 
     expect(new Set(chars).size).toBe(chars.length);
   });
+
+  it('builds the project by default', () => {
+    expect(Deploy.flags.build).toMatchObject({ default: true, allowNo: true });
+  });
 });
