@@ -60,7 +60,7 @@ async function Page({ searchParams }: Props) {
           ).href
         }
       />
-      <NextPreviewComponent />
+      <NextPreviewComponent cmsUrl={process.env.OPTIMIZELY_CMS_URL} />
       <OptimizelyComponent content={content} />
     </>
   );
@@ -76,7 +76,8 @@ Four pieces work together here:
 - **The communication injector script** comes from your CMS and lets the page and the
   editor talk to each other.
 - **`<NextPreviewComponent />`** listens for saves and refreshes the page without a full
-  reload.
+  reload. It also loads unpublished images, as described in
+  [Images and videos in preview](#images-and-videos-in-preview).
 - **`withAppContext`** starts the page with an empty request context.
   `getPreviewContent()` stores the preview token and locale there, so components further
   down, such as `<RichText>`, can use them without props. See
@@ -112,6 +113,24 @@ heading, wait for the autosave, and the preview updates.
 > If the preview frame stays blank, open your browser's developer tools. Some browsers
 > block an `http://` page inside the `https://` CMS. Run the dev server over HTTPS with
 > `next dev --experimental-https` and use the `https://` hostname instead.
+
+## Images and videos in preview
+
+Image and video URLs are rendered without the preview token, so they stay the same from
+one save to the next and the browser doesn't load them again. Published media loads as
+usual.
+
+Unpublished media needs the token. When an image or video fails to load,
+`NextPreviewComponent` loads it again with the token added. It adds the token only to URLs
+on your CMS host, which it takes from `cmsUrl`. Without `cmsUrl`, it uses the host the
+communication injector script loads from.
+
+> [!NOTE]
+>
+> If your preview route renders none of `NextPreviewComponent`, `PreviewComponent` or
+> `createContentSavedListener`, nothing loads unpublished media again. Pass
+> `{ usePreviewToken: true }` to `getPreviewContent()` to put the token in every media URL
+> instead.
 
 ## Let editors click to edit
 
@@ -166,6 +185,8 @@ returns an empty object, so the public site's HTML doesn't change.
 - The preview route needs the communication injector script, `NextPreviewComponent` and
   `withAppContext`.
 - Turn on preview tokens and the preview URL format in the application's settings.
+- Media URLs carry no preview token. `NextPreviewComponent` adds it to media that fails to
+  load.
 - Spread `pa('property')` onto elements so editors can click them to edit.
 
 You have finished the tutorial. You built a site that renders CMS content, and editors can

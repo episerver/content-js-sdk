@@ -242,6 +242,29 @@ const stop = listener.start();
 - Call `listener.update(options)` on every render instead of recreating the listener,
   which would cancel a pending refresh.
 - Without `onNavigate`, the page hard-reloads.
+- `start()` also starts `startMediaTokenRetry`, which loads media that fails to load
+  again with the preview token. Pass `cmsUrl` (usually `OPTIMIZELY_CMS_URL`) to name the
+  CMS host; without it, the host of the communication injector script is used. Turn it
+  off with `mediaTokenRetry: false`.
+
+Media URLs are rendered without the preview token, so they stay the same between saves.
+`startMediaTokenRetry` is exported on its own too, for a preview route that doesn't use
+the listener:
+
+```ts
+import { startMediaTokenRetry } from '@optimizely/cms-sdk/core';
+
+const stop = startMediaTokenRetry({ cmsUrl: 'https://<your-instance>.cms.optimizely.com' });
+```
+
+- It adds the token only to URLs on the CMS host. Without a known CMS
+  host, nothing is retried.
+- It reads the token when media fails: from `getToken()` when given, otherwise from the
+  page URL's `preview_token`.
+- It replaces a stale token, and never requests media again with the token it already
+  failed with.
+- A preview route that runs no client code can't retry. Pass `{ usePreviewToken: true }`
+  to `getPreviewContent()` to put the token in every media URL instead.
 
 ## Forms
 
@@ -351,7 +374,8 @@ on a host serving one request at a time, but not on a server handling concurrent
 
 `getRichTextTree(content)` turns a rich-text field into a tree of `RenderNode`s. A binding
 walks it with three helpers: `getRichTextElement(node)` gives an element node's `tag`,
-`selfClosing`, `attributes` and `style` (with the image preview token applied);
+`selfClosing`, `attributes` and `style` (with the image preview token applied when the
+preview opted in with `usePreviewToken`);
 `getMarkTag(mark)` gives a text mark's tag; and `toStyleString(style)` writes the style
 for frameworks that take a string.
 
