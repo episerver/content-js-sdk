@@ -57,11 +57,8 @@ const normalizeUrl = (url: string): string => {
 
 const startRetry = (
   { mediaTokenRetry, cmsUrl }: ContentSavedListenerOptions,
-  token: string | undefined,
-) =>
-  mediaTokenRetry === false ? undefined : (
-    startMediaTokenRetry({ cmsUrl, getToken: () => token })
-  );
+  getToken: () => string | undefined,
+) => (mediaTokenRetry === false ? undefined : startMediaTokenRetry({ cmsUrl, getToken }));
 
 export type ContentSavedListener = {
   /** Subscribes to the event. Returns the unsubscribe. */
@@ -157,7 +154,7 @@ export function createContentSavedListener(
 
       if (subscribers === 0) {
         window.addEventListener(EVENT_NAME, listener);
-        stopMediaTokenRetry = startRetry(options, latestToken);
+        stopMediaTokenRetry = startRetry(options, () => latestToken);
       }
       subscribers++;
 
