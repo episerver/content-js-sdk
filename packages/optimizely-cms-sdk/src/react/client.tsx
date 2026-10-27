@@ -48,6 +48,13 @@ export interface PreviewComponentProps {
    * so `onNavigate` resolving does not mean the new content has arrived.
    */
   busy?: boolean;
+
+  /**
+   * The CMS URL, usually `OPTIMIZELY_CMS_URL`. Media on this host that fails to
+   * load is retried with the preview token.
+   * @default the host the CMS communication injector script loads from
+   */
+  cmsUrl?: string;
 }
 
 /**
@@ -56,7 +63,7 @@ export interface PreviewComponentProps {
  */
 export const PreviewComponent: FunctionComponent<
   PropsWithChildren<PreviewComponentProps>
-> = ({ onNavigate, refreshTimeout = 50, children, busy = false }) => {
+> = ({ onNavigate, refreshTimeout = 50, children, busy = false, cmsUrl }) => {
   const [showMask, setShowMask] = useState<boolean>(false);
 
   const [listener] = useState(createContentSavedListener);
@@ -68,6 +75,7 @@ export const PreviewComponent: FunctionComponent<
       onNavigate,
       refreshTimeout,
       onBusyChange: setShowMask,
+      cmsUrl,
     });
   });
 
