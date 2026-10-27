@@ -1,5 +1,5 @@
 import { InferredContentReference, type PreviewContext } from '../../infer.js';
-import { appendToken } from '../../util/preview.js';
+import { withPreviewToken } from '../../util/preview.js';
 
 /** The parts of a content item the preview helpers read. */
 type PreviewableContent = {
@@ -54,13 +54,13 @@ export function getPreviewUtils(content: PreviewableContent) {
         // if dam asset is selected the default URL is in input.url.default will be null
         const url = input.url?.default ?? input.item?.Url;
         if (url) {
-          return appendToken(url, previewToken);
+          return withPreviewToken(url, previewToken);
         }
       }
 
       // if input is a string URL
       if (typeof input === 'string') {
-        return appendToken(input, previewToken);
+        return withPreviewToken(input, previewToken);
       }
 
       return undefined;

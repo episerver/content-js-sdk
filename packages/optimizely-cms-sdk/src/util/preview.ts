@@ -8,7 +8,7 @@ const TOKEN_PARAM = /([?&])preview_token=[^&#]*/;
  * @param previewToken - The preview token to set.
  * @returns The URL with the preview token as a query parameter.
  */
-export const appendToken = (url: string, previewToken?: string): string => {
+export const withPreviewToken = (url: string, previewToken?: string): string => {
   if (!url || !previewToken || previewToken.trim() === '') return url;
   if (TOKEN_PARAM.test(url)) return url.replace(TOKEN_PARAM, `$1preview_token=${previewToken}`);
 

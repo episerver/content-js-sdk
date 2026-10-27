@@ -5,7 +5,7 @@ import type {
   PublicRawFileAsset,
   Renditions,
 } from '../model/assets.js';
-import { appendToken } from '../util/preview.js';
+import { withPreviewToken } from '../util/preview.js';
 
 /**
  * Appends a preview token to a ContentReference's rendition URLs.
@@ -30,7 +30,7 @@ function appendPreviewTokenToRenditions(
       ...result.item,
       Renditions: result.item.Renditions.map((r: Renditions) => ({
         ...r,
-        Url: r.Url ? appendToken(r.Url, previewToken) : r.Url,
+        Url: r.Url ? withPreviewToken(r.Url, previewToken) : r.Url,
       })),
     };
   }

@@ -3,7 +3,7 @@
  *
  * @module
  */
-import { appendToken } from '../../util/preview.js';
+import { withPreviewToken } from '../../util/preview.js';
 
 export type MediaTokenRetryOptions = {
   /**
@@ -56,7 +56,7 @@ const tokenizeOptimizerUrl = (url: string, tokenize: Tokenize) => {
 };
 
 const tokenizer = (token: string, origin: string): Tokenize => {
-  const tokenizeCmsUrl: Tokenize = url => (originOf(url) === origin ? appendToken(url, token) : url);
+  const tokenizeCmsUrl: Tokenize = url => (originOf(url) === origin ? withPreviewToken(url, token) : url);
   return url => tokenizeOptimizerUrl(tokenizeCmsUrl(url), tokenizeCmsUrl);
 };
 
