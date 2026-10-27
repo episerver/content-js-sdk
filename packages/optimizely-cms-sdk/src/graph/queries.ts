@@ -333,18 +333,19 @@ export function liftSectionNodes(item: any): any {
 }
 
 /** Adds an extra `__context` property next to each `__typename` property */
-export function decorateWithContext(obj: any, params: PreviewParams): any {
+export function decorateWithContext(obj: any, params: PreviewParams, usePreviewToken = false): any {
   if (Array.isArray(obj)) {
-    return obj.map(e => decorateWithContext(e, params));
+    return obj.map(e => decorateWithContext(e, params, usePreviewToken));
   }
   if (typeof obj === 'object' && obj !== null) {
     for (const k in obj) {
-      obj[k] = decorateWithContext(obj[k], params);
+      obj[k] = decorateWithContext(obj[k], params, usePreviewToken);
     }
     if ('__typename' in obj) {
       obj.__context = {
         edit: params.ctx === 'edit',
         preview_token: params.preview_token,
+        ...(usePreviewToken && { usePreviewToken }),
       };
     }
   }

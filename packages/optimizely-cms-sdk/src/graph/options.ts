@@ -332,7 +332,17 @@ export type GraphGetItemOptions = GraphQueryOptions & {
   previewToken?: string;
 };
 
-export type GraphGetPreviewOptions = GraphQueryOptions;
+export type GraphGetPreviewOptions = GraphQueryOptions & {
+  /**
+   * Adds the preview token to media URLs (`src()`, `getSrcset`, rich-text images).
+   *
+   * Leave off when the preview runs the SDK's content-saved listener, which adds the
+   * token only to media that fails to load. Turn on for setups without it, or media
+   * that needs the token will not load.
+   * @default false
+   */
+  usePreviewToken?: boolean;
+};
 
 export type PreviewParams = {
   preview_token: string;

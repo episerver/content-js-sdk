@@ -1,9 +1,9 @@
-import { InferredContentReference } from '../../infer.js';
-import { appendToken } from '../../util/preview.js';
+import { InferredContentReference, type PreviewContext } from '../../infer.js';
+import { appendToken, mediaToken } from '../../util/preview.js';
 
 /** The parts of a content item the preview helpers read. */
 type PreviewableContent = {
-  __context?: { edit: boolean; preview_token: string };
+  __context?: PreviewContext;
   // Callers pass whole content objects; only `__context` is read.
   [key: string]: unknown;
 };
@@ -31,11 +31,11 @@ export function getPreviewUtils(content: PreviewableContent) {
     },
 
     /**
-     * Appends preview token to a ContentReference's Image assets.
-     * Adds the preview token to the main URL and all rendition URLs when in preview mode.
+     * The URL of a ContentReference's asset, or of a plain URL string.
+     * Carries the preview token only when the preview opted in with `usePreviewToken`.
      *
      * @param input - ContentReference from a DAM asset
-     * @returns ContentReference with preview tokens appended to all URLs, or the original if not in preview mode
+     * @returns The asset URL, or undefined when there is none
      *
      * @example
      * ```tsx
@@ -47,7 +47,7 @@ export function getPreviewUtils(content: PreviewableContent) {
      * ```
      */
     src(input: InferredContentReference | string | null | undefined): string | undefined {
-      const previewToken = content.__context?.preview_token;
+      const previewToken = mediaToken(content.__context);
 
       // if input is an object with a URL
       if (typeof input === 'object' && input) {

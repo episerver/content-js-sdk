@@ -872,6 +872,7 @@ export async function getPreviewContent(
 
     setContext({
       previewToken: params.preview_token,
+      usePreviewToken: options?.usePreviewToken,
       version: params.ver,
       locale: params.loc,
       type: contentTypeName,
@@ -918,7 +919,7 @@ export async function getPreviewContent(
       locale: params.loc,
     });
 
-    return decorateWithContext(result, params);
+    return decorateWithContext(result, params, options?.usePreviewToken);
   });
 }
 

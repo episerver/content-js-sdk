@@ -229,9 +229,10 @@ describe('RichText images', () => {
     expect(image).toBeEmptyDOMElement();
   });
 
-  test('adds the preview token from context to the image source', () => {
+  test('adds the preview token from context to the image source when the preview opted in', () => {
     const adapter = new MemoryAdapter();
     adapter.set('previewToken', 'token-1');
+    adapter.set('usePreviewToken', true);
     configureAdapter(adapter);
 
     const { container } = render(<RichText content={imageContent} />);

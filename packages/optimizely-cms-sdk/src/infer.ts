@@ -134,6 +134,14 @@ export type InferredImageMetadata = {
   height: number | null;
 };
 
+/** Added by `getPreviewContent` to every node of a preview response */
+export type PreviewContext = {
+  edit: boolean;
+  preview_token: string;
+  /** Media URLs carry `preview_token`. See `GraphGetPreviewOptions.usePreviewToken`. */
+  usePreviewToken?: boolean;
+};
+
 /** Attributes included in the response from Graph in every content type */
 export type InferredBase = {
   _id: string;
@@ -141,7 +149,7 @@ export type InferredBase = {
 
   // Properties that don't come from Graph are prefixed with double-underscores
   __typename: string;
-  __context?: { edit: boolean; preview_token: string };
+  __context?: PreviewContext;
   __composition?: ExperienceComponentNode;
 };
 
@@ -173,7 +181,7 @@ export type DisplaySettingsType = {
 export type ExperienceCompositionNode = {
   /** Internal node type. Can be `CompositionStructureNode` or `CompositionComponentNode` */
   __typename: string;
-  __context?: { edit: boolean; preview_token: string };
+  __context?: PreviewContext;
 
   /** Name of the content type if provided, `null` otherwise */
   type: string | null;
@@ -212,7 +220,7 @@ type InferSection<T extends AnyContentType> =
       nodes: ExperienceNode[];
 
       __typename: string;
-      __context?: { edit: boolean; preview_token: string };
+      __context?: PreviewContext;
     }
   : {};
 

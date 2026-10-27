@@ -53,6 +53,15 @@ describe('GraphClient - Context Integration', () => {
       });
     });
 
+    test('should store the media token opt-in', async () => {
+      const client = new GraphClient('test-key');
+      stubPreview(client);
+
+      await client.getPreviewContent(previewParams, { usePreviewToken: true });
+
+      expect(getContext()?.usePreviewToken).toBe(true);
+    });
+
     test('should throw error if adapter is broken', async () => {
       const fail = () => {
         throw new Error('Adapter error');

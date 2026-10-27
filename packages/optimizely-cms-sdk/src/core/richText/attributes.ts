@@ -9,7 +9,7 @@
  * @module
  */
 
-import { appendToken } from '../../util/preview.js';
+import { appendToken, mediaToken } from '../../util/preview.js';
 import { getContextData } from '../../context/config.js';
 import {
   buildRenderTree,
@@ -344,7 +344,10 @@ export const getLinkAttributes = (element: LinkElement) => ({
 // Throws when no context adapter is configured, a legitimate state for an app that never previews.
 function readPreviewToken(): string | undefined {
   try {
-    return getContextData('previewToken');
+    return mediaToken({
+      preview_token: getContextData('previewToken'),
+      usePreviewToken: getContextData('usePreviewToken'),
+    });
   } catch {
     return undefined;
   }
