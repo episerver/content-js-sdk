@@ -51,7 +51,7 @@ export interface PreviewComponentProps {
 
   /**
    * The CMS URL, usually `OPTIMIZELY_CMS_URL`. Media on this host that fails to
-   * load is retried with the preview token.
+   * load is retried with the preview token. Read once, when the component mounts.
    * @default the host the CMS communication injector script loads from
    */
   cmsUrl?: string;
