@@ -1,9 +1,9 @@
 /**
  * Stand-in content for a component nobody has authored yet.
  *
- * For the application that owns the components: `withMock` declares what a
- * component should look like in a preview, written next to the component
- * itself.
+ * For the application that owns the components. Most of the time a property
+ * says what it shows with `mock`, written in the content type; this is what
+ * fills everything else, and what a preview page passes to override it.
  *
  * A separate entry point because an application rendering real pages has no
  * use for generated content and should not reach for it by accident. The
@@ -15,9 +15,7 @@
  */
 
 export { generateMockContent } from '../render/mockContent.js';
-export { withMock, mockOf } from '../render/withMock.js';
 export type {
-  ComponentMock,
   FakerLike,
   MockContentOptions,
   MockData,

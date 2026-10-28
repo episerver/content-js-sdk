@@ -217,6 +217,62 @@ describe('developer-supplied mock data', () => {
   });
 });
 
+describe('a mock declared on the property', () => {
+  const Hero = contentType({
+    key: 'Hero',
+    displayName: 'Hero',
+    baseType: '_component',
+    properties: {
+      Headline: { type: 'string', mock: 'Built for the long run' },
+      Kicker: { type: 'string' },
+      Featured: { type: 'boolean', mock: false },
+      Rank: { type: 'integer', mock: 42 },
+      Body: { type: 'richText', mock: 'A paragraph, written as a string.' },
+      Varies: { type: 'string', mock: () => 'computed' },
+    },
+  });
+
+  const content = () => generateMockContent(Hero) as any;
+
+  test('fills the property it is written on, and only that one', () => {
+    expect(content().Headline).toBe('Built for the long run');
+    expect(content().Kicker).toBe('Kicker');
+  });
+
+  test('keeps the property\'s own type', () => {
+    // `false` is a value, not an absence: the generated default is `true`.
+    expect(content().Featured).toBe(false);
+    expect(content().Rank).toBe(42);
+  });
+
+  test('a function is called, so a value can vary', () => {
+    expect(content().Varies).toBe('computed');
+  });
+
+  test('rich text takes a string and becomes a document, verbatim', () => {
+    expect(content().Body.json.type).toBe('richText');
+    expect(content().Body.html).toBe('<p>A paragraph, written as a string.</p>');
+    // Not padded with lorem the way a generated paragraph is: this is what
+    // the author asked for.
+    expect(content().Body.html).not.toContain('Lorem ipsum');
+  });
+
+  test('beats the text source, which only fills what nothing else claims', () => {
+    const mock = generateMockContent(Hero, { mockData: faker }) as any;
+
+    expect(mock.Headline).toBe('Built for the long run');
+    expect(mock.Kicker).not.toBe('Kicker');
+  });
+
+  test('the preview page still has the last word', () => {
+    const mock = generateMockContent(Hero, {
+      mockData: { Hero: { Headline: 'from the page' } },
+    }) as any;
+
+    expect(mock.Headline).toBe('from the page');
+  });
+});
+
 describe('locale', () => {
   test('says the locale it was asked for', () => {
     const mock = generateMockContent(Article, { locale: 'sv' }) as any;
@@ -243,14 +299,14 @@ describe('layered sources', () => {
     properties: { Headline: { type: 'string' }, Kicker: { type: 'string' } },
   });
 
-  test('a text source and pinned values compose, which they could not before', () => {
+  test('a text source and pinned values compose', () => {
     const mock = generateMockContent(Hero, {
       mockData: [faker, { Hero: { Headline: 'Set it. Sweat it.' } }],
     }) as any;
 
     expect(mock.Headline).toBe('Set it. Sweat it.');
-    // Passing values used to turn the text source off for everything else,
-    // leaving this as the property's own name.
+    // Faker still fills what the pinned values do not name. Without that,
+    // this would fall back to the property's own name.
     expect(mock.Kicker).not.toBe('Kicker');
   });
 
@@ -263,54 +319,7 @@ describe('layered sources', () => {
   });
 });
 
-describe('a mock declared by the component', () => {
-  test('fills the component it belongs to', () => {
-    const mock = generateMockContent(Article, {
-      mockFor: key => (key === 'Article' ? { Title: 'Declared on the component' } : undefined),
-    }) as any;
-
-    expect(mock.Title).toBe('Declared on the component');
-    // Only the field it names; the rest still comes from the schema.
-    expect(mock.Summary).toContain('Summary');
-  });
-
-  test('fills a nested component too, not just the one being previewed', () => {
-    const mock = generateMockContent(Article, {
-      mockFor: key => (key === 'Author' ? { Name: 'Ada Lovelace' } : undefined),
-    }) as any;
-
-    expect(mock.Writer.Name).toBe('Ada Lovelace');
-  });
-
-  test('can build from the text source', () => {
-    const mock = generateMockContent(Article, {
-      mockData: faker,
-      mockFor: key =>
-        key === 'Article' ?
-          ({ faker }) => ({ Title: `by ${faker?.person.fullName()}` })
-        : undefined,
-    }) as any;
-
-    expect(mock.Title).toMatch(/^by \w+/);
-  });
-
-  test('the preview page has the last word over what a component declares', () => {
-    const mock = generateMockContent(Article, {
-      mockData: { Article: { Title: 'from the page' } },
-      mockFor: () => ({ Title: 'from the component' }),
-    }) as any;
-
-    expect(mock.Title).toBe('from the page');
-  });
-
-  test('a component without one is generated as usual', () => {
-    const mock = generateMockContent(Article, { mockFor: () => undefined }) as any;
-
-    expect(mock.Title).toBe('Headline');
-  });
-});
-
-describe('fixes from review', () => {
+describe('values at the edges of a schema', () => {
   test('an override reaches a nested content type, not just the root', () => {
     const mock = generateMockContent(Article, {
       mockData: { Author: { Name: 'Ada Lovelace' } },

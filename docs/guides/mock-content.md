@@ -10,7 +10,7 @@ what `mockData` controls.
 
 > **You will learn**
 >
-> - How to declare a component's own stand-in content with `withMock`
+> - How to declare a property's own stand-in content with `mock`
 > - What `mockData` accepts
 > - How to supply realistic copy with faker
 > - How to pin specific values per content type
@@ -22,47 +22,59 @@ component, and reports its size from a client component, so your framework has t
 async components on the server and understand `'use client'`. Next's App Router does; its
 Pages Router and plain client-side React do not. Nothing in it imports Next itself.
 
-## Declare it next to the component
+## Declare it on the property
 
-The most specific values win, and the place to put them is the component file itself:
+The shortest way to say what a preview shows is to write it beside the property it fills:
 
-```tsx
-// components/elements/Heading.tsx
-import { withMock } from '@optimizely/cms-sdk/mock';
-
-function Heading({ content }: { content: ContentProps<typeof HeadingComponent> }) {
-  return <h2>{content.heading}</h2>;
-}
-
-export default withMock(Heading, HeadingComponent, {
-  heading: 'Built for the long run',
+```ts
+export const HeadingComponent = contentType({
+  key: 'HeadingElement',
+  baseType: '_component',
+  displayName: 'Heading',
+  properties: {
+    heading: {
+      type: 'string',
+      displayName: 'Heading',
+      mock: 'Built for the long run',
+    },
+  },
 });
 ```
 
-Nothing else to wire. The preview finds the mock the same way it finds the component —
-by content type key, through the component registry — so there is no list to maintain.
+Nothing else to wire, and nothing to keep in sync: rename the property and the mock moves
+with it.
 
-- **Checked against the schema.** A property the content type does not declare, or a
-  value of the wrong type, is a compile error. Base fields such as `_metadata` are not
-  settable: those belong to the preview.
+- **Typed to the property.** A `string` property takes a string, a `boolean` takes a
+  boolean, an `integer` takes a number. The wrong type is a compile error.
+- **Never reaches the CMS.** `config push` strips `mock` before sending the content type,
+  so it stays out of your content model.
 - **Applies wherever the type appears.** A mock on `Author` fills it inside a
   `TeaserCard`, not only when `Author` is previewed on its own.
-- **Only read by the preview.** A published page never looks for it.
-- **The page has the last word.** Anything passed as `mockData` below overrides what a
-  component declares, so an application can override a mock that ships inside a shared
-  component library.
+- **Rich text takes a string.** It becomes a one-paragraph document, exactly as written,
+  rather than the padded placeholder a generated paragraph gets.
 
-Take the function form when a fixed string is too dull:
+Pass a function when a fixed value is too dull, or when the value has to be computed:
 
-```tsx
-export default withMock(Button, ButtonComponent, ({ faker }) => ({
-  label: faker?.commerce.productName() ?? 'Add to basket',
-}));
+```ts
+properties: {
+  published: { type: 'dateTime', mock: () => new Date().toISOString() },
+}
 ```
 
-Structured properties — `url`, `contentReference`, `richText` — have to be given in
-full, since the merge is shallow. Usually it is easier to leave them out and let the
-schema generate them.
+A property with no `mock` is still generated from the schema, so partial coverage is
+fine — mock the fields that matter and leave the rest.
+
+The rest of this page is what fills everything else. They stack, most specific last:
+
+```text
+the schema          every property gets something
+  ↓ replaced by
+faker               realistic text, for properties with no mock
+  ↓ replaced by
+mock                what a property says about itself
+  ↓ replaced by
+mockData            what the preview page passes
+```
 
 ## Preview without any mock data
 
@@ -111,10 +123,11 @@ Faker is seeded from the content type's key, so a component looks the same on ev
 reload. A preview that reshuffles its text each time you refresh is hard to compare
 against a design.
 
-## Pin the values that matter
+## Override from the preview page
 
-Pass an object keyed by content type to replace individual fields. Everything you leave
-out is still generated:
+A `mock` on the property is where values belong. Pass them to the page instead when they
+are not the component's to decide — overriding what a shared component library declares,
+or standing up one preview with particular content:
 
 ```tsx
 export default createStandalonePreview({
@@ -128,7 +141,7 @@ export default createStandalonePreview({
 
 The merge is shallow, so a field is either yours or generated, never half of each.
 Overrides apply wherever that content type appears, including nested inside another
-component.
+component, and they win over a `mock` written on the property.
 
 ## Build content with a factory
 
