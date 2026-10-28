@@ -21,4 +21,5 @@ Three new entry points, split by who imports them:
 
 The preview reports `dimensions` once it has settled and again when its box
 moves, answers a `measure` request from the embedder, and reports `error`
-when a component cannot be rendered.
+when a component cannot be rendered. Measurements go to `OPTIMIZELY_CMS_URL`
+unless the page names another origin.

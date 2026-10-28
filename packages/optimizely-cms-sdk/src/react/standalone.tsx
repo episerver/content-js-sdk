@@ -30,7 +30,7 @@ import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { generateMockContent, type MockData } from '../render/mockContent.js';
 import { mockOf } from '../render/withMock.js';
 import { resolveComponent } from '../core/render/registry.js';
-import { isDev } from '../util/environment.js';
+import { env, isDev } from '../util/environment.js';
 import { PREVIEW_ELEMENT_ID } from '../core/preview/protocol.js';
 import type { OptimizelyContent } from '../core/render/resolve.js';
 
@@ -169,16 +169,18 @@ export function createStandalonePreview({
    */
   fit?: PreviewFit;
   /**
-   * The origin this preview reports to. Without it, it stays silent.
+   * The origin this preview reports to.
    *
-   * Usually the CMS. Passed in rather than read from the environment, so the
-   * site decides where its configuration comes from and this works wherever
-   * there is no environment to read.
+   * Defaults to `OPTIMIZELY_CMS_URL`, since the CMS is what embeds these
+   * previews and that variable is already set. Pass one to report somewhere
+   * else instead — a local preview tool, or a second environment.
    *
    * Configured by the site, never taken from the request, so an embedder
    * cannot name itself into the conversation. Decides who may *hear* the
    * preview — a `frame-ancestors` CSP is what stops it being framed at all.
    * A full URL is fine; only its origin is kept.
+   *
+   * With neither, the preview renders but reports nothing.
    */
   parentOrigin?: string;
   /**
@@ -199,7 +201,9 @@ export function createStandalonePreview({
     const contentTypeKey = queryValue(query.type);
     const displayTemplateKey = queryValue(query.template);
 
-    const parentOrigins = [parentOrigin]
+    // The CMS is the embedder this exists for, and its URL is already
+    // configured, so a site has nothing to set up for the usual case.
+    const parentOrigins = [parentOrigin ?? env('OPTIMIZELY_CMS_URL')]
       .map(originOf)
       .filter((origin): origin is string => Boolean(origin));
 
@@ -215,6 +219,10 @@ export function createStandalonePreview({
       // component expects even though no editor has authored it.
       return generateMockContent(definition, {
         mockData,
+        // What `?loc=` asked for, or the page's default. Generated content
+        // that claimed a different locale would format dates and numbers
+        // the wrong way.
+        locale,
         // A component declares its own stand-in content with `withMock`, and
         // is found the same way it is found for rendering: by content type
         // key. Asked for nested types too, so a mock fills a component

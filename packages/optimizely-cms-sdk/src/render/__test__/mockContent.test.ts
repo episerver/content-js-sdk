@@ -217,6 +217,24 @@ describe('developer-supplied mock data', () => {
   });
 });
 
+describe('locale', () => {
+  test('says the locale it was asked for', () => {
+    const mock = generateMockContent(Article, { locale: 'sv' }) as any;
+
+    expect(mock._metadata.locale).toBe('sv');
+  });
+
+  test('nested content claims the same locale, not a default', () => {
+    const mock = generateMockContent(Article, { locale: 'sv' }) as any;
+
+    expect(mock.Writer._metadata.locale).toBe('sv');
+  });
+
+  test('falls back to `en` when the caller does not say', () => {
+    expect((generateMockContent(Article) as any)._metadata.locale).toBe('en');
+  });
+});
+
 describe('layered sources', () => {
   const Hero = contentType({
     key: 'Hero',

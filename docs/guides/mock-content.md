@@ -327,3 +327,8 @@ with no CMS round trip.
 Nested components and references are followed three levels deep, then left `null`. A
 section or experience gets an empty composition: which components an editor would place
 inside it is a guess, so the container renders its own chrome and nothing else.
+
+**Related:**
+
+- [Component previews](./component-previews.md): the page this content is rendered on
+- [Content types](./content-types.md): the schema the stand-in content is built from
