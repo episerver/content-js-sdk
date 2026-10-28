@@ -4,17 +4,19 @@ import { useState } from 'react';
 import '@testing-library/jest-dom/vitest';
 import { PreviewComponent } from '../client.js';
 
+const dispatch = (detail: object) =>
+  window.dispatchEvent(new CustomEvent('optimizely:cms:contentSaved', { detail }));
+
+/** The CMS's token message, then its ready message. */
 const save = (link: string | number) =>
   act(() => {
-    window.dispatchEvent(
-      new CustomEvent('optimizely:cms:contentSaved', {
-        detail: {
-          contentLink: `c${link}`,
-          previewUrl: window.location.href,
-          previewToken: 't',
-        },
-      }),
-    );
+    const message = {
+      contentLink: `c${link}`,
+      previewUrl: window.location.href,
+      previewToken: 't',
+    };
+    dispatch({ ...message, sectionId: 's' });
+    dispatch(message);
   });
 
 const advance = (ms: number) => act(async () => void vi.advanceTimersByTime(ms));
