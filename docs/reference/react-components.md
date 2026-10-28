@@ -403,12 +403,14 @@ An object with two functions:
     `{ 'data-epi-block-id': key }`.
   - Returns `{}` outside edit mode or without an argument.
 - `src(reference)` — returns the URL of an image. It accepts a content reference or a URL
-  string and returns `string | undefined`. In preview, it appends the `preview_token`
-  query parameter so the draft image loads.
+  string and returns `string | undefined`. The URL carries the `preview_token` query
+  parameter only when the preview was fetched with `getPreviewContent(params, { forceMediaToken: true })`.
+  Otherwise, [`PreviewComponent`](#previewcomponent) adds the token to images that fail to
+  load.
 
 #### Caveats
 
-- Edit mode and the preview token come from `content.__context`, which
+- Edit mode and the media token come from `content.__context`, which
   `getPreviewContent()` adds to every item it returns. Content fetched any other way gets
   no attributes and no token.
 - `pa()` doesn't check the property name. Use the key from the content type definition.
@@ -477,6 +479,9 @@ route. In Next.js, use [`NextPreviewComponent`](#nextpreviewcomponent) instead.
 - `children` (optional) — shown while a refresh is pending, such as a loading indicator.
 - `busy` (optional) — keeps `children` visible while `true`. Use it when your router's
   refresh returns before the new content has arrived. Default: `false`.
+- `cmsUrl` (optional) — the CMS URL, usually `OPTIMIZELY_CMS_URL`. Only media on this host
+  gets the preview token when it fails to load. Default: the host the communication
+  injector script loads from.
 
 #### Returns
 
@@ -489,6 +494,11 @@ route. In Next.js, use [`NextPreviewComponent`](#nextpreviewcomponent) instead.
   [Live preview](../learn/live-preview.md).
 - It is a Client Component, but you can render it from a Server Component.
 - When `onNavigate` returns a promise, `children` stay visible until it settles.
+- **It loads unpublished media.** Media URLs are rendered without the preview token, so
+  they don't change between saves. When an image or video on the CMS host fails to load,
+  it loads it again with the token from the latest save, or from the page URL before the
+  first save. Without a
+  known CMS host, nothing is retried.
 
 ### Usage
 
@@ -538,6 +548,7 @@ A `PreviewComponent` wired to the Next.js App Router.
 
 - `refreshTimeout` (optional) — as in `PreviewComponent`. Default: `50`.
 - `children` (optional) — shown while a refresh is pending.
+- `cmsUrl` (optional) — as in `PreviewComponent`. Pass `process.env.OPTIMIZELY_CMS_URL`.
 
 #### Returns
 
@@ -577,7 +588,7 @@ export default async function PreviewPage({ searchParams }: Props) {
           process.env.OPTIMIZELY_CMS_URL,
         ).toString()}
       />
-      <NextPreviewComponent />
+      <NextPreviewComponent cmsUrl={process.env.OPTIMIZELY_CMS_URL} />
       <OptimizelyComponent content={content} />
     </>
   );
@@ -645,15 +656,16 @@ declare function setContextData<K extends keyof ContextData>(
 
 #### `ContextData`
 
-| Field            | Type      | Set by `getPreviewContent()` from |
-| ---------------- | --------- | --------------------------------- |
-| `previewToken`   | `string`  | The `preview_token` parameter     |
-| `version`        | `string`  | The `ver` parameter               |
-| `locale`         | `string`  | The `loc` parameter               |
-| `key`            | `string`  | The `key` parameter               |
-| `mode`           | `string`  | The `ctx` parameter               |
-| `type`           | `string`  | The content type of the item      |
-| `currentContent` | `unknown` | Not set. Yours to use             |
+| Field            | Type      | Set by `getPreviewContent()` from      |
+| ---------------- | --------- | -------------------------------------- |
+| `previewToken`   | `string`  | The `preview_token` parameter          |
+| `mediaToken`     | `string`  | `preview_token` with `forceMediaToken` |
+| `version`        | `string`  | The `ver` parameter                    |
+| `locale`         | `string`  | The `loc` parameter                    |
+| `key`            | `string`  | The `key` parameter                    |
+| `mode`           | `string`  | The `ctx` parameter                    |
+| `type`           | `string`  | The content type of the item           |
+| `currentContent` | `unknown` | Not set. Yours to use                  |
 
 Every field is optional.
 
@@ -662,7 +674,7 @@ Every field is optional.
 - `setContext()` merges into the existing data. `setContextData()` sets one field.
 - The data lives in `React.cache()`, so it is shared only within one request, in Server
   Components. Client Components don't see it.
-- `RichText` reads `previewToken` from the context to load draft images.
+- `RichText` adds `mediaToken` to image URLs. It is set only with `forceMediaToken`.
 
 ### Usage
 

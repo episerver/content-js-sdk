@@ -1,11 +1,11 @@
-import type { InferredContentReference } from '../infer.js';
+import type { InferredContentReference, PreviewContext } from '../infer.js';
 import type {
   PublicImageAsset,
   PublicVideoAsset,
   PublicRawFileAsset,
   Renditions,
 } from '../model/assets.js';
-import { appendToken } from '../util/preview.js';
+import { withPreviewToken } from '../util/preview.js';
 
 /**
  * Appends a preview token to a ContentReference's rendition URLs.
@@ -30,7 +30,7 @@ function appendPreviewTokenToRenditions(
       ...result.item,
       Renditions: result.item.Renditions.map((r: Renditions) => ({
         ...r,
-        Url: r.Url ? appendToken(r.Url, previewToken) : r.Url,
+        Url: r.Url ? withPreviewToken(r.Url, previewToken) : r.Url,
       })),
     };
   }
@@ -43,7 +43,7 @@ function appendPreviewTokenToRenditions(
  *
  * This handles all the messy details:
  * - Removes duplicate widths if you have multiple renditions at the same size
- * - Adds preview tokens automatically when in edit mode
+ * - Adds the preview token when the preview opted in with `forceMediaToken`
  * - Returns undefined if there's no image or no renditions (attribute won't be rendered)
  *
  * @param content - Your content object with __context for preview tokens
@@ -75,11 +75,11 @@ function appendPreviewTokenToRenditions(
  * ```
  */
 export function getSrcset<T extends Record<string, any>>(
-  content: T & { __context?: { preview_token?: string } },
+  content: T & { __context?: Partial<PreviewContext> },
   property: InferredContentReference | null | undefined,
 ): string | undefined {
   const input = property;
-  const previewToken = content?.__context?.preview_token;
+  const previewToken = content?.__context?.media_token;
 
   // Apply preview token to renditions if provided
   const processedInput = previewToken ? appendPreviewTokenToRenditions(input, previewToken) : input;
@@ -361,7 +361,8 @@ export function getDamAssetType(
  * Creates a helper object with utility functions for working with Digital Asset Management (DAM) assets.
  *
  * Returns helper functions for asset manipulation and type checking. The `getSrcset` function
- * returned automatically includes preview tokens from the content's __context when in edit mode.
+ * returned includes the preview token from the content's __context when the preview opted in
+ * with `forceMediaToken`.
  *
  * @param content - Content object with optional __context for preview tokens
  * @returns Object containing utility functions: getSrcset, getAlt, isDamImageAsset, isDamVideoAsset, isDamRawFileAsset, isDamAsset, getDamAssetType
@@ -386,7 +387,9 @@ export function getDamAssetType(
  * }
  * ```
  */
-export function damAssets<T extends Record<string, any>>(content: T & { __context?: { preview_token?: string } }) {
+export function damAssets<T extends Record<string, any>>(
+  content: T & { __context?: Partial<PreviewContext> },
+) {
   return {
     getSrcset: (property: InferredContentReference | null | undefined) => getSrcset(content, property),
     getAlt,

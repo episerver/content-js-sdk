@@ -3,6 +3,7 @@
 import { createContext, ReactNode, useContext } from 'react';
 import { useFormSteps } from './FormWrapper.js';
 import { getPreviewUtils } from '../../core/preview/attributes.js';
+import type { PreviewContext } from '../../infer.js';
 
 /**
  * The step a field belongs to, or `undefined` for fields outside any step.
@@ -21,10 +22,7 @@ type FormStepProps = {
    */
   node?: {
     key: string;
-    __context?: {
-      edit: boolean;
-      preview_token: string;
-    };
+    __context?: PreviewContext;
   };
   children: ReactNode;
 };

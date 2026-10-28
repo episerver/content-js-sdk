@@ -31,7 +31,8 @@ every method uses every option:
 | `resolveTaxonomy` | Yes                | Yes                                          | Yes                 | No                                     |
 
 Some methods take extra options of their own: `variation` for `getContentByPath()`,
-`previewToken` for `getContent()`, and `locales` for `getPath()` and `getItems()`.
+`previewToken` for `getContent()`, `forceMediaToken` for `getPreviewContent()`, and
+`locales` for `getPath()` and `getItems()`.
 
 The option types are exported from `@optimizely/cms-sdk`: `GraphGetContentOptions`,
 `GraphGetItemOptions`, `GraphGetPreviewOptions`, `GraphGetLinksOptions` and
@@ -213,13 +214,19 @@ client.getPreviewContent(params: PreviewParams, options?: GraphGetPreviewOptions
   | `ctx`           | `'edit'` in the editor, `'preview'` outside |
 
 - `options` (optional) — `stored`, `slot`, `resolveTaxonomy`. See
-  [Options by method](#options-by-method).
+  [Options by method](#options-by-method). Also:
+  - `forceMediaToken` — forces the preview token into every media URL from `src()`,
+    `getSrcset()` and rich-text images. Not recommended: the token changes on every save,
+    so every image and video reloads each time. A preview component adds the token only
+    to media that fails to load. Use this only on a preview route that runs no client
+    code. Default: `false`.
 
 ### Returns
 
 A promise of the content item. Every object in it that has a `__typename` also gets a
-`__context` property, `{ edit: boolean, preview_token: string }`, which the React
-components use to add editing attributes.
+`__context` property, `{ edit: boolean, preview_token: string, media_token?: string }`,
+which the React components use to add editing attributes and media tokens. `media_token`
+is set only with `forceMediaToken`.
 
 ### Caveats
 
