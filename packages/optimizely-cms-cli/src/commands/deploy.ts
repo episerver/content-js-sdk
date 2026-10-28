@@ -33,7 +33,7 @@ const newItems = (current: string[] = [], previous: string[] = []) =>
 
 export default class Deploy extends Command {
   static override description =
-    'Package the project and deploy it to Optimizely front-end hosting. Reads the credentials from OPTIMIZELY_DXP_PROJECT_ID, OPTIMIZELY_DXP_CLIENT_KEY and OPTIMIZELY_DXP_CLIENT_SECRET';
+    'Package the project and deploy it to Optimizely front-end hosting. Reads the credentials from OPTIMIZELY_DXP_PROJECT_ID, OPTIMIZELY_DXP_CLIENT_KEY and OPTIMIZELY_DXP_CLIENT_SECRET. Set OPTIMIZELY_DXP_API_URL when the project is not on paasportal.episerver.net';
   static override examples = [
     '<%= config.bin %> <%= command.id %> --env Test1',
     '<%= config.bin %> <%= command.id %> --env Production1 --yes',
