@@ -81,11 +81,19 @@ export type MockContentOptions = {
    * its component registry.
    */
   mockFor?: (contentTypeKey: string) => ComponentMock | undefined;
+  /**
+   * The locale the content claims to be in, written to `_metadata.locale`.
+   *
+   * Components read it for date and number formatting, so a preview asked
+   * for one locale must not report another. Defaults to `en`.
+   */
+  locale?: string;
 };
 
 /** Carried through the walk, so nothing reads module state. */
 type MockContext = {
   faker?: FakerLike;
+  locale: string;
   sources: MockDataSource[];
   mockFor?: (contentTypeKey: string) => ComponentMock | undefined;
   depth: number;
@@ -93,6 +101,9 @@ type MockContext = {
 
 /** How deep nested components and content references are followed. */
 const MAX_DEPTH = 3;
+
+/** What `_metadata.locale` says when the caller does not care. */
+const DEFAULT_LOCALE = 'en';
 
 /** Fixed so that a preview of the same component is byte-identical each time. */
 const MOCK_DATE = '2025-01-23T12:00:00Z';
@@ -358,7 +369,7 @@ function build(
       key: `mock-${key}`,
       displayName: displayName ?? key,
       types: [key, ...(baseType ? [baseType] : [])],
-      locale: 'en',
+      locale: ctx.locale,
       version: '1',
       status: 'Published',
       published: MOCK_DATE,
@@ -456,11 +467,11 @@ const isFaker = (source: MockDataSource): source is FakerLike =>
  */
 export function generateMockContent(
   contentType: AnyContentType,
-  { mockData, mockFor }: MockContentOptions = {},
+  { mockData, mockFor, locale = DEFAULT_LOCALE }: MockContentOptions = {},
 ) {
   const sources = mockData === undefined ? [] : [mockData].flat();
   const faker = sources.find(isFaker);
   faker?.seed(hash(contentType.key));
 
-  return build(contentType, { faker, sources, mockFor, depth: 0 });
+  return build(contentType, { faker, locale, sources, mockFor, depth: 0 });
 }

@@ -118,7 +118,25 @@ export type PreviewMeasureRequest = {
   version: number;
 };
 
-/** True for a measure request from an embedder. Shape only — check the origin. */
+/**
+ * True for a measure request from an embedder.
+ *
+ * A shape check only. The preview page decides whether to answer by
+ * comparing `event.origin` against the origins the site configured.
+ *
+ * @param data - The `data` of a `message` event
+ * @returns Whether it is an `optimizely:preview:measure` request
+ *
+ * @example
+ * ```ts
+ * window.addEventListener('message', event => {
+ *   if (!isMeasureRequest(event.data)) return;
+ *   if (event.origin !== trustedOrigin) return;
+ *
+ *   measureAgain();
+ * });
+ * ```
+ */
 export function isMeasureRequest(data: unknown): data is PreviewMeasureRequest {
   return (
     typeof data === 'object' &&
@@ -128,9 +146,32 @@ export function isMeasureRequest(data: unknown): data is PreviewMeasureRequest {
 }
 
 /**
- * True when a message is one of ours. A shape check only — the channel is
- * shared with every other library. Check `event.origin` and `event.source`
- * for whether the sender is trusted.
+ * True when a message came from a preview.
+ *
+ * A shape check only: the `message` channel is shared with every other
+ * library on the page, so this says the message is *ours*, not that it is
+ * *trusted*. Check `event.origin` for the site it came from, and
+ * `event.source` for which frame sent it — every frame on a page receives
+ * every message.
+ *
+ * @param data - The `data` of a `message` event
+ * @returns Whether it is a message from a preview
+ *
+ * @example Narrowing before reading a payload
+ * ```ts
+ * window.addEventListener('message', event => {
+ *   if (!isPreviewMessage(event.data)) return;
+ *   if (event.origin !== siteOrigin) return;
+ *   if (event.source !== frame.contentWindow) return;
+ *
+ *   if (event.data.type === PreviewMessageType.error) {
+ *     showError(event.data.payload.message);
+ *     return;
+ *   }
+ *
+ *   resize(event.data.payload);
+ * });
+ * ```
  */
 export function isPreviewMessage(data: unknown): data is PreviewMessage {
   return (
@@ -142,8 +183,21 @@ export function isPreviewMessage(data: unknown): data is PreviewMessage {
 }
 
 /**
- * Checks a measurement before acting on it. Rejected rather than clamped: a
- * clamped value looks real and would be kept as the last good one.
+ * Checks a measurement before laying anything out with it.
+ *
+ * A broken component can report anything, and a bad number becomes a tile
+ * the size of a city block. Rejected rather than clamped: a clamped value
+ * looks real, and would be kept as the last good measurement.
+ *
+ * @param value - The `payload` of a `dimensions` message
+ * @returns Whether the width and height can be used
+ *
+ * @example
+ * ```ts
+ * if (!isValidDimensions(event.data.payload)) return;
+ *
+ * setBox(event.data.payload);
+ * ```
  */
 export function isValidDimensions(value: unknown): value is PreviewDimensions {
   const { width, height } = (value ?? {}) as PreviewDimensions;
