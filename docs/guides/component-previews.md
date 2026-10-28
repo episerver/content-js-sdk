@@ -38,8 +38,17 @@ its size from a client component. Next's App Router works; its Pages Router and 
 client-side React do not. Nothing in it imports Next.
 
 Components render with **stand-in content** built from the content type's schema, so a
-component previews before any editor has authored one. See
-[Mock content](./mock-content.md) for what fills it.
+component previews before any editor has authored one. A property says what it should
+show with `mock`:
+
+```ts
+properties: {
+  heading: { type: 'string', displayName: 'Heading', mock: 'Built for the long run' },
+}
+```
+
+`config push` strips that, so it never reaches your content model. See
+[Mock content](./mock-content.md) for everything else that fills a preview.
 
 ## Choose the component with the URL
 

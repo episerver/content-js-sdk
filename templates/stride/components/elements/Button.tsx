@@ -1,5 +1,4 @@
 import { ContentProps, contentType, displayTemplate } from '@optimizely/cms-sdk';
-import { withMock } from '@optimizely/cms-sdk/mock';
 import { CmsField } from '../shared/CmsField';
 import Link from 'next/link';
 import { cn } from '../../lib/utils';
@@ -16,6 +15,8 @@ export const ButtonComponent = contentType({
       displayName: 'Label',
       isLocalized: true,
       sortOrder: 1,
+      // What a preview shows before an editor has authored one.
+      mock: 'Click me',
     },
     link: {
       type: 'url',
@@ -55,7 +56,7 @@ type ButtonComponentProps = {
   displaySettings?: ContentProps<typeof ButtonDisplayTemplate>;
 };
 
-function Button({ content, displaySettings }: ButtonComponentProps) {
+export default function Button({ content, displaySettings }: ButtonComponentProps) {
   const variant = displaySettings?.variant ?? 'default';
 
   return (
@@ -72,11 +73,3 @@ function Button({ content, displaySettings }: ButtonComponentProps) {
     </CmsField>
   );
 }
-
-// What this looks like in a preview, before anyone has authored one. Read
-// only by the component preview page; a published page never sees it.
-export default withMock(Button, ButtonComponent, {
-  label: 'Click me',
-  // `link` is left out: the schema already generates a usable url, and
-  // pinning one means writing all six of its fields.
-});

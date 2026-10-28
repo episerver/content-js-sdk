@@ -18,7 +18,22 @@ export type RICHTEXT_PRESET = 'default' | 'expanded' | 'minimal';
 export type DISPLAY_MODE = 'available' | 'hidden';
 
 /** A "Base" content type property that includes all common attributes for all content type properties */
-type BaseProperty = {
+type BaseProperty<TMock = unknown> = {
+  /**
+   * What a component preview shows for this property, before any editor has
+   * authored content. A value, or a function returning one.
+   *
+   * Read only when generating stand-in content. The CLI strips it, so it is
+   * never part of the content model the CMS receives.
+   *
+   * @example
+   * ```ts
+   * properties: {
+   *   heading: { type: 'string', displayName: 'Heading', mock: 'Built for the long run' },
+   * }
+   * ```
+   */
+  mock?: TMock | (() => TMock);
   format?: string;
   displayName?: string;
   description?: string;
@@ -42,7 +57,7 @@ export type ArrayProperty<T extends ArrayItems> = BaseProperty & {
 };
 
 /** Represents the content type property "String" */
-export type StringProperty = BaseProperty & {
+export type StringProperty = BaseProperty<string> & {
   type: 'string';
 
   /**
@@ -55,30 +70,30 @@ export type StringProperty = BaseProperty & {
   maxLength?: number;
 } & WithEnum<string>;
 
-export type BooleanProperty = BaseProperty & { type: 'boolean' };
+export type BooleanProperty = BaseProperty<boolean> & { type: 'boolean' };
 export type BinaryProperty = BaseProperty & { type: 'binary' };
 export type JsonProperty<TSchema = JsonValue> = BaseProperty & {
   type: 'json';
   /** @internal used for type inference only - not a runtime property */
   readonly __schema?: TSchema;
 };
-export type DateTimeProperty = BaseProperty & {
+export type DateTimeProperty = BaseProperty<string> & {
   type: 'dateTime';
   minimum?: string;
   maximum?: string;
 };
 
-export type RichTextProperty = BaseProperty & {
+export type RichTextProperty = BaseProperty<string> & {
   type: 'richText';
   editorSettings?: { preset: RICHTEXT_PRESET };
 };
 export type UrlProperty = BaseProperty & { type: 'url' };
-export type IntegerProperty = BaseProperty & {
+export type IntegerProperty = BaseProperty<number> & {
   type: 'integer';
   minimum?: number;
   maximum?: number;
 } & WithEnum<number>;
-export type FloatProperty = BaseProperty & {
+export type FloatProperty = BaseProperty<number> & {
   type: 'float';
   minimum?: number;
   maximum?: number;

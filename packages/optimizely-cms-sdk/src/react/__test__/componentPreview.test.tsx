@@ -125,11 +125,19 @@ describe('createStandalonePreview', () => {
   test('never fetches real content, whatever the URL asks for', async () => {
     // This route takes no preview token and does no authorization, so it
     // serves generated content only. `key` stays a reserved parameter so an
-    // old URL fails loudly rather than becoming a display setting.
-    const { container } = await renderPage({ key: 'abc123', loc: 'sv' });
+    // old URL renders nothing rather than turning `key` into a display
+    // setting on whatever it does render.
+    const sent = framed();
+
+    const { container } = await renderPage(
+      { key: 'abc123', loc: 'sv' },
+      { parentOrigin: 'https://cms.test' },
+    );
+    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
     expect(getContent).not.toHaveBeenCalled();
     expect(container.querySelector('h2')).toBeNull();
+    expect(sent[0].data.payload.code).toBe('render-failed');
   });
 
   test('a display template supplies its first choice, a query parameter overrides it', async () => {
@@ -254,29 +262,6 @@ describe('createStandalonePreview', () => {
         document.getElementById('optimizely-preview')?.getAttribute('data-preview-error'),
       ).toBe('unknown-content-type'),
     );
-  });
-
-  test('ignores a mock declared for a different content type, and says so', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.stubEnv('NODE_ENV', 'development');
-
-    // The component registered for `Heading`, carrying a mock that names
-    // something else: a copy-paste between component files.
-    const Wrong = () => null;
-    (Wrong as any)[Symbol.for('optimizely.mock')] = {
-      contentType: 'SomethingElse',
-      data: { Text: 'from the wrong component' },
-    };
-    initReactComponentRegistry({ resolver: { Heading: Wrong } });
-
-    const { container } = await renderPage({ type: 'Heading' });
-
-    expect(container.textContent).not.toContain('from the wrong component');
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('withMock'));
-
-    vi.unstubAllEnvs();
-    vi.restoreAllMocks();
-    initReactComponentRegistry({ resolver: { Heading } });
   });
 
   /** A `message` from an embedder, as the frame's window would receive it. */
@@ -479,6 +464,18 @@ describe('form elements previewed on their own', () => {
   });
 });
 
+describe('display settings', () => {
+  test('a boolean setting arrives as a boolean, as it does on a real page', async () => {
+    const { container } = await renderPage({
+      type: 'Heading',
+      fadeOut: 'false',
+    });
+
+    // Not the string 'false', which is truthy and would invert the setting.
+    expect(container.querySelector('h2')?.dataset.faded).toBe('boolean');
+  });
+})
+
 describe('router conventions', () => {
   /** Routers differ in how they hand over the query; all three must work. */
   async function renderWith(searchParams: unknown) {
@@ -502,33 +499,6 @@ describe('router conventions', () => {
   test('a promise, as the Next App Router passes it', async () => {
     const { container } = await renderWith(Promise.resolve({ type: 'Heading' }));
     expect(container.querySelector('h2')?.textContent).toBe('Headline');
-  });
-})
-
-describe('fixes from review', () => {
-  test('a boolean setting arrives as a boolean, as it does on a real page', async () => {
-    const { container } = await renderPage({
-      type: 'Heading',
-      fadeOut: 'false',
-    });
-
-    // Not the string 'false', which is truthy and would invert the setting.
-    expect(container.querySelector('h2')?.dataset.faded).toBe('boolean');
-  });
-
-  test('a URL asking only for a content key reports that it rendered nothing', async () => {
-    const sent: any[] = [];
-    vi.spyOn(window, 'parent', 'get').mockReturnValue({
-      postMessage: (data: unknown) => sent.push(data),
-    } as unknown as Window);
-
-    await renderPage({ key: 'does-not-exist' }, { parentOrigin: 'https://cms.test' });
-    await vi.waitFor(() => expect(sent).not.toHaveLength(0));
-
-    // No content type named, so there was never anything to render.
-    expect(sent[0].payload.code).toBe('render-failed');
-    expect(getContent).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
   });
 })
 

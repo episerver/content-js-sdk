@@ -10,4 +10,5 @@ import { faker } from '@faker-js/faker';
 export default createStandalonePreview({
   defaultLocale: 'en',
   mockData: faker,
+  parentOrigin: 'http://localhost:5173/',
 });
