@@ -10,7 +10,13 @@ export interface ContentSavedEvent {
   editUrl?: string;
   previewUrl: string;
   previewToken: string;
+  /** Where the edit happened. Only on the message carrying the editor's token, one of the two. */
+  sectionId?: string;
+  nodeIds?: string[];
 }
+
+/** Which of the two messages the CMS sends per save this is. */
+export type SaveKind = 'token' | 'ready';
 
 /**
  * Callback for handling navigation/refresh when content is saved.
@@ -43,6 +49,14 @@ const normalizeUrl = (url: string): string => {
   parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
   return parsed.toString();
 };
+
+/**
+ * Tells apart the two messages the CMS sends per save: `token` carries the editor's
+ * preview token, `ready` means the change is ready to fetch. Only the token message
+ * says where the edit happened, so that field decides, not the arrival order.
+ */
+export const classifySave = (event: ContentSavedEvent): SaveKind =>
+  'sectionId' in event || 'nodeIds' in event ? 'token' : 'ready';
 
 export type ContentSavedListener = {
   /** Subscribes to the event. Returns the unsubscribe. */
