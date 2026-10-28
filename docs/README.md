@@ -66,6 +66,8 @@ Standalone pages, one topic each. Read them in any order.
 - [Rich text](./guides/rich-text.md): render and customise formatted text
 - [DAM assets](./guides/dam-assets.md): responsive images, video and files
 - [Forms](./guides/forms.md): render Optimizely Forms
+- [Component previews](./guides/component-previews.md): render one component on its own
+  for the CMS to embed or a tool to screenshot
 - [Mock content](./guides/mock-content.md): fill component previews with realistic data,
   from faker or your own source
 - [Navigation](./guides/navigation.md): breadcrumbs and menus

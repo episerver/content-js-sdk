@@ -398,13 +398,35 @@ describe('createStandalonePreview', () => {
     expect(sent[0].targetOrigin).toBe('https://cms.test');
   });
 
-  test('stays silent when the page names no parent origin', async () => {
+  test('generated content is in the locale the URL asked for', async () => {
+    // Components format dates and numbers from this, so a preview asked for
+    // one locale must not hand them another.
+    const Locale = ({ content }: any) => (
+      <span data-testid='locale'>{content._metadata.locale}</span>
+    );
+    initReactComponentRegistry({ resolver: { Heading: Locale } });
+
+    // Scoped to each render's own container: both stay in the document.
+    const localeOf = ({ container }: { container: HTMLElement }) =>
+      container.querySelector('[data-testid="locale"]')?.textContent;
+
+    expect(localeOf(await renderPage({ type: 'Heading', loc: 'sv' }))).toBe('sv');
+    expect(localeOf(await renderPage({ type: 'Heading' }))).toBe('en');
+
+    initReactComponentRegistry({ resolver: { Heading } });
+  });
+
+  test('stays silent when no origin is named and none is configured', async () => {
     const sent = framed();
+    // Pinned: with `OPTIMIZELY_CMS_URL` set in the environment this would
+    // report to it, and the test would pass or fail by accident.
+    vi.stubEnv('OPTIMIZELY_CMS_URL', '');
 
     await renderPage({ type: 'Heading' });
     await new Promise(resolve => setTimeout(resolve, 10));
 
     expect(sent).toHaveLength(0);
+    vi.unstubAllEnvs();
   });
 
   test('reports an error rather than leaving the parent to time out', async () => {
@@ -538,6 +560,31 @@ describe('parentOrigin', () => {
     await vi.waitFor(() => expect(sent).not.toHaveLength(0));
 
     expect(sent[0].targetOrigin).toBe('https://cms.test');
+    vi.restoreAllMocks();
+  });
+
+  test('reports to OPTIMIZELY_CMS_URL without being told to', async () => {
+    const sent = listening();
+    vi.stubEnv('OPTIMIZELY_CMS_URL', 'https://cms.test');
+
+    // Nothing passed: the CMS is the embedder this exists for.
+    await renderFor(undefined);
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+
+    expect(sent[0].targetOrigin).toBe('https://cms.test');
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  test('an origin passed in wins over the environment', async () => {
+    const sent = listening();
+    vi.stubEnv('OPTIMIZELY_CMS_URL', 'https://cms.test');
+
+    await renderFor('https://preview-tool.test');
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+
+    expect(sent[0].targetOrigin).toBe('https://preview-tool.test');
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
