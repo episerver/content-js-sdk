@@ -42,8 +42,6 @@ export const MOCK = Symbol.for('optimizely.mock');
  */
 export function withMock<C, T extends AnyContentType>(
   component: C,
-  // Present for its type, not its value: it is what `data` is checked
-  // against. Named rather than `_` so the call site reads properly.
   contentType: T,
   // The content type's own properties, and nothing else: `_metadata`, `_id`
   // and the rest of the base fields are the preview's to decide, not a
@@ -59,7 +57,10 @@ export function withMock<C, T extends AnyContentType>(
   // A symbol rather than a named property: components are also plain
   // functions an application may already hang things on.
   Object.defineProperty(component as object, MOCK, {
-    value: data as ComponentMock,
+    // The key is kept as well as the data. The preview looks a mock up by
+    // content type, so this is what lets it notice a component that was
+    // given the wrong one.
+    value: { contentType: contentType.key, data: data as ComponentMock },
     enumerable: false,
     configurable: true,
   });
@@ -67,7 +68,10 @@ export function withMock<C, T extends AnyContentType>(
   return component;
 }
 
+/** What {@linkcode withMock} stored, if the component has a mock. */
+export type DeclaredMock = { contentType: string; data: ComponentMock };
+
 /** The mock a component was given, if it has one. */
-export function mockOf(component: unknown): ComponentMock | undefined {
-  return (component as Record<symbol, ComponentMock> | undefined)?.[MOCK];
+export function mockOf(component: unknown): DeclaredMock | undefined {
+  return (component as Record<symbol, DeclaredMock> | undefined)?.[MOCK];
 }

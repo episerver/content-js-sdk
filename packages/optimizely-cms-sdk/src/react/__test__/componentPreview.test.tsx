@@ -241,8 +241,8 @@ describe('createStandalonePreview', () => {
 
     expect(element()?.getAttribute('data-preview-width')).toBe('257');
     expect(element()?.getAttribute('data-preview-height')).toBe('48');
-    expect(element()?.getAttribute('data-preview-x')).toBe('43');
-    expect(element()?.getAttribute('data-preview-y')).toBe('72');
+    expect(element()?.getAttribute('data-preview-offset-x')).toBe('43');
+    expect(element()?.getAttribute('data-preview-offset-y')).toBe('72');
     vi.restoreAllMocks();
   });
 
@@ -254,6 +254,29 @@ describe('createStandalonePreview', () => {
         document.getElementById('optimizely-preview')?.getAttribute('data-preview-error'),
       ).toBe('unknown-content-type'),
     );
+  });
+
+  test('ignores a mock declared for a different content type, and says so', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv('NODE_ENV', 'development');
+
+    // The component registered for `Heading`, carrying a mock that names
+    // something else: a copy-paste between component files.
+    const Wrong = () => null;
+    (Wrong as any)[Symbol.for('optimizely.mock')] = {
+      contentType: 'SomethingElse',
+      data: { Text: 'from the wrong component' },
+    };
+    initReactComponentRegistry({ resolver: { Heading: Wrong } });
+
+    const { container } = await renderPage({ type: 'Heading' });
+
+    expect(container.textContent).not.toContain('from the wrong component');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('withMock'));
+
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    initReactComponentRegistry({ resolver: { Heading } });
   });
 
   /** A `message` from an embedder, as the frame's window would receive it. */

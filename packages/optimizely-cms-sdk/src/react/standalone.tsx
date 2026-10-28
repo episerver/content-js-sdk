@@ -14,7 +14,6 @@
  * @module
  */
 
-import React, { ReactNode } from 'react';
 import { FallbackComponent, OptimizelyComponent } from './server.js';
 import { PreviewReporter } from './client.js';
 import { withAppContext } from './context/contextWrapper.js';
@@ -31,6 +30,7 @@ import { parseDisplaySettings } from '../model/displayTemplates.js';
 import { generateMockContent, type MockData } from '../render/mockContent.js';
 import { mockOf } from '../render/withMock.js';
 import { resolveComponent } from '../core/render/registry.js';
+import { isDev } from '../util/environment.js';
 import { PREVIEW_ELEMENT_ID } from '../core/preview/protocol.js';
 import type { OptimizelyContent } from '../core/render/resolve.js';
 
@@ -219,7 +219,24 @@ export function createStandalonePreview({
         // is found the same way it is found for rendering: by content type
         // key. Asked for nested types too, so a mock fills a component
         // wherever it appears.
-        mockFor: key => mockOf(resolveComponent(key)),
+        mockFor: key => {
+          const declared = mockOf(resolveComponent(key));
+          if (!declared) return undefined;
+
+          // A component given the wrong content type still type-checks if
+          // the two happen to share a property name, and then fills the
+          // wrong component. Cheap to notice, impossible to debug blind.
+          if (declared.contentType !== key && isDev()) {
+            console.warn(
+              `[optimizely] The component registered for "${key}" declares a ` +
+                `mock for "${declared.contentType}". Check the content type ` +
+                `passed to \`withMock\`.`,
+            );
+            return undefined;
+          }
+
+          return declared.data;
+        },
       }) as OptimizelyContent;
     })();
 

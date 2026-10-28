@@ -324,8 +324,8 @@ export function PreviewReporter({
       // anything that can query the DOM can wait for them and read them.
       element.setAttribute(PreviewAttribute.width, String(next.width));
       element.setAttribute(PreviewAttribute.height, String(next.height));
-      element.setAttribute(PreviewAttribute.x, String(next.offsetX));
-      element.setAttribute(PreviewAttribute.y, String(next.offsetY));
+      element.setAttribute(PreviewAttribute.offsetX, String(next.offsetX));
+      element.setAttribute(PreviewAttribute.offsetY, String(next.offsetY));
       // Last, so all four are readable the moment this one appears.
       element.setAttribute(PreviewAttribute.ready, '');
     };

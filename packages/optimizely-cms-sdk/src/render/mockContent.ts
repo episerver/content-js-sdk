@@ -423,7 +423,11 @@ function hash(value: string): number {
 
 /** A text source is recognised by shape, so the SDK never imports one to check. */
 const isFaker = (source: MockDataSource): source is FakerLike =>
-  typeof source === 'object' && 'lorem' in source;
+  typeof source === 'object' &&
+  // Both, because pinned values are also an object: a content type called
+  // `lorem` would otherwise be taken for a text source and never applied.
+  'lorem' in source &&
+  typeof (source as FakerLike).seed === 'function';
 
 /**
  * Builds stand-in content for one content type, shaped the way Graph returns

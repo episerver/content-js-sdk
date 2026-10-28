@@ -10,6 +10,7 @@ what `mockData` controls.
 
 > **You will learn**
 >
+> - How to declare a component's own stand-in content with `withMock`
 > - What `mockData` accepts
 > - How to supply realistic copy with faker
 > - How to pin specific values per content type
@@ -20,6 +21,48 @@ what `mockData` controls.
 component, and reports its size from a client component, so your framework has to render
 async components on the server and understand `'use client'`. Next's App Router does; its
 Pages Router and plain client-side React do not. Nothing in it imports Next itself.
+
+## Declare it next to the component
+
+The most specific values win, and the place to put them is the component file itself:
+
+```tsx
+// components/elements/Heading.tsx
+import { withMock } from '@optimizely/cms-sdk/mock';
+
+function Heading({ content }: { content: ContentProps<typeof HeadingComponent> }) {
+  return <h2>{content.heading}</h2>;
+}
+
+export default withMock(Heading, HeadingComponent, {
+  heading: 'Built for the long run',
+});
+```
+
+Nothing else to wire. The preview finds the mock the same way it finds the component —
+by content type key, through the component registry — so there is no list to maintain.
+
+- **Checked against the schema.** A property the content type does not declare, or a
+  value of the wrong type, is a compile error. Base fields such as `_metadata` are not
+  settable: those belong to the preview.
+- **Applies wherever the type appears.** A mock on `Author` fills it inside a
+  `TeaserCard`, not only when `Author` is previewed on its own.
+- **Only read by the preview.** A published page never looks for it.
+- **The page has the last word.** Anything passed as `mockData` below overrides what a
+  component declares, so an application can override a mock that ships inside a shared
+  component library.
+
+Take the function form when a fixed string is too dull:
+
+```tsx
+export default withMock(Button, ButtonComponent, ({ faker }) => ({
+  label: faker?.commerce.productName() ?? 'Add to basket',
+}));
+```
+
+Structured properties — `url`, `contentReference`, `richText` — have to be given in
+full, since the merge is shallow. Usually it is easier to leave them out and let the
+schema generate them.
 
 ## Preview without any mock data
 
