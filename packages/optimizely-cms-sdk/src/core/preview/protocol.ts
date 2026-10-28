@@ -36,13 +36,16 @@ export const MAX_PREVIEW_DIMENSION = 20000;
  * a runner can skip it rather than capture an empty page.
  */
 export const PreviewAttribute = {
-  /** Present once the first measurement is taken. Values are CSS pixels. */
+  /** Present, and empty, once a measurement has been taken. */
   ready: 'data-preview-ready',
+  /** The component's own width, in CSS pixels. */
   width: 'data-preview-width',
+  /** The component's own height, in CSS pixels. */
   height: 'data-preview-height',
-  x: 'data-preview-x',
-  y: 'data-preview-y',
-  /** The error code, when there is one. */
+  /** Where that box sits on the page, in CSS pixels. */
+  offsetX: 'data-preview-offset-x',
+  offsetY: 'data-preview-offset-y',
+  /** The error code, when the component could not be rendered. */
   error: 'data-preview-error',
 } as const;
 
