@@ -7,8 +7,8 @@ import { useTransition, type ReactNode } from 'react';
 
 export interface NextPreviewComponentProps {
   /**
-   * Delay in ms before triggering navigation. False to disable.
-   * Coalesces the burst of events the CMS emits for a single save.
+   * Delay in ms between the CMS reporting a save as ready and navigating. False to
+   * disable. Merges back-to-back saves into one refresh.
    * @default 50
    */
   refreshTimeout?: number | false;

@@ -471,9 +471,9 @@ route. In Next.js, use [`NextPreviewComponent`](#nextpreviewcomponent) instead.
   Called with the preview URL of the saved content. `isSameUrl` is `true` when it is the
   current page, so you can refresh instead of navigating. Without it, the page reloads
   with `window.location.replace(url)`.
-- `refreshTimeout` (optional) — milliseconds to wait before navigating. A single save
-  sends several events, and the delay merges them into one refresh. `false` navigates
-  immediately. Default: `50`.
+- `refreshTimeout` (optional) — milliseconds to wait, once the CMS reports a save as
+  ready, before navigating. Saves that finish within the delay merge into one refresh.
+  `false` navigates immediately. Default: `50`.
 - `children` (optional) — shown while a refresh is pending, such as a loading indicator.
 - `busy` (optional) — keeps `children` visible while `true`. Use it when your router's
   refresh returns before the new content has arrived. Default: `false`.
@@ -487,6 +487,9 @@ route. In Next.js, use [`NextPreviewComponent`](#nextpreviewcomponent) instead.
 - It listens for the `optimizely:cms:contentSaved` event, which the CMS communication
   script dispatches. Load that script on the preview route. See
   [Live preview](../learn/live-preview.md).
+- The CMS sends two events per save: one with the editor's preview token, then one when
+  the change is ready to fetch. The page refreshes once, on the second, with the first
+  one's URL and token. If either never arrives, it refreshes after 5 seconds anyway.
 - It is a Client Component, but you can render it from a Server Component.
 - When `onNavigate` returns a promise, `children` stay visible until it settles.
 

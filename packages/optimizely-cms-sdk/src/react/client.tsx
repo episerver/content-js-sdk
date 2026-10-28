@@ -30,9 +30,8 @@ export interface PreviewComponentProps {
   onNavigate?: NavigateCallback;
 
   /**
-   * Delay in ms before triggering navigation. False to disable.
-   * Coalesces the burst of events the CMS emits for a single save (page plus each
-   * nested block), which land within a few ms of each other.
+   * Delay in ms between the CMS reporting a save as ready and navigating. False to
+   * disable. Merges back-to-back saves into one refresh.
    * @default 50
    */
   refreshTimeout?: number | false;
@@ -51,8 +50,8 @@ export interface PreviewComponentProps {
 }
 
 /**
- * Listens for Optimizely CMS content saved events and triggers navigation/refresh.
- * Rapid saves are coalesced into a single refresh.
+ * Listens for Optimizely CMS content saved events and triggers navigation/refresh,
+ * once per save, after the CMS reports the change as ready.
  */
 export const PreviewComponent: FunctionComponent<
   PropsWithChildren<PreviewComponentProps>
