@@ -1,4 +1,4 @@
-import { Histogram, Counter } from '@opentelemetry/api';
+import { Histogram, Counter, Attributes } from '@opentelemetry/api';
 import { getMeter } from './meter.js';
 import { isComponentMetricsEnabled } from './settings.js';
 
@@ -70,10 +70,18 @@ const componentResolveHistogram = meter.createHistogram(
   },
 );
 
+// Recording reads Date.now(), which aborts a Next.js cacheComponents prerender, so render-path
+// measurements are buffered and replayed by the metric reader during collection
+const MAX_PENDING_DURATIONS = 10_000;
+const pendingResolveDurations: { value: number; attributes?: Attributes }[] = [];
+const lookupTotals = new Map<string, { value: number; attributes?: Attributes }>();
+
 // No-op while `componentMetrics` is off; checked per call because config() runs after this module loads
 export const componentResolveDuration: Histogram = {
-  record: (...args) => {
-    if (isComponentMetricsEnabled()) componentResolveHistogram.record(...args);
+  record: (value, attributes) => {
+    if (!isComponentMetricsEnabled()) return;
+    if (pendingResolveDurations.length < MAX_PENDING_DURATIONS)
+      pendingResolveDurations.push({ value, attributes });
   },
 };
 
@@ -104,14 +112,24 @@ export const contentFetchCount: Counter = meter.createCounter(
   },
 );
 
-const componentLookupCounter = meter.createCounter('optimizely.component.lookups', {
-  description: 'Total component resolution attempts',
-});
+meter
+  .createObservableCounter('optimizely.component.lookups', {
+    description: 'Total component resolution attempts',
+  })
+  .addCallback((observer) => {
+    pendingResolveDurations
+      .splice(0)
+      .forEach((it) => componentResolveHistogram.record(it.value, it.attributes));
+    lookupTotals.forEach((it) => observer.observe(it.value, it.attributes));
+  });
 
 // No-op while `componentMetrics` is off, like componentResolveDuration
 export const componentLookupCount: Counter = {
-  add: (...args) => {
-    if (isComponentMetricsEnabled()) componentLookupCounter.add(...args);
+  add: (value, attributes) => {
+    if (!isComponentMetricsEnabled()) return;
+    const key = JSON.stringify(attributes ?? {});
+    const total = lookupTotals.get(key)?.value ?? 0;
+    lookupTotals.set(key, { value: total + value, attributes });
   },
 };
 
