@@ -10,10 +10,11 @@ Three new entry points, split by who imports them:
 - `@optimizely/cms-sdk/react/standalone` — `createStandalonePreview` builds
   the preview page. Needs React Server Components, so Next's App Router or
   another RSC-capable framework. Nothing in it imports Next.
-- `@optimizely/cms-sdk/mock` — `withMock` declares the stand-in content a
-  component is previewed with, next to the component itself, checked against
-  its content type. `generateMockContent` builds content from a content
-  type's schema, optionally through faker, a factory or predefined values.
+- `@optimizely/cms-sdk/mock` — `generateMockContent` builds content from a
+  content type's schema, optionally through faker, a factory or predefined
+  values. A property can also say what a preview shows for it, with `mock`
+  on the property itself; `config push` strips that before sending the
+  content type, so it never reaches the content model.
 - `@optimizely/cms-sdk/protocol` — the contract an embedder reads: the
   `postMessage` types a preview reports its size over, and the DOM attributes
   it writes the same measurement to for tools that load the page directly

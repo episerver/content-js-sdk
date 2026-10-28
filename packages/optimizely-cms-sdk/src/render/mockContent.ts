@@ -59,28 +59,8 @@ export type MockDataSource = FakerLike | MockDataFactory | MockDataOverrides;
  */
 export type MockData = MockDataSource | MockDataSource[];
 
-/**
- * What one component contributes about itself, found through
- * {@linkcode MockContentOptions.mockFor} rather than passed in.
- */
-export type ComponentMock =
-  | Record<string, unknown>
-  | ((ctx: {
-      faker?: FakerLike;
-      generated: Record<string, unknown>;
-    }) => Record<string, unknown>);
-
 export type MockContentOptions = {
   mockData?: MockData;
-  /**
-   * The mock a component declares about itself, by content type key.
-   *
-   * Asked for every type the walk meets, so a component's own stand-in
-   * content fills it when nested as well as when previewed directly. The
-   * core has no idea where these come from; the React binding answers from
-   * its component registry.
-   */
-  mockFor?: (contentTypeKey: string) => ComponentMock | undefined;
   /**
    * The locale the content claims to be in, written to `_metadata.locale`.
    *
@@ -95,7 +75,6 @@ type MockContext = {
   faker?: FakerLike;
   locale: string;
   sources: MockDataSource[];
-  mockFor?: (contentTypeKey: string) => ComponentMock | undefined;
   depth: number;
 };
 
@@ -198,10 +177,16 @@ function textFor(name: string, property: AnyProperty, ctx: MockContext): string 
 }
 
 function mockRichText(label: string, ctx: MockContext) {
-  const text = ctx.faker ? label : `${label}. ${LOREM}`;
+  // Without a text source a label alone says nothing about how a paragraph
+  // wraps, so pad it. A declared mock is already what the author wanted and
+  // goes through `richTextOf` instead.
+  return richTextOf(ctx.faker ? label : `${label}. ${LOREM}`);
+}
 
-  // A root node wrapping the blocks, as Graph returns it: the renderer reads
-  // `children` off the top level and sees nothing in a bare array.
+/** One paragraph of rich text, shaped the way Graph returns it. */
+function richTextOf(text: string) {
+  // A root node wrapping the blocks: the renderer reads `children` off the
+  // top level and sees nothing in a bare array.
   return {
     json: { type: 'richText', children: [{ type: 'paragraph', children: [{ text }] }] },
     html: `<p>${text}</p>`,
@@ -236,6 +221,19 @@ function mockProperty(
 ): unknown {
   const label = labelOf(name, property);
   const enumValues = (property as { enum?: { value: unknown }[] }).enum;
+
+  // What the content type says this property should look like in a preview.
+  // Checked first: nothing the schema could generate beats being told.
+  const declared = (property as { mock?: unknown }).mock;
+  if (declared !== undefined) {
+    const value = typeof declared === 'function' ? declared() : declared;
+
+    // Rich text is a document, but writing one by hand to mock a paragraph
+    // would be miserable. A string is taken as its text.
+    return property.type === 'richText' && typeof value === 'string' ?
+        richTextOf(value)
+      : value;
+  }
 
   if (enumValues?.length) return enumValues[0].value;
 
@@ -383,28 +381,21 @@ function build(
 }
 
 /**
- * Lets declared data win over the generated values. Applied at every level,
- * so a mock for `Author` works nested as well as standalone.
+ * Lets what the preview page passed win over the generated values. Applied
+ * at every level, so an entry for `Author` works nested as well as
+ * standalone.
  *
- * Order is component first, then whatever the preview page passed: the
- * component's mock is its default, and the application gets the last word.
+ * A `mock` written on a property is handled while that property is
+ * generated, so it is already in `generated` by the time this runs — and
+ * these sources override it, which is what lets an application change what
+ * a shared component declares.
  */
 function applyMockData(
   contentType: AnyContentType,
   generated: Record<string, unknown>,
-  { sources, mockFor, faker }: MockContext,
+  { sources }: MockContext,
 ): Record<string, unknown> {
   let content = generated;
-
-  const declared = mockFor?.(contentType.key);
-  if (declared) {
-    content = {
-      ...content,
-      ...(typeof declared === 'function' ?
-        declared({ faker, generated: content })
-      : declared),
-    };
-  }
 
   for (const source of sources) {
     // The text source was used while generating; it has nothing to add here.
@@ -467,11 +458,11 @@ const isFaker = (source: MockDataSource): source is FakerLike =>
  */
 export function generateMockContent(
   contentType: AnyContentType,
-  { mockData, mockFor, locale = DEFAULT_LOCALE }: MockContentOptions = {},
+  { mockData, locale = DEFAULT_LOCALE }: MockContentOptions = {},
 ) {
   const sources = mockData === undefined ? [] : [mockData].flat();
   const faker = sources.find(isFaker);
   faker?.seed(hash(contentType.key));
 
-  return build(contentType, { faker, locale, sources, mockFor, depth: 0 });
+  return build(contentType, { faker, locale, sources, depth: 0 });
 }

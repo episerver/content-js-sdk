@@ -1,6 +1,5 @@
 import { describe, expectTypeOf, test } from 'vitest';
 import { contentType } from '../../model/index.js';
-import { withMock } from '../withMock.js';
 import {
   generateMockContent,
   type FakerLike,
@@ -68,50 +67,46 @@ describe('mockData', () => {
   });
 });
 
-describe('withMock', () => {
-  const Article = contentType({
-    key: 'Article',
-    displayName: 'Article',
-    baseType: '_page',
-    properties: {
-      Title: { type: 'string' },
-      Featured: { type: 'boolean' },
-    },
-  });
-
-  const Component = (_: unknown) => null;
-
-  test('takes the properties the content type declares', () => {
-    withMock(Component, Article, { Title: 'Built for the long run' });
-    withMock(Component, Article, { Title: 'x', Featured: true });
-  });
-
-  test('rejects a property the content type does not have', () => {
-    // @ts-expect-error `Headline` is not a property of Article.
-    withMock(Component, Article, { Headline: 'x' });
-  });
-
-  test('rejects a value of the wrong type', () => {
-    // @ts-expect-error `Featured` is a boolean.
-    withMock(Component, Article, { Featured: 'yes' });
-  });
-
-  test('rejects base fields: those belong to the preview, not the component', () => {
-    // @ts-expect-error `_metadata` is not a declared property.
-    withMock(Component, Article, { _metadata: { key: 'pinned' } });
-
-    // @ts-expect-error `_id` likewise.
-    withMock(Component, Article, { _id: 'pinned' });
-  });
-
-  test('a function may read everything the schema produced', () => {
-    withMock(Component, Article, ({ generated }) => {
-      expectTypeOf(generated._metadata).not.toBeNever();
-      return { Title: `after ${String(generated.Title)}` };
+describe('a mock on a property', () => {
+  test('takes the type that property holds', () => {
+    contentType({
+      key: 'Hero',
+      displayName: 'Hero',
+      baseType: '_component',
+      properties: {
+        Headline: { type: 'string', mock: 'Built for the long run' },
+        Featured: { type: 'boolean', mock: true },
+        Rank: { type: 'integer', mock: 3 },
+        // Rich text is written as the text it should contain.
+        Body: { type: 'richText', mock: 'One paragraph.' },
+      },
     });
   });
 
-  test('returns the component it was given, so it can be exported directly', () => {
-    expectTypeOf(withMock(Component, Article, { Title: 'x' })).toEqualTypeOf<typeof Component>();
+  test('takes a function returning that type', () => {
+    contentType({
+      key: 'Hero',
+      displayName: 'Hero',
+      baseType: '_component',
+      properties: { Headline: { type: 'string', mock: () => 'computed' } },
+    });
+  });
+
+  test('rejects a value of the wrong type', () => {
+    contentType({
+      key: 'Hero',
+      displayName: 'Hero',
+      baseType: '_component',
+      // @ts-expect-error a string property cannot be mocked with a number
+      properties: { Headline: { type: 'string', mock: 42 } },
+    });
+
+    contentType({
+      key: 'Hero',
+      displayName: 'Hero',
+      baseType: '_component',
+      // @ts-expect-error a boolean property cannot be mocked with a string
+      properties: { Featured: { type: 'boolean', mock: 'yes' } },
+    });
   });
 });
