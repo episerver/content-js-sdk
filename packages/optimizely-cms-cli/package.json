@@ -6,14 +6,19 @@
     "provenance": true
   },
   "description": "CLI application for integration with Optimizely CMS",
+  "engines": {
+    "node": ">=22.23.4"
+  },
   "repository": {
     "url": "https://github.com/episerver/content-js-sdk.git",
     "directory": "packages/optimizely-cms-cli"
   },
   "scripts": {
     "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "clean": "rimraf dist",
-    "test": "vitest --typecheck",
+    "test": "vitest run --typecheck",
+    "test:watch": "vitest --typecheck",
     "debug": "node --inspect-brk ./bin/run.js",
     "update:schema": "node ./scripts/generate-schema.js"
   },

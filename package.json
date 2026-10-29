@@ -7,13 +7,16 @@
   "type": "commonjs",
   "main": "index.js",
   "private": "true",
+  "engines": {
+    "node": ">=24.22.1"
+  },
   "scripts": {
-    "dev": "pnpm build --watch",
+    "dev": "pnpm --filter \"./packages/**\" --parallel run dev",
     "build": "pnpm --filter \"./packages/**\" build",
-    "install:all": "pnpm --filter \"./packages/**\" install && pnpm --filter \"./packages/**\" build && pnpm --filter \"./samples/**\" --filter \"./templates/**\" install",
+    "build:clean": "pnpm clean:all && pnpm build",
     "build:samples": "pnpm --filter \"./samples/**\" build",
     "clean:all": "pnpm -r clean",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "pnpm --filter \"./packages/**\" test",
     "publish:all": "pnpm --filter \"./packages/**\" publish --access public --no-git-checks",
     "update-hooks": "pnpm simple-git-hooks"
   },
