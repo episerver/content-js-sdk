@@ -90,7 +90,9 @@ so the preview looks exactly like the live site.
 >
 > In a React framework other than Next.js, use `PreviewComponent` from
 > `@optimizely/cms-sdk/react/client` instead of `NextPreviewComponent`, and a plain
-> `<script>` tag instead of Next.js's `Script`.
+> `<script>` tag instead of Next.js's `Script`. In Astro, wrap the content in
+> [`OptimizelyPreview`](../reference/astro-components.md#optimizelypreview), which also
+> loads the script.
 
 ## Point the CMS at your preview route
 

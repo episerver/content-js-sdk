@@ -266,6 +266,46 @@ const stop = startMediaTokenRetry({ cmsUrl: 'https://<your-instance>.cms.optimiz
 - A preview route that runs no client code can't retry. Pass `{ forceMediaToken: true }`
   to `getPreviewContent()` to put the token in every media URL instead.
 
+### Refreshing without a client-side router
+
+Without a client-side router, as in Astro or any other server-rendered site, the only
+thing `onNavigate` can do is reload the page. That loses the scroll position and reloads
+every image. `refreshInPlace()` returns an `onNavigate` that fetches the new preview URL
+and patches only what changed.
+
+```ts
+import {
+  createContentSavedListener,
+  refreshInPlace,
+} from '@optimizely/cms-sdk/core/preview';
+
+createContentSavedListener({ onNavigate: refreshInPlace() }).start();
+```
+
+`@optimizely/cms-sdk/core/preview` exports only the listener and `refreshInPlace`, so the
+browser doesn't load the rest of core. Wrap the rendered content in an element marked as
+the preview root:
+
+```html
+<div data-optimizely-preview-root>
+  <!-- rendered content -->
+</div>
+```
+
+- Pass `refreshInPlace({ root: '#content' })` to use another selector.
+- Nodes that didn't change stay in the DOM, so scroll position, images and the editor's
+  overlays survive. Preview image URLs carry a token that changes on every save, so URLs
+  that differ only by that token keep their current value and don't download again.
+- A request still pending when the next save arrives is cancelled.
+- The address bar switches to the new preview URL, so a manual reload shows the latest
+  draft.
+- It falls back to a full reload when either page has no root, the target is another path,
+  or the request fails.
+- `<script>` tags in the fetched content don't run.
+
+In Astro, the [`OptimizelyPreview`](../reference/astro-components.md#optimizelypreview)
+component sets all of this up, including the communication injector script.
+
 ## Forms
 
 ### The submission store

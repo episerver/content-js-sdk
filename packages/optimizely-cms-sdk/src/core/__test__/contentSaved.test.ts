@@ -185,6 +185,27 @@ describe('busy reporting', () => {
 
     await vi.waitFor(() => expect(onBusyChange).toHaveBeenLastCalledWith(false));
   });
+
+  test('an earlier navigation settling leaves busy raised for a later one', async () => {
+    const onBusyChange = vi.fn();
+    const settle: (() => void)[] = [];
+    listen({
+      onNavigate: () => new Promise<void>(resolve => settle.push(resolve)),
+      onBusyChange,
+    });
+
+    save();
+    vi.advanceTimersByTime(50);
+    save();
+    vi.advanceTimersByTime(50);
+    settle[0]();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(onBusyChange).not.toHaveBeenCalledWith(false);
+
+    settle[1]();
+    await vi.waitFor(() => expect(onBusyChange).toHaveBeenLastCalledWith(false));
+  });
 });
 
 describe('lifecycle', () => {
