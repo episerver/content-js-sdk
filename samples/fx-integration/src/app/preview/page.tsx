@@ -32,7 +32,7 @@ async function Page({ searchParams }: Props) {
           ).href
         }
       ></Script>
-      <NextPreviewComponent />
+      <NextPreviewComponent cmsUrl={process.env.OPTIMIZELY_CMS_URL} />
       <OptimizelyComponent content={content} />
     </>
   );

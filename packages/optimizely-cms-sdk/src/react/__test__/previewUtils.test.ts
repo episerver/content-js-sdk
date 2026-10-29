@@ -22,6 +22,7 @@ const asset = (defaultUrl: string | null, itemUrl: string | null): InferredConte
 
 const page = { __typename: 'TestPage' };
 const editPage = { __typename: 'TestPage', __context: { edit: true, preview_token: 'token-123' } };
+const tokenPage = { ...editPage, __context: { ...editPage.__context, media_token: 'token-123' } };
 
 describe('getPreviewUtils().src', () => {
   test.each([
@@ -37,8 +38,13 @@ describe('getPreviewUtils().src', () => {
     ['an asset URL', asset('https://example.com/default.jpg', null), 'https://example.com/default.jpg?preview_token=token-123'],
     ['a string URL', 'https://example.com/image.jpg', 'https://example.com/image.jpg?preview_token=token-123'],
     ['a URL with a query', 'https://example.com/image.jpg?width=500', 'https://example.com/image.jpg?width=500&preview_token=token-123'],
-  ])('appends the preview token to %s in preview mode', (_, input, expected) => {
-    expect(getPreviewUtils(editPage).src(input)).toBe(expected);
+    ['a URL with a stale token', 'https://example.com/image.jpg?preview_token=old', 'https://example.com/image.jpg?preview_token=token-123'],
+  ])('appends the preview token to %s when the preview opted in', (_, input, expected) => {
+    expect(getPreviewUtils(tokenPage).src(input)).toBe(expected);
+  });
+
+  test('leaves the preview token off in preview mode unless opted in', () => {
+    expect(getPreviewUtils(editPage).src('https://example.com/image.jpg')).toBe('https://example.com/image.jpg');
   });
 
   test.each([

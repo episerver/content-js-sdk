@@ -83,8 +83,9 @@ You can't change it for a single request.
 ## Rendering a responsive image
 
 Use `src()` from `getPreviewUtils()` for the URL and `getSrcset()` from `damAssets()` for
-the renditions. Both add the preview token when an editor previews the page, so that
-unpublished assets load:
+the renditions. In preview, the preview component adds the preview token to an asset that
+fails to load, so unpublished assets load too. See
+[Images and videos in preview](../learn/live-preview.md#images-and-videos-in-preview):
 
 ```tsx
 // src/components/Hero.tsx

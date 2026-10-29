@@ -260,3 +260,51 @@ describe('lifecycle', () => {
     expect(onNavigate).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('media token retry', () => {
+  const CMS = 'https://cms.example.com';
+  const IMAGE = `${CMS}/globalassets/cat.jpg`;
+
+  const failedImage = () => {
+    document.body.innerHTML = `<img src="${IMAGE}">`;
+    const image = document.querySelector('img')!;
+    image.dispatchEvent(new Event('error'));
+    return image;
+  };
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  test('retries failed media with the token of the latest save', () => {
+    listen({ onNavigate: vi.fn(), cmsUrl: CMS });
+
+    save({ previewToken: 'saved-token' });
+
+    expect(failedImage().getAttribute('src')).toBe(`${IMAGE}?preview_token=saved-token`);
+  });
+
+  test('uses the token in the page URL before the first save', () => {
+    window.history.replaceState({}, '', '/?preview_token=page-token');
+    listen({ onNavigate: vi.fn(), cmsUrl: CMS });
+
+    expect(failedImage().getAttribute('src')).toBe(`${IMAGE}?preview_token=page-token`);
+  });
+
+  test('can be turned off', () => {
+    listen({ onNavigate: vi.fn(), cmsUrl: CMS, mediaTokenRetry: false });
+
+    save({ previewToken: 'saved-token' });
+
+    expect(failedImage().getAttribute('src')).toBe(IMAGE);
+  });
+
+  test('stops with the listener', () => {
+    const stop = createContentSavedListener({ onNavigate: vi.fn(), cmsUrl: CMS }).start();
+
+    save({ previewToken: 'saved-token' });
+    stop();
+
+    expect(failedImage().getAttribute('src')).toBe(IMAGE);
+  });
+});

@@ -332,7 +332,17 @@ export type GraphGetItemOptions = GraphQueryOptions & {
   previewToken?: string;
 };
 
-export type GraphGetPreviewOptions = GraphQueryOptions;
+export type GraphGetPreviewOptions = GraphQueryOptions & {
+  /**
+   * Forces the preview token into every media URL (`src()`, `getSrcset`, rich-text images).
+   *
+   * Not recommended: the token changes on every save, so every image and video reloads
+   * each time. The SDK's content-saved listener adds the token only to media that fails
+   * to load. Use this only on a preview route that runs no client code.
+   * @default false
+   */
+  forceMediaToken?: boolean;
+};
 
 export type PreviewParams = {
   preview_token: string;

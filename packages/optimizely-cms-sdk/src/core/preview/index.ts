@@ -10,5 +10,7 @@ export type {
   ContentSavedListenerOptions,
   NavigateCallback,
 } from './contentSaved.js';
+export { startMediaTokenRetry } from './mediaTokenRetry.js';
+export type { MediaTokenRetryOptions } from './mediaTokenRetry.js';
 export { refreshInPlace } from './refreshInPlace.js';
 export type { RefreshInPlaceOptions } from './refreshInPlace.js';

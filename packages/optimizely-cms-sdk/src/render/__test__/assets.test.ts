@@ -35,6 +35,7 @@ const assetOfType = (__typename: string) => ({ ...imageAsset(), item: { __typena
 
 const page = { __typename: 'TestPage' };
 const previewPage = { __typename: 'TestPage', __context: { edit: true, preview_token: 'token-123' } };
+const tokenPage = { ...previewPage, __context: { ...previewPage.__context, media_token: 'token-123' } };
 
 describe('getSrcset', () => {
   test('lists each rendition width once, keeping the first rendition of a width', () => {
@@ -48,8 +49,12 @@ describe('getSrcset', () => {
     );
   });
 
-  test('appends the preview token from the content to every rendition', () => {
-    const entries = getSrcset(previewPage, imageAsset())!.split(', ');
+  test('leaves the preview token off unless the preview opted in', () => {
+    expect(getSrcset(previewPage, imageAsset())).toBe(getSrcset(page, imageAsset()));
+  });
+
+  test('appends the preview token to every rendition when the preview opted in', () => {
+    const entries = getSrcset(tokenPage, imageAsset())!.split(', ');
 
     expect(entries).toHaveLength(4);
     expect(entries.every(it => it.includes('.jpg?preview_token=token-123 '))).toBe(true);
@@ -116,9 +121,9 @@ describe('asset type checks', () => {
 
 describe('damAssets', () => {
   test('scopes getSrcset to the content preview token', () => {
-    const { getSrcset: scopedGetSrcset } = damAssets(previewPage);
+    const { getSrcset: scopedGetSrcset } = damAssets(tokenPage);
 
-    expect(scopedGetSrcset(imageAsset())).toBe(getSrcset(previewPage, imageAsset()));
+    expect(scopedGetSrcset(imageAsset())).toBe(getSrcset(tokenPage, imageAsset()));
     expect(scopedGetSrcset(imageAsset())).toContain('preview_token=token-123');
   });
 });
