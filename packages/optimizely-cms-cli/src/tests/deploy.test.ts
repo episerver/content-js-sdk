@@ -117,5 +117,4 @@ describe('Deploy command', () => {
       .filter(Boolean);
 
     expect(new Set(chars).size).toBe(chars.length);
-  });
-});
+  });});
