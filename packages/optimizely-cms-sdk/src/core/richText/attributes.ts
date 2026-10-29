@@ -9,7 +9,7 @@
  * @module
  */
 
-import { appendToken } from '../../util/preview.js';
+import { withPreviewToken } from '../../util/preview.js';
 import { getContextData } from '../../context/config.js';
 import {
   buildRenderTree,
@@ -342,9 +342,9 @@ export const getLinkAttributes = (element: LinkElement) => ({
 });
 
 // Throws when no context adapter is configured, a legitimate state for an app that never previews.
-function readPreviewToken(): string | undefined {
+function readMediaToken(): string | undefined {
   try {
-    return getContextData('previewToken');
+    return getContextData('mediaToken');
   } catch {
     return undefined;
   }
@@ -353,7 +353,7 @@ function readPreviewToken(): string | undefined {
 /** The attributes an image element contributes, with the preview token applied. */
 export function getImageAttributes(element: ImageElement) {
   return {
-    src: appendToken(element.url, readPreviewToken()),
+    src: withPreviewToken(element.url, readMediaToken()),
     alt: element.alt,
     title: element.title,
     width: element.width,
@@ -382,7 +382,7 @@ export function getRichTextElement(node: RenderNode): RichTextElement {
   // `buildRenderTree` has already mapped the image `url` to `src`.
   const attributes =
     elementType === 'image' && source.src ?
-      { ...source, src: appendToken(String(source.src), readPreviewToken()) }
+      { ...source, src: withPreviewToken(String(source.src), readMediaToken()) }
     : source;
 
   return { tag, selfClosing: !!config?.selfClosing, ...splitAttributes(attributes, tag) };

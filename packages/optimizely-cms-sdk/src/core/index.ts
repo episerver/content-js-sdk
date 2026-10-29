@@ -55,6 +55,8 @@ export type {
   ContentSavedListenerOptions,
   NavigateCallback,
 } from './preview/contentSaved.js';
+export { startMediaTokenRetry } from './preview/mediaTokenRetry.js';
+export type { MediaTokenRetryOptions } from './preview/mediaTokenRetry.js';
 
 // Context
 export {

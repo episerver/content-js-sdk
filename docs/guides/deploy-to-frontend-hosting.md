@@ -44,6 +44,13 @@ OPTIMIZELY_DXP_CLIENT_SECRET=your-client-secret
 > `OPTIMIZELY_CMS_CLIENT_SECRET`) that `config push` uses. A project that deploys and
 > pushes content types needs both sets.
 
+If your DXP management portal is not on `paasportal.episerver.net`, also set the
+Deployment API URL of your portal host:
+
+```ini
+OPTIMIZELY_DXP_API_URL=https://paasportal.epimore.com/api/v1.0
+```
+
 > [!WARNING]
 >
 > `deploy` never uploads `.env` files, but keep `.env` out of version control anyway.
@@ -208,21 +215,21 @@ The workflow:
 
 ## Troubleshooting
 
-| Message                                                                       | Fix                                                                                                                     |
-| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `Front-end hosting credentials not provided`                                  | Set the `OPTIMIZELY_DXP_*` variables the message names                                                                  |
-| `The front-end hosting credentials were rejected`                             | Check the client key and secret. Create a new API key if the secret is lost                                             |
-| `...have no access to this project or environment`                            | Check the environment name against the **Deployments** tab, or create an API key with the target environment selected   |
-| `No package-lock.json or yarn.lock found`                                     | Run `npm install --package-lock-only`                                                                                   |
-| `Found package-lock.json and yarn.lock`                                       | Delete the lock file of the package manager you do not use                                                              |
-| `package.json has no "start" script`                                          | Add the script from [Project requirements](#project-requirements)                                                       |
-| `Dependency "..." uses "workspace:*"`                                         | Replace it with a published version                                                                                     |
-| `A package named ... was already uploaded`                                    | Deploy again with a different `--version`                                                                               |
-| `Deployment ... failed`                                                       | Read the errors listed under the message. Application logs are in the **Troubleshoot** tab of the DXP management portal |
-| `Deployment ... did not finish within 30 minutes`                             | The deployment may still be running. Check the portal, or raise `--timeout`                                             |
-| `Failed to prepare container in repository 'frontend' on ACR` (in the portal) | The package has no lock file. Deploy with the CLI, which checks for one                                                 |
-| Warning: `Timed out waiting for all instances ... to become ready`            | The site took long to start in the slot. The deployment continues; if it succeeds, the site is fine                     |
-| Warning: `Site with URL ... responded with error code: 404`                   | Expected before the CMS application has the hostname. See [After the first deploy](#after-the-first-deploy)             |
+| Message                                                                       | Fix                                                                                                                                                           |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Front-end hosting credentials not provided`                                  | Set the `OPTIMIZELY_DXP_*` variables the message names                                                                                                        |
+| `The front-end hosting credentials were rejected`                             | Check the client key and secret. Create a new API key if the secret is lost. If the portal is not on `paasportal.episerver.net`, set `OPTIMIZELY_DXP_API_URL` |
+| `...have no access to this project or environment`                            | Check the environment name against the **Deployments** tab, or create an API key with the target environment selected                                         |
+| `No package-lock.json or yarn.lock found`                                     | Run `npm install --package-lock-only`                                                                                                                         |
+| `Found package-lock.json and yarn.lock`                                       | Delete the lock file of the package manager you do not use                                                                                                    |
+| `package.json has no "start" script`                                          | Add the script from [Project requirements](#project-requirements)                                                                                             |
+| `Dependency "..." uses "workspace:*"`                                         | Replace it with a published version                                                                                                                           |
+| `A package named ... was already uploaded`                                    | Deploy again with a different `--version`                                                                                                                     |
+| `Deployment ... failed`                                                       | Read the errors listed under the message. Application logs are in the **Troubleshoot** tab of the DXP management portal                                       |
+| `Deployment ... did not finish within 30 minutes`                             | The deployment may still be running. Check the portal, or raise `--timeout`                                                                                   |
+| `Failed to prepare container in repository 'frontend' on ACR` (in the portal) | The package has no lock file. Deploy with the CLI, which checks for one                                                                                       |
+| Warning: `Timed out waiting for all instances ... to become ready`            | The site took long to start in the slot. The deployment continues; if it succeeds, the site is fine                                                           |
+| Warning: `Site with URL ... responded with error code: 404`                   | Expected before the CMS application has the hostname. See [After the first deploy](#after-the-first-deploy)                                                   |
 
 ## Recap
 

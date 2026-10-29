@@ -17,6 +17,9 @@ export interface NextPreviewComponentProps {
    * Optional loading indicator shown during refresh delay.
    */
   children?: ReactNode;
+
+  /** The CMS URL for retrying media with the preview token. See `PreviewComponentProps.cmsUrl`. */
+  cmsUrl?: string;
 }
 
 /**
@@ -35,6 +38,7 @@ export interface NextPreviewComponentProps {
 export function NextPreviewComponent({
   refreshTimeout = 50,
   children,
+  cmsUrl,
 }: NextPreviewComponentProps = {}) {
   const router = useRouter();
 
@@ -47,6 +51,7 @@ export function NextPreviewComponent({
     <PreviewComponent
       refreshTimeout={refreshTimeout}
       busy={isPending}
+      cmsUrl={cmsUrl}
       onNavigate={(url: string, isSameUrl: boolean) => {
         startTransition(() => {
           if (isSameUrl) {

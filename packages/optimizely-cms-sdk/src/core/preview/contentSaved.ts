@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { startMediaTokenRetry } from './mediaTokenRetry.js';
 
 export interface ContentSavedEvent {
   contentLink: string;
@@ -35,6 +36,16 @@ export type ContentSavedListenerOptions = {
 
   /** Called when a refresh starts and again when it settles. */
   onBusyChange?: (busy: boolean) => void;
+
+  /**
+   * Retries media that fails to load with the preview token. See `startMediaTokenRetry`.
+   * Read when the listener starts.
+   * @default true
+   */
+  mediaTokenRetry?: boolean;
+
+  /** The CMS URL for the media retry. See `MediaTokenRetryOptions.cmsUrl`. */
+  cmsUrl?: string;
 };
 
 const EVENT_NAME = 'optimizely:cms:contentSaved';
@@ -52,6 +63,11 @@ const normalizeUrl = (url: string): string => {
 // Only the token message says where the edit happened; the ready message never does
 const isTokenMessage = (event: ContentSavedEvent) =>
   'sectionId' in event || 'nodeIds' in event;
+
+const startRetry = (
+  { mediaTokenRetry, cmsUrl }: ContentSavedListenerOptions,
+  getToken: () => string | undefined,
+) => (mediaTokenRetry === false ? undefined : startMediaTokenRetry({ cmsUrl, getToken }));
 
 export type ContentSavedListener = {
   /** Subscribes to the event. Returns the unsubscribe. */
@@ -82,10 +98,12 @@ export function createContentSavedListener(
   let options = initialOptions;
   let reloadDelay: ReturnType<typeof setTimeout> | undefined;
   let fallback: ReturnType<typeof setTimeout> | undefined;
+  let stopMediaTokenRetry: (() => void) | undefined;
 
   // Token messages minus ready messages, so overlapping saves each get a refresh
   let balance = 0;
   let tokenUrl = '';
+  let latestToken: string | undefined;
 
   const navigate = (previewUrl: string) => {
     const { onNavigate, refreshTimeout = 50, onBusyChange } = options;
@@ -103,7 +121,9 @@ export function createContentSavedListener(
 
     const executeNavigation = () => {
       if (onNavigate) {
-        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => onBusyChange?.(false));
+        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
+          onBusyChange?.(false),
+        );
       } else {
         // Fallback: hard reload
         window.location.replace(finalUrl);
@@ -127,7 +147,11 @@ export function createContentSavedListener(
     options.onBusyChange?.(true);
 
     const isToken = isTokenMessage(event);
-    if (isToken) tokenUrl = event.previewUrl;
+    // The media retry also needs the editor's token, not the ready message's
+    if (isToken) {
+      tokenUrl = event.previewUrl;
+      latestToken = event.previewToken;
+    }
     balance += isToken ? 1 : -1;
 
     // Completes a pair when it cancels out a message of the other kind
@@ -150,7 +174,10 @@ export function createContentSavedListener(
     start() {
       if (typeof window === 'undefined') return () => {};
 
-      if (subscribers === 0) window.addEventListener(EVENT_NAME, listener);
+      if (subscribers === 0) {
+        window.addEventListener(EVENT_NAME, listener);
+        stopMediaTokenRetry = startRetry(options, () => latestToken);
+      }
       subscribers++;
 
       let stopped = false;
@@ -162,6 +189,7 @@ export function createContentSavedListener(
 
         if (subscribers > 0) return;
         window.removeEventListener(EVENT_NAME, listener);
+        stopMediaTokenRetry?.();
         if (reloadDelay) clearTimeout(reloadDelay);
         clearTimeout(fallback);
         balance = 0;

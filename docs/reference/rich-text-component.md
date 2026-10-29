@@ -157,8 +157,9 @@ Some rules apply on top of that:
 - **`class` and `className`** on the same node are joined.
 - **`selected`** is removed. A `select` gets a `defaultValue` from the options marked
   `selected` instead, as React expects.
-- **`image` elements** get the request's preview token appended to `src`, so that images
-  load in preview.
+- **`image` elements** get the request's preview token appended to `src` when the preview
+  was fetched with `forceMediaToken: true`. Otherwise the preview component adds it to
+  images that fail to load.
 
 <details>
 <summary><b>Deep dive:</b> HTML attribute → React prop mapping</summary>

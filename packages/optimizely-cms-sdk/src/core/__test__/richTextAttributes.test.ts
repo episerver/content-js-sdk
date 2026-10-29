@@ -162,13 +162,21 @@ describe('getRichTextElement', () => {
   });
 
   describe('in preview', () => {
+    let adapter: MemoryAdapter;
+
     beforeEach(() => {
-      const adapter = new MemoryAdapter();
+      adapter = new MemoryAdapter();
       adapter.set('previewToken', 'token');
       configureAdapter(adapter);
     });
 
-    test('an image source gets the preview token', () => {
+    test('an image source is left alone unless the preview opted in', () => {
+      expect(element('image', { src: '/a.png' }).attributes.src).toBe('/a.png');
+    });
+
+    test('an image source gets the preview token when the preview opted in', () => {
+      adapter.set('mediaToken', 'token');
+
       expect(element('image', { src: '/a.png' }).attributes.src).toBe('/a.png?preview_token=token');
     });
 

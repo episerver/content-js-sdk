@@ -37,7 +37,7 @@ async function Page({ searchParams }: Props) {
           ).href
         }
       ></Script>
-      <NextPreviewComponent />
+      <NextPreviewComponent cmsUrl={process.env.OPTIMIZELY_CMS_URL} />
       <Header currentPath={path} />
       <ContentLayout content={content} currentPath={path} />
       <Footer currentPath={path} />
