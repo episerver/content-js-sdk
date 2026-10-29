@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
-  classifySave,
   createContentSavedListener,
   type ContentSavedEvent,
   type ContentSavedListenerOptions,
@@ -60,27 +59,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('classifySave', () => {
-  const message = (extra: Partial<ContentSavedEvent> = {}): ContentSavedEvent => ({
-    contentLink: '250_549',
-    previewUrl: 'https://localhost:3000/preview?key=abc&ver=549&preview_token=token',
-    previewToken: 'token',
-    ...extra,
-  });
-
-  test('a message saying where the edit happened is the token message, whichever field it uses', () => {
-    expect(classifySave(message({ sectionId: 'LayoutItem/Composition/36b9' }))).toBe(
-      'token',
-    );
-    expect(classifySave(message({ nodeIds: ['9acc4bdc'] }))).toBe('token');
-    expect(classifySave(message({ nodeIds: [] }))).toBe('token');
-  });
-
-  test('a message without a location is the ready message', () => {
-    expect(classifySave(message())).toBe('ready');
-  });
-});
-
 describe('pairing the two messages of a save', () => {
   test('navigates once, when the ready message arrives', () => {
     const onNavigate = vi.fn();
@@ -100,6 +78,22 @@ describe('pairing the two messages of a save', () => {
     listen({ onNavigate });
 
     save();
+    vi.advanceTimersByTime(50);
+
+    expect(onNavigate).toHaveBeenCalledWith(TOKEN_URL, false);
+  });
+
+  test('a token message may name the edit with nodeIds instead of sectionId', () => {
+    const onNavigate = vi.fn();
+    listen({ onNavigate });
+
+    dispatch({
+      contentLink: 'content-1',
+      previewUrl: TOKEN_URL,
+      previewToken: 'editor',
+      nodeIds: [],
+    });
+    readyMessage();
     vi.advanceTimersByTime(50);
 
     expect(onNavigate).toHaveBeenCalledWith(TOKEN_URL, false);

@@ -15,9 +15,6 @@ export interface ContentSavedEvent {
   nodeIds?: string[];
 }
 
-/** Which of the two messages the CMS sends per save this is. */
-export type SaveKind = 'token' | 'ready';
-
 /**
  * Callback for handling navigation/refresh when content is saved.
  * @param url - Target URL to navigate to
@@ -52,13 +49,9 @@ const normalizeUrl = (url: string): string => {
   return parsed.toString();
 };
 
-/**
- * Tells apart the two messages the CMS sends per save: `token` carries the editor's
- * preview token, `ready` means the change is ready to fetch. Only the token message
- * says where the edit happened, so that field decides, not the arrival order.
- */
-export const classifySave = (event: ContentSavedEvent): SaveKind =>
-  'sectionId' in event || 'nodeIds' in event ? 'token' : 'ready';
+// Only the token message says where the edit happened; the ready message never does
+const isTokenMessage = (event: ContentSavedEvent) =>
+  'sectionId' in event || 'nodeIds' in event;
 
 export type ContentSavedListener = {
   /** Subscribes to the event. Returns the unsubscribe. */
@@ -76,8 +69,9 @@ export type ContentSavedListener = {
 /**
  * Creates a listener for the CMS content-saved event.
  *
- * The CMS sends two messages per save. It navigates once, when the ready message
- * arrives, to the token message's URL, since only that token works for preview.
+ * The CMS sends two messages per save: one with the editor's preview token, and one
+ * when the change is ready. It navigates once both have arrived, in either order, to
+ * the token message's URL.
  *
  * Nothing is subscribed until {@linkcode ContentSavedListener.start} is called, so
  * importing this module is safe on the server.
@@ -91,7 +85,7 @@ export function createContentSavedListener(
 
   // Token messages minus ready messages, so overlapping saves each get a refresh
   let balance = 0;
-  let latestToken: ContentSavedEvent | undefined;
+  let tokenUrl = '';
 
   const navigate = (previewUrl: string) => {
     const { onNavigate, refreshTimeout = 50, onBusyChange } = options;
@@ -125,24 +119,22 @@ export function createContentSavedListener(
 
   // The ready message's token lacks editor roles, so without a token message keep the page's
   const onFallback = () => {
-    navigate(balance > 0 && latestToken ? latestToken.previewUrl : window.location.href);
+    navigate(balance > 0 ? tokenUrl : window.location.href);
     balance = 0;
-    fallback = undefined;
   };
 
   const handleContentSaved = (event: ContentSavedEvent) => {
     options.onBusyChange?.(true);
 
-    const isToken = classifySave(event) === 'token';
-    if (isToken) latestToken = event;
+    const isToken = isTokenMessage(event);
+    if (isToken) tokenUrl = event.previewUrl;
     balance += isToken ? 1 : -1;
 
-    // A message that cancels out one of the other kind completes a pair, in either order
-    const completesPair = isToken ? balance <= 0 : balance >= 0;
-    if (completesPair) navigate(latestToken?.previewUrl ?? window.location.href);
+    // Completes a pair when it cancels out a message of the other kind
+    if (isToken ? balance <= 0 : balance >= 0) navigate(tokenUrl);
 
-    if (fallback) clearTimeout(fallback);
-    fallback = balance === 0 ? undefined : setTimeout(onFallback, FALLBACK_TIMEOUT);
+    clearTimeout(fallback);
+    if (balance) fallback = setTimeout(onFallback, FALLBACK_TIMEOUT);
   };
 
   // One window listener however many times `start` is called; the last stop removes it
@@ -171,10 +163,8 @@ export function createContentSavedListener(
         if (subscribers > 0) return;
         window.removeEventListener(EVENT_NAME, listener);
         if (reloadDelay) clearTimeout(reloadDelay);
-        if (fallback) clearTimeout(fallback);
-        fallback = undefined;
+        clearTimeout(fallback);
         balance = 0;
-        latestToken = undefined;
       };
     },
   };
