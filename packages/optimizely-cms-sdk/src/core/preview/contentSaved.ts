@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { startMediaTokenRetry } from './mediaTokenRetry.js';
 
 export interface ContentSavedEvent {
   contentLink: string;
@@ -33,6 +34,16 @@ export type ContentSavedListenerOptions = {
 
   /** Called when a refresh starts and again when it settles. */
   onBusyChange?: (busy: boolean) => void;
+
+  /**
+   * Retries media that fails to load with the preview token. See `startMediaTokenRetry`.
+   * Read when the listener starts.
+   * @default true
+   */
+  mediaTokenRetry?: boolean;
+
+  /** The CMS URL for the media retry. See `MediaTokenRetryOptions.cmsUrl`. */
+  cmsUrl?: string;
 };
 
 const EVENT_NAME = 'optimizely:cms:contentSaved';
@@ -43,6 +54,11 @@ const normalizeUrl = (url: string): string => {
   parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
   return parsed.toString();
 };
+
+const startRetry = (
+  { mediaTokenRetry, cmsUrl }: ContentSavedListenerOptions,
+  getToken: () => string | undefined,
+) => (mediaTokenRetry === false ? undefined : startMediaTokenRetry({ cmsUrl, getToken }));
 
 export type ContentSavedListener = {
   /** Subscribes to the event. Returns the unsubscribe. */
@@ -69,9 +85,12 @@ export function createContentSavedListener(
   let options = initialOptions;
   let reloadDelay: ReturnType<typeof setTimeout> | undefined;
   let lastProcessed: { contentLink: string; timestamp: number } | null = null;
+  let latestToken: string | undefined;
+  let stopMediaTokenRetry: (() => void) | undefined;
 
   const handleContentSaved = (eventData: ContentSavedEvent) => {
     const { onNavigate, refreshTimeout = 50, onBusyChange } = options;
+    latestToken = eventData.previewToken;
 
     // With debouncing on, the timer already coalesces repeats. Only the
     // `refreshTimeout={false}` path needs an explicit dupe guard.
@@ -104,7 +123,9 @@ export function createContentSavedListener(
 
     const executeNavigation = () => {
       if (onNavigate) {
-        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => onBusyChange?.(false));
+        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
+          onBusyChange?.(false),
+        );
       } else {
         // Fallback: hard reload
         window.location.replace(finalUrl);
@@ -131,7 +152,10 @@ export function createContentSavedListener(
     start() {
       if (typeof window === 'undefined') return () => {};
 
-      if (subscribers === 0) window.addEventListener(EVENT_NAME, listener);
+      if (subscribers === 0) {
+        window.addEventListener(EVENT_NAME, listener);
+        stopMediaTokenRetry = startRetry(options, () => latestToken);
+      }
       subscribers++;
 
       let stopped = false;
@@ -143,6 +167,7 @@ export function createContentSavedListener(
 
         if (subscribers > 0) return;
         window.removeEventListener(EVENT_NAME, listener);
+        stopMediaTokenRetry?.();
         if (reloadDelay) clearTimeout(reloadDelay);
       };
     },

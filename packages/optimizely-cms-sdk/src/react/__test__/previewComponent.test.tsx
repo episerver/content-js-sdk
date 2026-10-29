@@ -104,4 +104,19 @@ describe('PreviewComponent', () => {
 
     expect(onNavigate).not.toHaveBeenCalled();
   });
+
+  test('retries failed media on the CMS host with the preview token', () => {
+    const image = 'https://cms.example.com/globalassets/cat.jpg';
+    const { container } = render(
+      <>
+        <PreviewComponent onNavigate={vi.fn()} cmsUrl='https://cms.example.com' />
+        <img src={image} />
+      </>,
+    );
+
+    save(1);
+    act(() => void container.querySelector('img')!.dispatchEvent(new Event('error')));
+
+    expect(container.querySelector('img')).toHaveAttribute('src', `${image}?preview_token=t`);
+  });
 });

@@ -135,11 +135,6 @@ export type QueryContext = {
    */
   sectionTypes?: ReadonlySet<string>;
   /**
-   * Tracks the ancestor fragment chain during recursive fragment generation
-   * to prevent circular fragment references.
-   */
-  ancestors: Set<string>;
-  /**
    * Which Rich Text representation(s) to select: `'html'`, `'json'`, or `'both'`.
    * Configurable via `config({ richTextFormat })`.
    * @default 'json'
@@ -188,7 +183,6 @@ export const createQueryContext = (
   compositionDepth: options.compositionDepth ?? DEFAULT_COMPOSITION_DEPTH,
   typeFilter: options.typeFilter,
   sectionTypes: options.sectionTypes,
-  ancestors: options.ancestors ?? new Set(),
   richTextFormat: options.richTextFormat ?? DEFAULT_RICH_TEXT_FORMAT,
 });
 
@@ -432,15 +426,22 @@ const resolvePropertyTypes = (
   return typeFilter ? resolved.filter(type => typeFilter(getKeyName(type))) : resolved;
 };
 
-/** The fragment spreads selecting every allowed type, plus their fragments. */
+/**
+ * The fragment spreads selecting every allowed type, plus their fragments.
+ *
+ * A spread is emitted even when it names a fragment that is still being built,
+ * so a self-referencing content type produces a cyclic fragment
+ * (`fragment A on A { children { ...A } }`). Optimizely Graph supports these and
+ * resolves them as deep as the indexed data goes:
+ * https://docs.optimizely.com/graph/docs/recursive-queries#circular-referenced-queries-cyclic-fragments
+ * Generation itself still terminates, because `visited` builds each fragment once.
+ */
 const buildTypeSpreads = (
   allowed: (PermittedTypes | AnyContentType)[],
   rootName: string,
   visited: Set<string>,
   ctx: QueryContext,
 ) => {
-  const { ancestors } = ctx;
-
   const { typesToInclude, contractsToInclude } = collectTypesAndContracts(
     allowed,
     rootName,
@@ -460,9 +461,7 @@ const buildTypeSpreads = (
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
     extraFragments.push(...result.fragments);
-    if (!ancestors?.has(strippedKey)) {
-      subfields.push(`...${strippedKey}`);
-    }
+    subfields.push(`...${strippedKey}`);
   });
 
   contractsToInclude.forEach(contractKey => {
@@ -471,9 +470,7 @@ const buildTypeSpreads = (
     includesDamAssetsFragments =
       includesDamAssetsFragments || result.includesDamAssetsFragments;
     extraFragments.push(...result.fragments);
-    if (!ancestors?.has(strippedKey)) {
-      subfields.push(`...${strippedKey}`);
-    }
+    subfields.push(`...${strippedKey}`);
   });
 
   return {

@@ -870,8 +870,11 @@ export async function getPreviewContent(
 
     span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 
+    const mediaToken = options?.forceMediaToken ? params.preview_token : undefined;
+
     setContext({
       previewToken: params.preview_token,
+      mediaToken,
       version: params.ver,
       locale: params.loc,
       type: contentTypeName,
@@ -918,7 +921,11 @@ export async function getPreviewContent(
       locale: params.loc,
     });
 
-    return decorateWithContext(result, params);
+    return decorateWithContext(result, {
+      edit: params.ctx === 'edit',
+      preview_token: params.preview_token,
+      ...(mediaToken && { media_token: mediaToken }),
+    });
   });
 }
 

@@ -173,6 +173,17 @@ describe('getPreviewContent', () => {
     });
   });
 
+  test('marks the context when media URLs should carry the token', async () => {
+    stubGraph(client, {
+      metadata: metadataResponse(['Article']),
+      content: { _Content: { item: { __typename: 'Article', Article__title: 'Draft' } } },
+    });
+
+    const content: any = await client.getPreviewContent(previewParams, { forceMediaToken: true });
+
+    expect(content.__context).toEqual({ edit: true, preview_token: 'token', media_token: 'token' });
+  });
+
   test('throws a GraphResponseError naming the key when the content is not found', async () => {
     stubGraph(client, { metadata: { _Content: { item: null }, damAssetType: null } });
 

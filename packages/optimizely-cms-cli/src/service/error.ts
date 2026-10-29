@@ -89,7 +89,7 @@ export const hostingErrors = {
   InvalidHostingCredentials: class InvalidHostingCredentials extends CLIError {
     constructor() {
       super(
-        'The front-end hosting credentials were rejected. Check `OPTIMIZELY_DXP_CLIENT_KEY` and `OPTIMIZELY_DXP_CLIENT_SECRET` against the API tab of the DXP management portal',
+        'The front-end hosting credentials were rejected. Check `OPTIMIZELY_DXP_CLIENT_KEY` and `OPTIMIZELY_DXP_CLIENT_SECRET` against the API tab of the DXP management portal. If the portal is not on paasportal.episerver.net, set `OPTIMIZELY_DXP_API_URL` to its Deployment API URL',
         { exit: 1 },
       );
     }

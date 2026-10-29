@@ -66,11 +66,12 @@ instance and calls `<url>/_cms/v1`.
 `deploy` uses its own credentials instead, created in the **API** tab of the DXP
 management portal:
 
-| Variable                       | Required     | Description                            |
-| ------------------------------ | ------------ | -------------------------------------- |
-| `OPTIMIZELY_DXP_PROJECT_ID`    | For `deploy` | The front-end hosting project ID       |
-| `OPTIMIZELY_DXP_CLIENT_KEY`    | For `deploy` | The client key of a Deployment API key |
-| `OPTIMIZELY_DXP_CLIENT_SECRET` | For `deploy` | The client secret of the same key      |
+| Variable                       | Required     | Description                                                                                                                         |
+| ------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `OPTIMIZELY_DXP_PROJECT_ID`    | For `deploy` | The front-end hosting project ID                                                                                                    |
+| `OPTIMIZELY_DXP_CLIENT_KEY`    | For `deploy` | The client key of a Deployment API key                                                                                              |
+| `OPTIMIZELY_DXP_CLIENT_SECRET` | For `deploy` | The client secret of the same key                                                                                                   |
+| `OPTIMIZELY_DXP_API_URL`       | No           | The Deployment API URL. Defaults to `https://paasportal.episerver.net/api/v1.0`. Set it when your project is on another portal host |
 
 > [!NOTE]
 >

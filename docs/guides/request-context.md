@@ -28,7 +28,7 @@ every level of the tree.
 a normal page the context starts empty, and you fill it yourself if you need it.
 
 The SDK reads the context too. For example, `<RichText>` appends the preview token to
-image URLs, so that images from a draft load in the preview.
+image URLs when the preview was fetched with `forceMediaToken: true`.
 
 ## Read it in a component
 

@@ -7,6 +7,8 @@ export interface ContextData {
   type?: string;
   currentContent?: unknown;
   previewToken?: string;
+  /** The token media URLs carry. Set only with `GraphGetPreviewOptions.forceMediaToken`. */
+  mediaToken?: string;
   mode?: string;
   locale?: string;
   key?: string;

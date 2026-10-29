@@ -9,7 +9,7 @@
  */
 
 import { getDisplayTemplateTag } from '../../model/displayTemplateRegistry.js';
-import type { ExperienceCompositionNode } from '../../infer.js';
+import type { ExperienceCompositionNode, PreviewContext } from '../../infer.js';
 import { resolveComponent, type ResolveComponentOptions } from './registry.js';
 
 /** Content data from the CMS, as the render layer reads it. */
@@ -23,7 +23,7 @@ export type OptimizelyContent = {
   displayTemplateKey?: string | null;
 
   /** Preview context */
-  __context?: { edit: boolean; preview_token: string };
+  __context?: PreviewContext;
 
   __composition?: ExperienceCompositionNode;
 
