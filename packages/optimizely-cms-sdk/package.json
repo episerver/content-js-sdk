@@ -128,7 +128,7 @@
     "prebuild": "node scripts/prebuild.js",
     "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
     "postbuild": "node scripts/postbuild.js",
-    "dev": "pnpm build && tsc --project tsconfig.esm.json --watch --preserveWatchOutput",
+    "dev": "pnpm build && tsc --project tsconfig.esm.json --inlineSources --watch --preserveWatchOutput",
     "clean": "rimraf dist",
     "test": "vitest run --typecheck",
     "test:watch": "vitest --typecheck"
