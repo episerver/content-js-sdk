@@ -4,17 +4,19 @@ import { useState } from 'react';
 import '@testing-library/jest-dom/vitest';
 import { PreviewComponent } from '../client.js';
 
-const save = (link: string | number) =>
+const dispatch = (detail: object) =>
+  window.dispatchEvent(new CustomEvent('optimizely:cms:contentSaved', { detail }));
+
+/** The CMS's token message, then its ready message. */
+const save = () =>
   act(() => {
-    window.dispatchEvent(
-      new CustomEvent('optimizely:cms:contentSaved', {
-        detail: {
-          contentLink: `c${link}`,
-          previewUrl: window.location.href,
-          previewToken: 't',
-        },
-      }),
-    );
+    const message = {
+      contentLink: 'c1',
+      previewUrl: window.location.href,
+      previewToken: 't',
+    };
+    dispatch({ ...message, sectionId: 's' });
+    dispatch(message);
   });
 
 const advance = (ms: number) => act(async () => void vi.advanceTimersByTime(ms));
@@ -35,7 +37,7 @@ describe('PreviewComponent', () => {
     }
 
     render(<Parent />);
-    save(1);
+    save();
     await advance(100);
     await act(async () => bump());
     await advance(500);
@@ -47,7 +49,7 @@ describe('PreviewComponent', () => {
     const onNavigate = vi.fn();
     render(<PreviewComponent onNavigate={onNavigate} />);
 
-    save(1);
+    save();
     await advance(49);
     expect(onNavigate).toHaveBeenCalledTimes(0);
     await advance(1);
@@ -64,7 +66,7 @@ describe('PreviewComponent', () => {
       </PreviewComponent>,
     );
 
-    save(1);
+    save();
     expect(container.textContent).toBe('loading');
 
     // `onNavigate` returns void, so the internal mask drops immediately - `busy` covers the round-trip.
@@ -96,10 +98,10 @@ describe('PreviewComponent', () => {
     const onNavigate = vi.fn();
     const { unmount } = render(<PreviewComponent onNavigate={onNavigate} />);
 
-    save(1);
+    save();
     unmount();
     await advance(100);
-    save(2);
+    save();
     await advance(100);
 
     expect(onNavigate).not.toHaveBeenCalled();
@@ -114,7 +116,7 @@ describe('PreviewComponent', () => {
       </>,
     );
 
-    save(1);
+    save();
     act(() => void container.querySelector('img')!.dispatchEvent(new Event('error')));
 
     expect(container.querySelector('img')).toHaveAttribute('src', `${image}?preview_token=t`);
