@@ -12,6 +12,7 @@
     "deploy": "optimizely-cms-cli deploy"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.6.0",
     "@optimizely/cms-sdk": "workspace:*",
     "clsx": "^2.1.1",
     "next": "16.3.6",

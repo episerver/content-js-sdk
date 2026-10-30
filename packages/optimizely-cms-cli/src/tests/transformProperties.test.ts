@@ -239,3 +239,35 @@ describe('Testing transformProperties', () => {
     });
   });
 });
+
+describe('mock values', () => {
+  test('are stripped: they belong to previews, not to the content model', () => {
+    const result = transformProperties(
+      {
+        heading: { type: 'string', displayName: 'Heading', mock: 'Built for the long run' },
+        featured: { type: 'boolean', mock: true },
+      } as any,
+      'Hero',
+    );
+
+    expect(result).toEqual({
+      heading: { type: 'string', displayName: 'Heading' },
+      featured: { type: 'boolean' },
+    });
+  });
+
+  test('are stripped from array items as well', () => {
+    const result = transformProperties(
+      { tags: { type: 'array', items: { type: 'string', mock: 'running' } } } as any,
+      'Hero',
+    );
+
+    expect(result).toEqual({ tags: { type: 'array', items: { type: 'string' } } });
+  });
+
+  test('a property with no mock is untouched', () => {
+    const result = transformProperties({ heading: { type: 'string' } } as any, 'Hero');
+
+    expect(result).toEqual({ heading: { type: 'string' } });
+  });
+});

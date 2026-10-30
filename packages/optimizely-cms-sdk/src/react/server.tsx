@@ -267,7 +267,8 @@ function FallbackColumn({ node, children }: StructureContainerProps) {
   );
 }
 
-function FallbackComponent({ children }: { children: ReactNode }) {
+/** @internal Shared with the preview entry point, not part of the public API. */
+export function FallbackComponent({ children }: { children: ReactNode }) {
   return isDev() ?
       <div
         style={{

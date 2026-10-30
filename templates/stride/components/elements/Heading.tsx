@@ -14,6 +14,8 @@ export const HeadingComponent = contentType({
       displayName: 'Heading',
       isLocalized: true,
       sortOrder: 1,
+      // What a preview shows before an editor has authored one.
+      mock: 'Built for the long run 123',
     },
   },
 });

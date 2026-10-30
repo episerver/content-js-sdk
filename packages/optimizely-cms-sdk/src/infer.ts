@@ -159,7 +159,8 @@ type EnabledKeys<T extends Record<string, AnyProperty>> = {
 }[keyof T];
 
 /** Infers an `object` with the TS type inferred for each type */
-type InferProps<T extends AnyContentType> =
+/** Just the properties a content type declares, without the base fields. */
+export type InferProps<T extends AnyContentType> =
   T extends (
     {
       properties: Record<string, AnyProperty>;

@@ -10,8 +10,15 @@ export {
   isContentTypeRegistered,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
+  getContentType,
+  getAllContentTypes,
   PropertyGroupType,
 } from './model/index.js';
+
+// Previewing one component on its own splits by who reads it:
+// `@optimizely/cms-sdk/mock` declares its stand-in content,
+// `@optimizely/cms-sdk/react/standalone` serves the page, and
+// `@optimizely/cms-sdk/protocol` is the contract an embedder reads.
 
 // GraphQL
 export {
