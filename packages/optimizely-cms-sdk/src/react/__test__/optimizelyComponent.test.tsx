@@ -63,6 +63,22 @@ describe('OptimizelyComponent', () => {
     expect(container.querySelector('b')).toHaveTextContent('Missing');
   });
 
+  test.each(['_Content', '_Component'])('renders nothing for %s, even in development', async typename => {
+    vi.stubEnv('NODE_ENV', 'development');
+
+    const { container } = await renderServer(<OptimizelyComponent content={{ __typename: typename }} />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  test('renders a component registered for a base type', async () => {
+    initReactComponentRegistry({ resolver: { _Content: Card } });
+
+    const { getByTestId } = await renderServer(<OptimizelyComponent content={{ __typename: '_Content' }} />);
+
+    expect(getByTestId('card')).toBeInTheDocument();
+  });
+
   test('renders nothing outside development when no component matches', async () => {
     vi.stubEnv('NODE_ENV', 'production');
 

@@ -24,6 +24,7 @@ import {
   ExperienceComponentNode,
   DisplaySettingsType,
 } from '../infer.js';
+import { isBaseType } from '../util/baseTypeUtil.js';
 import { isDev } from '../util/environment.js';
 import { OptimizelyReactError } from './error.js';
 import { withComponentRenderSpan } from '../telemetry/spans.js';
@@ -149,7 +150,12 @@ export async function OptimizelyComponent({
 
       if (!Component) {
         span.setAttribute(SemanticAttributes.OPTI_COMPONENT_FOUND, false);
-        return (
+
+        // Graph answers with a base type (`_Content`, `_Component`, …) when the item's
+        // own type is missing from its schema. Naming the base type helps nobody, so
+        // say nothing — an application wanting to render something can register a
+        // component for it, which is resolved above like any other.
+        return isBaseType(typename ?? '') ? null : (
           <FallbackComponent>
             No component found for content type <b>{typename}</b>
           </FallbackComponent>
