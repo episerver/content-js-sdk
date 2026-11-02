@@ -16,13 +16,17 @@
     "stride-template": "0.1.3-beta.0"
   },
   "changesets": [
+    "brave-loops-return",
     "eight-crabs-shout",
     "five-drinks-unite",
     "fresh-animals-obey",
+    "icy-beers-live",
     "long-sheep-fix",
+    "loud-aliens-walk",
     "red-forks-smile",
     "small-symbols-watch",
     "solid-dots-pay",
+    "sweet-points-accept",
     "tall-pugs-shave",
     "taxonomy-categories-support",
     "ten-buckets-decide"

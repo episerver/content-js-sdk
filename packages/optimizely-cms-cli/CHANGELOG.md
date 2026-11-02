@@ -1,5 +1,17 @@
 # @optimizely/cms-cli
 
+## 3.1.0-beta.1
+
+### Patch Changes
+
+- a942fb6: [CMS-57658](https://optimizely-ext.atlassian.net/browse/CMS-57658):
+  `config pull` outside a terminal now writes files when an output flag is given, instead
+  of printing JSON.
+- Updated dependencies [a9dd7db]
+- Updated dependencies [be34249]
+- Updated dependencies [34ac138]
+  - @optimizely/cms-sdk@3.1.0-beta.1
+
 ## 3.1.0-beta.0
 
 ### Minor Changes
