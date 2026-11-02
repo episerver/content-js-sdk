@@ -9,7 +9,7 @@ content type for each one.
 >
 > - How to define a display template
 > - How to choose what a template applies to
-> - How to offer settings with select and checkbox editors
+> - How to offer settings with select, variant and checkbox editors
 > - How to read the settings in a component
 > - How to render a different component for a template
 > - How to register display templates
@@ -41,7 +41,7 @@ export const SquareDisplayTemplate = displayTemplate({
   contentType: 'Tile',
   settings: {
     color: {
-      editor: 'select' as const,
+      editor: 'select',
       displayName: 'Description color',
       sortOrder: 0,
       choices: {
@@ -88,7 +88,7 @@ export const TileRowDisplayTemplate = displayTemplate({
   nodeType: 'row',
   settings: {
     padding: {
-      editor: 'select' as const,
+      editor: 'select',
       displayName: 'Padding',
       sortOrder: 0,
       choices: {
@@ -111,19 +111,24 @@ is the name your component reads.
 | `displayName` | Yes      | The label editors see                                               |
 | `sortOrder`   | Yes      | The setting's position in the panel                                 |
 | `choices`     | Yes      | The options, keyed by value. Each has `displayName` and `sortOrder` |
-| `editor`      | No       | `'select'` or `'checkbox'`                                          |
+| `editor`      | No       | `'select'`, `'checkbox'` or `'variant'`                             |
 
-> [!WARNING]
+> [!NOTE]
 >
-> Write `editor` with `as const`, as in the examples on this page. `ContentProps` infers a
-> type only for settings whose `editor` is the literal `'select'` or `'checkbox'`. Without
-> `as const`, or without `editor`, the setting is typed `never`.
+> `ContentProps` infers a type only for settings that set `editor`. A setting without one
+> is typed `never`. Earlier versions also needed `as const` on the value; they no longer
+> do, and leaving an existing `as const` in place does no harm.
 
 ### Select editor
 
 A drop-down with one choice selected. Both templates above use it. Your component receives
 the key of the chosen choice, such as `'small'`, typed as the union of the keys in
 `choices`.
+
+### Variant editor
+
+The choices shown side by side instead of in a drop-down, for picking a look. Your
+component receives the key of the chosen choice, the same as with `'select'`.
 
 ### Checkbox editor
 
@@ -141,7 +146,7 @@ export const BorderedCardDisplayTemplate = displayTemplate({
   baseType: '_component',
   settings: {
     showBorder: {
-      editor: 'checkbox' as const,
+      editor: 'checkbox',
       displayName: 'Show border',
       sortOrder: 0,
       choices: {
@@ -302,7 +307,7 @@ export const SquareDisplayTemplate = displayTemplate({
   tag: 'Square',
   settings: {
     color: {
-      editor: 'select' as const,
+      editor: 'select',
       displayName: 'Description color',
       sortOrder: 0,
       choices: {
@@ -312,7 +317,7 @@ export const SquareDisplayTemplate = displayTemplate({
       },
     },
     showBorder: {
-      editor: 'checkbox' as const,
+      editor: 'checkbox',
       displayName: 'Show border',
       sortOrder: 1,
       choices: {
@@ -384,7 +389,8 @@ initReactComponentRegistry({
 
 - Define a template with `displayTemplate()` and target a base type, a content type or a
   node type.
-- Use `editor: 'select'` for a choice of values and `editor: 'checkbox'` for a boolean.
+- Use `editor: 'select'` or `editor: 'variant'` for a choice of values and
+  `editor: 'checkbox'` for a boolean.
 - Read the editor's choices from the `displaySettings` prop, typed with `ContentProps`.
 - Give a template a `tag` to render it with a variant component.
 - Register every template with `initDisplayTemplateRegistry`.
