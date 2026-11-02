@@ -37,7 +37,25 @@ export const ArticleContentType = contentType({
   and contain only letters, digits and underscores.
 - `displayName` is the name editors see. It is required.
 - `baseType` decides what kind of content this is. See the next section.
+- `icon` is the icon editors see next to the content type. It is optional.
 - `properties` maps each property name to its definition.
+
+```ts
+export const ArticleContentType = contentType({
+  key: 'Article',
+  displayName: 'Article',
+  baseType: '_page',
+  icon: 'Document',
+});
+```
+
+Autocomplete lists the icons the CMS ships with: `Banner`, `Box`, `Browser`,
+`Bundle`, `Checkbox`, `Checklist`, `Code`, `Comment`, `Dashboard`, `Document`, `Email`,
+`Excel spreadsheet`, `Folder`, `Globe`, `Grid`, `Heading`, `Image`, `Image landscape`,
+`Layers`, `Link`, `List`, `Page`, `PDF file`, `Quote`, `Section`, `Shapes`,
+`Shopping cart`, `Sidebar`, `Start page`, `Table`, `Tablet`, `Tag`, `Task list`,
+`Text input`, `Toggle`, `Video`, `Website`, `Window`, `Word document`, `ZIP archive`.
+Any other string is accepted for a custom icon. Leave `icon` out for no icon.
 
 Export the content type from a file that the `components` patterns in
 [`optimizely.config.mjs`](../reference/optimizely-config.md) match. The CLI only finds

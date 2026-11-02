@@ -166,6 +166,7 @@ export type {
   BaseTypes,
   ComponentContentType,
   ContentType,
+  ContentTypeIcon,
   Contract,
   ExperienceContentType,
   FolderContentType,
