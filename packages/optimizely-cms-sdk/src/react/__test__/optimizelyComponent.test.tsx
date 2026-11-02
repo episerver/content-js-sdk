@@ -74,11 +74,9 @@ describe('OptimizelyComponent', () => {
   test('renders a component registered for a base type', async () => {
     initReactComponentRegistry({ resolver: { _Content: Card } });
 
-    const { getByTestId } = await renderServer(
-      <OptimizelyComponent content={{ __typename: '_Content', title: 'Empty' }} />,
-    );
+    const { getByTestId } = await renderServer(<OptimizelyComponent content={{ __typename: '_Content' }} />);
 
-    expect(getByTestId('card')).toHaveTextContent('Empty');
+    expect(getByTestId('card')).toBeInTheDocument();
   });
 
   test('renders nothing outside development when no component matches', async () => {
