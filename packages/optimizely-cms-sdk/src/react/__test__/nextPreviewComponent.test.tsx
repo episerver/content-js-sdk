@@ -7,13 +7,18 @@ const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
+const dispatch = (detail: object) =>
+  window.dispatchEvent(new CustomEvent('optimizely:cms:contentSaved', { detail }));
+
+/** The CMS's token message, then its ready message. */
 const save = (previewUrl: string) =>
   act(() => {
-    window.dispatchEvent(
-      new CustomEvent('optimizely:cms:contentSaved', {
-        detail: { contentLink: 'c1', previewUrl, previewToken: 't' },
-      }),
-    );
+    dispatch({ contentLink: 'c1', previewUrl, previewToken: 't', sectionId: 's' });
+    dispatch({
+      contentLink: 'c1',
+      previewUrl: 'http://localhost:3000/ignored',
+      previewToken: 'r',
+    });
   });
 
 const advance = (ms: number) => act(async () => void vi.advanceTimersByTime(ms));

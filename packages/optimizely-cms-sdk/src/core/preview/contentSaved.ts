@@ -11,6 +11,9 @@ export interface ContentSavedEvent {
   editUrl?: string;
   previewUrl: string;
   previewToken: string;
+  /** Where the edit happened: one or the other, only on the editor's token message. */
+  sectionId?: string;
+  nodeIds?: string[];
 }
 
 /**
@@ -25,9 +28,8 @@ export type ContentSavedListenerOptions = {
   onNavigate?: NavigateCallback;
 
   /**
-   * Delay in ms before triggering navigation. False to disable.
-   * Coalesces the burst of events the CMS emits for a single save (page plus each
-   * nested block), which land within a few ms of each other.
+   * Delay in ms between the CMS reporting a save as ready and navigating. False to
+   * disable. Merges back-to-back saves into one refresh.
    * @default 50
    */
   refreshTimeout?: number | false;
@@ -48,12 +50,19 @@ export type ContentSavedListenerOptions = {
 
 const EVENT_NAME = 'optimizely:cms:contentSaved';
 
+/** How long to wait for the other half of a save. Measured gap: under 1 s. */
+const FALLBACK_TIMEOUT = 5000;
+
 /** Two URLs pointing at the same page differ only by a trailing slash often enough to matter. */
 const normalizeUrl = (url: string): string => {
   const parsed = new URL(url);
   parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
   return parsed.toString();
 };
+
+// Only the token message says where the edit happened; the ready message never does
+const isTokenMessage = (event: ContentSavedEvent) =>
+  'sectionId' in event || 'nodeIds' in event;
 
 const startRetry = (
   { mediaTokenRetry, cmsUrl }: ContentSavedListenerOptions,
@@ -76,6 +85,10 @@ export type ContentSavedListener = {
 /**
  * Creates a listener for the CMS content-saved event.
  *
+ * The CMS sends two messages per save: one with the editor's preview token, and one
+ * when the change is ready. It navigates once both have arrived, in either order, to
+ * the token message's URL.
+ *
  * Nothing is subscribed until {@linkcode ContentSavedListener.start} is called, so
  * importing this module is safe on the server.
  */
@@ -84,42 +97,27 @@ export function createContentSavedListener(
 ): ContentSavedListener {
   let options = initialOptions;
   let reloadDelay: ReturnType<typeof setTimeout> | undefined;
-  let lastProcessed: { contentLink: string; timestamp: number } | null = null;
-  let latestToken: string | undefined;
+  let fallback: ReturnType<typeof setTimeout> | undefined;
   let stopMediaTokenRetry: (() => void) | undefined;
 
-  const handleContentSaved = (eventData: ContentSavedEvent) => {
+  // Token messages minus ready messages, so overlapping saves each get a refresh
+  let balance = 0;
+  let tokenUrl = '';
+  let latestToken: string | undefined;
+
+  const navigate = (previewUrl: string) => {
     const { onNavigate, refreshTimeout = 50, onBusyChange } = options;
-    latestToken = eventData.previewToken;
-
-    // With debouncing on, the timer already coalesces repeats. Only the
-    // `refreshTimeout={false}` path needs an explicit dupe guard.
-    if (!refreshTimeout) {
-      const now = Date.now();
-      if (
-        lastProcessed &&
-        lastProcessed.contentLink === eventData.contentLink &&
-        now - lastProcessed.timestamp < 50
-      ) {
-        return;
-      }
-      lastProcessed = { contentLink: eventData.contentLink, timestamp: now };
-    }
-
-    const currentUrl = window.location.href;
-
-    onBusyChange?.(true);
 
     if (reloadDelay) clearTimeout(reloadDelay);
 
     let finalUrl: string;
     try {
-      finalUrl = new URL(eventData.previewUrl, window.location.origin).toString();
+      finalUrl = new URL(previewUrl, window.location.origin).toString();
     } catch {
-      finalUrl = eventData.previewUrl;
+      finalUrl = previewUrl;
     }
 
-    const isSameUrl = normalizeUrl(currentUrl) === normalizeUrl(finalUrl);
+    const isSameUrl = normalizeUrl(window.location.href) === normalizeUrl(finalUrl);
 
     const executeNavigation = () => {
       if (onNavigate) {
@@ -137,6 +135,30 @@ export function createContentSavedListener(
     } else {
       executeNavigation();
     }
+  };
+
+  // The ready message's token lacks editor roles, so without a token message keep the page's
+  const onFallback = () => {
+    navigate(balance > 0 ? tokenUrl : window.location.href);
+    balance = 0;
+  };
+
+  const handleContentSaved = (event: ContentSavedEvent) => {
+    options.onBusyChange?.(true);
+
+    const isToken = isTokenMessage(event);
+    // The media retry also needs the editor's token, not the ready message's
+    if (isToken) {
+      tokenUrl = event.previewUrl;
+      latestToken = event.previewToken;
+    }
+    balance += isToken ? 1 : -1;
+
+    // Completes a pair when it cancels out a message of the other kind
+    if (isToken ? balance <= 0 : balance >= 0) navigate(tokenUrl);
+
+    clearTimeout(fallback);
+    if (balance) fallback = setTimeout(onFallback, FALLBACK_TIMEOUT);
   };
 
   // One window listener however many times `start` is called; the last stop removes it
@@ -169,6 +191,8 @@ export function createContentSavedListener(
         window.removeEventListener(EVENT_NAME, listener);
         stopMediaTokenRetry?.();
         if (reloadDelay) clearTimeout(reloadDelay);
+        clearTimeout(fallback);
+        balance = 0;
       };
     },
   };
