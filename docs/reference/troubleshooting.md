@@ -334,7 +334,8 @@ If you need the HTML string, set `fragment.richTextFormat` to `'html'` or `'both
   listen for those events.
 
 **Fix:** Render both on your preview route. In Next.js, use `<NextPreviewComponent>`,
-which refreshes the Server Components instead of reloading the page. See
+which refreshes the Server Components instead of reloading the page. In Astro, use
+[`<OptimizelyPreview>`](./astro-components.md#optimizelypreview), which covers both. See
 [Live preview](../learn/live-preview.md).
 
 ### `Invalid URL` when the preview route loads

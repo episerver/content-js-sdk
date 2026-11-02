@@ -1,0 +1,34 @@
+---
+/**
+ * Live preview for Astro: loads the CMS communication script and refreshes the
+ * wrapped content in place whenever an editor saves.
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Base URL of the CMS instance, which serves the communication script. */
+  cmsUrl: string | URL;
+}
+
+const { cmsUrl, ...attributes } = Astro.props;
+const injectorUrl = new URL('/util/javascript/communicationinjector.js', cmsUrl).href;
+---
+
+<script is:inline src={injectorUrl}></script>
+<div data-optimizely-preview-loading hidden>
+  <slot name='loading' />
+</div>
+<div data-optimizely-preview-root {...attributes}>
+  <slot />
+</div>
+
+<script>
+  import { createContentSavedListener, refreshInPlace } from '@optimizely/cms-sdk/core/preview';
+
+  const loading = document.querySelector('[data-optimizely-preview-loading]');
+
+  createContentSavedListener({
+    onNavigate: refreshInPlace(),
+    onBusyChange: busy => loading?.toggleAttribute('hidden', !busy),
+  }).start();
+</script>

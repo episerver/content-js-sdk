@@ -1,4 +1,5 @@
 const TOKEN_PARAM = /([?&])preview_token=[^&#]*/;
+const TOKEN_PATTERN = /preview_token=[^&\s,]*/g;
 
 /**
  * Sets the preview token on the given URL as a query parameter, replacing one it
@@ -15,3 +16,13 @@ export const withPreviewToken = (url: string, previewToken?: string): string => 
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}preview_token=${previewToken}`;
 };
+
+/**
+ * Removes the preview tokens `withPreviewToken` added, including inside `srcset` lists.
+ * The result is for comparing URLs only, not for requesting them.
+ */
+export const stripToken = (value: string): string => value.replace(TOKEN_PATTERN, '');
+
+/** Drops a trailing slash, which often differs between two URLs for the same page. */
+export const normalizePathname = (pathname: string): string =>
+  pathname.replace(/\/$/, '') || '/';

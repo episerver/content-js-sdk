@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { normalizePathname } from '../../util/preview.js';
 import { startMediaTokenRetry } from './mediaTokenRetry.js';
 
 export interface ContentSavedEvent {
@@ -48,10 +49,9 @@ export type ContentSavedListenerOptions = {
 
 const EVENT_NAME = 'optimizely:cms:contentSaved';
 
-/** Two URLs pointing at the same page differ only by a trailing slash often enough to matter. */
 const normalizeUrl = (url: string): string => {
   const parsed = new URL(url);
-  parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
+  parsed.pathname = normalizePathname(parsed.pathname);
   return parsed.toString();
 };
 
@@ -85,6 +85,7 @@ export function createContentSavedListener(
   let options = initialOptions;
   let reloadDelay: ReturnType<typeof setTimeout> | undefined;
   let lastProcessed: { contentLink: string; timestamp: number } | null = null;
+  let latestNavigation = 0;
   let latestToken: string | undefined;
   let stopMediaTokenRetry: (() => void) | undefined;
 
@@ -123,9 +124,11 @@ export function createContentSavedListener(
 
     const executeNavigation = () => {
       if (onNavigate) {
-        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
-          onBusyChange?.(false),
-        );
+        const navigation = ++latestNavigation;
+        // An earlier navigation settling must not lower busy while a later one runs
+        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => {
+          if (navigation === latestNavigation) onBusyChange?.(false);
+        });
       } else {
         // Fallback: hard reload
         window.location.replace(finalUrl);

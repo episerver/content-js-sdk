@@ -494,6 +494,9 @@ route. In Next.js, use [`NextPreviewComponent`](#nextpreviewcomponent) instead.
   [Live preview](../learn/live-preview.md).
 - It is a Client Component, but you can render it from a Server Component.
 - When `onNavigate` returns a promise, `children` stay visible until it settles.
+- Without a client-side router, pass
+  [`refreshInPlace()`](../guides/framework-agnostic-core.md#refreshing-without-a-client-side-router)
+  as `onNavigate` to patch the page instead of reloading it.
 - **It loads unpublished media.** Media URLs are rendered without the preview token, so
   they don't change between saves. When an image or video on the CMS host fails to load,
   it loads it again with the token from the latest save, or from the page URL before the
