@@ -180,3 +180,16 @@ test('content rejects contentType field', () => {
     },
   });
 });
+
+test('icon accepts predefined and custom values', () => {
+  contentType({ key: 'a', displayName: 'A', baseType: '_page', icon: 'Start page' });
+  contentType({ key: 'b', displayName: 'B', baseType: '_page', icon: 'my-custom-icon' });
+
+  contentType({
+    key: 'c',
+    displayName: 'C',
+    baseType: '_page',
+    // @ts-expect-error - icon must be a string
+    icon: 42,
+  });
+});

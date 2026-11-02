@@ -39,6 +39,8 @@ function transformContentType(
 
   return {
     ...parsedContentType,
+    // an empty icon means "no icon": omit it rather than sending a blank value
+    icon: parsedContentType.icon || undefined,
     properties: formattedProperties,
     ...(contracts ? { contracts } : {}),
   };
