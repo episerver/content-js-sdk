@@ -38,7 +38,16 @@ type WebsiteApplicationType = BaseApplicationType & {
   type: 'website';
   /** @description Whether to use preview tokens for this application. Only applicable when the type is 'website'. */
   usePreviewTokens?: boolean;
-  /** @description A dictionary of preview URL formats keyed by content type base or content type key. Only applicable when the type is 'website'. */
+  /**
+   * @description A dictionary of preview URL formats keyed by content type base or content type key. Only applicable when the type is 'website'.
+   *
+   * `'any'` is the fallback used for anything without its own entry. A base
+   * type such as `'_component'` covers every content type built on it, and a
+   * content type key beats both.
+   *
+   * The CMS fills in `{host}`, `{key}`, `{version}`, `{locale}` and
+   * `{context}`.
+   */
   previewUrlFormats?: {
     [key: string]: string;
   };

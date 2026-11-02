@@ -252,7 +252,7 @@ type InferFromDisplayTemplate<T extends DisplayTemplate> =
           editor: infer E;
         }
       ) ?
-        E extends 'select' ? keyof S[K]['choices']
+        E extends 'select' | 'variant' ? keyof S[K]['choices']
         : E extends 'checkbox' ? boolean
         : never
       : never;

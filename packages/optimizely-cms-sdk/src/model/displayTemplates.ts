@@ -5,11 +5,12 @@ import { BaseTypes } from './contentTypes.js';
 export const NODE_TYPES = ['row', 'column'] as const;
 
 // cms editor types
-export const EDITOR_TYPE = ['select', 'checkbox'] as const;
+export const EDITOR_TYPE = ['select', 'checkbox', 'variant'] as const;
 
 type NodeType = (typeof NODE_TYPES)[number];
 
-type EditorType = (typeof EDITOR_TYPE)[number] | string;
+// `(string & {})` keeps autocomplete on the known editors while still allowing custom ones
+type EditorType = (typeof EDITOR_TYPE)[number] | (string & {});
 
 type NodeTemplate = {
   nodeType: NodeType;

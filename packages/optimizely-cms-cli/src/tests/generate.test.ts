@@ -942,3 +942,36 @@ describe('generated file paths', () => {
     expect(generateRegistryFilePath('/output')).toBe(join('/output', 'registry.ts'));
   });
 });
+
+describe('pull keeps icon and variant editor', () => {
+  it('generates the content type icon, and omits it when empty', () => {
+    const withIcon: ManifestContentType = { ...mockComponent, icon: 'Banner' };
+    const manifest: Manifest = { contentTypes: [withIcon], displayTemplates: [] };
+
+    expect(generateContentCode(withIcon, manifest, false, new Map())).toContain(
+      "icon: 'Banner'",
+    );
+
+    const noIcon: ManifestContentType = { ...mockComponent, icon: '' };
+    expect(generateContentCode(noIcon, manifest, false, new Map())).not.toContain('icon');
+  });
+
+  it('generates the variant editor of a display template setting', () => {
+    const template: ManifestDisplayTemplate = {
+      ...mockDisplayTemplate,
+      settings: {
+        look: {
+          displayName: 'Look',
+          sortOrder: 0,
+          editor: 'variant',
+          choices: { light: { displayName: 'Light', sortOrder: 0 } },
+        },
+      },
+    };
+    const manifest: Manifest = { contentTypes: [], displayTemplates: [template] };
+
+    expect(generateContentCode(template, manifest, false, new Map())).toContain(
+      "editor: 'variant'",
+    );
+  });
+});
