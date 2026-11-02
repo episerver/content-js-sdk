@@ -15,6 +15,8 @@ export const ButtonComponent = contentType({
       displayName: 'Label',
       isLocalized: true,
       sortOrder: 1,
+      // What a preview shows before an editor has authored one.
+      mock: 'Click me',
     },
     link: {
       type: 'url',

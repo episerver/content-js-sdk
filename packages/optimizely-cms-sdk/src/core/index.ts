@@ -49,6 +49,8 @@ export type {
 // Preview
 export { getPreviewUtils } from './preview/attributes.js';
 export { createContentSavedListener } from './preview/contentSaved.js';
+// The component preview contract is exported from
+// `@optimizely/cms-sdk/protocol`, not from here.
 export type {
   ContentSavedEvent,
   ContentSavedListener,

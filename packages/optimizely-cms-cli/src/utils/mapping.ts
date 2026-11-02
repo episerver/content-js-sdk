@@ -72,6 +72,7 @@ export const transformProperties = (
 
 const transformProperty = (property: any, parentKey: string): any => {
   const handlers = [
+    omitMock,
     handleComponentType,
     handleArrayType,
     handleContentReferenceType,
@@ -79,6 +80,21 @@ const transformProperty = (property: any, parentKey: string): any => {
   ];
 
   return handlers.reduce((prop, handler) => handler(prop), property);
+};
+
+/**
+ * Drops `mock`, which belongs to component previews and not to the content
+ * model. It is written next to the property it fills, so it travels with the
+ * content type until it is stripped here, on the way to the CMS.
+ *
+ * Applied to array items too: those are properties in their own right.
+ */
+const omitMock = (property: any): any => {
+  if (property === null || typeof property !== 'object') return property;
+
+  const { mock: _, ...rest } = property;
+
+  return rest.items ? { ...rest, items: omitMock(rest.items) } : rest;
 };
 
 /**
