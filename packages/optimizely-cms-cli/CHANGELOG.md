@@ -1,5 +1,13 @@
 # @optimizely/cms-cli
 
+## 3.1.0-beta.2
+
+### Patch Changes
+
+- Updated dependencies [7083bd9]
+- Updated dependencies [b936bf4]
+  - @optimizely/cms-sdk@3.1.0-beta.2
+
 ## 3.1.0-beta.1
 
 ### Patch Changes
