@@ -36,6 +36,7 @@ import {
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type SortOption,
   type TaxonomyMode,
   type TaxonomyTerm,
   type ResolvedQueryOptions,
@@ -1090,18 +1091,26 @@ export async function getPath(
   return sortedKeys.map(key => linkMap.get(key)).filter(item => item !== undefined);
 }
 
+function buildOrderByClause(sort: SortOption): string {
+  const dir = sort.direction === 'asc' ? 'ASC' : 'DESC';
+  return `{ _metadata: { ${sort.field}: ${dir} } }`;
+}
+
 /** The children of a page. See `GraphClient.getItems`. */
 export async function getItems(
   context: GraphClientContext,
   reference: string | GraphReference,
   options?: GraphGetLinksOptions,
 ) {
+  const sort = options?.sort;
+
   const queryOptions = resolveQueryOptions(context, options);
   const { filter, locales } = linksFilter(reference, queryOptions.host, options);
 
   const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
-  const query = getItemsQuery('GetItems', filter.filterShape, publishedOnly);
+  const orderByClause = sort ? buildOrderByClause(sort) : undefined;
+  const query = getItemsQuery('GetItems', filter.filterShape, publishedOnly, orderByClause);
 
   const data = (await context.request(
     query,
@@ -1116,5 +1125,14 @@ export async function getItems(
     return null;
   }
 
-  return data?._Content?.item._link._Page.items;
+  const items = data?._Content?.item._link._Page.items;
+  if (!sort || !items) {
+    return items;
+  }
+
+  const meta = (item: (typeof items)[number]) =>
+    item._metadata as Record<string, unknown> | undefined;
+  const withValue = items.filter(item => meta(item)?.[sort.field] != null);
+  const withoutValue = items.filter(item => meta(item)?.[sort.field] == null);
+  return [...withValue, ...withoutValue];
 }

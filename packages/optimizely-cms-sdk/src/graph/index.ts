@@ -22,6 +22,9 @@ import {
   type PreviewParams,
   type ResolvedFragmentOptions,
   type ResolvedQueryOptions,
+  type SortDirection,
+  type SortField,
+  type SortOption,
   DEFAULT_FRAGMENT_OPTIONS,
   defaultQueryOptions,
   normalizeGraphUrl,
@@ -43,6 +46,9 @@ export {
   GraphReference,
   GraphSlot,
   PreviewParams,
+  SortDirection,
+  SortField,
+  SortOption,
 } from './options.js';
 export type {
   DamMode,
@@ -342,7 +348,7 @@ export class GraphClient {
    * - String format: `graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en`
    *
    * @param input - URL path string or GraphReference object/string
-   * @param options - Optional host and locales filters
+   * @param options - Optional host, locales filters, and sort order
    * @returns A list with the metadata information of all child/descendant pages
    *
    * @example
@@ -355,6 +361,11 @@ export class GraphClient {
    *
    * // Using string format
    * const items = await client.getItems('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
+   *
+   * // With sort option
+   * const items = await client.getItems('/blog', {
+   *   sort: { field: 'sortOrder', direction: 'asc' },
+   * });
    * ```
    */
   async getItems(reference: string | GraphReference, options?: GraphGetLinksOptions) {
