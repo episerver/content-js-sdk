@@ -185,6 +185,7 @@ query GetPath($host: String, $path: String, $pathNoSlash: String, $locale: [Loca
               key
               sortOrder
               displayName
+              published
               locale
               types
               url {
@@ -216,6 +217,7 @@ query GetItems($key: String, $version: String, $metadataLocale: String, $locale:
               key
               sortOrder
               displayName
+              published
               locale
               types
               url {
