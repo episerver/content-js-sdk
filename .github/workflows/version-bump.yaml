@@ -48,14 +48,33 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      # pre enter/exit runs inside version-selective.sh, not as a step here:
-      # changesets/action resets the branch before running the version command,
-      # so any pre.json written by an earlier step is discarded.
+      # Not changesets/action: in pre mode it filters out every changeset already
+      # listed in pre.json, so exiting beta with no new changesets looks like
+      # "no changesets found" and it skips versioning entirely. pre enter/exit
+      # also has to happen inside version-selective.sh, same process as
+      # `changeset version`, or pre.json is read before the edit lands.
+      - name: Version Packages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash scripts/version-selective.sh "${{ inputs.package }}" "${{ inputs.pre_mode }}"
+
       - name: Create Version PR
-        uses: changesets/action@v1
-        with:
-          version: bash scripts/version-selective.sh "${{ inputs.package }}" "${{ inputs.pre_mode }}"
-          commit: "chore(release): version packages"
-          title: "chore(release): version packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="changeset-release/${{ github.ref_name }}"
+          git checkout -B "$BRANCH"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "Nothing to version."
+            exit 0
+          fi
+          git commit -m "chore(release): version packages"
+          git push --force \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "$BRANCH"
+          # pr view would also match a closed/merged PR from a past release
+          [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ] || \
+            gh pr create --base "${{ github.ref_name }}" --head "$BRANCH" \
+              --title "chore(release): version packages" \
+              --body "Automated by the Create Version Bump PR workflow. Review the CHANGELOG entries, then merge and run Release Packages."
