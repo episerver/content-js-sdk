@@ -31,8 +31,8 @@ every method uses every option:
 | `resolveTaxonomy` | Yes                | Yes                                          | Yes                 | No                                     |
 
 Some methods take extra options of their own: `variation` for `getContentByPath()`,
-`previewToken` for `getContent()`, `forceMediaToken` for `getPreviewContent()`, and
-`locales` for `getPath()` and `getItems()`.
+`previewToken` for `getContent()`, `forceMediaToken` for `getPreviewContent()`,
+`locales` for `getPath()` and `getItems()`, and `sort` for `getItems()`.
 
 The option types are exported from `@optimizely/cms-sdk`: `GraphGetContentOptions`,
 `GraphGetItemOptions`, `GraphGetPreviewOptions`, `GraphGetLinksOptions` and
@@ -375,17 +375,22 @@ client.getItems(reference: string | GraphReference, options?: GraphGetLinksOptio
 
 ### Parameters
 
-Same as [`getPath()`](#getpath).
+Same as [`getPath()`](#getpath), plus an optional `sort` to control the order of results:
+
+| Option      | Type         | Description |
+| ----------- | ------------ | ----------- |
+| `sort`      | `SortOption` | Sort children by a metadata field. `{ field, direction }` where `field` is `'sortOrder'`, `'displayName'`, or `'published'` and `direction` is `'asc'` or `'desc'`. |
 
 ### Returns
 
 A promise of an array of the page's child pages, each with the same `PageLink` shape as
 [`getPath()`](#getpath) returns. It is `null` if the page doesn't exist.
 
+When `sort` is provided, items with `null` values for the sort field appear at the end of
+the results regardless of sort direction.
+
 ### Caveats
 
-- **The SDK doesn't sort the children.** Sort by `_metadata.sortOrder` to match the order
-  in the CMS page tree.
 - **Only pages are returned.** Child items that aren't pages are left out.
 - **A string that doesn't start with `graph://` is treated as a URL path.**
 
@@ -398,15 +403,15 @@ A promise of an array of the page's child pages, each with the same `PageLink` s
 import { getClient } from '@optimizely/cms-sdk';
 
 export default async function MainNavigation() {
-  const children = (await getClient().getItems('/en/')) ?? [];
-  const sorted = [...children].sort(
-    (a, b) => (a._metadata?.sortOrder ?? 0) - (b._metadata?.sortOrder ?? 0),
-  );
+  const children =
+    (await getClient().getItems('/en/', {
+      sort: { field: 'sortOrder', direction: 'asc' },
+    })) ?? [];
 
   return (
     <nav aria-label='Main'>
       <ul>
-        {sorted.map(page => (
+        {children.map(page => (
           <li key={page._metadata?.key}>
             <a href={page._metadata?.url?.hierarchical}>{page._metadata?.displayName}</a>
           </li>
@@ -415,6 +420,22 @@ export default async function MainNavigation() {
     </nav>
   );
 }
+```
+
+#### Sorting by display name
+
+```ts
+const children = await getClient().getItems('/en/', {
+  sort: { field: 'displayName', direction: 'asc' },
+});
+```
+
+#### Sorting by published date (newest first)
+
+```ts
+const children = await getClient().getItems('/en/', {
+  sort: { field: 'published', direction: 'desc' },
+});
 ```
 
 #### Fetching children in several locales
