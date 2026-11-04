@@ -160,7 +160,11 @@ export function findUnresolvedForms(
 
 // LINKS AND ITEMS QUERIES
 
-const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
+const LINKS_BODY = (linkType: 'PATH' | 'ITEMS', orderByClause?: string) => {
+  const pageArgs = orderByClause
+    ? `locale: $locale, orderBy: ${orderByClause}`
+    : `locale: $locale`;
+  return `{
     item {
       _id
       _metadata {
@@ -169,12 +173,13 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
         }
       }
       _link(type: ${linkType}) {
-        _Page(locale: $locale) {
+        _Page(${pageArgs}) {
           items {
             _metadata {
               key
               sortOrder
               displayName
+              published
               locale
               types
               url {
@@ -188,6 +193,7 @@ const LINKS_BODY = (linkType: 'PATH' | 'ITEMS') => `{
       }
     }
   }`;
+};
 
 /** The ancestors of one piece of content. */
 export function getLinksQuery(
@@ -208,12 +214,13 @@ export function getItemsQuery(
   opName: string,
   shape: FilterShape,
   publishedOnly = false,
+  orderByClause?: string,
 ): string {
   const allVars = getFilterVarDecls(shape);
   const whereClause = getFilterWhereClause(shape, publishedOnly);
   return `
 query ${opName}(${allVars}) {
-  _Content(${whereClause}${LOCALE_CLAUSE}) ${LINKS_BODY('ITEMS')}
+  _Content(${whereClause}${LOCALE_CLAUSE}) ${LINKS_BODY('ITEMS', orderByClause)}
 }`;
 }
 
@@ -231,6 +238,7 @@ export type GetLinksResponse = {
               key: string;
               sortOrder?: number;
               displayName?: string;
+              published?: string;
               locale?: string;
               types: string[];
               url?: {

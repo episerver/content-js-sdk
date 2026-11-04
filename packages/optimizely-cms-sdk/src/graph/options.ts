@@ -324,8 +324,26 @@ export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
 };
 
+export type SortField =
+  | 'sortOrder'
+  | 'displayName'
+  | 'published'
+  | 'created'
+  | 'lastModified'
+  | 'status'
+  | 'locale'
+  | 'key'
+  | (string & {});
+export type SortDirection = 'asc' | 'desc';
+
+export type SortOption = {
+  field: SortField;
+  direction: SortDirection;
+};
+
 export type GraphGetLinksOptions = GraphQueryOptions & {
   locales?: string[];
+  sort?: SortOption;
 };
 
 export type GraphGetItemOptions = GraphQueryOptions & {

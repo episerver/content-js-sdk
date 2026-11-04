@@ -21,6 +21,9 @@ export {
   GraphVariationInput,
   getClient,
   config,
+  SortDirection,
+  SortField,
+  SortOption,
 } from './graph/index.js';
 
 // GraphQL types
