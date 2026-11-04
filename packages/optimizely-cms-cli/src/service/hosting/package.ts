@@ -19,7 +19,14 @@ type PackageJson = {
 
 type PackageNameOverrides = { name?: string; version?: string };
 
-const SUPPORTED_LOCK_FILES = ['package-lock.json', 'yarn.lock'];
+export type PackageManager = 'npm' | 'yarn';
+
+// The platform installs and builds with the package manager of the lock file
+const LOCK_FILE_PACKAGE_MANAGERS: Partial<Record<string, PackageManager>> = {
+  'package-lock.json': 'npm',
+  'yarn.lock': 'yarn',
+};
+const SUPPORTED_LOCK_FILES = Object.keys(LOCK_FILE_PACKAGE_MANAGERS);
 const UNSUPPORTED_LOCK_FILES = ['pnpm-lock.yaml', 'bun.lock', 'bun.lockb'];
 const SUPPORTED_FRAMEWORKS = ['next', 'astro'];
 const REQUIRED_SCRIPTS = ['build', 'start'];
@@ -75,8 +82,7 @@ const findPackageWarnings = async (dir: string, files: string[]): Promise<string
 const present = (dir: string, files: string[]) =>
   files.filter(file => existsSync(join(dir, file)));
 
-const findLockFileProblems = (dir: string): string[] => {
-  const supported = present(dir, SUPPORTED_LOCK_FILES);
+const findLockFileProblems = (dir: string, supported: string[]): string[] => {
   const unsupported = present(dir, UNSUPPORTED_LOCK_FILES);
 
   if (supported.length > 1)
@@ -118,22 +124,28 @@ const findPackageJsonProblems = (packageJson: PackageJson): string[] => {
 
 const timestamp = (date: Date) => date.toISOString().replace(/[-:T]/g, '').slice(0, 14);
 
-/** Check that a project meets the front-end hosting requirements and return its package.json */
-export async function validateProject(dir: string): Promise<PackageJson> {
+/** Check that a project meets the front-end hosting requirements and return its package.json and package manager */
+export async function validateProject(
+  dir: string,
+): Promise<{ packageJson: PackageJson; packageManager: PackageManager }> {
   const packageJsonPath = join(dir, 'package.json');
 
   if (!existsSync(packageJsonPath))
     throw new hostingErrors.InvalidProject([`No package.json found in ${resolve(dir)}`]);
 
   const packageJson: PackageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+  const lockFiles = present(dir, SUPPORTED_LOCK_FILES);
+  const packageManager = LOCK_FILE_PACKAGE_MANAGERS[lockFiles[0]];
   const problems = [
     ...findPackageJsonProblems(packageJson),
-    ...findLockFileProblems(dir),
+    ...findLockFileProblems(dir, lockFiles),
   ];
 
-  if (problems.length > 0) throw new hostingErrors.InvalidProject(problems);
+  // A missing package manager is always reported as a lock file problem
+  if (problems.length > 0 || !packageManager)
+    throw new hostingErrors.InvalidProject(problems);
 
-  return packageJson;
+  return { packageJson, packageManager };
 }
 
 /** Build the `<name>.head.app.<version>.zip` file name; the default version is made unique with a UTC timestamp */
