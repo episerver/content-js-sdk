@@ -5,7 +5,13 @@ import ora from 'ora';
 import chalk from 'chalk';
 
 type Application = components['schemas']['Application'];
-type ApplicationPatch = components['schemas']['ApplicationPatch'];
+/**
+ * `componentPreviewUrlFormats` is not in the generated API schema yet, so it is
+ * added here. Drop this once the schema is regenerated with the field.
+ */
+type ApplicationPatch = components['schemas']['ApplicationPatch'] & {
+  componentPreviewUrlFormats?: { [key: string]: string } | null;
+};
 
 // UTILITIES
 
@@ -119,6 +125,14 @@ export const detectApplicationChanges = (
       )
     )
       patch.previewUrlFormats = configApp.previewUrlFormats;
+
+    if (
+      !arePreviewUrlFormatsEqual(
+        (existingApp as ApplicationPatch).componentPreviewUrlFormats ?? undefined,
+        configApp.componentPreviewUrlFormats,
+      )
+    )
+      patch.componentPreviewUrlFormats = configApp.componentPreviewUrlFormats;
   }
 
   return Object.keys(patch).length ? patch : null;
@@ -134,7 +148,9 @@ const validateEntryPoint = (app: ApplicationsType): void => {
 const validateInProcessWebsiteFields = (app: ApplicationsType): void => {
   if (
     app.type === 'inProcessWebsite' &&
-    ('usePreviewTokens' in app || 'previewUrlFormats' in app)
+    ('usePreviewTokens' in app ||
+      'previewUrlFormats' in app ||
+      'componentPreviewUrlFormats' in app)
   )
     throw new Error(`Invalid fields for inProcessWebsite application ${app.key}`);
 };
@@ -267,7 +283,7 @@ const checkApplicationsWithContent = async (
       if (errorMessage.includes('Invalid fields'))
         console.error(
           chalk.dim(
-            "Fields 'usePreviewTokens' and 'previewUrlFormats' are only valid for type 'website'",
+            "Fields 'usePreviewTokens', 'previewUrlFormats' and 'componentPreviewUrlFormats' are only valid for type 'website'",
           ),
         );
 

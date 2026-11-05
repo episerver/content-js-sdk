@@ -49,9 +49,9 @@ describe('validateApplications', () => {
   });
 });
 
-describe('previewUrlFormats keys', () => {
-  const withFormats = (previewUrlFormats: Record<string, string>) => [
-    { ...app, previewUrlFormats },
+describe('componentPreviewUrlFormats keys', () => {
+  const withFormats = (componentPreviewUrlFormats: Record<string, string>) => [
+    { ...app, componentPreviewUrlFormats },
   ];
 
   const projectKeys = previewableContentTypeKeys([
@@ -81,7 +81,7 @@ describe('previewUrlFormats keys', () => {
         withFormats({ _folder: '{host}/preview?key={key}' }) as ApplicationsType[],
         projectKeys,
       ),
-    ).toThrow('previewUrlFormats keys that name nothing previewable: _folder');
+    ).toThrow('componentPreviewUrlFormats keys that name nothing previewable: _folder');
   });
 
   test('rejects a contract key and an unknown key', () => {
@@ -96,7 +96,7 @@ describe('previewUrlFormats keys', () => {
     ).toThrow('Seo, Nonexistent');
   });
 
-  test('passes when no previewUrlFormats are configured', () => {
+  test('passes when no componentPreviewUrlFormats are configured', () => {
     expect(() => validate([app])).not.toThrow();
   });
 });

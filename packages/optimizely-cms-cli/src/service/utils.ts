@@ -366,22 +366,24 @@ const PREVIEWABLE_BASE_TYPES: readonly string[] = ContentTypes.ALL_BASE_TYPES.fi
   baseType => baseType !== '_folder',
 );
 
-/** The `previewUrlFormats` key that applies to everything without its own entry. */
+/** The key that applies to everything without an entry of its own. */
 const PREVIEW_FALLBACK_KEY = 'any';
 
 /**
- * Checks that every `previewUrlFormats` key names something previewable: the
- * `any` fallback, a base type, or a content type defined in this project.
+ * Checks that every `componentPreviewUrlFormats` key names something
+ * previewable: the `any` fallback, a base type, or a content type defined in
+ * this project.
  *
  * A key that matches none of those is a typo or a stale name, and the CMS
  * silently ignores it — so the preview the developer thought they configured
  * never appears.
  */
-const validatePreviewUrlFormats = (
+const validateComponentPreviewUrlFormats = (
   app: ApplicationsType,
   previewableContentTypeKeys: Set<string>,
 ): void => {
-  const formats = 'previewUrlFormats' in app ? app.previewUrlFormats : undefined;
+  const formats =
+    'componentPreviewUrlFormats' in app ? app.componentPreviewUrlFormats : undefined;
   if (!formats) return;
 
   const invalidKeys = Object.keys(formats).filter(
@@ -394,7 +396,7 @@ const validatePreviewUrlFormats = (
   if (invalidKeys.length === 0) return;
 
   throw new Error(
-    `Validation error: application "${app.key}" has previewUrlFormats keys that name nothing previewable: ${invalidKeys.join(', ')}.\n` +
+    `Validation error: application "${app.key}" has componentPreviewUrlFormats keys that name nothing previewable: ${invalidKeys.join(', ')}.\n` +
       `Each key is either a content type key from your project, or one of: ${[PREVIEW_FALLBACK_KEY, ...PREVIEWABLE_BASE_TYPES].join(', ')}.`,
   );
 };
@@ -406,7 +408,7 @@ const validateApplication = (
 ): void => {
   validateApplicationFields(app, applicationIndex);
   app.hosts?.forEach((host, hostIndex) => validateHostFields(host, hostIndex));
-  validatePreviewUrlFormats(app, previewableContentTypeKeys);
+  validateComponentPreviewUrlFormats(app, previewableContentTypeKeys);
 };
 
 /**
@@ -425,8 +427,8 @@ export const previewableContentTypeKeys = (
 /**
  * Validates application configuration, ensuring required fields are present and properly formatted.
  *
- * `contentTypeKeys` are the keys a `previewUrlFormats` entry may name; leave it
- * out to check the keys against base types alone.
+ * `contentTypeKeys` are the keys a `componentPreviewUrlFormats` entry may name;
+ * leave it out to check the keys against base types alone.
  */
 export const validateApplications = (
   applications: ApplicationsType[],

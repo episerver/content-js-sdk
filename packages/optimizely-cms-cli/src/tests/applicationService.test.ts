@@ -277,6 +277,17 @@ describe('detectApplicationChanges', () => {
     expect(result?.previewUrlFormats).toEqual({ any: '/new-preview?key={key}' });
   });
 
+  it('detects componentPreviewUrlFormats change for website type', () => {
+    const configApp = {
+      ...baseConfigApp,
+      componentPreviewUrlFormats: { _component: '/preview/component?key={key}' },
+    };
+    const result = detectApplicationChanges(baseExistingApp, configApp);
+    expect(result?.componentPreviewUrlFormats).toEqual({
+      _component: '/preview/component?key={key}',
+    });
+  });
+
   it('does not include previewUrlFormats for inProcessWebsite type', () => {
     const existingApp = { ...baseExistingApp, type: 'inProcessWebsite' as any };
     const configApp: ApplicationsType = {
@@ -563,7 +574,7 @@ describe('application API operations', () => {
         checkApplications([inProcess as unknown as ApplicationsType], undefined),
       ).rejects.toThrow('Invalid fields for inProcessWebsite application site');
       expect(printed(consoleSpies.error)).toContain(
-        "Fields 'usePreviewTokens' and 'previewUrlFormats' are only valid for type 'website'",
+        "Fields 'usePreviewTokens', 'previewUrlFormats' and 'componentPreviewUrlFormats' are only valid for type 'website'",
       );
     });
 

@@ -51,6 +51,20 @@ type WebsiteApplicationType = BaseApplicationType & {
   previewUrlFormats?: {
     [key: string]: string;
   };
+  /**
+   * @description A dictionary of URL formats for previewing one component on its own, keyed by base type or content type key. Only applicable when the type is 'website'.
+   *
+   * Separate from {@linkcode previewUrlFormats}, which is how a whole page is
+   * previewed. An entry here is what the CMS opens to show a single component
+   * outside any page around it, so only the kinds of content you add an entry
+   * for get one.
+   *
+   * The CMS fills in `{host}`, `{key}`, `{version}`, `{locale}` and
+   * `{context}`.
+   */
+  componentPreviewUrlFormats?: {
+    [key: string]: string;
+  };
 };
 
 type InProcessWebsiteApplicationType = BaseApplicationType & {
