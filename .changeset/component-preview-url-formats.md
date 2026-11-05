@@ -38,20 +38,39 @@ them. Like `usePreviewTokens` and `previewUrlFormats`, the field itself is rejec
 A content type opts out of component previews with `componentPreview: false`:
 
 ```ts
+const HeroContentType = contentType({
+  key: 'Hero',
+  displayName: 'Hero',
+  baseType: '_component',
+});
+
 const BannerContentType = contentType({
   key: 'Banner',
   displayName: 'Banner',
   baseType: '_component',
+  // reads from the page around it, so it is nothing on its own
   componentPreview: false,
 });
 ```
 
+```js
+// optimizely.config.mjs — one URL covering every component
+componentPreviewUrlFormats: {
+  _component: '{host}/preview/component?key={key}&ver={version}&loc={locale}',
+}
+```
+
 The field lives only in this SDK — the CMS does not store it, and `config push` strips it
-from the manifest. So push resolves `componentPreviewUrlFormats` before sending it: a base
-type is expanded into one entry per content type, with the opted-out ones left out, and
-the CMS receives `{ Hero: ..., Card: ... }` rather than `{ _component: ... }`. A base type
-therefore covers the content types the project knows at push time. Naming an opted-out
-content type explicitly does nothing, and push warns.
+from the manifest. So push resolves the dictionary before sending it, expanding the base
+type into one entry per content type and leaving the opted-out one out:
+
+```json
+{ "Hero": "{host}/preview/component?key={key}&ver={version}&loc={locale}" }
+```
+
+Banner is still pushed as a content type; it just gets no preview URL. Naming it
+explicitly changes nothing, and push warns. A base type therefore covers the content
+types the project knows at push time.
 
 `createStandalonePreview` honours the same flag, so a request that reaches the preview
 route some other way renders nothing rather than the component.

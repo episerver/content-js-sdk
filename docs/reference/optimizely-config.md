@@ -119,9 +119,26 @@ The CMS fills in `{host}`, `{key}`, `{version}`, `{locale}` and `{context}`.
 ### Opting a content type out of component previews
 
 A base type covers every content type built on it. To leave one out, set
-`componentPreview: false` on the content type itself:
+`componentPreview: false` on the content type itself.
+
+Three components, one of which only makes sense inside a page:
 
 ```ts
+// src/components/Hero.tsx
+export const HeroContentType = contentType({
+  key: 'Hero',
+  displayName: 'Hero',
+  baseType: '_component',
+});
+
+// src/components/Card.tsx
+export const CardContentType = contentType({
+  key: 'Card',
+  displayName: 'Card',
+  baseType: '_component',
+});
+
+// src/components/Banner.tsx
 export const BannerContentType = contentType({
   key: 'Banner',
   displayName: 'Banner',
@@ -131,16 +148,51 @@ export const BannerContentType = contentType({
 });
 ```
 
-The CMS has no field for this, so `config push` resolves the dictionary before sending it:
-a base type is expanded into one entry per content type, and an opted-out one is left out.
-The CMS receives `{ Hero: ..., Card: ... }` rather than `{ _component: ... }`.
+The application asks for one preview URL covering every component:
 
-Two consequences:
+```js
+// optimizely.config.mjs
+applications: [
+  {
+    key: 'site',
+    displayName: 'Site',
+    type: 'website',
+    componentPreviewUrlFormats: {
+      _component: '{host}/preview/component?key={key}&ver={version}&loc={locale}',
+    },
+  },
+],
+```
 
-- A base type covers the content types **this project knows at push time**. One added
-  elsewhere against the same CMS is not covered until someone pushes again.
-- Naming an opted-out content type explicitly does nothing, and push warns. The content
-  type wins: it is the more specific statement, and it sits with the component.
+The CMS has no field for `componentPreview`, so `config push` resolves the dictionary
+before sending it: the base type is expanded into one entry per content type, and the
+opted-out one is left out. The CMS receives
+
+```json
+{
+  "Hero": "{host}/preview/component?key={key}&ver={version}&loc={locale}",
+  "Card": "{host}/preview/component?key={key}&ver={version}&loc={locale}"
+}
+```
+
+Banner is still pushed as a content type and editors still use it — it just has no
+component preview, so the CMS never offers one.
+
+Naming it explicitly changes nothing:
+
+```js
+componentPreviewUrlFormats: {
+  _component: '{host}/preview/component?key={key}',
+  Banner: '{host}/preview/banner?key={key}', // ignored, and push warns
+}
+```
+
+The content type wins over the config: it is the more specific statement, and it sits
+with the component rather than in a file across the project.
+
+One consequence of resolving at push time: a base type covers the content types **this
+project knows when you push**. One added elsewhere against the same CMS is not covered
+until someone pushes again.
 
 [`createStandalonePreview`](./react-components.md) honours the same flag, so a request
 that reaches the route some other way renders nothing rather than the component.
