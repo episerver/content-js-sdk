@@ -38,6 +38,9 @@ export const ArticleContentType = contentType({
 - `displayName` is the name editors see. It is required.
 - `baseType` decides what kind of content this is. See the next section.
 - `icon` is the icon editors see next to the content type. It is optional.
+- `componentPreview` is whether this content type can be previewed on its own. It is
+  optional and defaults to `true`. See
+  [opting out of component previews](../reference/optimizely-config.md#opting-a-content-type-out-of-component-previews).
 - `properties` maps each property name to its definition.
 
 ```ts

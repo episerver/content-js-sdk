@@ -35,5 +35,26 @@ does not define — naming the offending keys rather than letting the CMS quietl
 them. Like `usePreviewTokens` and `previewUrlFormats`, the field itself is rejected on an
 `'inProcessWebsite'` application.
 
-The CMS API schema does not carry this field yet, so the CLI widens its own application
-type until the generated schema catches up.
+A content type opts out of component previews with `componentPreview: false`:
+
+```ts
+const BannerContentType = contentType({
+  key: 'Banner',
+  displayName: 'Banner',
+  baseType: '_component',
+  componentPreview: false,
+});
+```
+
+The field lives only in this SDK — the CMS does not store it, and `config push` strips it
+from the manifest. So push resolves `componentPreviewUrlFormats` before sending it: a base
+type is expanded into one entry per content type, with the opted-out ones left out, and
+the CMS receives `{ Hero: ..., Card: ... }` rather than `{ _component: ... }`. A base type
+therefore covers the content types the project knows at push time. Naming an opted-out
+content type explicitly does nothing, and push warns.
+
+`createStandalonePreview` honours the same flag, so a request that reaches the preview
+route some other way renders nothing rather than the component.
+
+The CMS API schema does not carry `componentPreviewUrlFormats` yet, so the CLI widens its
+own application type until the generated schema catches up.
