@@ -29,11 +29,14 @@ function transformContentType(
   validateContentTypeKey(contentType.key);
 
   const { key, properties = {} } = contentType;
-  // Parse the content type, excluding 'extends' from the content type
-  const { extends: _, ...parsedContentType } = normalizeMayContainTypes(
-    contentType,
-    allowedKeys,
-  );
+  // Parse the content type, excluding 'extends' from the content type.
+  // `componentPreview` goes too: it decides what the CLI pushes as a preview
+  // URL, and the CMS has no field for it.
+  const {
+    extends: _,
+    componentPreview: __,
+    ...parsedContentType
+  } = normalizeMayContainTypes(contentType, allowedKeys);
   const formattedProperties = transformProperties(properties, key);
   const contracts = convertExtendsToContracts(contentType);
 

@@ -1,7 +1,8 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import type { ApplicationsType } from '@optimizely/cms-sdk/buildConfig';
 import { contract } from '@optimizely/cms-sdk';
 import {
+  expandComponentPreviewUrlFormats,
   previewableContentTypeKeys,
   validateApplications,
   type AnyContentType,
@@ -98,5 +99,59 @@ describe('componentPreviewUrlFormats keys', () => {
 
   test('passes when no componentPreviewUrlFormats are configured', () => {
     expect(() => validate([app])).not.toThrow();
+  });
+});
+
+describe('expandComponentPreviewUrlFormats', () => {
+  const COMPONENT_URL = '{host}/preview/component?key={key}';
+  const HERO_URL = '{host}/preview/hero?key={key}';
+
+  const contentTypes = [
+    { key: 'Hero', displayName: 'Hero', baseType: '_component' },
+    { key: 'Card', displayName: 'Card', baseType: '_component' },
+    { key: 'Banner', displayName: 'Banner', baseType: '_component', componentPreview: false },
+    { key: 'Home', displayName: 'Home', baseType: '_page' },
+    { key: 'Assets', displayName: 'Assets', baseType: '_folder' },
+  ] as AnyContentType[];
+
+  const expand = (componentPreviewUrlFormats: Record<string, string>) =>
+    expandComponentPreviewUrlFormats([{ ...app, componentPreviewUrlFormats }], contentTypes)[0]
+      .componentPreviewUrlFormats;
+
+  test('expands a base type to its content types, minus the opted-out one', () => {
+    expect(expand({ _component: COMPONENT_URL })).toEqual({
+      Hero: COMPONENT_URL,
+      Card: COMPONENT_URL,
+    });
+  });
+
+  test('a content type key beats its base type', () => {
+    expect(expand({ _component: COMPONENT_URL, Hero: HERO_URL })).toEqual({
+      Hero: HERO_URL,
+      Card: COMPONENT_URL,
+    });
+  });
+
+  test('the fallback covers every previewable content type, never a folder', () => {
+    expect(expand({ any: COMPONENT_URL })).toEqual({
+      Hero: COMPONENT_URL,
+      Card: COMPONENT_URL,
+      Home: COMPONENT_URL,
+    });
+  });
+
+  test('an opted-out content type gets no URL even when named, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(expand({ Banner: HERO_URL })).toEqual({});
+    expect(warn.mock.calls.flat().join(' ')).toContain('Banner');
+
+    warn.mockRestore();
+  });
+
+  test('leaves an application without the field alone', () => {
+    const applications = [app];
+
+    expect(expandComponentPreviewUrlFormats(applications, contentTypes)[0]).toBe(app);
   });
 });

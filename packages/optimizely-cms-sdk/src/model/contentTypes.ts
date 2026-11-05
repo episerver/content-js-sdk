@@ -81,6 +81,20 @@ type BaseContentType = {
   key: string;
   displayName: string;
   icon?: ContentTypeIcon;
+  /**
+   * Whether this content type can be previewed on its own, outside any page
+   * around it. Defaults to `true`.
+   *
+   * Set it to `false` for a content type that only makes sense in place — one
+   * that reads from the page around it, or renders to nothing by itself. It is
+   * then left out of the `componentPreviewUrlFormats` the CLI pushes, so the
+   * CMS never offers the preview, and the standalone preview route refuses to
+   * render it.
+   *
+   * Lives only in this SDK: the CMS does not store it, and `config push`
+   * strips it from the manifest.
+   */
+  componentPreview?: boolean;
   extends?: AnyContract | Array<AnyContract>;
   properties?: PropertiesRecord;
 };

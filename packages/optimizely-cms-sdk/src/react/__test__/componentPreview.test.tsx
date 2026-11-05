@@ -650,3 +650,26 @@ describe('fit', () => {
     vi.restoreAllMocks();
   });
 })
+
+describe('componentPreview: false', () => {
+  const InPlaceOnly = contentType({
+    key: 'InPlaceOnly',
+    displayName: 'In place only',
+    baseType: '_component',
+    componentPreview: false,
+    properties: { Text: { type: 'string' } },
+  });
+
+  test('refuses to render a content type that opted out', async () => {
+    initContentTypeRegistry([HeadingType, InPlaceOnly]);
+    initReactComponentRegistry({ resolver: { Heading, InPlaceOnly: Heading } });
+
+    await renderPage({ type: 'InPlaceOnly' });
+
+    await vi.waitFor(() =>
+      expect(
+        document.getElementById('optimizely-preview')?.getAttribute('data-preview-error'),
+      ).toBe('unknown-content-type'),
+    );
+  });
+});

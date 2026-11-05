@@ -6,6 +6,7 @@ import { BaseCommand } from '../../baseCommand.js';
 import { writeFile, access } from 'node:fs/promises';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import {
+  expandComponentPreviewUrlFormats,
   findMetaData,
   logList,
   readFromPath,
@@ -143,7 +144,10 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const manifestContracts = contracts.map(contractToManifest);
     const validatedApplications =
       applications ?
-        validateApplications(applications, previewableContentTypeKeys(contentTypes))
+        expandComponentPreviewUrlFormats(
+          validateApplications(applications, previewableContentTypeKeys(contentTypes)),
+          contentTypes,
+        )
       : [];
     if (log) logList('Applications found', displayNamesOf(validatedApplications));
 

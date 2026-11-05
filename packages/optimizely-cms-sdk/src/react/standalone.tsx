@@ -213,6 +213,11 @@ export function createStandalonePreview({
       const definition = getContentType(contentTypeKey);
       if (!definition || !isContentType(definition)) return null;
 
+      // Opted out of standalone previews. The CMS is not given a URL for one
+      // of these, so a request for it arrived some other way — render the same
+      // nothing the CMS would never have asked for.
+      if (definition.componentPreview === false) return null;
+
       // Built from the content type's own schema, so it is the shape a
       // component expects even though no editor has authored it.
       return generateMockContent(definition, {

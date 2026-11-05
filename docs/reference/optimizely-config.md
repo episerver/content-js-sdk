@@ -116,6 +116,35 @@ The CMS fills in `{host}`, `{key}`, `{version}`, `{locale}` and `{context}`.
 `config push` rejects a `componentPreviewUrlFormats` key that names nothing previewable:
 `_folder`, a contract, a display template, or a content type this project does not define.
 
+### Opting a content type out of component previews
+
+A base type covers every content type built on it. To leave one out, set
+`componentPreview: false` on the content type itself:
+
+```ts
+export const BannerContentType = contentType({
+  key: 'Banner',
+  displayName: 'Banner',
+  baseType: '_component',
+  // reads from the page around it, so it is nothing on its own
+  componentPreview: false,
+});
+```
+
+The CMS has no field for this, so `config push` resolves the dictionary before sending it:
+a base type is expanded into one entry per content type, and an opted-out one is left out.
+The CMS receives `{ Hero: ..., Card: ... }` rather than `{ _component: ... }`.
+
+Two consequences:
+
+- A base type covers the content types **this project knows at push time**. One added
+  elsewhere against the same CMS is not covered until someone pushes again.
+- Naming an opted-out content type explicitly does nothing, and push warns. The content
+  type wins: it is the more specific statement, and it sits with the component.
+
+[`createStandalonePreview`](./react-components.md) honours the same flag, so a request
+that reaches the route some other way renders nothing rather than the component.
+
 The route you point at receives the key of real content, so it renders through
 [`getPreviewContent`](./graph-client.md), as `app/preview/page.tsx` does. The standalone
 component preview is a different thing: it takes `?type=` and renders stand-in content,

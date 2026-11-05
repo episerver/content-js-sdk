@@ -163,3 +163,14 @@ describe('mapContentToManifest', () => {
     expect(() => mapContentToManifest([invalid])).toThrow('Invalid content type key: "1Hero"');
   });
 });
+
+describe('componentPreview', () => {
+  it('never reaches the manifest, since the CMS has no field for it', () => {
+    const optedOut: AnyContentType = { ...BannerComponentType, componentPreview: false };
+
+    const [result] = mapContentToManifest([optedOut]);
+
+    expect(result).not.toHaveProperty('componentPreview');
+    expect(result.key).toBe('BannerComponent');
+  });
+});

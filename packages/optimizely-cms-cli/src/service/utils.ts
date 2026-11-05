@@ -414,6 +414,10 @@ const validateApplication = (
 /**
  * The content types a preview URL may be keyed by: everything in the project
  * except contracts, which are not content, and folders, which are not rendered.
+ *
+ * A content type that opted out with `componentPreview: false` stays in here.
+ * Naming it is not a typo, it is a contradiction, and
+ * {@linkcode expandComponentPreviewUrlFormats} warns about it instead.
  */
 export const previewableContentTypeKeys = (
   contentTypes: AnyContentType[],
@@ -423,6 +427,65 @@ export const previewableContentTypeKeys = (
       .filter(contentType => !isContract(contentType) && contentType.baseType !== '_folder')
       .map(contentType => contentType.key),
   );
+
+/** Whether a content type can be previewed on its own. */
+const isPreviewable = (contentType: AnyContentType): boolean =>
+  !isContract(contentType) &&
+  contentType.baseType !== '_folder' &&
+  contentType.componentPreview !== false;
+
+/**
+ * Resolves `componentPreviewUrlFormats` into one entry per content type.
+ *
+ * The CMS has no `componentPreview` field, so it cannot know that a content
+ * type opted out of a base type's entry. Sending it `_component` would offer a
+ * preview for every component including that one. Expanding here keeps the
+ * decision on this side: the CMS receives the content types that really are
+ * previewable, and nothing else.
+ *
+ * The cost is that a base type covers the content types this project knows at
+ * push time. One added elsewhere against the same CMS is not included until
+ * someone pushes again.
+ */
+export const expandComponentPreviewUrlFormats = (
+  applications: ApplicationsType[],
+  contentTypes: AnyContentType[],
+): ApplicationsType[] =>
+  applications.map(app => {
+    const formats =
+      'componentPreviewUrlFormats' in app ? app.componentPreviewUrlFormats : undefined;
+    if (!formats) return app;
+
+    // Saying both "preview it here" and "never preview it" is a mistake worth
+    // naming. The content type wins: it is the more specific statement, and it
+    // sits with the component rather than in the config file.
+    const contradictoryKeys = contentTypes
+      .filter(contentType => contentType.componentPreview === false)
+      .map(contentType => contentType.key)
+      .filter(key => key in formats);
+
+    if (contradictoryKeys.length > 0)
+      console.warn(
+        chalk.yellow(
+          `Warning: ${contradictoryKeys.join(', ')} ${contradictoryKeys.length === 1 ? 'is' : 'are'} named in componentPreviewUrlFormats of application "${app.key}" but set componentPreview: false. No preview URL is pushed for ${contradictoryKeys.length === 1 ? 'it' : 'them'}.`,
+        ),
+      );
+
+    const componentPreviewUrlFormats = Object.fromEntries(
+      contentTypes.filter(isPreviewable).flatMap(contentType => {
+        // Most specific first: the content type's own entry, then its base
+        // type's, then the fallback.
+        const url =
+          formats[contentType.key] ??
+          formats[contentType.baseType] ??
+          formats[PREVIEW_FALLBACK_KEY];
+
+        return url ? [[contentType.key, url] as const] : [];
+      }),
+    );
+
+    return { ...app, componentPreviewUrlFormats };
+  });
 
 /**
  * Validates application configuration, ensuring required fields are present and properly formatted.
