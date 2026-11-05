@@ -1,6 +1,11 @@
 import { describe, test, expect } from 'vitest';
 import type { ApplicationsType } from '@optimizely/cms-sdk/buildConfig';
-import { validateApplications } from '../service/utils.js';
+import { contract } from '@optimizely/cms-sdk';
+import {
+  previewableContentTypeKeys,
+  validateApplications,
+  type AnyContentType,
+} from '../service/utils.js';
 
 const app: ApplicationsType = {
   key: 'site',
@@ -41,5 +46,57 @@ describe('validateApplications', () => {
     expect(() =>
       validate([{ ...app, hosts: [{ authority: 'example.com' }, { locale: 'en' }] }]),
     ).toThrow('Error in hosts: Host at index 1 has an empty or missing "authority" field');
+  });
+});
+
+describe('previewUrlFormats keys', () => {
+  const withFormats = (previewUrlFormats: Record<string, string>) => [
+    { ...app, previewUrlFormats },
+  ];
+
+  const projectKeys = previewableContentTypeKeys([
+    { key: 'HeroComponent', displayName: 'Hero', baseType: '_component' },
+    { key: 'Folder', displayName: 'Folder', baseType: '_folder' },
+    contract({ key: 'Seo', displayName: 'SEO' }) as unknown as AnyContentType,
+  ]);
+
+  test('accepts the fallback, previewable base types and a project content type', () => {
+    const applications = withFormats({
+      any: '{host}/preview?key={key}',
+      _component: '{host}/preview/component?key={key}',
+      _page: '{host}/preview?key={key}',
+      _experience: '{host}/preview?key={key}',
+      _image: '{host}/preview?key={key}',
+      HeroComponent: '{host}/preview/hero?key={key}',
+    });
+
+    expect(validateApplications(applications as ApplicationsType[], projectKeys)).toBe(
+      applications,
+    );
+  });
+
+  test('rejects _folder, which is never rendered', () => {
+    expect(() =>
+      validateApplications(
+        withFormats({ _folder: '{host}/preview?key={key}' }) as ApplicationsType[],
+        projectKeys,
+      ),
+    ).toThrow('previewUrlFormats keys that name nothing previewable: _folder');
+  });
+
+  test('rejects a contract key and an unknown key', () => {
+    expect(() =>
+      validateApplications(
+        withFormats({
+          Seo: '{host}/preview?key={key}',
+          Nonexistent: '{host}/preview?key={key}',
+        }) as ApplicationsType[],
+        projectKeys,
+      ),
+    ).toThrow('Seo, Nonexistent');
+  });
+
+  test('passes when no previewUrlFormats are configured', () => {
+    expect(() => validate([app])).not.toThrow();
   });
 });

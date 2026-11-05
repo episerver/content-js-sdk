@@ -10,6 +10,7 @@ import {
   logList,
   readFromPath,
   normalizePropertyGroups,
+  previewableContentTypeKeys,
   validateApplications,
 } from '../../service/utils.js';
 import { checkApplications } from '../../service/applicationService.js';
@@ -140,7 +141,10 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     // Convert contracts to manifest shape
     const manifestContracts = contracts.map(contractToManifest);
-    const validatedApplications = applications ? validateApplications(applications) : [];
+    const validatedApplications =
+      applications ?
+        validateApplications(applications, previewableContentTypeKeys(contentTypes))
+      : [];
     if (log) logList('Applications found', displayNamesOf(validatedApplications));
 
     // Check if apps have entryPoint set (will be mapped from content config)
