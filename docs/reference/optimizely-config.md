@@ -83,7 +83,8 @@ Content items to create in the CMS, so that an application has a start page to p
 | `hosts`                        | `object[]`                        | No        | The domains the application answers on. See below                            |
 | `useApplicationSpecificAssets` | `boolean`                         | No        | Give the application its own assets folder                                   |
 | `usePreviewTokens`             | `boolean`                         | No        | `'website'` only. Send preview tokens to the preview URL                     |
-| `previewUrlFormats`            | `Record<string, string>`          | No        | `'website'` only. Preview URL per `any`, base type or content type key       |
+| `previewUrlFormats`            | `Record<string, string>`          | No        | `'website'` only. Page preview URL per `any`, base type or content type key  |
+| `componentPreviewUrlFormats`   | `Record<string, string>`          | No        | `'website'` only. Same keys, for previewing one component on its own         |
 
 When `previewUrlFormats` is left out of a new `'website'` application, it defaults to:
 
@@ -93,26 +94,32 @@ previewUrlFormats = {
 };
 ```
 
-Give one kind of content its own preview URL by keying an entry by base type, or a single
-content type by its key. A content type key wins over a base type, and a base type over
-`any`:
+Both dictionaries take the same keys: `any` for everything without an entry of its own, a
+base type, or a single content type by its key. A content type key wins over a base type,
+and a base type over `any`.
+
+`previewUrlFormats` is how a whole page is previewed. `componentPreviewUrlFormats` is how
+a single component is previewed outside any page, and has no default — only the content
+you give an entry gets one:
 
 ```js
-previewUrlFormats: {
-  any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
-  // every component previews on its own route, without the page around it
+componentPreviewUrlFormats: {
+  // every component
   _component: '{host}/preview/component?key={key}&ver={version}&loc={locale}&ctx={context}',
-  // and this one component somewhere else again
+  // and this one somewhere else again
   HeroComponent: '{host}/preview/hero?key={key}&ver={version}&loc={locale}&ctx={context}',
 }
 ```
 
 The CMS fills in `{host}`, `{key}`, `{version}`, `{locale}` and `{context}`.
 
+`config push` rejects a `componentPreviewUrlFormats` key that names nothing previewable:
+`_folder`, a contract, a display template, or a content type this project does not define.
+
 The route you point at receives the key of real content, so it renders through
 [`getPreviewContent`](./graph-client.md), as `app/preview/page.tsx` does. The standalone
 component preview is a different thing: it takes `?type=` and renders stand-in content,
-so it is reached from a catalogue of your own, not from a `previewUrlFormats` entry.
+so it is reached from a catalogue of your own, not from one of these entries.
 
 Each entry in `hosts` has these fields:
 
