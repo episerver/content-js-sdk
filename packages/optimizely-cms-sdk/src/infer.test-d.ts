@@ -1,7 +1,7 @@
 import { test, expectTypeOf } from 'vitest';
 import type { ContentProps, InferredAssetMetadata, InferredImageMetadata } from './infer.js';
 import type { TaxonomyTerm } from './graph/index.js';
-import { contentType, contract } from './model/index.js';
+import { contentType, contract, displayTemplate } from './model/index.js';
 
 test('ContentProps works for non-content type', () => {
   expectTypeOf<ContentProps<number>>().toBeUnknown();
@@ -224,4 +224,43 @@ test('TaxonomyTerm has the expected shape', () => {
   expectTypeOf<TaxonomyTerm['sortOrder']>().toEqualTypeOf<number | null>();
   expectTypeOf<TaxonomyTerm['isAvailable']>().toEqualTypeOf<boolean | null>();
   expectTypeOf<TaxonomyTerm['path']>().toEqualTypeOf<Array<{ key: string; displayName: string | null; description: string | null; taxonomy: string | null; usage: string | null }>>();
+});
+
+test('ContentProps infers display template settings per editor', () => {
+  const Styles = displayTemplate({
+    key: 'Styles',
+    displayName: 'Styles',
+    isDefault: false,
+    baseType: '_component',
+    settings: {
+      width: {
+        editor: 'select',
+        displayName: 'Width',
+        sortOrder: 1,
+        choices: { narrow: { displayName: 'Narrow', sortOrder: 1 } },
+      },
+      look: {
+        editor: 'variant',
+        displayName: 'Look',
+        sortOrder: 2,
+        choices: {
+          light: { displayName: 'Light', sortOrder: 1 },
+          dark: { displayName: 'Dark', sortOrder: 2 },
+        },
+      },
+      bordered: {
+        editor: 'checkbox',
+        displayName: 'Bordered',
+        sortOrder: 3,
+        choices: {
+          true: { displayName: 'Yes', sortOrder: 1 },
+          false: { displayName: 'No', sortOrder: 2 },
+        },
+      },
+    },
+  });
+
+  expectTypeOf<ContentProps<typeof Styles>['width']>().toEqualTypeOf<'narrow'>();
+  expectTypeOf<ContentProps<typeof Styles>['look']>().toEqualTypeOf<'light' | 'dark'>();
+  expectTypeOf<ContentProps<typeof Styles>['bordered']>().toEqualTypeOf<boolean>();
 });

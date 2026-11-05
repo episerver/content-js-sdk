@@ -230,6 +230,7 @@ const generateContentTypeArguments = (
     {
       key: content.key,
       displayName: content.displayName,
+      icon: content.icon || undefined,
       baseType: content.baseType || 'null',
       compositionBehaviors:
         content.compositionBehaviors?.length ? content.compositionBehaviors : undefined,

@@ -1,5 +1,5 @@
 import { test } from 'vitest';
-import { contentType, contract } from '../index.js';
+import { buildConfig, contentType, contract } from '../index.js';
 
 test('contract cannot have baseType field', () => {
   contract({
@@ -178,5 +178,38 @@ test('content rejects contentType field', () => {
         items: { type: 'content', contentType: Article },
       },
     },
+  });
+});
+
+test('icon accepts predefined and custom values', () => {
+  contentType({ key: 'a', displayName: 'A', baseType: '_page', icon: 'Start page' });
+  contentType({ key: 'b', displayName: 'B', baseType: '_page', icon: 'my-custom-icon' });
+
+  contentType({
+    key: 'c',
+    displayName: 'C',
+    baseType: '_page',
+    // @ts-expect-error - icon must be a string
+    icon: 42,
+  });
+});
+
+test('previewUrlFormats accepts the fallback, base types and content type keys', () => {
+  buildConfig({
+    components: [],
+    locale: ['en'],
+    propertyGroups: [],
+    applications: [
+      {
+        key: 'site',
+        displayName: 'Site',
+        type: 'website',
+        previewUrlFormats: {
+          any: '{host}/preview?key={key}&ver={version}&loc={locale}&ctx={context}',
+          _component: '{host}/preview/component?key={key}&loc={locale}',
+          HeroComponent: '{host}/preview/hero?key={key}',
+        },
+      },
+    ],
   });
 });

@@ -26,10 +26,61 @@ export type MediaStringTypes = (typeof MEDIA_BASE_TYPES)[number];
 
 export type PropertiesRecord = Record<string, AnyProperty>;
 
+/**
+ * Icon shown next to a content type in the CMS UI.
+ *
+ * The listed values are the icons the CMS ships with; any other string is
+ * accepted for custom icons. `(string & {})` keeps autocomplete on the
+ * predefined names while still allowing custom text.
+ */
+export type ContentTypeIcon =
+  | 'Banner'
+  | 'Box'
+  | 'Browser'
+  | 'Bundle'
+  | 'Checkbox'
+  | 'Checklist'
+  | 'Code'
+  | 'Comment'
+  | 'Dashboard'
+  | 'Document'
+  | 'Email'
+  | 'Excel spreadsheet'
+  | 'Folder'
+  | 'Globe'
+  | 'Grid'
+  | 'Heading'
+  | 'Image'
+  | 'Image landscape'
+  | 'Layers'
+  | 'Link'
+  | 'List'
+  | 'Page'
+  | 'PDF file'
+  | 'Quote'
+  | 'Section'
+  | 'Shapes'
+  | 'Shopping cart'
+  | 'Sidebar'
+  | 'Start page'
+  | 'Table'
+  | 'Tablet'
+  | 'Tag'
+  | 'Task list'
+  | 'Text input'
+  | 'Toggle'
+  | 'Video'
+  | 'Website'
+  | 'Window'
+  | 'Word document'
+  | 'ZIP archive'
+  | (string & {});
+
 /** A "Base" content type that includes all common attributes for all content types */
 type BaseContentType = {
   key: string;
   displayName: string;
+  icon?: ContentTypeIcon;
   extends?: AnyContract | Array<AnyContract>;
   properties?: PropertiesRecord;
 };

@@ -358,23 +358,86 @@ const validateHostFields = (host: Record<string, any>, hostIndex: number): void 
   });
 };
 
-const validateApplication = (app: ApplicationsType, applicationIndex: number): void => {
+/**
+ * Base types a preview URL can be keyed by. Folders are left out: they organise
+ * content in the CMS and are never rendered, so there is nothing to preview.
+ */
+const PREVIEWABLE_BASE_TYPES: readonly string[] = ContentTypes.ALL_BASE_TYPES.filter(
+  baseType => baseType !== '_folder',
+);
+
+/** The `previewUrlFormats` key that applies to everything without its own entry. */
+const PREVIEW_FALLBACK_KEY = 'any';
+
+/**
+ * Checks that every `previewUrlFormats` key names something previewable: the
+ * `any` fallback, a base type, or a content type defined in this project.
+ *
+ * A key that matches none of those is a typo or a stale name, and the CMS
+ * silently ignores it — so the preview the developer thought they configured
+ * never appears.
+ */
+const validatePreviewUrlFormats = (
+  app: ApplicationsType,
+  previewableContentTypeKeys: Set<string>,
+): void => {
+  const formats = 'previewUrlFormats' in app ? app.previewUrlFormats : undefined;
+  if (!formats) return;
+
+  const invalidKeys = Object.keys(formats).filter(
+    key =>
+      key !== PREVIEW_FALLBACK_KEY &&
+      !PREVIEWABLE_BASE_TYPES.includes(key) &&
+      !previewableContentTypeKeys.has(key),
+  );
+
+  if (invalidKeys.length === 0) return;
+
+  throw new Error(
+    `Validation error: application "${app.key}" has previewUrlFormats keys that name nothing previewable: ${invalidKeys.join(', ')}.\n` +
+      `Each key is either a content type key from your project, or one of: ${[PREVIEW_FALLBACK_KEY, ...PREVIEWABLE_BASE_TYPES].join(', ')}.`,
+  );
+};
+
+const validateApplication = (
+  app: ApplicationsType,
+  applicationIndex: number,
+  previewableContentTypeKeys: Set<string>,
+): void => {
   validateApplicationFields(app, applicationIndex);
   app.hosts?.forEach((host, hostIndex) => validateHostFields(host, hostIndex));
+  validatePreviewUrlFormats(app, previewableContentTypeKeys);
 };
 
 /**
+ * The content types a preview URL may be keyed by: everything in the project
+ * except contracts, which are not content, and folders, which are not rendered.
+ */
+export const previewableContentTypeKeys = (
+  contentTypes: AnyContentType[],
+): Set<string> =>
+  new Set(
+    contentTypes
+      .filter(contentType => !isContract(contentType) && contentType.baseType !== '_folder')
+      .map(contentType => contentType.key),
+  );
+
+/**
  * Validates application configuration, ensuring required fields are present and properly formatted.
+ *
+ * `contentTypeKeys` are the keys a `previewUrlFormats` entry may name; leave it
+ * out to check the keys against base types alone.
  */
 export const validateApplications = (
   applications: ApplicationsType[],
+  contentTypeKeys: Set<string> = new Set(),
 ): ApplicationsType[] => {
   if (!Array.isArray(applications))
     throw new Error(
       'Validation error: "applications" must be an array in the config file',
     );
 
-  applications.forEach(validateApplication);
+  applications.forEach((app, index) => validateApplication(app, index, contentTypeKeys));
 
   return applications;
 };
