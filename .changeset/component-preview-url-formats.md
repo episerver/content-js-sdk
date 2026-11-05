@@ -32,7 +32,8 @@ give an entry gets a component preview.
 `config push` now rejects a `componentPreviewUrlFormats` key that names nothing
 previewable — `_folder`, a contract, a display template, or a content type the project
 does not define — naming the offending keys rather than letting the CMS quietly ignore
-them.
+them. Like `usePreviewTokens` and `previewUrlFormats`, the field itself is rejected on an
+`'inProcessWebsite'` application.
 
 The CMS API schema does not carry this field yet, so the CLI widens its own application
 type until the generated schema catches up.
