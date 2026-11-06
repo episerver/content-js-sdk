@@ -74,6 +74,29 @@ overrides that one value and nothing else.
 The route serves generated content only. It takes no preview token and does no
 authorization, so there is nothing on it to protect.
 
+## Leave a component out
+
+Some components are nothing on their own: they read from the page around them, or render
+to an empty box without it. Set `componentPreview: false` on the content type and the
+route renders nothing for it, reporting `unknown-content-type` the way it does for a
+component it has never heard of:
+
+```ts
+export const BannerContentType = contentType({
+  key: 'Banner',
+  displayName: 'Banner',
+  baseType: '_component',
+  componentPreview: false,
+});
+```
+
+The flag lives only in this SDK; the CMS does not store it. If the CMS is what opens
+these previews, `config push` also leaves the component out of the application's
+`componentPreviewUrlFormats`, so the CMS never offers the preview in the first place. See
+[opting a content type out](../reference/optimizely-config.md#opting-a-content-type-out-of-component-previews).
+
+The content type is still pushed and editors still use it. Only the preview goes away.
+
 ## Say who may read the measurements
 
 A preview reports to **one** origin, and the site decides which — an embedder cannot ask
@@ -192,6 +215,7 @@ That is not a response to a message, so there is no loop. Send `measure` afterwa
 
 - `createStandalonePreview()` serves one component on a page of its own.
 - `?type=` picks the component; unrecognised parameters become display settings.
+- `componentPreview: false` on a content type keeps it out of previews entirely.
 - `parentOrigin` names the one origin allowed to hear a measurement.
 - The first `dimensions` means it has settled; later ones mean it moved.
 - Tools that cannot listen read the same numbers off `data-preview-*` attributes.
