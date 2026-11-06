@@ -194,8 +194,8 @@ One consequence of resolving at push time: a base type covers the content types 
 project knows when you push**. One added elsewhere against the same CMS is not covered
 until someone pushes again.
 
-[`createStandalonePreview`](./react-components.md) honours the same flag, so a request
-that reaches the route some other way renders nothing rather than the component.
+[`createStandalonePreview`](../guides/component-previews.md) honours the same flag, so a
+request that reaches the route some other way renders nothing rather than the component.
 
 The route you point at receives the key of real content, so it renders through
 [`getPreviewContent`](./graph-client.md), as `app/preview/page.tsx` does. The standalone
