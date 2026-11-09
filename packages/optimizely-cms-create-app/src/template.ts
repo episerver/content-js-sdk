@@ -45,7 +45,10 @@ function normalizeEnvFile(dir: string): void {
   for (const name of candidates) {
     const filePath = path.join(dir, name);
     if (fs.existsSync(filePath)) {
-      fs.renameSync(filePath, path.join(dir, '.env'));
+      fs.copyFileSync(filePath, path.join(dir, '.env'));
+      if (name !== '.env.example') {
+        fs.renameSync(filePath, path.join(dir, '.env.example'));
+      }
       return;
     }
   }
