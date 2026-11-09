@@ -116,6 +116,12 @@ for example `Test1`, `Test2` and `Production1`. The command first checks that th
 credentials can use the environment, so a wrong name or API key fails before anything is
 uploaded.
 
+Then it runs the `build` script locally (`npm run build`, or `yarn run build` in a
+yarn project), so type and build errors fail in a minute or two instead of after the upload.
+Install the dependencies first. If the build fails, the command prints its output and
+stops. `--no-build` skips the local build, for example when CI has already built the
+site.
+
 A deployment can take up to about 30 minutes: the platform installs the dependencies,
 builds the site and starts it in a deployment slot before it completes. The command shows
 each step, the deployment status, and any warnings or errors from the platform. It exits
@@ -224,6 +230,7 @@ The workflow:
 | `Found package-lock.json and yarn.lock`                                       | Delete the lock file of the package manager you do not use                                                                                                    |
 | `package.json has no "start" script`                                          | Add the script from [Project requirements](#project-requirements)                                                                                             |
 | `Dependency "..." uses "workspace:*"`                                         | Replace it with a published version                                                                                                                           |
+| `` `npm run build` failed with exit code ... ``                               | Fix the errors in the build output printed under the message. Install the dependencies if the build tool is not found                                         |
 | `A package named ... was already uploaded`                                    | Deploy again with a different `--version`                                                                                                                     |
 | `Deployment ... failed`                                                       | Read the errors listed under the message. Application logs are in the **Troubleshoot** tab of the DXP management portal                                       |
 | `Deployment ... did not finish within 30 minutes`                             | The deployment may still be running. Check the portal, or raise `--timeout`                                                                                   |

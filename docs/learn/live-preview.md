@@ -18,8 +18,8 @@ page's fields clickable.
 2. The CMS loads your site's preview route in a frame, with the content's key, version and
    locale and a short-lived **preview token** in the query string.
 3. Your preview route uses the token to fetch that exact draft version and renders it.
-4. When the editor saves, the CMS tells the page, and the page refreshes with the new
-   draft.
+4. When the editor saves, the CMS tells the page once the change is ready, and the page
+   refreshes with the new draft.
 
 ## Add the CMS URL to `.env`
 

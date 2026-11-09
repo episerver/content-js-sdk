@@ -4,8 +4,8 @@ This guide are instructions for maintainers. For general installation instructio
 
 ## Pre-requirements
 
-- Latest LTS version of [Node.js](https://nodejs.org/) (version 22 at the time of writing)
-- [pnpm](https://pnpm.io) package manager (version 10 at the time of writing)
+- [Node.js](https://nodejs.org/) — the version in [`.nvmrc`](./.nvmrc), which CI also uses. With [nvm](https://github.com/nvm-sh/nvm), run `nvm use` from the repository root.
+- [pnpm](https://pnpm.io) package manager — the version in the root `packageManager` field.
 
 ## Installation
 

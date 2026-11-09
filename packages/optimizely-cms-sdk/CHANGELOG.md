@@ -1,5 +1,233 @@
 # @optimizely/cms-sdk
 
+## 3.1.0
+
+### Minor Changes
+
+- ab10e89: [CMS-57435](https://optimizely-ext.atlassian.net/browse/CMS-57435): Return
+  image metadata with `contentReference` properties
+
+  A reference to an image used to come back as `key` and `url` only, so alt text,
+  photographer, width and height needed a second query — even though the same image in a
+  content area already arrived complete. References to media now resolve `item` as part of
+  the page request.
+
+  ```ts
+  const Page = contentType({
+    key: 'ArticlePage',
+    baseType: '_page',
+    properties: {
+      heroImage: { type: 'contentReference', allowedTypes: [ImageFile] },
+    },
+  });
+
+  const page = await client.getContent({ key });
+
+  page.heroImage?.item?.AltText; // previously required a second query
+  page.heroImage?.item?.imageMetadata; // { width, height }
+  ```
+
+  Applies to references that allow media, whether by content type or by `_image`, `_video`
+  or `_media`. References to pages and components are unchanged.
+
+- 5514541: [CMS-55718](https://optimizely-ext.atlassian.net/browse/CMS-55718): Add
+  framework-agnostic core module, with React bindings rebuilt on top of it.
+- 34ac138: [CMS-58169](https://optimizely-ext.atlassian.net/browse/CMS-58169): Preview
+  media URLs omit the preview token; the preview listener retries failed media with it.
+  Add `forceMediaToken` to restore.
+- 649de28: [CMS-57557](https://optimizely-ext.atlassian.net/browse/CMS-57557): Add
+  `platform` option.
+- 784755d: [CMS-57483](https://optimizely-ext.atlassian.net/browse/CMS-57483): Add
+  config({ telemetry: { componentMetrics: false } }) to turn off component metrics, which
+  break Next.js cacheComponents prerendering.
+- bafa411: [CMS-56217](https://optimizely-ext.atlassian.net/browse/CMS-56217): Support CMS
+  Taxonomy categories. The SDK now includes `categories` in the `ItemMetadata` fragment
+  when taxonomy is available, exposing `_metadata.categories` (array of term keys) on
+  every content fetch. Opt in to hierarchy resolution with `resolveTaxonomy: true` to get
+  `_metadata.resolvedCategories` with full breadcrumb paths, display names, and metadata —
+  without writing a separate `_TaxonomyTerm` query. Resolved terms are cached per-endpoint
+  for the process lifetime. Taxonomy detection follows the same tri-state pattern as DAM
+  (`'automatic' | 'on' | 'off'`).
+- b7e7e18: [CMS-56227](https://optimizely-ext.atlassian.net/browse/CMS-56227): Add auth
+  Add an `auth` option that authenticates Graph requests with an app credential (`basic`,
+  `hmac`), a bearer token or a custom resolver, optionally acting as a named user via
+  `asUser`, with responses filtered to published content by default.
+
+### Patch Changes
+
+- a9dd7db: [CMS-49490](https://optimizely-ext.atlassian.net/browse/CMS-49490): Return
+  nested content for self-referencing content types
+
+  A content type that can contain itself, directly or through another type, came back with
+  its nested items empty: they had a `__typename` and no other fields. The generated query
+  left out the fragment spread wherever a type referred back to itself, and because each
+  fragment is shared across the query, the data went missing everywhere that type appeared
+  — not only at the point where it looped.
+
+  ```ts
+  const Category = contentType({
+    key: 'Category',
+    baseType: '_component',
+    properties: {
+      title: { type: 'string' },
+      children: { type: 'array', items: { type: 'content', allowedTypes: ['_self'] } },
+    },
+  });
+
+  const category = await client.getContent({ key });
+
+  category.children?.[0]?.title; // previously undefined
+  ```
+
+  Queries now include the spread again, as they did in 2.x, producing cyclic fragments.
+  Optimizely Graph
+  [supports these](https://docs.optimizely.com/graph/docs/recursive-queries#circular-referenced-queries-cyclic-fragments)
+  and resolves them as deep as the content goes, stopping when an item repeats.
+
+  Cyclic fragments are not valid under the strict GraphQL specification, so tools that
+  validate queries, such as graphql-js, reject them. This does not affect the SDK's own
+  client, which sends queries without validating them.
+
+- f8361fe: [CMS-56511](https://optimizely-ext.atlassian.net/browse/CMS-56511): Reject
+  `contentType` on `content` properties in types and `config push`, since CMS silently
+  drops it; use `allowedTypes`/`restrictedTypes`.
+- be34249: [CMS-57483](https://optimizely-ext.atlassian.net/browse/CMS-57483): Fix
+  component metrics aborting Next.js `cacheComponents` prerenders by deferring them until
+  metric collection.
+- 7083bd9: [CMS-58473](https://optimizely-ext.atlassian.net/browse/CMS-58473): Stop
+  showing the "No component found for content type" box for Graph base types.
+
+  Graph answers with a base type such as `_Content` when an item's own type is missing
+  from its schema. The message named that base type and suggested registering a component
+  for it, which was never the real fix. Content resolving to a base type now renders
+  nothing, and every other unregistered content type still shows the fallback in
+  development.
+
+  To render something in its place, register a component for the base type:
+
+  ```ts
+  initReactComponentRegistry({
+    resolver: {
+      _Content: EmptyContent,
+    },
+  });
+  ```
+
+- f8447dc: [CMS-56675](https://optimizely-ext.atlassian.net/browse/CMS-56675): Fix
+  `getContent()`, `getItems()` and `getPath()` ignoring CMS language fallbacks when
+  looking up content by key.
+
+  All three filtered on `_metadata.locale`, which is the locale a document was _authored_
+  in. A fallback document keeps its source locale there and announces the requested one
+  separately, so the filter excluded every fallback and the lookup came back empty. The
+  requested locale is now passed only as the `locale:` field argument, which is what
+  resolves fallbacks.
+
+  ```ts
+  // Previously returned null when `en-PH` had no own language version.
+  // Now returns the fallback content configured in the CMS.
+  await client.getItems({ key, locale: 'en-PH' });
+  await client.getContent({ key, locale: 'en-PH' });
+  ```
+
+  A locale is also canonicalized before it is sent, so a lowercase one taken from a URL
+  segment reaches Graph as `en_US` rather than being rejected as an unknown `Locales`
+  value.
+
+  ```ts
+  // Previously: HTTP 400, Value "en_us" does not exist in "Locales" enum.
+  await client.getContent({ key, locale: 'en-us' });
+  ```
+
+  A `contentReference`, `url` or `link` property with no value is now `null` instead of an
+  object with every field null. Graph answers the hollow shape, which is truthy, so the
+  usual guard passed and the element rendered empty. The inferred types already allowed
+  `null` for any property; the response now agrees with them. Which properties those are
+  comes from the content type, so an authored `json` payload keeps its own empty objects.
+
+  ```ts
+  // Previously truthy: { key: null, url: { default: null, ... } }
+  {content.image && <img src={content.image.url.default} />}
+  ```
+
+- b936bf4: [CMS-58188](https://optimizely-ext.atlassian.net/browse/CMS-58188): Preview
+  refreshes once per CMS save, after the change is ready, using the editor's preview
+  token.
+
+## 3.1.0-beta.2
+
+### Patch Changes
+
+- 7083bd9: [CMS-58473](https://optimizely-ext.atlassian.net/browse/CMS-58473): Stop
+  showing the "No component found for content type" box for Graph base types.
+
+  Graph answers with a base type such as `_Content` when an item's own type is missing
+  from its schema. The message named that base type and suggested registering a component
+  for it, which was never the real fix. Content resolving to a base type now renders
+  nothing, and every other unregistered content type still shows the fallback in
+  development.
+
+  To render something in its place, register a component for the base type:
+
+  ```ts
+  initReactComponentRegistry({
+    resolver: {
+      _Content: EmptyContent,
+    },
+  });
+  ```
+
+- b936bf4: [CMS-58188](https://optimizely-ext.atlassian.net/browse/CMS-58188): Preview
+  refreshes once per CMS save, after the change is ready, using the editor's preview
+  token.
+
+## 3.1.0-beta.1
+
+### Minor Changes
+
+- 34ac138: [CMS-58169](https://optimizely-ext.atlassian.net/browse/CMS-58169): Preview
+  media URLs omit the preview token; the preview listener retries failed media with it.
+  Add `forceMediaToken` to restore.
+
+### Patch Changes
+
+- a9dd7db: [CMS-49490](https://optimizely-ext.atlassian.net/browse/CMS-49490): Return
+  nested content for self-referencing content types
+
+  A content type that can contain itself, directly or through another type, came back with
+  its nested items empty: they had a `__typename` and no other fields. The generated query
+  left out the fragment spread wherever a type referred back to itself, and because each
+  fragment is shared across the query, the data went missing everywhere that type appeared
+  — not only at the point where it looped.
+
+  ```ts
+  const Category = contentType({
+    key: 'Category',
+    baseType: '_component',
+    properties: {
+      title: { type: 'string' },
+      children: { type: 'array', items: { type: 'content', allowedTypes: ['_self'] } },
+    },
+  });
+
+  const category = await client.getContent({ key });
+
+  category.children?.[0]?.title; // previously undefined
+  ```
+
+  Queries now include the spread again, as they did in 2.x, producing cyclic fragments.
+  Optimizely Graph
+  [supports these](https://docs.optimizely.com/graph/docs/recursive-queries#circular-referenced-queries-cyclic-fragments)
+  and resolves them as deep as the content goes, stopping when an item repeats.
+
+  Cyclic fragments are not valid under the strict GraphQL specification, so tools that
+  validate queries, such as graphql-js, reject them. This does not affect the SDK's own
+  client, which sends queries without validating them.
+
+- be34249: [CMS-57483](https://optimizely-ext.atlassian.net/browse/CMS-57483): Fix
+  component metrics aborting Next.js `cacheComponents` prerenders by deferring them until
+  metric collection.
+
 ## 3.1.0-beta.0
 
 ### Minor Changes

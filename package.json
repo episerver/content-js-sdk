@@ -7,13 +7,16 @@
   "type": "commonjs",
   "main": "index.js",
   "private": "true",
+  "engines": {
+    "node": ">=24.22.1"
+  },
   "scripts": {
-    "dev": "pnpm build --watch",
+    "dev": "pnpm --filter \"./packages/**\" --parallel run dev",
     "build": "pnpm --filter \"./packages/**\" build",
-    "install:all": "pnpm --filter \"./packages/**\" install && pnpm --filter \"./packages/**\" build && pnpm --filter \"./samples/**\" --filter \"./templates/**\" install",
+    "build:clean": "pnpm clean:all && pnpm build",
     "build:samples": "pnpm --filter \"./samples/**\" build",
     "clean:all": "pnpm -r clean",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "pnpm --filter \"./packages/**\" test",
     "publish:all": "pnpm --filter \"./packages/**\" publish --access public --no-git-checks",
     "update-hooks": "pnpm simple-git-hooks"
   },
@@ -53,7 +56,11 @@
       "brace-expansion@^5": ">=5.0.8",
       "nanoid@^3": ">=3.3.16",
       "uuid@^10": ">=11.1.1",
-      "@opentelemetry/propagator-jaeger": ">=2.9.0"
+      "@opentelemetry/propagator-jaeger": ">=2.9.0",
+      "browserslist": ">=4.28.7",
+      "source-map-js": ">=1.2.2",
+      "@grpc/grpc-js": ">=1.14.5",
+      "zod@^4": ">=4.6.6"
     }
   }
 }

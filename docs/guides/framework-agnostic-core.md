@@ -223,8 +223,8 @@ built this way.
 
 ## Live preview
 
-`createContentSavedListener` handles CMS save events: URL normalisation, debouncing,
-duplicate filtering, same-URL detection and the hard-reload fallback.
+`createContentSavedListener` handles CMS save events: pairing the two events each save
+sends, URL normalisation, same-URL detection and the hard-reload fallback.
 
 ```ts
 const listener = createContentSavedListener({
@@ -237,8 +237,11 @@ const stop = listener.start();
 ```
 
 - Nothing subscribes until `start()`, so importing on a server is safe.
-- `refreshTimeout` coalesces the burst of events one save emits into a single navigation;
-  `false` navigates immediately, with a 50 ms duplicate guard.
+- Each save sends an event with the editor's preview token, then one when the change is
+  ready. The listener navigates once, on the ready event, to the first event's URL. If
+  either never arrives, it navigates after 5 seconds anyway.
+- `refreshTimeout` delays that navigation and merges saves that finish within it;
+  `false` navigates immediately.
 - Call `listener.update(options)` on every render instead of recreating the listener,
   which would cancel a pending refresh.
 - Without `onNavigate`, the page hard-reloads.
