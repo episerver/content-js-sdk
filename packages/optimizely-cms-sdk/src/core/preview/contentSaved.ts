@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { normalizePathname } from '../../util/preview.js';
 import { startMediaTokenRetry } from './mediaTokenRetry.js';
 
 export interface ContentSavedEvent {
@@ -53,10 +54,9 @@ const EVENT_NAME = 'optimizely:cms:contentSaved';
 /** How long to wait for the other half of a save. Measured gap: under 1 s. */
 const FALLBACK_TIMEOUT = 5000;
 
-/** Two URLs pointing at the same page differ only by a trailing slash often enough to matter. */
 const normalizeUrl = (url: string): string => {
   const parsed = new URL(url);
-  parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/';
+  parsed.pathname = normalizePathname(parsed.pathname);
   return parsed.toString();
 };
 
@@ -98,6 +98,7 @@ export function createContentSavedListener(
   let options = initialOptions;
   let reloadDelay: ReturnType<typeof setTimeout> | undefined;
   let fallback: ReturnType<typeof setTimeout> | undefined;
+  let latestNavigation = 0;
   let stopMediaTokenRetry: (() => void) | undefined;
 
   // Token messages minus ready messages, so overlapping saves each get a refresh
@@ -121,9 +122,11 @@ export function createContentSavedListener(
 
     const executeNavigation = () => {
       if (onNavigate) {
-        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() =>
-          onBusyChange?.(false),
-        );
+        const navigation = ++latestNavigation;
+        // An earlier navigation settling must not lower busy while a later one runs
+        Promise.resolve(onNavigate(finalUrl, isSameUrl)).finally(() => {
+          if (navigation === latestNavigation) onBusyChange?.(false);
+        });
       } else {
         // Fallback: hard reload
         window.location.replace(finalUrl);
