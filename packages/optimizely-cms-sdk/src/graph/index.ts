@@ -6,7 +6,11 @@ import {
 import { logError, logWarning, SemanticAttributes } from '../telemetry/index.js';
 import { withRequestSpan } from '../telemetry/spans.js';
 import { setTelemetryOptions, type TelemetryOptions } from '../telemetry/settings.js';
-import { DEFAULT_GRAPH_URL, DEFAULT_USER_AGENT } from './constants.js';
+import {
+  DEFAULT_GRAPH_URL,
+  DEFAULT_REQUEST_TIMEOUT,
+  DEFAULT_USER_AGENT,
+} from './constants.js';
 import { authModeFor, resolveAuthHeaders, validateAuth } from './auth.js';
 import {
   type GraphAuth,
@@ -107,6 +111,9 @@ export class GraphClient {
   /** How requests are built and responses read for the configured CMS product. */
   readonly platform: PlatformAdapter;
 
+  /** Milliseconds before a Graph request is aborted. */
+  readonly requestTimeout: number;
+
   // The key is required, other options have defaults or can be set globally
   constructor(apiKey: string, options: Omit<GraphOptions, 'apiKey'> = {}) {
     validateAuth(options.auth, options.secrets);
@@ -120,6 +127,7 @@ export class GraphClient {
     this.fragmentDefaults = withDefaults(DEFAULT_FRAGMENT_OPTIONS, options.fragment);
     this.queryDefaults = withDefaults(defaultQueryOptions(options.auth), options.query);
     this.platform = resolvePlatform(options.platform);
+    this.requestTimeout = options.requestTimeout ?? DEFAULT_REQUEST_TIMEOUT;
   }
 
   // TRANSPORT
@@ -179,8 +187,9 @@ export class GraphClient {
           method: 'POST',
           headers,
           body,
+          signal: AbortSignal.timeout(this.requestTimeout),
         }).catch(err => {
-          if (err instanceof TypeError) {
+          if (err instanceof TypeError || err?.name === 'TimeoutError') {
             const optiErr = new OptimizelyGraphError(
               'Error when calling `fetch`. Ensure the Graph URL is correct or try again later.',
             );
