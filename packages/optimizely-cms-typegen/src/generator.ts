@@ -7,21 +7,24 @@ import { pathToFileURL } from 'node:url';
 // Config Loading
 // ============================================================================
 
+let loadCount = 0;
+
 /**
  * Load optimizely.config.mjs from project root.
- * Returns null if config doesn't exist.
+ * Returns null if config doesn't exist. Errors in the config itself are thrown.
  */
 export async function loadConfig(root: string) {
   const configPath = path.join(root, 'optimizely.config.mjs');
 
   try {
     await fs.access(configPath);
-    const fileUrl = pathToFileURL(configPath);
-    const config = await import(fileUrl.href);
-    return config.default;
   } catch {
     return null;
   }
+
+  // Query string busts Node's import cache so watch mode sees config edits.
+  const config = await import(`${pathToFileURL(configPath).href}?t=${Date.now()}-${loadCount++}`);
+  return config.default ?? null;
 }
 
 // ============================================================================
@@ -57,8 +60,11 @@ function validatePatterns(patterns: unknown): string[] {
  * Scan for component files using glob patterns from config.
  * Returns absolute file paths.
  */
-export async function scanComponents(root: string): Promise<string[]> {
-  const config = await loadConfig(root);
+export async function scanComponents(
+  root: string,
+  loaded?: Awaited<ReturnType<typeof loadConfig>>,
+): Promise<string[]> {
+  const config = loaded === undefined ? await loadConfig(root) : loaded;
   if (!config?.components) return [];
 
   const patterns = validatePatterns(config.components);
@@ -98,52 +104,54 @@ async function directoryExists(dirPath: string): Promise<boolean> {
 // Note: Pattern matches for contentType, contract, and displayTemplate exports is faster than object inspection.
 // ============================================================================
 
-// Improved regex patterns that handle multiline, comments, and edge cases
-const EXPORT_PATTERNS = {
-  contentType: /export\s+const\s+(\w+ContentType)\s*=/s,
-  contract: /export\s+const\s+(\w+Contract)\s*=/s,
-  displayTemplate: /export\s+const\s+(\w+DisplayTemplate)\s*=/s,
-} as const;
-
-// Match key with single or double quotes, allowing escaped quotes inside
-const KEY_PATTERNS = {
-  contentType:
-    /export\s+const\s+\w+ContentType\s*=\s*contentType\s*\(\s*\{[^}]*key\s*:\s*(['"])([^'"\\]*(?:\\.[^'"\\]*)*)\1/s,
-  contract: /export\s+const\s+\w+Contract\s*=\s*contract\s*\(\s*\{[^}]*key\s*:\s*(['"])([^'"\\]*(?:\\.[^'"\\]*)*)\1/s,
-  baseType:
-    /export\s+const\s+\w+ContentType\s*=\s*contentType\s*\(\s*\{[^}]*baseType\s*:\s*(['"])([^'"]*)\1/s,
-} as const;
+const EXPORT_RE = /export\s+const\s+(\w+(?:ContentType|Contract|DisplayTemplate))\s*=/g;
+const KEY_RE = /\bkey\s*:\s*(['"])([^'"\\]*(?:\\.[^'"\\]*)*)\1/;
+const BASE_TYPE_RE = /\bbaseType\s*:\s*(['"])([^'"]*)\1/;
 
 // baseTypes whose keys are valid entries in `mayContainTypes`
 const MAY_CONTAIN_BASE_TYPES = new Set(['_page', '_experience', '_folder']);
 
 interface FileData {
-  contentTypeName?: string;
-  contractName?: string;
-  displayTemplateName?: string;
-  contentTypeKey?: string;
-  baseType?: string;
+  contentTypeNames: string[];
+  contractNames: string[];
+  displayTemplateNames: string[];
+  /** One entry per content type or contract that declares a key. */
+  keys: { key: string; baseType?: string; isContentType: boolean }[];
 }
 
 /**
  * Extract all relevant data from file content in one pass.
+ * Each export's key is read from the text up to the next export, so keys
+ * stay tied to their own export.
+ * shortcut: first `key:` after the export wins, so a nested `key:` before the top-level one is misread; upgrade to an AST parse if that shows up.
  */
 function parseFileContent(content: string): FileData {
-  const contentTypeMatch = content.match(EXPORT_PATTERNS.contentType);
-  const contractMatch = content.match(EXPORT_PATTERNS.contract);
-  const displayTemplateMatch = content.match(EXPORT_PATTERNS.displayTemplate);
-
-  const contentTypeKeyMatch = content.match(KEY_PATTERNS.contentType);
-  const contractKeyMatch = content.match(KEY_PATTERNS.contract);
-  const baseTypeMatch = content.match(KEY_PATTERNS.baseType);
-
-  return {
-    contentTypeName: contentTypeMatch?.[1],
-    contractName: contractMatch?.[1],
-    displayTemplateName: displayTemplateMatch?.[1],
-    contentTypeKey: contentTypeKeyMatch?.[2] || contractKeyMatch?.[2], // Group 2 is now the key value
-    baseType: baseTypeMatch?.[2],
+  const data: FileData = {
+    contentTypeNames: [],
+    contractNames: [],
+    displayTemplateNames: [],
+    keys: [],
   };
+  const matches = [...content.matchAll(EXPORT_RE)];
+
+  matches.forEach((m, i) => {
+    const name = m[1];
+    const body = content.slice(m.index! + m[0].length, matches[i + 1]?.index);
+
+    if (name.endsWith('DisplayTemplate')) {
+      data.displayTemplateNames.push(name);
+      return;
+    }
+    const isContentType = name.endsWith('ContentType');
+    (isContentType ? data.contentTypeNames : data.contractNames).push(name);
+
+    const key = body.match(KEY_RE)?.[2];
+    if (key) {
+      data.keys.push({ key, baseType: body.match(BASE_TYPE_RE)?.[2], isContentType });
+    }
+  });
+
+  return data;
 }
 
 // ============================================================================
@@ -202,25 +210,19 @@ async function parseAllFiles(
     const importPath = resolveImportPath(file, registryFile);
     const importItems: string[] = [];
 
-    if (parsed.contentTypeName) {
-      importItems.push(parsed.contentTypeName);
-      data.contentTypes.push(parsed.contentTypeName);
-    }
+    importItems.push(
+      ...parsed.contentTypeNames,
+      ...parsed.displayTemplateNames,
+      ...parsed.contractNames,
+    );
+    data.contentTypes.push(...parsed.contentTypeNames);
+    data.displayTemplates.push(...parsed.displayTemplateNames);
+    data.contracts.push(...parsed.contractNames);
 
-    if (parsed.displayTemplateName) {
-      importItems.push(parsed.displayTemplateName);
-      data.displayTemplates.push(parsed.displayTemplateName);
-    }
-
-    if (parsed.contractName) {
-      importItems.push(parsed.contractName);
-      data.contracts.push(parsed.contractName);
-    }
-
-    if (parsed.contentTypeKey) {
-      data.contentTypeKeys.add(parsed.contentTypeKey);
-      if (parsed.baseType && MAY_CONTAIN_BASE_TYPES.has(parsed.baseType)) {
-        data.mayContainKeys.add(parsed.contentTypeKey);
+    for (const { key, baseType, isContentType } of parsed.keys) {
+      data.contentTypeKeys.add(key);
+      if (isContentType && baseType && MAY_CONTAIN_BASE_TYPES.has(baseType)) {
+        data.mayContainKeys.add(key);
       }
     }
 
@@ -281,6 +283,8 @@ export function initRegistry() {
  * Generate global.d.ts type declarations.
  * Augments ContentTypeRegistry, PropertyGroupRegistry, and MayContainRegistry interfaces.
  */
+const q = (key: string) => JSON.stringify(key).slice(1, -1).replace(/'/g, "\\'");
+
 function buildTypesContent(
   contentTypeKeys: Set<string>,
   propertyGroupKeys: Set<string>,
@@ -295,15 +299,15 @@ function buildTypesContent(
 
 declare module '@optimizely/cms-sdk' {
   export interface ContentTypeRegistry {
-${sortedContentTypes.map(key => `    '${key}': string;`).join('\n')}
+${sortedContentTypes.map(key => `    '${q(key)}': string;`).join('\n')}
   }
 
   export interface PropertyGroupRegistry {
-${sortedPropertyGroups.map(key => `    '${key}': string;`).join('\n')}
+${sortedPropertyGroups.map(key => `    '${q(key)}': string;`).join('\n')}
   }
 
   export interface MayContainRegistry {
-${sortedMayContain.map(key => `    '${key}': string;`).join('\n')}
+${sortedMayContain.map(key => `    '${q(key)}': string;`).join('\n')}
   }
 }
 
@@ -315,6 +319,12 @@ export {};
 // Main Entry Point
 // ============================================================================
 
+// Skipping identical writes stops a watch loop when a glob also matches the output.
+async function writeIfChanged(file: string, content: string) {
+  const existing = await fs.readFile(file, 'utf-8').catch(() => null);
+  if (existing !== content) await fs.writeFile(file, content);
+}
+
 /**
  * Main generator function.
  * Scans components, generates registry.ts and global.d.ts files.
@@ -322,7 +332,8 @@ export {};
  */
 export async function generate(root = process.cwd()) {
   // Load config and scan files
-  const [config, files] = await Promise.all([loadConfig(root), scanComponents(root)]);
+  const config = await loadConfig(root);
+  const files = await scanComponents(root, config);
 
   const baseDir = await detectBaseDir(root);
   const registryDir = path.join(root, baseDir);
@@ -333,7 +344,9 @@ export async function generate(root = process.cwd()) {
 
   // Extract property group keys from config
   const propertyGroupKeys = new Set<string>(
-    (config?.propertyGroups || []).map((pg: any) => pg.key as string),
+    (config?.propertyGroups || [])
+      .map((pg: any) => pg.key)
+      .filter((k: unknown): k is string => typeof k === 'string'),
   );
 
   // Generate both file contents
@@ -347,8 +360,8 @@ export async function generate(root = process.cwd()) {
   // Ensure output directory exists and write both files in parallel
   await fs.mkdir(registryDir, { recursive: true });
   await Promise.all([
-    fs.writeFile(registryFile, registryContent),
-    fs.writeFile(path.join(root, 'global.d.ts'), typesContent),
+    writeIfChanged(registryFile, registryContent),
+    writeIfChanged(path.join(root, 'global.d.ts'), typesContent),
   ]);
 
   return { files, baseDir };

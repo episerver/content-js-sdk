@@ -64,6 +64,54 @@ describe('generator', () => {
     });
   });
 
+  describe('loadConfig errors', () => {
+    it('throws on a broken config instead of returning null', async () => {
+      await fs.writeFile(path.join(testRoot, 'optimizely.config.mjs'), 'export default {');
+      await expect(loadConfig(testRoot)).rejects.toThrow();
+    });
+
+    it('sees config edits after the first load', async () => {
+      const configPath = path.join(testRoot, 'optimizely.config.mjs');
+      await fs.writeFile(configPath, `export default { a: 1 };`);
+      await loadConfig(testRoot);
+      await fs.writeFile(configPath, `export default { a: 2 };`);
+      expect(await loadConfig(testRoot)).toEqual({ a: 2 });
+    });
+  });
+
+  describe('multiple exports per file', () => {
+    it('registers every content type and keeps keys tied to their export', async () => {
+      const srcDir = path.join(testRoot, 'src', 'components');
+      await fs.mkdir(srcDir, { recursive: true });
+      await fs.writeFile(
+        path.join(testRoot, 'optimizely.config.mjs'),
+        `export default { components: 'src/components/**/*.ts', propertyGroups: [{ key: "it's" }] };`
+      );
+      await fs.writeFile(
+        path.join(srcDir, 'a.ts'),
+        `export const ArticleContentType = contentType({ baseType: '_page', properties: { x: { type: 'string' } }, key: 'Article' });
+export const NewsContentType = contentType({ baseType: '_component', key: 'News' });
+export const SeoContract = contract({ key: 'Seo' });`
+      );
+
+      await generate(testRoot);
+
+      const registry = await fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
+      expect(registry).toContain('ArticleContentType,');
+      expect(registry).toContain('NewsContentType,');
+      expect(registry).toContain('SeoContract,');
+
+      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
+      expect(types).toContain("'Article': string;");
+      expect(types).toContain("'News': string;");
+      expect(types).toContain("'Seo': string;");
+      expect(types).toContain("'it\\'s': string;");
+      // only the _page type may contain children
+      expect(types.split('MayContainRegistry')[1]).toContain("'Article'");
+      expect(types.split('MayContainRegistry')[1]).not.toContain("'News'");
+    });
+  });
+
   describe('scanComponents', () => {
     it('returns empty array when no config', async () => {
       const files = await scanComponents(testRoot);

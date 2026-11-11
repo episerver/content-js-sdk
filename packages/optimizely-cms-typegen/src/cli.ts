@@ -13,23 +13,23 @@ function logSuccess(files: string[], baseDir: string) {
   );
 }
 
-// Debounce helper to prevent parallel regenerations
+// Debounce, and chain runs so two generations never write files at once.
 let regenerateTimeout: NodeJS.Timeout | null = null;
+let running: Promise<void> = Promise.resolve();
 
-async function regenerate() {
-  if (regenerateTimeout) {
-    clearTimeout(regenerateTimeout);
-  }
+function regenerate() {
+  if (regenerateTimeout) clearTimeout(regenerateTimeout);
 
-  regenerateTimeout = setTimeout(async () => {
-    try {
-      const { files, baseDir } = await generate(root);
-      logSuccess(files, baseDir);
-    } catch (error) {
-      console.error(`${PREFIX} ✗ Generation failed:`, error instanceof Error ? error.message : error);
-    } finally {
-      regenerateTimeout = null;
-    }
+  regenerateTimeout = setTimeout(() => {
+    regenerateTimeout = null;
+    running = running.then(async () => {
+      try {
+        const { files, baseDir } = await generate(root);
+        logSuccess(files, baseDir);
+      } catch (error) {
+        console.error(`${PREFIX} ✗ Generation failed:`, error instanceof Error ? error.message : error);
+      }
+    });
   }, 300);
 }
 
@@ -45,11 +45,11 @@ async function main() {
   if (watchMode) {
     console.log(`${PREFIX} 👀 Watching for changes...`);
 
-    const config = await loadConfig(root);
+    const config = await loadConfig(root).catch(() => null);
     const patterns =
       Array.isArray(config?.components) ?
         config.components
-      : [config.components || 'src/components/**/*.{ts,tsx}'];
+      : [config?.components || 'src/components/**/*.{ts,tsx}'];
 
     const watcher = chokidar.watch([...patterns, 'optimizely.config.mjs'], {
       cwd: root,
