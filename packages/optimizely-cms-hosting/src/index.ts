@@ -1,1 +1,1 @@
-export {};
+export { purgeCdnCache } from './shared/cdn.js';
