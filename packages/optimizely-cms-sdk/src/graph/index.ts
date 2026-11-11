@@ -191,7 +191,9 @@ export class GraphClient {
         }).catch(err => {
           if (err instanceof TypeError || err?.name === 'TimeoutError') {
             const optiErr = new OptimizelyGraphError(
-              'Error when calling `fetch`. Ensure the Graph URL is correct or try again later.',
+              err.name === 'TimeoutError' ?
+                `Error when calling \`fetch\`: no response from Graph within ${this.requestTimeout} ms (\`requestTimeout\`). Try again later or raise the timeout.`
+              : 'Error when calling `fetch`. Ensure the Graph URL is correct or try again later.',
             );
             optiErr.cause = err;
             // Exception is automatically recorded by createSpan wrapper

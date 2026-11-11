@@ -139,7 +139,7 @@ describe('looking up which types are sections', () => {
       ),
     );
     try {
-      await expect(slow.request('query { a }', {})).rejects.toThrow(/Error when calling/);
+      await expect(slow.request('query { a }', {})).rejects.toThrow(/within 20 ms/);
     } finally {
       vi.unstubAllGlobals();
     }
