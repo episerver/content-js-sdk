@@ -12,7 +12,7 @@ export interface ContentSavedEvent {
   editUrl?: string;
   previewUrl: string;
   previewToken: string;
-  /** Where the edit happened: one or the other, only on the editor's token message. */
+  /** Where in a composition the edit happened: one or the other, only on the editor's token message. */
   sectionId?: string;
   nodeIds?: string[];
 }
@@ -60,9 +60,11 @@ const normalizeUrl = (url: string): string => {
   return parsed.toString();
 };
 
-// Only the token message says where the edit happened; the ready message never does
+// The ready message is always the bare save; the token message's extra fields vary by page type
+const READY_KEYS = new Set(['contentLink', 'previewUrl', 'previewToken']);
+
 const isTokenMessage = (event: ContentSavedEvent) =>
-  'sectionId' in event || 'nodeIds' in event;
+  Object.keys(event).some(key => !READY_KEYS.has(key));
 
 const startRetry = (
   { mediaTokenRetry, cmsUrl }: ContentSavedListenerOptions,

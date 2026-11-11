@@ -10,7 +10,7 @@ const EVENT_NAME = 'optimizely:cms:contentSaved';
 const TOKEN_URL = 'http://localhost:3000/about?preview_token=editor';
 const READY_URL = 'http://localhost:3000/about?preview_token=indexer';
 
-const dispatch = (detail: ContentSavedEvent) =>
+const dispatch = (detail: ContentSavedEvent & Record<string, unknown>) =>
   window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail }));
 
 /** The message carrying the editor's token. */
@@ -96,6 +96,29 @@ describe('pairing the two messages of a save', () => {
     readyMessage();
     vi.advanceTimersByTime(50);
 
+    expect(onNavigate).toHaveBeenCalledWith(TOKEN_URL, false);
+  });
+
+  test('a token message from outside a composition pairs without sectionId or nodeIds', () => {
+    const onNavigate = vi.fn();
+    listen({ onNavigate });
+
+    // As captured from the CMS for a plain page property edit
+    dispatch({
+      contentLink: 'content-1',
+      previewUrl: TOKEN_URL,
+      previewToken: 'editor',
+      successful: true,
+      savedContentLink: 'content-1',
+      publishedContentLink: null,
+      properties: [{ name: 'heading', successful: true, validationErrors: null }],
+      validationErrors: [],
+      editUrl: 'https://cms.example.com/ui/CMS/#context=epi.cms.contentdata:///content-1',
+    });
+    readyMessage();
+    vi.advanceTimersByTime(50);
+
+    expect(onNavigate).toHaveBeenCalledTimes(1);
     expect(onNavigate).toHaveBeenCalledWith(TOKEN_URL, false);
   });
 
