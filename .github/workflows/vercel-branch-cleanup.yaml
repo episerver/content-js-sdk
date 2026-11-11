@@ -1,0 +1,42 @@
+name: Vercel Branch Cleanup
+
+# Removes the per-branch preview alias created by deploy-vercel.yaml when a branch is deleted.
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_CLI_VERSION: 65.14.0
+  # Keep in sync with deploy-vercel.yaml.
+  ALIAS_PREFIX: content-js-sdk-sample-git
+  BRANCH_NAME: ${{ github.event.ref }}
+
+on:
+  delete:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Same group as deploy-vercel.yaml, so cleanup waits for a running deploy of the branch.
+  group: vercel-deploy-refs/heads/${{ github.event.ref }}
+  cancel-in-progress: false
+
+jobs:
+  Remove-Branch-Alias:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove branch alias
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # Keep in sync with deploy-vercel.yaml. Subdomains are limited to 63 characters.
+          max_len=$((63 - ${#ALIAS_PREFIX} - 1))
+          branch_slug=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g' | cut -c1-"$max_len" | sed -E 's/^-+|-+$//g')
+          alias_domain="$ALIAS_PREFIX-${branch_slug:-branch}.vercel.app"
+
+          if npx --yes "vercel@$VERCEL_CLI_VERSION" alias rm "$alias_domain" --yes --scope "$VERCEL_ORG_ID"; then
+            echo "Removed $alias_domain"
+          else
+            echo "::notice::Could not remove $alias_domain (the branch may never have been deployed)."
+          fi
