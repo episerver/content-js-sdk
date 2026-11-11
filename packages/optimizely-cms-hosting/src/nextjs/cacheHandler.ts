@@ -49,7 +49,7 @@ export default class CacheHandler implements NextCacheHandler {
     const customTags = tagList.filter(tag => !tag.startsWith(PATH_TAG_PREFIX));
 
     if (customTags.length)
-      log.warn(`Tag revalidation is not supported, ignoring ${customTags.join(', ')}`);
+      log.warn(`Ignoring unsupported tags: ${customTags.join(', ')}`);
     await store.delete(pathTags.map(toPageKey));
   }
 

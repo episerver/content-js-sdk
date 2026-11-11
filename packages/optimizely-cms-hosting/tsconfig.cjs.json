@@ -11,6 +11,7 @@
     "src/**/__test__/**",
     "src/**/*.test.ts",
     "src/**/*.test-d.ts",
-    "src/bin/**"
+    "src/bin/**",
+    "src/astro/**"
   ]
 }

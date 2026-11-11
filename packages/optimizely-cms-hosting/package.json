@@ -47,20 +47,12 @@
       "import": {
         "types": "./dist/esm/astro/index.d.ts",
         "default": "./dist/esm/astro/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/astro/index.d.ts",
-        "default": "./dist/cjs/astro/index.js"
       }
     },
     "./astro/cache-provider": {
       "import": {
         "types": "./dist/esm/astro/cacheProvider.d.ts",
         "default": "./dist/esm/astro/cacheProvider.js"
-      },
-      "require": {
-        "types": "./dist/cjs/astro/cacheProvider.d.ts",
-        "default": "./dist/cjs/astro/cacheProvider.js"
       }
     }
   },

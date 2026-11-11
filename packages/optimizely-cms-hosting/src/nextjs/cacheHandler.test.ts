@@ -76,7 +76,7 @@ describe('CacheHandler', () => {
 
     expect(store.delete).toHaveBeenCalledWith(['/en']);
     expect(console.warn).toHaveBeenCalledWith(
-      '[cms-hosting] Tag revalidation is not supported, ignoring header',
+      '[cms-hosting] Ignoring unsupported tags: header',
     );
   });
 });
