@@ -1,0 +1,81 @@
+import { log } from '../util/general.js';
+import { envGraphGateway, envSiteHostname } from './env.js';
+
+type Webhook = { id: string; request?: { url?: string } };
+
+/** Options for {@link registerWebhook}. */
+export type RegisterWebhookOptions = {
+  /** Path of the route that receives Graph webhooks. Defaults to `/hooks/graph`. */
+  callbackPath?: string;
+};
+
+const REQUEST_TIMEOUT_MS = 10_000;
+
+const createWebhooksApi = (appKey: string, secret: string) => {
+  const endpoint = `${envGraphGateway()}/api/webhooks`;
+  // btoa rather than Buffer, so the module also loads in the Next.js Edge runtime
+  const authorization = `Basic ${btoa(`${appKey}:${secret}`)}`;
+
+  const request = async (path: string, init: RequestInit = {}) => {
+    const requestName = `${init.method ?? 'GET'} /api/webhooks${path}`;
+    const response = await fetch(`${endpoint}${path}`, {
+      ...init,
+      headers: { ...init.headers, Authorization: authorization },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+
+    if (!response.ok) throw new Error(`${requestName} failed (${response.status})`);
+    return response;
+  };
+
+  return {
+    list: async () => (await (await request('')).json()) as Webhook[],
+    remove: (id: string) => request(`/${id}`, { method: 'DELETE' }),
+    create: (url: string, callbackApiKey: string) =>
+      request('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          disabled: false,
+          request: { url, method: 'post', headers: { 'x-api-key': callbackApiKey } },
+          topic: ['*.*'],
+          filters: [{ status: { eq: 'Published' } }],
+        }),
+      }),
+  };
+};
+
+/**
+ * Registers the Optimizely Graph webhook that calls the site on publish, unless
+ * it already exists, and removes duplicates left by instances starting at the
+ * same time. Does nothing when the platform variables are missing, and logs
+ * instead of throwing when Graph cannot be reached.
+ */
+export async function registerWebhook({
+  callbackPath = '/hooks/graph',
+}: RegisterWebhookOptions = {}) {
+  const appKey = process.env.OPTIMIZELY_GRAPH_APP_KEY;
+  const secret = process.env.OPTIMIZELY_GRAPH_SECRET;
+  const callbackApiKey = process.env.OPTIMIZELY_GRAPH_CALLBACK_APIKEY;
+  const hostname = envSiteHostname();
+
+  if (!appKey || !secret || !callbackApiKey || !hostname) return;
+
+  try {
+    const webhooks = createWebhooksApi(appKey, secret);
+    const url = `https://${hostname}${callbackPath}`;
+    const matching = (await webhooks.list()).filter(it => it.request?.url === url);
+    // Every instance sorts the same way, so they all keep the same webhook
+    const [kept, ...duplicates] = matching.sort((a, b) => b.id.localeCompare(a.id));
+
+    if (!kept) {
+      await webhooks.create(url, callbackApiKey);
+      log.info(`Registered the Graph webhook for ${url}`);
+    } else if (duplicates.length) {
+      await Promise.all(duplicates.map(it => webhooks.remove(it.id)));
+      log.info(`Removed ${duplicates.length} duplicate Graph webhooks for ${url}`);
+    }
+  } catch (error) {
+    log.warn('Graph webhook registration failed', error);
+  }
+}
