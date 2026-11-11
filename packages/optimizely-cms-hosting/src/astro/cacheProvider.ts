@@ -58,7 +58,7 @@ const toKey = (path: string) => path.replace(/\/$/, '') || '/';
 const hasQuery = (url: URL) =>
   [...url.searchParams.keys()].some(key => {
     const smallKey = key.toLowerCase();
-    !smallKey.startsWith('utm_') && !IGNORED_QUERY_PARAMS.has(smallKey);
+    return !smallKey.startsWith('utm_') && !IGNORED_QUERY_PARAMS.has(smallKey);
   });
 
 const readDirective = (header: string, directive: string) =>
