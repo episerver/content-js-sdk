@@ -188,6 +188,17 @@ describe('createCacheStore with Redis', () => {
     expect(cluster.get).toHaveBeenCalledWith('nextjs:slot1:/en');
   });
 
+  it('keeps Buffers and Maps through Redis', async () => {
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+    const value = { rscData: Buffer.from('rsc'), segmentData: new Map([['/a', 1]]) };
+
+    await store.set('/en', value);
+    cluster.get.mockResolvedValue(cluster.set.mock.calls[0][1]);
+
+    expect(await store.get('/en')).toEqual(value);
+  });
+
   it('deletes each key with its own DEL', async () => {
     const { createCacheStore } = await loadStore();
 

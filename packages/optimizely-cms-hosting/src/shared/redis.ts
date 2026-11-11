@@ -6,7 +6,7 @@ import {
 } from '@redis/entraid';
 import { isIP } from 'node:net';
 import { createCluster } from 'redis';
-import { log, withTimeout } from '../util/general.js';
+import { deserialize, log, serialize, withTimeout } from '../util/general.js';
 
 type Cluster = ReturnType<typeof createAzureCluster>;
 type MemoryEntry = { value: string; size: number; expiresAt: number };
@@ -157,12 +157,12 @@ export function createCacheStore(namespace: CacheNamespace) {
       const stored = await withRedis(redis => redis.get(key));
       const raw = stored === UNAVAILABLE ? readMemory(key) : stored;
 
-      return raw ? (JSON.parse(raw) as T) : null;
+      return raw ? deserialize<T>(raw) : null;
     },
 
     async set(path: string, value: unknown, ttlSeconds?: number) {
       const key = toKey(path);
-      const serialized = JSON.stringify(value);
+      const serialized = serialize(value);
       const written = await withRedis(redis =>
         redis.set(key, serialized, ttlSeconds ? { EX: ttlSeconds } : undefined),
       );
