@@ -249,6 +249,7 @@ The workflow:
 
 ## Related
 
+- [Refresh pages on publish](./refresh-pages-on-publish.md)
 - [CLI commands](../reference/cli.md)
 - [Quick start](../learn/quick-start.md)
 - [Live preview](../learn/live-preview.md)
