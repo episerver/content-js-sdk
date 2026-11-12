@@ -10,6 +10,13 @@ import { deserialize, log, serialize, withTimeout } from '../util/general.js';
 
 type Cluster = ReturnType<typeof createAzureCluster>;
 type MemoryEntry = { value: string; size: number; expiresAt: number };
+type StoreState = {
+  cluster: Cluster | null;
+  connecting: Promise<Cluster | null> | null;
+  retryAfter: number;
+  memory: Map<string, MemoryEntry>;
+  memoryBytes: number;
+};
 
 /** Cache owner, so Next.js and Astro entries never share a key. */
 export type CacheNamespace = 'nextjs' | 'astro';
@@ -21,12 +28,18 @@ const UNAVAILABLE = Symbol('unavailable');
 // Next.js's default cacheMaxMemorySize, which apps using this store set to 0
 const MEMORY_LIMIT_BYTES = 50 * 1024 * 1024;
 
-const memory = new Map<string, MemoryEntry>();
-let memoryBytes = 0;
+const STATE_KEY = Symbol.for('@optimizely/cms-hosting/redis');
 
-let cluster: Cluster | null = null;
-let connecting: Promise<Cluster | null> | null = null;
-let retryAfter = 0;
+// Next.js loads the cache handler and bundles the webhook route separately, each with its own
+// copy of this module; one state per process keeps them on the same connection and memory
+const state: StoreState = ((globalThis as Record<symbol, StoreState>)[STATE_KEY] ??= {
+  cluster: null,
+  connecting: null,
+  retryAfter: 0,
+  memory: new Map(),
+  memoryBytes: 0,
+});
+const { memory } = state;
 
 // CONNECTION
 
@@ -72,22 +85,22 @@ const connect = async (url: string): Promise<Cluster | null> => {
     return client;
   } catch (error) {
     client?.destroy();
-    retryAfter = Date.now() + RETRY_AFTER_MS;
+    state.retryAfter = Date.now() + RETRY_AFTER_MS;
     log.warn('Redis unavailable, using the in-memory cache', error);
     return null;
   }
 };
 
 const getRedis = async () => {
-  if (cluster) return cluster;
+  if (state.cluster) return state.cluster;
 
   const url = process.env.REDIS_URL;
-  if (!url || Date.now() < retryAfter) return null;
+  if (!url || Date.now() < state.retryAfter) return null;
 
-  connecting ??= connect(url)
-    .then(client => (cluster = client))
-    .finally(() => (connecting = null));
-  return connecting;
+  state.connecting ??= connect(url)
+    .then(client => (state.cluster = client))
+    .finally(() => (state.connecting = null));
+  return state.connecting;
 };
 
 const withRedis = async <T>(operation: (redis: Cluster) => Promise<T>) => {
@@ -105,7 +118,7 @@ const withRedis = async <T>(operation: (redis: Cluster) => Promise<T>) => {
 // MEMORY FALLBACK
 
 const removeMemory = (key: string) => {
-  memoryBytes -= memory.get(key)?.size ?? 0;
+  state.memoryBytes -= memory.get(key)?.size ?? 0;
   memory.delete(key);
 };
 
@@ -118,11 +131,13 @@ const readMemory = (key: string) => {
     return null;
   }
 
-  // Move to the end: eviction in writeMemory removes the Map's first (oldest-inserted) key
+  // Move to the end: eviction in writeMemory removes the oldest-inserted key first
   memory.delete(key);
   memory.set(key, entry);
   return entry.value;
 };
+
+const oldestKey = () => memory.keys().next().value!;
 
 const writeMemory = (key: string, value: string, ttlSeconds?: number) => {
   const size = Buffer.byteLength(value);
@@ -135,9 +150,9 @@ const writeMemory = (key: string, value: string, ttlSeconds?: number) => {
     size,
     expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : Infinity,
   });
-  memoryBytes += size;
+  state.memoryBytes += size;
 
-  while (memoryBytes > MEMORY_LIMIT_BYTES) removeMemory(memory.keys().next().value!);
+  while (state.memoryBytes > MEMORY_LIMIT_BYTES) removeMemory(oldestKey());
 };
 
 // STORE

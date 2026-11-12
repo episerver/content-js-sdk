@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 type RequestContext = Parameters<NonNullable<CacheProvider['onRequest']>>[0];
 
 const CACHE_FOR_A_MINUTE = 'max-age=60, stale-while-revalidate=120';
+const STORE_STATE = Symbol.for('@optimizely/cms-hosting/redis');
 
 const loadProvider = async () => {
   const { default: factory } = await import('./cacheProvider.js');
@@ -33,6 +34,8 @@ const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
 beforeEach(() => {
   vi.resetModules();
+  // The store keeps its state on globalThis, which resetModules does not reset
+  delete (globalThis as Record<symbol, unknown>)[STORE_STATE];
   vi.stubEnv('REDIS_URL', undefined);
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });

@@ -19,6 +19,8 @@ vi.mock('@redis/entraid', () => ({
   EntraIdCredentialsProviderFactory: { createForDefaultAzureCredential: vi.fn() },
 }));
 
+const STORE_STATE = Symbol.for('@optimizely/cms-hosting/redis');
+
 const loadStore = async () => {
   const { createCacheStore } = await import('./redis.js');
   const { createCluster } = await import('redis');
@@ -32,6 +34,8 @@ const loadStore = async () => {
 
 beforeEach(() => {
   vi.resetModules();
+  // The store keeps its state on globalThis, which resetModules does not reset
+  delete (globalThis as Record<symbol, unknown>)[STORE_STATE];
   vi.resetAllMocks();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -123,6 +127,18 @@ describe('createCacheStore without Redis', () => {
     expect(await store.get('/a')).toBeNull();
     expect(await store.get('/b')).toBeNull();
     expect(await astro.get('/a')).toBe(3);
+  });
+
+  it('shares entries between copies of the module, as Next.js bundles create', async () => {
+    const first = (await loadStore()).createCacheStore('nextjs');
+    vi.resetModules();
+    const second = (await loadStore()).createCacheStore('nextjs');
+
+    await first.set('/en', 'value');
+    expect(await second.get('/en')).toBe('value');
+
+    await second.clear();
+    expect(await first.get('/en')).toBeNull();
   });
 
   it('deletes entries', async () => {
@@ -259,6 +275,20 @@ describe('createCacheStore with Redis', () => {
       'astro:slot[1]:/c',
       'astro:slot[1]:/d',
     ]);
+  });
+
+  it('shares one connection between copies of the module', async () => {
+    const first = await loadStore();
+    await first.createCacheStore('nextjs').get('/en');
+    vi.resetModules();
+    const second = await loadStore();
+    await second.createCacheStore('nextjs').get('/en');
+
+    // Each distinct mock once: vitest may keep the same `redis` mock across resetModules
+    const mocks = new Set([first.createCluster, second.createCluster]);
+    const connections = [...mocks].reduce((sum, mock) => sum + mock.mock.calls.length, 0);
+
+    expect(connections).toBe(1);
   });
 
   it('connects once for concurrent requests', async () => {
