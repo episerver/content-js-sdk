@@ -7,6 +7,7 @@ export const ImageComponent = contentType({
   compositionBehaviors: ['elementEnabled'],
   displayName: 'Image',
   description: 'Image',
+  icon: 'image',
   properties: {
     image: {
       type: 'contentReference',

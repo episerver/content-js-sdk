@@ -17,6 +17,7 @@ export const ImageCardComponent = contentType({
   compositionBehaviors: ['elementEnabled'],
   displayName: 'Image Card',
   description: 'Card with support for image and call to action',
+  icon: 'image',
   properties: {
     image: {
       type: 'contentReference',

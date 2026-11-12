@@ -7,6 +7,7 @@ export const HorizontalRulerComponent = contentType({
   compositionBehaviors: ['elementEnabled'],
   displayName: 'Horizontal Ruler',
   description: 'Horizontal ruler with labels.',
+  icon: 'section',
   properties: {
     topLabel: {
       type: 'string',

@@ -7,6 +7,7 @@ export const VideoComponent = contentType({
   compositionBehaviors: ['elementEnabled'],
   displayName: 'Video',
   description: 'Video',
+  icon: 'video',
   properties: {
     video: {
       type: 'contentReference',

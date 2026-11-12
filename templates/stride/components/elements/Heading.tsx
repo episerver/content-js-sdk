@@ -8,6 +8,7 @@ export const HeadingComponent = contentType({
   compositionBehaviors: ['elementEnabled'],
   displayName: 'Heading',
   description: 'Heading element with an optional icon.',
+  icon: 'heading',
   properties: {
     heading: {
       type: 'string',
@@ -27,7 +28,7 @@ export const HeadingDisplayTemplate = displayTemplate({
   contentType: 'HeadingElement',
   settings: {
     level: {
-      editor: 'select',
+      editor: 'variant',
       displayName: 'Level',
       sortOrder: 1,
       choices: {

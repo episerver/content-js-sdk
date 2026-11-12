@@ -33,7 +33,7 @@ export const ButtonDisplayTemplate = displayTemplate({
   contentType: 'ButtonElement',
   settings: {
     variant: {
-      editor: 'select',
+      editor: 'variant',
       sortOrder: 1,
       displayName: 'Variant',
       choices: {
