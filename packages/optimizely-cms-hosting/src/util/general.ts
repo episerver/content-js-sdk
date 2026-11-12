@@ -40,6 +40,17 @@ export const serialize = (value: unknown) => JSON.stringify(value, replacer);
 export const deserialize = <T>(raw: string) => JSON.parse(raw, reviver) as T;
 
 /**
+ * Compares a secret in time that does not depend on where the strings differ.
+ * Plain JS rather than node:crypto, so it also runs in the Next.js Edge runtime.
+ */
+export const secretsMatch = (provided: string, expected: string) =>
+  provided.length === expected.length &&
+  Array.from(
+    { length: expected.length },
+    (_, index) => provided.charCodeAt(index) ^ expected.charCodeAt(index),
+  ).reduce((difference, bits) => difference | bits, 0) === 0;
+
+/**
  * Rejects with "`operation` timed out after Ns" when `promise` has not settled
  * within `ms`. Does not keep the process alive.
  */

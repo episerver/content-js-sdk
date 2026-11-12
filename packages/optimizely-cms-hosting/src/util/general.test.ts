@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { deserialize, log, serialize, withTimeout } from './general.js';
+import { deserialize, log, secretsMatch, serialize, withTimeout } from './general.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -29,6 +29,19 @@ describe('serialize / deserialize', () => {
 
     expect(serialize(value)).toBe(JSON.stringify(value));
     expect(deserialize(serialize(value))).toEqual(value);
+  });
+});
+
+describe('secretsMatch', () => {
+  it.each([
+    ['callback-key', 'callback-key', true],
+    ['callback-kez', 'callback-key', false],
+    ['callback-key-2', 'callback-key', false],
+    ['', 'callback-key', false],
+    ['key-🔑', 'key-🔑', true],
+    ['key-🔒', 'key-🔑', false],
+  ])('compares %s with %s as %s', (provided, expected, matches) => {
+    expect(secretsMatch(provided, expected)).toBe(matches);
   });
 });
 

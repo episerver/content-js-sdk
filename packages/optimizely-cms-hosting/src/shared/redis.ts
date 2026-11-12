@@ -142,6 +142,8 @@ const writeMemory = (key: string, value: string, ttlSeconds?: number) => {
 
 // STORE
 
+const escapeGlob = (text: string) => text.replace(/[*?[\]\\]/g, '\\$&');
+
 /**
  * Creates a JSON cache store on the platform's Redis cluster, with keys
  * namespaced by framework and deployment slot. Falls back to process memory
@@ -149,7 +151,8 @@ const writeMemory = (key: string, value: string, ttlSeconds?: number) => {
  */
 export function createCacheStore(namespace: CacheNamespace) {
   const deploymentId = process.env.OPTIMIZELY_DXP_DEPLOYMENT_ID ?? 'default';
-  const toKey = (path: string) => `${namespace}:${deploymentId}:${path}`;
+  const prefix = `${namespace}:${deploymentId}:`;
+  const toKey = (path: string) => `${prefix}${path}`;
 
   return {
     async get<T>(path: string): Promise<T | null> {
@@ -176,6 +179,24 @@ export function createCacheStore(namespace: CacheNamespace) {
       await withRedis(redis => Promise.all(keys.map(key => redis.del(key))));
       // Also when Redis is up, so entries written during an earlier outage cannot resurface
       keys.forEach(removeMemory);
+    },
+
+    /** Deletes every entry of this namespace and deployment slot. */
+    async clear() {
+      const pattern = `${escapeGlob(prefix)}*`;
+
+      // SCAN only sees the keys of the node it runs on, so it runs on every master
+      await withRedis(redis =>
+        Promise.all(
+          redis.masters.map(async master => {
+            const client = await redis.nodeClient(master);
+
+            for await (const keys of client.scanIterator({ MATCH: pattern, COUNT: 500 }))
+              await Promise.all(keys.map(key => redis.del(key)));
+          }),
+        ),
+      );
+      [...memory.keys()].filter(key => key.startsWith(prefix)).forEach(removeMemory);
     },
   };
 }

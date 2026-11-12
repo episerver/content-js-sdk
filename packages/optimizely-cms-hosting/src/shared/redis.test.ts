@@ -7,6 +7,8 @@ const cluster = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
   del: vi.fn(),
+  masters: [{ id: 'm1' }, { id: 'm2' }],
+  nodeClient: vi.fn(),
 }));
 
 vi.mock('redis', () => ({ createCluster: vi.fn(() => cluster) }));
@@ -108,6 +110,21 @@ describe('createCacheStore without Redis', () => {
     expect(await store.get('/small')).toBe('value');
   });
 
+  it('clears only the entries of its namespace and slot', async () => {
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+    const astro = createCacheStore('astro');
+
+    await store.set('/a', 1);
+    await store.set('/b', 2);
+    await astro.set('/a', 3);
+    await store.clear();
+
+    expect(await store.get('/a')).toBeNull();
+    expect(await store.get('/b')).toBeNull();
+    expect(await astro.get('/a')).toBe(3);
+  });
+
   it('deletes entries', async () => {
     const { createCacheStore } = await loadStore();
     const store = createCacheStore('astro');
@@ -207,6 +224,41 @@ describe('createCacheStore with Redis', () => {
     expect(cluster.del).toHaveBeenCalledTimes(2);
     expect(cluster.del).toHaveBeenCalledWith('astro:slot1:/a');
     expect(cluster.del).toHaveBeenCalledWith('astro:slot1:/b');
+  });
+
+  it('clears the slot by scanning every master', async () => {
+    vi.stubEnv('OPTIMIZELY_DXP_DEPLOYMENT_ID', 'slot[1]');
+    const scanned = {
+      m1: [['astro:slot[1]:/a', 'astro:slot[1]:/b'], ['astro:slot[1]:/c']],
+      m2: [['astro:slot[1]:/d']],
+    };
+    const scanIterator = vi.fn();
+    cluster.nodeClient.mockImplementation(async ({ id }: { id: 'm1' | 'm2' }) => ({
+      scanIterator: (options: unknown) => {
+        scanIterator(id, options);
+        return (async function* () {
+          yield* scanned[id];
+        })();
+      },
+    }));
+    const { createCacheStore } = await loadStore();
+
+    await createCacheStore('astro').clear();
+
+    expect(scanIterator).toHaveBeenCalledWith('m1', {
+      MATCH: 'astro:slot\\[1\\]:*',
+      COUNT: 500,
+    });
+    expect(scanIterator).toHaveBeenCalledWith('m2', {
+      MATCH: 'astro:slot\\[1\\]:*',
+      COUNT: 500,
+    });
+    expect(cluster.del.mock.calls.flat().sort()).toEqual([
+      'astro:slot[1]:/a',
+      'astro:slot[1]:/b',
+      'astro:slot[1]:/c',
+      'astro:slot[1]:/d',
+    ]);
   });
 
   it('connects once for concurrent requests', async () => {

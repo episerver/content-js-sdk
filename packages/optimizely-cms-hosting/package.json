@@ -43,6 +43,16 @@
         "default": "./dist/cjs/nextjs/cacheHandler.js"
       }
     },
+    "./nextjs/route": {
+      "import": {
+        "types": "./dist/esm/nextjs/route.d.ts",
+        "default": "./dist/esm/nextjs/route.js"
+      },
+      "require": {
+        "types": "./dist/cjs/nextjs/route.d.ts",
+        "default": "./dist/cjs/nextjs/route.js"
+      }
+    },
     "./astro": {
       "import": {
         "types": "./dist/esm/astro/index.d.ts",
@@ -53,6 +63,12 @@
       "import": {
         "types": "./dist/esm/astro/cacheProvider.d.ts",
         "default": "./dist/esm/astro/cacheProvider.js"
+      }
+    },
+    "./astro/route": {
+      "import": {
+        "types": "./dist/esm/astro/route.d.ts",
+        "default": "./dist/esm/astro/route.js"
       }
     }
   },

@@ -1,0 +1,99 @@
+import { log, secretsMatch } from '../util/general.js';
+import { getSiteHostnames, purgeCdnCache } from './cdn.js';
+import { resolveDocPath } from './graph.js';
+
+type WebhookPayload = {
+  type?: { subject?: string; action?: string };
+  data?: { docId?: string; items?: Record<string, string> };
+};
+
+/** How a framework drops pages from its origin cache. */
+export type OriginCache = {
+  /** Removes one path. Must have taken effect when the promise resolves. */
+  invalidate(path: string): Promise<void>;
+  /** Removes every page of the deployment. */
+  clear(): Promise<void>;
+};
+
+// REQUEST
+
+const isAuthorized = (request: Request) => {
+  const provided = request.headers.get('x-api-key');
+  const expected = process.env.OPTIMIZELY_GRAPH_CALLBACK_APIKEY;
+
+  return Boolean(provided && expected && secretsMatch(provided, expected));
+};
+
+// Read as text: Graph sends the JSON body as text/plain
+const parsePayload = async (request: Request) => {
+  try {
+    const payload: unknown = JSON.parse(await request.text());
+    return payload && typeof payload === 'object' && !Array.isArray(payload) ?
+        (payload as WebhookPayload)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+// INVALIDATION
+
+// The CDN caches a page separately with and without the trailing slash
+const toPurgeUrls = (hostnames: string[], paths: string[]) =>
+  hostnames.flatMap(hostname =>
+    paths
+      .flatMap(path => (path === '/' ? [path] : [path, `${path}/`]))
+      .map(path => `https://${hostname}${path}`),
+  );
+
+const purge = (urls?: string[]) =>
+  purgeCdnCache(urls).catch(error => log.error('CDN purge failed', error));
+
+const handleDocChange = async (docId: string, cache: OriginCache) => {
+  const path = await resolveDocPath(docId).catch(error => {
+    log.error(`Resolving ${docId} failed`, error);
+    return undefined;
+  });
+
+  // Unpublished content may have no URL left in Graph; the home page still changes
+  if (!path) log.warn(`No URL found for ${docId}, refreshing only the home page`);
+
+  // The home page commonly lists other pages, so every change refreshes it
+  const paths = [...new Set([path ?? '/', '/'])];
+
+  // Origin first: a CDN purged earlier could fetch the old page again
+  await Promise.all(paths.map(it => cache.invalidate(it)));
+  await purge(toPurgeUrls(await getSiteHostnames(), paths));
+};
+
+// Graph does not say which documents a bulk deletion removed
+const handleBulkDeletion = async (cache: OriginCache) => {
+  await cache.clear();
+  await purge();
+};
+
+const hasDeletions = (payload: WebhookPayload) =>
+  Object.values(payload.data?.items ?? {}).includes('deleted');
+
+/**
+ * Handles an Optimizely Graph webhook: checks the `x-api-key` header, then
+ * drops the changed page and the home page from the origin cache and the CDN.
+ * A bulk deletion clears the whole deployment from the origin cache.
+ */
+export async function handleGraphWebhook(request: Request, cache: OriginCache) {
+  if (!isAuthorized(request))
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const payload = await parsePayload(request);
+  if (!payload) return Response.json({ error: 'Invalid JSON payload' }, { status: 400 });
+
+  const { subject, action } = payload.type ?? {};
+  const docId = payload.data?.docId;
+
+  if (subject === 'doc' && (action === 'updated' || action === 'expired') && docId)
+    await handleDocChange(docId, cache);
+  else if (subject === 'bulk' && action === 'completed' && hasDeletions(payload))
+    await handleBulkDeletion(cache);
+
+  return Response.json({ received: true });
+}
