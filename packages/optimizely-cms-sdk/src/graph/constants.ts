@@ -10,6 +10,9 @@ export const GRAPH_PATH = '/content/v2';
 /**
  * Default User-Agent string for HTTP requests to Graph API.
  */
+/** Milliseconds a Graph request may take before it is aborted. */
+export const DEFAULT_REQUEST_TIMEOUT = 30000;
+
 export const DEFAULT_USER_AGENT = `OptimizelySDK/${SDK_VERSION} (JS)`;
 
 /**

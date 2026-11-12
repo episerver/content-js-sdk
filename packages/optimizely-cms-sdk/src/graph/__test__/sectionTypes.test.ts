@@ -81,6 +81,70 @@ describe('looking up which types are sections', () => {
     expect(schemaLookups()).toHaveLength(1);
   });
 
+  test('a hung lookup does not stall the fetch', async () => {
+    vi.useFakeTimers();
+    try {
+      initContentTypeRegistry([Plain, Section]);
+      refreshCache();
+      const hung = new GraphClient('hung-key');
+      vi.spyOn(hung, 'request').mockImplementation(async (query: string) => {
+        if (query.includes('GetSectionTypes')) return new Promise(() => {});
+        if (query.includes('GetContentMetadata')) {
+          return { _Content: { item: { _metadata: { types: ['PlainPage'] } } } };
+        }
+        return { _Content: { item: { __typename: 'PlainPage' } } };
+      });
+
+      const done = hung.getContent({ key: 'a' });
+      await vi.advanceTimersByTimeAsync(3000);
+      await expect(done).resolves.toBeDefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a slow lookup does not make a direct section fetch ask for composition', async () => {
+    vi.useFakeTimers();
+    try {
+      initContentTypeRegistry([Plain, Section]);
+      refreshCache();
+      const slow = new GraphClient('slow-lookup-key');
+      const spy = vi.spyOn(slow, 'request').mockImplementation(async (query: string) => {
+        if (query.includes('GetSectionTypes')) return new Promise(() => {});
+        if (query.includes('GetContentMetadata')) {
+          return { _Content: { item: { _metadata: { types: ['MySection'] } } } };
+        }
+        return { _Content: { item: { __typename: 'MySection' } } };
+      });
+
+      const done = slow.getContent({ key: 'a' });
+      await vi.advanceTimersByTimeAsync(3000);
+      await done;
+
+      const contentQuery = spy.mock.calls
+        .map(call => String(call[0]))
+        .find(q => !q.includes('GetSectionTypes') && !q.includes('GetContentMetadata'))!;
+      expect(contentQuery).toContain('fragment MySection on');
+      expect(contentQuery).not.toContain('composition');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('request aborts after requestTimeout', async () => {
+    const slow = new GraphClient('slow-key', { requestTimeout: 20 });
+    vi.stubGlobal('fetch', (_url: any, init: any) =>
+      new Promise((_, reject) =>
+        init.signal.addEventListener('abort', () => reject(init.signal.reason)),
+      ),
+    );
+    try {
+      await expect(slow.request('query { a }', {})).rejects.toThrow(/within 20 ms/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   // The lookup is a schema question, not a content one. Failing it must not stop
   // a page rendering — the query just falls back to the conservative default.
   test('a failed lookup does not break the fetch', async () => {

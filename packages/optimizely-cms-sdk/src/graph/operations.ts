@@ -64,6 +64,9 @@ import {
  * than on the client because `getClient()` returns a new client per call, and
  * the in-flight promise is shared so concurrent first requests make one lookup.
  */
+/** How long a content fetch waits for the shared lookup before assuming the default. */
+const SECTION_TYPES_WAIT_MS = 3000;
+
 const sectionTypesByEndpoint = new Map<
   string,
   Promise<ReadonlySet<string> | undefined>
@@ -107,6 +110,19 @@ function getSectionTypes(
 
   sectionTypesByEndpoint.set(endpoint, pending);
   return pending;
+}
+
+/** Like {@linkcode getSectionTypes}, but a slow lookup falls back to `undefined` for this call only. */
+function getSectionTypesBounded(
+  context: GraphClientContext,
+): Promise<ReadonlySet<string> | undefined> {
+  let timer: ReturnType<typeof setTimeout>;
+  const fallback = new Promise<undefined>(resolve => {
+    timer = setTimeout(() => resolve(undefined), SECTION_TYPES_WAIT_MS);
+  });
+  return Promise.race([getSectionTypes(context), fallback]).finally(() =>
+    clearTimeout(timer),
+  );
 }
 
 // FORMS
@@ -712,7 +728,7 @@ async function getContentMetaData(
       queryOptions.slot,
       queryOptions.stored,
     ),
-    getSectionTypes(context),
+    getSectionTypesBounded(context),
   ]);
 
   const { contentTypeName, damDetected, taxonomyDetected, formsOnPage } =
