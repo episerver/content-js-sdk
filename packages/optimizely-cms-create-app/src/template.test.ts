@@ -121,14 +121,15 @@ describe('copyTemplate', () => {
     expect(pkg).not.toHaveProperty('devDependencies');
   });
 
-  it('sets the project name and renames .env.template to .env', async () => {
+  it('sets the project name and creates both .env and .env.example from .env.template', async () => {
     stubRegistry({});
 
     const pkg = await copyFixture();
 
     expect(pkg.name).toBe('my-app');
-    expect(fs.readFileSync(path.join(targetDir, '.env'), 'utf-8')).toBe('KEY=value\n');
-    expect(fs.existsSync(path.join(targetDir, '.env.template'))).toBe(false);
+    expect(readTarget('.env')).toBe('KEY=value\n');
+    expect(readTarget('.env.example')).toBe('KEY=value\n');
+    expect(targetExists('.env.template')).toBe(false);
   });
 
   it('throws for an unknown template', async () => {
@@ -185,16 +186,27 @@ describe('copyTemplate', () => {
 
   it.each([
     [['.env.in', '.env.example', 'env.example', '.env.template'], '.env.in'],
-    [['.env.example', 'env.example', '.env.template'], '.env.example'],
     [['env.example', '.env.template'], 'env.example'],
-  ])('renames the first env candidate of %j', async (candidates, winner) => {
+  ])('creates .env and .env.example from the first env candidate of %j', async (candidates, winner) => {
     candidates.forEach(it => writeFixtureFile(it, `FROM=${it}\n`));
     stubRegistry({});
 
     await copyFixture();
 
     expect(readTarget('.env')).toBe(`FROM=${winner}\n`);
+    expect(readTarget('.env.example')).toBe(`FROM=${winner}\n`);
     expect(targetExists(winner)).toBe(false);
+  });
+
+  it('keeps .env.example in place when it is the winning candidate', async () => {
+    writeFixtureFile('.env.example', 'FROM=.env.example\n');
+    writeFixtureFile('.env.template', 'FROM=.env.template\n');
+    stubRegistry({});
+
+    await copyFixture();
+
+    expect(readTarget('.env')).toBe('FROM=.env.example\n');
+    expect(readTarget('.env.example')).toBe('FROM=.env.example\n');
   });
 
   it('looks up the latest versions on the npm registry with a timeout signal', async () => {
