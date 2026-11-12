@@ -1,0 +1,128 @@
+name: Vercel Deployment
+
+# Pushes to main deploy to production. Manual runs ("Run workflow" -> "Use workflow from")
+# deploy the selected branch: main goes to production, any other branch becomes a Vercel
+# preview deployment aliased to a stable per-branch URL, leaving production untouched.
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_CLI_VERSION: 65.14.0
+  PRODUCTION_URL: https://content-js-sdk-sample-optimizely-sandbox.vercel.app
+  # "-git-" keeps branch aliases from colliding with the production or per-deployment URLs.
+  # Keep in sync with vercel-branch-cleanup.yaml.
+  ALIAS_PREFIX: content-js-sdk-sample-git
+  BRANCH_NAME: ${{ github.ref_name }}
+  DEPLOY_TARGET: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: vercel-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  Deploy:
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'Vercel production' || 'Vercel preview environment' }}
+      url: ${{ steps.branch-alias.outputs.site_url || steps.vercel-deployment.outputs.site_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Vercel CLI
+        run: pnpm install --global "vercel@$VERCEL_CLI_VERSION"
+
+      - name: Install monorepo dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Optimizely SDK packages
+        run: pnpm build
+
+      - name: Pull Vercel Environment Information
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          branch_args=()
+          if [[ "$DEPLOY_TARGET" == "preview" ]]; then
+            branch_args=(--git-branch="$BRANCH_NAME")
+          fi
+          vercel pull --yes --environment="$DEPLOY_TARGET" "${branch_args[@]}"
+
+      - name: Build Project Artifacts (Vercel)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          OPTIMIZELY_GRAPH_SINGLE_KEY: ${{ secrets.OPTIMIZELY_GRAPH_SINGLE_KEY }}
+          OPTIMIZELY_CMS_URL: ${{ secrets.OPTIMIZELY_CMS_URL }}
+          OPTIMIZELY_GRAPH_GATEWAY: ${{ secrets.OPTIMIZELY_GRAPH_GATEWAY }}
+        run: vercel build --environment="$DEPLOY_TARGET"
+
+      - name: Deploy Project Artifacts to Vercel
+        id: vercel-deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          deployment_url=$(vercel deploy --prebuilt --environment="$DEPLOY_TARGET" \
+            --meta githubDeployment=1 \
+            --meta githubCommitRef="$BRANCH_NAME")
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+          if [[ "$DEPLOY_TARGET" == "production" ]]; then
+            echo "site_url=$PRODUCTION_URL" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Vercel only creates branch URLs for Git-integration deployments, so give CLI
+      # preview deployments a stable <prefix>-<branch>.vercel.app alias instead.
+      - name: Assign branch alias (preview only)
+        id: branch-alias
+        if: env.DEPLOY_TARGET == 'preview'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DEPLOYMENT_URL: ${{ steps.vercel-deployment.outputs.deployment_url }}
+        run: |
+          # Keep in sync with vercel-branch-cleanup.yaml. Subdomains are limited to 63 characters.
+          max_len=$((63 - ${#ALIAS_PREFIX} - 1))
+          branch_slug=$(printf '%s' "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g' | cut -c1-"$max_len" | sed -E 's/^-+|-+$//g')
+          alias_domain="$ALIAS_PREFIX-${branch_slug:-branch}.vercel.app"
+
+          vercel alias set "$DEPLOYMENT_URL" "$alias_domain" --scope "$VERCEL_ORG_ID"
+          echo "site_url=https://$alias_domain" >> "$GITHUB_OUTPUT"
+
+      - name: Write deployment summary
+        env:
+          DEPLOYMENT_URL: ${{ steps.vercel-deployment.outputs.deployment_url }}
+          SITE_URL: ${{ steps.branch-alias.outputs.site_url || steps.vercel-deployment.outputs.site_url }}
+        run: |
+          {
+            if [[ "$DEPLOY_TARGET" == "production" ]]; then
+              echo "### Production deployment of \`$BRANCH_NAME\`"
+              echo ""
+              echo "- Production URL: $SITE_URL"
+            else
+              echo "### Preview deployment of \`$BRANCH_NAME\`"
+              echo ""
+              echo "- Branch URL: $SITE_URL"
+            fi
+            echo "- Deployment URL: $DEPLOYMENT_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
