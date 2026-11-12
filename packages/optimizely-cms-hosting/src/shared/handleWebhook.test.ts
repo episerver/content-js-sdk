@@ -31,6 +31,7 @@ let cache: OriginCache;
 beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv('OPTIMIZELY_GRAPH_CALLBACK_APIKEY', 'callback-key');
+  vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -99,6 +100,19 @@ describe('handleGraphWebhook', () => {
       ]);
     },
   );
+
+  it('logs the webhook and what it refreshed', async () => {
+    mocks.resolveDocPath.mockResolvedValue('/en/about');
+
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
+
+    expect(console.info).toHaveBeenCalledWith(
+      '[cms-hosting] Received the Graph webhook doc.updated for abc_en_Published',
+    );
+    expect(console.info).toHaveBeenCalledWith(
+      '[cms-hosting] Refreshed /en/about and / in the origin cache',
+    );
+  });
 
   it('purges the paths on every site hostname', async () => {
     mocks.resolveDocPath.mockResolvedValue('/en');

@@ -63,6 +63,9 @@ describe('registerWebhook', () => {
     await registerWebhook();
 
     expect(calls()).toEqual([`GET ${ENDPOINT}`]);
+    expect(console.info).toHaveBeenCalledWith(
+      `[cms-hosting] The Graph webhook for ${CALLBACK_URL} is already registered`,
+    );
   });
 
   it('keeps the webhook with the highest id and deletes the duplicates', async () => {
@@ -101,6 +104,9 @@ describe('registerWebhook', () => {
     await registerWebhook();
 
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(console.info).toHaveBeenCalledWith(
+      `[cms-hosting] Graph webhook not registered, missing ${variable}`,
+    );
   });
 
   it('logs instead of throwing when Graph fails', async () => {

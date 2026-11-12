@@ -61,6 +61,19 @@ describe('createCacheStore without Redis', () => {
     expect(createCluster).not.toHaveBeenCalled();
   });
 
+  it('warns once that REDIS_URL is not set', async () => {
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+
+    await store.set('/a', 1);
+    await store.get('/a');
+
+    expect(console.warn).toHaveBeenCalledOnce();
+    expect(console.warn).toHaveBeenCalledWith(
+      '[cms-hosting] REDIS_URL is not set, using the in-memory cache',
+    );
+  });
+
   it('keeps frameworks and deployment slots apart', async () => {
     const { createCacheStore } = await loadStore();
     const nextjs = createCacheStore('nextjs');
@@ -181,6 +194,17 @@ describe('createCacheStore with Redis', () => {
       }),
     );
     expect(ManagedIdentityCredential).toHaveBeenCalledWith({ clientId: 'client-id' });
+  });
+
+  it('logs the connection', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const { createCacheStore } = await loadStore();
+
+    await createCacheStore('nextjs').get('/en');
+
+    expect(info).toHaveBeenCalledWith(
+      '[cms-hosting] Connected to Redis at myredis.redis.azure.net:10000',
+    );
   });
 
   it('maps advertised node IPs back to the Redis host', async () => {

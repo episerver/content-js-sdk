@@ -63,12 +63,14 @@ const handleDocChange = async (docId: string, cache: OriginCache) => {
 
   // Origin first: a CDN purged earlier could fetch the old page again
   await Promise.all(paths.map(it => cache.invalidate(it)));
+  log.info(`Refreshed ${paths.join(' and ')} in the origin cache`);
   await purge(toPurgeUrls(await getSiteHostnames(), paths));
 };
 
 // Graph does not say which documents a bulk deletion removed
 const handleBulkDeletion = async (cache: OriginCache) => {
   await cache.clear();
+  log.info('Cleared the origin cache after a bulk deletion');
   await purge();
 };
 
@@ -89,6 +91,10 @@ export async function handleGraphWebhook(request: Request, cache: OriginCache) {
 
   const { subject, action } = payload.type ?? {};
   const docId = payload.data?.docId;
+
+  log.info(
+    `Received the Graph webhook ${subject}.${action}${docId ? ` for ${docId}` : ''}`,
+  );
 
   if (subject === 'doc' && (action === 'updated' || action === 'expired') && docId)
     await handleDocChange(docId, cache);

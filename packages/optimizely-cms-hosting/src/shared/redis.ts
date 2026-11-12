@@ -14,6 +14,7 @@ type StoreState = {
   cluster: Cluster | null;
   connecting: Promise<Cluster | null> | null;
   retryAfter: number;
+  reportedMissingUrl: boolean;
   memory: Map<string, MemoryEntry>;
   memoryBytes: number;
 };
@@ -36,6 +37,7 @@ const state: StoreState = ((globalThis as Record<symbol, StoreState>)[STATE_KEY]
   cluster: null,
   connecting: null,
   retryAfter: 0,
+  reportedMissingUrl: false,
   memory: new Map(),
   memoryBytes: 0,
 });
@@ -82,6 +84,7 @@ const connect = async (url: string): Promise<Cluster | null> => {
     );
 
     await withTimeout(client.connect(), CONNECT_TIMEOUT_MS, 'Redis connection');
+    log.info(`Connected to Redis at ${host}:${port}`);
     return client;
   } catch (error) {
     client?.destroy();
@@ -95,6 +98,11 @@ const getRedis = async () => {
   if (state.cluster) return state.cluster;
 
   const url = process.env.REDIS_URL;
+
+  if (!url && !state.reportedMissingUrl) {
+    state.reportedMissingUrl = true;
+    log.warn('REDIS_URL is not set, using the in-memory cache');
+  }
   if (!url || Date.now() < state.retryAfter) return null;
 
   state.connecting ??= connect(url)

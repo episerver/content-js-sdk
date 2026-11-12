@@ -11,6 +11,11 @@ export type RegisterWebhookOptions = {
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
+const missingVariables = (variables: Record<string, string | undefined>) =>
+  Object.entries(variables)
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
 const createWebhooksApi = (appKey: string, secret: string) => {
   const endpoint = `${envGraphGateway()}/api/webhooks`;
   // btoa rather than Buffer, so the module also loads in the Next.js Edge runtime
@@ -48,8 +53,8 @@ const createWebhooksApi = (appKey: string, secret: string) => {
 /**
  * Registers the Optimizely Graph webhook that calls the site on publish, unless
  * it already exists, and removes duplicates left by instances starting at the
- * same time. Does nothing when the platform variables are missing, and logs
- * instead of throwing when Graph cannot be reached.
+ * same time. Logs and does nothing when the platform variables are missing, and
+ * logs instead of throwing when Graph cannot be reached.
  */
 export async function registerWebhook({
   callbackPath = '/hooks/graph',
@@ -59,7 +64,17 @@ export async function registerWebhook({
   const callbackApiKey = process.env.OPTIMIZELY_GRAPH_CALLBACK_APIKEY;
   const hostname = envSiteHostname();
 
-  if (!appKey || !secret || !callbackApiKey || !hostname) return;
+  if (!appKey || !secret || !callbackApiKey || !hostname) {
+    const missing = missingVariables({
+      OPTIMIZELY_GRAPH_APP_KEY: appKey,
+      OPTIMIZELY_GRAPH_SECRET: secret,
+      OPTIMIZELY_GRAPH_CALLBACK_APIKEY: callbackApiKey,
+      OPTIMIZELY_SITE_HOSTNAME: hostname,
+    });
+
+    log.info(`Graph webhook not registered, missing ${missing.join(', ')}`);
+    return;
+  }
 
   try {
     const webhooks = createWebhooksApi(appKey, secret);
@@ -74,6 +89,8 @@ export async function registerWebhook({
     } else if (duplicates.length) {
       await Promise.all(duplicates.map(it => webhooks.remove(it.id)));
       log.info(`Removed ${duplicates.length} duplicate Graph webhooks for ${url}`);
+    } else {
+      log.info(`The Graph webhook for ${url} is already registered`);
     }
   } catch (error) {
     log.warn('Graph webhook registration failed', error);
