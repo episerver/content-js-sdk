@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import chokidar from 'chokidar';
-import { generate, loadConfig } from './generator.js';
+import { generate, loadConfig, PLATFORM_GLOB } from './generator.js';
 
 const PREFIX = '[cms-typegen]';
 const root = process.cwd();
@@ -51,7 +51,8 @@ async function main() {
         config.components
       : [config?.components || 'src/components/**/*.{ts,tsx}'];
 
-    const watcher = chokidar.watch([...patterns, 'optimizely.config.mjs'], {
+    const watcher = chokidar.watch([...patterns, 'optimizely.config.mjs', PLATFORM_GLOB], {
+      ignored: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts', '**/registry.ts'],
       cwd: root,
       ignoreInitial: true,
     });

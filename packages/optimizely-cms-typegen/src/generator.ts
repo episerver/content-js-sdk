@@ -77,6 +77,31 @@ export async function scanComponents(
   return files;
 }
 
+// ============================================================================
+// Platform Detection
+// ============================================================================
+
+export const PLATFORM_GLOB = '**/*.{ts,tsx,js,jsx,mjs}';
+const PLATFORM_IGNORE = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts'];
+// `config({ ... platform: 'paas' })`, allowing one level of nested braces before `platform`.
+const PLATFORM_RE =
+  /\bconfig\s*\(\s*\{(?:[^{}]|\{[^{}]*\})*?\bplatform\s*:\s*(['"])(saas|paas)\1/;
+
+/**
+ * Find the literal `platform` passed to the SDK's `config()` in app source.
+ * Returns undefined when absent (the SDK then defaults to SaaS).
+ * shortcut: first literal match wins and `platform: someVariable` is not seen; upgrade to an AST parse if that shows up.
+ */
+export async function detectPlatform(root: string): Promise<'saas' | 'paas' | undefined> {
+  const files = await fg(PLATFORM_GLOB, { cwd: root, absolute: true, ignore: PLATFORM_IGNORE });
+  for (const file of files) {
+    const content = await fs.readFile(file, 'utf-8');
+    if (!content.includes('@optimizely/cms-sdk')) continue;
+    const platform = content.match(PLATFORM_RE)?.[2];
+    if (platform) return platform as 'saas' | 'paas';
+  }
+}
+
 /**
  * Detect base directory (src, app, or root).
  * Checks existence of src/ and app/ directories.
@@ -289,6 +314,7 @@ function buildTypesContent(
   contentTypeKeys: Set<string>,
   propertyGroupKeys: Set<string>,
   mayContainKeys: Set<string>,
+  platform?: 'saas' | 'paas',
 ): string {
   const sortedContentTypes = Array.from(contentTypeKeys).sort();
   const sortedPropertyGroups = Array.from(propertyGroupKeys).sort();
@@ -311,6 +337,17 @@ ${sortedMayContain.map(key => `    '${q(key)}': string;`).join('\n')}
   }
 }
 
+${
+    platform ?
+      `
+declare global {
+  interface OptimizelyCmsRegister {
+    platform: '${platform}';
+  }
+}
+`
+    : ''
+  }
 export {};
 `;
 }
@@ -355,6 +392,7 @@ export async function generate(root = process.cwd()) {
     data.contentTypeKeys,
     propertyGroupKeys,
     data.mayContainKeys,
+    await detectPlatform(root),
   );
 
   // Ensure output directory exists and write both files in parallel
