@@ -1060,7 +1060,7 @@ describe('GraphClient.getItems() with GraphReference', () => {
   });
 });
 
-describe('GraphClient.getItems() sort option', () => {
+describe('GraphClient.getItems() orderBy', () => {
   let client: GraphClient;
   let mockRequest: any;
 
@@ -1069,7 +1069,7 @@ describe('GraphClient.getItems() sort option', () => {
     mockRequest = vi.spyOn(client, 'request');
   });
 
-  test('includes orderBy in query when sort option is provided with sortOrder ASC', async () => {
+  test('includes orderBy with metadata sortOrder ASC', async () => {
     mockRequest.mockResolvedValueOnce({
       _Content: {
         item: {
@@ -1086,13 +1086,13 @@ describe('GraphClient.getItems() sort option', () => {
       },
     });
 
-    await client.getItems({ key: 'parent-key' }, { sort: { field: 'sortOrder', direction: 'asc' } });
+    await client.getItems({ key: 'parent-key' }, { orderBy: { _metadata: { sortOrder: 'ASC' } } });
 
     const query = mockRequest.mock.calls[0][0] as string;
     expect(query).toContain('orderBy: { _metadata: { sortOrder: ASC } }');
   });
 
-  test('includes orderBy in query when sort option is provided with sortOrder DESC', async () => {
+  test('includes orderBy with metadata sortOrder DESC', async () => {
     mockRequest.mockResolvedValueOnce({
       _Content: {
         item: {
@@ -1109,13 +1109,13 @@ describe('GraphClient.getItems() sort option', () => {
       },
     });
 
-    await client.getItems({ key: 'parent-key' }, { sort: { field: 'sortOrder', direction: 'desc' } });
+    await client.getItems({ key: 'parent-key' }, { orderBy: { _metadata: { sortOrder: 'DESC' } } });
 
     const query = mockRequest.mock.calls[0][0] as string;
     expect(query).toContain('orderBy: { _metadata: { sortOrder: DESC } }');
   });
 
-  test('does not include orderBy when no sort option is provided', async () => {
+  test('does not include orderBy when not provided', async () => {
     mockRequest.mockResolvedValueOnce({
       _Content: {
         item: {
@@ -1135,7 +1135,7 @@ describe('GraphClient.getItems() sort option', () => {
     expect(query).not.toContain('orderBy');
   });
 
-  test('passes custom sort field through to query', async () => {
+  test('supports multiple metadata fields', async () => {
     mockRequest.mockResolvedValueOnce({
       _Content: {
         item: {
@@ -1149,13 +1149,38 @@ describe('GraphClient.getItems() sort option', () => {
       },
     });
 
-    await client.getItems({ key: 'parent-key' }, { sort: { field: 'lastModified', direction: 'desc' } });
+    await client.getItems({ key: 'parent-key' }, {
+      orderBy: { _metadata: { published: 'DESC', displayName: 'ASC' } },
+    });
 
     const query = mockRequest.mock.calls[0][0] as string;
-    expect(query).toContain('orderBy: { _metadata: { lastModified: DESC } }');
+    expect(query).toContain('_metadata: { published: DESC, displayName: ASC }');
   });
 
-  test('moves items with null sort field values to end of results', async () => {
+  test('supports content-type property fields at top level', async () => {
+    mockRequest.mockResolvedValueOnce({
+      _Content: {
+        item: {
+          _id: 'test-id',
+          _link: {
+            _Page: {
+              items: [{ _metadata: { key: 'a' } }],
+            },
+          },
+        },
+      },
+    });
+
+    await client.getItems({ key: 'parent-key' }, {
+      orderBy: { heading: 'DESC', _metadata: { published: 'ASC' } },
+    });
+
+    const query = mockRequest.mock.calls[0][0] as string;
+    expect(query).toContain('heading: DESC');
+    expect(query).toContain('_metadata: { published: ASC }');
+  });
+
+  test('moves items with null metadata sort field values to end', async () => {
     mockRequest.mockResolvedValueOnce({
       _Content: {
         item: {
@@ -1176,7 +1201,7 @@ describe('GraphClient.getItems() sort option', () => {
 
     const result = await client.getItems(
       { key: 'parent-key' },
-      { sort: { field: 'sortOrder', direction: 'asc' } },
+      { orderBy: { _metadata: { sortOrder: 'ASC' } } },
     );
 
     expect(result).toHaveLength(4);
@@ -1184,55 +1209,6 @@ describe('GraphClient.getItems() sort option', () => {
     expect(result![1]._metadata?.key).toBe('c');
     expect(result![2]._metadata?.key).toBe('a');
     expect(result![3]._metadata?.key).toBe('d');
-  });
-
-  test('includes displayName orderBy in query', async () => {
-    mockRequest.mockResolvedValueOnce({
-      _Content: {
-        item: {
-          _id: 'test-id',
-          _link: {
-            _Page: {
-              items: [{ _metadata: { key: 'a', displayName: 'Alpha' } }],
-            },
-          },
-        },
-      },
-    });
-
-    await client.getItems({ key: 'parent-key' }, { sort: { field: 'displayName', direction: 'asc' } });
-
-    const query = mockRequest.mock.calls[0][0] as string;
-    expect(query).toContain('orderBy: { _metadata: { displayName: ASC } }');
-  });
-
-  test('moves items with null displayName to end of results', async () => {
-    mockRequest.mockResolvedValueOnce({
-      _Content: {
-        item: {
-          _id: 'test-id',
-          _link: {
-            _Page: {
-              items: [
-                { _metadata: { key: 'a', displayName: null } },
-                { _metadata: { key: 'b', displayName: 'Beta' } },
-                { _metadata: { key: 'c', displayName: 'Alpha' } },
-              ],
-            },
-          },
-        },
-      },
-    });
-
-    const result = await client.getItems(
-      { key: 'parent-key' },
-      { sort: { field: 'displayName', direction: 'asc' } },
-    );
-
-    expect(result).toHaveLength(3);
-    expect(result![0]._metadata?.key).toBe('b');
-    expect(result![1]._metadata?.key).toBe('c');
-    expect(result![2]._metadata?.key).toBe('a');
   });
 
   test('includes published orderBy in query', async () => {
@@ -1249,7 +1225,7 @@ describe('GraphClient.getItems() sort option', () => {
       },
     });
 
-    await client.getItems({ key: 'parent-key' }, { sort: { field: 'published', direction: 'desc' } });
+    await client.getItems({ key: 'parent-key' }, { orderBy: { _metadata: { published: 'DESC' } } });
 
     const query = mockRequest.mock.calls[0][0] as string;
     expect(query).toContain('orderBy: { _metadata: { published: DESC } }');
