@@ -71,11 +71,11 @@ export async function MainMenu() {
 }
 ```
 
-To match the order editors set in the CMS, pass `sort` to `getItems()`:
+To match the order editors set in the CMS, pass `orderBy` to `getItems()`:
 
 ```ts
 const children = (await getClient().getItems('/en/', {
-  sort: { field: 'sortOrder', direction: 'asc' },
+  orderBy: { _metadata: { sortOrder: 'ASC' } },
 })) ?? [];
 ```
 
