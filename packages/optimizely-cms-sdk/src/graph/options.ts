@@ -1,4 +1,5 @@
 import { GraphVariationInput } from './filters.js';
+import type { InferredContentMetadata } from '../infer.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
@@ -324,8 +325,31 @@ export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
 };
 
+export type OrderDirection = 'ASC' | 'DESC';
+
+/** Metadata fields available for ordering, derived from the Graph response schema. */
+export type MetadataOrderField = keyof InferredContentMetadata & string;
+
+/** Order-by clause for metadata fields: `{ _metadata: { published: 'DESC' } }`. */
+export type MetadataOrderBy = {
+  _metadata?: { [K in MetadataOrderField]?: OrderDirection };
+};
+
+/**
+ * Order-by clause matching Graph's `orderBy` format.
+ *
+ * Metadata fields go under `_metadata`, content-type properties at the top level:
+ * ```ts
+ * { heading: 'DESC', _metadata: { published: 'ASC' } }
+ * ```
+ */
+export type OrderBy = MetadataOrderBy & {
+  [field: string]: OrderDirection | { [nested: string]: OrderDirection } | undefined;
+};
+
 export type GraphGetLinksOptions = GraphQueryOptions & {
   locales?: string[];
+  orderBy?: OrderBy;
 };
 
 export type GraphGetItemOptions = GraphQueryOptions & {

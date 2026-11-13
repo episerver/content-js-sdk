@@ -71,8 +71,13 @@ export async function MainMenu() {
 }
 ```
 
-To match the order editors set in the CMS, sort the children by `_metadata.sortOrder`
-before rendering them.
+To match the order editors set in the CMS, pass `orderBy` to `getItems()`:
+
+```ts
+const children = (await getClient().getItems('/en/', {
+  orderBy: { _metadata: { sortOrder: 'ASC' } },
+})) ?? [];
+```
 
 ## Share one helper between both
 

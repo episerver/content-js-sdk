@@ -36,6 +36,7 @@ import {
   type GraphReference,
   type GraphSlot,
   type PreviewParams,
+  type OrderBy,
   type TaxonomyMode,
   type TaxonomyTerm,
   type ResolvedQueryOptions,
@@ -1090,18 +1091,56 @@ export async function getPath(
   return sortedKeys.map(key => linkMap.get(key)).filter(item => item !== undefined);
 }
 
+function buildOrderByClause(orderBy: OrderBy): string {
+  const parts: string[] = [];
+
+  for (const [key, value] of Object.entries(orderBy)) {
+    if (value === undefined) continue;
+    if (typeof value === 'string') {
+      parts.push(`${key}: ${value}`);
+    } else {
+      const nested = Object.entries(value)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ');
+      if (nested) parts.push(`${key}: { ${nested} }`);
+    }
+  }
+
+  return `{ ${parts.join(', ')} }`;
+}
+
+function resolveOrderBy(options?: GraphGetLinksOptions): OrderBy | undefined {
+  return options?.orderBy;
+}
+
+function firstOrderField(orderBy: OrderBy): string | undefined {
+  if (orderBy._metadata) {
+    const first = Object.keys(orderBy._metadata)[0];
+    if (first) return first;
+  }
+  for (const [key, value] of Object.entries(orderBy)) {
+    if (key === '_metadata' || value === undefined) continue;
+    if (typeof value === 'string') return key;
+  }
+  return undefined;
+}
+
 /** The children of a page. See `GraphClient.getItems`. */
 export async function getItems(
   context: GraphClientContext,
   reference: string | GraphReference,
   options?: GraphGetLinksOptions,
 ) {
+  const orderBy = resolveOrderBy(options);
+
   const queryOptions = resolveQueryOptions(context, options);
   const { filter, locales } = linksFilter(reference, queryOptions.host, options);
 
   const variables = { ...filter.variables, locale: toLocaleEnumValues(locales) };
   const publishedOnly = queryOptions.publishedOnly && !filter.variables.version;
-  const query = getItemsQuery('GetItems', filter.filterShape, publishedOnly);
+  const orderByClause = orderBy ? buildOrderByClause(orderBy) : undefined;
+  const query = getItemsQuery('GetItems', filter.filterShape, publishedOnly, orderByClause);
 
   const data = (await context.request(
     query,
@@ -1116,5 +1155,23 @@ export async function getItems(
     return null;
   }
 
-  return data?._Content?.item._link._Page.items;
+  const items = data?._Content?.item._link._Page.items;
+  if (!orderBy || !items) {
+    return items;
+  }
+
+  const sortField = firstOrderField(orderBy);
+  if (!sortField) return items;
+
+  const isMetadataField = sortField in (orderBy._metadata ?? {});
+  const getValue = (item: (typeof items)[number]) => {
+    if (isMetadataField) {
+      return (item._metadata as Record<string, unknown> | undefined)?.[sortField];
+    }
+    return (item as Record<string, unknown>)[sortField];
+  };
+
+  const withValue = items.filter(item => getValue(item) != null);
+  const withoutValue = items.filter(item => getValue(item) == null);
+  return [...withValue, ...withoutValue];
 }

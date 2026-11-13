@@ -15,6 +15,7 @@ optimizely-cms-cli <command> [arguments] [flags]
 | [`config pull`](#config-pull)                                         | Generates TypeScript files, or JSON, from the CMS        |
 | [`config delete`](#config-delete)                                     | Deletes the content types defined in your config file    |
 | [`content delete`](#content-delete)                                   | Deletes one content type                                 |
+| [`generate client`](#generate-client)                                 | Generates a typed GraphQL client from your content types |
 | [`danger delete-all-content-types`](#danger-delete-all-content-types) | Deletes every user-defined content type in the CMS       |
 | [`deploy`](#deploy)                                                   | Packages the project and deploys it to front-end hosting |
 
@@ -434,6 +435,94 @@ optimizely-cms-cli content delete <key> [--host <url>]
 ```sh
 optimizely-cms-cli content delete Article
 ```
+
+## `generate client`
+
+Scans the content types declared through your config file and generates a typed GraphQL
+client. Each content type becomes a namespace with methods whose return types and `orderBy`
+fields are inferred from the content type definition.
+
+```sh
+optimizely-cms-cli generate client [config] [--output <path>] [--filter <baseType>]
+```
+
+### Reference
+
+#### Arguments
+
+- `config` (optional) — the path to the config file. Defaults to `./optimizely.config.mjs`.
+
+#### Flags
+
+| Flag              | Short | Default          | Description                                                        |
+| ----------------- | ----- | ---------------- | ------------------------------------------------------------------ |
+| `--output <path>` | `-o`  | `./lib/client.ts`| The output file path for the generated client                      |
+| `--filter <type>` | `-f`  |                  | Only include content types with this baseType (e.g. `_page`)       |
+
+#### What gets generated
+
+The generated file exports a `getTypedClient()` function that wraps `getClient()` with
+typed namespaces. Each namespace has `getContentByPath`, `getContent`, `getItems` and
+`getPath` methods with strongly-typed return values. The `orderBy` option in `getItems`
+and `getPath` accepts content-type properties at the top level and metadata fields under
+`_metadata`, with autocomplete for both.
+
+```ts
+// Generated file (lib/client.ts)
+import { getClient, createClient } from '@optimizely/cms-sdk';
+import { NewsPage } from '../components/pages/News';
+import { StandardPage } from '../components/pages/Standard';
+
+export function getTypedClient() {
+  return createClient(getClient(), {
+    news_page: NewsPage,
+    standard_page: StandardPage,
+  });
+}
+```
+
+The generated client also exposes a `.graph` property for direct access to the underlying
+`GraphClient`. See [Typed client](./graph-client.md#typed-client) for the full API.
+
+### Usage
+
+#### Generating the typed client
+
+```sh
+optimizely-cms-cli generate client
+```
+
+```text
+✔ Found 17 content types
+✔ Generated typed client at ./lib/client.ts
+  standard_page → StandardPage (components/pages/Standard.tsx)
+  news_page → NewsPage (components/pages/News.tsx)
+  ...
+```
+
+#### Generating only page types
+
+```sh
+optimizely-cms-cli generate client --filter _page
+```
+
+#### Using a custom output path
+
+```sh
+optimizely-cms-cli generate client --output ./src/generated/client.ts
+```
+
+#### Adding a script to package.json
+
+```json
+{
+  "scripts": {
+    "generate:client": "optimizely-cms-cli generate client"
+  }
+}
+```
+
+Then run `npm run generate:client` after adding or changing content types.
 
 ## `danger delete-all-content-types`
 
