@@ -1,14 +1,13 @@
 import { GraphClient } from '@optimizely/cms-sdk';
 import { envGraphGateway } from './env.js';
 
-type PathResponse = {
-  _Content?: { item?: { _metadata?: { url?: { default?: string | null } } } };
-};
+type Urls = { default?: string | null; hierarchical?: string | null };
+type PathResponse = { _Content?: { item?: { _metadata?: { url?: Urls } } } };
 
 const PATH_QUERY = `
-query ResolveDocPath($id: String, $locale: Locales) {
+query ResolveDocPaths($id: String, $locale: Locales) {
   _Content(ids: [$id], locale: [$locale]) {
-    item { _metadata { url { default } } }
+    item { _metadata { url { default hierarchical } } }
   }
 }`;
 
@@ -27,10 +26,11 @@ const toPath = (url: string) => {
 };
 
 /**
- * Resolves the `docId` of a Graph webhook to the URL path of that content, or
- * `undefined` when Graph has no URL for it.
+ * Resolves the `docId` of a Graph webhook to the URL paths of that content:
+ * its default URL and, when different, its hierarchical one. Empty when Graph
+ * has no URL for it.
  */
-export async function resolveDocPath(docId: string): Promise<string | undefined> {
+export async function resolveDocPaths(docId: string): Promise<string[]> {
   const singleKey = process.env.OPTIMIZELY_GRAPH_SINGLE_KEY;
   if (!singleKey) throw new Error('OPTIMIZELY_GRAPH_SINGLE_KEY is not set');
 
@@ -42,7 +42,11 @@ export async function resolveDocPath(docId: string): Promise<string | undefined>
     undefined,
     false,
   );
-  const url = data?._Content?.item?._metadata?.url?.default;
+  const urls = data?._Content?.item?._metadata?.url;
+  // With a simple address set, url.default is that address and the page also lives at url.hierarchical
+  const paths = [urls?.default, urls?.hierarchical]
+    .filter((it): it is string => Boolean(it))
+    .map(toPath);
 
-  return url ? toPath(url) : undefined;
+  return [...new Set(paths)];
 }

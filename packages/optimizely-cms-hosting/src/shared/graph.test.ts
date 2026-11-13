@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveDocPath } from './graph.js';
+import { resolveDocPaths } from './graph.js';
 
 const graph = vi.hoisted(() => ({ constructor: vi.fn(), request: vi.fn() }));
 
@@ -10,9 +10,9 @@ vi.mock('@optimizely/cms-sdk', () => ({
   }),
 }));
 
-const respondWithUrl = (url: string | null) =>
+const respondWithUrls = (url: string | null, hierarchical: string | null = url) =>
   graph.request.mockResolvedValue({
-    _Content: { item: { _metadata: { url: { default: url } } } },
+    _Content: { item: { _metadata: { url: { default: url, hierarchical } } } },
   });
 
 beforeEach(() => {
@@ -23,31 +23,37 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllEnvs());
 
-describe('resolveDocPath', () => {
+describe('resolveDocPaths', () => {
   it('queries Graph uncached with the id and locale from the docId', async () => {
-    respondWithUrl('/en/about/');
+    respondWithUrls('/en/about/');
 
     expect(
-      await resolveDocPath('3f2b1c4d-aaaa-bbbb-cccc-1234567890ab_en_Published'),
-    ).toBe('/en/about');
+      await resolveDocPaths('3f2b1c4d-aaaa-bbbb-cccc-1234567890ab_en_Published'),
+    ).toEqual(['/en/about']);
     expect(graph.constructor).toHaveBeenCalledWith('single-key', {
       graphUrl: 'https://cg.optimizely.com',
     });
     expect(graph.request).toHaveBeenCalledWith(
-      expect.stringContaining('_Content(ids: [$id], locale: [$locale])'),
+      expect.stringContaining('url { default hierarchical }'),
       { id: '3f2b1c4daaaabbbbcccc1234567890ab', locale: 'en' },
       undefined,
       false,
     );
   });
 
+  it('returns both the simple address and the hierarchical URL', async () => {
+    respondWithUrls('/about', '/en/about/');
+
+    expect(await resolveDocPaths('abc_en_Published')).toEqual(['/about', '/en/about']);
+  });
+
   it.each([
     ['zh_Hans', 'zh_Hans'],
     ['zh-Hans', 'zh_Hans'],
   ])('keeps locale %s as the Graph locale %s', async (docLocale, locale) => {
-    respondWithUrl('/zh/');
+    respondWithUrls('/zh/');
 
-    await resolveDocPath(`abc_${docLocale}_Published`);
+    await resolveDocPaths(`abc_${docLocale}_Published`);
 
     expect(graph.request.mock.calls[0][1]).toEqual({ id: 'abc', locale });
   });
@@ -57,21 +63,21 @@ describe('resolveDocPath', () => {
     ['/', '/'],
     ['https://www.mysite.com/', '/'],
   ])('turns %s into the path %s', async (url, path) => {
-    respondWithUrl(url);
+    respondWithUrls(url);
 
-    expect(await resolveDocPath('abc_en_Published')).toBe(path);
+    expect(await resolveDocPaths('abc_en_Published')).toEqual([path]);
   });
 
-  it('returns undefined when Graph has no URL', async () => {
-    respondWithUrl(null);
+  it('returns no paths when Graph has no URL', async () => {
+    respondWithUrls(null);
 
-    expect(await resolveDocPath('abc_en_Published')).toBeUndefined();
+    expect(await resolveDocPaths('abc_en_Published')).toEqual([]);
   });
 
   it('throws without a single key', async () => {
     vi.stubEnv('OPTIMIZELY_GRAPH_SINGLE_KEY', undefined);
 
-    await expect(resolveDocPath('abc_en_Published')).rejects.toThrow(
+    await expect(resolveDocPaths('abc_en_Published')).rejects.toThrow(
       'OPTIMIZELY_GRAPH_SINGLE_KEY is not set',
     );
   });

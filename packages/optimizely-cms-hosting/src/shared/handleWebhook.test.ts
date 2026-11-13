@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleGraphWebhook, type OriginCache } from './handleWebhook.js';
 
 const mocks = vi.hoisted(() => ({
-  resolveDocPath: vi.fn(),
+  resolveDocPaths: vi.fn(),
   purgeCdnCache: vi.fn(),
   getSiteHostnames: vi.fn(),
 }));
 
-vi.mock('./graph.js', () => ({ resolveDocPath: mocks.resolveDocPath }));
+vi.mock('./graph.js', () => ({ resolveDocPaths: mocks.resolveDocPaths }));
 vi.mock('./cdn.js', () => ({
   purgeCdnCache: mocks.purgeCdnCache,
   getSiteHostnames: mocks.getSiteHostnames,
@@ -53,10 +53,10 @@ afterEach(() => {
 
 describe('handleGraphWebhook', () => {
   it.each([
-    ['a missing key', null],
-    ['a wrong key', 'wrong-key'],
-    ['a key of another length', 'callback-key-2'],
-  ])('rejects %s with 401', async (_, apiKey) => {
+    ['a missing key', null, 'no x-api-key header'],
+    ['a wrong key', 'wrong-key', 'wrong x-api-key'],
+    ['a key of another length', 'callback-key-2', 'wrong x-api-key'],
+  ])('rejects %s with 401 and logs why', async (_, apiKey, reason) => {
     const response = await handleGraphWebhook(
       webhook(docEvent('updated'), apiKey),
       cache,
@@ -64,6 +64,9 @@ describe('handleGraphWebhook', () => {
 
     expect(response.status).toBe(401);
     expect(cache.invalidate).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(
+      `[cms-hosting] Rejected a Graph webhook: ${reason}`,
+    );
   });
 
   it('rejects every request when no callback key is configured', async () => {
@@ -72,23 +75,29 @@ describe('handleGraphWebhook', () => {
     const response = await handleGraphWebhook(webhook(docEvent('updated'), ''), cache);
 
     expect(response.status).toBe(401);
+    expect(console.warn).toHaveBeenCalledWith(
+      '[cms-hosting] Rejected a Graph webhook: OPTIMIZELY_GRAPH_CALLBACK_APIKEY is not set',
+    );
   });
 
   it.each(['not json', '[1]', 'null'])('rejects the body %s with 400', async body => {
     const response = await handleGraphWebhook(webhook(body), cache);
 
     expect(response.status).toBe(400);
+    expect(console.warn).toHaveBeenCalledWith(
+      '[cms-hosting] Rejected a Graph webhook: the body is not a JSON object',
+    );
   });
 
   it.each(['updated', 'expired'])(
     'refreshes the page and the home page on doc.%s, origin first',
     async action => {
-      mocks.resolveDocPath.mockResolvedValue('/en/about');
+      mocks.resolveDocPaths.mockResolvedValue(['/en/about']);
 
       const response = await handleGraphWebhook(webhook(docEvent(action)), cache);
 
       expect(await response.json()).toEqual({ received: true });
-      expect(mocks.resolveDocPath).toHaveBeenCalledWith('abc_en_Published');
+      expect(mocks.resolveDocPaths).toHaveBeenCalledWith('abc_en_Published');
       expect(events).toEqual([
         'invalidate /en/about',
         'invalidate /',
@@ -102,7 +111,7 @@ describe('handleGraphWebhook', () => {
   );
 
   it('logs the webhook and what it refreshed', async () => {
-    mocks.resolveDocPath.mockResolvedValue('/en/about');
+    mocks.resolveDocPaths.mockResolvedValue(['/en/about']);
 
     await handleGraphWebhook(webhook(docEvent('updated')), cache);
 
@@ -114,8 +123,20 @@ describe('handleGraphWebhook', () => {
     );
   });
 
+  it('refreshes both URLs of a page with a simple address', async () => {
+    mocks.resolveDocPaths.mockResolvedValue(['/about', '/en/about']);
+
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
+
+    expect(events.filter(it => it.startsWith('invalidate'))).toEqual([
+      'invalidate /about',
+      'invalidate /en/about',
+      'invalidate /',
+    ]);
+  });
+
   it('purges the paths on every site hostname', async () => {
-    mocks.resolveDocPath.mockResolvedValue('/en');
+    mocks.resolveDocPaths.mockResolvedValue(['/en']);
     mocks.getSiteHostnames.mockResolvedValue(['www.mysite.com', 'mysite.dxcloud.test']);
 
     await handleGraphWebhook(webhook(docEvent('updated')), cache);
@@ -131,10 +152,10 @@ describe('handleGraphWebhook', () => {
   });
 
   it.each([
-    ['has no URL', () => mocks.resolveDocPath.mockResolvedValue(undefined)],
+    ['has no URL', () => mocks.resolveDocPaths.mockResolvedValue([])],
     [
       'cannot be resolved',
-      () => mocks.resolveDocPath.mockRejectedValue(new Error('down')),
+      () => mocks.resolveDocPaths.mockRejectedValue(new Error('down')),
     ],
   ])('refreshes only the home page when the content %s', async (_, arrange) => {
     arrange();
@@ -146,7 +167,7 @@ describe('handleGraphWebhook', () => {
   });
 
   it('answers 200 when the CDN purge fails', async () => {
-    mocks.resolveDocPath.mockResolvedValue('/en');
+    mocks.resolveDocPaths.mockResolvedValue(['/en']);
     mocks.purgeCdnCache.mockRejectedValue(new Error('403'));
 
     const response = await handleGraphWebhook(webhook(docEvent('updated')), cache);

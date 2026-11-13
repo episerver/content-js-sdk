@@ -1,6 +1,6 @@
 import { log, secretsMatch } from '../util/general.js';
 import { getSiteHostnames, purgeCdnCache } from './cdn.js';
-import { resolveDocPath } from './graph.js';
+import { resolveDocPaths } from './graph.js';
 
 type WebhookPayload = {
   type?: { subject?: string; action?: string };
@@ -17,11 +17,15 @@ export type OriginCache = {
 
 // REQUEST
 
-const isAuthorized = (request: Request) => {
+// Why the request is not from Graph, or undefined when it is
+const authorizationProblem = (request: Request) => {
   const provided = request.headers.get('x-api-key');
   const expected = process.env.OPTIMIZELY_GRAPH_CALLBACK_APIKEY;
 
-  return Boolean(provided && expected && secretsMatch(provided, expected));
+  if (!expected) return 'OPTIMIZELY_GRAPH_CALLBACK_APIKEY is not set';
+  if (!provided) return 'no x-api-key header';
+  if (!secretsMatch(provided, expected)) return 'wrong x-api-key';
+  return undefined;
 };
 
 // Read as text: Graph sends the JSON body as text/plain
@@ -50,16 +54,17 @@ const purge = (urls?: string[]) =>
   purgeCdnCache(urls).catch(error => log.error('CDN purge failed', error));
 
 const handleDocChange = async (docId: string, cache: OriginCache) => {
-  const path = await resolveDocPath(docId).catch(error => {
+  const docPaths = await resolveDocPaths(docId).catch(error => {
     log.error(`Resolving ${docId} failed`, error);
-    return undefined;
+    return [];
   });
 
   // Unpublished content may have no URL left in Graph; the home page still changes
-  if (!path) log.warn(`No URL found for ${docId}, refreshing only the home page`);
+  if (!docPaths.length)
+    log.warn(`No URL found for ${docId}, refreshing only the home page`);
 
   // The home page commonly lists other pages, so every change refreshes it
-  const paths = [...new Set([path ?? '/', '/'])];
+  const paths = [...new Set([...docPaths, '/'])];
 
   // Origin first: a CDN purged earlier could fetch the old page again
   await Promise.all(paths.map(it => cache.invalidate(it)));
@@ -83,11 +88,19 @@ const hasDeletions = (payload: WebhookPayload) =>
  * A bulk deletion clears the whole deployment from the origin cache.
  */
 export async function handleGraphWebhook(request: Request, cache: OriginCache) {
-  if (!isAuthorized(request))
+  const problem = authorizationProblem(request);
+
+  if (problem) {
+    log.warn(`Rejected a Graph webhook: ${problem}`);
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const payload = await parsePayload(request);
-  if (!payload) return Response.json({ error: 'Invalid JSON payload' }, { status: 400 });
+
+  if (!payload) {
+    log.warn('Rejected a Graph webhook: the body is not a JSON object');
+    return Response.json({ error: 'Invalid JSON payload' }, { status: 400 });
+  }
 
   const { subject, action } = payload.type ?? {};
   const docId = payload.data?.docId;
