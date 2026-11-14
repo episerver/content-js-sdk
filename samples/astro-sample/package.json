@@ -16,7 +16,7 @@
   "dependencies": {
     "@astrojs/ts-plugin": "^1.10.12",
     "@optimizely/cms-sdk": "workspace:*",
-    "astro": "^7.3.5",
+    "astro": "^7.4.7",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "svelte": "^5.57.1"
