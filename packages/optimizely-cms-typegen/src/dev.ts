@@ -31,21 +31,9 @@ const proc = spawn(
   { stdio: 'inherit' },
 );
 
-// Handle parent process termination
-let isExiting = false;
+// Forward termination to the child so neither process is orphaned
+const stop = () => proc.kill('SIGTERM');
+process.on('SIGINT', stop);
+process.on('SIGTERM', stop);
 
-function cleanup() {
-  if (isExiting) return;
-  isExiting = true;
-
-  if (proc && !proc.killed) {
-    proc.kill('SIGTERM');
-  }
-}
-
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
-
-proc.on('exit', (code) => {
-  process.exit(code || 0);
-});
+proc.on('exit', code => process.exit(code || 0));

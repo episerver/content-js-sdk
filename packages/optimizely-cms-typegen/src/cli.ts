@@ -7,6 +7,8 @@ const root = process.cwd();
 const args = process.argv.slice(2);
 const watchMode = args.includes('--watch') || args.includes('-w');
 
+const message = (error: unknown) => (message(error));
+
 function logSuccess(files: string[], baseDir: string) {
   console.log(
     `${PREFIX} ✓ Generated registry for ${files.length} components in ${baseDir}/registry.ts`,
@@ -27,7 +29,7 @@ function regenerate() {
         const { files, baseDir } = await generate(root);
         logSuccess(files, baseDir);
       } catch (error) {
-        console.error(`${PREFIX} ✗ Generation failed:`, error instanceof Error ? error.message : error);
+        console.error(`${PREFIX} ✗ Generation failed:`, message(error));
       }
     });
   }, 300);
@@ -38,7 +40,7 @@ async function main() {
     const { files, baseDir } = await generate(root);
     logSuccess(files, baseDir);
   } catch (error) {
-    console.error(`${PREFIX} ✗ Initial generation failed:`, error instanceof Error ? error.message : error);
+    console.error(`${PREFIX} ✗ Initial generation failed:`, message(error));
     process.exit(1);
   }
 
@@ -57,20 +59,13 @@ async function main() {
       ignoreInitial: true,
     });
 
-    watcher.on('change', async (filePath) => {
-      console.log(`\n${PREFIX} 🔄 File changed: ${filePath}`);
-      regenerate();
-    });
-
-    watcher.on('add', async (filePath) => {
-      console.log(`\n${PREFIX} ➕ File added: ${filePath}`);
-      regenerate();
-    });
-
-    watcher.on('unlink', async (filePath) => {
-      console.log(`\n${PREFIX} ➖ File removed: ${filePath}`);
-      regenerate();
-    });
+    const events = { change: '🔄 File changed', add: '➕ File added', unlink: '➖ File removed' };
+    for (const [event, label] of Object.entries(events)) {
+      watcher.on(event, filePath => {
+        console.log(`\n${PREFIX} ${label}: ${filePath}`);
+        regenerate();
+      });
+    }
 
     watcher.on('error', error => {
       console.error(`${PREFIX} ✗ Watcher error:`, error);

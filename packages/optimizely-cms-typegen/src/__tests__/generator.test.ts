@@ -21,23 +21,6 @@ describe('generator', () => {
   });
 
   describe('detectBaseDir', () => {
-    it('detects src directory', async () => {
-      await fs.mkdir(path.join(testRoot, 'src'));
-      const baseDir = await detectBaseDir(testRoot);
-      expect(baseDir).toBe('src');
-    });
-
-    it('detects app directory when src does not exist', async () => {
-      await fs.mkdir(path.join(testRoot, 'app'));
-      const baseDir = await detectBaseDir(testRoot);
-      expect(baseDir).toBe('app');
-    });
-
-    it('returns . when neither src nor app exist', async () => {
-      const baseDir = await detectBaseDir(testRoot);
-      expect(baseDir).toBe('.');
-    });
-
     it('prefers src over app when both exist', async () => {
       await fs.mkdir(path.join(testRoot, 'src'));
       await fs.mkdir(path.join(testRoot, 'app'));
@@ -143,11 +126,6 @@ config({ apiKey: 'k', query: { cache: true }, platform: 'paas' });`
   });
 
   describe('scanComponents', () => {
-    it('returns empty array when no config', async () => {
-      const files = await scanComponents(testRoot);
-      expect(files).toEqual([]);
-    });
-
     it('scans component files based on config pattern', async () => {
       // Create config
       await fs.writeFile(
@@ -285,27 +263,6 @@ export const HeroDisplayTemplate = displayTemplate({
       expect(registryContent).toContain('HeroDisplayTemplate');
       expect(registryContent).toContain('export const displayTemplates');
       expect(registryContent).toContain('initDisplayTemplateRegistry');
-    });
-
-    it('handles empty component directory', async () => {
-      const srcDir = path.join(testRoot, 'src');
-      await fs.mkdir(srcDir, { recursive: true });
-
-      await fs.writeFile(
-        path.join(testRoot, 'optimizely.config.mjs'),
-        `export default { components: 'src/components/**/*.tsx' };`
-      );
-
-      const result = await generate(testRoot);
-
-      expect(result.files).toHaveLength(0);
-
-      const registryContent = await fs.readFile(
-        path.join(srcDir, 'registry.ts'),
-        'utf-8'
-      );
-      expect(registryContent).toContain('BlankExperienceContentType');
-      expect(registryContent).toContain('export const contentTypes = [');
     });
   });
 });

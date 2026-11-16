@@ -1,4 +1,5 @@
 import fg from 'fast-glob';
+import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -67,14 +68,7 @@ export async function scanComponents(
   const config = loaded === undefined ? await loadConfig(root) : loaded;
   if (!config?.components) return [];
 
-  const patterns = validatePatterns(config.components);
-
-  const files = await fg(patterns, {
-    cwd: root,
-    absolute: true,
-  });
-
-  return files;
+  return fg(validatePatterns(config.components), { cwd: root, absolute: true });
 }
 
 // ============================================================================
@@ -102,26 +96,9 @@ export async function detectPlatform(root: string): Promise<'saas' | 'paas' | un
   }
 }
 
-/**
- * Detect base directory (src, app, or root).
- * Checks existence of src/ and app/ directories.
- */
-export async function detectBaseDir(root: string): Promise<string> {
-  const srcExists = await directoryExists(path.join(root, 'src'));
-  const appExists = await directoryExists(path.join(root, 'app'));
-
-  if (srcExists) return 'src';
-  if (appExists) return 'app';
-  return '.';
-}
-
-async function directoryExists(dirPath: string): Promise<boolean> {
-  try {
-    await fs.access(dirPath);
-    return true;
-  } catch {
-    return false;
-  }
+/** Base directory for generated files: src, app, or the project root. */
+export function detectBaseDir(root: string): string {
+  return ['src', 'app'].find(dir => existsSync(path.join(root, dir))) ?? '.';
 }
 
 // ============================================================================
@@ -372,7 +349,7 @@ export async function generate(root = process.cwd()) {
   const config = await loadConfig(root);
   const files = await scanComponents(root, config);
 
-  const baseDir = await detectBaseDir(root);
+  const baseDir = detectBaseDir(root);
   const registryDir = path.join(root, baseDir);
   const registryFile = path.join(registryDir, 'registry.ts');
 
