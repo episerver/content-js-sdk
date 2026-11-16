@@ -190,6 +190,18 @@ export const validateContentAreaConstraints = (
         name => Array.isArray(target[name]) && target[name].length === 0,
       );
 
+      for (const name of ['allowedTypes', 'restrictedTypes']) {
+        if (!Array.isArray(target[name])) continue;
+        const keys: string[] = target[name].map((t: any) => (typeof t === 'string' ? t : t?.key));
+        const dupes = [...new Set(keys.filter((k, i) => keys.indexOf(k) !== i))];
+        if (dupes.length > 0) {
+          errors.push(
+            `${location}: duplicate type constraints. ` +
+              `"${name}" lists ${dupes.map(d => `"${d}"`).join(', ')} more than once, remove the repeated entries.`,
+          );
+        }
+      }
+
       // CMS silently drops `contentType` on content properties, leaving them unrestricted
       if (!isContentReference && target.contentType) {
         errors.push(

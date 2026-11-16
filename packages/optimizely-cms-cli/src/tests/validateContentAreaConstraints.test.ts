@@ -343,4 +343,26 @@ describe('validateContentAreaConstraints', () => {
     expect(errors[0]).toContain('sections');
     expect(errors[0]).toContain('conflicting type constraints');
   });
+
+  it('should return errors for duplicate entries in allowedTypes or restrictedTypes', () => {
+    const types = [
+      contentType({
+        key: 'PageType',
+        baseType: '_page',
+        displayName: 'Page',
+        properties: {
+          mainContent: {
+            type: 'content',
+            allowedTypes: ['Teaser', 'Teaser', 'Hero'],
+            restrictedTypes: ['_image', '_image'],
+          },
+        },
+      }),
+    ];
+
+    const { errors } = validateContentAreaConstraints(types);
+    expect(errors).toHaveLength(2);
+    expect(errors[0]).toContain('"allowedTypes" lists "Teaser" more than once');
+    expect(errors[1]).toContain('"restrictedTypes" lists "_image" more than once');
+  });
 });
