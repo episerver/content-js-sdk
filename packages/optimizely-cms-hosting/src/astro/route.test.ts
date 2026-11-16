@@ -11,7 +11,7 @@ vi.mock('../shared/redis.js', () => ({
   createCacheStore: () => ({ clear: mocks.clear }),
 }));
 
-const { POST } = await import('./route.js');
+const { POST, createWebhookRoute } = await import('./route.js');
 
 const request = new Request('https://site.test/hooks/graph', { method: 'POST' });
 const invalidate = vi.fn();
@@ -25,7 +25,19 @@ describe('POST', () => {
     mocks.handleGraphWebhook.mockResolvedValue(response);
 
     expect(await POST(context)).toBe(response);
-    expect(mocks.handleGraphWebhook).toHaveBeenCalledWith(request, expect.anything());
+    expect(mocks.handleGraphWebhook).toHaveBeenCalledWith(request, expect.anything(), {});
+  });
+
+  it('passes the options of createWebhookRoute to the webhook handler', async () => {
+    const options = { alsoRefresh: () => ['/news'] };
+
+    await createWebhookRoute(options)(context);
+
+    expect(mocks.handleGraphWebhook).toHaveBeenCalledWith(
+      request,
+      expect.anything(),
+      options,
+    );
   });
 
   it('invalidates paths through the configured cache provider', async () => {

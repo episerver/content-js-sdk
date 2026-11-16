@@ -61,6 +61,18 @@ describe('createCacheStore without Redis', () => {
     expect(createCluster).not.toHaveBeenCalled();
   });
 
+  it('can share entries across deployment slots', async () => {
+    const { createCacheStore } = await loadStore();
+    const options = { sharedAcrossDeployments: true };
+    const shared = createCacheStore('webhook', options);
+    vi.stubEnv('OPTIMIZELY_DXP_DEPLOYMENT_ID', 'slot2');
+    const sharedInOtherSlot = createCacheStore('webhook', options);
+
+    await shared.set('docs/abc_en', ['/en']);
+
+    expect(await sharedInOtherSlot.get('docs/abc_en')).toEqual(['/en']);
+  });
+
   it('warns once that REDIS_URL is not set', async () => {
     const { createCacheStore } = await loadStore();
     const store = createCacheStore('nextjs');

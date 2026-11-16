@@ -11,8 +11,11 @@ query ResolveDocPaths($id: String, $locale: Locales) {
   }
 }`;
 
-// `{uuid}_{locale}_{status}`, where Graph locale names can contain underscores themselves
-const parseDocId = (docId: string) => {
+/**
+ * Splits a Graph `docId` (`{uuid}_{locale}_{status}`) into the content id
+ * without dashes and the Graph locale. Locale names can contain underscores.
+ */
+export const parseDocId = (docId: string) => {
   const [uuid, ...rest] = docId.split('_');
   const locale = rest.slice(0, -1).join('_').replaceAll('-', '_');
 

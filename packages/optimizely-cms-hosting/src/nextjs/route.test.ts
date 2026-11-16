@@ -21,7 +21,7 @@ vi.mock('./cacheHandler.js', () => ({
   }),
 }));
 
-const { POST } = await import('./route.js');
+const { POST, createWebhookRoute } = await import('./route.js');
 
 const originCache = async () => {
   await POST(new Request('https://site.test/hooks/graph', { method: 'POST' }));
@@ -37,7 +37,20 @@ describe('POST', () => {
     const request = new Request('https://site.test/hooks/graph', { method: 'POST' });
 
     expect(await POST(request)).toBe(response);
-    expect(mocks.handleGraphWebhook).toHaveBeenCalledWith(request, expect.anything());
+    expect(mocks.handleGraphWebhook).toHaveBeenCalledWith(request, expect.anything(), {});
+  });
+
+  it('passes the options of createWebhookRoute to the webhook handler', async () => {
+    const options = { alsoRefresh: () => ['/news'] };
+    const request = new Request('https://site.test/hooks/graph', { method: 'POST' });
+
+    await createWebhookRoute(options)(request);
+
+    expect(mocks.handleGraphWebhook).toHaveBeenCalledWith(
+      request,
+      expect.anything(),
+      options,
+    );
   });
 
   it('revalidates the path and deletes the page before resolving', async () => {

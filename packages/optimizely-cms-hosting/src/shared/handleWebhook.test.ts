@@ -1,16 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleGraphWebhook, type OriginCache } from './handleWebhook.js';
+import { handleGraphWebhook, homePagePaths, type OriginCache } from './handleWebhook.js';
 
 const mocks = vi.hoisted(() => ({
   resolveDocPaths: vi.fn(),
   purgeCdnCache: vi.fn(),
   getSiteHostnames: vi.fn(),
+  remembered: new Map<string, string[]>(),
 }));
 
-vi.mock('./graph.js', () => ({ resolveDocPaths: mocks.resolveDocPaths }));
+// The status suffix does not matter, as in docPaths.ts
+const keyOf = (docId: string) => docId.split('_').slice(0, -1).join('_');
+
+vi.mock('./graph.js', async importOriginal => ({
+  ...(await importOriginal<typeof import('./graph.js')>()),
+  resolveDocPaths: mocks.resolveDocPaths,
+}));
 vi.mock('./cdn.js', () => ({
   purgeCdnCache: mocks.purgeCdnCache,
   getSiteHostnames: mocks.getSiteHostnames,
+}));
+vi.mock('./docPaths.js', () => ({
+  rememberDocPaths: async (docId: string, paths: string[]) =>
+    void mocks.remembered.set(keyOf(docId), paths),
+  recallDocPaths: async (docId: string) => mocks.remembered.get(keyOf(docId)) ?? [],
+  forgetDocPaths: async (docIds: string[]) =>
+    docIds.forEach(docId => mocks.remembered.delete(keyOf(docId))),
 }));
 
 const webhook = (body: unknown, apiKey: string | null = 'callback-key') =>
@@ -25,11 +39,19 @@ const docEvent = (action: string, docId = 'abc_en_Published') => ({
   data: { docId },
 });
 
+const bulkEvent = (items: Record<string, string>) => ({
+  type: { subject: 'bulk', action: 'completed' },
+  data: { items },
+});
+
 let events: string[];
 let cache: OriginCache;
 
+const invalidated = () => events.filter(it => it.startsWith('invalidate'));
+
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.remembered.clear();
   vi.stubEnv('OPTIMIZELY_GRAPH_CALLBACK_APIKEY', 'callback-key');
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -41,9 +63,7 @@ beforeEach(() => {
     clear: vi.fn(async () => void events.push('clear')),
   };
   mocks.getSiteHostnames.mockResolvedValue(['www.mysite.com']);
-  mocks.purgeCdnCache.mockImplementation(
-    async urls => void events.push(`purge ${urls ?? 'roots'}`),
-  );
+  mocks.purgeCdnCache.mockImplementation(async urls => void events.push(`purge ${urls}`));
 });
 
 afterEach(() => {
@@ -51,7 +71,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('handleGraphWebhook', () => {
+describe('handleGraphWebhook requests', () => {
   it.each([
     ['a missing key', null, 'no x-api-key header'],
     ['a wrong key', 'wrong-key', 'wrong x-api-key'],
@@ -89,8 +109,24 @@ describe('handleGraphWebhook', () => {
     );
   });
 
+  it.each([
+    ['a bulk change without deletions', bulkEvent({ a_en_Published: 'indexed' })],
+    ['another doc action', docEvent('created')],
+    [
+      'a doc event without docId',
+      { type: { subject: 'doc', action: 'updated' }, data: {} },
+    ],
+  ])('ignores %s', async (_, body) => {
+    const response = await handleGraphWebhook(webhook(body), cache);
+
+    expect(response.status).toBe(200);
+    expect(events).toEqual([]);
+  });
+});
+
+describe('handleGraphWebhook on a publish', () => {
   it.each(['updated', 'expired'])(
-    'refreshes the page and the home page on doc.%s, origin first',
+    'refreshes the page, the site root and the locale home on doc.%s, origin first',
     async action => {
       mocks.resolveDocPaths.mockResolvedValue(['/en/about']);
 
@@ -101,10 +137,13 @@ describe('handleGraphWebhook', () => {
       expect(events).toEqual([
         'invalidate /en/about',
         'invalidate /',
+        'invalidate /en',
         `purge ${[
           'https://www.mysite.com/en/about',
           'https://www.mysite.com/en/about/',
           'https://www.mysite.com/',
+          'https://www.mysite.com/en',
+          'https://www.mysite.com/en/',
         ]}`,
       ]);
     },
@@ -119,7 +158,7 @@ describe('handleGraphWebhook', () => {
       '[cms-hosting] Received the Graph webhook doc.updated for abc_en_Published',
     );
     expect(console.info).toHaveBeenCalledWith(
-      '[cms-hosting] Refreshed /en/about and / in the origin cache',
+      '[cms-hosting] Refreshed /en/about, /, /en in the origin cache',
     );
   });
 
@@ -128,42 +167,28 @@ describe('handleGraphWebhook', () => {
 
     await handleGraphWebhook(webhook(docEvent('updated')), cache);
 
-    expect(events.filter(it => it.startsWith('invalidate'))).toEqual([
+    expect(invalidated()).toEqual([
       'invalidate /about',
       'invalidate /en/about',
       'invalidate /',
+      'invalidate /en',
     ]);
   });
 
   it('purges the paths on every site hostname', async () => {
-    mocks.resolveDocPaths.mockResolvedValue(['/en']);
+    mocks.resolveDocPaths.mockResolvedValue(['/news']);
     mocks.getSiteHostnames.mockResolvedValue(['www.mysite.com', 'mysite.dxcloud.test']);
 
     await handleGraphWebhook(webhook(docEvent('updated')), cache);
 
     expect(mocks.purgeCdnCache).toHaveBeenCalledWith([
-      'https://www.mysite.com/en',
-      'https://www.mysite.com/en/',
+      'https://www.mysite.com/news',
+      'https://www.mysite.com/news/',
       'https://www.mysite.com/',
-      'https://mysite.dxcloud.test/en',
-      'https://mysite.dxcloud.test/en/',
+      'https://mysite.dxcloud.test/news',
+      'https://mysite.dxcloud.test/news/',
       'https://mysite.dxcloud.test/',
     ]);
-  });
-
-  it.each([
-    ['has no URL', () => mocks.resolveDocPaths.mockResolvedValue([])],
-    [
-      'cannot be resolved',
-      () => mocks.resolveDocPaths.mockRejectedValue(new Error('down')),
-    ],
-  ])('refreshes only the home page when the content %s', async (_, arrange) => {
-    arrange();
-
-    const response = await handleGraphWebhook(webhook(docEvent('expired')), cache);
-
-    expect(response.status).toBe(200);
-    expect(events).toEqual(['invalidate /', 'purge https://www.mysite.com/']);
   });
 
   it('answers 200 when the CDN purge fails', async () => {
@@ -175,35 +200,114 @@ describe('handleGraphWebhook', () => {
     expect(response.status).toBe(200);
     expect(console.error).toHaveBeenCalled();
   });
+});
 
-  it('clears the deployment and purges the site roots on a bulk deletion', async () => {
-    const bulk = {
-      type: { subject: 'bulk', action: 'completed' },
-      data: { items: { a_en_Published: 'indexed', b_en_Published: 'deleted' } },
-    };
+describe('handleGraphWebhook with remembered paths', () => {
+  it('refreshes the last known URLs of content that expired', async () => {
+    mocks.resolveDocPaths.mockResolvedValueOnce(['/en/about']).mockResolvedValueOnce([]);
 
-    await handleGraphWebhook(webhook(bulk), cache);
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
+    events = [];
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
 
-    expect(events).toEqual(['clear', 'purge roots']);
+    expect(invalidated()).toEqual([
+      'invalidate /en/about',
+      'invalidate /',
+      'invalidate /en',
+    ]);
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the old URL of content that moved', async () => {
+    mocks.resolveDocPaths
+      .mockResolvedValueOnce(['/en/old'])
+      .mockResolvedValueOnce(['/en/new']);
+
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
+    events = [];
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
+
+    expect(invalidated()).toEqual([
+      'invalidate /en/new',
+      'invalidate /en/old',
+      'invalidate /',
+      'invalidate /en',
+    ]);
+    expect(mocks.remembered.get('abc_en')).toEqual(['/en/new']);
   });
 
   it.each([
+    ['has no URL', () => mocks.resolveDocPaths.mockResolvedValue([])],
     [
-      'a bulk change without deletions',
-      {
-        type: { subject: 'bulk', action: 'completed' },
-        data: { items: { a: 'indexed' } },
-      },
+      'cannot be resolved',
+      () => mocks.resolveDocPaths.mockRejectedValue(new Error('down')),
     ],
-    ['another doc action', docEvent('created')],
-    [
-      'a doc event without docId',
-      { type: { subject: 'doc', action: 'updated' }, data: {} },
-    ],
-  ])('ignores %s', async (_, body) => {
-    const response = await handleGraphWebhook(webhook(body), cache);
+  ])('refreshes only the site root when unknown content %s', async (_, arrange) => {
+    arrange();
+
+    const response = await handleGraphWebhook(webhook(docEvent('expired')), cache);
 
     expect(response.status).toBe(200);
-    expect(events).toEqual([]);
+    expect(events).toEqual(['invalidate /', 'purge https://www.mysite.com/']);
+    expect(console.warn).toHaveBeenCalledWith(
+      '[cms-hosting] No URL known for abc_en_Published',
+    );
+  });
+});
+
+describe('handleGraphWebhook on a bulk deletion', () => {
+  it('refreshes and forgets the last known URLs of deleted content', async () => {
+    mocks.resolveDocPaths.mockResolvedValueOnce(['/en/about']);
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
+    events = [];
+
+    await handleGraphWebhook(
+      webhook(bulkEvent({ abc_en_Published: 'deleted', def_en_Published: 'indexed' })),
+      cache,
+    );
+
+    expect(cache.clear).not.toHaveBeenCalled();
+    expect(invalidated()).toEqual([
+      'invalidate /en/about',
+      'invalidate /',
+      'invalidate /en',
+    ]);
+    expect(events.at(-1)).toContain('https://www.mysite.com/en/about/');
+    expect(mocks.remembered.has('abc_en')).toBe(false);
+  });
+
+  it('clears the origin cache when a deleted item has no known URL', async () => {
+    await handleGraphWebhook(webhook(bulkEvent({ abc_en_Published: 'deleted' })), cache);
+
+    expect(events).toEqual(['clear', 'invalidate /', 'purge https://www.mysite.com/']);
+    expect(console.info).toHaveBeenCalledWith(
+      '[cms-hosting] Cleared the origin cache, no URL known for deleted abc_en_Published',
+    );
+  });
+});
+
+describe('alsoRefresh', () => {
+  it('replaces the home pages through the options', async () => {
+    mocks.resolveDocPaths.mockResolvedValue(['/en/about']);
+    const alsoRefresh = vi.fn(() => ['/news']);
+
+    await handleGraphWebhook(webhook(docEvent('updated')), cache, { alsoRefresh });
+
+    expect(alsoRefresh).toHaveBeenCalledWith({
+      docId: 'abc_en_Published',
+      locale: 'en',
+      paths: ['/en/about'],
+    });
+    expect(invalidated()).toEqual(['invalidate /en/about', 'invalidate /news']);
+  });
+
+  it.each([
+    ['en', ['/en/news/article'], ['/', '/en']],
+    ['en', ['/EN/about'], ['/', '/EN']],
+    ['zh_Hans', ['/zh-hans/about'], ['/', '/zh-hans']],
+    ['en', ['/news/article'], ['/']],
+    ['en', [], ['/']],
+  ])('defaults, for locale %s and paths %j, to %j', (locale, paths, expected) => {
+    expect(homePagePaths({ docId: 'abc', locale, paths })).toEqual(expected);
   });
 });

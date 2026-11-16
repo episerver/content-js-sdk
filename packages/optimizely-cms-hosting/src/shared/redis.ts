@@ -19,8 +19,8 @@ type StoreState = {
   memoryBytes: number;
 };
 
-/** Cache owner, so Next.js and Astro entries never share a key. */
-export type CacheNamespace = 'nextjs' | 'astro';
+/** Cache owner, so Next.js pages, Astro pages and webhook data never share a key. */
+export type CacheNamespace = 'nextjs' | 'astro' | 'webhook';
 
 const DEFAULT_PORT = 10000;
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -169,12 +169,15 @@ const escapeGlob = (text: string) => text.replace(/[*?[\]\\]/g, '\\$&');
 
 /**
  * Creates a JSON cache store on the platform's Redis cluster, with keys
- * namespaced by framework and deployment slot. Falls back to process memory
- * when Redis is not configured or not reachable.
+ * namespaced by owner and, unless `sharedAcrossDeployments`, by deployment slot.
+ * Falls back to process memory when Redis is not configured or not reachable.
  */
-export function createCacheStore(namespace: CacheNamespace) {
+export function createCacheStore(
+  namespace: CacheNamespace,
+  { sharedAcrossDeployments = false } = {},
+) {
   const deploymentId = process.env.OPTIMIZELY_DXP_DEPLOYMENT_ID ?? 'default';
-  const prefix = `${namespace}:${deploymentId}:`;
+  const prefix = `${namespace}:${sharedAcrossDeployments ? 'shared' : deploymentId}:`;
   const toKey = (path: string) => `${prefix}${path}`;
 
   return {

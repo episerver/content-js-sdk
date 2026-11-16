@@ -17,8 +17,8 @@ that make this work, so you do not write the infrastructure code yourself.
 1. A visitor requests a page. The site renders it and stores it in the platform's Redis,
    which every instance of the site shares. The CDN caches it as well.
 2. An editor publishes a change. Optimizely Graph calls a **webhook** on your site.
-3. The webhook finds the URL of the changed content, removes that page and the home page
-   from Redis, and purges both from the CDN.
+3. The webhook finds the URL of the changed content, removes that page and the home pages
+   from Redis, and purges them from the CDN.
 4. The next visitor gets a freshly rendered page, which is cached again.
 
 The package registers the webhook when the site starts, so you do not create it by hand.
@@ -133,13 +133,41 @@ The `&` runs the registration in the background, so it does not delay the server
 
 ## Which pages are refreshed
 
-A publish refreshes the page's own URL and the home page, because a home page often lists
-other pages. Other pages that show the changed content, such as listings and menus, update
-when their cache time runs out. Keep that time short enough for your editors.
+A publish refreshes:
 
-When content is deleted in bulk, Graph does not say which pages went away. The site then
-removes every page of the deployment from Redis, and purges the home page of each hostname
-from the CDN.
+- the page's URL, and its simple address if it has one
+- its previous URL, if the page moved
+- the site root `/` and the home page of the page's locale, such as `/en`, because home
+  pages often list other pages
+
+Other pages that show the changed content, such as listings and menus, update when their
+cache time runs out. Keep that time short enough for your editors, or refresh those pages
+as well (see below).
+
+The site remembers the URLs of every page it refreshes. When a page expires or is deleted,
+Graph no longer knows its URL, so the site refreshes the remembered one. A page that has
+not been published since the site started using the package has no remembered URL.
+Deleting such a page removes every page of the deployment from Redis instead, and the CDN
+keeps the deleted page until its cache time ends.
+
+### Refreshing more pages on each publish
+
+Create the webhook route with `alsoRefresh`. It receives the changed content's `docId`,
+`locale` and `paths`, and returns the paths to refresh besides the content's own:
+
+```ts
+// src/app/hooks/graph/route.ts
+import { createWebhookRoute, homePagePaths } from '@optimizely/cms-hosting/nextjs/route';
+
+export const POST = createWebhookRoute({
+  // The default home pages, plus the news listing
+  alsoRefresh: change => [...homePagePaths(change), '/en/news'],
+});
+```
+
+`homePagePaths` is the default: `/` and the locale's home page. Return `[]` to refresh
+only the changed page. In Astro, import the same functions from
+`@optimizely/cms-hosting/astro/route`.
 
 These are not supported:
 
@@ -179,6 +207,8 @@ with `[cms-hosting]` in the server log say which part is missing.
 
 ### A published change does not appear
 
+- Check that you publish in the CMS the site is connected to. The platform connects the
+  site to one CMS, and registers the webhook with that CMS's Graph.
 - Check that the site's hostname is under **Hostnames** in **Settings > Applications**, so
   Graph returns a URL for the content. See
   [After the first deploy](./deploy-to-frontend-hosting.md#after-the-first-deploy).
@@ -196,8 +226,9 @@ Astro's origin check blocked the request. Set `security: { checkOrigin: false }`
 - Next.js needs a cache handler, `instrumentation.ts` and a webhook route.
 - Astro needs the cache provider, `routeRules`, a webhook endpoint and a `start` script
   that registers the webhook.
-- A publish refreshes the changed page and the home page. Other pages update when their
-  cache time runs out.
+- A publish refreshes the changed page, `/` and the locale's home page. Expired and
+  deleted pages are refreshed at their remembered URLs.
+- `createWebhookRoute({ alsoRefresh })` refreshes more pages on each publish.
 - Front-end hosting supplies every setting.
 
 ## Related
