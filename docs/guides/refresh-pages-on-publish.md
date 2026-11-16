@@ -99,6 +99,8 @@ export default defineConfig({
   routeRules: {
     '/': { maxAge: 600, swr: 1800 },
     '/[...slug]': { maxAge: 600, swr: 1800 },
+    // Endpoints that must not be cached
+    '/api/[...path]': { maxAge: 0 },
   },
   // Graph sends the webhook as a text/plain POST, which this check blocks
   security: { checkOrigin: false },
@@ -107,6 +109,10 @@ export default defineConfig({
 
 `maxAge` is how many seconds a page counts as fresh. `swr` is how many seconds after that
 the stale page is still served while a fresh one renders in the background.
+
+`'/[...slug]'` matches every path, endpoints included, so a GET endpoint would be cached
+as well. Give endpoints that must stay fresh their own rule with `maxAge: 0`. A more
+specific rule wins over the catch-all.
 
 > [!WARNING]
 >
@@ -220,6 +226,19 @@ with `[cms-hosting]` in the server log say which part is missing.
 
 Astro's origin check blocked the request. Set `security: { checkOrigin: false }`, as in
 [Set up Astro](#set-up-astro).
+
+### An endpoint returns out-of-date data
+
+The platform's CDN caches responses that have no `Cache-Control` header, such as those of
+a Next.js route handler or an Astro endpoint. Send `no-store` from responses that must
+always be fresh:
+
+```ts
+return Response.json(data, { headers: { 'Cache-Control': 'no-store' } });
+```
+
+In Astro, also give the endpoint a `maxAge: 0` rule, as in [Set up Astro](#set-up-astro).
+Otherwise the catch-all rule replaces the header.
 
 ## Recap
 
