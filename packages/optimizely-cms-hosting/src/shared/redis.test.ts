@@ -363,6 +363,21 @@ describe('createCacheStore with Redis', () => {
     expect(createCluster).toHaveBeenCalledTimes(2);
   });
 
+  it('reconnects in the background, without holding up requests', async () => {
+    vi.useFakeTimers();
+    cluster.connect
+      .mockRejectedValueOnce(new Error('refused'))
+      .mockReturnValueOnce(new Promise(() => {}));
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+
+    await store.set('/en', 'value');
+    vi.advanceTimersByTime(61_000);
+
+    // The reconnect never finishes here, yet the request is answered from memory
+    expect(await store.get('/en')).toBe('value');
+  });
+
   it('gives up on a connection that takes longer than 10 seconds', async () => {
     vi.useFakeTimers();
     cluster.connect.mockReturnValue(new Promise(() => {}));

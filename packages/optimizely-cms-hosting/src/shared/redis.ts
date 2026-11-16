@@ -108,7 +108,8 @@ const getRedis = async () => {
   state.connecting ??= connect(url)
     .then(client => (state.cluster = client))
     .finally(() => (state.connecting = null));
-  return state.connecting;
+  // Only the first attempt is awaited; after a failure, requests use memory while it reconnects
+  return state.retryAfter ? null : state.connecting;
 };
 
 const withRedis = async <T>(operation: (redis: Cluster) => Promise<T>) => {

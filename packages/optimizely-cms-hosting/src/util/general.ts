@@ -39,6 +39,12 @@ export const serialize = (value: unknown) => JSON.stringify(value, replacer);
 /** Parses the output of `serialize`, restoring Buffers and Maps. */
 export const deserialize = <T>(raw: string) => JSON.parse(raw, reviver) as T;
 
+/** The items in their first-seen order, without duplicates. */
+export const unique = <T>(items: T[]) => [...new Set(items)];
+
+/** A URL path without trailing slashes, `/` for the root. */
+export const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
+
 /**
  * Compares a secret in time that does not depend on where the strings differ.
  * Plain JS rather than node:crypto, so it also runs in the Next.js Edge runtime.

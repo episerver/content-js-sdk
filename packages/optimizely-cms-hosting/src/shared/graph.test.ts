@@ -45,7 +45,7 @@ describe('resolveDocPaths', () => {
       await resolveDocPaths('3f2b1c4d-aaaa-bbbb-cccc-1234567890ab_en_Published'),
     ).toEqual(['/en/about']);
     expect(graph.constructor).toHaveBeenCalledWith('single-key', {
-      graphUrl: 'https://cg.optimizely.com',
+      graphUrl: 'https://cg.optimizely.com/content/v2',
     });
     expect(graph.request).toHaveBeenCalledWith(
       expect.stringContaining('url { default hierarchical }'),

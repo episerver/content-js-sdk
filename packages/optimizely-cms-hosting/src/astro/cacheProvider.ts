@@ -5,7 +5,7 @@ import {
   setConditionalHeaders,
 } from 'astro/cache/provider-utils';
 import { createCacheStore } from '../shared/redis.js';
-import { log } from '../util/general.js';
+import { log, normalizePath } from '../util/general.js';
 
 type OnRequest = NonNullable<CacheProvider['onRequest']>;
 type RequestContext = Parameters<OnRequest>[0];
@@ -13,7 +13,6 @@ type Next = Parameters<OnRequest>[1];
 type CacheState = 'HIT' | 'STALE' | 'MISS';
 type Entry = {
   body: Buffer;
-  status: number;
   headers: [string, string][];
   storedAt: number;
   maxAge: number;
@@ -50,9 +49,12 @@ const IGNORED_QUERY_PARAMS = new Set([
 // Where Astro attaches cookies set through Astro.cookies before they become headers
 const ASTRO_COOKIES = Symbol.for('astro.cookies');
 
-// CACHE KEYS AND HEADERS
+const store = createCacheStore('astro');
 
-const toKey = (path: string) => path.replace(/\/$/, '') || '/';
+/** Deletes every cached page of this deployment. */
+export const clearPages = () => store.clear();
+
+// CACHE KEYS AND HEADERS
 
 // Requests with a meaningful query are not cached, so a path maps to a single entry
 const hasQuery = (url: URL) =>
@@ -79,6 +81,7 @@ const varies = (response: Response) =>
 
 // ENTRIES
 
+// Reads the body of a cacheable response, which is then answered from the entry
 const toEntry = async (response: Response): Promise<Entry | null> => {
   // Written by setHeaders from routeRules; Astro strips it before the response leaves
   const cdnCacheControl = response.headers.get('CDN-Cache-Control') ?? '';
@@ -88,8 +91,7 @@ const toEntry = async (response: Response): Promise<Entry | null> => {
     return null;
 
   return {
-    body: Buffer.from(await response.clone().arrayBuffer()),
-    status: response.status,
+    body: Buffer.from(await response.arrayBuffer()),
     headers: [...response.headers],
     storedAt: Date.now(),
     maxAge,
@@ -98,10 +100,9 @@ const toEntry = async (response: Response): Promise<Entry | null> => {
 };
 
 const toResponse = (entry: Entry, state: CacheState, ageSeconds: number) => {
-  const response = new Response(new Uint8Array(entry.body), {
-    status: entry.status,
-    headers: entry.headers,
-  });
+  // The Buffer wraps a plain ArrayBuffer (from arrayBuffer() or base64), so no copy is needed
+  const body = entry.body as Uint8Array<ArrayBuffer>;
+  const response = new Response(body, { headers: entry.headers });
 
   // Lets the CDN subtract the time already spent in Redis from s-maxage
   response.headers.set('Age', String(Math.floor(ageSeconds)));
@@ -113,8 +114,8 @@ const ttlFor = (entry: Entry) => entry.maxAge + entry.swr;
 
 // PROVIDER
 
-const createRedisCacheProvider = (): CacheProvider => {
-  const store = createCacheStore('astro');
+/** Astro cache provider backed by the platform's Redis, shared by every instance. Invalidates by path only. */
+const factory: CacheProviderFactory = () => {
   const refreshing = new Set<string>();
 
   const refresh = (key: string, context: RequestContext, next: Next) => {
@@ -157,7 +158,7 @@ const createRedisCacheProvider = (): CacheProvider => {
       const { request, url } = context;
       if (request.method !== 'GET' || hasQuery(url)) return next();
 
-      const key = toKey(url.pathname);
+      const key = normalizePath(url.pathname);
       const cached = await store.get<Entry>(key);
       const ageSeconds = cached ? (Date.now() - cached.storedAt) / 1000 : 0;
 
@@ -172,21 +173,18 @@ const createRedisCacheProvider = (): CacheProvider => {
       const entry = await toEntry(response);
       if (!entry) return response;
 
-      await store.set(key, entry, ttlFor(entry));
-      response.headers.set('X-Astro-Cache', 'MISS');
-      return response;
+      // The visitor does not wait for the write
+      context.waitUntil?.(store.set(key, entry, ttlFor(entry)));
+      return toResponse(entry, 'MISS', 0);
     },
 
     async invalidate({ path, tags }) {
       const tagList = normalizeTags(tags);
 
       if (tagList.length) log.warn(`Ignoring unsupported tags: ${tagList.join(', ')}`);
-      if (path) await store.delete([toKey(path)]);
+      if (path) await store.delete([normalizePath(path)]);
     },
   };
 };
-
-/** Astro cache provider backed by the platform's Redis, shared by every instance. Invalidates by path only. */
-const factory: CacheProviderFactory = () => createRedisCacheProvider();
 
 export default factory;

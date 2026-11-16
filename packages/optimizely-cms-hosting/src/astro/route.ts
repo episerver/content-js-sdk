@@ -1,14 +1,12 @@
 import type { APIRoute } from 'astro';
 import { handleGraphWebhook, type WebhookOptions } from '../shared/handleWebhook.js';
-import { createCacheStore } from '../shared/redis.js';
+import { clearPages } from './cacheProvider.js';
 
 export {
   homePagePaths,
   type ContentChange,
   type WebhookOptions,
 } from '../shared/handleWebhook.js';
-
-const store = createCacheStore('astro');
 
 /**
  * Creates the endpoint for Optimizely Graph webhooks, for example to refresh
@@ -19,7 +17,7 @@ export const createWebhookRoute =
   ({ request, cache }) =>
     handleGraphWebhook(
       request,
-      { invalidate: path => cache.invalidate({ path }), clear: () => store.clear() },
+      { invalidate: path => cache.invalidate({ path }), clear: clearPages },
       options,
     );
 

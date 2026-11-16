@@ -4,21 +4,17 @@ import type { OriginCache } from '../shared/handleWebhook.js';
 const mocks = vi.hoisted(() => ({
   handleGraphWebhook: vi.fn(),
   revalidatePath: vi.fn(),
-  revalidateTag: vi.fn(),
-  clear: vi.fn(),
+  invalidatePage: vi.fn(),
+  clearPages: vi.fn(),
 }));
 
 vi.mock('next/cache.js', () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock('../shared/handleWebhook.js', () => ({
   handleGraphWebhook: mocks.handleGraphWebhook,
 }));
-vi.mock('../shared/redis.js', () => ({
-  createCacheStore: () => ({ clear: mocks.clear }),
-}));
 vi.mock('./cacheHandler.js', () => ({
-  default: vi.fn(function () {
-    return { revalidateTag: mocks.revalidateTag };
-  }),
+  invalidatePage: mocks.invalidatePage,
+  clearPages: mocks.clearPages,
 }));
 
 const { POST, createWebhookRoute } = await import('./route.js');
@@ -55,7 +51,7 @@ describe('POST', () => {
 
   it('revalidates the path and deletes the page before resolving', async () => {
     let deleted = false;
-    mocks.revalidateTag.mockImplementation(async () => {
+    mocks.invalidatePage.mockImplementation(async () => {
       await Promise.resolve();
       deleted = true;
     });
@@ -64,15 +60,15 @@ describe('POST', () => {
     await cache.invalidate('/en/about');
 
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/en/about');
-    expect(mocks.revalidateTag).toHaveBeenCalledWith('_N_T_/en/about');
+    expect(mocks.invalidatePage).toHaveBeenCalledWith('/en/about');
     expect(deleted).toBe(true);
   });
 
-  it('clears the Next.js store', async () => {
+  it('clears the Next.js pages', async () => {
     const cache = await originCache();
 
     await cache.clear();
 
-    expect(mocks.clear).toHaveBeenCalled();
+    expect(mocks.clearPages).toHaveBeenCalled();
   });
 });

@@ -1,5 +1,5 @@
 import { GraphClient } from '@optimizely/cms-sdk';
-import { envGraphGateway } from './env.js';
+import { normalizePath, unique } from '../util/general.js';
 
 type Urls = { default?: string | null; hierarchical?: string | null };
 type PathResponse = { _Content?: { item?: { _metadata?: { url?: Urls } } } };
@@ -30,10 +30,8 @@ export const parseDocId = (docId: string) => {
 };
 
 // url.default is absolute when the content's application has a host
-const toPath = (url: string) => {
-  const pathname = URL.canParse(url) ? new URL(url).pathname : url;
-  return pathname.replace(/\/+$/, '') || '/';
-};
+const toPath = (url: string) =>
+  normalizePath(URL.canParse(url) ? new URL(url).pathname : url);
 
 /**
  * Resolves the `docId` of a Graph webhook to the URL paths of that content:
@@ -44,7 +42,10 @@ export async function resolveDocPaths(docId: string): Promise<string[]> {
   const singleKey = process.env.OPTIMIZELY_GRAPH_SINGLE_KEY;
   if (!singleKey) throw new Error('OPTIMIZELY_GRAPH_SINGLE_KEY is not set');
 
-  const client = new GraphClient(singleKey, { graphUrl: envGraphGateway() });
+  // GraphClient normalizes the gateway itself and defaults it when unset
+  const client = new GraphClient(singleKey, {
+    graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY,
+  });
   const { id, locale } = parseDocId(docId);
   // Uncached, so content that was just moved resolves to its new URL
   const data: PathResponse = await client.request(
@@ -59,5 +60,5 @@ export async function resolveDocPaths(docId: string): Promise<string[]> {
     .filter((it): it is string => Boolean(it))
     .map(toPath);
 
-  return [...new Set(paths)];
+  return unique(paths);
 }

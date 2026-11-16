@@ -10,7 +10,6 @@ const SLOT_HOSTNAME = /-slot\./i;
 
 let credential: TokenCredential | undefined;
 let cachedToken: { token: string; expiresAt: number } | undefined;
-let cachedHostnames: string[] | undefined;
 let hostnamesRequest: Promise<string[]> | undefined;
 
 // PLATFORM API
@@ -72,20 +71,17 @@ const envHostnames = () => [envSiteHostname()].filter(it => it !== undefined);
  */
 export async function getSiteHostnames(): Promise<string[]> {
   const api = platformApi();
-
-  if (cachedHostnames) return cachedHostnames;
   if (!api) return envHostnames();
 
-  try {
-    hostnamesRequest ??= fetchSiteHostnames(api);
-    cachedHostnames = await hostnamesRequest;
-    return cachedHostnames;
-  } catch (error) {
+  // One lookup per process, shared by concurrent calls
+  hostnamesRequest ??= fetchSiteHostnames(api).catch(error => {
+    // Not cached, so the next call retries the lookup
+    hostnamesRequest = undefined;
     log.error('Site hostname lookup failed, using OPTIMIZELY_SITE_HOSTNAME', error);
     return envHostnames();
-  } finally {
-    hostnamesRequest = undefined;
-  }
+  });
+
+  return hostnamesRequest;
 }
 
 // PURGE
@@ -121,3 +117,15 @@ export async function purgeCdnCache(urls?: string[]) {
 
   log.info(`CDN purge accepted (operation ${operationId ?? 'unknown'})`);
 }
+
+// The CDN caches a page separately with and without the trailing slash
+const toUrls = (hostname: string, path: string) =>
+  (path === '/' ? [path] : [path, `${path}/`]).map(it => `https://${hostname}${it}`);
+
+/** Purges URL paths from the platform CDN on every site hostname. */
+export const purgeCdnPaths = async (paths: string[]) => {
+  const urls = (await getSiteHostnames()).flatMap(hostname =>
+    paths.flatMap(path => toUrls(hostname, path)),
+  );
+  return purgeCdnCache(urls);
+};

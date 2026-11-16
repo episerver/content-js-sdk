@@ -7,9 +7,7 @@ const mocks = vi.hoisted(() => ({ handleGraphWebhook: vi.fn(), clear: vi.fn() })
 vi.mock('../shared/handleWebhook.js', () => ({
   handleGraphWebhook: mocks.handleGraphWebhook,
 }));
-vi.mock('../shared/redis.js', () => ({
-  createCacheStore: () => ({ clear: mocks.clear }),
-}));
+vi.mock('./cacheProvider.js', () => ({ clearPages: mocks.clear }));
 
 const { POST, createWebhookRoute } = await import('./route.js');
 

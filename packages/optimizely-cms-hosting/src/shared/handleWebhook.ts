@@ -1,5 +1,5 @@
-import { log, secretsMatch } from '../util/general.js';
-import { getSiteHostnames, purgeCdnCache } from './cdn.js';
+import { log, normalizePath, secretsMatch, unique } from '../util/general.js';
+import { purgeCdnPaths } from './cdn.js';
 import { forgetDocPaths, recallDocPaths, rememberDocPaths } from './docPaths.js';
 import { parseDocId, resolveDocPaths } from './graph.js';
 
@@ -82,28 +82,19 @@ const deletedDocIds = (payload: WebhookPayload) =>
 
 // INVALIDATION
 
-const unique = (paths: string[]) => [...new Set(paths)];
-
-// The CDN caches a page separately with and without the trailing slash
-const toPurgeUrls = (hostnames: string[], paths: string[]) =>
-  hostnames.flatMap(hostname =>
-    paths
-      .flatMap(path => (path === '/' ? [path] : [path, `${path}/`]))
-      .map(path => `https://${hostname}${path}`),
-  );
-
+// alsoRefresh paths come from site code, so they are normalized like Graph's
 const withAlsoRefreshed = (docId: string, paths: string[], options: WebhookOptions) => {
   const alsoRefresh = options.alsoRefresh ?? homePagePaths;
-  return [...paths, ...alsoRefresh({ docId, locale: parseDocId(docId).locale, paths })];
+  const locale = parseDocId(docId).locale;
+
+  return [...paths, ...alsoRefresh({ docId, locale, paths }).map(normalizePath)];
 };
 
 const refresh = async (paths: string[], cache: OriginCache) => {
   // Origin first: a CDN purged earlier could fetch the old page again
   await Promise.all(paths.map(it => cache.invalidate(it)));
   log.info(`Refreshed ${paths.join(', ')} in the origin cache`);
-  await purgeCdnCache(toPurgeUrls(await getSiteHostnames(), paths)).catch(error =>
-    log.error('CDN purge failed', error),
-  );
+  await purgeCdnPaths(paths).catch(error => log.error('CDN purge failed', error));
 };
 
 const handleDocChange = async (
@@ -133,12 +124,16 @@ const handleBulkDeletion = async (
   cache: OriginCache,
   options: WebhookOptions,
 ) => {
-  const remembered = await Promise.all(docIds.map(recallDocPaths));
-  const knownIds = new Set(
-    docIds.filter((_, index) => remembered[index].length).map(it => parseDocId(it).id),
+  const deleted = await Promise.all(
+    docIds.map(async docId => ({
+      docId,
+      id: parseDocId(docId).id,
+      paths: await recallDocPaths(docId),
+    })),
   );
+  const knownIds = new Set(deleted.filter(it => it.paths.length).map(it => it.id));
   // Graph lists every locale of deleted content; with one known, the others most likely had no page
-  const unknown = docIds.filter(it => !knownIds.has(parseDocId(it).id));
+  const unknown = deleted.filter(it => !knownIds.has(it.id)).map(it => it.docId);
 
   // Without a known URL, the deleted content could have been on any page
   if (unknown.length) {
@@ -146,9 +141,7 @@ const handleBulkDeletion = async (
     log.info(`Cleared the origin cache, no URL known for deleted ${unknown.join(', ')}`);
   }
 
-  const paths = docIds.flatMap((docId, index) =>
-    withAlsoRefreshed(docId, remembered[index], options),
-  );
+  const paths = deleted.flatMap(it => withAlsoRefreshed(it.docId, it.paths, options));
   await refresh(unique(paths), cache);
   await forgetDocPaths(docIds);
 };

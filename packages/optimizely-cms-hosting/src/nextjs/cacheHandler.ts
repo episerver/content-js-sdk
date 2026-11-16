@@ -15,10 +15,13 @@ const BUILD_FETCH_TTL_SECONDS = 60 * 60;
 const store = createCacheStore('nextjs');
 
 // Next.js stores the root page under '/index'
-const toPageKey = (pathTag: string) => {
-  const path = pathTag.slice(PATH_TAG_PREFIX.length);
-  return path === '/' ? '/index' : path;
-};
+const toPageKey = (path: string) => (path === '/' ? '/index' : path);
+
+/** Deletes the cached page of a path. */
+export const invalidatePage = (path: string) => store.delete([toPageKey(path)]);
+
+/** Deletes every cached page of this deployment. */
+export const clearPages = () => store.clear();
 
 const ttlFor = (ctx: SetContext) => {
   // `expire` rather than `revalidate`, so stale pages stay available for stale-while-revalidate
@@ -50,7 +53,7 @@ export default class CacheHandler implements NextCacheHandler {
 
     if (customTags.length)
       log.warn(`Ignoring unsupported tags: ${customTags.join(', ')}`);
-    await store.delete(pathTags.map(toPageKey));
+    await store.delete(pathTags.map(tag => toPageKey(tag.slice(PATH_TAG_PREFIX.length))));
   }
 
   resetRequestCache() {}

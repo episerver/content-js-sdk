@@ -4,8 +4,7 @@ import {
   type OriginCache,
   type WebhookOptions,
 } from '../shared/handleWebhook.js';
-import { createCacheStore } from '../shared/redis.js';
-import CacheHandler from './cacheHandler.js';
+import { clearPages, invalidatePage } from './cacheHandler.js';
 
 export {
   homePagePaths,
@@ -13,16 +12,13 @@ export {
   type WebhookOptions,
 } from '../shared/handleWebhook.js';
 
-const cacheHandler = new CacheHandler();
-const store = createCacheStore('nextjs');
-
 const originCache: OriginCache = {
   async invalidate(path) {
     revalidatePath(path);
     // revalidatePath applies after the response, too late for the CDN purge that follows
-    await cacheHandler.revalidateTag(`_N_T_${path}`);
+    await invalidatePage(path);
   },
-  clear: () => store.clear(),
+  clear: clearPages,
 };
 
 /**

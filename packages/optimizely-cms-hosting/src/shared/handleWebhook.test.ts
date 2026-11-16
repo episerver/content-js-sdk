@@ -3,8 +3,7 @@ import { handleGraphWebhook, homePagePaths, type OriginCache } from './handleWeb
 
 const mocks = vi.hoisted(() => ({
   resolveDocPaths: vi.fn(),
-  purgeCdnCache: vi.fn(),
-  getSiteHostnames: vi.fn(),
+  purgeCdnPaths: vi.fn(),
   remembered: new Map<string, string[]>(),
 }));
 
@@ -15,10 +14,7 @@ vi.mock('./graph.js', async importOriginal => ({
   ...(await importOriginal<typeof import('./graph.js')>()),
   resolveDocPaths: mocks.resolveDocPaths,
 }));
-vi.mock('./cdn.js', () => ({
-  purgeCdnCache: mocks.purgeCdnCache,
-  getSiteHostnames: mocks.getSiteHostnames,
-}));
+vi.mock('./cdn.js', () => ({ purgeCdnPaths: mocks.purgeCdnPaths }));
 vi.mock('./docPaths.js', () => ({
   rememberDocPaths: async (docId: string, paths: string[]) =>
     void mocks.remembered.set(keyOf(docId), paths),
@@ -62,8 +58,9 @@ beforeEach(() => {
     invalidate: vi.fn(async path => void events.push(`invalidate ${path}`)),
     clear: vi.fn(async () => void events.push('clear')),
   };
-  mocks.getSiteHostnames.mockResolvedValue(['www.mysite.com']);
-  mocks.purgeCdnCache.mockImplementation(async urls => void events.push(`purge ${urls}`));
+  mocks.purgeCdnPaths.mockImplementation(
+    async paths => void events.push(`purge ${paths}`),
+  );
 });
 
 afterEach(() => {
@@ -138,13 +135,7 @@ describe('handleGraphWebhook on a publish', () => {
         'invalidate /en/about',
         'invalidate /',
         'invalidate /en',
-        `purge ${[
-          'https://www.mysite.com/en/about',
-          'https://www.mysite.com/en/about/',
-          'https://www.mysite.com/',
-          'https://www.mysite.com/en',
-          'https://www.mysite.com/en/',
-        ]}`,
+        'purge /en/about,/,/en',
       ]);
     },
   );
@@ -175,25 +166,9 @@ describe('handleGraphWebhook on a publish', () => {
     ]);
   });
 
-  it('purges the paths on every site hostname', async () => {
-    mocks.resolveDocPaths.mockResolvedValue(['/news']);
-    mocks.getSiteHostnames.mockResolvedValue(['www.mysite.com', 'mysite.dxcloud.test']);
-
-    await handleGraphWebhook(webhook(docEvent('updated')), cache);
-
-    expect(mocks.purgeCdnCache).toHaveBeenCalledWith([
-      'https://www.mysite.com/news',
-      'https://www.mysite.com/news/',
-      'https://www.mysite.com/',
-      'https://mysite.dxcloud.test/news',
-      'https://mysite.dxcloud.test/news/',
-      'https://mysite.dxcloud.test/',
-    ]);
-  });
-
   it('answers 200 when the CDN purge fails', async () => {
     mocks.resolveDocPaths.mockResolvedValue(['/en']);
-    mocks.purgeCdnCache.mockRejectedValue(new Error('403'));
+    mocks.purgeCdnPaths.mockRejectedValue(new Error('403'));
 
     const response = await handleGraphWebhook(webhook(docEvent('updated')), cache);
 
@@ -248,7 +223,7 @@ describe('handleGraphWebhook with remembered paths', () => {
     const response = await handleGraphWebhook(webhook(docEvent('expired')), cache);
 
     expect(response.status).toBe(200);
-    expect(events).toEqual(['invalidate /', 'purge https://www.mysite.com/']);
+    expect(events).toEqual(['invalidate /', 'purge /']);
     expect(console.warn).toHaveBeenCalledWith(
       '[cms-hosting] No URL known for abc_en_Published',
     );
@@ -272,7 +247,7 @@ describe('handleGraphWebhook on a bulk deletion', () => {
       'invalidate /',
       'invalidate /en',
     ]);
-    expect(events.at(-1)).toContain('https://www.mysite.com/en/about/');
+    expect(events.at(-1)).toBe('purge /en/about,/,/en');
     expect(mocks.remembered.has('abc_en')).toBe(false);
   });
 
@@ -314,7 +289,7 @@ describe('handleGraphWebhook on a bulk deletion', () => {
   it('clears the origin cache when a deleted item has no known URL', async () => {
     await handleGraphWebhook(webhook(bulkEvent({ abc_en_Published: 'deleted' })), cache);
 
-    expect(events).toEqual(['clear', 'invalidate /', 'purge https://www.mysite.com/']);
+    expect(events).toEqual(['clear', 'invalidate /', 'purge /']);
     expect(console.info).toHaveBeenCalledWith(
       '[cms-hosting] Cleared the origin cache, no URL known for deleted abc_en_Published',
     );
@@ -333,6 +308,16 @@ describe('alsoRefresh', () => {
       locale: 'en',
       paths: ['/en/about'],
     });
+    expect(invalidated()).toEqual(['invalidate /en/about', 'invalidate /news']);
+  });
+
+  it('normalizes the paths it returns', async () => {
+    mocks.resolveDocPaths.mockResolvedValue(['/en/about']);
+
+    await handleGraphWebhook(webhook(docEvent('updated')), cache, {
+      alsoRefresh: () => ['/news/', '/en/about/'],
+    });
+
     expect(invalidated()).toEqual(['invalidate /en/about', 'invalidate /news']);
   });
 

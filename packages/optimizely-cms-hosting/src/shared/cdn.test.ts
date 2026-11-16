@@ -129,6 +129,33 @@ describe('purgeCdnCache', () => {
   });
 });
 
+describe('purgeCdnPaths', () => {
+  it('purges each path on every site hostname, with and without the trailing slash', async () => {
+    fetchMock.mockResolvedValueOnce(
+      hostnames(['www.mysite.com', true], ['mysite.dxcloud.test']),
+    );
+    const { purgeCdnPaths } = await loadCdn();
+
+    await purgeCdnPaths(['/en/about', '/']);
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      `${API_URL}/v1/edge-cache/purge`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          urls: [
+            'https://www.mysite.com/en/about',
+            'https://www.mysite.com/en/about/',
+            'https://www.mysite.com/',
+            'https://mysite.dxcloud.test/en/about',
+            'https://mysite.dxcloud.test/en/about/',
+            'https://mysite.dxcloud.test/',
+          ],
+        }),
+      }),
+    );
+  });
+});
+
 describe('getSiteHostnames', () => {
   it('returns the non-slot hostnames and looks them up once', async () => {
     fetchMock.mockResolvedValue(
