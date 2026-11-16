@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resolveDocPaths } from './graph.js';
+import { parseDocId, resolveDocPaths } from './graph.js';
 
 const graph = vi.hoisted(() => ({ constructor: vi.fn(), request: vi.fn() }));
 
@@ -22,6 +22,20 @@ beforeEach(() => {
 });
 
 afterEach(() => vi.unstubAllEnvs());
+
+describe('parseDocId', () => {
+  it.each([
+    ['3f2b-1c4d_en_Published', { id: '3f2b1c4d', locale: 'en', status: 'Published' }],
+    ['3f2b-1c4d_983_en_Previous', { id: '3f2b1c4d', locale: 'en', status: 'Previous' }],
+    [
+      '3f2b-1c4d_en-US_Published',
+      { id: '3f2b1c4d', locale: 'en_US', status: 'Published' },
+    ],
+    ['3f2b-1c4d_zh_Hans_Draft', { id: '3f2b1c4d', locale: 'zh_Hans', status: 'Draft' }],
+  ])('splits %s', (docId, expected) => {
+    expect(parseDocId(docId)).toEqual(expected);
+  });
+});
 
 describe('resolveDocPaths', () => {
   it('queries Graph uncached with the id and locale from the docId', async () => {
@@ -50,7 +64,8 @@ describe('resolveDocPaths', () => {
   it.each([
     ['zh_Hans', 'zh_Hans'],
     ['zh-Hans', 'zh_Hans'],
-  ])('keeps locale %s as the Graph locale %s', async (docLocale, locale) => {
+    ['983_en', 'en'],
+  ])('queries the docId part %s as the Graph locale %s', async (docLocale, locale) => {
     respondWithUrls('/zh/');
 
     await resolveDocPaths(`abc_${docLocale}_Published`);

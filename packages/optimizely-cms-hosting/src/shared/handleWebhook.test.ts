@@ -276,6 +276,41 @@ describe('handleGraphWebhook on a bulk deletion', () => {
     expect(mocks.remembered.has('abc_en')).toBe(false);
   });
 
+  it('does not clear for other locales or versions of content with a known URL', async () => {
+    mocks.resolveDocPaths.mockResolvedValueOnce(['/en/about']);
+    await handleGraphWebhook(webhook(docEvent('updated')), cache);
+    events = [];
+
+    // What Graph sent in the manual test when a page was deleted from the trash
+    await handleGraphWebhook(
+      webhook(
+        bulkEvent({
+          abc_983_en_Previous: 'deleted',
+          abc_de_Published: 'deleted',
+          'abc_en-US_Published': 'deleted',
+          abc_en_Published: 'deleted',
+        }),
+      ),
+      cache,
+    );
+
+    expect(cache.clear).not.toHaveBeenCalled();
+    expect(invalidated().sort()).toEqual([
+      'invalidate /',
+      'invalidate /en',
+      'invalidate /en/about',
+    ]);
+  });
+
+  it('ignores deleted drafts and previous versions', async () => {
+    await handleGraphWebhook(
+      webhook(bulkEvent({ abc_983_en_Previous: 'deleted', abc_en_Draft: 'deleted' })),
+      cache,
+    );
+
+    expect(events).toEqual([]);
+  });
+
   it('clears the origin cache when a deleted item has no known URL', async () => {
     await handleGraphWebhook(webhook(bulkEvent({ abc_en_Published: 'deleted' })), cache);
 

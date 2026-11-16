@@ -26,6 +26,7 @@ describe('docPaths', () => {
     await rememberDocPaths('3f2b-1c4d_en_Published', ['/en/about']);
 
     expect(await recallDocPaths('3f2b1c4d_en_Expired')).toEqual(['/en/about']);
+    expect(await recallDocPaths('3f2b1c4d_983_en_Published')).toEqual(['/en/about']);
     expect(await recallDocPaths('3f2b1c4d_sv_Published')).toEqual([]);
   });
 

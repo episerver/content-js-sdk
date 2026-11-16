@@ -73,10 +73,12 @@ const parsePayload = async (request: Request) => {
   }
 };
 
+// Only published versions had pages; Graph also lists deleted drafts and previous versions
 const deletedDocIds = (payload: WebhookPayload) =>
   Object.entries(payload.data?.items ?? {})
     .filter(([, status]) => status === 'deleted')
-    .map(([docId]) => docId);
+    .map(([docId]) => docId)
+    .filter(docId => parseDocId(docId).status === 'Published');
 
 // INVALIDATION
 
@@ -132,7 +134,11 @@ const handleBulkDeletion = async (
   options: WebhookOptions,
 ) => {
   const remembered = await Promise.all(docIds.map(recallDocPaths));
-  const unknown = docIds.filter((_, index) => !remembered[index].length);
+  const knownIds = new Set(
+    docIds.filter((_, index) => remembered[index].length).map(it => parseDocId(it).id),
+  );
+  // Graph lists every locale of deleted content; with one known, the others most likely had no page
+  const unknown = docIds.filter(it => !knownIds.has(parseDocId(it).id));
 
   // Without a known URL, the deleted content could have been on any page
   if (unknown.length) {

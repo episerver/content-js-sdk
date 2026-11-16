@@ -12,14 +12,21 @@ query ResolveDocPaths($id: String, $locale: Locales) {
 }`;
 
 /**
- * Splits a Graph `docId` (`{uuid}_{locale}_{status}`) into the content id
- * without dashes and the Graph locale. Locale names can contain underscores.
+ * Splits a Graph `docId` (`{uuid}[_{version}]_{locale}_{status}`) into the
+ * content id without dashes, the Graph locale and the status, such as
+ * `Published` or `Previous`. Locale names can contain underscores.
  */
 export const parseDocId = (docId: string) => {
   const [uuid, ...rest] = docId.split('_');
-  const locale = rest.slice(0, -1).join('_').replaceAll('-', '_');
+  const middle = rest.slice(0, -1);
+  // Version-specific docIds carry a numeric version before the locale; no locale is numeric
+  const localeParts = /^\d+$/.test(middle[0] ?? '') ? middle.slice(1) : middle;
 
-  return { id: uuid.replaceAll('-', ''), locale };
+  return {
+    id: uuid.replaceAll('-', ''),
+    locale: localeParts.join('_').replaceAll('-', '_'),
+    status: rest.at(-1) ?? '',
+  };
 };
 
 // url.default is absolute when the content's application has a host
@@ -38,10 +45,11 @@ export async function resolveDocPaths(docId: string): Promise<string[]> {
   if (!singleKey) throw new Error('OPTIMIZELY_GRAPH_SINGLE_KEY is not set');
 
   const client = new GraphClient(singleKey, { graphUrl: envGraphGateway() });
+  const { id, locale } = parseDocId(docId);
   // Uncached, so content that was just moved resolves to its new URL
   const data: PathResponse = await client.request(
     PATH_QUERY,
-    parseDocId(docId),
+    { id, locale },
     undefined,
     false,
   );
