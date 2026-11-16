@@ -327,24 +327,38 @@ export type GraphGetContentOptions = GraphQueryOptions & {
 
 export type OrderDirection = 'ASC' | 'DESC';
 
-/** Metadata fields available for ordering, derived from the Graph response schema. */
-export type MetadataOrderField = keyof InferredContentMetadata & string;
+/** Matches `IContentMetadataOrderByInput` from Graph schema. */
+export type ContentMetadataOrderByInput = {
+  [K in keyof InferredContentMetadata]?: OrderDirection | { [field: string]: OrderDirection };
+};
 
-/** Order-by clause for metadata fields: `{ _metadata: { published: 'DESC' } }`. */
-export type MetadataOrderBy = {
-  _metadata?: { [K in MetadataOrderField]?: OrderDirection };
+/** Matches `_MetadataOrderByInput` from Graph schema. Accepts unknown fields for forward compat. */
+export type ItemMetadataOrderByInput = {
+  [K in 'key' | 'displayName' | 'lastModified' | 'type' | 'categories' | (string & {})]?: OrderDirection;
+};
+
+/** Matches `_ChangesetMetadataOrderByInput` from Graph schema. Accepts unknown fields for forward compat. */
+export type ChangesetMetadataOrderByInput = {
+  [K in 'changesetKey' | 'changesetName' | 'status' | 'locale' | (string & {})]?: OrderDirection;
 };
 
 /**
  * Order-by clause matching Graph's `orderBy` format.
  *
- * Metadata fields go under `_metadata`, content-type properties at the top level:
  * ```ts
- * { heading: 'DESC', _metadata: { published: 'ASC' } }
+ * { _metadata: { published: 'DESC', sortOrder: 'ASC' } }
+ * { _modified: 'DESC' }
+ * { body: { html: 'ASC' }, _metadata: { published: 'DESC' } }
  * ```
  */
-export type OrderBy = MetadataOrderBy & {
-  [field: string]: OrderDirection | { [nested: string]: OrderDirection } | undefined;
+type OrderByValue = OrderDirection | { [nested: string]: OrderByValue } | undefined;
+
+export type OrderBy = {
+  _metadata?: ContentMetadataOrderByInput;
+  _itemMetadata?: ItemMetadataOrderByInput;
+  _changesetMetadata?: ChangesetMetadataOrderByInput;
+  _modified?: OrderDirection;
+  [field: string]: OrderByValue;
 };
 
 export type GraphGetLinksOptions = GraphQueryOptions & {

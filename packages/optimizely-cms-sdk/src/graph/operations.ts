@@ -1091,23 +1091,23 @@ export async function getPath(
   return sortedKeys.map(key => linkMap.get(key)).filter(item => item !== undefined);
 }
 
-function buildOrderByClause(orderBy: OrderBy): string {
+function serializeOrderBy(obj: Record<string, unknown>): string {
   const parts: string[] = [];
 
-  for (const [key, value] of Object.entries(orderBy)) {
+  for (const [key, value] of Object.entries(obj)) {
     if (value === undefined) continue;
     if (typeof value === 'string') {
       parts.push(`${key}: ${value}`);
-    } else {
-      const nested = Object.entries(value)
-        .filter(([, v]) => v !== undefined)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(', ');
-      if (nested) parts.push(`${key}: { ${nested} }`);
+    } else if (typeof value === 'object' && value !== null) {
+      parts.push(`${key}: ${serializeOrderBy(value as Record<string, unknown>)}`);
     }
   }
 
   return `{ ${parts.join(', ')} }`;
+}
+
+function buildOrderByClause(orderBy: OrderBy): string {
+  return serializeOrderBy(orderBy as Record<string, unknown>);
 }
 
 function resolveOrderBy(options?: GraphGetLinksOptions): OrderBy | undefined {

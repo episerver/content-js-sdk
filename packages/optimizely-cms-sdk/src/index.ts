@@ -25,8 +25,9 @@ export {
   createClientFromRegistry,
   OrderBy,
   OrderDirection,
-  MetadataOrderBy,
-  MetadataOrderField,
+  ContentMetadataOrderByInput,
+  ItemMetadataOrderByInput,
+  ChangesetMetadataOrderByInput,
 } from './graph/index.js';
 
 // GraphQL types

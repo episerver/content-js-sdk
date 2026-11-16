@@ -14,6 +14,7 @@ const NewsPage = contentType({
   baseType: '_page' as const,
   properties: {
     headline: { type: 'string' as const },
+    body: { type: 'richText' as const },
     publishDate: { type: 'dateTime' as const },
   },
 });
@@ -24,7 +25,7 @@ const ArticlePage = contentType({
   baseType: '_page' as const,
   properties: {
     title: { type: 'string' as const },
-    body: { type: 'richText' as const },
+    content: { type: 'richText' as const },
   },
 });
 
@@ -125,27 +126,41 @@ describe('createClientFromRegistry', () => {
 // ---------------------------------------------------------------------------
 
 describe('TypedOrderBy', () => {
-  test('accepts content type property keys at top level', () => {
+  test('accepts richText property as nested orderBy', () => {
     type NewsOrderBy = TypedOrderBy<typeof NewsPage>;
-    expectTypeOf<{ headline: 'DESC' }>().toMatchTypeOf<NewsOrderBy>();
-    expectTypeOf<{ publishDate: 'ASC' }>().toMatchTypeOf<NewsOrderBy>();
+    expectTypeOf<{ body: { html: 'ASC' } }>().toMatchTypeOf<NewsOrderBy>();
   });
 
-  test('accepts metadata fields under _metadata', () => {
+  test('does not include string properties', () => {
+    type NewsOrderBy = TypedOrderBy<typeof NewsPage>;
+    expectTypeOf<'headline'>().not.toMatchTypeOf<keyof NewsOrderBy>();
+  });
+
+  test('accepts _metadata fields', () => {
     type NewsOrderBy = TypedOrderBy<typeof NewsPage>;
     expectTypeOf<{ _metadata: { sortOrder: 'ASC' } }>().toMatchTypeOf<NewsOrderBy>();
     expectTypeOf<{ _metadata: { published: 'DESC' } }>().toMatchTypeOf<NewsOrderBy>();
   });
 
-  test('accepts mixed property and metadata fields', () => {
+  test('accepts _itemMetadata fields', () => {
     type NewsOrderBy = TypedOrderBy<typeof NewsPage>;
-    expectTypeOf<{ headline: 'DESC', _metadata: { published: 'ASC' } }>()
+    expectTypeOf<{ _itemMetadata: { displayName: 'ASC' } }>().toMatchTypeOf<NewsOrderBy>();
+  });
+
+  test('accepts _modified system field', () => {
+    type NewsOrderBy = TypedOrderBy<typeof NewsPage>;
+    expectTypeOf<{ _modified: 'DESC' }>().toMatchTypeOf<NewsOrderBy>();
+  });
+
+  test('accepts mixed richText property and metadata', () => {
+    type NewsOrderBy = TypedOrderBy<typeof NewsPage>;
+    expectTypeOf<{ body: { html: 'ASC' }, _metadata: { published: 'DESC' } }>()
       .toMatchTypeOf<NewsOrderBy>();
   });
 
   test('orderBy option is accepted by getItems', () => {
     const typed = createClient(client, { news: NewsPage });
-    expectTypeOf<{ orderBy: { headline: 'DESC' } }>()
+    expectTypeOf<{ orderBy: { body: { html: 'DESC' } } }>()
       .toMatchTypeOf<NonNullable<Parameters<typeof typed.news.getItems>[1]>>();
   });
 });

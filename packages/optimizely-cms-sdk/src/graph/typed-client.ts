@@ -1,12 +1,15 @@
 import type { GraphClient } from './index.js';
 import type { ContentProps } from '../infer.js';
 import type { AnyContentType } from '../model/contentTypes.js';
+import type { AnyProperty, RichTextProperty } from '../model/properties.js';
 import type {
+  ContentMetadataOrderByInput,
+  ChangesetMetadataOrderByInput,
   GraphGetContentOptions,
   GraphGetItemOptions,
   GraphGetLinksOptions,
   GraphReference,
-  MetadataOrderField,
+  ItemMetadataOrderByInput,
   OrderDirection,
 } from './options.js';
 import { getAllContentTypes, getContentTypeByBaseType } from '../model/contentTypeRegistry.js';
@@ -18,24 +21,35 @@ import { getAllContentTypes, getContentTypeByBaseType } from '../model/contentTy
 /** A mapping of user-friendly keys to content type definitions. */
 export type ContentTypeMap = Record<string, AnyContentType>;
 
-/** Extract property keys from a content type definition. */
-type PropertyKeys<CT extends AnyContentType> =
+/** Map a content type property to its GraphQL orderBy input type. */
+type PropertyOrderByInput<P extends AnyProperty> =
+  P extends RichTextProperty ? { html?: OrderDirection }
+  : never;
+
+/** Extract orderable property keys (only property types Graph supports in orderBy). */
+type OrderablePropertyKeys<CT extends AnyContentType> =
   CT extends { properties: infer P }
-    ? P extends Record<string, any> ? keyof P & string : never
+    ? P extends Record<string, AnyProperty>
+      ? { [K in keyof P]: PropertyOrderByInput<P[K]> extends never ? never : K }[keyof P] & string
+      : never
     : never;
 
 /**
- * Typed `orderBy` clause for a specific content type.
+ * Typed `orderBy` clause for a specific content type, matching Graph schema.
  *
- * Content-type properties are at the top level, metadata fields go under `_metadata`:
  * ```ts
- * { heading: 'DESC', _metadata: { published: 'ASC' } }
+ * { body: { html: 'ASC' }, _metadata: { published: 'DESC' } }
  * ```
  */
 export type TypedOrderBy<CT extends AnyContentType> = {
-  [K in PropertyKeys<CT>]?: OrderDirection;
+  [K in OrderablePropertyKeys<CT>]?: CT extends { properties: infer P }
+    ? P extends Record<string, AnyProperty> ? K extends keyof P ? PropertyOrderByInput<P[K]> : never : never
+    : never;
 } & {
-  _metadata?: { [K in MetadataOrderField]?: OrderDirection };
+  _metadata?: ContentMetadataOrderByInput;
+  _itemMetadata?: ItemMetadataOrderByInput;
+  _changesetMetadata?: ChangesetMetadataOrderByInput;
+  _modified?: OrderDirection;
 };
 
 /** GraphGetLinksOptions with content-type-aware orderBy. */

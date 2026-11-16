@@ -45,8 +45,9 @@ export {
   PreviewParams,
   OrderBy,
   OrderDirection,
-  MetadataOrderBy,
-  MetadataOrderField,
+  ContentMetadataOrderByInput,
+  ItemMetadataOrderByInput,
+  ChangesetMetadataOrderByInput,
 } from './options.js';
 export {
   createClient,
