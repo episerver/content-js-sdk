@@ -1,88 +1,81 @@
-This is a [Next.js](https://nextjs.org) project that shows how to use Optimizely Graph Webhooks with Next.js cache invalidation.
+This is a [Next.js](https://nextjs.org) project that shows Incremental Static Regeneration
+(ISR) on Optimizely front-end hosting with
+[`@optimizely/cms-hosting`](../../packages/optimizely-cms-hosting). When you publish a
+page in the CMS, the site shows the change within seconds, without a rebuild.
 
-## Features Demonstrated
+## How it works
 
-- Using webhooks with Optimizely CMS hooks
-- Graph webhook integration
-- Next.js cache invalidation
+Four files connect the project to the hosting platform:
+
+| File                                     | What it does                                                                                       |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `cache-handler.mjs` and `next.config.ts` | Store the ISR cache in the platform's Redis, so every instance serves and refreshes the same pages |
+| `src/instrumentation.ts`                 | Registers an Optimizely Graph webhook when the server starts                                       |
+| `src/app/hooks/graph/route.ts`           | Receives the webhook and refreshes the published page in the cache and the CDN                     |
 
 ## Setup
 
-### 1. Deploy or use a tunnel
+### 1. Create content
 
-To try this project, you need an actual URL that can receive requests from Graph (`localhost` is not valid). Here are some options:
+Go to your CMS and create a page.
 
-- Deploy this project to Optimizely front-end hosting with `optimizely-cms-cli deploy`. See [Deploy to Front-end Hosting](../../docs/guides/deploy-to-frontend-hosting.md). Copy the project out of this monorepo first: it needs its own `package-lock.json`, and published versions instead of `workspace:*`
-- Deploy this project to [Vercel](https://vercel.com)
-- Use a local tunneling service like [ngrok](https://ngrok.com)
+### 2. Deploy the project
 
-### 2. Set up the environment variables
+Deploy the project to Optimizely front-end hosting with `optimizely-cms-cli deploy`. See
+[Deploy to Front-end Hosting](../../docs/guides/deploy-to-frontend-hosting.md). Copy the
+project out of this monorepo first: it needs its own `package-lock.json`, and published
+versions instead of `workspace:*`.
 
-Go to your CMS &rarr; Settings &rarr; API Key. Under "Render Content", copy the value "Single Key"
+The platform sets every variable the project needs, including the Redis connection, the
+webhook credentials and the CDN purge API. You do not set any of them.
 
-Create an `.env` file with the following content:
+### 3. Create an application
 
-```ini
-OPTIMIZELY_GRAPH_SINGLE_KEY=<the single key you copied>
-```
-
-Add one more line to the `.env` file with a randomly generated string. This string will be part of the webhook URL `https://example.com/webhooks/<WEBHOOK_ID>`, so ensure that the value is URL-friendly.
-
-```ini
-WEBHOOK_ID=randomly_generated_id
-```
-
-<details>
-<summary>Why you need this?</summary>
-
-Webhook URLs are public endpoints. Anyone with the URL will be able to revoke a cache. The `WEBHOOK_ID` environment variable ensures that the webhook URL is not publicly known. Treat the variable as a password or a token
-
-</details>
-
-### 3. Create the webhook
-
-Run `npm run webhook:create` and follow the instructions to create a webhook in Graph that points to your project.
-
-### 4. Create content
-
-Go to your CMS and create a page
-
-### 5. Create an application
-
-Go to your CMS &rarr; Settings &rarr; Applications. Click "Create application" In the dialog:
+Go to your CMS &rarr; Settings &rarr; Applications. Click "Create application". In the
+dialog:
 
 - In _Application Name_ write "webhooks_test"
-- Under _choose start page_ choose "from existing" and choose the page you created in the previous step.
+- Under _choose start page_ choose "from existing" and choose the page you created in
+  step 1.
 
-Click create application and, in the list of applications, click the application you just created and go to "Hostnames". Click "Add Hostname". In the dialog:
+Click create application and, in the list of applications, click the application you just
+created and go to "Hostnames". Click "Add Hostname". In the dialog:
 
-- In _Hostname_ write the URL of your application, e.g. https://example.com.
+- In _Hostname_ write the hostname that `deploy` printed, for example
+  `myproject9abc1t001.dxcloud.episerver.net`.
 - Check the "Use a secure connection (HTTPS)" checkbox
 - In _Locale_ choose All
 
-### 6. Build and start the project
+### 4. Test the cache
 
-Run `npm run build` and `npm start`
-
-> [!Note]
-> The command `npm run dev` does not work because Next.js cache is disabled in dev mode
-
-### 7. Test the cache
-
-Go to `<your project URL>/en`. You will see a page with the message:
+Go to `<your site>/en`. You will see a page with the message:
 
 ```
 This page is generated and cached: 2025-10-03T12:42:40.453Z. 15 seconds ago
 ```
 
-Refresh the page. You will see that the date is the same and that the seconds counter has _not_ restarted.
+Refresh the page. You will see that the date is the same and that the seconds counter has
+_not_ restarted.
 
-### 8. Trigger a cache revalidation
+### 5. Publish a change
 
 Go to your CMS, make changes to the page `/en/` you created previously and publish them.
 
-Go to `<your project URL>/en`. You will see that a different date and that the counter has restarted
+Go to `<your site>/en`. Within a few seconds, you will see a different date and the
+counter has restarted.
 
-### 9. Clean-up
+## Running somewhere else
 
-Run `npm run webhook:edit` and follow the instructions to delete the webhook that you don't need anymore.
+Without the platform variables, the project still builds and runs:
+
+- Each instance caches pages in its own memory instead of Redis.
+- No webhook is registered, and the CDN is not purged.
+
+To try the webhook on another host, give the site a public URL (`localhost` cannot receive
+webhooks; use a tunnel like [ngrok](https://ngrok.com)) and set the variables listed in
+`.env.in`.
+
+> [!NOTE]
+>
+> `npm run dev` does not cache pages, because Next.js disables the cache in dev mode. Use
+> `npm run build` and `npm start`.

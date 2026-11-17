@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist/esm"
+  },
+  "exclude": ["src/**/__test__/**", "src/**/*.test.ts", "src/**/*.test-d.ts"]
+}

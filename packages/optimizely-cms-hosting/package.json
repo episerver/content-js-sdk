@@ -1,0 +1,132 @@
+{
+  "name": "@optimizely/cms-hosting",
+  "version": "0.0.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "description": "ISR support for Next.js and Astro sites on Optimizely front-end hosting",
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/cjs/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./nextjs": {
+      "import": {
+        "types": "./dist/esm/nextjs/index.d.ts",
+        "default": "./dist/esm/nextjs/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/nextjs/index.d.ts",
+        "default": "./dist/cjs/nextjs/index.js"
+      }
+    },
+    "./nextjs/cache-handler": {
+      "import": {
+        "types": "./dist/esm/nextjs/cacheHandler.d.ts",
+        "default": "./dist/esm/nextjs/cacheHandler.js"
+      },
+      "require": {
+        "types": "./dist/cjs/nextjs/cacheHandler.d.ts",
+        "default": "./dist/cjs/nextjs/cacheHandler.js"
+      }
+    },
+    "./nextjs/route": {
+      "import": {
+        "types": "./dist/esm/nextjs/route.d.ts",
+        "default": "./dist/esm/nextjs/route.js"
+      },
+      "require": {
+        "types": "./dist/cjs/nextjs/route.d.ts",
+        "default": "./dist/cjs/nextjs/route.js"
+      }
+    },
+    "./astro": {
+      "import": {
+        "types": "./dist/esm/astro/index.d.ts",
+        "default": "./dist/esm/astro/index.js"
+      }
+    },
+    "./astro/cache-provider": {
+      "import": {
+        "types": "./dist/esm/astro/cacheProvider.d.ts",
+        "default": "./dist/esm/astro/cacheProvider.js"
+      }
+    },
+    "./astro/route": {
+      "import": {
+        "types": "./dist/esm/astro/route.d.ts",
+        "default": "./dist/esm/astro/route.js"
+      }
+    }
+  },
+  "bin": {
+    "optimizely-hosting": "./dist/esm/bin/optimizely-hosting.js"
+  },
+  "repository": {
+    "url": "https://github.com/episerver/content-js-sdk.git",
+    "directory": "packages/optimizely-cms-hosting"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.cjs.json && tsc --project tsconfig.esm.json",
+    "postbuild": "node scripts/postbuild.js",
+    "dev": "pnpm build && tsc --project tsconfig.esm.json --inlineSources --watch --preserveWatchOutput",
+    "clean": "rimraf dist",
+    "test": "vitest run --typecheck",
+    "test:watch": "vitest --typecheck"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "optimizely",
+    "cms",
+    "isr",
+    "nextjs",
+    "astro",
+    "redis",
+    "hosting"
+  ],
+  "author": "Optimizely",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.7.0",
+  "peerDependencies": {
+    "@optimizely/cms-sdk": "workspace:^",
+    "astro": ">=7.0.0",
+    "next": ">=16.0.0"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@azure/identity": "^4.14.1",
+    "@redis/entraid": "^6.3.1",
+    "redis": "^6.3.1"
+  },
+  "devDependencies": {
+    "@optimizely/cms-sdk": "workspace:*",
+    "@types/node": "^22.13.14",
+    "astro": "^7.3.5",
+    "next": "^16.3.6",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.2",
+    "vitest": "^5.0.1"
+  }
+}

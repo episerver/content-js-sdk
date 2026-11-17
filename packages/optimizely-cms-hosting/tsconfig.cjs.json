@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "outDir": "./dist/cjs"
+  },
+  "exclude": [
+    "src/**/__test__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test-d.ts",
+    "src/bin/**",
+    "src/astro/**"
+  ]
+}
