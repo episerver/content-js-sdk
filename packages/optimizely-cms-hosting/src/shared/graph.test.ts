@@ -89,6 +89,18 @@ describe('resolveDocPaths', () => {
     expect(await resolveDocPaths('abc_en_Published')).toEqual([]);
   });
 
+  it('gives up on a lookup that takes longer than 10 seconds', async () => {
+    vi.useFakeTimers();
+    graph.request.mockReturnValue(new Promise(() => {}));
+
+    const lookup = resolveDocPaths('abc_en_Published');
+    const assertion = expect(lookup).rejects.toThrow('Graph lookup timed out after 10s');
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await assertion;
+    vi.useRealTimers();
+  });
+
   it('throws without a single key', async () => {
     vi.stubEnv('OPTIMIZELY_GRAPH_SINGLE_KEY', undefined);
 

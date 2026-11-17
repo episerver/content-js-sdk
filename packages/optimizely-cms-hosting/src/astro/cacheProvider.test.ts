@@ -74,6 +74,21 @@ describe('setHeaders', () => {
 });
 
 describe('onRequest', () => {
+  it('stores a miss when the adapter has no waitUntil, as @astrojs/node', async () => {
+    const { onRequest } = await loadProvider();
+    const next = vi.fn(async () => page('v1'));
+    const withoutWaitUntil = () => ({
+      ...requestTo('https://site.test/en'),
+      waitUntil: undefined,
+    });
+
+    await onRequest(withoutWaitUntil(), next);
+    const hit = await onRequest(withoutWaitUntil(), next);
+
+    expect(hit.headers.get('X-Astro-Cache')).toBe('HIT');
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
   it('stores a miss and serves the next request from the cache', async () => {
     vi.useFakeTimers({ now: 0, toFake: ['Date'] });
     const { onRequest } = await loadProvider();

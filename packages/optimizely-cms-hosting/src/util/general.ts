@@ -45,6 +45,12 @@ export const unique = <T>(items: T[]) => [...new Set(items)];
 /** A URL path without trailing slashes, `/` for the root. */
 export const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
 
+/** The normalized path of a path or absolute URL: `/en/news` for `en/news/` or `https://site/en/news`. */
+export const toPath = (value: string) =>
+  normalizePath(
+    URL.canParse(value) ? new URL(value).pathname : `/${value.replace(/^\/+/, '')}`,
+  );
+
 /**
  * Compares a secret in time that does not depend on where the strings differ.
  * Plain JS rather than node:crypto, so it also runs in the Next.js Edge runtime.

@@ -414,4 +414,43 @@ describe('createCacheStore with Redis', () => {
     expect(cluster.del).toHaveBeenCalledWith('nextjs:slot1:/en');
     expect(await store.get('/en')).toBeNull();
   });
+
+  it('throws when Redis is up but the delete fails, after clearing memory', async () => {
+    cluster.set.mockRejectedValueOnce(new Error('MOVED'));
+    cluster.get.mockRejectedValue(new Error('MOVED'));
+    cluster.del.mockRejectedValue(new Error('CLUSTERDOWN'));
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+
+    await store.set('/en', 'value');
+
+    await expect(store.delete(['/en'])).rejects.toThrow('CLUSTERDOWN');
+    expect(await store.get('/en')).toBeNull();
+  });
+
+  it('fails fast while a node is down instead of queueing commands', async () => {
+    const { createCacheStore, createCluster } = await loadStore();
+
+    await createCacheStore('nextjs').get('/en');
+
+    expect(createCluster).toHaveBeenCalledWith(
+      expect.objectContaining({
+        defaults: expect.objectContaining({ disableOfflineQueue: true }),
+      }),
+    );
+  });
+
+  it('uses memory when a Redis operation takes longer than 2 seconds', async () => {
+    vi.useFakeTimers();
+    cluster.set.mockRejectedValueOnce(new Error('MOVED'));
+    cluster.get.mockReturnValue(new Promise(() => {}));
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+    await store.set('/en', 'value');
+
+    const pending = store.get('/en');
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(await pending).toBe('value');
+  });
 });

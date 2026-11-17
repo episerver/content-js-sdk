@@ -1,11 +1,12 @@
 import { ManagedIdentityCredential, type TokenCredential } from '@azure/identity';
-import { log } from '../util/general.js';
+import { log, withTimeout } from '../util/general.js';
 import { envSiteHostname } from './env.js';
 
 type PlatformApi = { url: string; resourceId: string };
 type Hostname = { hostname: string; isCustomHostname?: boolean };
 
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 10_000;
 const SLOT_HOSTNAME = /-slot\./i;
 
 let credential: TokenCredential | undefined;
@@ -28,7 +29,12 @@ const getToken = async (resourceId: string) => {
   // Without AZURE_CLIENT_ID this uses the system-assigned identity
   credential ??= new ManagedIdentityCredential({ clientId: process.env.AZURE_CLIENT_ID });
 
-  const accessToken = await credential.getToken(`${resourceId}/.default`);
+  const tokenRequest = credential.getToken(`${resourceId}/.default`);
+  const accessToken = await withTimeout(
+    tokenRequest,
+    REQUEST_TIMEOUT_MS,
+    'Managed identity',
+  );
   if (!accessToken) throw new Error('managed identity returned no token');
 
   cachedToken = { token: accessToken.token, expiresAt: accessToken.expiresOnTimestamp };
@@ -44,6 +50,7 @@ const requestPlatform = async (
   const response = await fetch(`${api.url}${path}`, {
     ...init,
     headers: { ...init.headers, Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok)

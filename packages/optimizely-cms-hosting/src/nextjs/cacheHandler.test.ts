@@ -41,10 +41,13 @@ describe('CacheHandler', () => {
     vi.useRealTimers();
   });
 
-  it('stores fetch entries without a TTL', async () => {
-    await handler.set('hash', page, { fetchCache: true } as SetContext);
+  it.each([
+    ['pages without an expire time', { cacheControl: { revalidate: false } }],
+    ['fetch entries', { fetchCache: true }],
+  ])('keeps %s for a year', async (_, ctx) => {
+    await handler.set('/en', page, ctx as SetContext);
 
-    expect(store.set).toHaveBeenCalledWith('hash', expect.anything(), undefined);
+    expect(store.set).toHaveBeenCalledWith('/en', expect.anything(), 365 * 24 * 60 * 60);
   });
 
   it('keeps build-time-only fetch entries for an hour', async () => {
@@ -63,6 +66,24 @@ describe('CacheHandler', () => {
     await handler.revalidateTag(tag);
 
     expect(store.delete).toHaveBeenCalledWith([key]);
+  });
+
+  it.each([
+    ['_N_T_/en/news/page', ['/en/news/page', '/en/news']],
+    ['_N_T_/page', ['/page', '/index']],
+  ])('deletes both readings of the typed tag %s', async (tag, keys) => {
+    await handler.revalidateTag(tag);
+
+    expect(store.delete).toHaveBeenCalledWith(keys);
+  });
+
+  it('refreshes only the page of a layout tag, with a warning', async () => {
+    await handler.revalidateTag('_N_T_/en/layout');
+
+    expect(store.delete).toHaveBeenCalledWith(['/en/layout', '/en']);
+    expect(console.warn).toHaveBeenCalledWith(
+      '[cms-hosting] Refreshing only the page itself for _N_T_/en/layout',
+    );
   });
 
   it('ignores the layout tag that comes with every revalidatePath', async () => {

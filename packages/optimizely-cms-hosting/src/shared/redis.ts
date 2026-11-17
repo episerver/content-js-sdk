@@ -24,6 +24,8 @@ export type CacheNamespace = 'nextjs' | 'astro' | 'webhook';
 
 const DEFAULT_PORT = 10000;
 const CONNECT_TIMEOUT_MS = 10_000;
+const OPERATION_TIMEOUT_MS = 2_000;
+const CLEAR_TIMEOUT_MS = 60_000;
 const RETRY_AFTER_MS = 60_000;
 const UNAVAILABLE = Symbol('unavailable');
 // Next.js's default cacheMaxMemorySize, which apps using this store set to 0
@@ -61,6 +63,8 @@ const createAzureCluster = (host: string, port: number, clientId: string) =>
           tokenManagerConfig: DEFAULT_TOKEN_MANAGER_CONFIG,
         }),
       socket: { tls: true, connectTimeout: 5000 },
+      // Fail at once while a node is down, so requests fall back to memory instead of queueing
+      disableOfflineQueue: true,
     },
     // Azure advertises cluster nodes by internal IP, which the container cannot reach
     nodeAddressMap: (address: string) => {
@@ -112,12 +116,15 @@ const getRedis = async () => {
   return state.retryAfter ? null : state.connecting;
 };
 
-const withRedis = async <T>(operation: (redis: Cluster) => Promise<T>) => {
+const withRedis = async <T>(
+  operation: (redis: Cluster) => Promise<T>,
+  timeoutMs = OPERATION_TIMEOUT_MS,
+) => {
   const redis = await getRedis();
   if (!redis) return UNAVAILABLE;
 
   try {
-    return await operation(redis);
+    return await withTimeout(operation(redis), timeoutMs, 'Redis operation');
   } catch (error) {
     log.error('Redis operation failed, using the in-memory cache', error);
     return UNAVAILABLE;
@@ -200,28 +207,36 @@ export function createCacheStore(
       if (written === UNAVAILABLE) writeMemory(key, serialized, ttlSeconds);
     },
 
+    /** Throws when Redis is up but the delete fails, since Redis would still serve the entries. */
     async delete(paths: string[]) {
       const keys = paths.map(toKey);
-      // One DEL per key: a multi-key DEL fails when the keys hash to different cluster slots
-      await withRedis(redis => Promise.all(keys.map(key => redis.del(key))));
+      const redis = await getRedis();
+
       // Also when Redis is up, so entries written during an earlier outage cannot resurface
       keys.forEach(removeMemory);
+      if (!redis) return;
+
+      // One DEL per key: a multi-key DEL fails when the keys hash to different cluster slots
+      const deletes = Promise.all(keys.map(key => redis.del(key)));
+      await withTimeout(deletes, OPERATION_TIMEOUT_MS, 'Redis delete');
     },
 
     /** Deletes every entry of this namespace and deployment slot. */
     async clear() {
-      const pattern = `${escapeGlob(prefix)}*`;
+      const scanOptions = { MATCH: `${escapeGlob(prefix)}*`, COUNT: 500 };
 
       // SCAN only sees the keys of the node it runs on, so it runs on every master
-      await withRedis(redis =>
-        Promise.all(
-          redis.masters.map(async master => {
-            const client = await redis.nodeClient(master);
+      await withRedis(
+        redis =>
+          Promise.all(
+            redis.masters.map(async master => {
+              const client = await redis.nodeClient(master);
 
-            for await (const keys of client.scanIterator({ MATCH: pattern, COUNT: 500 }))
-              await Promise.all(keys.map(key => redis.del(key)));
-          }),
-        ),
+              for await (const keys of client.scanIterator(scanOptions))
+                await Promise.all(keys.map(key => redis.del(key)));
+            }),
+          ),
+        CLEAR_TIMEOUT_MS,
       );
       [...memory.keys()].filter(key => key.startsWith(prefix)).forEach(removeMemory);
     },

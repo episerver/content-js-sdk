@@ -1,7 +1,11 @@
 import { log } from '../util/general.js';
 import { envGraphGateway, envSiteHostname } from './env.js';
 
-type Webhook = { id: string; request?: { url?: string } };
+type Webhook = {
+  id: string;
+  disabled?: boolean;
+  request?: { url?: string; headers?: Record<string, string> };
+};
 
 /** Options for {@link registerWebhook}. */
 export type RegisterWebhookOptions = {
@@ -53,7 +57,7 @@ const createWebhooksApi = (appKey: string, secret: string) => {
 /**
  * Registers the Optimizely Graph webhook that calls the site on publish, unless
  * it already exists, and removes duplicates left by instances starting at the
- * same time. Logs and does nothing when the platform variables are missing, and
+ * same time, as well as disabled ones and ones with an outdated API key. Logs and does nothing when the platform variables are missing, and
  * logs instead of throwing when Graph cannot be reached.
  */
 export async function registerWebhook({
@@ -80,16 +84,25 @@ export async function registerWebhook({
     const webhooks = createWebhooksApi(appKey, secret);
     const url = `https://${hostname}${callbackPath}`;
     const matching = (await webhooks.list()).filter(it => it.request?.url === url);
+    // A disabled webhook, or one with a rotated API key, would leave the site without calls
+    const usable = matching.filter(
+      it => !it.disabled && it.request?.headers?.['x-api-key'] === callbackApiKey,
+    );
     // Every instance sorts the same way, so they all keep the same webhook
-    const [kept, ...duplicates] = matching.sort((a, b) => b.id.localeCompare(a.id));
+    const [kept, ...duplicates] = usable.sort((a, b) => b.id.localeCompare(a.id));
+    const outdated = [...matching.filter(it => !usable.includes(it)), ...duplicates];
+
+    if (outdated.length) {
+      await Promise.all(outdated.map(it => webhooks.remove(it.id)));
+      log.info(
+        `Removed ${outdated.length} outdated or duplicate Graph webhooks for ${url}`,
+      );
+    }
 
     if (!kept) {
       await webhooks.create(url, callbackApiKey);
       log.info(`Registered the Graph webhook for ${url}`);
-    } else if (duplicates.length) {
-      await Promise.all(duplicates.map(it => webhooks.remove(it.id)));
-      log.info(`Removed ${duplicates.length} duplicate Graph webhooks for ${url}`);
-    } else {
+    } else if (!outdated.length) {
       log.info(`The Graph webhook for ${url} is already registered`);
     }
   } catch (error) {

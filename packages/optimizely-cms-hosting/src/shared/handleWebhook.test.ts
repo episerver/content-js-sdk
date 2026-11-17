@@ -175,6 +175,25 @@ describe('handleGraphWebhook on a publish', () => {
     expect(response.status).toBe(200);
     expect(console.error).toHaveBeenCalled();
   });
+
+  it('logs the paths whose origin refresh failed instead of reporting success', async () => {
+    mocks.resolveDocPaths.mockResolvedValue(['/en/about']);
+    vi.mocked(cache.invalidate).mockImplementation(async path => {
+      if (path === '/en/about') throw new Error('CLUSTERDOWN');
+    });
+
+    const response = await handleGraphWebhook(webhook(docEvent('updated')), cache);
+
+    expect(response.status).toBe(200);
+    expect(console.info).toHaveBeenCalledWith(
+      '[cms-hosting] Refreshed /, /en in the origin cache',
+    );
+    expect(console.error).toHaveBeenCalledWith(
+      '[cms-hosting] Refreshing /en/about failed, the old page stays cached:',
+      'CLUSTERDOWN',
+    );
+    expect(mocks.purgeCdnPaths).toHaveBeenCalledWith(['/en/about', '/', '/en']);
+  });
 });
 
 describe('handleGraphWebhook with remembered paths', () => {
@@ -315,10 +334,20 @@ describe('alsoRefresh', () => {
     mocks.resolveDocPaths.mockResolvedValue(['/en/about']);
 
     await handleGraphWebhook(webhook(docEvent('updated')), cache, {
-      alsoRefresh: () => ['/news/', '/en/about/'],
+      alsoRefresh: () => [
+        '/news/',
+        '/en/about/',
+        'en/blog',
+        'https://www.mysite.com/en/faq/',
+      ],
     });
 
-    expect(invalidated()).toEqual(['invalidate /en/about', 'invalidate /news']);
+    expect(invalidated()).toEqual([
+      'invalidate /en/about',
+      'invalidate /news',
+      'invalidate /en/blog',
+      'invalidate /en/faq',
+    ]);
   });
 
   it.each([

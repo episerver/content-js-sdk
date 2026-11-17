@@ -11,11 +11,21 @@ const PATH_TAG_PREFIX = '_N_T_';
 // Next.js sends this with every revalidatePath call as a side effect
 const LAYOUT_TAG = `${PATH_TAG_PREFIX}/layout`;
 const BUILD_FETCH_TTL_SECONDS = 60 * 60;
+// Next.js's default expireTime; without a TTL, earlier deployments' keys would never expire
+const DEFAULT_TTL_SECONDS = 365 * 24 * 60 * 60;
 
 const store = createCacheStore('nextjs');
 
 // Next.js stores the root page under '/index'
 const toPageKey = (path: string) => (path === '/' ? '/index' : path);
+
+// revalidatePath(path, type) appends the type, but a page can also be called "page" or "layout"
+const toPagePaths = (pathTag: string) => {
+  const path = pathTag.slice(PATH_TAG_PREFIX.length);
+  const typed = path.match(/^(.*)\/(page|layout)$/);
+
+  return typed ? [path, typed[1] || '/'] : [path];
+};
 
 /** Deletes the cached page of a path. */
 export const invalidatePage = (path: string) => store.delete([toPageKey(path)]);
@@ -25,10 +35,10 @@ export const clearPages = () => store.clear();
 
 const ttlFor = (ctx: SetContext) => {
   // `expire` rather than `revalidate`, so stale pages stay available for stale-while-revalidate
-  if (!ctx.fetchCache) return ctx.cacheControl?.expire;
+  if (!ctx.fetchCache) return ctx.cacheControl?.expire ?? DEFAULT_TTL_SECONDS;
   // Shared between workers during `next build` but never read at runtime
   if (ctx.isImplicitBuildTimeCache) return BUILD_FETCH_TTL_SECONDS;
-  return undefined;
+  return DEFAULT_TTL_SECONDS;
 };
 
 /**
@@ -50,10 +60,13 @@ export default class CacheHandler implements NextCacheHandler {
       tag => tag.startsWith(PATH_TAG_PREFIX) && tag !== LAYOUT_TAG,
     );
     const customTags = tagList.filter(tag => !tag.startsWith(PATH_TAG_PREFIX));
+    const layoutTags = pathTags.filter(tag => tag.endsWith('/layout'));
 
     if (customTags.length)
       log.warn(`Ignoring unsupported tags: ${customTags.join(', ')}`);
-    await store.delete(pathTags.map(tag => toPageKey(tag.slice(PATH_TAG_PREFIX.length))));
+    if (layoutTags.length)
+      log.warn(`Refreshing only the page itself for ${layoutTags.join(', ')}`);
+    await store.delete(pathTags.flatMap(toPagePaths).map(toPageKey));
   }
 
   resetRequestCache() {}

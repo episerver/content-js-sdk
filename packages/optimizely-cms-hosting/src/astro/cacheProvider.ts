@@ -173,8 +173,10 @@ const factory: CacheProviderFactory = () => {
       const entry = await toEntry(response);
       if (!entry) return response;
 
+      // Started outside waitUntil?.(), which skips its argument when the adapter has no waitUntil
+      const write = store.set(key, entry, ttlFor(entry));
       // The visitor does not wait for the write
-      context.waitUntil?.(store.set(key, entry, ttlFor(entry)));
+      context.waitUntil?.(write);
       return toResponse(entry, 'MISS', 0);
     },
 

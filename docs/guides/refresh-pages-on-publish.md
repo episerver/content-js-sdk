@@ -148,7 +148,9 @@ A publish refreshes:
 
 Other pages that show the changed content, such as listings and menus, update when their
 cache time runs out. Keep that time short enough for your editors, or refresh those pages
-as well (see below).
+as well (see below). The same goes for URLs with a query string, such as
+`/en/news?page=2`: the CDN caches each one separately, and a publish purges only the plain
+URL.
 
 The site remembers the URLs of every page it refreshes. When a page expires or is deleted,
 Graph no longer knows its URL, so the site refreshes the remembered one. A page that has

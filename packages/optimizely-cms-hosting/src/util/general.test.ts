@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { deserialize, log, secretsMatch, serialize, withTimeout } from './general.js';
+import {
+  deserialize,
+  log,
+  normalizePath,
+  secretsMatch,
+  serialize,
+  toPath,
+  unique,
+  withTimeout,
+} from './general.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -29,6 +38,30 @@ describe('serialize / deserialize', () => {
 
     expect(serialize(value)).toBe(JSON.stringify(value));
     expect(deserialize(serialize(value))).toEqual(value);
+  });
+});
+
+describe('paths', () => {
+  it.each([
+    ['/en/news/', '/en/news'],
+    ['/', '/'],
+    ['', '/'],
+  ])('normalizePath(%j) is %j', (path, expected) => {
+    expect(normalizePath(path)).toBe(expected);
+  });
+
+  it.each([
+    ['en/news/', '/en/news'],
+    ['/en/news', '/en/news'],
+    ['https://www.mysite.com/en/news/', '/en/news'],
+    ['https://www.mysite.com', '/'],
+    ['', '/'],
+  ])('toPath(%j) is %j', (value, expected) => {
+    expect(toPath(value)).toBe(expected);
+  });
+
+  it('keeps the first of each item in order', () => {
+    expect(unique(['/b', '/a', '/b'])).toEqual(['/b', '/a']);
   });
 });
 

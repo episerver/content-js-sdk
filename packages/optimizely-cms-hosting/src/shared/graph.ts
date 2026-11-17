@@ -1,5 +1,5 @@
 import { GraphClient } from '@optimizely/cms-sdk';
-import { normalizePath, unique } from '../util/general.js';
+import { toPath, unique, withTimeout } from '../util/general.js';
 
 type Urls = { default?: string | null; hierarchical?: string | null };
 type PathResponse = { _Content?: { item?: { _metadata?: { url?: Urls } } } };
@@ -29,9 +29,7 @@ export const parseDocId = (docId: string) => {
   };
 };
 
-// url.default is absolute when the content's application has a host
-const toPath = (url: string) =>
-  normalizePath(URL.canParse(url) ? new URL(url).pathname : url);
+const LOOKUP_TIMEOUT_MS = 10_000;
 
 /**
  * Resolves the `docId` of a Graph webhook to the URL paths of that content:
@@ -48,14 +46,11 @@ export async function resolveDocPaths(docId: string): Promise<string[]> {
   });
   const { id, locale } = parseDocId(docId);
   // Uncached, so content that was just moved resolves to its new URL
-  const data: PathResponse = await client.request(
-    PATH_QUERY,
-    { id, locale },
-    undefined,
-    false,
-  );
+  const lookup = client.request(PATH_QUERY, { id, locale }, undefined, false);
+  const data: PathResponse = await withTimeout(lookup, LOOKUP_TIMEOUT_MS, 'Graph lookup');
   const urls = data?._Content?.item?._metadata?.url;
-  // With a simple address set, url.default is that address and the page also lives at url.hierarchical
+  // With a simple address set, url.default is that address and the page also lives at
+  // url.hierarchical; url.default is absolute when the content's application has a host
   const paths = [urls?.default, urls?.hierarchical]
     .filter((it): it is string => Boolean(it))
     .map(toPath);

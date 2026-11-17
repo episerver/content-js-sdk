@@ -66,6 +66,7 @@ describe('purgeCdnCache', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer token-1' },
       body: JSON.stringify({ urls: ['https://mysite.test/en'] }),
+      signal: expect.any(AbortSignal),
     });
     expect(console.info).toHaveBeenCalledWith(
       '[cms-hosting] CDN purge accepted (operation op-1)',
@@ -168,6 +169,7 @@ describe('getSiteHostnames', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/v1/environment/hostnames`, {
       headers: { Authorization: 'Bearer token-1' },
+      signal: expect.any(AbortSignal),
     });
   });
 

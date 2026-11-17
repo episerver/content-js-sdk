@@ -5,7 +5,11 @@ const ENDPOINT = 'https://cg.optimizely.com/api/webhooks';
 const CALLBACK_URL = 'https://mysite.dxcloud.test/hooks/graph';
 const AUTHORIZATION = `Basic ${btoa('app-key:secret')}`;
 
-const webhook = (id: string, url = CALLBACK_URL) => ({ id, request: { url } });
+const webhook = (
+  id: string,
+  url = CALLBACK_URL,
+  { apiKey = 'callback-key', disabled = false } = {},
+) => ({ id, disabled, request: { url, headers: { 'x-api-key': apiKey } } });
 const json = (body: unknown) => new Response(JSON.stringify(body));
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -77,6 +81,21 @@ describe('registerWebhook', () => {
       `GET ${ENDPOINT}`,
       `DELETE ${ENDPOINT}/b`,
       `DELETE ${ENDPOINT}/a`,
+    ]);
+  });
+
+  it.each([
+    ['an outdated API key', webhook('a', CALLBACK_URL, { apiKey: 'old-key' })],
+    ['a disabled webhook', webhook('a', CALLBACK_URL, { disabled: true })],
+  ])('replaces %s', async (_, existing) => {
+    fetchMock.mockResolvedValueOnce(json([existing]));
+
+    await registerWebhook();
+
+    expect(calls()).toEqual([
+      `GET ${ENDPOINT}`,
+      `DELETE ${ENDPOINT}/a`,
+      `POST ${ENDPOINT}`,
     ]);
   });
 

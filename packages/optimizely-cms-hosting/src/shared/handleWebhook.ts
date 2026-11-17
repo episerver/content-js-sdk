@@ -1,4 +1,4 @@
-import { log, normalizePath, secretsMatch, unique } from '../util/general.js';
+import { log, secretsMatch, toPath, unique } from '../util/general.js';
 import { purgeCdnPaths } from './cdn.js';
 import { forgetDocPaths, recallDocPaths, rememberDocPaths } from './docPaths.js';
 import { parseDocId, resolveDocPaths } from './graph.js';
@@ -87,13 +87,24 @@ const withAlsoRefreshed = (docId: string, paths: string[], options: WebhookOptio
   const alsoRefresh = options.alsoRefresh ?? homePagePaths;
   const locale = parseDocId(docId).locale;
 
-  return [...paths, ...alsoRefresh({ docId, locale, paths }).map(normalizePath)];
+  return [...paths, ...alsoRefresh({ docId, locale, paths }).map(toPath)];
 };
 
 const refresh = async (paths: string[], cache: OriginCache) => {
   // Origin first: a CDN purged earlier could fetch the old page again
-  await Promise.all(paths.map(it => cache.invalidate(it)));
-  log.info(`Refreshed ${paths.join(', ')} in the origin cache`);
+  const results = await Promise.allSettled(paths.map(it => cache.invalidate(it)));
+  const refreshed = paths.filter((_, index) => results[index].status === 'fulfilled');
+  const failures = results.filter(it => it.status === 'rejected');
+
+  if (refreshed.length) log.info(`Refreshed ${refreshed.join(', ')} in the origin cache`);
+  if (failures.length) {
+    const failed = paths.filter((_, index) => results[index].status === 'rejected');
+    log.error(
+      `Refreshing ${failed.join(', ')} failed, the old page stays cached`,
+      failures[0].reason,
+    );
+  }
+
   await purgeCdnPaths(paths).catch(error => log.error('CDN purge failed', error));
 };
 
