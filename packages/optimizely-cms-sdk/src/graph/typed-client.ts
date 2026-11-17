@@ -1,7 +1,16 @@
 import type { GraphClient } from './index.js';
 import type { ContentProps } from '../infer.js';
 import type { AnyContentType } from '../model/contentTypes.js';
-import type { AnyProperty, RichTextProperty } from '../model/properties.js';
+import type {
+  AnyProperty,
+  ContentProperty,
+  ContentReferenceProperty,
+  FloatProperty,
+  IntegerProperty,
+  LinkProperty,
+  RichTextProperty,
+  UrlProperty,
+} from '../model/properties.js';
 import type {
   ContentMetadataOrderByInput,
   ChangesetMetadataOrderByInput,
@@ -21,9 +30,18 @@ import { getAllContentTypes, getContentTypeByBaseType } from '../model/contentTy
 /** A mapping of user-friendly keys to content type definitions. */
 export type ContentTypeMap = Record<string, AnyContentType>;
 
-/** Map a content type property to its GraphQL orderBy input type. */
+/**
+ * Maps a content type property to its GraphQL orderBy input type.
+ * Based on which property types appear in Graph's orderBy schema.
+ */
 type PropertyOrderByInput<P extends AnyProperty> =
   P extends RichTextProperty ? { html?: OrderDirection }
+  : P extends LinkProperty ? { text?: OrderDirection; title?: OrderDirection; target?: OrderDirection; url?: { [k: string]: OrderDirection } }
+  : P extends ContentProperty ? Record<string, OrderDirection>
+  : P extends ContentReferenceProperty ? Record<string, OrderDirection>
+  : P extends UrlProperty ? { [k: string]: OrderDirection }
+  : P extends IntegerProperty ? OrderDirection
+  : P extends FloatProperty ? OrderDirection
   : never;
 
 /** Extract orderable property keys (only property types Graph supports in orderBy). */
@@ -59,12 +77,12 @@ type TypedGetLinksOptions<CT extends AnyContentType> = Omit<GraphGetLinksOptions
 
 /** Methods available on each content-type namespace of a typed client. */
 export type TypedContentMethods<CT extends AnyContentType> = {
-  getContentByPath(
+  getByPath(
     path: string,
     options?: GraphGetContentOptions,
   ): Promise<ContentProps<CT>[]>;
 
-  getContent(
+  get(
     reference: string | GraphReference,
     options?: GraphGetItemOptions,
   ): Promise<ContentProps<CT> | null>;
@@ -82,32 +100,43 @@ export type TypedContentMethods<CT extends AnyContentType> = {
 
 /**
  * A typed client: one namespace per registered content type, each with
- * strongly-typed return values, plus a `graph` escape hatch to the raw client.
+ * strongly-typed return values. For operations not covered by the typed API
+ * (such as `request()` or `getPreviewContent()`), use `getClient()` directly.
  */
 export type TypedClient<TMap extends ContentTypeMap> = {
   [K in keyof TMap]: TypedContentMethods<TMap[K]>;
-} & {
-  /** The underlying GraphClient for operations not covered by the typed API. */
-  graph: GraphClient;
 };
 
 // ---------------------------------------------------------------------------
 // Builders
 // ---------------------------------------------------------------------------
 
+function filterByType<T extends { _metadata?: { types?: string[] } }>(
+  items: T[] | null,
+  contentTypeKey: string,
+): T[] | null {
+  if (!items) return null;
+  return items.filter(item => item._metadata?.types?.includes(contentTypeKey));
+}
+
 function buildNamespace<CT extends AnyContentType>(
   client: GraphClient,
-  _contentType: CT,
+  contentType: CT,
 ): TypedContentMethods<CT> {
+  const key = contentType.key;
   return {
-    getContentByPath: (path, options?) =>
+    getByPath: (path, options?) =>
       client.getContentByPath(path, options),
-    getContent: (reference, options?) =>
+    get: (reference, options?) =>
       client.getContent(reference, options),
-    getItems: (reference, options?) =>
-      client.getItems(reference, options as GraphGetLinksOptions),
-    getPath: (reference, options?) =>
-      client.getPath(reference, options as GraphGetLinksOptions),
+    getItems: async (reference, options?) => {
+      const items = await client.getItems(reference, options as GraphGetLinksOptions);
+      return filterByType(items, key);
+    },
+    getPath: async (reference, options?) => {
+      const items = await client.getPath(reference, options as GraphGetLinksOptions);
+      return filterByType(items, key);
+    },
   } as TypedContentMethods<CT>;
 }
 
@@ -126,25 +155,28 @@ function buildNamespace<CT extends AnyContentType>(
  * import { getClient, createClient } from '@optimizely/cms-sdk';
  * import { NewsPageCT, ArticlePageCT } from './content-types';
  *
- * const client = createClient(getClient(), {
+ * const typed = createClient(getClient(), {
  *   news: NewsPageCT,
  *   article: ArticlePageCT,
  * });
  *
  * // Fully typed — return type is ContentProps<typeof NewsPageCT>[]
- * const items = await client.news.getItems('/blog', {
- *   orderBy: { published: 'DESC', _metadata: { sortOrder: 'ASC' } },
+ * const items = await typed.news.getItems('/blog', {
+ *   orderBy: { _metadata: { published: 'DESC' } },
  * });
+ *
+ * // For untyped operations, use getClient() directly
+ * const preview = await getClient().getPreviewContent(params);
  * ```
  *
- * A future codegen CLI can generate the `types` map automatically from the
- * content type registry or source files.
+ * Use `optimizely-cms-cli generate client` to generate the type map
+ * automatically from your content type files.
  */
 export function createClient<TMap extends ContentTypeMap>(
   client: GraphClient,
   types: TMap,
 ): TypedClient<TMap> {
-  const typed = { graph: client } as TypedClient<TMap>;
+  const typed = {} as TypedClient<TMap>;
 
   for (const [key, ct] of Object.entries(types)) {
     (typed as any)[key] = buildNamespace(client, ct);
@@ -173,7 +205,7 @@ export function createClient<TMap extends ContentTypeMap>(
 export function createClientFromRegistry(
   client: GraphClient,
   filter?: AnyContentType['baseType'],
-): TypedClient<ContentTypeMap> & { graph: GraphClient } {
+): TypedClient<ContentTypeMap> {
   const types: ContentTypeMap = {};
   const entries = filter ? getContentTypeByBaseType(filter) : getAllContentTypes();
 

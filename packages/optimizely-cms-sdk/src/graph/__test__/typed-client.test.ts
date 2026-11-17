@@ -38,6 +38,20 @@ const HeroBlock = contentType({
   },
 });
 
+const TestPage = contentType({
+  key: 'TestPage',
+  displayName: 'Test Page',
+  baseType: '_page' as const,
+  properties: {
+    name: { type: 'string' as const },
+    body: { type: 'richText' as const },
+    link: { type: 'link' as const },
+    priority: { type: 'integer' as const },
+    score: { type: 'float' as const },
+    published: { type: 'dateTime' as const },
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
@@ -62,7 +76,6 @@ describe('createClient', () => {
 
     expect(typed.news).toBeDefined();
     expect(typed.article).toBeDefined();
-    expect(typed.graph).toBe(client);
   });
 
   test('namespace methods delegate to the underlying GraphClient', async () => {
@@ -73,19 +86,14 @@ describe('createClient', () => {
       content: { _Content: { items: [{ _id: '1', _metadata: { types: ['NewsPage'] } }] } },
     });
 
-    const result = await typed.news.getContentByPath('/news/post-1');
+    const result = await typed.news.getByPath('/news/post-1');
     expect(result).toHaveLength(1);
-  });
-
-  test('exposes the raw GraphClient via .graph', () => {
-    const typed = createClient(client, { news: NewsPage });
-    expect(typed.graph).toBe(client);
   });
 
   test('namespace has all expected methods', () => {
     const typed = createClient(client, { news: NewsPage });
-    expect(typeof typed.news.getContentByPath).toBe('function');
-    expect(typeof typed.news.getContent).toBe('function');
+    expect(typeof typed.news.getByPath).toBe('function');
+    expect(typeof typed.news.get).toBe('function');
     expect(typeof typed.news.getItems).toBe('function');
     expect(typeof typed.news.getPath).toBe('function');
   });
@@ -114,7 +122,7 @@ describe('createClientFromRegistry', () => {
 
   test('keys are lowercased content type keys', () => {
     const typed = createClientFromRegistry(client);
-    const keys = Object.keys(typed).filter(k => k !== 'graph');
+    const keys = Object.keys(typed);
     expect(keys).toContain('newspage');
     expect(keys).toContain('articlepage');
     expect(keys).toContain('heroblock');
@@ -156,6 +164,26 @@ describe('TypedOrderBy', () => {
     type NewsOrderBy = TypedOrderBy<typeof NewsPage>;
     expectTypeOf<{ body: { html: 'ASC' }, _metadata: { published: 'DESC' } }>()
       .toMatchTypeOf<NewsOrderBy>();
+  });
+
+  test('accepts link property as nested orderBy', () => {
+    type TestOrderBy = TypedOrderBy<typeof TestPage>;
+    expectTypeOf<{ link: { text: 'ASC' } }>().toMatchTypeOf<TestOrderBy>();
+  });
+
+  test('accepts integer property as scalar orderBy', () => {
+    type TestOrderBy = TypedOrderBy<typeof TestPage>;
+    expectTypeOf<{ priority: 'ASC' }>().toMatchTypeOf<TestOrderBy>();
+  });
+
+  test('accepts float property as scalar orderBy', () => {
+    type TestOrderBy = TypedOrderBy<typeof TestPage>;
+    expectTypeOf<{ score: 'DESC' }>().toMatchTypeOf<TestOrderBy>();
+  });
+
+  test('does not include dateTime properties', () => {
+    type TestOrderBy = TypedOrderBy<typeof TestPage>;
+    expectTypeOf<'published'>().not.toMatchTypeOf<keyof TestOrderBy>();
   });
 
   test('orderBy option is accepted by getItems', () => {
