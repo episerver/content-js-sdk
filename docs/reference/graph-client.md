@@ -509,9 +509,10 @@ const data = await getClient().request(
 
 ## Typed client
 
-A typed client wraps `GraphClient` with one namespace per content type. Each namespace has
-the same methods as `GraphClient`, but with return types inferred from the content type
-definition and `orderBy` fields that include the content type's properties.
+A typed client wraps `GraphClient` with one namespace per content type. Each namespace
+provides shorter method names (`getByPath`, `get`, `getItems`, `getPath`), return types
+inferred from the content type definition, typed `orderBy` fields, and automatic filtering
+by content type — `getItems` and `getPath` only return items matching the namespace's type.
 
 ### createClient()
 
@@ -538,10 +539,10 @@ const items = await client.news.getItems('/blog', {
 });
 
 // Return type is ContentProps<typeof StandardPage> | null
-const page = await client.standard.getContent({ key: 'abc123' });
+const page = await client.standard.get({ key: 'abc123' });
 
-// Escape hatch — the raw GraphClient
-const raw = await client.graph.getContentByPath('/any-path');
+// For untyped operations, use getClient() directly
+const preview = await getClient().getPreviewContent(params);
 ```
 
 The typed client is designed for code generation. Run
@@ -577,23 +578,26 @@ Each namespace on a typed client has these methods:
 
 | Method             | Signature                                                                                      | Returns                          |
 | ------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------- |
-| `getContentByPath` | `(path: string, options?: GraphGetContentOptions) => Promise<ContentProps<CT>[]>`               | Content at a URL path            |
-| `getContent`       | `(reference: string \| GraphReference, options?: GraphGetItemOptions) => Promise<ContentProps<CT> \| null>` | One content item by key |
-| `getItems`         | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Child pages         |
-| `getPath`          | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Ancestor pages      |
+| `getByPath` | `(path: string, options?: GraphGetContentOptions) => Promise<ContentProps<CT>[]>`               | Content at a URL path            |
+| `get`       | `(reference: string \| GraphReference, options?: GraphGetItemOptions) => Promise<ContentProps<CT> \| null>` | One content item by key |
+| `getItems`         | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Child pages of this type |
+| `getPath`          | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Ancestors of this type   |
 
 The `orderBy` option in `getItems` and `getPath` matches Graph's `orderBy` format.
 Metadata fields go under `_metadata`, `_itemMetadata` or `_changesetMetadata`. Orderable
 content-type properties (such as rich text) appear at the top level with their
 Graph-specific input shape (e.g. `body: { html: 'ASC' }`).
 
-### The `.graph` property
+### Untyped operations
 
-Every typed client exposes the underlying `GraphClient` as `.graph`, for operations the
-typed API doesn't cover (such as `request()` or `getPreviewContent()`):
+The typed client wraps `getByPath`, `get`, `getItems` and `getPath`.
+For other operations (such as `request()` or `getPreviewContent()`), use `getClient()`
+directly:
 
 ```ts
-const preview = await client.graph.getPreviewContent(params);
+import { getClient } from '@optimizely/cms-sdk';
+
+const preview = await getClient().getPreviewContent(params);
 ```
 
 ## GraphReference
