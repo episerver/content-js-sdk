@@ -464,8 +464,8 @@ optimizely-cms-cli generate client [config] [--output <path>] [--filter <baseTyp
 The generated file exports a `getTypedClient()` function that wraps `getClient()` with
 typed namespaces. Each namespace has `getContentByPath`, `getContent`, `getItems` and
 `getPath` methods with strongly-typed return values. The `orderBy` option in `getItems`
-and `getPath` accepts content-type properties at the top level and metadata fields under
-`_metadata`, with autocomplete for both.
+and `getPath` matches Graph's format: metadata fields under `_metadata`, orderable
+content-type properties (e.g. rich text) at the top level, with autocomplete for both.
 
 ```ts
 // Generated file (lib/client.ts)

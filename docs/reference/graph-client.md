@@ -379,7 +379,7 @@ Same as [`getPath()`](#getpath), plus an optional `orderBy` to control the order
 
 | Option      | Type      | Description |
 | ----------- | --------- | ----------- |
-| `orderBy`   | `OrderBy` | Order children by metadata or content-type fields, matching Graph's `orderBy` format. Metadata fields go under `_metadata`, content-type properties at the top level. |
+| `orderBy`   | `OrderBy` | Order children matching Graph's `orderBy` format. Metadata fields go under `_metadata`, system fields like `_modified` at the top level. Example: `{ _metadata: { sortOrder: 'ASC' } }`. |
 
 ### Returns
 
@@ -532,9 +532,9 @@ Each key in the map becomes a namespace:
 ```ts
 // Return type is ContentProps<typeof NewsPage>[]
 const items = await client.news.getItems('/blog', {
-  orderBy: { publishDate: 'DESC', _metadata: { sortOrder: 'ASC' } },
-  //         ^ autocomplete: 'heading' | 'publishDate' (from content type)
-  //                                      ^ autocomplete: 'sortOrder' | 'published' | ... (from metadata)
+  orderBy: { body: { html: 'ASC' }, _metadata: { published: 'DESC' } },
+  //         ^ content-type properties (richText → { html: OrderDirection })
+  //                                    ^ metadata fields (sortOrder, published, ...)
 });
 
 // Return type is ContentProps<typeof StandardPage> | null
@@ -582,9 +582,10 @@ Each namespace on a typed client has these methods:
 | `getItems`         | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Child pages         |
 | `getPath`          | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Ancestor pages      |
 
-The `orderBy` option in `getItems` and `getPath` accepts content-type property keys at the
-top level and metadata fields under `_metadata`, matching Graph's `orderBy` format. Both
-sets of fields are inferred from the content type definition and the Graph response schema.
+The `orderBy` option in `getItems` and `getPath` matches Graph's `orderBy` format.
+Metadata fields go under `_metadata`, `_itemMetadata` or `_changesetMetadata`. Orderable
+content-type properties (such as rich text) appear at the top level with their
+Graph-specific input shape (e.g. `body: { html: 'ASC' }`).
 
 ### The `.graph` property
 
