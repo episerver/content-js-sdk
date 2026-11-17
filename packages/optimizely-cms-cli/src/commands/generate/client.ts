@@ -161,6 +161,11 @@ function buildTypeMap(sources: ContentTypeSource[]): string {
   return `{\n${entries.join('\n')}\n}`;
 }
 
+const BUILT_IN_ENTRIES = [
+  { exportName: 'BlankExperienceContentType', clientKey: 'blank_experience' },
+  { exportName: 'BlankSectionContentType', clientKey: 'blank_section' },
+];
+
 function generateClientFile(
   sources: ContentTypeSource[],
   outputDir: string,
@@ -175,7 +180,7 @@ function generateClientFile(
       )
     : sources;
 
-  if (filtered.length === 0) {
+  if (filtered.length === 0 && !BUILT_IN_ENTRIES.length) {
     throw new Error(
       filter
         ? `No content types found with baseType '${filter}'`
@@ -186,16 +191,24 @@ function generateClientFile(
   const imports = buildImports(filtered, outputDir, configDir);
   const typeMap = buildTypeMap(filtered);
 
+  const builtInNames = BUILT_IN_ENTRIES.map(e => e.exportName).join(', ');
+  const allEntries = [
+    ...BUILT_IN_ENTRIES.map(e => `  ${e.clientKey}: ${e.exportName},`),
+    ...filtered.map(s => `  ${toClientKey(s.contentType.key)}: ${s.exportName},`),
+  ];
+
   return [
     `/**`,
     ` * Auto-generated typed client. Do not edit manually.`,
     ` * Re-generate with: optimizely-cms-cli generate client`,
     ` */`,
-    `import { getClient, createClient } from '@optimizely/cms-sdk';`,
+    `import { getClient, createClient, ${builtInNames} } from '@optimizely/cms-sdk';`,
     ...imports,
     ``,
     `export function getTypedClient() {`,
-    `  return createClient(getClient(), ${typeMap});`,
+    `  return createClient(getClient(), {`,
+    ...allEntries,
+    `  });`,
     `}`,
     ``,
   ].join('\n');
