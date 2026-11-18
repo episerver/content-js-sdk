@@ -31,6 +31,8 @@ export { default } from '@optimizely/cms-hosting/nextjs/cache-handler';
 const nextConfig = {
   cacheHandler: require.resolve('./cache-handler.mjs'),
   cacheMaxMemorySize: 0,
+  // Next.js 16.4 fails to bundle it on Windows
+  serverExternalPackages: ['@azure/identity'],
 };
 
 export default nextConfig;

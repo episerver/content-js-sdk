@@ -50,6 +50,8 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   cacheHandler: require.resolve('./cache-handler.mjs'),
   cacheMaxMemorySize: 0,
+  // Next.js 16.4 fails to bundle it on Windows
+  serverExternalPackages: ['@azure/identity'],
 };
 
 export default nextConfig;
@@ -179,8 +181,8 @@ only the changed page. In Astro, import the same functions from
 
 These are not supported:
 
-- **Tags.** `revalidateTag()` in Next.js and `cache.invalidate({ tags })` in Astro are
-  ignored with a warning. Only paths are invalidated.
+- **Tags in Astro.** `cache.invalidate({ tags })` is ignored with a warning. Only paths
+  are invalidated. In Next.js, `revalidateTag()` works on every instance.
 - **`'use cache'` in Next.js.** With `cacheComponents` turned on, Next.js keeps these
   entries in each instance's memory, so a webhook only clears the instance that received
   it.

@@ -177,6 +177,15 @@ describe('createCacheStore without Redis', () => {
     expect(await store.get('/a')).toBeNull();
     expect(await store.get('/b')).toBe(2);
   });
+
+  it('keeps required writes in memory', async () => {
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+
+    await store.setOrThrow('tags/a', 1);
+
+    expect(await store.get('tags/a')).toBe(1);
+  });
 });
 
 describe('createCacheStore with Redis', () => {
@@ -426,6 +435,17 @@ describe('createCacheStore with Redis', () => {
 
     await expect(store.delete(['/en'])).rejects.toThrow('CLUSTERDOWN');
     expect(await store.get('/en')).toBeNull();
+  });
+
+  it('throws when Redis is up but a required write fails, after writing memory', async () => {
+    cluster.set.mockRejectedValue(new Error('CLUSTERDOWN'));
+    cluster.get.mockRejectedValue(new Error('MOVED'));
+    const { createCacheStore } = await loadStore();
+    const store = createCacheStore('nextjs');
+
+    await expect(store.setOrThrow('tags/a', 1, 60)).rejects.toThrow('CLUSTERDOWN');
+    expect(cluster.set).toHaveBeenCalledWith('nextjs:slot1:tags/a', '1', { EX: 60 });
+    expect(await store.get('tags/a')).toBe(1);
   });
 
   it('fails fast while a node is down instead of queueing commands', async () => {
