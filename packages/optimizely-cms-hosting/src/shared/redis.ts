@@ -207,6 +207,24 @@ export function createCacheStore(
       if (written === UNAVAILABLE) writeMemory(key, serialized, ttlSeconds);
     },
 
+    /** Like `set`, but throws when Redis is up and the write fails, as other instances would miss it. */
+    async setOrThrow(path: string, value: unknown, ttlSeconds?: number) {
+      const key = toKey(path);
+      const serialized = serialize(value);
+      const redis = await getRedis();
+
+      // Also when Redis is up, so the value still applies during a later outage
+      writeMemory(key, serialized, ttlSeconds);
+      if (!redis) return;
+
+      const write = redis.set(
+        key,
+        serialized,
+        ttlSeconds ? { EX: ttlSeconds } : undefined,
+      );
+      await withTimeout(write, OPERATION_TIMEOUT_MS, 'Redis write');
+    },
+
     /** Throws when Redis is up but the delete fails, since Redis would still serve the entries. */
     async delete(paths: string[]) {
       const keys = paths.map(toKey);
