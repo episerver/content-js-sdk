@@ -10,10 +10,7 @@
   },
   "keywords": [
     "optimizely",
-    "cms",
-    "vite",
-    "webpack",
-    "unplugin"
+    "cms"
   ],
   "author": "Optimizely",
   "license": "Apache-2.0",

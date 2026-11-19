@@ -9,6 +9,7 @@ The official type generator and CLI tool for Optimizely CMS. Automatically gener
 ## Features
 
 - **Auto-generates registry** - Creates `registry.ts` and `global.d.ts` from your components
+- **Registers components** - Maps each component to its content type, with tag variants
 - **Watch mode** - Hot reload during development with `opti-dev`
 - **Type-safe** - Full TypeScript definitions for your content types
 - **Zero config** - Reads from your existing `optimizely.config.mjs`
@@ -16,10 +17,10 @@ The official type generator and CLI tool for Optimizely CMS. Automatically gener
 
 ## Installation
 
-Install as a development dependency:
+Install as a development dependency. `typescript` (version 5 or later) is a peer dependency, used to read your source files:
 
 ```bash
-npm install -D @optimizely/cms-typegen
+npm install -D @optimizely/cms-typegen typescript
 ```
 
 Or using other package managers:
@@ -61,7 +62,7 @@ Create components with content type definitions:
 
 ```tsx
 // src/components/Hero.tsx
-import { contentType, displayTemplate } from '@optimizely/cms-sdk';
+import { contentType, displayTemplate, ContentProps } from '@optimizely/cms-sdk';
 
 export const HeroContentType = contentType({
   key: 'Hero',
@@ -103,7 +104,13 @@ export const HeroDisplayTemplate = displayTemplate({
     },
   },
 });
+
+export default function Hero({ content }: { content: ContentProps<typeof HeroContentType> }) {
+  return <h1>{content.title}</h1>;
+}
 ```
+
+The default export is registered as the component for `Hero`. See [Component matching](#component-matching) for other layouts.
 
 ### 3. Generate registry
 
@@ -165,46 +172,93 @@ The `opti-dev` command:
 
 ### `.optimizely/registry.ts`
 
-Imports all content types and provides initialization:
+Imports all content types and components, and provides initialization:
 
 ```ts
 // @generated – do not edit
+/// <reference path="./global.d.ts" />
 
 import { BlankExperienceContentType, initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';
-import { HeroContentType, HeroDisplayTemplate } from './components/Hero';
-import { ButtonContentType } from './components/Button';
+import HeroComponent from '../src/components/Hero';
+import { HeroContentType, HeroDisplayTemplate } from '../src/components/Hero';
 
-// Content types to register
-export const contentTypes = [
-  BlankExperienceContentType,
-  HeroContentType,
-  ButtonContentType,
-]
+export const contentTypes = [BlankExperienceContentType, HeroContentType];
+export const displayTemplates = [HeroDisplayTemplate];
 
-// Display templates to register
-export const displayTemplates = [
-  HeroDisplayTemplate
-];
+// React components by content type key
+export const components = {
+  'Hero': HeroComponent,
+};
 
-// Initialize registries
-export function initRegistry() {
+export function initRegistry(extraComponents = {}) {
   initContentTypeRegistry(contentTypes);
   initDisplayTemplateRegistry(displayTemplates);
+  initReactComponentRegistry({ resolver: { ...components, ...extraComponents } });
 }
 ```
 
+`initRegistry` takes an optional map for components typegen can't find, or to override generated ones:
+
+```tsx
+initRegistry({ BlankSection });
+```
+
+If no component is found, `components` is omitted and `initRegistry()` registers content types and display templates only.
+
 #### Component matching
 
-A component is the default export of a file matched by `components`. Its content type is the first of:
+A component is the default export of a file matched by `components`. Typegen reads the files without running them, and picks the content type in this order.
 
-1. The content type defined in the same file.
-2. A display template it imports that declares both `tag` and `contentType`. It registers as `'Key:tag'`.
-3. The one content type it imports.
-4. A content type whose key or name (without `ContentType`) equals the file name.
+**1. Same file as the content type**
 
-`export const tag = '...'` makes a same-file component fill `'Key:tag'`. If two components claim the same slot, the first file
-(sorted by path) wins and a warning names the one ignored. Typegen parses files with `typescript` (a peer dependency) and reads
-string literals only.
+```tsx
+export const HeroContentType = contentType({ key: 'Hero', ... });
+export default function Hero() { ... }
+// 'Hero': HeroComponent
+```
+
+**2. A tagged display template the component imports**
+
+The template's `contentType` and `tag` give the slot. A tagged component registers as `'Key:tag'`:
+
+```tsx
+// Hero.tsx
+export const HeroCompactDisplayTemplate = displayTemplate({ key: 'HeroCompact', contentType: 'Hero', tag: 'compact', ... });
+
+// HeroCompact.tsx
+import { HeroCompactDisplayTemplate } from './Hero';
+export default function HeroCompact() { ... }
+// 'Hero:compact': Hero_compactComponent
+```
+
+**3. The one content type the component imports**
+
+```tsx
+// HeroView.tsx
+import { HeroContentType } from './Hero';
+export default function HeroView({ content }: { content: ContentProps<typeof HeroContentType> }) { ... }
+// 'Hero': HeroComponent
+```
+
+**4. The file name**
+
+A file named `Hero.tsx` matches a content type with key `Hero` or export `HeroContentType`.
+
+#### Tags
+
+Add `export const tag` to a component to fill `'Key:tag'`, or `export const tags` in the content type file to attach variants to the default component:
+
+```tsx
+export const tags = { teaser: StandardTeaser };
+export default Standard;
+// 'Standard': { default: StandardComponent, tags: StandardComponentTags }
+```
+
+#### Conflicts
+
+If two components claim the same slot, the first file (sorted by path) wins and a warning names the one ignored. A component defined next to its content type always beats an inferred one. Content types with no component are listed in a warning.
+
+Only string literals are read, so `key: MY_KEY` isn't picked up. Anything typegen can't match goes through `initRegistry({ ... })`.
 
 ### `.optimizely/global.d.ts`
 
@@ -224,6 +278,13 @@ declare module '@optimizely/cms-sdk' {
 
   export interface MayContainRegistry {
     'Start': string;
+  }
+}
+
+// Only when `config({ platform })` is set in your app
+declare global {
+  interface OptimizelyCmsRegister {
+    platform: 'saas';
   }
 }
 
@@ -299,7 +360,8 @@ Add to your `package.json`:
     "dev": "opti-dev next dev --experimental-https",
     "build": "opti-typegen && next build",
     "typegen": "opti-typegen",
-    "typegen:watch": "opti-typegen --watch"
+    "typegen:watch": "opti-typegen --watch",
+    "typecheck": "opti-typegen && tsc --noEmit"
   }
 }
 ```

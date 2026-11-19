@@ -238,18 +238,93 @@ interface RegistryData {
   mayContainKeys: Set<string>;
   /** `slot` is the content type key, or `key:tag` for a tagged component. */
   components: { slot: string; local: string; tags?: string }[];
-  /** Keys of content types with no component in their file. */
+  /** Keys of content types no component was found for. */
   missingComponents: string[];
+}
+
+interface ParsedFile {
+  file: string;
+  parsed: FileData;
+  importPath: string;
+}
+
+const stripSuffix = (name: string) => name.replace(/ContentType$/, '');
+const ownTypes = ({ parsed }: ParsedFile) => parsed.keys.filter(k => k.isContentType);
+
+/**
+ * Pick the content type slot a file's default export fills, or undefined when none is found.
+ * In order: the file's own content type, a tagged display template it imports, a content type it imports, or its file name.
+ * shortcut: a file with several keyed content types gets no component; upgrade if that is common.
+ */
+function resolveSlot(
+  { file, parsed }: ParsedFile,
+  own: FileData['keys'],
+  typeKeys: Map<string, string>,
+  templates: Map<string, FileData['templates'][number]>,
+): { key: string; tag?: string } | undefined {
+  if (own.length === 1) return { key: own[0].key, tag: parsed.tag };
+
+  const imported = [...parsed.imports];
+  const tagged = imported.map(n => templates.get(n)).filter(t => t?.contentType && t.tag);
+  if (tagged.length === 1) return { key: tagged[0]!.contentType!, tag: tagged[0]!.tag };
+
+  const types = imported.filter(n => typeKeys.has(n));
+  if (types.length === 1) return { key: typeKeys.get(types[0])!, tag: parsed.tag };
+
+  const base = path.basename(file).replace(/\.\w+$/, '');
+  const byName = [...typeKeys].find(([name, key]) => key === base || stripSuffix(name) === base);
+  return byName && { key: byName[1], tag: parsed.tag };
+}
+
+/**
+ * Register each file's default export as the component for its slot (`Key` or `Key:tag`).
+ * Files that define their own content type go first, so an inferred match never beats them;
+ * a later duplicate is ignored, with a warning unless it lost to such a file.
+ */
+function collectComponents(
+  parsedFiles: ParsedFile[],
+  typeKeys: Map<string, string>,
+  templates: Map<string, FileData['templates'][number]>,
+  data: RegistryData,
+) {
+  const ordered = [...parsedFiles].sort(
+    (a, b) => Number(ownTypes(b).length === 1) - Number(ownTypes(a).length === 1),
+  );
+  const slots = new Map<string, boolean>(); // slot -> claimed by a file's own content type
+  const claimedKeys = new Set<string>();
+
+  for (const pf of ordered) {
+    const { file, parsed, importPath } = pf;
+    const own = ownTypes(pf);
+    if (!parsed.hasDefaultExport || own.length > 1) continue;
+
+    const resolved = resolveSlot(pf, own, typeKeys, templates);
+    if (!resolved) continue;
+
+    const slot = resolved.tag ? `${resolved.key}:${resolved.tag}` : resolved.key;
+    if (slots.has(slot)) {
+      if (!slots.get(slot)) {
+        console.warn(`[cms-typegen] '${slot}' already has a component, ignoring ${path.relative(process.cwd(), file)}`);
+      }
+      continue;
+    }
+    slots.set(slot, own.length === 1);
+    claimedKeys.add(resolved.key);
+
+    const local = own.length === 1 ? stripSuffix(own[0].name) + 'Component' : slot.replace(/\W/g, '_') + 'Component';
+    const tags = parsed.hasTags ? `${local}Tags` : undefined;
+    data.imports.push(`import ${local}${tags ? `, { tags as ${tags} }` : ''} from '${importPath}';`);
+    data.components.push({ slot, local, tags });
+  }
+
+  data.missingComponents = [...typeKeys.values()].filter(k => !claimedKeys.has(k));
 }
 
 /**
  * Read and parse all component files in parallel.
  * Returns parsed data for both registry and type generation.
  */
-async function parseAllFiles(
-  files: string[],
-  registryFile: string,
-): Promise<RegistryData> {
+async function parseAllFiles(files: string[], registryFile: string): Promise<RegistryData> {
   const data: RegistryData = {
     imports: [],
     contentTypes: [],
@@ -260,28 +335,21 @@ async function parseAllFiles(
     components: [],
     missingComponents: [],
   };
-
   const typeKeys = new Map<string, string>(); // content type export name -> key
   const templates = new Map<string, FileData['templates'][number]>();
 
   // Sorted, so which duplicate wins does not depend on glob order.
-  files = [...files].sort();
+  const sorted = [...files].sort();
+  const contents = await Promise.all(sorted.map(file => fs.readFile(file, 'utf-8')));
 
-  // Read all files in parallel
-  const fileContents = await Promise.all(files.map(file => fs.readFile(file, 'utf-8')));
-
-  // Process each file
-  const parsedFiles = files.map((file, index) => {
-    const content = fileContents[index];
-    const parsed = parseFileContent(content, file);
+  const parsedFiles: ParsedFile[] = sorted.map((file, i) => {
+    const parsed = parseFileContent(contents[i], file);
     const importPath = resolveImportPath(file, registryFile);
-    const importItems: string[] = [];
-
-    importItems.push(
+    const importItems = [
       ...parsed.contentTypeNames,
       ...parsed.displayTemplateNames,
       ...parsed.contractNames,
-    );
+    ];
     data.contentTypes.push(...parsed.contentTypeNames);
     data.displayTemplates.push(...parsed.displayTemplateNames);
     data.contracts.push(...parsed.contractNames);
@@ -301,61 +369,7 @@ async function parseAllFiles(
     return { file, parsed, importPath };
   });
 
-  // A component is the default export of a file. Its content type comes from, in order:
-  // the file itself, a tagged display template it uses, a content type it uses, or its file name.
-  // shortcut: a file with several keyed content types gets no component; upgrade if that is common.
-  // Files that define their own content type go first, so an inferred match never beats them.
-  const ownCount = (f: (typeof parsedFiles)[number]) => f.parsed.keys.filter(k => k.isContentType).length;
-  parsedFiles.sort((a, b) => Number(ownCount(b) === 1) - Number(ownCount(a) === 1));
-
-  const slots = new Map<string, boolean>(); // slot -> claimed by a file's own content type
-  const claimed = new Set<string>();
-  for (const { file, parsed, importPath } of parsedFiles) {
-    if (!parsed.hasDefaultExport) continue;
-    const own = parsed.keys.filter(k => k.isContentType);
-    if (own.length > 1) continue;
-
-    const used = (map: Map<string, unknown>) => [...parsed.imports].filter(n => map.has(n));
-    let key: string | undefined;
-    let tag = parsed.tag;
-    let local = '';
-    if (own.length === 1) {
-      key = own[0].key;
-      local = own[0].name.replace(/ContentType$/, '') + 'Component';
-    } else {
-      const tagged = used(templates)
-        .map(n => templates.get(n)!)
-        .filter(t => t.contentType && t.tag);
-      const types = used(typeKeys);
-      const base = path.basename(file).replace(/\.\w+$/, '');
-      if (tagged.length === 1) {
-        key = tagged[0].contentType;
-        tag = tagged[0].tag;
-      } else if (types.length === 1) {
-        key = typeKeys.get(types[0]);
-      } else {
-        key = [...typeKeys].find(([n, k]) => k === base || n.replace(/ContentType$/, '') === base)?.[1];
-      }
-    }
-    if (!key) continue;
-
-    const slot = tag ? `${key}:${tag}` : key;
-    if (slots.has(slot)) {
-      // A component defined next to its content type silently wins over an inferred one.
-      if (!slots.get(slot)) console.warn(`[cms-typegen] '${slot}' already has a component, ignoring ${path.relative(process.cwd(), file)}`);
-      continue;
-    }
-    slots.set(slot, own.length === 1);
-    claimed.add(key);
-    local ||= slot.replace(/\W/g, '_') + 'Component';
-    const tags = parsed.hasTags ? `${local}Tags` : undefined;
-    data.imports.push(
-      `import ${local}${tags ? `, { tags as ${tags} }` : ''} from '${importPath}';`,
-    );
-    data.components.push({ slot, local, tags });
-  }
-  data.missingComponents = [...typeKeys.values()].filter(k => !claimed.has(k));
-
+  collectComponents(parsedFiles, typeKeys, templates, data);
   return data;
 }
 
