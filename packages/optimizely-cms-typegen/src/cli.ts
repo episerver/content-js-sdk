@@ -7,7 +7,7 @@ const root = process.cwd();
 const args = process.argv.slice(2);
 const watchMode = args.includes('--watch') || args.includes('-w');
 
-const message = (error: unknown) => (message(error));
+const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 function logSuccess(files: string[]) {
   console.log(

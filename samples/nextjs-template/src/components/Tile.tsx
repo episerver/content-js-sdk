@@ -115,6 +115,8 @@ type Props = {
   displaySettings?: ContentProps<typeof SquareDisplayTemplate>;
 };
 
+export const tags = { Square: SquareTile };
+
 export default function Tile({ content }: Props) {
   const { pa } = getPreviewUtils(content);
   return (
