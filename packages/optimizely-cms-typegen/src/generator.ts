@@ -1,8 +1,11 @@
 import fg from 'fast-glob';
-import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
+import ts from 'typescript';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+/** Folder for generated files, relative to the project root. */
+export const OUTPUT_DIR = '.optimizely';
 
 // ============================================================================
 // Config Loading
@@ -76,7 +79,7 @@ export async function scanComponents(
 // ============================================================================
 
 export const PLATFORM_GLOB = '**/*.{ts,tsx,js,jsx,mjs}';
-const PLATFORM_IGNORE = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts'];
+const PLATFORM_IGNORE = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts', `**/${OUTPUT_DIR}/**`];
 // `config({ ... platform: 'paas' })`, allowing one level of nested braces before `platform`.
 const PLATFORM_RE =
   /\bconfig\s*\(\s*\{(?:[^{}]|\{[^{}]*\})*?\bplatform\s*:\s*(['"])(saas|paas)\1/;
@@ -96,19 +99,10 @@ export async function detectPlatform(root: string): Promise<'saas' | 'paas' | un
   }
 }
 
-/** Base directory for generated files: src, app, or the project root. */
-export function detectBaseDir(root: string): string {
-  return ['src', 'app'].find(dir => existsSync(path.join(root, dir))) ?? '.';
-}
-
 // ============================================================================
-// Export Pattern Matching
-// Note: Pattern matches for contentType, contract, and displayTemplate exports is faster than object inspection.
+// Source Parsing
+// Files are parsed (not run) with the TypeScript parser; only top-level statements are read.
 // ============================================================================
-
-const EXPORT_RE = /export\s+const\s+(\w+(?:ContentType|Contract|DisplayTemplate))\s*=/g;
-const KEY_RE = /\bkey\s*:\s*(['"])([^'"\\]*(?:\\.[^'"\\]*)*)\1/;
-const BASE_TYPE_RE = /\bbaseType\s*:\s*(['"])([^'"]*)\1/;
 
 // baseTypes whose keys are valid entries in `mayContainTypes`
 const MAY_CONTAIN_BASE_TYPES = new Set(['_page', '_experience', '_folder']);
@@ -118,40 +112,99 @@ interface FileData {
   contractNames: string[];
   displayTemplateNames: string[];
   /** One entry per content type or contract that declares a key. */
-  keys: { key: string; baseType?: string; isContentType: boolean }[];
+  keys: { name: string; key: string; baseType?: string; isContentType: boolean }[];
+  /** Display templates with the `tag` and `contentType` they declare. */
+  templates: { name: string; contentType?: string; tag?: string }[];
+  /** Names this file imports, as exported by their source (`import { A as B }` gives `A`). */
+  imports: Set<string>;
+  hasDefaultExport: boolean;
+  /** `export const tag = '...'`, the slot a component fills for its content type. */
+  tag?: string;
+  /** `export const tags = { ... }`, the component's tag variants. */
+  hasTags: boolean;
+}
+
+const hasModifier = (node: ts.Node, kind: ts.SyntaxKind) =>
+  ts.canHaveModifiers(node) && !!ts.getModifiers(node)?.some(m => m.kind === kind);
+
+/** The text of a string literal, or undefined for anything else. */
+const stringValue = (node?: ts.Expression) =>
+  node && ts.isStringLiteralLike(node) ? node.text : undefined;
+
+/** The object literal passed to `contentType({...})`, `displayTemplate({...})`, etc. */
+function callObject(init?: ts.Expression): ts.ObjectLiteralExpression | undefined {
+  while (init && (ts.isAsExpression(init) || ts.isSatisfiesExpression(init))) init = init.expression;
+  if (!init || !ts.isCallExpression(init)) return;
+  let arg = init.arguments[0];
+  while (arg && (ts.isAsExpression(arg) || ts.isSatisfiesExpression(arg))) arg = arg.expression;
+  return arg && ts.isObjectLiteralExpression(arg) ? arg : undefined;
+}
+
+/** A top-level string property of an object literal. */
+function prop(obj: ts.ObjectLiteralExpression | undefined, name: string): string | undefined {
+  for (const p of obj?.properties ?? []) {
+    if (ts.isPropertyAssignment(p) && (ts.isIdentifier(p.name) || ts.isStringLiteralLike(p.name)) && p.name.text === name) {
+      return stringValue(p.initializer);
+    }
+  }
 }
 
 /**
- * Extract all relevant data from file content in one pass.
- * Each export's key is read from the text up to the next export, so keys
- * stay tied to their own export.
- * shortcut: first `key:` after the export wins, so a nested `key:` before the top-level one is misread; upgrade to an AST parse if that shows up.
+ * Extract all relevant data from a source file in one pass.
+ * shortcut: only string literal values are read, so `key: SOME_CONST` is not found; add same-file constant lookup if that shows up.
  */
-function parseFileContent(content: string): FileData {
+function parseFileContent(content: string, fileName: string): FileData {
   const data: FileData = {
     contentTypeNames: [],
     contractNames: [],
     displayTemplateNames: [],
     keys: [],
+    templates: [],
+    imports: new Set(),
+    hasDefaultExport: false,
+    hasTags: false,
   };
-  const matches = [...content.matchAll(EXPORT_RE)];
+  const source = ts.createSourceFile(fileName, content, ts.ScriptTarget.Latest);
 
-  matches.forEach((m, i) => {
-    const name = m[1];
-    const body = content.slice(m.index! + m[0].length, matches[i + 1]?.index);
-
-    if (name.endsWith('DisplayTemplate')) {
-      data.displayTemplateNames.push(name);
-      return;
+  for (const node of source.statements) {
+    if (ts.isImportDeclaration(node)) {
+      const bindings = node.importClause?.namedBindings;
+      if (bindings && ts.isNamedImports(bindings)) {
+        for (const el of bindings.elements) data.imports.add((el.propertyName ?? el.name).text);
+      }
+    } else if (ts.isExportAssignment(node)) {
+      data.hasDefaultExport ||= !node.isExportEquals;
+    } else if (ts.isExportDeclaration(node)) {
+      const named = node.exportClause;
+      if (named && ts.isNamedExports(named) && named.elements.some(e => e.name.text === 'default')) {
+        data.hasDefaultExport = true;
+      }
+    } else if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      hasModifier(node, ts.SyntaxKind.ExportKeyword) &&
+      hasModifier(node, ts.SyntaxKind.DefaultKeyword)
+    ) {
+      data.hasDefaultExport = true;
+    } else if (ts.isVariableStatement(node) && hasModifier(node, ts.SyntaxKind.ExportKeyword)) {
+      for (const decl of node.declarationList.declarations) {
+        if (!ts.isIdentifier(decl.name)) continue;
+        const name = decl.name.text;
+        if (name === 'tag') data.tag = stringValue(decl.initializer);
+        else if (name === 'tags') data.hasTags = true;
+        else if (name.endsWith('DisplayTemplate')) {
+          const obj = callObject(decl.initializer);
+          data.displayTemplateNames.push(name);
+          data.templates.push({ name, contentType: prop(obj, 'contentType'), tag: prop(obj, 'tag') });
+        } else if (name.endsWith('ContentType') || name.endsWith('Contract')) {
+          const isContentType = name.endsWith('ContentType');
+          (isContentType ? data.contentTypeNames : data.contractNames).push(name);
+          const obj = callObject(decl.initializer);
+          const key = prop(obj, 'key');
+          if (key) data.keys.push({ name, key, baseType: prop(obj, 'baseType'), isContentType });
+        }
+      }
     }
-    const isContentType = name.endsWith('ContentType');
-    (isContentType ? data.contentTypeNames : data.contractNames).push(name);
-
-    const key = body.match(KEY_RE)?.[2];
-    if (key) {
-      data.keys.push({ key, baseType: body.match(BASE_TYPE_RE)?.[2], isContentType });
-    }
-  });
+  }
 
   return data;
 }
@@ -183,6 +236,10 @@ interface RegistryData {
   displayTemplates: string[];
   contentTypeKeys: Set<string>;
   mayContainKeys: Set<string>;
+  /** `slot` is the content type key, or `key:tag` for a tagged component. */
+  components: { slot: string; local: string; tags?: string }[];
+  /** Keys of content types with no component in their file. */
+  missingComponents: string[];
 }
 
 /**
@@ -200,15 +257,23 @@ async function parseAllFiles(
     displayTemplates: [],
     contentTypeKeys: new Set(),
     mayContainKeys: new Set(),
+    components: [],
+    missingComponents: [],
   };
+
+  const typeKeys = new Map<string, string>(); // content type export name -> key
+  const templates = new Map<string, FileData['templates'][number]>();
+
+  // Sorted, so which duplicate wins does not depend on glob order.
+  files = [...files].sort();
 
   // Read all files in parallel
   const fileContents = await Promise.all(files.map(file => fs.readFile(file, 'utf-8')));
 
   // Process each file
-  files.forEach((file, index) => {
+  const parsedFiles = files.map((file, index) => {
     const content = fileContents[index];
-    const parsed = parseFileContent(content);
+    const parsed = parseFileContent(content, file);
     const importPath = resolveImportPath(file, registryFile);
     const importItems: string[] = [];
 
@@ -221,17 +286,75 @@ async function parseAllFiles(
     data.displayTemplates.push(...parsed.displayTemplateNames);
     data.contracts.push(...parsed.contractNames);
 
-    for (const { key, baseType, isContentType } of parsed.keys) {
+    for (const { name, key, baseType, isContentType } of parsed.keys) {
       data.contentTypeKeys.add(key);
+      if (isContentType) typeKeys.set(name, key);
       if (isContentType && baseType && MAY_CONTAIN_BASE_TYPES.has(baseType)) {
         data.mayContainKeys.add(key);
       }
     }
+    for (const t of parsed.templates) templates.set(t.name, t);
 
     if (importItems.length > 0) {
       data.imports.push(`import { ${importItems.join(', ')} } from '${importPath}';`);
     }
+    return { file, parsed, importPath };
   });
+
+  // A component is the default export of a file. Its content type comes from, in order:
+  // the file itself, a tagged display template it uses, a content type it uses, or its file name.
+  // shortcut: a file with several keyed content types gets no component; upgrade if that is common.
+  // Files that define their own content type go first, so an inferred match never beats them.
+  const ownCount = (f: (typeof parsedFiles)[number]) => f.parsed.keys.filter(k => k.isContentType).length;
+  parsedFiles.sort((a, b) => Number(ownCount(b) === 1) - Number(ownCount(a) === 1));
+
+  const slots = new Map<string, boolean>(); // slot -> claimed by a file's own content type
+  const claimed = new Set<string>();
+  for (const { file, parsed, importPath } of parsedFiles) {
+    if (!parsed.hasDefaultExport) continue;
+    const own = parsed.keys.filter(k => k.isContentType);
+    if (own.length > 1) continue;
+
+    const used = (map: Map<string, unknown>) => [...parsed.imports].filter(n => map.has(n));
+    let key: string | undefined;
+    let tag = parsed.tag;
+    let local = '';
+    if (own.length === 1) {
+      key = own[0].key;
+      local = own[0].name.replace(/ContentType$/, '') + 'Component';
+    } else {
+      const tagged = used(templates)
+        .map(n => templates.get(n)!)
+        .filter(t => t.contentType && t.tag);
+      const types = used(typeKeys);
+      const base = path.basename(file).replace(/\.\w+$/, '');
+      if (tagged.length === 1) {
+        key = tagged[0].contentType;
+        tag = tagged[0].tag;
+      } else if (types.length === 1) {
+        key = typeKeys.get(types[0]);
+      } else {
+        key = [...typeKeys].find(([n, k]) => k === base || n.replace(/ContentType$/, '') === base)?.[1];
+      }
+    }
+    if (!key) continue;
+
+    const slot = tag ? `${key}:${tag}` : key;
+    if (slots.has(slot)) {
+      // A component defined next to its content type silently wins over an inferred one.
+      if (!slots.get(slot)) console.warn(`[cms-typegen] '${slot}' already has a component, ignoring ${path.relative(process.cwd(), file)}`);
+      continue;
+    }
+    slots.set(slot, own.length === 1);
+    claimed.add(key);
+    local ||= slot.replace(/\W/g, '_') + 'Component';
+    const tags = parsed.hasTags ? `${local}Tags` : undefined;
+    data.imports.push(
+      `import ${local}${tags ? `, { tags as ${tags} }` : ''} from '${importPath}';`,
+    );
+    data.components.push({ slot, local, tags });
+  }
+  data.missingComponents = [...typeKeys.values()].filter(k => !claimed.has(k));
 
   return data;
 }
@@ -243,8 +366,15 @@ async function parseAllFiles(
  */
 function buildRegistryContent(data: RegistryData): string {
   // Add SDK imports and BlankExperienceContentType at beginning
+  const hasComponents = data.components.length > 0;
   const imports = [
     `import { BlankExperienceContentType, initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';`,
+    ...(hasComponents ?
+      [
+        `import type { ComponentType } from 'react';`,
+        `import { initReactComponentRegistry } from '@optimizely/cms-sdk/react/server';`,
+      ]
+    : []),
     ...data.imports,
   ];
 
@@ -254,8 +384,9 @@ function buildRegistryContent(data: RegistryData): string {
     ...data.contracts,
   ];
 
-  return `// Auto-generated by @optimizely/cms-typegen
-// Do not edit manually
+  // The reference pulls global.d.ts into any program that imports this file, even though tsconfig `include` skips dot folders.
+  return `// @generated – do not edit
+/// <reference path="./global.d.ts" />
 
 ${imports.join('\n')}
 
@@ -269,11 +400,29 @@ export const displayTemplates = [
 ${data.displayTemplates.map((t: string) => `  ${t},`).join('\n')}
 ];
 
-// Initialize registries
+${
+    hasComponents ?
+      `// React components by content type key
+export const components = {
+${data.components
+  .map(c => `  '${q(c.slot)}': ${c.tags ? `{ default: ${c.local}, tags: ${c.tags} }` : c.local},`)
+  .join('\n')}
+};
+
+// Initialize registries. \`extraComponents\` adds or overrides components, such as ones without a content type.
+export function initRegistry(
+  extraComponents: Record<string, ComponentType<any> | { default: ComponentType<any>; tags?: Record<string, ComponentType<any>> }> = {},
+) {
+  initContentTypeRegistry(contentTypes);
+  initDisplayTemplateRegistry(displayTemplates);
+  initReactComponentRegistry({ resolver: { ...components, ...extraComponents } });
+}`
+    : `// Initialize registries
 export function initRegistry() {
   initContentTypeRegistry(contentTypes);
   initDisplayTemplateRegistry(displayTemplates);
-}
+}`
+  }
 `;
 }
 
@@ -297,8 +446,7 @@ function buildTypesContent(
   const sortedPropertyGroups = Array.from(propertyGroupKeys).sort();
   const sortedMayContain = Array.from(mayContainKeys).sort();
 
-  return `// Auto-generated by @optimizely/cms-typegen
-// Do not edit manually
+  return `// @generated – do not edit
 
 declare module '@optimizely/cms-sdk' {
   export interface ContentTypeRegistry {
@@ -349,9 +497,8 @@ export async function generate(root = process.cwd()) {
   const config = await loadConfig(root);
   const files = await scanComponents(root, config);
 
-  const baseDir = detectBaseDir(root);
-  const registryDir = path.join(root, baseDir);
-  const registryFile = path.join(registryDir, 'registry.ts');
+  const outDir = path.join(root, OUTPUT_DIR);
+  const registryFile = path.join(outDir, 'registry.ts');
 
   // Parse all files once in parallel
   const data = await parseAllFiles(files, registryFile);
@@ -363,6 +510,12 @@ export async function generate(root = process.cwd()) {
       .filter((k: unknown): k is string => typeof k === 'string'),
   );
 
+  if (data.components.length > 0 && data.missingComponents.length > 0) {
+    console.warn(
+      `[cms-typegen] No component found for content type(s): ${data.missingComponents.join(', ')}`,
+    );
+  }
+
   // Generate both file contents
   const registryContent = buildRegistryContent(data);
   const typesContent = buildTypesContent(
@@ -373,11 +526,11 @@ export async function generate(root = process.cwd()) {
   );
 
   // Ensure output directory exists and write both files in parallel
-  await fs.mkdir(registryDir, { recursive: true });
+  await fs.mkdir(outDir, { recursive: true });
   await Promise.all([
     writeIfChanged(registryFile, registryContent),
-    writeIfChanged(path.join(root, 'global.d.ts'), typesContent),
+    writeIfChanged(path.join(outDir, 'global.d.ts'), typesContent),
   ]);
 
-  return { files, baseDir };
+  return { files };
 }

@@ -9,6 +9,7 @@
     "dev": "opti-dev next dev --experimental-https",
     "build": "opti-typegen && next build",
     "start": "next start",
+    "typecheck": "opti-typegen && tsc --noEmit",
     "deploy": "optimizely-cms-cli deploy"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import chokidar from 'chokidar';
-import { generate, loadConfig, PLATFORM_GLOB } from './generator.js';
+import { generate, loadConfig, PLATFORM_GLOB, OUTPUT_DIR } from './generator.js';
 
 const PREFIX = '[cms-typegen]';
 const root = process.cwd();
@@ -9,9 +9,9 @@ const watchMode = args.includes('--watch') || args.includes('-w');
 
 const message = (error: unknown) => (message(error));
 
-function logSuccess(files: string[], baseDir: string) {
+function logSuccess(files: string[]) {
   console.log(
-    `${PREFIX} ✓ Generated registry for ${files.length} components in ${baseDir}/registry.ts`,
+    `${PREFIX} ✓ Generated registry for ${files.length} components in ${OUTPUT_DIR}/registry.ts`,
   );
 }
 
@@ -26,8 +26,8 @@ function regenerate() {
     regenerateTimeout = null;
     running = running.then(async () => {
       try {
-        const { files, baseDir } = await generate(root);
-        logSuccess(files, baseDir);
+        const { files } = await generate(root);
+        logSuccess(files);
       } catch (error) {
         console.error(`${PREFIX} ✗ Generation failed:`, message(error));
       }
@@ -37,8 +37,8 @@ function regenerate() {
 
 async function main() {
   try {
-    const { files, baseDir } = await generate(root);
-    logSuccess(files, baseDir);
+    const { files } = await generate(root);
+    logSuccess(files);
   } catch (error) {
     console.error(`${PREFIX} ✗ Initial generation failed:`, message(error));
     process.exit(1);
@@ -54,7 +54,7 @@ async function main() {
       : [config?.components || 'src/components/**/*.{ts,tsx}'];
 
     const watcher = chokidar.watch([...patterns, 'optimizely.config.mjs', PLATFORM_GLOB], {
-      ignored: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts', '**/registry.ts'],
+      ignored: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts', `**/${OUTPUT_DIR}/**`],
       cwd: root,
       ignoreInitial: true,
     });

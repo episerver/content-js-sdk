@@ -33,6 +33,7 @@
     "vitest": "^3.1.6"
   },
   "peerDependencies": {
-    "@optimizely/cms-sdk": "workspace:*"
+    "@optimizely/cms-sdk": "workspace:*",
+    "typescript": ">=5"
   }
 }

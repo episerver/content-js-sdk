@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generate, loadConfig, scanComponents, detectBaseDir } from '../generator.js';
+import { generate, loadConfig, scanComponents } from '../generator.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.join(__dirname, 'fixtures');
@@ -18,15 +18,6 @@ describe('generator', () => {
   afterEach(async () => {
     // Clean up after tests
     await fs.rm(testRoot, { recursive: true, force: true });
-  });
-
-  describe('detectBaseDir', () => {
-    it('prefers src over app when both exist', async () => {
-      await fs.mkdir(path.join(testRoot, 'src'));
-      await fs.mkdir(path.join(testRoot, 'app'));
-      const baseDir = await detectBaseDir(testRoot);
-      expect(baseDir).toBe('src');
-    });
   });
 
   describe('loadConfig', () => {
@@ -79,12 +70,15 @@ export const SeoContract = contract({ key: 'Seo' });`
 
       await generate(testRoot);
 
-      const registry = await fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
+      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
+      expect(registry).toMatch(/^\/\/ @generated/);
+      expect(registry).toContain('/// <reference path="./global.d.ts" />');
+      expect(registry).toContain("from '../src/components/a'");
       expect(registry).toContain('ArticleContentType,');
       expect(registry).toContain('NewsContentType,');
       expect(registry).toContain('SeoContract,');
 
-      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
+      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
       expect(types).toContain("'Article': string;");
       expect(types).toContain("'News': string;");
       expect(types).toContain("'Seo': string;");
@@ -92,6 +86,90 @@ export const SeoContract = contract({ key: 'Seo' });`
       // only the _page type may contain children
       expect(types.split('MayContainRegistry')[1]).toContain("'Article'");
       expect(types.split('MayContainRegistry')[1]).not.toContain("'News'");
+    });
+  });
+
+  describe('components', () => {
+    it('registers the default export of a content type file, with tags and a missing-type warning', async () => {
+      const dir = path.join(testRoot, 'src', 'components');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        path.join(testRoot, 'optimizely.config.mjs'),
+        `export default { components: 'src/components/*.tsx' };`
+      );
+      await fs.writeFile(
+        path.join(dir, 'Card.tsx'),
+        `export const CardContentType = contentType({ key: 'Card' });
+export const tags = { small: 1 };
+export default function Card() {}`
+      );
+      await fs.writeFile(path.join(dir, 'Plain.tsx'), `export const PlainContentType = contentType({ key: 'Plain' });`);
+
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await generate(testRoot);
+
+      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
+      expect(registry).toContain("import CardComponent, { tags as CardComponentTags } from '../src/components/Card';");
+      expect(registry).toContain("'Card': { default: CardComponent, tags: CardComponentTags },");
+      expect(registry).not.toContain("'Plain'");
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('Plain'));
+      warn.mockRestore();
+    });
+  });
+
+  describe('components in separate files', () => {
+    it('matches by content type use, display template tag and file name; first duplicate wins', async () => {
+      const dir = path.join(testRoot, 'src');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        path.join(testRoot, 'optimizely.config.mjs'),
+        `export default { components: 'src/*.tsx' };`
+      );
+      await fs.writeFile(
+        path.join(dir, 'types.tsx'),
+        `export const TeaserContentType = contentType({ key: 'Teaser' });
+export const HeroContentType = contentType({ key: 'Hero' });
+export const TeaserBigDisplayTemplate = displayTemplate({ key: 'Big', contentType: 'Teaser', tag: 'big' });`
+      );
+      await fs.writeFile(path.join(dir, 'A.tsx'), `import { TeaserContentType } from './types';\nexport default function A() {}`);
+      await fs.writeFile(path.join(dir, 'B.tsx'), `import { TeaserContentType } from './types';\nexport default function B() {}`);
+      await fs.writeFile(path.join(dir, 'Big.tsx'), `import { TeaserBigDisplayTemplate } from './types';\nexport default function Big() {}`);
+      await fs.writeFile(path.join(dir, 'C.tsx'), `// uses TeaserContentType\nexport default function C() {}`);
+      await fs.writeFile(path.join(dir, 'Hero.tsx'), `export default function Hero() {}`);
+
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await generate(testRoot);
+
+      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
+      expect(registry).toContain("'Teaser': TeaserComponent,");
+      expect(registry).toContain("'Teaser:big': Teaser_bigComponent,");
+      expect(registry).toContain("'Hero': HeroComponent,");
+      expect(registry).not.toContain('/src/C');
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("'Teaser' already has a component"));
+      warn.mockRestore();
+    });
+  });
+
+  describe('parsing', () => {
+    it('reads the top-level key, and a default export written as `export { X as default }`', async () => {
+      const dir = path.join(testRoot, 'src');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        path.join(testRoot, 'optimizely.config.mjs'),
+        `export default { components: 'src/*.tsx' };`
+      );
+      await fs.writeFile(
+        path.join(dir, 'Nested.tsx'),
+        `export const NestedContentType = contentType({ properties: { a: { key: 'wrong' } }, key: 'Nested' });
+const Nested = () => null;
+export { Nested as default };`
+      );
+      await generate(testRoot);
+
+      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
+      expect(registry).toContain("'Nested': NestedComponent,");
+      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
+      expect(types).not.toContain('wrong');
     });
   });
 
@@ -108,7 +186,7 @@ export const SeoContract = contract({ key: 'Seo' });`
 config({ apiKey: 'k', query: { cache: true }, platform: 'paas' });`
       );
       await generate(testRoot);
-      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
+      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
       expect(types).toContain("platform: 'paas';");
       expect(types).toContain('interface OptimizelyCmsRegister');
     });
@@ -120,7 +198,7 @@ config({ apiKey: 'k', query: { cache: true }, platform: 'paas' });`
         `import { config } from '@optimizely/cms-sdk';\nconfig({ apiKey: 'k' });`
       );
       await generate(testRoot);
-      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
+      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
       expect(types).not.toContain('OptimizelyCmsRegister');
     });
   });
@@ -195,10 +273,9 @@ export default function Button() {
       const result = await generate(testRoot);
 
       expect(result.files).toHaveLength(2);
-      expect(result.baseDir).toBe('src');
 
       // Check registry.ts was created
-      const registryPath = path.join(srcDir, 'registry.ts');
+      const registryPath = path.join(testRoot, '.optimizely', 'registry.ts');
       const registryExists = await fs
         .access(registryPath)
         .then(() => true)
@@ -211,10 +288,10 @@ export default function Button() {
       expect(registryContent).toContain('ButtonContract');
       expect(registryContent).toContain('BlankExperienceContentType');
       expect(registryContent).toContain('export const contentTypes');
-      expect(registryContent).toContain('export function initRegistry()');
+      expect(registryContent).toContain('export function initRegistry(');
 
       // Check global.d.ts was created
-      const typesPath = path.join(testRoot, 'global.d.ts');
+      const typesPath = path.join(testRoot, '.optimizely', 'global.d.ts');
       const typesExists = await fs
         .access(typesPath)
         .then(() => true)
@@ -257,7 +334,7 @@ export const HeroDisplayTemplate = displayTemplate({
       await generate(testRoot);
 
       const registryContent = await fs.readFile(
-        path.join(srcDir, 'registry.ts'),
+        path.join(testRoot, '.optimizely', 'registry.ts'),
         'utf-8'
       );
       expect(registryContent).toContain('HeroDisplayTemplate');

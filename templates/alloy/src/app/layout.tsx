@@ -1,30 +1,11 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import {
-  BlankExperienceContentType,
-  initContentTypeRegistry,
-  config,
-} from '@optimizely/cms-sdk';
-import { initReactComponentRegistry, initForms } from '@optimizely/cms-sdk/react/server';
+import { config } from '@optimizely/cms-sdk';
+import { initForms } from '@optimizely/cms-sdk/react/server';
 
 import './globals.css';
-import Teaser, { TeaserContentType } from '@/components/base/Teaser';
-import Editorial, { EditorialContentType } from '@/components/base/Editorial';
-import Contact, { ContactContentType } from '@/components/base/Contact';
-import Start, { StartContentType } from '@/components/Start';
-import Product, { ProductContentType } from '@/components/Product';
-import Standard, { StandardContentType } from '@/components/Standard';
-import Notice, { NoticeContentType } from '@/components/base/Notice';
-import News, { NewsContentType } from '@/components/News';
-import Article, { ArticleContentType } from '@/components/base/Article';
+import { initRegistry } from '../../.optimizely/registry';
 import BlankSection from '@/components/base/BlankSection';
-import { SEOContentType } from '@/components/base/SEO';
-import Button, { ButtonContentType } from '@/components/base/Button';
-import { TeaserCardContract } from '@/components/contracts/TeaserCard';
-import StandardTeaser from '@/components/base/StandardTeaser';
-import NewsEventsList, {
-  NewsEventsListContentType,
-} from '@/components/base/NewsEventsList';
 import FormContainer from '@/components/forms/FormContainer';
 import FormChoice from '@/components/forms/FormChoice';
 import FormInput from '@/components/forms/FormInput';
@@ -58,46 +39,13 @@ config({
   fragment: {
     richTextFormat: 'json',
   },
-});
-
-initContentTypeRegistry([
-  ArticleContentType,
-  BlankExperienceContentType,
-  ContactContentType,
-  EditorialContentType,
-  NewsContentType,
-  NoticeContentType,
-  ProductContentType,
-  StartContentType,
-  TeaserContentType,
-  StandardContentType,
-  SEOContentType,
-  ButtonContentType,
-  TeaserCardContract,
-  NewsEventsListContentType,
-]);
-
-initReactComponentRegistry({
-  resolver: {
-    Article,
-    Contact,
-    Editorial,
-    News,
-    Notice,
-    Product,
-    Standard: {
-      default: Standard,
-      tags: {
-        teaser: StandardTeaser,
-      },
-    },
-    Start,
-    Teaser,
-    BlankSection,
-    Button,
-    NewsEventsList,
+  query: {
+    host: process.env.APPLICATION_HOST,
   },
 });
+
+// BlankSection has no content type of its own, so it is registered here
+initRegistry({ BlankSection });
 
 initForms({
   container: FormContainer,

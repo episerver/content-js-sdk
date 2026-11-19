@@ -6,6 +6,7 @@ import {
   OptimizelyComposition,
 } from '@optimizely/cms-sdk/react/server';
 import { SEOContentType } from './base/SEO';
+import StandardTeaser from './base/StandardTeaser';
 import { TeaserCardContract } from './contracts/TeaserCard';
 
 export const StandardContentType = contentType({
@@ -92,5 +93,7 @@ function Standard({ content }: StandardPageProps) {
     </main>
   );
 }
+
+export const tags = { teaser: StandardTeaser };
 
 export default Standard;
