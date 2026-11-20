@@ -1,5 +1,18 @@
 # @optimizely/cms-cli
 
+## 3.2.0-beta.0
+
+### Minor Changes
+
+- ab73d19: `deploy` runs the project's build script before packaging so build errors fail
+  before uploading; `--no-build` skips it.
+
+### Patch Changes
+
+- Updated dependencies [21ed0be]
+- Updated dependencies [cd4255a]
+  - @optimizely/cms-sdk@3.2.0-beta.0
+
 ## 3.1.0
 
 ### Minor Changes

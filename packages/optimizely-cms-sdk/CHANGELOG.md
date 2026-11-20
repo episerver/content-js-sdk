@@ -1,5 +1,18 @@
 # @optimizely/cms-sdk
 
+## 3.2.0-beta.0
+
+### Minor Changes
+
+- cd4255a: Add `refreshInPlace` and the `OptimizelyPreview` Astro component to update live
+  preview in place without reloading the page.
+
+### Patch Changes
+
+- 21ed0be: [CMS-58856](https://optimizely-ext.atlassian.net/browse/CMS-58856),
+  [CMS-58892](https://optimizely-ext.atlassian.net/browse/CMS-58892): Fix live preview
+  refreshing late with an expired token after editing content outside a composition
+
 ## 3.1.0
 
 ### Minor Changes

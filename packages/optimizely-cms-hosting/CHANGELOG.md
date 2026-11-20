@@ -1,5 +1,13 @@
 # @optimizely/cms-hosting
 
+## 1.0.0-beta.1
+
+### Patch Changes
+
+- Updated dependencies [21ed0be]
+- Updated dependencies [cd4255a]
+  - @optimizely/cms-sdk@3.2.0-beta.0
+
 ## 0.1.0-beta.0
 
 ### Minor Changes
