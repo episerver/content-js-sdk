@@ -126,8 +126,10 @@ npx opti-typegen
 
 This creates:
 
-- `.optimizely/registry.ts` - Component registry for SDK initialization
-- `.optimizely/global.d.ts` - TypeScript type definitions
+- `src/registry.ts` - Component registry for SDK initialization (`app/registry.ts` if there is no `src/`, else the project root)
+- `global.d.ts` - TypeScript type definitions, in the project root
+
+Commit both files. They are generated, so don't edit them.
 
 ## CLI Commands
 
@@ -170,17 +172,15 @@ The `opti-dev` command:
 
 ## Generated Files
 
-### `.optimizely/registry.ts`
+### `src/registry.ts`
 
 Imports all content types and components, and provides initialization:
 
 ```ts
 // @generated – do not edit
-/// <reference path="./global.d.ts" />
-
 import { BlankExperienceContentType, initContentTypeRegistry, initDisplayTemplateRegistry } from '@optimizely/cms-sdk';
-import HeroComponent from '../src/components/Hero';
-import { HeroContentType, HeroDisplayTemplate } from '../src/components/Hero';
+import HeroComponent from './components/Hero';
+import { HeroContentType, HeroDisplayTemplate } from './components/Hero';
 
 export const contentTypes = [BlankExperienceContentType, HeroContentType];
 export const displayTemplates = [HeroDisplayTemplate];
@@ -260,7 +260,7 @@ If two components claim the same slot, the first file (sorted by path) wins and 
 
 Only string literals are read, so `key: MY_KEY` isn't picked up. Anything typegen can't match goes through `initRegistry({ ... })`.
 
-### `.optimizely/global.d.ts`
+### `global.d.ts`
 
 Type-safe content type keys:
 
@@ -301,7 +301,7 @@ content type's `mayContainTypes`.
 
 ```tsx
 // app/layout.tsx
-import { initRegistry } from '../.optimizely/registry';
+import { initRegistry } from '../registry';
 
 export default function RootLayout({ children }) {
   initRegistry();
@@ -318,7 +318,7 @@ export default function RootLayout({ children }) {
 
 ```tsx
 // src/main.tsx
-import { initRegistry } from '../.optimizely/registry';
+import { initRegistry } from './registry';
 
 initRegistry();
 
@@ -371,7 +371,7 @@ Add to your `package.json`:
 - **Run before build** - Always generate types before building: `opti-typegen && next build`
 - **Use opti-dev** - Prefer `opti-dev` over `opti-typegen --watch` for development
 - **Don't edit generated files** - `registry.ts` and `global.d.ts` are auto-generated
-- **Do not commit generated files** - Add `.optimizely/` to `.gitignore`. Import `.optimizely/registry` somewhere in your app (for example `initRegistry` in the root layout) so TypeScript also loads `global.d.ts`
+- **Commit generated files** - `registry.ts` and `global.d.ts` belong in git, so a fresh clone builds without running typegen first. CI can run `opti-typegen && git diff --exit-code` to catch a stale registry
 
 ## Integration
 

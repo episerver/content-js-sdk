@@ -4,8 +4,16 @@ import ts from 'typescript';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-/** Folder for generated files, relative to the project root. */
-export const OUTPUT_DIR = '.optimizely';
+/**
+ * Folder for registry.ts: `src` (Vite, Next with src), else `app` (Next without src), else the root.
+ * global.d.ts always goes in the root. Both files are meant to be committed.
+ */
+export async function registryDir(root: string) {
+  for (const dir of ['src', 'app']) {
+    if (await fs.stat(path.join(root, dir)).then(s => s.isDirectory(), () => false)) return path.join(root, dir);
+  }
+  return root;
+}
 
 // ============================================================================
 // Config Loading
@@ -79,7 +87,7 @@ export async function scanComponents(
 // ============================================================================
 
 export const PLATFORM_GLOB = '**/*.{ts,tsx,js,jsx,mjs}';
-const PLATFORM_IGNORE = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts', `**/${OUTPUT_DIR}/**`];
+const PLATFORM_IGNORE = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts'];
 // `config({ ... platform: 'paas' })`, allowing one level of nested braces before `platform`.
 const PLATFORM_RE =
   /\bconfig\s*\(\s*\{(?:[^{}]|\{[^{}]*\})*?\bplatform\s*:\s*(['"])(saas|paas)\1/;
@@ -398,9 +406,7 @@ function buildRegistryContent(data: RegistryData): string {
     ...data.contracts,
   ];
 
-  // The reference pulls global.d.ts into any program that imports this file, even though tsconfig `include` skips dot folders.
   return `// @generated – do not edit
-/// <reference path="./global.d.ts" />
 
 ${imports.join('\n')}
 
@@ -511,8 +517,7 @@ export async function generate(root = process.cwd()) {
   const config = await loadConfig(root);
   const files = await scanComponents(root, config);
 
-  const outDir = path.join(root, OUTPUT_DIR);
-  const registryFile = path.join(outDir, 'registry.ts');
+  const registryFile = path.join(await registryDir(root), 'registry.ts');
 
   // Parse all files once in parallel
   const data = await parseAllFiles(files, registryFile);
@@ -539,12 +544,10 @@ export async function generate(root = process.cwd()) {
     await detectPlatform(root),
   );
 
-  // Ensure output directory exists and write both files in parallel
-  await fs.mkdir(outDir, { recursive: true });
   await Promise.all([
     writeIfChanged(registryFile, registryContent),
-    writeIfChanged(path.join(outDir, 'global.d.ts'), typesContent),
+    writeIfChanged(path.join(root, 'global.d.ts'), typesContent),
   ]);
 
-  return { files };
+  return { files, registryFile };
 }

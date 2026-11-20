@@ -3,7 +3,7 @@ import React from 'react';
 import { Bodoni_Moda, Inter } from 'next/font/google';
 import './globals.css';
 import { config } from '@optimizely/cms-sdk';
-import { initRegistry } from '../../.optimizely/registry';
+import { initRegistry } from '../registry';
 import BlankExperience from '@/components/BlankExperience';
 import BlankSection from '@/components/BlankSection';
 

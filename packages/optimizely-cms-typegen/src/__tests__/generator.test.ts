@@ -53,6 +53,24 @@ describe('generator', () => {
     });
   });
 
+  describe('registry location', () => {
+    it('uses app/ when there is no src/', async () => {
+      await fs.mkdir(path.join(testRoot, 'app'), { recursive: true });
+      await fs.mkdir(path.join(testRoot, 'components'), { recursive: true });
+      await fs.writeFile(path.join(testRoot, 'optimizely.config.mjs'), `export default { components: 'components/**/*.tsx' };`);
+      await fs.writeFile(
+        path.join(testRoot, 'components', 'Hero.tsx'),
+        `export const HeroContentType = contentType({ key: 'Hero', baseType: '_component' });\nexport default function Hero() {}`
+      );
+
+      await generate(testRoot);
+
+      const registry = await fs.readFile(path.join(testRoot, 'app', 'registry.ts'), 'utf-8');
+      expect(registry).toContain("from '../components/Hero'");
+      await fs.access(path.join(testRoot, 'global.d.ts'));
+    });
+  });
+
   describe('multiple exports per file', () => {
     it('registers every content type and keeps keys tied to their export', async () => {
       const srcDir = path.join(testRoot, 'src', 'components');
@@ -70,15 +88,14 @@ export const SeoContract = contract({ key: 'Seo' });`
 
       await generate(testRoot);
 
-      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
+      const registry = await fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
       expect(registry).toMatch(/^\/\/ @generated/);
-      expect(registry).toContain('/// <reference path="./global.d.ts" />');
-      expect(registry).toContain("from '../src/components/a'");
+      expect(registry).toContain("from './components/a'");
       expect(registry).toContain('ArticleContentType,');
       expect(registry).toContain('NewsContentType,');
       expect(registry).toContain('SeoContract,');
 
-      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
+      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
       expect(types).toContain("'Article': string;");
       expect(types).toContain("'News': string;");
       expect(types).toContain("'Seo': string;");
@@ -108,8 +125,8 @@ export default function Card() {}`
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       await generate(testRoot);
 
-      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
-      expect(registry).toContain("import CardComponent, { tags as CardComponentTags } from '../src/components/Card';");
+      const registry = await fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
+      expect(registry).toContain("import CardComponent, { tags as CardComponentTags } from './components/Card';");
       expect(registry).toContain("'Card': { default: CardComponent, tags: CardComponentTags },");
       expect(registry).not.toContain("'Plain'");
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('Plain'));
@@ -140,7 +157,7 @@ export const TeaserBigDisplayTemplate = displayTemplate({ key: 'Big', contentTyp
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       await generate(testRoot);
 
-      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
+      const registry = await fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
       expect(registry).toContain("'Teaser': TeaserComponent,");
       expect(registry).toContain("'Teaser:big': Teaser_bigComponent,");
       expect(registry).toContain("'Hero': HeroComponent,");
@@ -166,9 +183,9 @@ export { Nested as default };`
       );
       await generate(testRoot);
 
-      const registry = await fs.readFile(path.join(testRoot, '.optimizely', 'registry.ts'), 'utf-8');
+      const registry = await fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
       expect(registry).toContain("'Nested': NestedComponent,");
-      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
+      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
       expect(types).not.toContain('wrong');
     });
   });
@@ -186,7 +203,7 @@ export { Nested as default };`
 config({ apiKey: 'k', query: { cache: true }, platform: 'paas' });`
       );
       await generate(testRoot);
-      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
+      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
       expect(types).toContain("platform: 'paas';");
       expect(types).toContain('interface OptimizelyCmsRegister');
     });
@@ -198,7 +215,7 @@ config({ apiKey: 'k', query: { cache: true }, platform: 'paas' });`
         `import { config } from '@optimizely/cms-sdk';\nconfig({ apiKey: 'k' });`
       );
       await generate(testRoot);
-      const types = await fs.readFile(path.join(testRoot, '.optimizely', 'global.d.ts'), 'utf-8');
+      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
       expect(types).not.toContain('OptimizelyCmsRegister');
     });
   });
@@ -275,7 +292,7 @@ export default function Button() {
       expect(result.files).toHaveLength(2);
 
       // Check registry.ts was created
-      const registryPath = path.join(testRoot, '.optimizely', 'registry.ts');
+      const registryPath = path.join(testRoot, 'src', 'registry.ts');
       const registryExists = await fs
         .access(registryPath)
         .then(() => true)
@@ -291,7 +308,7 @@ export default function Button() {
       expect(registryContent).toContain('export function initRegistry(');
 
       // Check global.d.ts was created
-      const typesPath = path.join(testRoot, '.optimizely', 'global.d.ts');
+      const typesPath = path.join(testRoot, 'global.d.ts');
       const typesExists = await fs
         .access(typesPath)
         .then(() => true)
@@ -334,7 +351,7 @@ export const HeroDisplayTemplate = displayTemplate({
       await generate(testRoot);
 
       const registryContent = await fs.readFile(
-        path.join(testRoot, '.optimizely', 'registry.ts'),
+        path.join(testRoot, 'src', 'registry.ts'),
         'utf-8'
       );
       expect(registryContent).toContain('HeroDisplayTemplate');
