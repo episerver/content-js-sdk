@@ -39,17 +39,20 @@ jobs:
       - name: Build Packages
         run: pnpm --filter "./packages/**" build
 
-      # ==========================================
-      # PUBLISH TO NPM + PUSH TAGS + GITHUB RELEASES
-      # ==========================================
-      # changesets/action runs publish.sh, parses the "New tag: pkg@version"
-      # lines that `changeset publish` emits, pushes those git tags, and creates
-      # a GitHub Release per package from the CHANGELOG entry. Auth for both the
-      # tag push and the release API comes from GITHUB_TOKEN below.
-      - name: Publish to NPM and create GitHub Releases
-        uses: changesets/action@v1
-        with:
-          publish: bash ./scripts/publish.sh
+      # Not changesets/action: it refuses to publish while any changeset is
+      # pending, and opens a version PR for all packages instead. `changeset
+      # publish` only publishes versions not yet on npm and tags them locally.
+      - name: Publish to NPM
+        run: bash ./scripts/publish.sh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Push tags and create GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" --tags
+          for tag in $(git tag --points-at HEAD); do
+            case "$tag" in *-*) pre=--prerelease ;; *) pre= ;; esac
+            gh release create "$tag" --title "$tag" --generate-notes $pre || true
+          done
