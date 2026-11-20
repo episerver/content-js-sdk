@@ -6,6 +6,7 @@ The official JavaScript/TypeScript SDK for building headless applications with O
 
 ## Features
 
+- **Typed GraphQL client** - Generated client with per-content-type namespaces and autocomplete
 - **Type-safe content modeling** - Full TypeScript definitions for your content types
 - **Framework integration** - First-class support for React and Next.js
 - **Live preview** - Real-time content editing experience
@@ -56,6 +57,7 @@ Full guides and documentation in the main repository:
 - [Tutorial](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/installation.md) - Build a site step by step, from installation to live preview
 - [Your first content type](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/first-content-type.md) - Define content types in TypeScript
 - [Fetch content](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/fetch-content.md) - Configure the client and fetch content from Graph
+- [Typed client](https://github.com/episerver/content-js-sdk/blob/main/docs/reference/graph-client.md#typed-client) - Generate a typed client with autocomplete for sort fields
 - [Render with React](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/render-with-react.md) - Render content with your own components
 - [Live preview](https://github.com/episerver/content-js-sdk/blob/main/docs/learn/live-preview.md) - Let editors preview changes as they type
 

@@ -31,8 +31,8 @@ every method uses every option:
 | `resolveTaxonomy` | Yes                | Yes                                          | Yes                 | No                                     |
 
 Some methods take extra options of their own: `variation` for `getContentByPath()`,
-`previewToken` for `getContent()`, `forceMediaToken` for `getPreviewContent()`, and
-`locales` for `getPath()` and `getItems()`.
+`previewToken` for `getContent()`, `forceMediaToken` for `getPreviewContent()`,
+`locales` for `getPath()` and `getItems()`, and `orderBy` for `getItems()`.
 
 The option types are exported from `@optimizely/cms-sdk`: `GraphGetContentOptions`,
 `GraphGetItemOptions`, `GraphGetPreviewOptions`, `GraphGetLinksOptions` and
@@ -375,17 +375,22 @@ client.getItems(reference: string | GraphReference, options?: GraphGetLinksOptio
 
 ### Parameters
 
-Same as [`getPath()`](#getpath).
+Same as [`getPath()`](#getpath), plus an optional `orderBy` to control the order of results:
+
+| Option      | Type      | Description |
+| ----------- | --------- | ----------- |
+| `orderBy`   | `OrderBy` | Order children matching Graph's `orderBy` format. Metadata fields go under `_metadata`, system fields like `_modified` at the top level. Example: `{ _metadata: { sortOrder: 'ASC' } }`. |
 
 ### Returns
 
 A promise of an array of the page's child pages, each with the same `PageLink` shape as
 [`getPath()`](#getpath) returns. It is `null` if the page doesn't exist.
 
+When `orderBy` is provided, items with `null` values for the first order field appear at
+the end of the results.
+
 ### Caveats
 
-- **The SDK doesn't sort the children.** Sort by `_metadata.sortOrder` to match the order
-  in the CMS page tree.
 - **Only pages are returned.** Child items that aren't pages are left out.
 - **A string that doesn't start with `graph://` is treated as a URL path.**
 
@@ -398,15 +403,15 @@ A promise of an array of the page's child pages, each with the same `PageLink` s
 import { getClient } from '@optimizely/cms-sdk';
 
 export default async function MainNavigation() {
-  const children = (await getClient().getItems('/en/')) ?? [];
-  const sorted = [...children].sort(
-    (a, b) => (a._metadata?.sortOrder ?? 0) - (b._metadata?.sortOrder ?? 0),
-  );
+  const children =
+    (await getClient().getItems('/en/', {
+      orderBy: { _metadata: { sortOrder: 'ASC' } },
+    })) ?? [];
 
   return (
     <nav aria-label='Main'>
       <ul>
-        {sorted.map(page => (
+        {children.map(page => (
           <li key={page._metadata?.key}>
             <a href={page._metadata?.url?.hierarchical}>{page._metadata?.displayName}</a>
           </li>
@@ -415,6 +420,30 @@ export default async function MainNavigation() {
     </nav>
   );
 }
+```
+
+#### Ordering by display name
+
+```ts
+const children = await getClient().getItems('/en/', {
+  orderBy: { _metadata: { displayName: 'ASC' } },
+});
+```
+
+#### Ordering by published date (newest first)
+
+```ts
+const children = await getClient().getItems('/en/', {
+  orderBy: { _metadata: { published: 'DESC' } },
+});
+```
+
+#### Ordering by multiple fields
+
+```ts
+const children = await getClient().getItems('/en/', {
+  orderBy: { _metadata: { published: 'DESC', displayName: 'ASC' } },
+});
 ```
 
 #### Fetching children in several locales
@@ -476,6 +505,99 @@ const data = await getClient().request(
   }`,
   {},
 );
+```
+
+## Typed client
+
+A typed client wraps `GraphClient` with one namespace per content type. Each namespace
+provides shorter method names (`getByPath`, `get`, `getItems`, `getPath`), return types
+inferred from the content type definition, typed `orderBy` fields, and automatic filtering
+by content type — `getItems` and `getPath` only return items matching the namespace's type.
+
+### createClient()
+
+Creates a typed client from an explicit content-type map.
+
+```ts
+import { getClient, createClient } from '@optimizely/cms-sdk';
+import { NewsPage, StandardPage } from './content-types';
+
+const client = createClient(getClient(), {
+  news: NewsPage,
+  standard: StandardPage,
+});
+```
+
+Each key in the map becomes a namespace:
+
+```ts
+// Return type is ContentProps<typeof NewsPage>[]
+const items = await client.news.getItems('/blog', {
+  orderBy: { body: { html: 'ASC' }, _metadata: { published: 'DESC' } },
+  //         ^ content-type properties (richText → { html: OrderDirection })
+  //                                    ^ metadata fields (sortOrder, published, ...)
+});
+
+// Return type is ContentProps<typeof StandardPage> | null
+const page = await client.standard.get({ key: 'abc123' });
+
+// For untyped operations, use getClient() directly
+const preview = await getClient().getPreviewContent(params);
+```
+
+The typed client is designed for code generation. Run
+[`generate client`](./cli.md#generate-client) to create the map automatically from your
+content types:
+
+```sh
+optimizely-cms-cli generate client
+```
+
+### createClientFromRegistry()
+
+Creates a client from the content types already in the registry. Useful for runtime use
+when you don't need compile-time type narrowing.
+
+```ts
+import { getClient, createClientFromRegistry } from '@optimizely/cms-sdk';
+
+// All registered content types
+const client = createClientFromRegistry(getClient());
+
+// Only page types
+const pages = createClientFromRegistry(getClient(), '_page');
+```
+
+Keys are the content type's `key` field, lowercased. Because the registry is populated at
+runtime, the return types are not narrowed — use `createClient()` or the generated client
+for full type safety.
+
+### Namespace methods
+
+Each namespace on a typed client has these methods:
+
+| Method             | Signature                                                                                      | Returns                          |
+| ------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------- |
+| `getByPath` | `(path: string, options?: GraphGetContentOptions) => Promise<ContentProps<CT>[]>`               | Content at a URL path            |
+| `get`       | `(reference: string \| GraphReference, options?: GraphGetItemOptions) => Promise<ContentProps<CT> \| null>` | One content item by key |
+| `getItems`         | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Child pages of this type |
+| `getPath`          | `(reference: string \| GraphReference, options?: TypedGetLinksOptions<CT>) => Promise<ContentProps<CT>[] \| null>` | Ancestors of this type   |
+
+The `orderBy` option in `getItems` and `getPath` matches Graph's `orderBy` format.
+Metadata fields go under `_metadata`, `_itemMetadata` or `_changesetMetadata`. Orderable
+content-type properties (such as rich text) appear at the top level with their
+Graph-specific input shape (e.g. `body: { html: 'ASC' }`).
+
+### Untyped operations
+
+The typed client wraps `getByPath`, `get`, `getItems` and `getPath`.
+For other operations (such as `request()` or `getPreviewContent()`), use `getClient()`
+directly:
+
+```ts
+import { getClient } from '@optimizely/cms-sdk';
+
+const preview = await getClient().getPreviewContent(params);
 ```
 
 ## GraphReference
