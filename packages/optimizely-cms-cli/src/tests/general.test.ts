@@ -1,6 +1,18 @@
 import { describe, test, expect } from 'vitest';
-import { formatCounts, pluralize, validateManifest } from '../utils/general.js';
+import { formatCounts, isObject, pluralize, validateManifest } from '../utils/general.js';
 import { translateErrorMessage } from '../utils/errors.js';
+
+describe('isObject', () => {
+  test.each([
+    ['an object', {}, true],
+    ['null', null, false],
+    ['an array', [], false],
+    ['a string', 'text', false],
+    ['undefined', undefined, false],
+  ])('%s → %s', (_, value, expected) => {
+    expect(isObject(value)).toBe(expected);
+  });
+});
 
 describe('pluralize', () => {
   test.each([
