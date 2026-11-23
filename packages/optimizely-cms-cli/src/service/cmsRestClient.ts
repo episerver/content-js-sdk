@@ -23,7 +23,7 @@ function isSaasApiGateway(url: string): boolean {
  * Resolves the effective CMS host, falling back to the environment variable and
  * then the default SaaS gateway URL. Trailing slashes are stripped.
  */
-function resolveHost(host?: string): string {
+export function resolveHost(host?: string): string {
   return (host || process.env.OPTIMIZELY_CMS_API_URL || DEFAULT_GATEWAY_URL).replace(
     /\/$/,
     '',
