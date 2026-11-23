@@ -1,5 +1,10 @@
 import { describe, test, expect } from 'vitest';
-import { hashItem, hashManifest, normalizeItem } from '../utils/normalizeManifest.js';
+import {
+  diffItems,
+  hashItem,
+  hashManifest,
+  normalizeItem,
+} from '../utils/normalizeManifest.js';
 
 const readOnly = {
   source: 'api',
@@ -132,6 +137,31 @@ describe('normalizeItem', () => {
         ...readOnly,
       }),
     ).toEqual({ key: 'TileRow', nodeType: 'row' });
+  });
+});
+
+describe('diffItems', () => {
+  test('lists differing fields by dotted path, in key order', () => {
+    expect(
+      diffItems(
+        { key: 'Hero', displayName: 'Hero', properties: { title: { maxLength: 80 } } },
+        { key: 'Hero', displayName: 'Hero (teammate)', properties: { body: { type: 'richText' } } },
+      ),
+    ).toEqual([
+      { path: 'displayName', local: 'Hero', server: 'Hero (teammate)' },
+      { path: 'properties.body', local: undefined, server: { type: 'richText' } },
+      { path: 'properties.title', local: { maxLength: 80 }, server: undefined },
+    ]);
+  });
+
+  test('compares arrays as a whole', () => {
+    expect(diffItems({ allowedTypes: ['A', 'B'] }, { allowedTypes: ['B', 'A'] })).toEqual([
+      { path: 'allowedTypes', local: ['A', 'B'], server: ['B', 'A'] },
+    ]);
+  });
+
+  test('is empty for equal items', () => {
+    expect(diffItems(normalizeItem('contentTypes', localTile), normalizeItem('contentTypes', serverTile))).toEqual([]);
   });
 });
 

@@ -17,7 +17,7 @@ import {
   generateRegistryFilePath,
 } from '../../utils/generate.js';
 import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make.js';
-import { formatCounts, validateManifest } from '../../utils/general.js';
+import { formatCounts, isInteractive, validateManifest } from '../../utils/general.js';
 import { filterOutBuiltinTypes } from '../../utils/mapping.js';
 import { buildCircularDependencyMap } from '../../utils/dependency.js';
 import { fetchManifest } from '../../service/manifestService.js';
@@ -273,9 +273,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
-    const isInteractive = process.stdout.isTTY === true && process.stdin.isTTY === true;
+    const interactive = isInteractive();
     const hasOutputFlag = outputFlags.some(flag => Boolean(flags[flag]));
-    const shouldOutputJson = flags.json || (!isInteractive && !hasOutputFlag);
+    const shouldOutputJson = flags.json || (!interactive && !hasOutputFlag);
     const includeReadOnly = flags.includeReadOnly;
 
     if (shouldOutputJson) return this.handleJsonOutput(flags.host, includeReadOnly);
@@ -286,7 +286,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     // Prompt for output directory if not provided
     const providedOutput =
       flags.output ||
-      (isInteractive ?
+      (interactive ?
         await input({
           message: 'Where should the generated file(s) be saved?',
           default: defaultOutput,
@@ -302,7 +302,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       : flags.individual ? 'individual'
       : flags.group ? 'group'
       : isForcedSingleFileMode ? 'single-file'
-      : isInteractive ?
+      : interactive ?
         await select({
           message: 'How would you like to organize the output?',
           choices: [
@@ -320,7 +320,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     const actualOutputType = isForcedSingleFileMode ? 'single-file' : outputType;
 
     const wantsRegistry =
-      isInteractive &&
+      interactive &&
       (await confirm({
         message: 'Generate a registry file (registry.ts) for the generated types?',
         default: false,

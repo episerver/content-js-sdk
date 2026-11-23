@@ -6,7 +6,8 @@ export type ManifestSection = 'contentTypes' | 'displayTemplates' | 'propertyGro
 
 type Item = Record<string, unknown>;
 
-const SECTIONS: ManifestSection[] = ['contentTypes', 'displayTemplates', 'propertyGroups'];
+/** Every manifest section, in upload order */
+export const SECTIONS: ManifestSection[] = ['contentTypes', 'displayTemplates', 'propertyGroups'];
 
 const READ_ONLY_FIELDS = ['source', 'created', 'createdBy', 'lastModified', 'lastModifiedBy'];
 
@@ -119,15 +120,60 @@ export const hashValue = (value: unknown): string =>
 export const hashItem = (section: ManifestSection, item: Item): string =>
   hashValue(normalizeItem(section, item));
 
-/** Hashes every item of a local or server manifest, keyed by `section:key`. */
-export const hashManifest = (
-  manifest: Partial<Record<ManifestSection, Item[] | null>>,
-): Record<string, string> =>
+/** Identifies a manifest item across sections, e.g. `contentTypes:Hero` */
+export const itemId = (section: ManifestSection, key: unknown) => `${section}:${key}`;
+
+/** Splits an item id back into its section and key. */
+export const parseItemId = (id: string) => {
+  const separator = id.indexOf(':');
+
+  return {
+    section: id.slice(0, separator) as ManifestSection,
+    key: id.slice(separator + 1),
+  };
+};
+
+type AnyManifest = Partial<Record<ManifestSection, Item[] | null>>;
+
+/** Normalises every item of a local or server manifest, keyed by item id. */
+export const normalizeManifest = (manifest: AnyManifest): Record<string, Item> =>
   Object.fromEntries(
     SECTIONS.flatMap(section =>
       (manifest[section] ?? []).map(item => [
-        `${section}:${item.key}`,
-        hashItem(section, item),
+        itemId(section, item.key),
+        normalizeItem(section, item),
       ]),
     ),
   );
+
+/** Hashes every item of a local or server manifest, keyed by item id. */
+export const hashManifest = (manifest: AnyManifest): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(normalizeManifest(manifest)).map(([id, item]) => [id, hashValue(item)]),
+  );
+
+/** A field whose value differs between a local item and its server copy */
+export type FieldDifference = { path: string; local: unknown; server: unknown };
+
+/** Lists the fields that differ between two normalised items, by dotted path. */
+export const diffItems = (local: unknown, server: unknown, path = ''): FieldDifference[] =>
+  isObject(local) && isObject(server) ?
+    [...new Set([...Object.keys(local), ...Object.keys(server)])]
+      .sort()
+      .flatMap(key => diffItems(local[key], server[key], path ? `${path}.${key}` : key))
+  : isEqual(local, server) ? []
+  : [{ path, local, server }];
+
+/** Keeps only the manifest items with the given ids. */
+export const pickItems = <T extends Record<ManifestSection, { key?: string }[]>>(
+  manifest: T,
+  ids: string[],
+): T => ({
+  ...manifest,
+  ...Object.fromEntries(
+    SECTIONS.map(section => [
+      section,
+      manifest[section].filter(item => ids.includes(itemId(section, item.key))),
+    ]),
+  ),
+});

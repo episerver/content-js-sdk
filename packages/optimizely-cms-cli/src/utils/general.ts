@@ -4,6 +4,9 @@ import { Manifest } from './manifest.js';
 export const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
 
+/** Whether both stdin and stdout are terminals, so prompts can be shown */
+export const isInteractive = () => process.stdin.isTTY === true && process.stdout.isTTY === true;
+
 /** Pluralizes a word based on count */
 export const pluralize = (count: number, singular: string) =>
   count !== 1 ? `${singular}s` : singular;
