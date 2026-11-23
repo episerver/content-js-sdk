@@ -44,3 +44,6 @@ yarn-error.log*
 next-env.d.ts
 
 certificates
+
+# Optimizely CLI per-developer state (config patch)
+.optimizely/

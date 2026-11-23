@@ -40,3 +40,6 @@ graphify-out/
 config.bat
 test-app
 *.tsbuildinfo
+
+# Optimizely CLI per-developer state (config patch)
+.optimizely/
