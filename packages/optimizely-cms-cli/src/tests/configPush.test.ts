@@ -127,11 +127,10 @@ describe('config push', () => {
   test('requires content when an application has no entryPoint', async () => {
     const configPath = await writeConfig({ applications: [{ ...site, entryPoint: undefined }] });
 
-    await expect(push(configPath)).rejects.toThrow(ExitError);
-
-    expect(printed(consoleSpies.error)).toContain(
+    await expect(push(configPath)).rejects.toThrow(
       'Content configuration required when applications defined without entryPoint',
     );
+
     expect(createApiClient).not.toHaveBeenCalled();
   });
 

@@ -6,6 +6,9 @@ import { paths } from './apiSchema/openapi-schema-types.js';
 
 const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
 
+/** CMS REST API version, used in request URLs and versioned media types */
+export const API_VERSION = 'v1';
+
 /**
  * Determines if the provided URL matches the pattern of a SaaS API gateway.
  * @param url - The URL to check
@@ -35,7 +38,6 @@ function resolveHost(host?: string): string {
  * @returns The constructed root URL for the CMS API
  */
 function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
-  const API_VERSION = 'v1';
   const omitVersion = options?.omitVersion ?? false;
 
   const baseUrl = resolveHost(options?.host);
