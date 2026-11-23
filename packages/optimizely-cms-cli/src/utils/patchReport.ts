@@ -38,8 +38,13 @@ type DetailsInput = {
   serverItems: Record<string, unknown>;
 };
 
-// one reported item: items sharing a heading are listed under it once
-type Entry = { heading: string; item: string; details?: string[] };
+type ReportSection = {
+  heading: string;
+  color: ChalkInstance;
+  matches: (status: ItemStatus) => boolean;
+  // what differs per item, shown in a column after its name
+  describe: (status: ItemStatus, change?: ServerChange) => string;
+};
 
 const SECTION_LABELS: Record<ManifestSection, string> = {
   contentTypes: 'content type',
@@ -47,79 +52,90 @@ const SECTION_LABELS: Record<ManifestSection, string> = {
   propertyGroups: 'property group',
 };
 
+const CONFLICT_REASONS: Record<ConflictReason, string> = {
+  bothChanged: 'changed locally and on the server',
+  deletedOnServer: 'changed locally, deleted on the server',
+  noState: 'differs from the server, with no saved state to tell which side changed',
+};
+
 const MAX_VALUE_LENGTH = 60;
 
-const byWhom = (change?: ServerChange) =>
-  change?.lastModifiedBy ? ` by ${change.lastModifiedBy}` : '';
-
-const CONFLICT_HEADINGS: Record<ConflictReason, (change?: ServerChange) => string> = {
-  bothChanged: change => `Changed locally and on the server${byWhom(change)}`,
-  deletedOnServer: () => 'Changed locally, deleted on the server',
-  noState: () => 'Differs from the server, with no saved state to tell which side changed',
+const labelOf = (id: string) => {
+  const { section, key } = parseItemId(id);
+  return `${key} (${SECTION_LABELS[section]})`;
 };
 
-const headingOf = (status: ItemStatus, change?: ServerChange): string => {
-  switch (status.status) {
-    case 'conflict':
-      return CONFLICT_HEADINGS[status.reason](change);
-    case 'outdated':
-      return `Changed on the server${byWhom(change)} (run config pull to see the changes)`;
-    case 'deletedOnServer':
-      return 'Deleted on the server (not recreated)';
-    case 'removed':
-      return 'Removed locally, still in the CMS';
-    case 'new':
-      return 'New';
-    default:
-      return 'Changed';
-  }
+const formatTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ?
+      timestamp
+    : `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 };
 
-// the time differs per item, so it goes on the item line rather than the heading
-const showsServerTime = (status: ItemStatus) =>
-  status.status === 'outdated' || (status.status === 'conflict' && status.reason === 'bothChanged');
+const whoAndWhen = (_: ItemStatus, change?: ServerChange) =>
+  [
+    change?.lastModifiedBy && `by ${change.lastModifiedBy}`,
+    change?.lastModified && formatTime(change.lastModified),
+  ]
+    .filter(Boolean)
+    .join('  ');
 
-const describeItem = (status: ItemStatus, change?: ServerChange) => {
-  const { section, key } = parseItemId(status.id);
-  const time = showsServerTime(status) && change?.lastModified ? ` at ${change.lastModified}` : '';
+const nothing = () => '';
 
-  return `${key} (${SECTION_LABELS[section]})${time}`;
-};
+const isConflict = (reason: ConflictReason) => (status: ItemStatus) =>
+  status.status === 'conflict' && status.reason === reason;
 
-const toEntry = (status: ItemStatus, change?: ServerChange): Entry => ({
-  heading: headingOf(status, change),
-  item: describeItem(status, change),
-});
+const hasStatus = (...wanted: ItemStatus['status'][]) => (status: ItemStatus) =>
+  wanted.includes(status.status);
 
-const formatEntries = (entries: Entry[], color: ChalkInstance) =>
-  [...new Set(entries.map(it => it.heading))].flatMap(heading => [
-    color(`  ${heading}:`),
-    ...entries
-      .filter(it => it.heading === heading)
-      .flatMap(it => [`    ${it.item}`, ...(it.details ?? []).map(line => `      ${line}`)]),
-  ]);
-
-const GROUPS: { title: string; color: ChalkInstance; statuses: ItemStatus['status'][] }[] = [
-  { title: 'To push', color: chalk.green, statuses: ['changed', 'new'] },
-  { title: 'Conflicts', color: chalk.red, statuses: ['conflict'] },
-  { title: 'Changed on the server', color: chalk.yellow, statuses: ['outdated', 'deletedOnServer'] },
-  { title: 'Removed locally', color: chalk.yellow, statuses: ['removed'] },
+const REPORT_SECTIONS: ReportSection[] = [
+  {
+    heading: 'To push',
+    color: chalk.green,
+    matches: hasStatus('changed', 'new'),
+    describe: status => status.status,
+  },
+  ...(Object.keys(CONFLICT_REASONS) as ConflictReason[]).map(reason => ({
+    heading: `Conflicts — ${CONFLICT_REASONS[reason]}`,
+    color: chalk.yellow,
+    matches: isConflict(reason),
+    describe: reason === 'bothChanged' ? whoAndWhen : nothing,
+  })),
+  {
+    heading: 'Changed on the server — run config pull to see it',
+    color: chalk.yellow,
+    matches: hasStatus('outdated'),
+    describe: whoAndWhen,
+  },
+  {
+    heading: 'Deleted on the server — not recreated',
+    color: chalk.yellow,
+    matches: hasStatus('deletedOnServer'),
+    describe: nothing,
+  },
+  {
+    heading: 'Still in the CMS — removed from your config, not deleted',
+    color: chalk.cyan,
+    matches: hasStatus('removed'),
+    describe: nothing,
+  },
 ];
 
-const formatGroup = (
-  { title, color, statuses: groupStatuses }: (typeof GROUPS)[number],
+const formatSection = (
+  { heading, color, matches, describe }: ReportSection,
   { statuses, serverChanges }: ReportInput,
+  labelWidth: number,
 ) => {
-  const entries = statuses
-    .filter(it => groupStatuses.includes(it.status))
-    .map(it => toEntry(it, serverChanges[it.id]));
+  const items = statuses.filter(matches);
+  const itemLine = (status: ItemStatus) =>
+    `  ${labelOf(status.id).padEnd(labelWidth)}  ${chalk.dim(describe(status, serverChanges[status.id]))}`.trimEnd();
 
-  return entries.length > 0 ? [color.bold(`${title}:`), ...formatEntries(entries, color)] : [];
+  return items.length > 0 ? [color.bold(`${heading} (${items.length})`), ...items.map(itemLine)] : [];
 };
 
 const formatSyncs = ({ applications, locales }: ReportInput['syncs']) => {
   const names = [applications && 'applications', locales && 'locales'].filter(Boolean);
-  return names.length > 0 ? [chalk.green.bold('To sync:'), chalk.green(`  ${names.join(', ')}`)] : [];
+  return names.length > 0 ? [chalk.green.bold(`To sync: ${names.join(', ')}`)] : [];
 };
 
 const formatValue = (value: unknown) => {
@@ -130,24 +146,38 @@ const formatValue = (value: unknown) => {
 };
 
 const formatDifferences = (differences: FieldDifference[]) => {
-  const width = Math.max(...differences.map(it => it.path.length));
+  const rows = differences.map(it => ({
+    path: it.path,
+    local: formatValue(it.local),
+    server: formatValue(it.server),
+  }));
+  const pathWidth = Math.max(...rows.map(it => it.path.length));
+  const localWidth = Math.max(...rows.map(it => it.local.length));
 
-  return differences.map(
+  return rows.map(
     ({ path, local, server }) =>
-      `${chalk.dim(path.padEnd(width))}  local: ${formatValue(local)}  server: ${formatValue(server)}`,
+      `    ${chalk.dim(path.padEnd(pathWidth))}  local: ${local.padEnd(localWidth)}  server: ${server}`,
   );
 };
 
-/** Prints the classified items, grouped by what patch does with them. */
-export const printPatchReport = (input: ReportInput) => {
-  const upToDate = input.statuses.filter(it => ['unchanged', 'inSync'].includes(it.status));
-  const lines = [
-    ...GROUPS.flatMap(group => formatGroup(group, input)),
-    ...formatSyncs(input.syncs),
-    ...(upToDate.length > 0 ? [chalk.dim(`${upToDate.length} up to date`)] : []),
-  ];
+const conflictReasonOf = (status: ItemStatus) =>
+  status.status === 'conflict' ? CONFLICT_REASONS[status.reason] : '';
 
-  lines.forEach(line => console.log(line));
+/** Prints the classified items, one section per status, separated by blank lines. */
+export const printPatchReport = (input: ReportInput) => {
+  const reported = input.statuses.filter(it => REPORT_SECTIONS.some(section => section.matches(it)));
+  const labelWidth = Math.max(0, ...reported.map(it => labelOf(it.id).length));
+  const upToDate = input.statuses.filter(hasStatus('unchanged', 'inSync'));
+  const blocks = [
+    ...REPORT_SECTIONS.map(section => formatSection(section, input, labelWidth)),
+    formatSyncs(input.syncs),
+    upToDate.length > 0 ? [chalk.dim(`${upToDate.length} up to date`)] : [],
+  ].filter(block => block.length > 0);
+
+  blocks.forEach((block, index) => {
+    if (index > 0) console.log('');
+    block.forEach(line => console.log(line));
+  });
 };
 
 /** Prints, per conflicting item, every field whose local and server values differ. */
@@ -157,13 +187,19 @@ export const printConflictDetails = ({
   localItems,
   serverItems,
 }: DetailsInput) => {
-  const entries = conflicts.map(it => ({
-    ...toEntry(it, serverChanges[it.id]),
-    // an item deleted on the server has nothing to compare against
-    details:
-      serverItems[it.id] ? formatDifferences(diffItems(localItems[it.id], serverItems[it.id])) : [],
-  }));
-  const lines = [chalk.red.bold('Conflict details:'), ...formatEntries(entries, chalk.red)];
+  const lines = conflicts.flatMap(it => {
+    const reason = [conflictReasonOf(it), whoAndWhen(it, serverChanges[it.id])]
+      .filter(Boolean)
+      .join(', ');
 
-  lines.forEach(line => console.log(line));
+    return [
+      `  ${labelOf(it.id)} ${chalk.dim(`— ${reason}`)}`,
+      // an item deleted on the server has nothing to compare against
+      ...(serverItems[it.id] ?
+        formatDifferences(diffItems(localItems[it.id], serverItems[it.id]))
+      : []),
+    ];
+  });
+
+  [chalk.yellow.bold('Conflict details'), ...lines].forEach(line => console.log(line));
 };

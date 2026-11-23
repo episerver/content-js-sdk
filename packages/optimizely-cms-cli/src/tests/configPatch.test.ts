@@ -70,9 +70,18 @@ describe('config patch', () => {
     contentTypes: server.contentTypes.map(it => (it.key === key ? { ...it, ...change } : it)),
   });
 
-  // an item listed under its heading in the report
-  const expectReported = (heading: string, item: string) =>
-    expect(printed(consoleSpies.log)).toContain(`  ${heading}:\n    ${item}`);
+  // the lines of the report section starting with `heading`, with column padding squeezed
+  const reportSection = (heading: string) => {
+    const lines = printed(consoleSpies.log).split('\n');
+    const start = lines.findIndex(line => line.startsWith(`${heading} (`));
+    const end = lines.indexOf('', start);
+
+    return start === -1 ? [] : (
+        lines.slice(start + 1, end === -1 ? undefined : end).map(line => line.trim().replace(/\s{2,}/g, '  '))
+      );
+  };
+  const expectReported = (heading: string, ...columns: string[]) =>
+    expect(reportSection(heading)).toContain(columns.join('  '));
 
   const postedBody = () => client.POST.mock.calls[0][1].body;
   const postedKeys = () =>
@@ -139,7 +148,7 @@ describe('config patch', () => {
         displayTemplates: [],
         propertyGroups: [],
       });
-      expectReported('New', 'Banner (content type)');
+      expectReported('To push', 'Banner (content type)', 'new');
     });
 
     test('treats a difference from the server as a conflict', async () => {
@@ -150,7 +159,7 @@ describe('config patch', () => {
       await expect(patch()).rejects.toThrow(ExitError);
 
       expectReported(
-        'Differs from the server, with no saved state to tell which side changed',
+        'Conflicts — differs from the server, with no saved state to tell which side changed',
         'Hero (content type)',
       );
       expect(client.POST).not.toHaveBeenCalled();
@@ -164,7 +173,7 @@ describe('config patch', () => {
     await patch();
 
     expect(postedKeys()).toEqual(['Hero']);
-    expectReported('Changed', 'Hero (content type)');
+    expectReported('To push', 'Hero (content type)', 'changed');
   });
 
   test('warns about a teammate change without pushing', async () => {
@@ -179,8 +188,10 @@ describe('config patch', () => {
 
     expect(client.POST).not.toHaveBeenCalled();
     expectReported(
-      'Changed on the server by teammate@example.com (run config pull to see the changes)',
-      'Hero (content type) at 2026-11-23T10:00:00Z',
+      'Changed on the server — run config pull to see it',
+      'Hero (content type)',
+      'by teammate@example.com',
+      '2026-11-23 10:00 UTC',
     );
   });
 
@@ -192,7 +203,7 @@ describe('config patch', () => {
 
     expect(client.POST).not.toHaveBeenCalled();
     expect(client.DELETE).not.toHaveBeenCalled();
-    expectReported('Removed locally, still in the CMS', 'Banner (content type)');
+    expectReported('Still in the CMS — removed from your config, not deleted', 'Banner (content type)');
   });
 
   describe('conflicts', () => {
@@ -213,7 +224,7 @@ describe('config patch', () => {
       await expect(patch()).rejects.toThrow(ExitError);
 
       const logs = printed(consoleSpies.log);
-      expect(logs).toContain('Conflict details:');
+      expect(logs).toContain('Conflict details');
       expect(logs).toMatch(/displayName\s+local: "Hero"\s+server: "Hero \(teammate\)"/);
       expect(logs).toMatch(/properties\.title\.maxLength\s+local: 80\s+server: \(not set\)/);
       expect(client.POST).not.toHaveBeenCalled();
@@ -298,7 +309,7 @@ describe('config patch', () => {
           ['show', 'overwrite', 'skip', 'abort'],
           ['overwrite', 'skip', 'abort'],
         ]);
-        expect(printed(consoleSpies.log)).toContain('Conflict details:');
+        expect(printed(consoleSpies.log)).toContain('Conflict details');
         expect(postedKeys()).toEqual(['Banner']);
       });
 
@@ -322,7 +333,7 @@ describe('config patch', () => {
 
     expect(client.POST).not.toHaveBeenCalled();
     expect(select).not.toHaveBeenCalled();
-    expectReported('Changed', 'Hero (content type)');
+    expectReported('To push', 'Hero (content type)', 'changed');
     expect(await readState()).toBe(stateBefore);
   });
 

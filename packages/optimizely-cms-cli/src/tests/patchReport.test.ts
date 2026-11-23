@@ -4,7 +4,10 @@ import { printConflictDetails, printPatchReport } from '../utils/patchReport.js'
 import type { ItemStatus } from '../utils/patchStatus.js';
 
 const noSyncs = { applications: false, locales: false };
-const teammate = { lastModifiedBy: 'teammate@example.com' };
+const teammate = {
+  lastModifiedBy: 'teammate@example.com',
+  lastModified: '2026-11-23T10:43:26.2394424+00:00',
+};
 
 describe('patch report', () => {
   let log: MockInstance;
@@ -23,53 +26,40 @@ describe('patch report', () => {
       return printedLines();
     };
 
-    test('groups items by what patch does with them, under one heading per explanation', () => {
+    test('prints one section per status, with aligned item columns and blank lines between', () => {
       expect(
-        report([
-          { id: 'contentTypes:Hero', status: 'changed' },
-          { id: 'contentTypes:Banner', status: 'changed' },
-          { id: 'propertyGroups:seo', status: 'new' },
-          { id: 'displayTemplates:Row', status: 'conflict', reason: 'deletedOnServer' },
-          { id: 'contentTypes:Old', status: 'deletedOnServer' },
-          { id: 'contentTypes:Gone', status: 'removed' },
-        ]),
+        report(
+          [
+            { id: 'contentTypes:Hero', status: 'changed' },
+            { id: 'propertyGroups:seo', status: 'new' },
+            { id: 'contentTypes:Tile', status: 'conflict', reason: 'bothChanged' },
+            { id: 'displayTemplates:Row', status: 'conflict', reason: 'deletedOnServer' },
+            { id: 'contentTypes:SmallFeature', status: 'outdated' },
+            { id: 'contentTypes:Old', status: 'deletedOnServer' },
+            { id: 'contentTypes:Gone', status: 'removed' },
+          ],
+          noSyncs,
+          { 'contentTypes:Tile': teammate, 'contentTypes:SmallFeature': teammate },
+        ),
       ).toEqual([
-        'To push:',
-        '  Changed:',
-        '    Hero (content type)',
-        '    Banner (content type)',
-        '  New:',
-        '    seo (property group)',
-        'Conflicts:',
-        '  Changed locally, deleted on the server:',
-        '    Row (display template)',
-        'Changed on the server:',
-        '  Deleted on the server (not recreated):',
-        '    Old (content type)',
-        'Removed locally:',
-        '  Removed locally, still in the CMS:',
-        '    Gone (content type)',
-      ]);
-    });
-
-    test('groups conflicts by who changed them, keeping each time on its item', () => {
-      const lines = report(
-        [
-          { id: 'contentTypes:Hero', status: 'conflict', reason: 'bothChanged' },
-          { id: 'contentTypes:Banner', status: 'conflict', reason: 'bothChanged' },
-        ],
-        noSyncs,
-        {
-          'contentTypes:Hero': { ...teammate, lastModified: '2026-11-23T10:00:00Z' },
-          'contentTypes:Banner': teammate,
-        },
-      );
-
-      expect(lines).toEqual([
-        'Conflicts:',
-        '  Changed locally and on the server by teammate@example.com:',
-        '    Hero (content type) at 2026-11-23T10:00:00Z',
-        '    Banner (content type)',
+        'To push (2)',
+        '  Hero (content type)          changed',
+        '  seo (property group)         new',
+        '',
+        'Conflicts — changed locally and on the server (1)',
+        '  Tile (content type)          by teammate@example.com  2026-11-23 10:43 UTC',
+        '',
+        'Conflicts — changed locally, deleted on the server (1)',
+        '  Row (display template)',
+        '',
+        'Changed on the server — run config pull to see it (1)',
+        '  SmallFeature (content type)  by teammate@example.com  2026-11-23 10:43 UTC',
+        '',
+        'Deleted on the server — not recreated (1)',
+        '  Old (content type)',
+        '',
+        'Still in the CMS — removed from your config, not deleted (1)',
+        '  Gone (content type)',
       ]);
     });
 
@@ -83,7 +73,17 @@ describe('patch report', () => {
           ],
           { applications: true, locales: true },
         ),
-      ).toEqual(['To sync:', '  applications, locales', '2 up to date']);
+      ).toEqual(['To sync: applications, locales', '', '2 up to date']);
+    });
+
+    test('keeps a timestamp it cannot parse as it is', () => {
+      const [, line] = report(
+        [{ id: 'contentTypes:Hero', status: 'outdated' }],
+        noSyncs,
+        { 'contentTypes:Hero': { lastModified: 'yesterday' } },
+      );
+
+      expect(line).toBe('  Hero (content type)  yesterday');
     });
 
     test('prints nothing when there is nothing to report', () => {
@@ -92,7 +92,7 @@ describe('patch report', () => {
   });
 
   describe('printConflictDetails', () => {
-    test('lists every differing field under its item, aligned', () => {
+    test('lists every differing field under its item, with aligned columns', () => {
       printConflictDetails({
         conflicts: [
           { id: 'contentTypes:Hero', status: 'conflict', reason: 'bothChanged' },
@@ -109,13 +109,11 @@ describe('patch report', () => {
       });
 
       expect(printedLines()).toEqual([
-        'Conflict details:',
-        '  Changed locally and on the server by teammate@example.com:',
-        '    Hero (content type)',
-        '      displayName                 local: "Hero"  server: "Hero (teammate)"',
-        '      properties.title.maxLength  local: 80  server: (not set)',
-        '  Changed locally, deleted on the server:',
-        '    Row (display template)',
+        'Conflict details',
+        '  Hero (content type) — changed locally and on the server, by teammate@example.com  2026-11-23 10:43 UTC',
+        '    displayName                 local: "Hero"  server: "Hero (teammate)"',
+        '    properties.title.maxLength  local: 80      server: (not set)',
+        '  Row (display template) — changed locally, deleted on the server',
       ]);
     });
 

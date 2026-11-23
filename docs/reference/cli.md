@@ -321,11 +321,10 @@ version, skip them and push the rest, or abort. **Show the differences** lists e
 whose value differs, then asks again:
 
 ```text
-Conflict details:
-  Changed locally and on the server by teammate@example.com:
-    Hero (content type)
-      displayName                 local: "Hero"  server: "Hero (teammate)"
-      properties.title.maxLength  local: 80  server: (not set)
+Conflict details
+  Hero (content type) — changed locally and on the server, by teammate@example.com  2026-11-23 10:43 UTC
+    displayName                 local: "Hero"  server: "Hero (teammate)"
+    properties.title.maxLength  local: 80      server: (not set)
 ```
 
 Outside a terminal, patch prints the same details, pushes nothing and exits with code `1`.
@@ -369,14 +368,13 @@ optimizely-cms-cli config patch
 ```
 
 ```text
-To push:
-  Changed:
-    Hero (content type)
-  New:
-    seo (property group)
-Changed on the server:
-  Changed on the server by teammate@example.com (run config pull to see the changes):
-    Banner (content type) at 2026-11-23T10:00:00Z
+To push (2)
+  Hero (content type)     changed
+  seo (property group)    new
+
+Changed on the server — run config pull to see it (1)
+  Banner (content type)   by teammate@example.com  2026-11-23 10:00 UTC
+
 12 up to date
 ✔ Configuration file uploaded
 ```
