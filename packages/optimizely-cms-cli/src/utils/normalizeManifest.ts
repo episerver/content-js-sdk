@@ -109,11 +109,15 @@ export const normalizeItem = (section: ManifestSection, item: Item): Item => {
   return sortKeys(removeDefaults(withoutServerFields(item))) as Item;
 };
 
+/** Hashes any JSON value independently of key order. */
+export const hashValue = (value: unknown): string =>
+  createHash('sha256')
+    .update(JSON.stringify(sortKeys(value)) ?? '')
+    .digest('hex');
+
 /** Hashes the normalised item, so a local item and its server copy hash equally when in sync. */
 export const hashItem = (section: ManifestSection, item: Item): string =>
-  createHash('sha256')
-    .update(JSON.stringify(normalizeItem(section, item)))
-    .digest('hex');
+  hashValue(normalizeItem(section, item));
 
 /** Hashes every item of a local or server manifest, keyed by `section:key`. */
 export const hashManifest = (

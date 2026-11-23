@@ -20,6 +20,7 @@ import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make
 import { formatCounts, validateManifest } from '../../utils/general.js';
 import { filterOutBuiltinTypes } from '../../utils/mapping.js';
 import { buildCircularDependencyMap } from '../../utils/dependency.js';
+import { fetchManifest } from '../../service/manifestService.js';
 
 const defaultOutput = './src/content-types';
 const outputFlags = ['output', 'single-file', 'individual', 'group'] as const;
@@ -78,42 +79,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
   // API METHODS
 
-  /**
-   * Fetches the manifest from CMS
-   * @throws Error with descriptive message if fetch fails
-   */
   private async fetchManifest(host?: string, includeReadOnly?: boolean) {
-    const restClient = await createApiClient(host);
-    const { data, error, response } = await restClient.GET('/manifest', {
-      params: {
-        query: {
-          sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
-          ...(includeReadOnly ? { includeReadOnly } : {}),
-        },
-      },
-    });
-    if (error || (response && !response.ok)) {
-      throw new Error(this.buildErrorMessage(error, response));
-    }
-    return data;
-  }
-
-  // ERROR HANDLING
-
-  /**
-   * Builds formatted error message from API response
-   */
-  private buildErrorMessage(error: any, response: any): string {
-    const status = error?.status ?? response?.status;
-    const title = error?.title ?? error?.message ?? response?.statusText;
-    const detail = error?.detail;
-
-    let message = 'Failed to fetch manifest from CMS';
-    if (status) message += chalk.dim(` (status ${status})`);
-    if (title) message += `: ${chalk.yellow(title)}`;
-    if (detail) message += chalk.dim(` - ${detail}`);
-
-    return message;
+    return fetchManifest(await createApiClient(host), { includeReadOnly });
   }
 
   /**

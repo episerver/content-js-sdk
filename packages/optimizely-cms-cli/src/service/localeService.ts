@@ -19,14 +19,14 @@ const deriveDisplayName = (key: string): string => {
 };
 
 /**
- * Syncs locales from buildConfig to CMS via REST API
+ * Syncs locales from buildConfig to CMS via REST API; resolves to whether every locale synced
  */
 export async function syncLocales(
   locale: string[],
   restClient: ApiClient,
-): Promise<void> {
+): Promise<boolean> {
   if (!locale || !Array.isArray(locale) || locale.length === 0) {
-    return;
+    return true;
   }
 
   const spinner = ora('Syncing locales').start();
@@ -41,7 +41,7 @@ export async function syncLocales(
         `${error.status || ''} ${error.detail || error.title || 'Unknown error'}`,
       ),
     );
-    return;
+    return false;
   }
 
   const existingLocales = listResponse.data?.items || [];
@@ -125,4 +125,6 @@ export async function syncLocales(
       `Locales synced: ${createdCount} created, ${enabledCount} enabled, ${alreadyEnabled.length} unchanged${failed > 0 ? `, ${failed} failed` : ''}`,
     ),
   );
+
+  return failed === 0;
 }

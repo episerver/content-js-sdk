@@ -15,7 +15,6 @@ import {
   validateApplications,
 } from './utils.js';
 import { mapContentToManifest } from '../mapper/contentToPackage.js';
-import { translateErrorMessage } from '../utils/errors.js';
 import { contractToManifest, validateContentAreaConstraints } from '../utils/mapping.js';
 
 type ApiClient = Client<paths>;
@@ -165,20 +164,34 @@ export const uploadManifest = async (
   return response.data;
 };
 
-/** Prints the outcomes and errors of an import; exits when there are errors. */
-export const reportImportResult = (result: ImportResult) => {
-  if (result.outcomes && result.outcomes.length > 0) {
-    console.log(chalk.cyan.bold('\nOutcomes:'));
-    for (const outcome of result.outcomes) {
-      console.log(chalk.dim('  -'), chalk.blue(outcome.message));
-    }
-  }
+const fetchErrorMessage = (
+  error?: ProblemDetails & { message?: string },
+  response?: Response,
+) => {
+  const status = error?.status ?? response?.status;
+  const title = error?.title ?? error?.message ?? response?.statusText;
+  const detail = error?.detail;
 
-  if (result.errors && result.errors.length > 0) {
-    console.log(chalk.red.bold('\nErrors:'));
-    for (const error of result.errors) {
-      console.log(chalk.dim('  -'), chalk.red(translateErrorMessage(error)));
-    }
-    process.exit(1);
-  }
+  return [
+    'Failed to fetch manifest from CMS',
+    status ? chalk.dim(` (status ${status})`) : '',
+    title ? `: ${chalk.yellow(title)}` : '',
+    detail ? chalk.dim(` - ${detail}`) : '',
+  ].join('');
+};
+
+/** Fetches the content types, display templates and property groups stored in the CMS. */
+export const fetchManifest = async (restClient: ApiClient, { includeReadOnly = false } = {}) => {
+  const { data, error, response } = await restClient.GET('/manifest', {
+    params: {
+      query: {
+        sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
+        ...(includeReadOnly ? { includeReadOnly } : {}),
+      },
+    },
+  });
+
+  if (error || (response && !response.ok)) throw new Error(fetchErrorMessage(error, response));
+
+  return data;
 };

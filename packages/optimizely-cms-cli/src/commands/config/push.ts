@@ -9,9 +9,12 @@ import { checkApplications } from '../../service/applicationService.js';
 import { syncLocales } from '../../service/localeService.js';
 import {
   buildManifest,
-  reportImportResult,
+  fetchManifest,
   uploadManifest,
 } from '../../service/manifestService.js';
+import { savePatchState, type StateUpdate } from '../../service/patchState.js';
+import { reportImportResult } from '../../utils/errors.js';
+import { hashManifest, hashValue } from '../../utils/normalizeManifest.js';
 import {
   findUnknownKeys,
   parseOnlyKeys,
@@ -113,15 +116,45 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       );
     }
 
+    // hashed before syncing: the application sync fills in entry points and preview formats
+    const applicationsHash = hashValue({ applications, content });
+    const localesHash = hashValue(locale ?? []);
+
     const result = await uploadManifest(restClient, metaData, flags.force);
 
     // Locales and applications are global, so a scoped push leaves them alone
-    if (!onlyKeys && Array.isArray(locale) && locale.length > 0)
-      await syncLocales(locale, restClient);
+    const localesSynced = !onlyKeys && (await syncLocales(locale, restClient));
 
     // Check and ensure applications (skips if all exist)
     if (!onlyKeys) await checkApplications(applications, content, flags.host);
 
     reportImportResult(result);
+
+    await recordPushState(configFilePath, flags.host, restClient, {
+      local: hashManifest(metaData),
+      ...(onlyKeys ? {} : { applications: applicationsHash }),
+      ...(localesSynced ? { locales: localesHash } : {}),
+    });
   }
 }
+
+const recordPushState = async (
+  configFilePath: string,
+  host: string | undefined,
+  restClient: Awaited<ReturnType<typeof createApiClient>>,
+  update: Omit<StateUpdate, 'server' | 'record'>,
+) => {
+  try {
+    await savePatchState(configFilePath, host, {
+      ...update,
+      server: hashManifest(await fetchManifest(restClient)),
+      record: Object.keys(update.local),
+    });
+  } catch (error) {
+    console.warn(
+      chalk.yellow(
+        `Pushed, but could not record the state for config patch: ${(error as Error).message}`,
+      ),
+    );
+  }
+};

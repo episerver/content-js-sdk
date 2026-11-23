@@ -32,7 +32,7 @@ describe('syncLocales', () => {
   afterEach(() => vi.restoreAllMocks());
 
   test('does nothing for an empty locale list', async () => {
-    await sync([]);
+    await expect(sync([])).resolves.toBe(true);
 
     expect(client.GET).not.toHaveBeenCalled();
     expect(ora).not.toHaveBeenCalled();
@@ -43,7 +43,7 @@ describe('syncLocales', () => {
       apiResponse({ status: 500, error: { status: 500, detail: 'Database down' } }),
     );
 
-    await expect(sync(['en'])).resolves.toBeUndefined();
+    await expect(sync(['en'])).resolves.toBe(false);
 
     expect(spinnerMessages(ora, 'fail')).toEqual(['Failed to fetch existing locales']);
     expect(printed(consoleSpies.error)).toContain('500 Database down');
@@ -58,7 +58,7 @@ describe('syncLocales', () => {
       ]),
     );
 
-    await sync(['en', 'sv', 'fr-CA']);
+    await expect(sync(['en', 'sv', 'fr-CA'])).resolves.toBe(true);
 
     expect(client.POST).toHaveBeenCalledTimes(1);
     expect(client.POST).toHaveBeenCalledWith(
@@ -118,7 +118,7 @@ describe('syncLocales', () => {
     );
     client.PATCH.mockResolvedValue(apiResponse({ error: { detail: 'Locked' } }));
 
-    await sync(['xx', 'sv']);
+    await expect(sync(['xx', 'sv'])).resolves.toBe(false);
 
     expect(spinnerMessages(ora, 'warn')).toEqual([
       'Failed to create locale xx: Invalid locale',

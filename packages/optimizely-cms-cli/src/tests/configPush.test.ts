@@ -12,12 +12,16 @@ import {
   mockApiClient,
   mockExit,
   printed,
+  respondByPath,
   silenceConsole,
   writeProject,
   type MockApiClient,
 } from './helpers.js';
 
-vi.mock('../service/cmsRestClient.js');
+vi.mock('../service/cmsRestClient.js', async importOriginal => ({
+  ...(await importOriginal<typeof import('../service/cmsRestClient.js')>()),
+  createApiClient: vi.fn(),
+}));
 vi.mock('ora', async () => ({
   default: vi.fn((await import('./helpers.js')).createSpinner),
 }));
@@ -194,7 +198,8 @@ describe('config push', () => {
     });
     expect(printed(consoleSpies.log)).toContain('Pushing content types: [Hero]');
     expect(printed(consoleSpies.log)).not.toContain('Applications found');
-    expect(client.GET).not.toHaveBeenCalled();
+    expect(client.GET).not.toHaveBeenCalledWith('/locales');
+    expect(client.GET).not.toHaveBeenCalledWith('/applications/{key}', expect.anything());
     expect(createApiClient).toHaveBeenCalledTimes(1);
   });
 
@@ -305,5 +310,99 @@ describe('config push', () => {
     expect(logs).toContain(
       "Removing a property loses data. Use the '--force' flag to apply the changes anyway.",
     );
+  });
+
+  describe('patch state', () => {
+    const stateFile = () => join(tempDir, '.optimizely', 'patch-state.json');
+    const readState = async () => {
+      const { instances } = JSON.parse(await readFile(stateFile(), 'utf8'));
+      return instances['https://api.cms.optimizely.com|client-a'];
+    };
+    const serverManifest = {
+      contentTypes: [{ key: 'Hero' }, { key: 'Banner' }],
+      propertyGroups: [{ key: 'content' }, { key: 'layout' }],
+    };
+
+    beforeEach(() => {
+      vi.stubEnv('OPTIMIZELY_CMS_CLIENT_ID', 'client-a');
+      vi.stubEnv('OPTIMIZELY_CMS_CLIENT_SECRET', 'secret');
+      vi.stubEnv('OPTIMIZELY_CMS_API_URL', '');
+      respondByPath(client.GET, {
+        '/manifest': apiResponse({ data: serverManifest }),
+        '/locales': apiResponse({ data: { items: [{ key: 'en', isEnabled: true }] } }),
+      });
+    });
+
+    afterEach(() => vi.unstubAllEnvs());
+
+    test('records the pushed items, applications and locales after a full push', async () => {
+      const configPath = await writeConfig({ locale: ['en'] });
+
+      await push(configPath);
+
+      const state = await readState();
+      expect(Object.keys(state.items)).toEqual([
+        'contentTypes:Hero',
+        'contentTypes:Banner',
+        'propertyGroups:content',
+        'propertyGroups:layout',
+      ]);
+      expect(state.items['contentTypes:Hero']).toEqual({
+        local: expect.any(String),
+        server: expect.any(String),
+      });
+      expect(state).toMatchObject({ applications: expect.any(String), locales: expect.any(String) });
+    });
+
+    test('records only what --only sent, leaving global settings unrecorded', async () => {
+      const configPath = await writeConfig({ locale: ['en'] });
+
+      await push(configPath, '--only', 'Hero');
+
+      const state = await readState();
+      expect(Object.keys(state.items)).toEqual(['contentTypes:Hero', 'propertyGroups:content']);
+      expect(state.applications).toBeUndefined();
+      expect(state.locales).toBeUndefined();
+    });
+
+    test('leaves locales unrecorded when the locale sync fails', async () => {
+      const configPath = await writeConfig({ locale: ['en'] });
+      respondByPath(client.GET, { '/manifest': apiResponse({ data: serverManifest }) });
+
+      await push(configPath);
+
+      expect((await readState()).locales).toBeUndefined();
+    });
+
+    test('writes nothing on --dryRun', async () => {
+      const configPath = await writeConfig();
+
+      await push(configPath, '--dryRun');
+
+      await expect(readFile(stateFile())).rejects.toThrow();
+    });
+
+    test('writes nothing when the import reports errors', async () => {
+      const configPath = await writeConfig();
+      client.POST.mockResolvedValue(
+        apiResponse({ data: { errors: [{ section: 'contentTypes', message: 'Invalid' }] } }),
+      );
+
+      await expect(push(configPath)).rejects.toThrow(ExitError);
+
+      await expect(readFile(stateFile())).rejects.toThrow();
+    });
+
+    test('warns instead of failing when the state cannot be recorded', async () => {
+      const configPath = await writeConfig();
+      respondByPath(client.GET, {});
+
+      await push(configPath);
+
+      expect(printed(consoleSpies.warn)).toContain(
+        'Pushed, but could not record the state for config patch',
+      );
+      await expect(readFile(stateFile())).rejects.toThrow();
+    });
   });
 });
