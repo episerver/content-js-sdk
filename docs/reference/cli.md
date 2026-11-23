@@ -12,6 +12,7 @@ optimizely-cms-cli <command> [arguments] [flags]
 | --------------------------------------------------------------------- | -------------------------------------------------------- |
 | [`login`](#login)                                                     | Checks the credentials in your environment               |
 | [`config push`](#config-push)                                         | Pushes content types from your config file to the CMS    |
+| [`config patch`](#config-patch)                                       | Pushes only what changed since your last push            |
 | [`config pull`](#config-pull)                                         | Generates TypeScript files, or JSON, from the CMS        |
 | [`config delete`](#config-delete)                                     | Deletes the content types defined in your config file    |
 | [`content delete`](#content-delete)                                   | Deletes one content type                                 |
@@ -198,6 +199,8 @@ See [Content types](../guides/content-types.md) for how to choose a constraint.
   property or changing its type, and the CLI suggests `--force` in the error.
 - **A scoped push (`--only`) skips locales, content and applications.** These are global,
   so only a full push changes them.
+- **A successful push saves the state that [`config patch`](#config-patch) uses.** It
+  records what it uploaded in `.optimizely/patch-state.json`. `--dryRun` doesn't write it.
 
 ### Usage
 
@@ -254,6 +257,144 @@ Combine `--only` with `--force` to limit a data-losing update to the type you ch
 ```sh
 optimizely-cms-cli config push --only Hero --force
 ```
+
+## `config patch`
+
+Pushes only the content types, contracts, display templates and property groups that
+changed since your last push, and leaves everything else in the CMS alone. It also tells
+you when someone changed the same item in the CMS in the meantime.
+
+```sh
+optimizely-cms-cli config patch [file] [--dryRun] [--force] [--overwrite | --skipConflicts] [--host <url>]
+```
+
+### Reference
+
+#### Arguments
+
+- `file` (optional) — the path to the config file. Defaults to `./optimizely.config.mjs`.
+
+#### Flags
+
+| Flag              | Default | Description                                                                  |
+| ----------------- | ------- | ---------------------------------------------------------------------------- |
+| `--dryRun`        | `false` | Reports what would be pushed, then stops. Never prompts and saves nothing    |
+| `--force`         | `false` | Applies changes the CMS would otherwise reject because they can lose data    |
+| `--overwrite`     | `false` | Pushes [conflicting](#conflicts) items too, replacing the version in the CMS |
+| `--skipConflicts` | `false` | Pushes everything except conflicting items                                   |
+| `--host <url>`    |         | The CMS to compare with and push to                                          |
+
+`--overwrite` and `--skipConflicts` can't be combined.
+
+#### How patch decides what to push
+
+Patch compares three versions of every item: the one in your config, the one in the CMS,
+and the [saved state](#the-state-file) from the last time you pushed it.
+
+| Reported as           | Meaning                                      | What patch does                                      |
+| --------------------- | -------------------------------------------- | ---------------------------------------------------- |
+| Changed               | Changed in your config                       | Pushes it                                            |
+| New                   | In your config, not in the CMS               | Pushes it                                            |
+| Up to date            | Unchanged, or identical on both sides        | Nothing                                              |
+| Changed on the server | Changed in the CMS, unchanged in your config | Warns. Run [`config pull`](#config-pull) to see it   |
+| Deleted on the server | Deleted in the CMS, unchanged in your config | Warns, and doesn't recreate it                       |
+| Removed locally       | Removed from your config, still in the CMS   | Reports it. Nothing is deleted                       |
+| Conflict              | See [Conflicts](#conflicts)                  | Asks you, or follows `--overwrite`/`--skipConflicts` |
+
+Only the changed and new items are uploaded. Unlike `config push --only`, patch doesn't
+add a content type's display templates or property groups unless those changed too. Items
+in the CMS that aren't in your config are never touched.
+
+Locales and applications are synced only when their part of the config changed since the
+last push.
+
+#### Conflicts
+
+An item conflicts when:
+
+- it changed in your config and in the CMS since your last push
+- it changed in your config and was deleted in the CMS
+- there is no saved state for it yet, and it differs from the CMS
+
+In a terminal, patch asks what to do: show the differences, overwrite them with your
+version, skip them and push the rest, or abort. **Show the differences** lists every field
+whose value differs, then asks again:
+
+```text
+Conflict details:
+  Changed locally and on the server by teammate@example.com:
+    Hero (content type)
+      displayName                 local: "Hero"  server: "Hero (teammate)"
+      properties.title.maxLength  local: 80  server: (not set)
+```
+
+Outside a terminal, patch prints the same details, pushes nothing and exits with code `1`.
+Pass `--overwrite` or `--skipConflicts` to decide in advance.
+
+The details compare your config with the CMS. They show what differs, not which side
+changed it.
+
+#### The state file
+
+Patch stores fingerprints of what was pushed in `.optimizely/patch-state.json`, next to
+the config file. `config push` writes the same file. The state is kept per CMS, identified
+by its URL and your client ID, so switching between instances doesn't mix them up.
+
+The file belongs to one developer's working copy. The project templates ignore
+`.optimizely/`, and we recommend you do the same. Committing it works as long as it always
+moves together with the code it describes; when the two drift apart, for example after a
+merge, the next run may report items as conflicts until they are pushed again.
+
+Deleting the file is safe. The next run compares your config with the CMS directly, as on
+a first run.
+
+#### Caveats
+
+- **`config patch` never deletes anything**, just like `config push`.
+- **The first run asks about every difference.** Without a saved state, items identical to
+  the CMS are recorded as up to date and items missing from the CMS are pushed as new. Any
+  item that differs from the CMS is a conflict, because patch can't tell which side
+  changed it. Run `config push` once first to start from a known state.
+- **In a CI pipeline every run is a first run**, because a fresh checkout has no state
+  file. Use `config push`, or `config patch --overwrite` if the pipeline's config should
+  always win.
+- **`--dryRun` still signs in and reads the CMS**, so it needs valid credentials.
+
+### Usage
+
+#### Pushing your changes
+
+```sh
+optimizely-cms-cli config patch
+```
+
+```text
+To push:
+  Changed:
+    Hero (content type)
+  New:
+    seo (property group)
+Changed on the server:
+  Changed on the server by teammate@example.com (run config pull to see the changes):
+    Banner (content type) at 2026-11-23T10:00:00Z
+12 up to date
+✔ Configuration file uploaded
+```
+
+#### Checking what would be pushed
+
+```sh
+optimizely-cms-cli config patch --dryRun
+```
+
+#### Choosing `config patch` or `config push --only`
+
+|                                       | `config push --only` | `config patch`             |
+| ------------------------------------- | -------------------- | -------------------------- |
+| Which items                           | The keys you list    | Worked out from your edits |
+| Display templates and property groups | Added automatically  | Only when they changed     |
+| Notices changes made in the CMS       | No                   | Yes                        |
+| Locales and applications              | Skipped              | Synced when they changed   |
 
 ## `config pull`
 

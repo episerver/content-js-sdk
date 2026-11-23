@@ -69,6 +69,10 @@ display name, is applied straight away.
 Changes that could lose content, such as removing a property or changing its type, are
 rejected. Rerun the command with `--force` to apply them anyway.
 
+Once your project has many content types, or teammates share the same CMS, run
+`config patch` instead. It pushes only what you changed since your last push, and warns
+you when someone changed the same type in the CMS.
+
 `config push` never deletes anything. If you remove a content type from your code, it
 stays in the CMS until you delete it with `content delete`. See
 [CLI commands](../reference/cli.md).
