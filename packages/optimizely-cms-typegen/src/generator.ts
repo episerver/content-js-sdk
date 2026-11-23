@@ -519,19 +519,29 @@ export {};
 // ============================================================================
 
 // Skipping identical writes stops a watch loop when a glob also matches the output.
-async function writeIfChanged(file: string, content: string) {
+// Writes go to a temp file first, so a bundler never reads a half-written file.
+// Returns true when the file differs from `content`; with `check` nothing is written.
+async function writeIfChanged(file: string, content: string, check: boolean) {
   const existing = await fs.readFile(file, 'utf-8').catch(() => null);
-  if (existing !== content) await fs.writeFile(file, content);
+  if (existing === content) return false;
+  if (!check) {
+    const tmp = `${file}.${process.pid}.tmp`;
+    await fs.writeFile(tmp, content);
+    await fs.rename(tmp, file);
+  }
+  return true;
 }
 
 /**
- * Main generator function.
+ * Main generator function. Throws when `optimizely.config.mjs` is missing.
  * Scans components, generates registry.ts and global.d.ts files.
  * Optimized: reads all files once, parses once, generates both outputs.
  */
-export async function generate(root = process.cwd()) {
-  // Load config and scan files
+export async function generate(root = process.cwd(), { check = false } = {}) {
   const config = await loadConfig(root);
+  if (!config) {
+    throw new Error(`optimizely.config.mjs not found in ${root}. Nothing was generated.`);
+  }
   const files = await scanComponents(root, config);
 
   const registryFile = path.join(await registryDir(root), 'registry.ts');
@@ -561,10 +571,13 @@ export async function generate(root = process.cwd()) {
     await detectPlatform(root),
   );
 
-  await Promise.all([
-    writeIfChanged(registryFile, registryContent),
-    writeIfChanged(path.join(root, 'global.d.ts'), typesContent),
+  const typesFile = path.join(root, 'global.d.ts');
+  const changed = await Promise.all([
+    writeIfChanged(registryFile, registryContent, check),
+    writeIfChanged(typesFile, typesContent, check),
   ]);
 
-  return { files, registryFile };
+  /** With `check`, the generated files that are missing or out of date. */
+  const stale = [registryFile, typesFile].filter((_, i) => changed[i]);
+  return { files, registryFile, stale };
 }

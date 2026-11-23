@@ -143,7 +143,12 @@ opti-typegen
 
 # Watch mode - regenerate on file changes
 opti-typegen --watch
+
+# Check only - exit 1 if the committed files are out of date (for CI)
+opti-typegen --check
 ```
+
+Typegen needs `optimizely.config.mjs`. Without it the command fails and writes nothing, so a committed `registry.ts` is never overwritten.
 
 ### `opti-dev`
 
@@ -165,7 +170,7 @@ opti-dev npm run dev
 
 The `opti-dev` command:
 
-1. Generates `registry.ts` and `global.d.ts`
+1. Generates `registry.ts` and `global.d.ts` once, and stops if that fails, before the dev server starts
 2. Watches for component file changes
 3. Runs your dev server concurrently
 4. Regenerates types when components change
@@ -371,7 +376,7 @@ Add to your `package.json`:
 - **Run before build** - Always generate types before building: `opti-typegen && next build`
 - **Use opti-dev** - Prefer `opti-dev` over `opti-typegen --watch` for development
 - **Don't edit generated files** - `registry.ts` and `global.d.ts` are auto-generated
-- **Commit generated files** - `registry.ts` and `global.d.ts` belong in git, so a fresh clone builds without running typegen first. CI can run `opti-typegen && git diff --exit-code` to catch a stale registry
+- **Commit generated files** - `registry.ts` and `global.d.ts` belong in git, so a fresh clone builds without running typegen first. CI can run `opti-typegen --check` to catch a stale registry
 
 ## Integration
 

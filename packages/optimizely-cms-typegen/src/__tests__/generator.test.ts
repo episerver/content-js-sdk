@@ -82,6 +82,25 @@ export default function Button() {}`
     });
   });
 
+  describe('safety', () => {
+    it('writes nothing without optimizely.config.mjs', async () => {
+      await fs.mkdir(path.join(testRoot, 'src'), { recursive: true });
+      await expect(generate(testRoot)).rejects.toThrow('optimizely.config.mjs not found');
+      await expect(fs.access(path.join(testRoot, 'src', 'registry.ts'))).rejects.toThrow();
+    });
+
+    it('check reports stale files without writing, then passes after generate', async () => {
+      await fs.mkdir(path.join(testRoot, 'src', 'components'), { recursive: true });
+      await fs.writeFile(path.join(testRoot, 'optimizely.config.mjs'), `export default { components: 'src/components/**/*.tsx' };`);
+
+      expect((await generate(testRoot, { check: true })).stale).toHaveLength(2);
+      await expect(fs.access(path.join(testRoot, 'global.d.ts'))).rejects.toThrow();
+
+      await generate(testRoot);
+      expect((await generate(testRoot, { check: true })).stale).toEqual([]);
+    });
+  });
+
   describe('registry location', () => {
     it('uses app/ when there is no src/', async () => {
       await fs.mkdir(path.join(testRoot, 'app'), { recursive: true });
@@ -239,6 +258,7 @@ config({ apiKey: 'k', query: { cache: true }, platform: 'paas' });`
 
     it('emits nothing when no platform is set', async () => {
       await fs.mkdir(path.join(testRoot, 'src'), { recursive: true });
+      await fs.writeFile(path.join(testRoot, 'optimizely.config.mjs'), `export default { components: 'src/**/*.tsx' };`);
       await fs.writeFile(
         path.join(testRoot, 'src', 'layout.tsx'),
         `import { config } from '@optimizely/cms-sdk';\nconfig({ apiKey: 'k' });`

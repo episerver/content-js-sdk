@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,10 @@ const concurrentlyBin = path.join(
   'bin',
   'concurrently.js',
 );
+
+// Generate once before anything starts, so the dev server never sees a missing or stale registry.
+const first = spawnSync(process.execPath, [cliPath], { stdio: 'inherit' });
+if (first.status !== 0) process.exit(first.status ?? 1);
 
 const proc = spawn(
   process.execPath,
