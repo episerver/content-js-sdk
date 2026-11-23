@@ -53,6 +53,35 @@ describe('generator', () => {
     });
   });
 
+  describe('detection by call', () => {
+    it('finds content types whatever the variable is named', async () => {
+      await fs.mkdir(path.join(testRoot, 'src', 'components'), { recursive: true });
+      await fs.writeFile(path.join(testRoot, 'optimizely.config.mjs'), `export default { components: 'src/components/**/*.tsx' };`);
+      await fs.writeFile(
+        path.join(testRoot, 'src', 'components', 'Start.tsx'),
+        `export const StartPage = contentType({ key: 'Start', baseType: '_page' });\nexport default function Start() {}`
+      );
+      await fs.writeFile(
+        path.join(testRoot, 'src', 'components', 'Button.tsx'),
+        `export const ButtonComponent = contentType({ key: 'Button', baseType: '_component' });
+export const ButtonLook = displayTemplate({ key: 'ButtonLook', baseType: '_component' });
+export default function Button() {}`
+      );
+
+      await generate(testRoot);
+
+      const registry = await fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
+      expect(registry).toContain('StartPage,');
+      expect(registry).toContain('ButtonComponent,');
+      expect(registry).toContain('ButtonLook,');
+      expect(registry).toContain("'Start': StartPageComponent,");
+      expect(registry).toContain("'Button': ButtonComponentComponent,");
+      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
+      expect(types).toMatch(/'Start': string;/);
+      expect(types).toMatch(/'Button': string;/);
+    });
+  });
+
   describe('registry location', () => {
     it('uses app/ when there is no src/', async () => {
       await fs.mkdir(path.join(testRoot, 'app'), { recursive: true });

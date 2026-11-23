@@ -148,6 +148,12 @@ function callObject(init?: ts.Expression): ts.ObjectLiteralExpression | undefine
   return arg && ts.isObjectLiteralExpression(arg) ? arg : undefined;
 }
 
+/** The function name in `fn({...})`, or undefined when the initializer is not a plain call. */
+function calleeName(init?: ts.Expression): string | undefined {
+  while (init && (ts.isAsExpression(init) || ts.isSatisfiesExpression(init))) init = init.expression;
+  return init && ts.isCallExpression(init) && ts.isIdentifier(init.expression) ? init.expression.text : undefined;
+}
+
 /** A top-level string property of an object literal. */
 function prop(obj: ts.ObjectLiteralExpression | undefined, name: string): string | undefined {
   for (const p of obj?.properties ?? []) {
@@ -199,14 +205,22 @@ function parseFileContent(content: string, fileName: string): FileData {
         const name = decl.name.text;
         if (name === 'tag') data.tag = stringValue(decl.initializer);
         else if (name === 'tags') data.hasTags = true;
-        else if (name.endsWith('DisplayTemplate')) {
+        else {
+          // What the variable is assigned decides its kind; the name suffix is the fallback.
+          const callee = calleeName(decl.initializer);
+          const known = callee === 'displayTemplate' || callee === 'contract' || callee === 'contentType';
+          const isTemplate = callee === 'displayTemplate' || (!known && name.endsWith('DisplayTemplate'));
+          const isContract = callee === 'contract' || (!known && name.endsWith('Contract'));
+          const isContentType = callee === 'contentType' || (!known && name.endsWith('ContentType'));
+          if (!isTemplate && !isContract && !isContentType) continue;
+
           const obj = callObject(decl.initializer);
-          data.displayTemplateNames.push(name);
-          data.templates.push({ name, contentType: prop(obj, 'contentType'), tag: prop(obj, 'tag') });
-        } else if (name.endsWith('ContentType') || name.endsWith('Contract')) {
-          const isContentType = name.endsWith('ContentType');
+          if (isTemplate) {
+            data.displayTemplateNames.push(name);
+            data.templates.push({ name, contentType: prop(obj, 'contentType'), tag: prop(obj, 'tag') });
+            continue;
+          }
           (isContentType ? data.contentTypeNames : data.contractNames).push(name);
-          const obj = callObject(decl.initializer);
           const key = prop(obj, 'key');
           if (key) data.keys.push({ name, key, baseType: prop(obj, 'baseType'), isContentType });
         }
@@ -300,6 +314,7 @@ function collectComponents(
   );
   const slots = new Map<string, boolean>(); // slot -> claimed by a file's own content type
   const claimedKeys = new Set<string>();
+  const taken = new Set([...data.contentTypes, ...data.contracts, ...data.displayTemplates]);
 
   for (const pf of ordered) {
     const { file, parsed, importPath } = pf;
@@ -319,7 +334,9 @@ function collectComponents(
     slots.set(slot, own.length === 1);
     claimedKeys.add(resolved.key);
 
-    const local = own.length === 1 ? stripSuffix(own[0].name) + 'Component' : slot.replace(/\W/g, '_') + 'Component';
+    let local = own.length === 1 ? stripSuffix(own[0].name) + 'Component' : slot.replace(/\W/g, '_') + 'Component';
+    while (taken.has(local)) local += '_'; // never shadow an exported type or template
+    taken.add(local);
     const tags = parsed.hasTags ? `${local}Tags` : undefined;
     data.imports.push(`import ${local}${tags ? `, { tags as ${tags} }` : ''} from '${importPath}';`);
     data.components.push({ slot, local, tags });
