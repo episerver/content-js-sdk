@@ -6,6 +6,8 @@ export type ManifestSection = 'contentTypes' | 'displayTemplates' | 'propertyGro
 
 type Item = Record<string, unknown>;
 
+const SECTIONS: ManifestSection[] = ['contentTypes', 'displayTemplates', 'propertyGroups'];
+
 const READ_ONLY_FIELDS = ['source', 'created', 'createdBy', 'lastModified', 'lastModifiedBy'];
 
 // values GET /manifest returns for fields the config left out (probed 2026-11)
@@ -112,3 +114,16 @@ export const hashItem = (section: ManifestSection, item: Item): string =>
   createHash('sha256')
     .update(JSON.stringify(normalizeItem(section, item)))
     .digest('hex');
+
+/** Hashes every item of a local or server manifest, keyed by `section:key`. */
+export const hashManifest = (
+  manifest: Partial<Record<ManifestSection, Item[] | null>>,
+): Record<string, string> =>
+  Object.fromEntries(
+    SECTIONS.flatMap(section =>
+      (manifest[section] ?? []).map(item => [
+        `${section}:${item.key}`,
+        hashItem(section, item),
+      ]),
+    ),
+  );

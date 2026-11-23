@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { hashItem, normalizeItem } from '../utils/normalizeManifest.js';
+import { hashItem, hashManifest, normalizeItem } from '../utils/normalizeManifest.js';
 
 const readOnly = {
   source: 'api',
@@ -144,6 +144,23 @@ describe('hashItem', () => {
     const edited = { ...localTile, displayName: 'Tile (teammate)' };
 
     expect(hashItem('contentTypes', edited)).not.toBe(hashItem('contentTypes', localTile));
+  });
+
+  test('hashes every item of a manifest by section and key', () => {
+    const hashes = hashManifest({
+      contentTypes: [localTile],
+      displayTemplates: null,
+      propertyGroups: [{ key: 'seo', displayName: 'SEO', sortOrder: 1 }],
+    });
+
+    expect(hashes).toEqual({
+      'contentTypes:Tile': hashItem('contentTypes', localTile),
+      'propertyGroups:seo': hashItem('propertyGroups', {
+        key: 'seo',
+        displayName: 'SEO',
+        sortOrder: 1,
+      }),
+    });
   });
 
   test('keeps array order significant', () => {
