@@ -210,6 +210,17 @@ initRegistry({ BlankSection });
 
 If no component is found, `components` is omitted and `initRegistry()` registers content types and display templates only.
 
+#### How each part is generated
+
+Typegen reads every file matched by `components` without running it, then builds each part of `registry.ts` and `global.d.ts` from what it finds.
+
+1. **`contentTypes`.** An exported variable assigned `contentType({...})` or `contract({...})` is added, whatever its name. If the value is not one of those calls, a name ending in `ContentType` or `Contract` is used instead. The `key` and `baseType` are read from the object when they are string literals.
+2. **`displayTemplates`.** An exported variable assigned `displayTemplate({...})`, or named `...DisplayTemplate`, is added. Its `contentType` and `tag` are kept to match components.
+3. **`components`.** The default export of each file is matched to a content type by the rules in [Component matching](#component-matching). The result is one entry per slot, `'Key'` or `'Key:tag'`.
+4. **`global.d.ts`.** Every key found in step 1 goes into `ContentTypeRegistry`. Keys with a `baseType` of `_page`, `_experience` or `_folder` also go into `MayContainRegistry`. `propertyGroups` keys from `optimizely.config.mjs` go into `PropertyGroupRegistry`.
+
+`initRegistry()` then passes these lists to the SDK. At render time the SDK reads the content type key of a block, finds the component in `components`, and uses a tag if one applies, as described under [Tags](#tags).
+
 #### Component matching
 
 A component is the default export of a file matched by `components`. Typegen reads the files without running them, and picks the content type in this order.
@@ -247,7 +258,7 @@ export default function HeroView({ content }: { content: ContentProps<typeof Her
 
 **4. The file name**
 
-A file named `Hero.tsx` matches a content type with key `Hero` or export `HeroContentType`.
+A file named `Hero.tsx` matches a content type with key `Hero`, or one exported as `Hero` or `HeroContentType`.
 
 #### Tags
 
@@ -258,6 +269,16 @@ export const tags = { teaser: StandardTeaser };
 export default Standard;
 // 'Standard': { default: StandardComponent, tags: StandardComponentTags }
 ```
+
+How a tag reaches the right component:
+
+1. An editor picks a display template for a block in the CMS.
+2. The SDK finds that template in `displayTemplates` by its key and reads its `tag`. If the template is not in `displayTemplates`, there is no tag and the default component renders.
+3. The SDK looks for `components['Key:tag']`, then `components['Key'].tags[tag]`, then the default component.
+
+An unknown tag falls back to the default component without an error. A tag can also be passed with the `tag` prop on `OptimizelyComponent`, which overrides the template's tag.
+
+A display template that has no `contentType`, such as one scoped by `baseType` or `nodeType`, cannot be matched to a component by rule 2. Use `export const tag` in the component file for those.
 
 #### Conflicts
 
