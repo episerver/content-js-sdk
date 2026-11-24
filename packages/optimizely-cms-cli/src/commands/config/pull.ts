@@ -79,7 +79,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
   // API METHODS
 
-  private async fetchManifest(host?: string, includeReadOnly?: boolean) {
+  private async downloadManifest(host?: string, includeReadOnly?: boolean) {
     return fetchManifest(await createApiClient(host), { includeReadOnly });
   }
 
@@ -150,7 +150,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }).start();
 
     try {
-      const response = await this.fetchManifest(host, includeReadOnly);
+      const response = await this.downloadManifest(host, includeReadOnly);
       if (!this.handleEmptyResponse(response, spinner)) return;
 
       spinner.succeed(` Downloaded configuration from CMS (${formatCounts(response)})`);
@@ -343,7 +343,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     const spinner = ora('Downloading configuration from CMS').start();
 
     try {
-      const response = await this.fetchManifest(flags.host, includeReadOnly);
+      const response = await this.downloadManifest(flags.host, includeReadOnly);
       if (!this.handleEmptyResponse(response, spinner)) return;
 
       spinner.text = 'Validating manifest';
