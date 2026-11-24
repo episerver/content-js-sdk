@@ -8,7 +8,10 @@ import { fetchManifest } from './manifestService.js';
 import { hashManifest } from '../utils/normalizeManifest.js';
 import type { StoredItem } from '../utils/patchStatus.js';
 
-const StoredItemSchema = z.object({ local: z.string(), server: z.string() });
+const StoredItemSchema = z.object({
+  local: z.string(),
+  server: z.string(),
+}) satisfies z.ZodType<StoredItem>;
 const InstanceStateSchema = z.object({
   updatedAt: z.string().optional(),
   items: z.record(z.string(), StoredItemSchema),
