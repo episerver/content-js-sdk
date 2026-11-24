@@ -121,7 +121,10 @@ export const detectApplicationChanges = (
       patch.previewUrlFormats = configApp.previewUrlFormats;
   }
 
-  return Object.keys(patch).length ? patch : null;
+  // a field left out of the config can't be sent in a merge patch, so it isn't a change
+  const changes = Object.entries(patch).filter(([, value]) => value !== undefined);
+
+  return changes.length ? (Object.fromEntries(changes) as ApplicationPatch) : null;
 };
 
 // VALIDATION HELPERS

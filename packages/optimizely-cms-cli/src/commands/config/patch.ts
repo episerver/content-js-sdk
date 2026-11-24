@@ -188,7 +188,9 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
       : undefined;
     const localesSynced = syncsLocales && (await syncLocales(locale, restClient));
 
-    if (syncsApplications) await checkApplications(applications, content, flags.host);
+    // unchanged applications are left alone, like unchanged content types
+    if (syncsApplications)
+      await checkApplications(syncs.applications.items, content, flags.host);
     if (result) reportImportResult(result);
 
     const update = {
