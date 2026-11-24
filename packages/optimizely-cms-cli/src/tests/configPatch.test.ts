@@ -8,7 +8,10 @@ import { createApiClient } from '../service/cmsRestClient.js';
 import { buildManifest } from '../service/manifestService.js';
 import { savePatchState } from '../service/patchState.js';
 import { checkApplications } from '../service/applicationService.js';
-import { processContentWithApplications } from '../service/contentService.js';
+import {
+  findMissingContent,
+  processContentWithApplications,
+} from '../service/contentService.js';
 import { hashApplications } from '../utils/normalizeManifest.js';
 import {
   ExitError,
@@ -116,6 +119,7 @@ describe('config patch', () => {
     );
     client.POST.mockResolvedValue(apiResponse({ data: { outcomes: [] } }));
     vi.mocked(createApiClient).mockResolvedValue(client as never);
+    vi.mocked(findMissingContent).mockResolvedValue([]);
     stubCmsEnv();
     consoleSpies = silenceConsole();
     mockExit();
@@ -354,14 +358,31 @@ describe('config patch', () => {
     expect(await readState()).toBe(stateBefore);
   });
 
-  test('syncs locales only when they changed', async () => {
-    await writeConfig([hero, banner], { locale: ['en'] });
-    server = await localManifest();
+  describe('locales', () => {
+    // the mocked CMS has `en` enabled
+    const localeRequests = () =>
+      client.GET.mock.calls.filter(([requestPath]) => requestPath === '/locales').length;
 
-    await patch();
-    await patch();
+    test('syncs only locales missing or disabled in the CMS', async () => {
+      await writeConfig([hero, banner], { locale: ['en', 'sv'] });
+      server = await localManifest();
 
-    expect(client.GET.mock.calls.filter(([requestPath]) => requestPath === '/locales')).toHaveLength(1);
+      await patch();
+
+      expect(reportSection('Locales to sync — missing or disabled in the CMS')).toEqual(['sv']);
+      // one request to compare, one by the sync
+      expect(localeRequests()).toBe(2);
+    });
+
+    test('skips the sync when every locale is already enabled', async () => {
+      await writeConfig([hero, banner], { locale: ['en'] });
+      server = await localManifest();
+
+      await patch();
+
+      expect(reportSection('Locales to sync — missing or disabled in the CMS')).toEqual([]);
+      expect(localeRequests()).toBe(1);
+    });
   });
 
   describe('applications and content', () => {
@@ -370,14 +391,13 @@ describe('config patch', () => {
     const site = { key: 'site', displayName: 'Site', type: 'website', entryPoint: 'about' };
     const blogApp = { key: 'blog_app', displayName: 'Blog', type: 'website', entryPoint: 'blog' };
 
-    // seeds the state as if `applications` and `content` had been synced before
-    const seedSynced = async (applications: object[], content: string[]) =>
+    // seeds the state as if `applications` had been synced before
+    const seedSynced = async (applications: object[]) =>
       savePatchState(configPath(), undefined, {
         local: {},
         server: {},
         record: [],
         applications: hashApplications(applications as { key: string }[]),
-        content,
       });
 
     beforeEach(async () => {
@@ -389,7 +409,7 @@ describe('config patch', () => {
     });
 
     test('sync a changed application with only the content it points at', async () => {
-      await seedSynced([site, { ...blogApp, displayName: 'Old blog' }], ['about', 'blog']);
+      await seedSynced([site, { ...blogApp, displayName: 'Old blog' }]);
 
       await patch();
 
@@ -400,20 +420,19 @@ describe('config patch', () => {
       ]);
     });
 
-    test('create only content added since the last sync, without touching applications', async () => {
-      await seedSynced([site, blogApp], ['about']);
+    test('create only content missing in the CMS, without touching applications', async () => {
+      await seedSynced([site, blogApp]);
+      vi.mocked(findMissingContent).mockResolvedValue([blogContent]);
 
       await patch();
 
       expect(checkApplications).not.toHaveBeenCalled();
       expect(processContentWithApplications).toHaveBeenCalledWith([blogContent], [], undefined);
-      expect(reportSection('Content to sync — added since the last push')).toEqual([
-        'blog (Blog)',
-      ]);
+      expect(reportSection('Content to create — missing in the CMS')).toEqual(['blog (Blog)']);
     });
 
-    test('leave both alone when neither changed', async () => {
-      await seedSynced([site, blogApp], ['about', 'blog']);
+    test('leave both alone when nothing changed or is missing', async () => {
+      await seedSynced([site, blogApp]);
 
       await patch();
 
@@ -422,19 +441,12 @@ describe('config patch', () => {
     });
   });
 
-  // seeds the state instead of rewriting the config: Node caches the imported config module
-  test('lists only the locales added since the last sync', async () => {
-    await writeConfig([hero, banner], { locale: ['en', 'sv'] });
+  test('does not look for missing content when the config has no applications', async () => {
+    await writeConfig();
     server = await localManifest();
-    await savePatchState(configPath(), undefined, {
-      local: {},
-      server: {},
-      record: [],
-      locales: ['en'],
-    });
 
     await patch();
 
-    expect(reportSection('Locales to sync — added since the last push')).toEqual(['sv']);
+    expect(findMissingContent).not.toHaveBeenCalled();
   });
 });

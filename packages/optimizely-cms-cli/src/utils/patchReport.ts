@@ -20,16 +20,17 @@ export const serverChangesOf = (
     lastModifiedBy,
   }));
 
-/** Settings due a sync, and whether there is no saved state to compare them with */
-export type SettingSync<T> = { items: T[]; firstSync: boolean };
+type Named = { key?: string; displayName?: string };
 
 type ReportInput = {
   statuses: ItemStatus[];
   serverChanges: Record<string, ServerChange>;
   syncs: {
-    applications: SettingSync<{ key?: string; displayName?: string }>;
-    content: SettingSync<{ key: string; displayName: string }>;
-    locales: SettingSync<string>;
+    // changed applications, and whether there is no saved state to compare them with
+    applications: { items: Named[]; firstSync: boolean };
+    // content items and locales missing in the CMS
+    content: Named[];
+    locales: string[];
   };
 };
 
@@ -69,9 +70,9 @@ const labelOf = (id: string) => {
 
 const formatTime = (timestamp: string) => {
   const date = new Date(timestamp);
-  return Number.isNaN(date.getTime()) ?
-      timestamp
-    : `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
+  return Number.isNaN(date.getTime()) ? timestamp : (
+      `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`
+    );
 };
 
 const whoAndWhen = (change?: ServerChange) =>
@@ -125,38 +126,38 @@ const formatSection = (
   const itemLine = (status: ItemStatus) =>
     `  ${labelOf(status.id).padEnd(labelWidth)}  ${chalk.dim(describe?.(serverChanges[status.id], status) ?? '')}`.trimEnd();
 
-  return items.length > 0 ? [color.bold(`${heading} (${items.length})`), ...items.map(itemLine)] : [];
+  return items.length > 0 ?
+      [color.bold(`${heading} (${items.length})`), ...items.map(itemLine)]
+    : [];
 };
 
-const formatSync = <T>(
-  title: string,
-  changeReason: string,
-  { items, firstSync }: SettingSync<T>,
-  labelOfItem: (item: T) => string,
-) =>
+const formatSync = <T>(heading: string, items: T[], labelOfItem: (item: T) => string) =>
   items.length > 0 ?
     [
-      chalk.blue.bold(
-        `${title} — ${firstSync ? 'no saved state' : changeReason} (${items.length})`,
-      ),
+      chalk.blue.bold(`${heading} (${items.length})`),
       ...items.map(it => `  ${labelOfItem(it)}`),
     ]
   : [];
 
-const keyAndName = (it: { key?: string; displayName?: string }) =>
-  `${it.key} (${it.displayName})`;
+const keyAndName = (it: Named) => `${it.key} (${it.displayName})`;
 
 const formatSyncs = ({ applications, content, locales }: ReportInput['syncs']) => [
-  formatSync('Applications to sync', 'changed since the last push', applications, keyAndName),
-  formatSync('Content to sync', 'added since the last push', content, keyAndName),
-  formatSync('Locales to sync', 'added since the last push', locales, it => it),
+  formatSync(
+    `Applications to sync — ${applications.firstSync ? 'no saved state' : 'changed since the last push'}`,
+    applications.items,
+    keyAndName,
+  ),
+  formatSync('Content to create — missing in the CMS', content, keyAndName),
+  formatSync('Locales to sync — missing or disabled in the CMS', locales, it => it),
 ];
 
 const formatValue = (value: unknown) => {
   if (value === undefined) return '(not set)';
 
   const text = JSON.stringify(value);
-  return text.length > MAX_VALUE_LENGTH ? `${text.slice(0, MAX_VALUE_LENGTH - 1)}…` : text;
+  return text.length > MAX_VALUE_LENGTH ?
+      `${text.slice(0, MAX_VALUE_LENGTH - 1)}…`
+    : text;
 };
 
 const formatDifferences = (differences: FieldDifference[]) => {
@@ -179,7 +180,9 @@ const conflictReasonOf = (status: ItemStatus) =>
 
 /** Prints the classified items, one section per status, separated by blank lines. */
 export const printPatchReport = (input: ReportInput) => {
-  const reported = input.statuses.filter(it => REPORT_SECTIONS.some(section => section.matches(it)));
+  const reported = input.statuses.filter(it =>
+    REPORT_SECTIONS.some(section => section.matches(it)),
+  );
   const labelWidth = Math.max(0, ...reported.map(it => labelOf(it.id).length));
   const upToDate = input.statuses.filter(hasStatus('unchanged', 'inSync'));
   const blocks = [

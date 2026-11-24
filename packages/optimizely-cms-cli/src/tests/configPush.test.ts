@@ -336,7 +336,7 @@ describe('config push', () => {
 
     afterEach(() => vi.unstubAllEnvs());
 
-    test('records the pushed items, applications and locales after a full push', async () => {
+    test('records the pushed items and applications after a full push', async () => {
       const configPath = await writeConfig({ locale: ['en'] });
 
       await push(configPath);
@@ -352,10 +352,10 @@ describe('config push', () => {
         local: expect.any(String),
         server: expect.any(String),
       });
-      expect(state).toMatchObject({ applications: {}, locales: ['en'] });
+      expect(state.applications).toEqual({});
     });
 
-    test('records only what --only sent, leaving global settings unrecorded', async () => {
+    test('records only what --only sent, leaving applications unrecorded', async () => {
       const configPath = await writeConfig({ locale: ['en'] });
 
       await push(configPath, '--only', 'Hero');
@@ -363,16 +363,6 @@ describe('config push', () => {
       const state = await readState();
       expect(Object.keys(state.items)).toEqual(['contentTypes:Hero', 'propertyGroups:content']);
       expect(state.applications).toBeUndefined();
-      expect(state.locales).toBeUndefined();
-    });
-
-    test('leaves locales unrecorded when the locale sync fails', async () => {
-      const configPath = await writeConfig({ locale: ['en'] });
-      respondByPath(client.GET, { '/manifest': apiResponse({ data: serverManifest }) });
-
-      await push(configPath);
-
-      expect((await readState()).locales).toBeUndefined();
     });
 
     test('writes nothing on --dryRun', async () => {

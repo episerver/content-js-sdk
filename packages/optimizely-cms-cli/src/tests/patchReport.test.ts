@@ -5,8 +5,8 @@ import { printed, silenceConsole } from './helpers.js';
 
 const noSyncs: Parameters<typeof printPatchReport>[0]['syncs'] = {
   applications: { items: [], firstSync: false },
-  content: { items: [], firstSync: false },
-  locales: { items: [], firstSync: false },
+  content: [],
+  locales: [],
 };
 const teammate = {
   lastModifiedBy: 'teammate@example.com',
@@ -83,21 +83,18 @@ describe('patch report', () => {
               items: [{ key: 'blog_app', displayName: 'Blog App' }],
               firstSync: false,
             },
-            content: {
-              items: [{ key: 'BlogContent', displayName: 'Blog' }],
-              firstSync: false,
-            },
-            locales: { items: ['en', 'sv'], firstSync: true },
+            content: [{ key: 'BlogContent', displayName: 'Blog' }],
+            locales: ['en', 'sv'],
           },
         ),
       ).toEqual([
         'Applications to sync — changed since the last push (1)',
         '  blog_app (Blog App)',
         '',
-        'Content to sync — added since the last push (1)',
+        'Content to create — missing in the CMS (1)',
         '  BlogContent (Blog)',
         '',
-        'Locales to sync — no saved state (2)',
+        'Locales to sync — missing or disabled in the CMS (2)',
         '  en',
         '  sv',
         '',
@@ -105,10 +102,12 @@ describe('patch report', () => {
       ]);
     });
 
-    test('names locales added since the last push', () => {
-      expect(report([], { ...noSyncs, locales: { items: ['fr'], firstSync: false } })).toEqual([
-        'Locales to sync — added since the last push (1)',
-        '  fr',
+    test('says when there is no saved state to compare applications with', () => {
+      const applications = { items: [{ key: 'site', displayName: 'Site' }], firstSync: true };
+
+      expect(report([], { ...noSyncs, applications })).toEqual([
+        'Applications to sync — no saved state (1)',
+        '  site (Site)',
       ]);
     });
 

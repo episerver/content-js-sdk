@@ -18,14 +18,28 @@ const deriveDisplayName = (key: string): string => {
 };
 
 /**
- * Syncs locales from buildConfig to CMS via REST API; resolves to whether every locale synced
+ * Lists the configured locales that are missing or disabled in the CMS; all of them when the
+ * CMS can't be read, so the sync runs and reports the problem
  */
-export async function syncLocales(
+export async function findLocalesToSync(
   locale: string[],
   restClient: ApiClient,
-): Promise<boolean> {
+): Promise<string[]> {
+  if (locale.length === 0) return [];
+
+  const { data, error } = await restClient.GET('/locales');
+  if (error) return locale;
+
+  const enabled = new Set((data?.items ?? []).filter(it => it.isEnabled).map(it => it.key));
+  return locale.filter(it => !enabled.has(it));
+}
+
+/**
+ * Syncs locales from buildConfig to CMS via REST API
+ */
+export async function syncLocales(locale: string[], restClient: ApiClient): Promise<void> {
   if (!locale || !Array.isArray(locale) || locale.length === 0) {
-    return true;
+    return;
   }
 
   const spinner = ora('Syncing locales').start();
@@ -40,7 +54,7 @@ export async function syncLocales(
         `${error.status || ''} ${error.detail || error.title || 'Unknown error'}`,
       ),
     );
-    return false;
+    return;
   }
 
   const existingLocales = listResponse.data?.items || [];
@@ -124,6 +138,4 @@ export async function syncLocales(
       `Locales synced: ${createdCount} created, ${enabledCount} enabled, ${alreadyEnabled.length} unchanged${failed > 0 ? `, ${failed} failed` : ''}`,
     ),
   );
-
-  return failed === 0;
 }

@@ -77,11 +77,11 @@ describe('patch state', () => {
     });
 
     test('reads back what it saved', async () => {
-      await savePatchState(configFilePath, undefined, update({ locales: ['en'] }));
+      await savePatchState(configFilePath, undefined, update({ applications: { site: 'A1' } }));
 
       expect(await readPatchState(configFilePath)).toMatchObject({
         items: { 'contentTypes:Tile': { local: 'L1', server: 'S1' } },
-        locales: ['en'],
+        applications: { site: 'A1' },
       });
     });
 
@@ -98,25 +98,19 @@ describe('patch state', () => {
     });
 
     test('updates recorded items, drops forgotten ones and keeps the rest', async () => {
-      await savePatchState(
-        configFilePath,
-        undefined,
-        update({ applications: { site: 'A1' }, locales: ['en'] }),
-      );
+      await savePatchState(configFilePath, undefined, update({ applications: { site: 'A1' } }));
       await savePatchState(configFilePath, undefined, {
         local: { 'contentTypes:Tile': 'L2', 'propertyGroups:seo': 'G1' },
         server: { 'contentTypes:Tile': 'S2' },
         record: ['contentTypes:Tile', 'propertyGroups:seo'],
         drop: ['contentTypes:Hero'],
-        applications: { site: 'A2' },
       });
 
       expect(await readPatchState(configFilePath)).toEqual({
         updatedAt: expect.any(String),
         // seo has no server hash yet, so it is not recorded
         items: { 'contentTypes:Tile': { local: 'L2', server: 'S2' } },
-        applications: { site: 'A2' },
-        locales: ['en'],
+        applications: { site: 'A1' },
       });
     });
 

@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import { v5 as uuidv5 } from 'uuid';
 import type { components } from './apiSchema/openapi-schema-types.js';
-import { createApiClient } from './cmsRestClient.js';
+import { createApiClient, type ApiClient } from './cmsRestClient.js';
 
 type NewContent = components['schemas']['NewContent'];
 
@@ -25,6 +25,12 @@ const CONTENT_NAMESPACE = 'a8f3e1c4-7b2d-4a9e-b5f6-8c3d1e2f4a5b';
 function toContentRef(key: string): string {
   return `cms://content/${key}`;
 }
+
+// deterministic CMS key for a config content key, without hyphens for the API
+const cmsContentKeyOf = (key: string) => uuidv5(key, CONTENT_NAMESPACE).replace(/-/g, '');
+
+// a 403 means the item exists but the API key can't read it
+const exists = (response: Response) => response.ok || response.status === 403;
 
 /**
  * Validates content type exists.
@@ -104,8 +110,7 @@ async function checkContentFromConfig(
   const client = await createApiClient(host);
 
   for (const contentConfig of contentArray) {
-    // Generate a deterministic UUID/GUID based on the content key (without hyphens for API)
-    const contentKey = uuidv5(contentConfig.key, CONTENT_NAMESPACE).replace(/-/g, '');
+    const contentKey = cmsContentKeyOf(contentConfig.key);
 
     const existingContent = await client.GET('/content/{key}', {
       params: { path: { key: contentKey } },
@@ -118,13 +123,11 @@ async function checkContentFromConfig(
       continue;
     }
 
-    // If GET returned non-404 error (likely 403), assume exists
-    if (!existingContent.response.ok && existingContent.response.status !== 404) {
-      if (existingContent.response.status === 403) {
-        contentRefMap.set(contentConfig.key, toContentRef(contentKey));
-        console.log(chalk.dim(`  Content "${contentConfig.key}" exists`));
-        continue;
-      }
+    // If GET returned 403, the content exists but can't be read
+    if (exists(existingContent.response)) {
+      contentRefMap.set(contentConfig.key, toContentRef(contentKey));
+      console.log(chalk.dim(`  Content "${contentConfig.key}" exists`));
+      continue;
     }
 
     // Content doesn't exist (404), create it
@@ -165,7 +168,9 @@ export async function processContentWithApplications(
 
   // Map content keys in entryPoint to full content refs
   for (const app of applications) {
-    const isContentRef = app.entryPoint && (app.entryPoint.startsWith('cms://') || app.entryPoint.startsWith('content://'));
+    const isContentRef =
+      app.entryPoint &&
+      (app.entryPoint.startsWith('cms://') || app.entryPoint.startsWith('content://'));
     if (app.entryPoint && !isContentRef) {
       const contentRef = contentRefMap.get(app.entryPoint);
 
@@ -183,3 +188,19 @@ export async function processContentWithApplications(
   }
 }
 
+/** Lists the configured content items that don't exist in the CMS yet. */
+export async function findMissingContent(
+  contentArray: ContentConfig[],
+  restClient: ApiClient,
+): Promise<ContentConfig[]> {
+  const found = await Promise.all(
+    contentArray.map(async it => {
+      const { response } = await restClient.GET('/content/{key}', {
+        params: { path: { key: cmsContentKeyOf(it.key) } },
+      });
+      return exists(response);
+    }),
+  );
+
+  return contentArray.filter((_, index) => !found[index]);
+}

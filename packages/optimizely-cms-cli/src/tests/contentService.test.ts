@@ -1,5 +1,8 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { processContentWithApplications } from '../service/contentService.js';
+import {
+  findMissingContent,
+  processContentWithApplications,
+} from '../service/contentService.js';
 import { createApiClient } from '../service/cmsRestClient.js';
 import {
   apiResponse,
@@ -67,7 +70,9 @@ describe('processContentWithApplications', () => {
   });
 
   test('treats a 403 lookup as existing content under the deterministic key', async () => {
-    client.GET.mockResolvedValue(apiResponse({ status: 403, error: { title: 'Forbidden' } }));
+    client.GET.mockResolvedValue(
+      apiResponse({ status: 403, error: { title: 'Forbidden' } }),
+    );
     const app = site();
 
     await processContentWithApplications([home], [app]);
@@ -78,7 +83,9 @@ describe('processContentWithApplications', () => {
 
   test('creates missing content under the root container after validating its type', async () => {
     respondByPath(client.GET, { '/contenttypes/{key}': apiResponse({ data: {} }) });
-    client.POST.mockResolvedValue(apiResponse({ status: 201, data: { key: 'created456' } }));
+    client.POST.mockResolvedValue(
+      apiResponse({ status: 201, data: { key: 'created456' } }),
+    );
     const app = site();
 
     await processContentWithApplications([{ ...home, locale: 'sv' }], [app]);
@@ -111,7 +118,9 @@ describe('processContentWithApplications', () => {
 
   test('uses the deterministic key when creation reports a 409 conflict', async () => {
     respondByPath(client.GET, { '/contenttypes/{key}': apiResponse({ data: {} }) });
-    client.POST.mockResolvedValue(apiResponse({ status: 409, error: { title: 'Conflict' } }));
+    client.POST.mockResolvedValue(
+      apiResponse({ status: 409, error: { title: 'Conflict' } }),
+    );
     const app = site();
 
     await processContentWithApplications([home], [app]);
@@ -131,7 +140,10 @@ describe('processContentWithApplications', () => {
   test('fails with the CMS error when creation is rejected', async () => {
     respondByPath(client.GET, { '/contenttypes/{key}': apiResponse({ data: {} }) });
     client.POST.mockResolvedValue(
-      apiResponse({ status: 400, error: { title: 'Bad Request', detail: 'Invalid name' } }),
+      apiResponse({
+        status: 400,
+        error: { title: 'Bad Request', detail: 'Invalid name' },
+      }),
     );
 
     await expect(processContentWithApplications([home], [])).rejects.toThrow(
@@ -172,4 +184,35 @@ describe('processContentWithApplications', () => {
       expect(consoleSpies.warn).not.toHaveBeenCalled();
     },
   );
+});
+
+describe('findMissingContent', () => {
+  const about = { key: 'about', displayName: 'About', contentType: 'StartPage' };
+
+  test.each([
+    ['exists', 200, []],
+    ['exists but cannot be read', 403, []],
+    ['is missing', 404, [home]],
+    ['cannot be checked', 500, [home]],
+  ])('treats content that %s accordingly', async (_, status, expected) => {
+    const client = mockApiClient();
+    client.GET.mockResolvedValue(
+      apiResponse({ status, data: status === 200 ? { key: HOME_KEY } : undefined }),
+    );
+
+    expect(await findMissingContent([home], client as never)).toEqual(expected);
+    expect(client.GET).toHaveBeenCalledWith('/content/{key}', {
+      params: { path: { key: HOME_KEY } },
+    });
+  });
+
+  test('checks every item and keeps the missing ones in config order', async () => {
+    const client = mockApiClient();
+    client.GET.mockImplementation(
+      async (_: string, { params }: { params: { path: { key: string } } }) =>
+        apiResponse({ status: params.path.key === HOME_KEY ? 404 : 200 }),
+    );
+
+    expect(await findMissingContent([about, home], client as never)).toEqual([home]);
+  });
 });

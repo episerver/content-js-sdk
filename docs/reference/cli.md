@@ -306,8 +306,9 @@ add a content type's display templates or property groups unless those changed t
 in the CMS that aren't in your config are never touched.
 
 Only the applications that changed since the last push are synced, together with the
-content items they use as entry point. Content items and locales are synced when they were
-added. The report lists which ones, and why.
+content items they use as entry point. Content items and locales are compared with the
+CMS: patch creates content items that are missing there, and syncs locales that are
+missing or disabled. The report lists which ones, and why.
 
 #### Conflicts
 

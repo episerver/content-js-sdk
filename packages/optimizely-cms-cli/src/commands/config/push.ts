@@ -119,7 +119,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     const result = await uploadManifest(restClient, metaData, flags.force);
 
     // Locales and applications are global, so a scoped push leaves them alone
-    const localesSynced = !onlyKeys && (await syncLocales(locale, restClient));
+    if (!onlyKeys) await syncLocales(locale, restClient);
 
     // Check and ensure applications (skips if all exist)
     if (!onlyKeys) await checkApplications(applications, content, flags.host);
@@ -130,9 +130,6 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       local: localHashes,
       record: Object.keys(localHashes),
       ...(onlyKeys ? {} : { applications: applicationHashes }),
-      // content is only processed alongside applications
-      ...(!onlyKeys && applications.length > 0 ? { content: content.map(it => it.key) } : {}),
-      ...(localesSynced ? { locales: locale } : {}),
     });
   }
 }
