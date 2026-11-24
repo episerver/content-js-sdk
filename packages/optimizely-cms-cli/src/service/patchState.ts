@@ -112,24 +112,25 @@ export const savePatchState = async (
 };
 
 /**
- * Saves the state after an upload, reading the server copy back so its hashes reflect
- * what the CMS stored. Only warns on failure: the upload itself already succeeded.
+ * Saves the state for the current instance. Without `serverHashes` the server copy is read
+ * back, as needed after an upload. Only warns on failure: the CMS is already up to date.
  */
-export const recordUpload = async (
+export const recordState = async (
   configFilePath: string,
   host: string | undefined,
   restClient: ApiClient,
   update: Omit<StateUpdate, 'server'>,
+  serverHashes?: Record<string, string>,
 ) => {
   try {
     await savePatchState(configFilePath, host, {
       ...update,
-      server: hashManifest(await fetchManifest(restClient)),
+      server: serverHashes ?? hashManifest(await fetchManifest(restClient)),
     });
   } catch (error) {
     console.warn(
       chalk.yellow(
-        `Pushed, but could not record the state for config patch: ${(error as Error).message}`,
+        `Could not record the state for config patch: ${(error as Error).message}`,
       ),
     );
   }

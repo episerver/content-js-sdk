@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { select } from '@inquirer/prompts';
@@ -133,6 +133,18 @@ describe('config patch', () => {
       expect(printed(consoleSpies.log)).toContain('Nothing to push.');
       expect(printed(consoleSpies.log)).toContain('4 up to date');
       expect(Object.keys(JSON.parse(await readState()).instances)).toHaveLength(1);
+    });
+
+    test('warns instead of failing when the state cannot be saved', async () => {
+      await writeConfig();
+      server = await localManifest();
+      // a file where the state directory should be makes the save fail
+      await writeFile(join(tempDir, '.optimizely'), '');
+
+      await patch();
+
+      expect(printed(consoleSpies.warn)).toContain('Could not record the state for config patch');
+      expect(client.POST).not.toHaveBeenCalled();
     });
 
     test('pushes only the items missing on the server, without their property groups', async () => {

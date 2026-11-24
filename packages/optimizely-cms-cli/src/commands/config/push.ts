@@ -8,7 +8,7 @@ import { logList } from '../../service/utils.js';
 import { checkApplications } from '../../service/applicationService.js';
 import { syncLocales } from '../../service/localeService.js';
 import { buildManifest, uploadManifest } from '../../service/manifestService.js';
-import { recordUpload } from '../../service/patchState.js';
+import { recordState } from '../../service/patchState.js';
 import { reportImportResult } from '../../utils/errors.js';
 import { hashManifest, hashSettings } from '../../utils/normalizeManifest.js';
 import {
@@ -126,7 +126,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     reportImportResult(result);
 
-    await recordUpload(configFilePath, flags.host, restClient, {
+    await recordState(configFilePath, flags.host, restClient, {
       local: localHashes,
       record: Object.keys(localHashes),
       ...(onlyKeys ? {} : { applications: settingsHashes.applications }),

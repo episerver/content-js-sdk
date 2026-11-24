@@ -11,7 +11,7 @@ import {
   fetchManifest,
   uploadManifest,
 } from '../../service/manifestService.js';
-import { readPatchState, recordUpload, savePatchState } from '../../service/patchState.js';
+import { readPatchState, recordState } from '../../service/patchState.js';
 import { reportImportResult } from '../../utils/errors.js';
 import { isInteractive, pluralize } from '../../utils/general.js';
 import {
@@ -190,15 +190,18 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
       ...(localesSynced ? { locales: settingsHashes.locales } : {}),
     };
 
-    if (result) return recordUpload(configFilePath, flags.host, restClient, update);
-
+    // anything pushed is also in `record`
     const changesState =
       update.record.length > 0 || update.drop.length > 0 || syncs.applications || localesSynced;
 
+    // after an upload the server copy is read back; otherwise the fetched one is current
     if (changesState)
-      await savePatchState(configFilePath, flags.host, {
-        ...update,
-        server: hashItems(serverItems),
-      });
+      await recordState(
+        configFilePath,
+        flags.host,
+        restClient,
+        update,
+        result ? undefined : hashItems(serverItems),
+      );
   }
 }

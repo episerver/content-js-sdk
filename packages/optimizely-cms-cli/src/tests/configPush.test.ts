@@ -401,7 +401,7 @@ describe('config push', () => {
       await push(configPath);
 
       expect(printed(consoleSpies.warn)).toContain(
-        'Pushed, but could not record the state for config patch',
+        'Could not record the state for config patch',
       );
       await expect(readFile(stateFile())).rejects.toThrow();
     });
