@@ -10,7 +10,7 @@ import { syncLocales } from '../../service/localeService.js';
 import { buildManifest, uploadManifest } from '../../service/manifestService.js';
 import { recordState } from '../../service/patchState.js';
 import { reportImportResult } from '../../utils/errors.js';
-import { hashManifest, hashSettings } from '../../utils/normalizeManifest.js';
+import { hashApplications, hashManifest } from '../../utils/normalizeManifest.js';
 import {
   findUnknownKeys,
   parseOnlyKeys,
@@ -113,7 +113,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
 
     // hashed before syncing: the application sync fills in entry points and preview formats
-    const settingsHashes = hashSettings({ applications, content, locale });
+    const applicationHashes = hashApplications(applications, content);
     const localHashes = hashManifest(metaData);
 
     const result = await uploadManifest(restClient, metaData, flags.force);
@@ -129,8 +129,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     await recordState(configFilePath, flags.host, restClient, {
       local: localHashes,
       record: Object.keys(localHashes),
-      ...(onlyKeys ? {} : { applications: settingsHashes.applications }),
-      ...(localesSynced ? { locales: settingsHashes.locales } : {}),
+      ...(onlyKeys ? {} : { applications: applicationHashes }),
+      ...(localesSynced ? { locales: locale } : {}),
     });
   }
 }

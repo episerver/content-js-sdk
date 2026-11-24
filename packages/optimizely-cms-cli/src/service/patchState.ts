@@ -15,8 +15,10 @@ const StoredItemSchema = z.object({
 const InstanceStateSchema = z.object({
   updatedAt: z.string().optional(),
   items: z.record(z.string(), StoredItemSchema),
-  applications: z.string().optional(),
-  locales: z.string().optional(),
+  // application key → hash of the application and the content config
+  applications: z.record(z.string(), z.string()).optional(),
+  // the locales last synced
+  locales: z.array(z.string()).optional(),
 });
 const PatchStateSchema = z.object({
   version: z.literal(1),
@@ -36,8 +38,8 @@ export type StateUpdate = {
   record: string[];
   /** item ids to forget */
   drop?: string[];
-  applications?: string;
-  locales?: string;
+  applications?: Record<string, string>;
+  locales?: string[];
 };
 
 const EMPTY_STATE: PatchState = { version: 1, instances: {} };

@@ -3,7 +3,10 @@ import { printConflictDetails, printPatchReport } from '../utils/patchReport.js'
 import type { ItemStatus } from '../utils/patchStatus.js';
 import { printed, silenceConsole } from './helpers.js';
 
-const noSyncs = { applications: false, locales: false };
+const noSyncs: Parameters<typeof printPatchReport>[0]['syncs'] = {
+  applications: { items: [], firstSync: false },
+  locales: { items: [], firstSync: false },
+};
 const teammate = {
   lastModifiedBy: 'teammate@example.com',
   lastModified: '2026-11-23T10:43:26.2394424+00:00',
@@ -66,7 +69,7 @@ describe('patch report', () => {
       ]);
     });
 
-    test('lists the settings to sync and counts up-to-date items', () => {
+    test('lists the settings to sync with the reason, and counts up-to-date items', () => {
       expect(
         report(
           [
@@ -74,9 +77,31 @@ describe('patch report', () => {
             { id: 'contentTypes:Banner', status: 'inSync' },
             { id: 'contentTypes:Stale', status: 'gone' },
           ],
-          { applications: true, locales: true },
+          {
+            applications: {
+              items: [{ key: 'blog_app', displayName: 'Blog App' }],
+              firstSync: false,
+            },
+            locales: { items: ['en', 'sv'], firstSync: true },
+          },
         ),
-      ).toEqual(['To sync: applications, locales', '', '2 up to date']);
+      ).toEqual([
+        'Applications to sync — changed since the last push (1)',
+        '  blog_app (Blog App)',
+        '',
+        'Locales to sync — no saved state (2)',
+        '  en',
+        '  sv',
+        '',
+        '2 up to date',
+      ]);
+    });
+
+    test('names locales added since the last push', () => {
+      expect(report([], { ...noSyncs, locales: { items: ['fr'], firstSync: false } })).toEqual([
+        'Locales to sync — added since the last push (1)',
+        '  fr',
+      ]);
     });
 
     test('keeps a timestamp it cannot parse as it is', () => {

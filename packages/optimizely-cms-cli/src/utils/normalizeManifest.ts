@@ -147,16 +147,20 @@ export const hashItems = (items: Record<string, Item>): Record<string, string> =
 export const hashManifest = (manifest: AnyManifest): Record<string, string> =>
   hashItems(normalizeManifest(manifest));
 
-/** Hashes the global settings synced outside the manifest. */
-export const hashSettings = ({
-  applications,
-  content,
-  locale,
-}: {
-  applications: unknown;
-  content: unknown;
-  locale: unknown;
-}) => ({ applications: hashValue({ applications, content }), locales: hashValue(locale) });
+/**
+ * Hashes each application together with the content config, keyed by application key.
+ * The application sync processes all content, so a content change affects every application.
+ */
+export const hashApplications = (
+  applications: { key?: string }[],
+  content: unknown,
+): Record<string, string> =>
+  Object.fromEntries(
+    applications.map(application => [
+      String(application.key),
+      hashValue({ application, content }),
+    ]),
+  );
 
 /** A field whose value differs between a local item and its server copy */
 export type FieldDifference = { path: string; local: unknown; server: unknown };

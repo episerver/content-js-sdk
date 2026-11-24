@@ -6,6 +6,7 @@ import { select } from '@inquirer/prompts';
 import ConfigPatch from '../commands/config/patch.js';
 import { createApiClient } from '../service/cmsRestClient.js';
 import { buildManifest } from '../service/manifestService.js';
+import { savePatchState } from '../service/patchState.js';
 import {
   ExitError,
   apiResponse,
@@ -356,5 +357,21 @@ describe('config patch', () => {
     await patch();
 
     expect(client.GET.mock.calls.filter(([requestPath]) => requestPath === '/locales')).toHaveLength(1);
+  });
+
+  // seeds the state instead of rewriting the config: Node caches the imported config module
+  test('lists only the locales added since the last sync', async () => {
+    await writeConfig([hero, banner], { locale: ['en', 'sv'] });
+    server = await localManifest();
+    await savePatchState(configPath(), undefined, {
+      local: {},
+      server: {},
+      record: [],
+      locales: ['en'],
+    });
+
+    await patch();
+
+    expect(reportSection('Locales to sync — added since the last push')).toEqual(['sv']);
   });
 });

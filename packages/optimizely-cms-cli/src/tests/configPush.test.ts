@@ -352,7 +352,7 @@ describe('config push', () => {
         local: expect.any(String),
         server: expect.any(String),
       });
-      expect(state).toMatchObject({ applications: expect.any(String), locales: expect.any(String) });
+      expect(state).toMatchObject({ applications: {}, locales: ['en'] });
     });
 
     test('records only what --only sent, leaving global settings unrecorded', async () => {

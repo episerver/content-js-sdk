@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'vitest';
 import {
   diffItems,
+  hashApplications,
   hashItem,
   hashManifest,
-  hashSettings,
   normalizeItem,
 } from '../utils/normalizeManifest.js';
 
@@ -175,17 +175,31 @@ describe('diffItems', () => {
   });
 });
 
-describe('hashSettings', () => {
-  const settings = { applications: [{ key: 'site' }], content: [{ key: 'home' }], locale: ['en'] };
+describe('hashApplications', () => {
+  const applications = [
+    { key: 'site', displayName: 'Site' },
+    { key: 'blog', displayName: 'Blog' },
+  ];
+  const content = [{ key: 'home' }];
 
-  test('hashes applications with their content, and locales on their own', () => {
-    const hashes = hashSettings(settings);
+  test('hashes each application, keyed by its key', () => {
+    const hashes = hashApplications(applications, content);
+    const renamed = hashApplications(
+      [applications[0], { ...applications[1], displayName: 'Blog (renamed)' }],
+      content,
+    );
 
-    expect(hashSettings({ ...settings, locale: ['sv'] })).toEqual({
-      applications: hashes.applications,
-      locales: expect.not.stringMatching(hashes.locales),
-    });
-    expect(hashSettings({ ...settings, content: [] }).applications).not.toBe(hashes.applications);
+    expect(Object.keys(hashes)).toEqual(['site', 'blog']);
+    expect(renamed.site).toBe(hashes.site);
+    expect(renamed.blog).not.toBe(hashes.blog);
+  });
+
+  test('changes every hash when the content config changes', () => {
+    const hashes = hashApplications(applications, content);
+    const changed = hashApplications(applications, [{ key: 'about' }]);
+
+    expect(changed.site).not.toBe(hashes.site);
+    expect(changed.blog).not.toBe(hashes.blog);
   });
 });
 

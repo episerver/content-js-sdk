@@ -20,10 +20,16 @@ export const serverChangesOf = (
     lastModifiedBy,
   }));
 
+/** Settings due a sync, and whether there is no saved state to compare them with */
+export type SettingSync<T> = { items: T[]; firstSync: boolean };
+
 type ReportInput = {
   statuses: ItemStatus[];
   serverChanges: Record<string, ServerChange>;
-  syncs: { applications: boolean; locales: boolean };
+  syncs: {
+    applications: SettingSync<{ key?: string; displayName?: string }>;
+    locales: SettingSync<string>;
+  };
 };
 
 type DetailsInput = {
@@ -81,7 +87,7 @@ const isConflict = (reason: ConflictReason) => (status: ItemStatus) =>
 const REPORT_SECTIONS: ReportSection[] = [
   {
     heading: 'To push',
-    color: chalk.green,
+    color: chalk.blue,
     matches: hasStatus('changed', 'new'),
     describe: (_, status) => status.status,
   },
@@ -121,10 +127,30 @@ const formatSection = (
   return items.length > 0 ? [color.bold(`${heading} (${items.length})`), ...items.map(itemLine)] : [];
 };
 
-const formatSyncs = ({ applications, locales }: ReportInput['syncs']) => {
-  const names = [applications && 'applications', locales && 'locales'].filter(Boolean);
-  return names.length > 0 ? [chalk.green.bold(`To sync: ${names.join(', ')}`)] : [];
-};
+const formatSync = <T>(
+  title: string,
+  changeReason: string,
+  { items, firstSync }: SettingSync<T>,
+  labelOfItem: (item: T) => string,
+) =>
+  items.length > 0 ?
+    [
+      chalk.blue.bold(
+        `${title} — ${firstSync ? 'no saved state' : changeReason} (${items.length})`,
+      ),
+      ...items.map(it => `  ${labelOfItem(it)}`),
+    ]
+  : [];
+
+const formatSyncs = ({ applications, locales }: ReportInput['syncs']) => [
+  formatSync(
+    'Applications to sync',
+    'changed since the last push',
+    applications,
+    it => `${it.key} (${it.displayName})`,
+  ),
+  formatSync('Locales to sync', 'added since the last push', locales, it => it),
+];
 
 const formatValue = (value: unknown) => {
   if (value === undefined) return '(not set)';
@@ -158,7 +184,7 @@ export const printPatchReport = (input: ReportInput) => {
   const upToDate = input.statuses.filter(hasStatus('unchanged', 'inSync'));
   const blocks = [
     ...REPORT_SECTIONS.map(section => formatSection(section, input, labelWidth)),
-    formatSyncs(input.syncs),
+    ...formatSyncs(input.syncs),
     upToDate.length > 0 ? [chalk.dim(`${upToDate.length} up to date`)] : [],
   ].filter(block => block.length > 0);
 

@@ -15,8 +15,8 @@ import { readPatchState, recordState } from '../../service/patchState.js';
 import { reportImportResult } from '../../utils/errors.js';
 import { isInteractive, pluralize } from '../../utils/general.js';
 import {
+  hashApplications,
   hashItems,
-  hashSettings,
   normalizeManifest,
   pickItems,
 } from '../../utils/normalizeManifest.js';
@@ -130,7 +130,7 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
     );
 
     // hashed before syncing: the application sync fills in entry points and preview formats
-    const settingsHashes = hashSettings({ applications, content, locale });
+    const applicationHashes = hashApplications(applications, content);
 
     const restClient = await createApiClient(flags.host);
     const [serverManifest, stored] = await Promise.all([
@@ -143,12 +143,21 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
     const localHashes = hashItems(localItems);
     const statuses = classifyItems(localHashes, hashItems(serverItems), stored.items);
     const serverChanges = serverChangesOf(serverManifest);
-    // the syncs only add and update, so an empty setting never needs one
+    // the syncs only add and update, so only changed applications and added locales need one
     const syncs = {
-      applications:
-        applications.length > 0 && settingsHashes.applications !== stored.applications,
-      locales: locale.length > 0 && settingsHashes.locales !== stored.locales,
+      applications: {
+        items: applications.filter(
+          it => applicationHashes[String(it.key)] !== stored.applications?.[String(it.key)],
+        ),
+        firstSync: !stored.applications,
+      },
+      locales: {
+        items: locale.filter(it => !stored.locales?.includes(it)),
+        firstSync: !stored.locales,
+      },
     };
+    const syncsApplications = syncs.applications.items.length > 0;
+    const syncsLocales = syncs.locales.items.length > 0;
 
     printPatchReport({ statuses, serverChanges, syncs });
 
@@ -170,29 +179,29 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
         ),
       );
 
-    if (pushIds.length === 0 && !syncs.applications && !syncs.locales)
+    if (pushIds.length === 0 && !syncsApplications && !syncsLocales)
       console.log(chalk.green('Nothing to push.'));
 
     const result =
       pushIds.length > 0 ?
         await uploadManifest(restClient, pickItems(manifest, pushIds), flags.force)
       : undefined;
-    const localesSynced = syncs.locales && (await syncLocales(locale, restClient));
+    const localesSynced = syncsLocales && (await syncLocales(locale, restClient));
 
-    if (syncs.applications) await checkApplications(applications, content, flags.host);
+    if (syncsApplications) await checkApplications(applications, content, flags.host);
     if (result) reportImportResult(result);
 
     const update = {
       local: localHashes,
       record: [...pushIds, ...idsOf(statuses.filter(hasStatus('inSync')))],
       drop: idsOf(statuses.filter(hasStatus('gone'))),
-      ...(syncs.applications ? { applications: settingsHashes.applications } : {}),
-      ...(localesSynced ? { locales: settingsHashes.locales } : {}),
+      ...(syncsApplications ? { applications: applicationHashes } : {}),
+      ...(localesSynced ? { locales: locale } : {}),
     };
 
     // anything pushed is also in `record`
     const changesState =
-      update.record.length > 0 || update.drop.length > 0 || syncs.applications || localesSynced;
+      update.record.length > 0 || update.drop.length > 0 || syncsApplications || localesSynced;
 
     // after an upload the server copy is read back; otherwise the fetched one is current
     if (changesState)
