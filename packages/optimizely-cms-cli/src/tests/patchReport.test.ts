@@ -28,8 +28,15 @@ describe('patch report', () => {
   afterEach(() => vi.restoreAllMocks());
 
   describe('printPatchReport', () => {
-    const report = (statuses: ItemStatus[], syncs = noSyncs, serverChanges = {}) => {
-      printPatchReport({ statuses, serverChanges, syncs });
+    const nothingChecked = { applications: 0, content: 0, locales: 0 };
+
+    const report = (
+      statuses: ItemStatus[],
+      syncs = noSyncs,
+      serverChanges = {},
+      checked = nothingChecked,
+    ) => {
+      printPatchReport({ statuses, serverChanges, syncs, checked });
       return printedLines();
     };
 
@@ -98,12 +105,29 @@ describe('patch report', () => {
         '  en',
         '  sv',
         '',
-        '2 up to date',
+        'Up to date: 2 items',
+      ]);
+    });
+
+    test('sums up every kind of setting checked that needs nothing', () => {
+      const syncs = { ...noSyncs, locales: ['sv'] };
+      const checked = { applications: 2, content: 1, locales: 2 };
+
+      expect(
+        report([{ id: 'contentTypes:Hero', status: 'unchanged' }], syncs, {}, checked),
+      ).toEqual([
+        'Locales to sync — missing or disabled in the CMS (1)',
+        '  sv',
+        '',
+        'Up to date: 1 item, 2 applications, 1 content item, 1 locale',
       ]);
     });
 
     test('says when there is no saved state to compare applications with', () => {
-      const applications = { items: [{ key: 'site', displayName: 'Site' }], firstSync: true };
+      const applications = {
+        items: [{ key: 'site', displayName: 'Site' }],
+        firstSync: true,
+      };
 
       expect(report([], { ...noSyncs, applications })).toEqual([
         'Applications to sync — no saved state (1)',
@@ -135,11 +159,17 @@ describe('patch report', () => {
         ],
         serverChanges: { 'contentTypes:Hero': teammate },
         localItems: {
-          'contentTypes:Hero': { displayName: 'Hero', properties: { title: { maxLength: 80 } } },
+          'contentTypes:Hero': {
+            displayName: 'Hero',
+            properties: { title: { maxLength: 80 } },
+          },
           'displayTemplates:Row': { nodeType: 'row' },
         },
         serverItems: {
-          'contentTypes:Hero': { displayName: 'Hero (teammate)', properties: { title: {} } },
+          'contentTypes:Hero': {
+            displayName: 'Hero (teammate)',
+            properties: { title: {} },
+          },
         },
       });
 

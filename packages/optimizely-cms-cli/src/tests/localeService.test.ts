@@ -32,7 +32,10 @@ describe('findLocalesToSync', () => {
       ]),
     );
 
-    expect(await findLocalesToSync(['en', 'sv', 'fr'], client as never)).toEqual(['sv', 'fr']);
+    expect(await findLocalesToSync(['en', 'sv', 'fr'], client as never)).toEqual([
+      'sv',
+      'fr',
+    ]);
   });
 
   test('lists every locale when the CMS cannot be read', async () => {
@@ -168,7 +171,9 @@ describe('syncLocales', () => {
 
     await sync(['sv']);
 
-    expect(spinnerMessages(ora, 'warn')).toEqual(['Failed to enable locale sv: Unknown error']);
+    expect(spinnerMessages(ora, 'warn')).toEqual([
+      'Failed to enable locale sv: Unknown error',
+    ]);
     expect(printed(consoleSpies.log)).toContain('- Read-only (field: isEnabled)');
   });
 });

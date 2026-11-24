@@ -1,4 +1,5 @@
 import chalk, { type ChalkInstance } from 'chalk';
+import { pluralize } from './general.js';
 import {
   diffItems,
   mapItemsById,
@@ -32,6 +33,8 @@ type ReportInput = {
     content: Named[];
     locales: string[];
   };
+  // how many settings of each kind were checked, for the up-to-date summary
+  checked: { applications: number; content: number; locales: number };
 };
 
 type DetailsInput = {
@@ -175,6 +178,21 @@ const formatDifferences = (differences: FieldDifference[]) => {
   );
 };
 
+// everything checked that needs nothing, e.g. "26 items, 2 applications, 1 locale"
+const formatUpToDate = ({ statuses, syncs, checked }: ReportInput) => {
+  const counts: [number, string][] = [
+    [statuses.filter(hasStatus('unchanged', 'inSync')).length, 'item'],
+    [checked.applications - syncs.applications.items.length, 'application'],
+    [checked.content - syncs.content.length, 'content item'],
+    [checked.locales - syncs.locales.length, 'locale'],
+  ];
+  const parts = counts
+    .filter(([count]) => count > 0)
+    .map(([count, noun]) => `${count} ${pluralize(count, noun)}`);
+
+  return parts.length > 0 ? [chalk.dim(`Up to date: ${parts.join(', ')}`)] : [];
+};
+
 const conflictReasonOf = (status: ItemStatus) =>
   status.status === 'conflict' ? CONFLICT_REASONS[status.reason] : '';
 
@@ -184,11 +202,10 @@ export const printPatchReport = (input: ReportInput) => {
     REPORT_SECTIONS.some(section => section.matches(it)),
   );
   const labelWidth = Math.max(0, ...reported.map(it => labelOf(it.id).length));
-  const upToDate = input.statuses.filter(hasStatus('unchanged', 'inSync'));
   const blocks = [
     ...REPORT_SECTIONS.map(section => formatSection(section, input, labelWidth)),
     ...formatSyncs(input.syncs),
-    upToDate.length > 0 ? [chalk.dim(`${upToDate.length} up to date`)] : [],
+    formatUpToDate(input),
   ].filter(block => block.length > 0);
 
   blocks.forEach((block, index) => {

@@ -30,14 +30,19 @@ export async function findLocalesToSync(
   const { data, error } = await restClient.GET('/locales');
   if (error) return locale;
 
-  const enabled = new Set((data?.items ?? []).filter(it => it.isEnabled).map(it => it.key));
+  const enabled = new Set(
+    (data?.items ?? []).filter(it => it.isEnabled).map(it => it.key),
+  );
   return locale.filter(it => !enabled.has(it));
 }
 
 /**
  * Syncs locales from buildConfig to CMS via REST API
  */
-export async function syncLocales(locale: string[], restClient: ApiClient): Promise<void> {
+export async function syncLocales(
+  locale: string[],
+  restClient: ApiClient,
+): Promise<void> {
   if (!locale || !Array.isArray(locale) || locale.length === 0) {
     return;
   }

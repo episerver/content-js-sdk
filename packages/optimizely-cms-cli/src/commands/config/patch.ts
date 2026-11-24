@@ -173,7 +173,17 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
     const syncsContent = missingContent.length > 0;
     const syncsLocales = localesToSync.length > 0;
 
-    printPatchReport({ statuses, serverChanges, syncs });
+    printPatchReport({
+      statuses,
+      serverChanges,
+      syncs,
+      // content is only checked when the config has applications
+      checked: {
+        applications: applications.length,
+        content: applications.length > 0 ? content.length : 0,
+        locales: locale.length,
+      },
+    });
 
     if (flags.dryRun) return;
 

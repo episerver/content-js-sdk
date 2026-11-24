@@ -377,7 +377,7 @@ To push (2)
 Changed on the server — run config pull to see it (1)
   Banner (content type)   by teammate@example.com  2026-11-23 10:00 UTC
 
-12 up to date
+Up to date: 12 items, 2 applications, 2 content items, 1 locale
 ✔ Configuration file uploaded
 ```
 

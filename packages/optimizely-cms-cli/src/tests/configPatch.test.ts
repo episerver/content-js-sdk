@@ -57,11 +57,15 @@ describe('config patch', () => {
   let consoleSpies: ReturnType<typeof silenceConsole>;
   let server: ServerManifest;
 
-  const patch = (...args: string[]) => ConfigPatch.run([configPath(), ...args], import.meta.url);
+  const patch = (...args: string[]) =>
+    ConfigPatch.run([configPath(), ...args], import.meta.url);
   const configPath = () => join(tempDir, 'optimizely.config.mjs');
   const readState = async () => readFile(patchStateFile(tempDir), 'utf8');
 
-  const writeConfig = (components = [hero, banner], config: Record<string, unknown> = {}) =>
+  const writeConfig = (
+    components = [hero, banner],
+    config: Record<string, unknown> = {},
+  ) =>
     writeProject(
       tempDir,
       {
@@ -73,11 +77,14 @@ describe('config patch', () => {
     );
 
   // the server copy of whatever the config currently produces
-  const localManifest = async () => (await buildManifest(configPath(), { log: false })).manifest;
+  const localManifest = async () =>
+    (await buildManifest(configPath(), { log: false })).manifest;
 
   const withServerContentType = (key: string, change: Record<string, unknown>) => ({
     ...server,
-    contentTypes: server.contentTypes.map(it => (it.key === key ? { ...it, ...change } : it)),
+    contentTypes: server.contentTypes.map(it =>
+      it.key === key ? { ...it, ...change } : it,
+    ),
   });
 
   // the lines of the report section starting with `heading`, with column padding squeezed
@@ -86,9 +93,11 @@ describe('config patch', () => {
     const start = lines.findIndex(line => line.startsWith(`${heading} (`));
     const end = lines.indexOf('', start);
 
-    return start === -1 ? [] : (
-        lines.slice(start + 1, end === -1 ? undefined : end).map(line => line.trim().replace(/\s{2,}/g, '  '))
-      );
+    return start === -1 ?
+        []
+      : lines
+          .slice(start + 1, end === -1 ? undefined : end)
+          .map(line => line.trim().replace(/\s{2,}/g, '  '));
   };
   const expectReported = (heading: string, ...columns: string[]) =>
     expect(reportSection(heading)).toContain(columns.join('  '));
@@ -141,7 +150,7 @@ describe('config patch', () => {
 
       expect(client.POST).not.toHaveBeenCalled();
       expect(printed(consoleSpies.log)).toContain('Nothing to push.');
-      expect(printed(consoleSpies.log)).toContain('4 up to date');
+      expect(printed(consoleSpies.log)).toContain('Up to date: 4 items');
       expect(Object.keys(JSON.parse(await readState()).instances)).toHaveLength(1);
     });
 
@@ -153,14 +162,19 @@ describe('config patch', () => {
 
       await patch();
 
-      expect(printed(consoleSpies.warn)).toContain('Could not record the state for config patch');
+      expect(printed(consoleSpies.warn)).toContain(
+        'Could not record the state for config patch',
+      );
       expect(client.POST).not.toHaveBeenCalled();
     });
 
     test('pushes only the items missing on the server, without their property groups', async () => {
       await writeConfig();
       const local = await localManifest();
-      server = { ...local, contentTypes: local.contentTypes.filter(it => it.key === 'Hero') };
+      server = {
+        ...local,
+        contentTypes: local.contentTypes.filter(it => it.key === 'Hero'),
+      };
 
       await patch();
 
@@ -224,7 +238,10 @@ describe('config patch', () => {
 
     expect(client.POST).not.toHaveBeenCalled();
     expect(client.DELETE).not.toHaveBeenCalled();
-    expectReported('Still in the CMS — removed from your config, not deleted', 'Banner (content type)');
+    expectReported(
+      'Still in the CMS — removed from your config, not deleted',
+      'Banner (content type)',
+    );
   });
 
   describe('conflicts', () => {
@@ -247,7 +264,9 @@ describe('config patch', () => {
       const logs = printed(consoleSpies.log);
       expect(logs).toContain('Conflict details');
       expect(logs).toMatch(/displayName\s+local: "Hero"\s+server: "Hero \(teammate\)"/);
-      expect(logs).toMatch(/properties\.title\.maxLength\s+local: 80\s+server: \(not set\)/);
+      expect(logs).toMatch(
+        /properties\.title\.maxLength\s+local: 80\s+server: \(not set\)/,
+      );
       expect(client.POST).not.toHaveBeenCalled();
       expect(printed(consoleSpies.error)).toContain('--overwrite');
       expect(printed(consoleSpies.error)).toContain('--skipConflicts');
@@ -325,7 +344,9 @@ describe('config patch', () => {
 
         const offered = vi
           .mocked(select)
-          .mock.calls.map(([options]) => options.choices.map(choice => (choice as { value: string }).value));
+          .mock.calls.map(([options]) =>
+            options.choices.map(choice => (choice as { value: string }).value),
+          );
         expect(offered).toEqual([
           ['show', 'overwrite', 'skip', 'abort'],
           ['overwrite', 'skip', 'abort'],
@@ -369,7 +390,9 @@ describe('config patch', () => {
 
       await patch();
 
-      expect(reportSection('Locales to sync — missing or disabled in the CMS')).toEqual(['sv']);
+      expect(reportSection('Locales to sync — missing or disabled in the CMS')).toEqual([
+        'sv',
+      ]);
       // one request to compare, one by the sync
       expect(localeRequests()).toBe(2);
     });
@@ -380,7 +403,9 @@ describe('config patch', () => {
 
       await patch();
 
-      expect(reportSection('Locales to sync — missing or disabled in the CMS')).toEqual([]);
+      expect(reportSection('Locales to sync — missing or disabled in the CMS')).toEqual(
+        [],
+      );
       expect(localeRequests()).toBe(1);
     });
   });
@@ -388,8 +413,18 @@ describe('config patch', () => {
   describe('applications and content', () => {
     const aboutContent = { key: 'about', displayName: 'About', contentType: 'Hero' };
     const blogContent = { key: 'blog', displayName: 'Blog', contentType: 'Hero' };
-    const site = { key: 'site', displayName: 'Site', type: 'website', entryPoint: 'about' };
-    const blogApp = { key: 'blog_app', displayName: 'Blog', type: 'website', entryPoint: 'blog' };
+    const site = {
+      key: 'site',
+      displayName: 'Site',
+      type: 'website',
+      entryPoint: 'about',
+    };
+    const blogApp = {
+      key: 'blog_app',
+      displayName: 'Blog',
+      type: 'website',
+      entryPoint: 'blog',
+    };
 
     // seeds the state as if `applications` had been synced before
     const seedSynced = async (applications: object[]) =>
@@ -415,9 +450,9 @@ describe('config patch', () => {
 
       expect(checkApplications).toHaveBeenCalledWith([blogApp], [blogContent], undefined);
       expect(processContentWithApplications).not.toHaveBeenCalled();
-      expect(reportSection('Applications to sync — changed since the last push')).toEqual([
-        'blog_app (Blog)',
-      ]);
+      expect(reportSection('Applications to sync — changed since the last push')).toEqual(
+        ['blog_app (Blog)'],
+      );
     });
 
     test('create only content missing in the CMS, without touching applications', async () => {
@@ -427,8 +462,14 @@ describe('config patch', () => {
       await patch();
 
       expect(checkApplications).not.toHaveBeenCalled();
-      expect(processContentWithApplications).toHaveBeenCalledWith([blogContent], [], undefined);
-      expect(reportSection('Content to create — missing in the CMS')).toEqual(['blog (Blog)']);
+      expect(processContentWithApplications).toHaveBeenCalledWith(
+        [blogContent],
+        [],
+        undefined,
+      );
+      expect(reportSection('Content to create — missing in the CMS')).toEqual([
+        'blog (Blog)',
+      ]);
     });
 
     test('leave both alone when nothing changed or is missing', async () => {
