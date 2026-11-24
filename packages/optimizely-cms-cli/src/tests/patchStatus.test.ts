@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { classifyItems, needsSync, type StoredItem } from '../utils/patchStatus.js';
+import { classifyItems, hasStatus, type StoredItem } from '../utils/patchStatus.js';
 
 const ID = 'contentTypes:Tile';
 const stored: StoredItem = { local: 'L0', server: 'S0' };
@@ -64,12 +64,12 @@ test('classifies every item, sorted by id', () => {
   ]);
 });
 
-describe('needsSync', () => {
-  test.each([
-    ['never synced', 'A', undefined, true],
-    ['changed', 'B', 'A', true],
-    ['unchanged', 'A', 'A', false],
-  ])('%s', (_, current, storedHash, expected) => {
-    expect(needsSync(current, storedHash)).toBe(expected);
-  });
+test('hasStatus matches any of the given statuses', () => {
+  const statuses = [
+    { id: 'a', status: 'changed' },
+    { id: 'b', status: 'new' },
+    { id: 'c', status: 'conflict', reason: 'noState' },
+  ] as const;
+
+  expect(statuses.filter(hasStatus('changed', 'conflict')).map(it => it.id)).toEqual(['a', 'c']);
 });

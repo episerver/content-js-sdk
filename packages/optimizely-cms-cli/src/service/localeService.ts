@@ -1,9 +1,8 @@
 import ora from 'ora';
 import chalk from 'chalk';
-import type { Client } from 'openapi-fetch';
 import type { paths } from './apiSchema/openapi-schema-types.js';
+import type { ApiClient } from './cmsRestClient.js';
 
-type ApiClient = Client<paths>;
 type Locale = paths['/locales']['post']['requestBody']['content']['application/json'];
 
 /**

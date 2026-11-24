@@ -4,9 +4,8 @@ import { constants } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import chalk from 'chalk';
 import ora from 'ora';
-import type { Client } from 'openapi-fetch';
 import type { components, paths } from './apiSchema/openapi-schema-types.js';
-import { API_VERSION } from './cmsRestClient.js';
+import { API_VERSION, type ApiClient } from './cmsRestClient.js';
 import {
   findMetaData,
   logList,
@@ -15,9 +14,10 @@ import {
   validateApplications,
 } from './utils.js';
 import { mapContentToManifest } from '../mapper/contentToPackage.js';
+import { pluralize } from '../utils/general.js';
 import { contractToManifest, validateContentAreaConstraints } from '../utils/mapping.js';
+import { SECTIONS } from '../utils/normalizeManifest.js';
 
-type ApiClient = Client<paths>;
 type ImportResult =
   paths['/manifest']['post']['responses']['200']['content']['application/json'];
 type ProblemDetails = components['schemas']['ProblemDetails'];
@@ -65,12 +65,10 @@ const exitOnConstraintErrors = (errors: string[]) => {
 
   console.error(
     chalk.red(
-      `\nInvalid content type configuration (${errors.length} ${errors.length === 1 ? 'issue' : 'issues'} found):`,
+      `\nInvalid content type configuration (${errors.length} ${pluralize(errors.length, 'issue')} found):`,
     ),
   );
-  for (const error of errors) {
-    console.error(chalk.red(`  ✖ ${error}`));
-  }
+  errors.forEach(error => console.error(chalk.red(`  ✖ ${error}`)));
   console.error(
     chalk.dim(
       '\n  Resolve the issues above and run the command again. Nothing was pushed to the CMS.\n',
@@ -89,12 +87,8 @@ export const buildManifest = async (configFilePath: string, { log = true } = {})
   const { componentPaths, propertyGroups, applications, content, locale } =
     await readFromPath(pathToFileURL(configFilePath).href);
 
-  if (!componentPaths || !Array.isArray(componentPaths)) {
-    console.error(
-      chalk.red('Invalid configuration: "components" field must be an array'),
-    );
-    process.exit(1);
-  }
+  if (!Array.isArray(componentPaths))
+    exitWithMessage('Invalid configuration: "components" field must be an array');
 
   // the component globs are relative to the config file
   const configDirectory = pathToFileURL(path.dirname(configFilePath)).href;
@@ -127,7 +121,7 @@ export const buildManifest = async (configFilePath: string, { log = true } = {})
     },
     applications: validatedApplications,
     content,
-    locale,
+    locale: (Array.isArray(locale) ? locale : []) as string[],
   };
 };
 
@@ -185,7 +179,7 @@ export const fetchManifest = async (restClient: ApiClient, { includeReadOnly = f
   const { data, error, response } = await restClient.GET('/manifest', {
     params: {
       query: {
-        sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
+        sections: SECTIONS,
         ...(includeReadOnly ? { includeReadOnly } : {}),
       },
     },

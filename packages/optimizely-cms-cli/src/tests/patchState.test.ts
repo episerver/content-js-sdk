@@ -3,9 +3,13 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { readPatchState, savePatchState } from '../service/patchState.js';
-import { printed, silenceConsole } from './helpers.js';
-
-const HOST = 'https://api.cms.optimizely.com';
+import {
+  STUB_INSTANCE_KEY,
+  patchStateFile,
+  printed,
+  silenceConsole,
+  stubCmsEnv,
+} from './helpers.js';
 
 describe('patch state', () => {
   let tempDir: string;
@@ -24,10 +28,8 @@ describe('patch state', () => {
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'cli-patch-state-'));
     configFilePath = join(tempDir, 'optimizely.config.mjs');
-    stateFile = join(tempDir, '.optimizely', 'patch-state.json');
-    vi.stubEnv('OPTIMIZELY_CMS_CLIENT_ID', 'client-a');
-    vi.stubEnv('OPTIMIZELY_CMS_CLIENT_SECRET', 'secret');
-    vi.stubEnv('OPTIMIZELY_CMS_API_URL', '');
+    stateFile = patchStateFile(tempDir);
+    stubCmsEnv();
     consoleSpies = silenceConsole();
   });
 
@@ -62,7 +64,7 @@ describe('patch state', () => {
       expect(await readStateFile()).toEqual({
         version: 1,
         instances: {
-          [`${HOST}|client-a`]: {
+          [STUB_INSTANCE_KEY]: {
             updatedAt: expect.any(String),
             items: {
               'contentTypes:Hero': { local: 'H1', server: 'HS1' },
@@ -86,11 +88,11 @@ describe('patch state', () => {
     test('keeps instances apart by host and by client ID', async () => {
       await savePatchState(configFilePath, undefined, update());
       await savePatchState(configFilePath, 'https://other.example.com', update({ record: [] }));
-      vi.stubEnv('OPTIMIZELY_CMS_CLIENT_ID', 'client-b');
+      stubCmsEnv('client-b');
 
       expect(await readPatchState(configFilePath)).toEqual({ items: {} });
       expect(Object.keys((await readStateFile()).instances)).toEqual([
-        `${HOST}|client-a`,
+        STUB_INSTANCE_KEY,
         'https://other.example.com|client-a',
       ]);
     });

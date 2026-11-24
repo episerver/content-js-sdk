@@ -1,7 +1,7 @@
-import { describe, test, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
-import { stripVTControlCharacters } from 'node:util';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { printConflictDetails, printPatchReport } from '../utils/patchReport.js';
 import type { ItemStatus } from '../utils/patchStatus.js';
+import { printed, silenceConsole } from './helpers.js';
 
 const noSyncs = { applications: false, locales: false };
 const teammate = {
@@ -10,12 +10,15 @@ const teammate = {
 };
 
 describe('patch report', () => {
-  let log: MockInstance;
+  let consoleSpies: ReturnType<typeof silenceConsole>;
 
-  const printedLines = () => log.mock.calls.map(([line]) => stripVTControlCharacters(line));
+  const printedLines = () => {
+    const output = printed(consoleSpies.log);
+    return output === '' ? [] : output.split('\n');
+  };
 
   beforeEach(() => {
-    log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleSpies = silenceConsole();
   });
 
   afterEach(() => vi.restoreAllMocks());

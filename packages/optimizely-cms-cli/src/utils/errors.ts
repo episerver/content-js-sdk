@@ -50,16 +50,16 @@ type ImportResult = {
 export const reportImportResult = (result: ImportResult) => {
   if (result.outcomes && result.outcomes.length > 0) {
     console.log(chalk.cyan.bold('\nOutcomes:'));
-    for (const outcome of result.outcomes) {
-      console.log(chalk.dim('  -'), chalk.blue(outcome.message));
-    }
+    result.outcomes.forEach(outcome =>
+      console.log(chalk.dim('  -'), chalk.blue(outcome.message)),
+    );
   }
 
   if (result.errors && result.errors.length > 0) {
     console.log(chalk.red.bold('\nErrors:'));
-    for (const error of result.errors) {
-      console.log(chalk.dim('  -'), chalk.red(translateErrorMessage(error)));
-    }
+    result.errors.forEach(error =>
+      console.log(chalk.dim('  -'), chalk.red(translateErrorMessage(error))),
+    );
     process.exit(1);
   }
 };

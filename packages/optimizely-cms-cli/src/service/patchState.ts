@@ -3,7 +3,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import chalk from 'chalk';
 import { z } from 'zod';
 import { readEnvCredentials } from './config.js';
-import { resolveHost } from './cmsRestClient.js';
+import { resolveHost, type ApiClient } from './cmsRestClient.js';
+import { fetchManifest } from './manifestService.js';
+import { hashManifest } from '../utils/normalizeManifest.js';
 import type { StoredItem } from '../utils/patchStatus.js';
 
 const StoredItemSchema = z.object({ local: z.string(), server: z.string() });
@@ -66,7 +68,8 @@ const recordedItems = ({ local, server, record }: StateUpdate) =>
   );
 
 const mergeInstance = (instance: InstanceState, update: StateUpdate): InstanceState => {
-  const kept = Object.entries(instance.items).filter(([id]) => !update.drop?.includes(id));
+  const dropped = new Set(update.drop);
+  const kept = Object.entries(instance.items).filter(([id]) => !dropped.has(id));
 
   return {
     updatedAt: new Date().toISOString(),
@@ -106,4 +109,28 @@ export const savePatchState = async (
 
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, `${JSON.stringify({ version: 1, instances }, null, 2)}\n`);
+};
+
+/**
+ * Saves the state after an upload, reading the server copy back so its hashes reflect
+ * what the CMS stored. Only warns on failure: the upload itself already succeeded.
+ */
+export const recordUpload = async (
+  configFilePath: string,
+  host: string | undefined,
+  restClient: ApiClient,
+  update: Omit<StateUpdate, 'server'>,
+) => {
+  try {
+    await savePatchState(configFilePath, host, {
+      ...update,
+      server: hashManifest(await fetchManifest(restClient)),
+    });
+  } catch (error) {
+    console.warn(
+      chalk.yellow(
+        `Pushed, but could not record the state for config patch: ${(error as Error).message}`,
+      ),
+    );
+  }
 };

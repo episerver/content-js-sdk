@@ -3,6 +3,7 @@ import {
   diffItems,
   hashItem,
   hashManifest,
+  hashSettings,
   normalizeItem,
 } from '../utils/normalizeManifest.js';
 
@@ -71,6 +72,15 @@ describe('normalizeItem', () => {
       key: 'Seo',
       isContract: true,
     });
+  });
+
+  test('removes null fields at every level', () => {
+    expect(
+      normalizeItem('contentTypes', {
+        key: 'Hero',
+        properties: { title: { type: 'string', pattern: null, items: { enum: null } } },
+      }),
+    ).toEqual({ key: 'Hero', properties: { title: { type: 'string', items: {} } } });
   });
 
   test('sorts keys at every level', () => {
@@ -162,6 +172,20 @@ describe('diffItems', () => {
 
   test('is empty for equal items', () => {
     expect(diffItems(normalizeItem('contentTypes', localTile), normalizeItem('contentTypes', serverTile))).toEqual([]);
+  });
+});
+
+describe('hashSettings', () => {
+  const settings = { applications: [{ key: 'site' }], content: [{ key: 'home' }], locale: ['en'] };
+
+  test('hashes applications with their content, and locales on their own', () => {
+    const hashes = hashSettings(settings);
+
+    expect(hashSettings({ ...settings, locale: ['sv'] })).toEqual({
+      applications: hashes.applications,
+      locales: expect.not.stringMatching(hashes.locales),
+    });
+    expect(hashSettings({ ...settings, content: [] }).applications).not.toBe(hashes.applications);
   });
 });
 

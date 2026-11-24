@@ -68,5 +68,8 @@ export const classifyItems = (
       : classifyWithoutState(id, local[id], server[id]),
     );
 
-/** Whether a global setting (applications, locales) changed since it was last synced */
-export const needsSync = (current: string, stored?: string) => current !== stored;
+/** Matches item statuses that are one of the given kinds, for use with `filter`. */
+export const hasStatus =
+  (...wanted: ItemStatus['status'][]) =>
+  (status: ItemStatus) =>
+    wanted.includes(status.status);

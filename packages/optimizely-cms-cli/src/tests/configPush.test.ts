@@ -11,9 +11,12 @@ import {
   contentTypeDefinition,
   mockApiClient,
   mockExit,
+  STUB_INSTANCE_KEY,
+  patchStateFile,
   printed,
   respondByPath,
   silenceConsole,
+  stubCmsEnv,
   writeProject,
   type MockApiClient,
 } from './helpers.js';
@@ -313,10 +316,10 @@ describe('config push', () => {
   });
 
   describe('patch state', () => {
-    const stateFile = () => join(tempDir, '.optimizely', 'patch-state.json');
+    const stateFile = () => patchStateFile(tempDir);
     const readState = async () => {
       const { instances } = JSON.parse(await readFile(stateFile(), 'utf8'));
-      return instances['https://api.cms.optimizely.com|client-a'];
+      return instances[STUB_INSTANCE_KEY];
     };
     const serverManifest = {
       contentTypes: [{ key: 'Hero' }, { key: 'Banner' }],
@@ -324,9 +327,7 @@ describe('config push', () => {
     };
 
     beforeEach(() => {
-      vi.stubEnv('OPTIMIZELY_CMS_CLIENT_ID', 'client-a');
-      vi.stubEnv('OPTIMIZELY_CMS_CLIENT_SECRET', 'secret');
-      vi.stubEnv('OPTIMIZELY_CMS_API_URL', '');
+      stubCmsEnv();
       respondByPath(client.GET, {
         '/manifest': apiResponse({ data: serverManifest }),
         '/locales': apiResponse({ data: { items: [{ key: 'en', isEnabled: true }] } }),

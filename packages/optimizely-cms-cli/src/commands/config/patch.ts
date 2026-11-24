@@ -11,16 +11,16 @@ import {
   fetchManifest,
   uploadManifest,
 } from '../../service/manifestService.js';
-import { readPatchState, savePatchState } from '../../service/patchState.js';
+import { readPatchState, recordUpload, savePatchState } from '../../service/patchState.js';
 import { reportImportResult } from '../../utils/errors.js';
-import { isInteractive } from '../../utils/general.js';
+import { isInteractive, pluralize } from '../../utils/general.js';
 import {
-  hashManifest,
-  hashValue,
+  hashItems,
+  hashSettings,
   normalizeManifest,
   pickItems,
 } from '../../utils/normalizeManifest.js';
-import { classifyItems, needsSync, type ItemStatus } from '../../utils/patchStatus.js';
+import { classifyItems, hasStatus, type ItemStatus } from '../../utils/patchStatus.js';
 import {
   printConflictDetails,
   printPatchReport,
@@ -29,9 +29,6 @@ import {
 
 type ConflictChoice = 'overwrite' | 'skip' | 'abort';
 
-const idsWith = (statuses: ItemStatus[], ...wanted: ItemStatus['status'][]) =>
-  statuses.filter(it => wanted.includes(it.status)).map(it => it.id);
-
 const SHOW_CHOICE = { name: 'Show the differences', value: 'show' as const };
 const DECISION_CHOICES: { name: string; value: ConflictChoice }[] = [
   { name: 'Overwrite them with the local version', value: 'overwrite' },
@@ -39,12 +36,14 @@ const DECISION_CHOICES: { name: string; value: ConflictChoice }[] = [
   { name: 'Abort without pushing anything', value: 'abort' },
 ];
 
+const idsOf = (statuses: ItemStatus[]) => statuses.map(it => it.id);
+
 const askAboutConflicts = <T extends string>(
   count: number,
   choices: { name: string; value: T }[],
 ) =>
   select<T>({
-    message: `${count} ${count === 1 ? 'item has' : 'items have'} conflicting changes. What should patch do?`,
+    message: `Conflicting changes in ${count} ${pluralize(count, 'item')}. What should patch do?`,
     choices,
   });
 
@@ -69,6 +68,23 @@ const exitOnConflicts = (): never => {
     ),
   );
   return process.exit(1);
+};
+
+const resolveConflicts = async (
+  count: number,
+  flags: { overwrite: boolean; skipConflicts: boolean },
+  showDetails: () => void,
+): Promise<ConflictChoice> => {
+  if (count === 0 || flags.overwrite) return 'overwrite';
+  if (flags.skipConflicts) return 'skip';
+  if (isInteractive()) {
+    const choice = await askForDecision(count, showDetails);
+    return choice === 'abort' ? exitOnConflicts() : choice;
+  }
+
+  // without a prompt the details are the only way to see what blocks the push
+  showDetails();
+  return exitOnConflicts();
 };
 
 export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
@@ -110,64 +126,52 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
 
     const { manifest, applications, content, locale } = await buildManifest(
       configFilePath,
-      {
-        log: false,
-      },
+      { log: false },
     );
 
     // hashed before syncing: the application sync fills in entry points and preview formats
-    const applicationsHash = hashValue({ applications, content });
-    const localesHash = hashValue(locale ?? []);
+    const settingsHashes = hashSettings({ applications, content, locale });
 
     const restClient = await createApiClient(flags.host);
-    const serverManifest = await fetchManifest(restClient);
-    const stored = await readPatchState(configFilePath, flags.host);
+    const [serverManifest, stored] = await Promise.all([
+      fetchManifest(restClient),
+      readPatchState(configFilePath, flags.host),
+    ]);
 
-    const localHashes = hashManifest(manifest);
-    const statuses = classifyItems(
-      localHashes,
-      hashManifest(serverManifest),
-      stored.items,
-    );
+    const localItems = normalizeManifest(manifest);
+    const serverItems = normalizeManifest(serverManifest);
+    const localHashes = hashItems(localItems);
+    const statuses = classifyItems(localHashes, hashItems(serverItems), stored.items);
+    const serverChanges = serverChangesOf(serverManifest);
     // the syncs only add and update, so an empty setting never needs one
     const syncs = {
       applications:
-        applications.length > 0 && needsSync(applicationsHash, stored.applications),
-      locales:
-        Array.isArray(locale) &&
-        locale.length > 0 &&
-        needsSync(localesHash, stored.locales),
+        applications.length > 0 && settingsHashes.applications !== stored.applications,
+      locales: locale.length > 0 && settingsHashes.locales !== stored.locales,
     };
-
-    const serverChanges = serverChangesOf(serverManifest);
-    const showConflictDetails = () =>
-      printConflictDetails({
-        conflicts: statuses.filter(it => it.status === 'conflict'),
-        serverChanges,
-        localItems: normalizeManifest(manifest),
-        serverItems: normalizeManifest(serverManifest),
-      });
 
     printPatchReport({ statuses, serverChanges, syncs });
 
-    const conflicts = idsWith(statuses, 'conflict');
-    const choice = await this.resolveConflicts(
-      conflicts.length,
-      flags,
-      showConflictDetails,
-    );
-    const pushIds = [
-      ...idsWith(statuses, 'changed', 'new'),
-      ...(choice === 'overwrite' ? conflicts : []),
-    ];
+    if (flags.dryRun) return;
 
-    if (choice === 'skip' && conflicts.length > 0 && !flags.dryRun)
-      console.warn(chalk.yellow(`Skipping ${conflicts.length} conflicting item(s).`));
+    const conflicts = statuses.filter(hasStatus('conflict'));
+    const choice = await resolveConflicts(conflicts.length, flags, () =>
+      printConflictDetails({ conflicts, serverChanges, localItems, serverItems }),
+    );
+    const pushIds = idsOf([
+      ...statuses.filter(hasStatus('changed', 'new')),
+      ...(choice === 'overwrite' ? conflicts : []),
+    ]);
+
+    if (choice === 'skip')
+      console.warn(
+        chalk.yellow(
+          `Skipping ${conflicts.length} conflicting ${pluralize(conflicts.length, 'item')}.`,
+        ),
+      );
 
     if (pushIds.length === 0 && !syncs.applications && !syncs.locales)
       console.log(chalk.green('Nothing to push.'));
-
-    if (flags.dryRun) return;
 
     const result =
       pushIds.length > 0 ?
@@ -178,36 +182,23 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
     if (syncs.applications) await checkApplications(applications, content, flags.host);
     if (result) reportImportResult(result);
 
-    const record = [...pushIds, ...idsWith(statuses, 'inSync')];
-    const drop = idsWith(statuses, 'gone');
-
-    if (record.length === 0 && drop.length === 0 && !syncs.applications && !localesSynced)
-      return;
-
-    await savePatchState(configFilePath, flags.host, {
+    const update = {
       local: localHashes,
-      server: hashManifest(result ? await fetchManifest(restClient) : serverManifest),
-      record,
-      drop,
-      ...(syncs.applications ? { applications: applicationsHash } : {}),
-      ...(localesSynced ? { locales: localesHash } : {}),
-    });
-  }
+      record: [...pushIds, ...idsOf(statuses.filter(hasStatus('inSync')))],
+      drop: idsOf(statuses.filter(hasStatus('gone'))),
+      ...(syncs.applications ? { applications: settingsHashes.applications } : {}),
+      ...(localesSynced ? { locales: settingsHashes.locales } : {}),
+    };
 
-  private async resolveConflicts(
-    count: number,
-    flags: { overwrite: boolean; skipConflicts: boolean; dryRun: boolean },
-    showDetails: () => void,
-  ): Promise<ConflictChoice> {
-    if (count === 0 || flags.overwrite) return 'overwrite';
-    if (flags.skipConflicts || flags.dryRun) return 'skip';
-    if (isInteractive()) {
-      const choice = await askForDecision(count, showDetails);
-      return choice === 'abort' ? exitOnConflicts() : choice;
-    }
+    if (result) return recordUpload(configFilePath, flags.host, restClient, update);
 
-    // without a prompt the details are the only way to see what blocks the push
-    showDetails();
-    return exitOnConflicts();
+    const changesState =
+      update.record.length > 0 || update.drop.length > 0 || syncs.applications || localesSynced;
+
+    if (changesState)
+      await savePatchState(configFilePath, flags.host, {
+        ...update,
+        server: hashItems(serverItems),
+      });
   }
 }

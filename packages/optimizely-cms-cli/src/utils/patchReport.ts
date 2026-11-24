@@ -1,13 +1,12 @@
 import chalk, { type ChalkInstance } from 'chalk';
 import {
   diffItems,
-  itemId,
+  mapItemsById,
   parseItemId,
-  SECTIONS,
   type FieldDifference,
   type ManifestSection,
 } from './normalizeManifest.js';
-import type { ConflictReason, ItemStatus } from './patchStatus.js';
+import { hasStatus, type ConflictReason, type ItemStatus } from './patchStatus.js';
 
 /** Who last changed an item on the server, as reported by the CMS */
 export type ServerChange = { lastModified?: string; lastModifiedBy?: string };
@@ -16,14 +15,10 @@ export type ServerChange = { lastModified?: string; lastModifiedBy?: string };
 export const serverChangesOf = (
   manifest: Partial<Record<ManifestSection, (ServerChange & { key?: string })[] | null>>,
 ): Record<string, ServerChange> =>
-  Object.fromEntries(
-    SECTIONS.flatMap(section =>
-      (manifest[section] ?? []).map(({ key, lastModified, lastModifiedBy }) => [
-        itemId(section, key),
-        { lastModified, lastModifiedBy },
-      ]),
-    ),
-  );
+  mapItemsById(manifest, ({ lastModified, lastModifiedBy }) => ({
+    lastModified,
+    lastModifiedBy,
+  }));
 
 type ReportInput = {
   statuses: ItemStatus[];
@@ -43,7 +38,7 @@ type ReportSection = {
   color: ChalkInstance;
   matches: (status: ItemStatus) => boolean;
   // what differs per item, shown in a column after its name
-  describe: (status: ItemStatus, change?: ServerChange) => string;
+  describe?: (change: ServerChange | undefined, status: ItemStatus) => string;
 };
 
 const SECTION_LABELS: Record<ManifestSection, string> = {
@@ -72,7 +67,7 @@ const formatTime = (timestamp: string) => {
     : `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 };
 
-const whoAndWhen = (_: ItemStatus, change?: ServerChange) =>
+const whoAndWhen = (change?: ServerChange) =>
   [
     change?.lastModifiedBy && `by ${change.lastModifiedBy}`,
     change?.lastModified && formatTime(change.lastModified),
@@ -80,26 +75,21 @@ const whoAndWhen = (_: ItemStatus, change?: ServerChange) =>
     .filter(Boolean)
     .join('  ');
 
-const nothing = () => '';
-
 const isConflict = (reason: ConflictReason) => (status: ItemStatus) =>
   status.status === 'conflict' && status.reason === reason;
-
-const hasStatus = (...wanted: ItemStatus['status'][]) => (status: ItemStatus) =>
-  wanted.includes(status.status);
 
 const REPORT_SECTIONS: ReportSection[] = [
   {
     heading: 'To push',
     color: chalk.green,
     matches: hasStatus('changed', 'new'),
-    describe: status => status.status,
+    describe: (_, status) => status.status,
   },
   ...(Object.keys(CONFLICT_REASONS) as ConflictReason[]).map(reason => ({
     heading: `Conflicts — ${CONFLICT_REASONS[reason]}`,
     color: chalk.yellow,
     matches: isConflict(reason),
-    describe: reason === 'bothChanged' ? whoAndWhen : nothing,
+    describe: reason === 'bothChanged' ? whoAndWhen : undefined,
   })),
   {
     heading: 'Changed on the server — run config pull to see it',
@@ -111,13 +101,11 @@ const REPORT_SECTIONS: ReportSection[] = [
     heading: 'Deleted on the server — not recreated',
     color: chalk.yellow,
     matches: hasStatus('deletedOnServer'),
-    describe: nothing,
   },
   {
     heading: 'Still in the CMS — removed from your config, not deleted',
     color: chalk.cyan,
     matches: hasStatus('removed'),
-    describe: nothing,
   },
 ];
 
@@ -128,7 +116,7 @@ const formatSection = (
 ) => {
   const items = statuses.filter(matches);
   const itemLine = (status: ItemStatus) =>
-    `  ${labelOf(status.id).padEnd(labelWidth)}  ${chalk.dim(describe(status, serverChanges[status.id]))}`.trimEnd();
+    `  ${labelOf(status.id).padEnd(labelWidth)}  ${chalk.dim(describe?.(serverChanges[status.id], status) ?? '')}`.trimEnd();
 
   return items.length > 0 ? [color.bold(`${heading} (${items.length})`), ...items.map(itemLine)] : [];
 };
@@ -188,7 +176,7 @@ export const printConflictDetails = ({
   serverItems,
 }: DetailsInput) => {
   const lines = conflicts.flatMap(it => {
-    const reason = [conflictReasonOf(it), whoAndWhen(it, serverChanges[it.id])]
+    const reason = [conflictReasonOf(it), whoAndWhen(serverChanges[it.id])]
       .filter(Boolean)
       .join(', ');
 

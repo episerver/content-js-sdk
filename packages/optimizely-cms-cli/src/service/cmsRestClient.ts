@@ -1,4 +1,4 @@
-import createClient from 'openapi-fetch';
+import createClient, { type Client } from 'openapi-fetch';
 import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
 import { OAuthPaths } from './apiSchema/gateway-auth-types.js';
@@ -8,6 +8,9 @@ const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
 
 /** CMS REST API version, used in request URLs and versioned media types */
 export const API_VERSION = 'v1';
+
+/** Typed client for the CMS REST API */
+export type ApiClient = Client<paths>;
 
 /**
  * Determines if the provided URL matches the pattern of a SaaS API gateway.

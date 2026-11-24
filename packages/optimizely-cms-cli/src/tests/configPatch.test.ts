@@ -13,8 +13,10 @@ import {
   contentTypeDefinition,
   mockApiClient,
   mockExit,
+  patchStateFile,
   printed,
   silenceConsole,
+  stubCmsEnv,
   writeProject,
   type MockApiClient,
 } from './helpers.js';
@@ -48,8 +50,7 @@ describe('config patch', () => {
 
   const patch = (...args: string[]) => ConfigPatch.run([configPath(), ...args], import.meta.url);
   const configPath = () => join(tempDir, 'optimizely.config.mjs');
-  const stateFile = () => join(tempDir, '.optimizely', 'patch-state.json');
-  const readState = async () => readFile(stateFile(), 'utf8');
+  const readState = async () => readFile(patchStateFile(tempDir), 'utf8');
 
   const writeConfig = (components = [hero, banner], config: Record<string, unknown> = {}) =>
     writeProject(
@@ -109,9 +110,7 @@ describe('config patch', () => {
     );
     client.POST.mockResolvedValue(apiResponse({ data: { outcomes: [] } }));
     vi.mocked(createApiClient).mockResolvedValue(client as never);
-    vi.stubEnv('OPTIMIZELY_CMS_CLIENT_ID', 'client-a');
-    vi.stubEnv('OPTIMIZELY_CMS_CLIENT_SECRET', 'secret');
-    vi.stubEnv('OPTIMIZELY_CMS_API_URL', '');
+    stubCmsEnv();
     consoleSpies = silenceConsole();
     mockExit();
   });

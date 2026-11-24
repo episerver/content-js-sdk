@@ -5,6 +5,7 @@ import { isObject } from './general.js';
 export type ManifestSection = 'contentTypes' | 'displayTemplates' | 'propertyGroups';
 
 type Item = Record<string, unknown>;
+type AnyManifest = Partial<Record<ManifestSection, Item[] | null>>;
 
 /** Every manifest section, in upload order */
 export const SECTIONS: ManifestSection[] = ['contentTypes', 'displayTemplates', 'propertyGroups'];
@@ -34,34 +35,30 @@ const RICH_TEXT_DEFAULTS: Item = { ...PROPERTY_DEFAULTS, editorSettings: { prese
 const ARRAY_ITEMS_DEFAULTS: Item = { allowedTypes: [], restrictedTypes: [] };
 const DISPLAY_TEMPLATE_DEFAULTS: Item = { isDefault: false, settings: {} };
 
-const sortKeys = (value: unknown): unknown =>
-  Array.isArray(value) ? value.map(sortKeys)
+// keys sorted and null fields dropped at every level, so equal content serialises equally
+const canonical = (value: unknown): unknown =>
+  Array.isArray(value) ? value.map(canonical)
   : isObject(value) ?
     Object.fromEntries(
       Object.keys(value)
         .sort()
-        .map(key => [key, sortKeys(value[key])]),
+        .filter(key => value[key] != null)
+        .map(key => [key, canonical(value[key])]),
     )
   : value;
 
 const isEqual = (a: unknown, b: unknown) =>
-  JSON.stringify(sortKeys(a)) === JSON.stringify(sortKeys(b));
+  JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
-const isDefault = (defaults: Item, key: string, value: unknown) =>
-  key in defaults && isEqual(value, defaults[key]);
+const digest = (text: string) => createHash('sha256').update(text).digest('hex');
 
-const withoutServerFields = (item: Item): Item =>
-  Object.fromEntries(
-    Object.entries(item).filter(
-      ([key, value]) => value != null && !READ_ONLY_FIELDS.includes(key),
-    ),
-  );
+const withoutReadOnlyFields = (item: Item): Item =>
+  Object.fromEntries(Object.entries(item).filter(([key]) => !READ_ONLY_FIELDS.includes(key)));
 
-// a field that is missing, null or equal to its default reads the same on both sides
 const withoutDefaults = (item: Item, defaults: Item): Item =>
   Object.fromEntries(
     Object.entries(item).filter(
-      ([key, value]) => value != null && !isDefault(defaults, key, value),
+      ([key, value]) => !(key in defaults && isEqual(value, defaults[key])),
     ),
   );
 
@@ -92,33 +89,12 @@ const normalizeContentType = (contentType: Item): Item => {
     : normalized;
 };
 
-// property groups have no defaults: the local mapper always sends every field
-const NORMALIZERS: Partial<Record<ManifestSection, (item: Item) => Item>> = {
+const NORMALIZERS: Record<ManifestSection, (item: Item) => Item> = {
   contentTypes: normalizeContentType,
   displayTemplates: item => withoutDefaults(item, DISPLAY_TEMPLATE_DEFAULTS),
+  // the local mapper always sends every property group field
+  propertyGroups: item => item,
 };
-
-const identity = (item: Item) => item;
-
-/**
- * Brings a local or server manifest item to one comparable shape: read-only fields,
- * nulls and server defaults removed, keys sorted.
- */
-export const normalizeItem = (section: ManifestSection, item: Item): Item => {
-  const removeDefaults = NORMALIZERS[section] ?? identity;
-
-  return sortKeys(removeDefaults(withoutServerFields(item))) as Item;
-};
-
-/** Hashes any JSON value independently of key order. */
-export const hashValue = (value: unknown): string =>
-  createHash('sha256')
-    .update(JSON.stringify(sortKeys(value)) ?? '')
-    .digest('hex');
-
-/** Hashes the normalised item, so a local item and its server copy hash equally when in sync. */
-export const hashItem = (section: ManifestSection, item: Item): string =>
-  hashValue(normalizeItem(section, item));
 
 /** Identifies a manifest item across sections, e.g. `contentTypes:Hero` */
 export const itemId = (section: ManifestSection, key: unknown) => `${section}:${key}`;
@@ -133,24 +109,54 @@ export const parseItemId = (id: string) => {
   };
 };
 
-type AnyManifest = Partial<Record<ManifestSection, Item[] | null>>;
-
-/** Normalises every item of a local or server manifest, keyed by item id. */
-export const normalizeManifest = (manifest: AnyManifest): Record<string, Item> =>
+/** Maps every item of a manifest, keyed by item id. */
+export const mapItemsById = <T extends { key?: unknown }, R>(
+  manifest: Partial<Record<ManifestSection, T[] | null>>,
+  mapper: (item: T, section: ManifestSection) => R,
+): Record<string, R> =>
   Object.fromEntries(
     SECTIONS.flatMap(section =>
-      (manifest[section] ?? []).map(item => [
-        itemId(section, item.key),
-        normalizeItem(section, item),
-      ]),
+      (manifest[section] ?? []).map(item => [itemId(section, item.key), mapper(item, section)]),
     ),
   );
 
+/**
+ * Brings a local or server manifest item to one comparable shape: read-only fields,
+ * nulls and server defaults removed, keys sorted.
+ */
+export const normalizeItem = (section: ManifestSection, item: Item): Item =>
+  canonical(NORMALIZERS[section](withoutReadOnlyFields(item))) as Item;
+
+/** Normalises every item of a local or server manifest, keyed by item id. */
+export const normalizeManifest = (manifest: AnyManifest): Record<string, Item> =>
+  mapItemsById(manifest, (item, section) => normalizeItem(section, item));
+
+/** Hashes any JSON value independently of key order. */
+export const hashValue = (value: unknown): string =>
+  digest(JSON.stringify(canonical(value)) ?? '');
+
+/** Hashes the normalised item, so a local item and its server copy hash equally when in sync. */
+export const hashItem = (section: ManifestSection, item: Item): string =>
+  digest(JSON.stringify(normalizeItem(section, item)));
+
+/** Hashes items that are already normalised, keyed like the input. */
+export const hashItems = (items: Record<string, Item>): Record<string, string> =>
+  Object.fromEntries(Object.entries(items).map(([id, item]) => [id, digest(JSON.stringify(item))]));
+
 /** Hashes every item of a local or server manifest, keyed by item id. */
 export const hashManifest = (manifest: AnyManifest): Record<string, string> =>
-  Object.fromEntries(
-    Object.entries(normalizeManifest(manifest)).map(([id, item]) => [id, hashValue(item)]),
-  );
+  hashItems(normalizeManifest(manifest));
+
+/** Hashes the global settings synced outside the manifest. */
+export const hashSettings = ({
+  applications,
+  content,
+  locale,
+}: {
+  applications: unknown;
+  content: unknown;
+  locale: unknown;
+}) => ({ applications: hashValue({ applications, content }), locales: hashValue(locale) });
 
 /** A field whose value differs between a local item and its server copy */
 export type FieldDifference = { path: string; local: unknown; server: unknown };
@@ -168,12 +174,16 @@ export const diffItems = (local: unknown, server: unknown, path = ''): FieldDiff
 export const pickItems = <T extends Record<ManifestSection, { key?: string }[]>>(
   manifest: T,
   ids: string[],
-): T => ({
-  ...manifest,
-  ...Object.fromEntries(
-    SECTIONS.map(section => [
-      section,
-      manifest[section].filter(item => ids.includes(itemId(section, item.key))),
-    ]),
-  ),
-});
+): T => {
+  const wanted = new Set(ids);
+
+  return {
+    ...manifest,
+    ...Object.fromEntries(
+      SECTIONS.map(section => [
+        section,
+        manifest[section].filter(item => wanted.has(itemId(section, item.key))),
+      ]),
+    ),
+  };
+};

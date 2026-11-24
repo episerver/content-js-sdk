@@ -132,3 +132,16 @@ export const writeProject = async (
 
   return configPath;
 };
+
+/** Patch state key of the instance `stubCmsEnv` points at */
+export const STUB_INSTANCE_KEY = 'https://api.cms.optimizely.com|client-a';
+
+/** Stubs CMS credentials and clears the API URL, so the default gateway is used */
+export const stubCmsEnv = (clientId = 'client-a') => {
+  vi.stubEnv('OPTIMIZELY_CMS_CLIENT_ID', clientId);
+  vi.stubEnv('OPTIMIZELY_CMS_CLIENT_SECRET', 'secret');
+  vi.stubEnv('OPTIMIZELY_CMS_API_URL', '');
+};
+
+/** Path of the patch state file for a project rooted at `root` */
+export const patchStateFile = (root: string) => join(root, '.optimizely', 'patch-state.json');

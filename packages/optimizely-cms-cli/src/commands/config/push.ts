@@ -7,14 +7,10 @@ import { createApiClient } from '../../service/cmsRestClient.js';
 import { logList } from '../../service/utils.js';
 import { checkApplications } from '../../service/applicationService.js';
 import { syncLocales } from '../../service/localeService.js';
-import {
-  buildManifest,
-  fetchManifest,
-  uploadManifest,
-} from '../../service/manifestService.js';
-import { savePatchState, type StateUpdate } from '../../service/patchState.js';
+import { buildManifest, uploadManifest } from '../../service/manifestService.js';
+import { recordUpload } from '../../service/patchState.js';
 import { reportImportResult } from '../../utils/errors.js';
-import { hashManifest, hashValue } from '../../utils/normalizeManifest.js';
+import { hashManifest, hashSettings } from '../../utils/normalizeManifest.js';
 import {
   findUnknownKeys,
   parseOnlyKeys,
@@ -117,8 +113,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
 
     // hashed before syncing: the application sync fills in entry points and preview formats
-    const applicationsHash = hashValue({ applications, content });
-    const localesHash = hashValue(locale ?? []);
+    const settingsHashes = hashSettings({ applications, content, locale });
+    const localHashes = hashManifest(metaData);
 
     const result = await uploadManifest(restClient, metaData, flags.force);
 
@@ -130,31 +126,11 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
 
     reportImportResult(result);
 
-    await recordPushState(configFilePath, flags.host, restClient, {
-      local: hashManifest(metaData),
-      ...(onlyKeys ? {} : { applications: applicationsHash }),
-      ...(localesSynced ? { locales: localesHash } : {}),
+    await recordUpload(configFilePath, flags.host, restClient, {
+      local: localHashes,
+      record: Object.keys(localHashes),
+      ...(onlyKeys ? {} : { applications: settingsHashes.applications }),
+      ...(localesSynced ? { locales: settingsHashes.locales } : {}),
     });
   }
 }
-
-const recordPushState = async (
-  configFilePath: string,
-  host: string | undefined,
-  restClient: Awaited<ReturnType<typeof createApiClient>>,
-  update: Omit<StateUpdate, 'server' | 'record'>,
-) => {
-  try {
-    await savePatchState(configFilePath, host, {
-      ...update,
-      server: hashManifest(await fetchManifest(restClient)),
-      record: Object.keys(update.local),
-    });
-  } catch (error) {
-    console.warn(
-      chalk.yellow(
-        `Pushed, but could not record the state for config patch: ${(error as Error).message}`,
-      ),
-    );
-  }
-};
