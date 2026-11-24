@@ -180,26 +180,16 @@ describe('hashApplications', () => {
     { key: 'site', displayName: 'Site' },
     { key: 'blog', displayName: 'Blog' },
   ];
-  const content = [{ key: 'home' }];
-
-  test('hashes each application, keyed by its key', () => {
-    const hashes = hashApplications(applications, content);
-    const renamed = hashApplications(
-      [applications[0], { ...applications[1], displayName: 'Blog (renamed)' }],
-      content,
-    );
+  test('hashes each application on its own, keyed by its key', () => {
+    const hashes = hashApplications(applications);
+    const renamed = hashApplications([
+      applications[0],
+      { ...applications[1], displayName: 'Blog (renamed)' },
+    ]);
 
     expect(Object.keys(hashes)).toEqual(['site', 'blog']);
     expect(renamed.site).toBe(hashes.site);
     expect(renamed.blog).not.toBe(hashes.blog);
-  });
-
-  test('changes every hash when the content config changes', () => {
-    const hashes = hashApplications(applications, content);
-    const changed = hashApplications(applications, [{ key: 'about' }]);
-
-    expect(changed.site).not.toBe(hashes.site);
-    expect(changed.blog).not.toBe(hashes.blog);
   });
 });
 

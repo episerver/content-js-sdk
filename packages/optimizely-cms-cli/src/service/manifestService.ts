@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import type { components, paths } from './apiSchema/openapi-schema-types.js';
 import { API_VERSION, type ApiClient } from './cmsRestClient.js';
+import type { ContentConfig } from './contentService.js';
 import {
   findMetaData,
   logList,
@@ -120,7 +121,7 @@ export const buildManifest = async (configFilePath: string, { log = true } = {})
       propertyGroups: normalizedPropertyGroups,
     },
     applications: validatedApplications,
-    content,
+    content: (Array.isArray(content) ? content : []) as ContentConfig[],
     locale: (Array.isArray(locale) ? locale : []) as string[],
   };
 };

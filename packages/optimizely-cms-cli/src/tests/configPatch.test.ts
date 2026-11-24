@@ -7,6 +7,9 @@ import ConfigPatch from '../commands/config/patch.js';
 import { createApiClient } from '../service/cmsRestClient.js';
 import { buildManifest } from '../service/manifestService.js';
 import { savePatchState } from '../service/patchState.js';
+import { checkApplications } from '../service/applicationService.js';
+import { processContentWithApplications } from '../service/contentService.js';
+import { hashApplications } from '../utils/normalizeManifest.js';
 import {
   ExitError,
   apiResponse,
@@ -27,6 +30,8 @@ vi.mock('../service/cmsRestClient.js', async importOriginal => ({
   createApiClient: vi.fn(),
 }));
 vi.mock('@inquirer/prompts');
+vi.mock('../service/applicationService.js');
+vi.mock('../service/contentService.js');
 vi.mock('ora', async () => ({
   default: vi.fn((await import('./helpers.js')).createSpinner),
 }));
@@ -357,6 +362,64 @@ describe('config patch', () => {
     await patch();
 
     expect(client.GET.mock.calls.filter(([requestPath]) => requestPath === '/locales')).toHaveLength(1);
+  });
+
+  describe('applications and content', () => {
+    const aboutContent = { key: 'about', displayName: 'About', contentType: 'Hero' };
+    const blogContent = { key: 'blog', displayName: 'Blog', contentType: 'Hero' };
+    const site = { key: 'site', displayName: 'Site', type: 'website', entryPoint: 'about' };
+    const blogApp = { key: 'blog_app', displayName: 'Blog', type: 'website', entryPoint: 'blog' };
+
+    // seeds the state as if `applications` and `content` had been synced before
+    const seedSynced = async (applications: object[], content: string[]) =>
+      savePatchState(configPath(), undefined, {
+        local: {},
+        server: {},
+        record: [],
+        applications: hashApplications(applications as { key: string }[]),
+        content,
+      });
+
+    beforeEach(async () => {
+      await writeConfig([hero, banner], {
+        applications: [site, blogApp],
+        content: [aboutContent, blogContent],
+      });
+      server = await localManifest();
+    });
+
+    test('sync a changed application with only the content it points at', async () => {
+      await seedSynced([site, { ...blogApp, displayName: 'Old blog' }], ['about', 'blog']);
+
+      await patch();
+
+      expect(checkApplications).toHaveBeenCalledWith([blogApp], [blogContent], undefined);
+      expect(processContentWithApplications).not.toHaveBeenCalled();
+      expect(reportSection('Applications to sync — changed since the last push')).toEqual([
+        'blog_app (Blog)',
+      ]);
+    });
+
+    test('create only content added since the last sync, without touching applications', async () => {
+      await seedSynced([site, blogApp], ['about']);
+
+      await patch();
+
+      expect(checkApplications).not.toHaveBeenCalled();
+      expect(processContentWithApplications).toHaveBeenCalledWith([blogContent], [], undefined);
+      expect(reportSection('Content to sync — added since the last push')).toEqual([
+        'blog (Blog)',
+      ]);
+    });
+
+    test('leave both alone when neither changed', async () => {
+      await seedSynced([site, blogApp], ['about', 'blog']);
+
+      await patch();
+
+      expect(checkApplications).not.toHaveBeenCalled();
+      expect(processContentWithApplications).not.toHaveBeenCalled();
+    });
   });
 
   // seeds the state instead of rewriting the config: Node caches the imported config module

@@ -5,7 +5,8 @@ import { createApiClient } from './cmsRestClient.js';
 
 type NewContent = components['schemas']['NewContent'];
 
-interface ContentConfig {
+/** A content item declared in the config file's `content` array */
+export interface ContentConfig {
   key: string;
   displayName: string;
   contentType: string;

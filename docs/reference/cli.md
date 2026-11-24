@@ -305,8 +305,9 @@ Only the changed and new items are uploaded. Unlike `config push --only`, patch 
 add a content type's display templates or property groups unless those changed too. Items
 in the CMS that aren't in your config are never touched.
 
-Applications are synced when one of them, or the `content` config, changed since the last
-push. Locales are synced when one was added. The report lists which ones, and why.
+Only the applications that changed since the last push are synced, together with the
+content items they use as entry point. Content items and locales are synced when they were
+added. The report lists which ones, and why.
 
 #### Conflicts
 

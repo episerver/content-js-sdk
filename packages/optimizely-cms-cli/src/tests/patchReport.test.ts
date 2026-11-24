@@ -5,6 +5,7 @@ import { printed, silenceConsole } from './helpers.js';
 
 const noSyncs: Parameters<typeof printPatchReport>[0]['syncs'] = {
   applications: { items: [], firstSync: false },
+  content: { items: [], firstSync: false },
   locales: { items: [], firstSync: false },
 };
 const teammate = {
@@ -82,12 +83,19 @@ describe('patch report', () => {
               items: [{ key: 'blog_app', displayName: 'Blog App' }],
               firstSync: false,
             },
+            content: {
+              items: [{ key: 'BlogContent', displayName: 'Blog' }],
+              firstSync: false,
+            },
             locales: { items: ['en', 'sv'], firstSync: true },
           },
         ),
       ).toEqual([
         'Applications to sync — changed since the last push (1)',
         '  blog_app (Blog App)',
+        '',
+        'Content to sync — added since the last push (1)',
+        '  BlogContent (Blog)',
         '',
         'Locales to sync — no saved state (2)',
         '  en',

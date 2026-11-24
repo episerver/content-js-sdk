@@ -28,6 +28,7 @@ type ReportInput = {
   serverChanges: Record<string, ServerChange>;
   syncs: {
     applications: SettingSync<{ key?: string; displayName?: string }>;
+    content: SettingSync<{ key: string; displayName: string }>;
     locales: SettingSync<string>;
   };
 };
@@ -142,13 +143,12 @@ const formatSync = <T>(
     ]
   : [];
 
-const formatSyncs = ({ applications, locales }: ReportInput['syncs']) => [
-  formatSync(
-    'Applications to sync',
-    'changed since the last push',
-    applications,
-    it => `${it.key} (${it.displayName})`,
-  ),
+const keyAndName = (it: { key?: string; displayName?: string }) =>
+  `${it.key} (${it.displayName})`;
+
+const formatSyncs = ({ applications, content, locales }: ReportInput['syncs']) => [
+  formatSync('Applications to sync', 'changed since the last push', applications, keyAndName),
+  formatSync('Content to sync', 'added since the last push', content, keyAndName),
   formatSync('Locales to sync', 'added since the last push', locales, it => it),
 ];
 

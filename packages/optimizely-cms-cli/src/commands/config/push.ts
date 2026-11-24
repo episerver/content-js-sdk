@@ -113,7 +113,7 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
     }
 
     // hashed before syncing: the application sync fills in entry points and preview formats
-    const applicationHashes = hashApplications(applications, content);
+    const applicationHashes = hashApplications(applications);
     const localHashes = hashManifest(metaData);
 
     const result = await uploadManifest(restClient, metaData, flags.force);
@@ -130,6 +130,8 @@ export default class ConfigPush extends BaseCommand<typeof ConfigPush> {
       local: localHashes,
       record: Object.keys(localHashes),
       ...(onlyKeys ? {} : { applications: applicationHashes }),
+      // content is only processed alongside applications
+      ...(!onlyKeys && applications.length > 0 ? { content: content.map(it => it.key) } : {}),
       ...(localesSynced ? { locales: locale } : {}),
     });
   }
