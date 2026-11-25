@@ -51,11 +51,11 @@ function validatePatterns(patterns: unknown): string[] {
 
   const validated = normalized.filter((p): p is string => {
     if (typeof p !== 'string') {
-      console.warn(`[cms-typegen] Skipping non-string pattern: ${typeof p}`);
+      console.warn(`[cms-codegen] Skipping non-string pattern: ${typeof p}`);
       return false;
     }
     if (path.isAbsolute(p)) {
-      console.warn(`[cms-typegen] Skipping absolute path pattern: ${p}`);
+      console.warn(`[cms-codegen] Skipping absolute path pattern: ${p}`);
       return false;
     }
     return true;
@@ -327,7 +327,7 @@ function collectComponents(
     const slot = resolved.tag ? `${resolved.key}:${resolved.tag}` : resolved.key;
     if (slots.has(slot)) {
       if (!slots.get(slot)) {
-        console.warn(`[cms-typegen] '${slot}' already has a component, ignoring ${path.relative(process.cwd(), file)}`);
+        console.warn(`[cms-codegen] '${slot}' already has a component, ignoring ${path.relative(process.cwd(), file)}`);
       }
       continue;
     }
@@ -558,7 +558,7 @@ export async function generate(root = process.cwd(), { check = false } = {}) {
 
   if (data.components.length > 0 && data.missingComponents.length > 0) {
     console.warn(
-      `[cms-typegen] No component found for content type(s): ${data.missingComponents.join(', ')}`,
+      `[cms-codegen] No component found for content type(s): ${data.missingComponents.join(', ')}`,
     );
   }
 

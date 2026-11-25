@@ -3,7 +3,7 @@ import chokidar from 'chokidar';
 import path from 'node:path';
 import { generate, loadConfig, PLATFORM_GLOB } from './generator.js';
 
-const PREFIX = '[cms-typegen]';
+const PREFIX = '[cms-codegen]';
 const root = process.cwd();
 const args = process.argv.slice(2);
 const watchMode = args.includes('--watch') || args.includes('-w');
@@ -42,7 +42,7 @@ async function main() {
       const { stale } = await generate(root, { check: true });
       if (stale.length === 0) return console.log(`${PREFIX} ✓ Generated files are up to date`);
       console.error(
-        `${PREFIX} ✗ Out of date: ${stale.map(f => path.relative(root, f)).join(', ')}. Run opti-typegen and commit the result.`,
+        `${PREFIX} ✗ Out of date: ${stale.map(f => path.relative(root, f)).join(', ')}. Run opti-codegen and commit the result.`,
       );
     } catch (error) {
       console.error(`${PREFIX} ✗ Check failed:`, message(error));

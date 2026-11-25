@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "opti-dev next dev --experimental-https -p 3001",
-    "build": "opti-typegen && next build",
+    "build": "opti-codegen && next build",
     "start": "next start",
     "lint": "eslint",
     "deploy": "optimizely-cms-cli deploy",
@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@optimizely/cms-cli": "workspace:*",
-    "@optimizely/cms-typegen": "workspace:*",
+    "@optimizely/cms-codegen": "workspace:*",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

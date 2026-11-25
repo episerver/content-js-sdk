@@ -1,6 +1,6 @@
-# @optimizely/cms-typegen
+# @optimizely/cms-codegen
 
-[![npm version](https://img.shields.io/npm/v/@optimizely/cms-typegen)](https://www.npmjs.com/package/@optimizely/cms-typegen)
+[![npm version](https://img.shields.io/npm/v/@optimizely/cms-codegen)](https://www.npmjs.com/package/@optimizely/cms-codegen)
 
 The official type generator and CLI tool for Optimizely CMS. Automatically generates component registry and TypeScript type definitions from your content type definitions, enabling full type safety and hot reload during development.
 
@@ -20,17 +20,17 @@ The official type generator and CLI tool for Optimizely CMS. Automatically gener
 Install as a development dependency. `typescript` (version 5 or later) is a peer dependency, used to read your source files:
 
 ```bash
-npm install -D @optimizely/cms-typegen typescript
+npm install -D @optimizely/cms-codegen typescript
 ```
 
 Or using other package managers:
 
 ```bash
 # pnpm
-pnpm add -D @optimizely/cms-typegen
+pnpm add -D @optimizely/cms-codegen
 
 # yarn
-yarn add -D @optimizely/cms-typegen
+yarn add -D @optimizely/cms-codegen
 ```
 
 ## Quick Start
@@ -118,10 +118,10 @@ Run the generator:
 
 ```bash
 # Generate registry.ts and global.d.ts
-pnpm exec opti-typegen
+pnpm exec opti-codegen
 
 # Or using npx
-npx opti-typegen
+npx opti-codegen
 ```
 
 This creates:
@@ -133,19 +133,19 @@ Commit both files. They are generated, so don't edit them.
 
 ## CLI Commands
 
-### `opti-typegen`
+### `opti-codegen`
 
 Generate registry and types from your components:
 
 ```bash
 # Generate once
-opti-typegen
+opti-codegen
 
 # Watch mode - regenerate on file changes
-opti-typegen --watch
+opti-codegen --watch
 
 # Check only - exit 1 if the committed files are out of date (for CI)
-opti-typegen --check
+opti-codegen --check
 ```
 
 Typegen needs `optimizely.config.mjs`. Without it the command fails and writes nothing, so a committed `registry.ts` is never overwritten.
@@ -384,20 +384,20 @@ Add to your `package.json`:
 {
   "scripts": {
     "dev": "opti-dev next dev --experimental-https",
-    "build": "opti-typegen && next build",
-    "typegen": "opti-typegen",
-    "typegen:watch": "opti-typegen --watch",
-    "typecheck": "opti-typegen && tsc --noEmit"
+    "build": "opti-codegen && next build",
+    "typegen": "opti-codegen",
+    "typegen:watch": "opti-codegen --watch",
+    "typecheck": "opti-codegen && tsc --noEmit"
   }
 }
 ```
 
 ## Best Practices
 
-- **Run before build** - Always generate types before building: `opti-typegen && next build`
-- **Use opti-dev** - Prefer `opti-dev` over `opti-typegen --watch` for development
+- **Run before build** - Always generate types before building: `opti-codegen && next build`
+- **Use opti-dev** - Prefer `opti-dev` over `opti-codegen --watch` for development
 - **Don't edit generated files** - `registry.ts` and `global.d.ts` are auto-generated
-- **Commit generated files** - `registry.ts` and `global.d.ts` belong in git, so a fresh clone builds without running typegen first. CI can run `opti-typegen --check` to catch a stale registry
+- **Commit generated files** - `registry.ts` and `global.d.ts` belong in git, so a fresh clone builds without running typegen first. CI can run `opti-codegen --check` to catch a stale registry
 
 ## Integration
 

@@ -7,9 +7,9 @@
   },
   "scripts": {
     "dev": "opti-dev next dev --experimental-https",
-    "build": "opti-typegen && next build",
+    "build": "opti-codegen && next build",
     "start": "next start",
-    "typecheck": "opti-typegen && tsc --noEmit",
+    "typecheck": "opti-codegen && tsc --noEmit",
     "deploy": "optimizely-cms-cli deploy"
   },
   "dependencies": {
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@optimizely/cms-cli": "workspace:*",
-    "@optimizely/cms-typegen": "workspace:*",
+    "@optimizely/cms-codegen": "workspace:*",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

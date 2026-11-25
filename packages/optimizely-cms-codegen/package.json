@@ -1,6 +1,7 @@
 {
-  "name": "@optimizely/cms-typegen",
+  "name": "@optimizely/cms-codegen",
   "version": "2.0.0",
+  "private": true,
   "description": "Auto-generates Optimizely CMS component registry and TypeScript types",
   "type": "module",
   "scripts": {
@@ -18,7 +19,7 @@
     "dist"
   ],
   "bin": {
-    "opti-typegen": "./dist/cli.js",
+    "opti-codegen": "./dist/cli.js",
     "opti-dev": "./dist/dev.js"
   },
   "dependencies": {
