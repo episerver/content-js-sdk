@@ -78,6 +78,12 @@ const exitOnConflicts = (): never => {
   return process.exit(1);
 };
 
+// aborting at the prompt is the user's choice, not a failure
+const exitOnAbort = (): never => {
+  console.log(chalk.green('Patch aborted, nothing was pushed.'));
+  return process.exit(0);
+};
+
 const resolveConflicts = async (
   count: number,
   flags: { overwrite: boolean; skipConflicts: boolean },
@@ -87,7 +93,7 @@ const resolveConflicts = async (
   if (flags.skipConflicts) return 'skip';
   if (isInteractive()) {
     const choice = await askForDecision(count, showDetails);
-    return choice === 'abort' ? exitOnConflicts() : choice;
+    return choice === 'abort' ? exitOnAbort() : choice;
   }
 
   // without a prompt the details are the only way to see what blocks the push

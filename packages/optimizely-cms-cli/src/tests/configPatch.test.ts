@@ -395,13 +395,15 @@ describe('config patch', () => {
         expect(postedKeys()).toEqual(['Banner']);
       });
 
-      test('push nothing when the prompt is aborted', async () => {
+      test('push nothing and exit cleanly when the prompt is aborted', async () => {
         await conflict();
         vi.mocked(select).mockResolvedValue('abort');
 
-        await expect(patch()).rejects.toThrow(ExitError);
+        await expect(patch()).rejects.toEqual(new ExitError(0));
 
         expect(client.POST).not.toHaveBeenCalled();
+        expect(printed(consoleSpies.log)).toContain('Patch aborted, nothing was pushed.');
+        expect(printed(consoleSpies.error)).not.toContain('Nothing was pushed');
       });
     });
   });
