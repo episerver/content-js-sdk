@@ -18,6 +18,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build packages
         run: pnpm --filter "./packages/**" build
+      - name: Link package bins
+        run: pnpm install --frozen-lockfile
       - name: Build sample sites
         run: pnpm --filter "./samples/**" build
       - name: Run tests
