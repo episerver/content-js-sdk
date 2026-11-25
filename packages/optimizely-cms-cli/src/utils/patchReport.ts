@@ -23,18 +23,18 @@ export const serverChangesOf = (
 
 type Named = { key?: string; displayName?: string };
 
+// the settings of one kind that need a sync, out of how many were checked
+type SettingSync<T> = { items: T[]; total: number };
+
 type ReportInput = {
   statuses: ItemStatus[];
   serverChanges: Record<string, ServerChange>;
   syncs: {
-    // changed applications, and whether there is no saved state to compare them with
-    applications: { items: Named[]; firstSync: boolean };
-    // content items and locales missing in the CMS
-    content: Named[];
-    locales: string[];
+    // firstSync: no saved state to compare the applications with
+    applications: SettingSync<Named> & { firstSync: boolean };
+    content: SettingSync<Named>;
+    locales: SettingSync<string>;
   };
-  // how many settings of each kind were checked, for the up-to-date summary
-  checked: { applications: number; content: number; locales: number };
 };
 
 type DetailsInput = {
@@ -139,8 +139,8 @@ const formatSyncs = ({ applications, content, locales }: ReportInput['syncs']) =
     applications.items,
     keyAndName,
   ),
-  formatSync('Content to create — missing in the CMS', content, keyAndName),
-  formatSync('Locales to sync — missing or disabled in the CMS', locales, it => it),
+  formatSync('Content to create — missing in the CMS', content.items, keyAndName),
+  formatSync('Locales to sync — missing or disabled in the CMS', locales.items, it => it),
 ];
 
 const formatValue = (value: unknown) => {
@@ -168,12 +168,14 @@ const formatDifferences = (differences: FieldDifference[]) => {
 };
 
 // everything checked that needs nothing, e.g. "26 items, 2 applications, 1 locale"
-const formatUpToDate = ({ statuses, syncs, checked }: ReportInput) => {
+const upToDateCount = ({ items, total }: SettingSync<unknown>) => total - items.length;
+
+const formatUpToDate = ({ statuses, syncs }: ReportInput) => {
   const counts: [number, string][] = [
     [statuses.filter(hasStatus('unchanged', 'inSync')).length, 'item'],
-    [checked.applications - syncs.applications.items.length, 'application'],
-    [checked.content - syncs.content.length, 'content item'],
-    [checked.locales - syncs.locales.length, 'locale'],
+    [upToDateCount(syncs.applications), 'application'],
+    [upToDateCount(syncs.content), 'content item'],
+    [upToDateCount(syncs.locales), 'locale'],
   ];
   const parts = counts
     .filter(([count]) => count > 0)

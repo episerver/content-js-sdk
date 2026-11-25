@@ -17,6 +17,20 @@ const deriveDisplayName = (key: string): string => {
   }
 };
 
+// splits the configured locales by what the sync has to do with them
+const categorizeLocales = (
+  locale: string[],
+  existing: { key?: string; isEnabled?: boolean }[],
+) => {
+  const byKey = new Map(existing.map(it => [it.key, it]));
+
+  return {
+    toCreate: locale.filter(it => !byKey.has(it)),
+    toEnable: locale.filter(it => byKey.has(it) && !byKey.get(it)?.isEnabled),
+    alreadyEnabled: locale.filter(it => byKey.get(it)?.isEnabled),
+  };
+};
+
 /**
  * Lists the configured locales that are missing or disabled in the CMS; all of them when the
  * CMS can't be read, so the sync runs and reports the problem
@@ -30,10 +44,8 @@ export async function findLocalesToSync(
   const { data, error } = await restClient.GET('/locales');
   if (error) return locale;
 
-  const enabled = new Set(
-    (data?.items ?? []).filter(it => it.isEnabled).map(it => it.key),
-  );
-  return locale.filter(it => !enabled.has(it));
+  const { alreadyEnabled } = categorizeLocales(locale, data?.items ?? []);
+  return locale.filter(it => !alreadyEnabled.includes(it));
 }
 
 /**
@@ -62,19 +74,10 @@ export async function syncLocales(
     return;
   }
 
-  const existingLocales = listResponse.data?.items || [];
-  const existingKeys = new Set(existingLocales.map(l => l.key));
-
-  // Categorize locales
-  const toCreate = locale.filter(lang => !existingKeys.has(lang));
-  const toEnable = locale.filter(lang => {
-    const existing = existingLocales.find(l => l.key === lang);
-    return existing && !existing.isEnabled;
-  });
-  const alreadyEnabled = locale.filter(lang => {
-    const existing = existingLocales.find(l => l.key === lang);
-    return existing && existing.isEnabled;
-  });
+  const { toCreate, toEnable, alreadyEnabled } = categorizeLocales(
+    locale,
+    listResponse.data?.items ?? [],
+  );
 
   let createdCount = 0;
   for (const lang of toCreate) {

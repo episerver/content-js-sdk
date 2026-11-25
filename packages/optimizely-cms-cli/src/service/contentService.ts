@@ -116,16 +116,11 @@ async function checkContentFromConfig(
       params: { path: { key: contentKey } },
     });
 
-    // If content exists (200 OK), use it
-    if (existingContent.response.ok && existingContent.data?.key) {
-      contentRefMap.set(contentConfig.key, toContentRef(existingContent.data.key));
-      console.log(chalk.dim(`  Content "${contentConfig.key}" exists`));
-      continue;
-    }
-
-    // If GET returned 403, the content exists but can't be read
     if (exists(existingContent.response)) {
-      contentRefMap.set(contentConfig.key, toContentRef(contentKey));
+      contentRefMap.set(
+        contentConfig.key,
+        toContentRef(existingContent.data?.key ?? contentKey),
+      );
       console.log(chalk.dim(`  Content "${contentConfig.key}" exists`));
       continue;
     }

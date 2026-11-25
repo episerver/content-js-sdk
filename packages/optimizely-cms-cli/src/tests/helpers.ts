@@ -41,6 +41,10 @@ export const respondByPath = (
 ): MockInstance =>
   method.mockImplementation(async (path: string) => responses[path] ?? fallback);
 
+/** Keys passed to the client's DELETE calls, in call order */
+export const deletedKeys = (client: MockApiClient): string[] =>
+  client.DELETE.mock.calls.map(([, options]) => options.params.path.key);
+
 /** Thrown by the mocked `process.exit` so the command flow stops where the real one would */
 export class ExitError extends Error {
   constructor(readonly code?: string | number | null) {

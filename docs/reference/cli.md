@@ -584,7 +584,8 @@ optimizely-cms-cli content delete <key> [<key>...] [--host <url>]
 #### Caveats
 
 - **A type that has content can't be deleted.** The CLI prints
-  `Could not delete <key> (content type): it is in use`. Delete the content first.
+  `Could not delete <key> (content type): it still has content; delete the content first`,
+  or `it is in use` when the CMS doesn't say why.
 - **An unknown key fails** with `<key> (content type) is not in the CMS`.
 - **One failure doesn't stop the rest.** Every key is attempted, and the command exits
   with code `1` if any of them wasn't deleted.

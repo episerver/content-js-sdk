@@ -12,7 +12,16 @@ export type DeleteOutcome = 'deleted' | 'missing' | 'failed';
 
 type DeleteResponse = {
   response: Response;
-  error?: { status?: number | null; title?: string | null; detail?: string | null };
+  error?: {
+    code?: string | null;
+    title?: string | null;
+    detail?: string | null;
+  };
+};
+
+type DeleteOptions = {
+  // when the caller named the items itself, a missing one is a failure, not a warning
+  missingIsFailure?: boolean;
 };
 
 // display templates point at content types, which point at property groups
@@ -35,6 +44,8 @@ const DELETERS: Record<
 };
 
 const failureReason = ({ response, error }: DeleteResponse) => {
+  if (response.status === 409 && error?.code === 'DependencyConflict')
+    return 'it still has content; delete the content first';
   if (response.status === 409) return 'it is in use';
   if (!error) return 'an unexpected error occurred';
 
@@ -42,7 +53,11 @@ const failureReason = ({ response, error }: DeleteResponse) => {
   return `error ${response.status}: ${error.title || 'Unknown error'}${detail}`;
 };
 
-const deleteItem = async (client: ApiClient, id: string): Promise<DeleteOutcome> => {
+const deleteItem = async (
+  client: ApiClient,
+  id: string,
+  { missingIsFailure = false }: DeleteOptions,
+): Promise<DeleteOutcome> => {
   const { section, key } = parseItemId(id);
   const label = itemLabel(id);
   const spinner = ora(`Deleting ${label}`).start();
@@ -54,7 +69,9 @@ const deleteItem = async (client: ApiClient, id: string): Promise<DeleteOutcome>
   }
 
   if (result.response.status === 404) {
-    spinner.warn(chalk.yellow(`${label} is not in the CMS`));
+    const message = `${label} is not in the CMS`;
+    if (missingIsFailure) spinner.fail(chalk.red(message));
+    else spinner.warn(chalk.yellow(message));
     return 'missing';
   }
 
@@ -71,10 +88,14 @@ const deleteOrder = (id: string) => DELETE_ORDER.indexOf(parseItemId(id).section
 export const deleteItems = (
   client: ApiClient,
   ids: string[],
+  options: DeleteOptions = {},
 ): Promise<Record<string, DeleteOutcome>> =>
   [...ids]
     .sort((a, b) => deleteOrder(a) - deleteOrder(b))
     .reduce(
-      async (acc, id) => ({ ...(await acc), [id]: await deleteItem(client, id) }),
+      async (acc, id) => ({
+        ...(await acc),
+        [id]: await deleteItem(client, id, options),
+      }),
       Promise.resolve({} as Record<string, DeleteOutcome>),
     );

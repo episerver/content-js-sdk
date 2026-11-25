@@ -37,12 +37,13 @@ export default class ContentDelete extends BaseCommand<typeof ContentDelete> {
     }
 
     const client = await createApiClient(flags.host);
+    // a key that isn't in the CMS was named on purpose, so it counts as a failure
     const outcomes = await deleteItems(
       client,
       keys.map(key => itemId('contentTypes', key)),
+      { missingIsFailure: true },
     );
 
-    // a key that isn't in the CMS was named on purpose, so it counts as a failure
     if (Object.values(outcomes).some(outcome => outcome !== 'deleted')) process.exit(1);
   }
 }

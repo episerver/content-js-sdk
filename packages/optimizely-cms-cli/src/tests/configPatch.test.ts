@@ -530,6 +530,6 @@ describe('config patch', () => {
 
     await patch();
 
-    expect(findMissingContent).not.toHaveBeenCalled();
+    expect(findMissingContent).toHaveBeenCalledWith([], client);
   });
 });

@@ -4,9 +4,9 @@ import type { ItemStatus } from '../utils/patchStatus.js';
 import { printed, silenceConsole } from './helpers.js';
 
 const noSyncs: Parameters<typeof printPatchReport>[0]['syncs'] = {
-  applications: { items: [], firstSync: false },
-  content: [],
-  locales: [],
+  applications: { items: [], total: 0, firstSync: false },
+  content: { items: [], total: 0 },
+  locales: { items: [], total: 0 },
 };
 const teammate = {
   lastModifiedBy: 'teammate@example.com',
@@ -28,15 +28,8 @@ describe('patch report', () => {
   afterEach(() => vi.restoreAllMocks());
 
   describe('printPatchReport', () => {
-    const nothingChecked = { applications: 0, content: 0, locales: 0 };
-
-    const report = (
-      statuses: ItemStatus[],
-      syncs = noSyncs,
-      serverChanges = {},
-      checked = nothingChecked,
-    ) => {
-      printPatchReport({ statuses, serverChanges, syncs, checked });
+    const report = (statuses: ItemStatus[], syncs = noSyncs, serverChanges = {}) => {
+      printPatchReport({ statuses, serverChanges, syncs });
       return printedLines();
     };
 
@@ -88,10 +81,11 @@ describe('patch report', () => {
           {
             applications: {
               items: [{ key: 'blog_app', displayName: 'Blog App' }],
+              total: 1,
               firstSync: false,
             },
-            content: [{ key: 'BlogContent', displayName: 'Blog' }],
-            locales: ['en', 'sv'],
+            content: { items: [{ key: 'BlogContent', displayName: 'Blog' }], total: 1 },
+            locales: { items: ['en', 'sv'], total: 2 },
           },
         ),
       ).toEqual([
@@ -110,12 +104,13 @@ describe('patch report', () => {
     });
 
     test('sums up every kind of setting checked that needs nothing', () => {
-      const syncs = { ...noSyncs, locales: ['sv'] };
-      const checked = { applications: 2, content: 1, locales: 2 };
+      const syncs = {
+        applications: { items: [], total: 2, firstSync: false },
+        content: { items: [], total: 1 },
+        locales: { items: ['sv'], total: 2 },
+      };
 
-      expect(
-        report([{ id: 'contentTypes:Hero', status: 'unchanged' }], syncs, {}, checked),
-      ).toEqual([
+      expect(report([{ id: 'contentTypes:Hero', status: 'unchanged' }], syncs)).toEqual([
         'Locales to sync — missing or disabled in the CMS (1)',
         '  sv',
         '',
@@ -126,6 +121,7 @@ describe('patch report', () => {
     test('says when there is no saved state to compare applications with', () => {
       const applications = {
         items: [{ key: 'site', displayName: 'Site' }],
+        total: 1,
         firstSync: true,
       };
 

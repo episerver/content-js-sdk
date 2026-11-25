@@ -6,6 +6,7 @@ import { createApiClient } from '../service/cmsRestClient.js';
 import {
   ExitError,
   apiResponse,
+  deletedKeys,
   mockApiClient,
   mockExit,
   printed,
@@ -26,8 +27,6 @@ describe('content delete', () => {
   let consoleSpies: ReturnType<typeof silenceConsole>;
 
   const remove = (...args: string[]) => ContentDelete.run(args, import.meta.url);
-  const deletedKeys = () =>
-    client.DELETE.mock.calls.map(([, options]) => options.params.path.key);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -73,35 +72,40 @@ describe('content delete', () => {
 
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(vi.mocked(confirm).mock.calls[0][0].message).toContain('2 content types');
-    expect(deletedKeys()).toEqual(['Article', 'ProductPage']);
+    expect(deletedKeys(client)).toEqual(['Article', 'ProductPage']);
   });
 
   test.each([
     [
       '404',
       { status: 404, title: 'Not Found' },
-      'warn',
       'Article (content type) is not in the CMS',
     ],
     [
       '409',
       { status: 409, title: 'Conflict' },
-      'fail',
       'Could not delete Article (content type): it is in use',
+    ],
+    [
+      '409 with content',
+      { status: 409, code: 'DependencyConflict' },
+      'Could not delete Article (content type): it still has content; delete the content first',
     ],
     [
       'other',
       { status: 400, title: 'Bad Request', detail: 'Locked' },
-      'fail',
       'Could not delete Article (content type): error 400: Bad Request (Locked)',
     ],
-  ] as const)('explains a %s response and exits', async (_, error, method, message) => {
-    client.DELETE.mockResolvedValue(apiResponse({ status: error.status, error }));
+  ] as const)(
+    'reports a %s response as a failure and exits',
+    async (_, error, message) => {
+      client.DELETE.mockResolvedValue(apiResponse({ status: error.status, error }));
 
-    await expect(remove('Article')).rejects.toThrow(ExitError);
+      await expect(remove('Article')).rejects.toThrow(ExitError);
 
-    expect(spinnerMessages(ora, method)).toEqual([message]);
-  });
+      expect(spinnerMessages(ora, 'fail')).toEqual([message]);
+    },
+  );
 
   test('reports an unexpected error when the failure has no body', async () => {
     client.DELETE.mockResolvedValue(apiResponse({ status: 500 }));
@@ -121,7 +125,7 @@ describe('content delete', () => {
 
     await expect(remove('Article', 'ProductPage')).rejects.toThrow(ExitError);
 
-    expect(deletedKeys()).toEqual(['Article', 'ProductPage']);
+    expect(deletedKeys(client)).toEqual(['Article', 'ProductPage']);
     expect(spinnerMessages(ora, 'succeed')).toEqual([
       'Deleted ProductPage (content type)',
     ]);

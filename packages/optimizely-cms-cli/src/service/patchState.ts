@@ -53,9 +53,13 @@ const isMissingFile = (error: unknown) =>
   (error as NodeJS.ErrnoException)?.code === 'ENOENT';
 
 /** Reads the state file; undefined when it is missing, null when it cannot be used */
-const readStateFile = async (filePath: string): Promise<PatchState | null | undefined> => {
+const readStateFile = async (
+  filePath: string,
+): Promise<PatchState | null | undefined> => {
   try {
-    const parsed = PatchStateSchema.safeParse(JSON.parse(await readFile(filePath, 'utf8')));
+    const parsed = PatchStateSchema.safeParse(
+      JSON.parse(await readFile(filePath, 'utf8')),
+    );
     return parsed.success ? parsed.data : null;
   } catch (error) {
     return isMissingFile(error) ? undefined : null;
@@ -113,20 +117,19 @@ export const savePatchState = async (
 };
 
 /**
- * Saves the state for the current instance. Without `serverHashes` the server copy is read
+ * Saves the state for the current instance. Without `server` hashes the server copy is read
  * back, as needed after an upload. Only warns on failure: the CMS is already up to date.
  */
 export const recordState = async (
   configFilePath: string,
   host: string | undefined,
   restClient: ApiClient,
-  update: Omit<StateUpdate, 'server'>,
-  serverHashes?: Record<string, string>,
+  update: Omit<StateUpdate, 'server'> & Partial<Pick<StateUpdate, 'server'>>,
 ) => {
   try {
     await savePatchState(configFilePath, host, {
       ...update,
-      server: serverHashes ?? hashManifest(await fetchManifest(restClient)),
+      server: update.server ?? hashManifest(await fetchManifest(restClient)),
     });
   } catch (error) {
     console.warn(

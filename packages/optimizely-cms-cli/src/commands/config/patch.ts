@@ -3,12 +3,11 @@ import * as path from 'node:path';
 import chalk from 'chalk';
 import { confirm, select } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
-import { createApiClient } from '../../service/cmsRestClient.js';
+import { createApiClient, type ApiClient } from '../../service/cmsRestClient.js';
 import { checkApplications } from '../../service/applicationService.js';
 import {
   findMissingContent,
   processContentWithApplications,
-  type ContentConfig,
 } from '../../service/contentService.js';
 import { deleteItems } from '../../service/deleteService.js';
 import { findLocalesToSync, syncLocales } from '../../service/localeService.js';
@@ -44,7 +43,17 @@ const DECISION_CHOICES: { name: string; value: ConflictChoice }[] = [
 
 const idsOf = (statuses: ItemStatus[]) => statuses.map(it => it.id);
 
-const noContent: ContentConfig[] = [];
+const idsWith = (statuses: ItemStatus[], ...wanted: ItemStatus['status'][]) =>
+  idsOf(statuses.filter(hasStatus(...wanted)));
+
+// an item already missing from the CMS is as good as deleted; refusals fail the run
+const deleteRemovedItems = async (client: ApiClient, ids: string[]) => {
+  const outcomes = await deleteItems(client, ids);
+  const deletedIds = ids.filter(id => outcomes[id] !== 'failed');
+
+  if (deletedIds.length < ids.length) process.exitCode = 1;
+  return deletedIds;
+};
 
 const askAboutConflicts = <T extends string>(
   count: number,
@@ -164,21 +173,23 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
 
     // hashed before syncing: the application sync fills in entry points and preview formats
     const applicationHashes = hashApplications(applications);
+    // like push, content is only synced alongside applications
+    const checkedContent = applications.length > 0 ? content : [];
 
     const restClient = await createApiClient(flags.host);
     // content and locales are only ever created, so the CMS itself says which are missing
     const [serverManifest, stored, missingContent, localesToSync] = await Promise.all([
       fetchManifest(restClient),
       readPatchState(configFilePath, flags.host),
-      // like push, content is only synced when the config has applications
-      applications.length > 0 ? findMissingContent(content, restClient) : noContent,
+      findMissingContent(checkedContent, restClient),
       findLocalesToSync(locale, restClient),
     ]);
 
     const localItems = normalizeManifest(manifest);
     const serverItems = normalizeManifest(serverManifest);
     const localHashes = hashItems(localItems);
-    const statuses = classifyItems(localHashes, hashItems(serverItems), stored.items);
+    const serverHashes = hashItems(serverItems);
+    const statuses = classifyItems(localHashes, serverHashes, stored.items);
     const serverChanges = serverChangesOf(serverManifest);
 
     const changedApplications = applications.filter(
@@ -191,25 +202,17 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
     ]);
     const contentToSync = content.filter(it => neededKeys.has(it.key));
     const syncs = {
-      applications: { items: changedApplications, firstSync: !stored.applications },
-      content: missingContent,
-      locales: localesToSync,
+      applications: {
+        items: changedApplications,
+        total: applications.length,
+        firstSync: !stored.applications,
+      },
+      content: { items: missingContent, total: checkedContent.length },
+      locales: { items: localesToSync, total: locale.length },
     };
     const syncsApplications = changedApplications.length > 0;
-    const syncsContent = missingContent.length > 0;
-    const syncsLocales = localesToSync.length > 0;
 
-    printPatchReport({
-      statuses,
-      serverChanges,
-      syncs,
-      // content is only checked when the config has applications
-      checked: {
-        applications: applications.length,
-        content: applications.length > 0 ? content.length : 0,
-        locales: locale.length,
-      },
-    });
+    printPatchReport({ statuses, serverChanges, syncs });
 
     if (flags.dryRun) return;
 
@@ -217,10 +220,10 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
     const choice = await resolveConflicts(conflicts.length, flags, () =>
       printConflictDetails({ conflicts, serverChanges, localItems, serverItems }),
     );
-    const pushIds = idsOf([
-      ...statuses.filter(hasStatus('changed', 'new')),
-      ...(choice === 'overwrite' ? conflicts : []),
-    ]);
+    const pushIds = [
+      ...idsWith(statuses, 'changed', 'new'),
+      ...(choice === 'overwrite' ? idsOf(conflicts) : []),
+    ];
 
     if (choice === 'skip')
       console.warn(
@@ -230,59 +233,42 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
       );
 
     // every question comes before the first change
-    const removed = statuses.filter(hasStatus('removed'));
-    const deletesRemoved = await shouldDeleteRemoved(removed.length, flags.deleteRemoved);
+    const removedIds = idsWith(statuses, 'removed');
+    const deletesRemoved = await shouldDeleteRemoved(
+      removedIds.length,
+      flags.deleteRemoved,
+    );
+    const syncsNothing = Object.values(syncs).every(it => it.items.length === 0);
 
-    if (
-      pushIds.length === 0 &&
-      !syncsApplications &&
-      !syncsContent &&
-      !syncsLocales &&
-      !deletesRemoved
-    )
+    if (pushIds.length === 0 && syncsNothing && !deletesRemoved)
       console.log(chalk.green('Nothing to push.'));
 
     const result =
       pushIds.length > 0 ?
         await uploadManifest(restClient, pickItems(manifest, pushIds), flags.force)
       : undefined;
-    if (syncsLocales) await syncLocales(locale, restClient);
+    if (localesToSync.length > 0) await syncLocales(locale, restClient);
 
     // unchanged applications and existing content are left alone, like unchanged content types
     if (syncsApplications)
       await checkApplications(changedApplications, contentToSync, flags.host);
-    else if (syncsContent)
+    else if (missingContent.length > 0)
       await processContentWithApplications(contentToSync, [], flags.host);
     if (result) reportImportResult(result);
 
-    const deleteOutcomes =
-      deletesRemoved ? await deleteItems(restClient, idsOf(removed)) : {};
-    // an item already missing from the CMS is as good as deleted
-    const deletedIds = Object.keys(deleteOutcomes).filter(
-      id => deleteOutcomes[id] !== 'failed',
-    );
-
-    if (Object.values(deleteOutcomes).includes('failed')) process.exitCode = 1;
-
+    const deletedIds =
+      deletesRemoved ? await deleteRemovedItems(restClient, removedIds) : [];
     const update = {
       local: localHashes,
-      record: [...pushIds, ...idsOf(statuses.filter(hasStatus('inSync')))],
-      drop: [...idsOf(statuses.filter(hasStatus('gone'))), ...deletedIds],
+      record: [...pushIds, ...idsWith(statuses, 'inSync')],
+      drop: [...idsWith(statuses, 'gone'), ...deletedIds],
       ...(syncsApplications ? { applications: applicationHashes } : {}),
+      // after an upload the server copy is read back; otherwise the fetched one is current
+      ...(result ? {} : { server: serverHashes }),
     };
 
     // anything pushed is also in `record`
-    const changesState =
-      update.record.length > 0 || update.drop.length > 0 || syncsApplications;
-
-    // after an upload the server copy is read back; otherwise the fetched one is current
-    if (changesState)
-      await recordState(
-        configFilePath,
-        flags.host,
-        restClient,
-        update,
-        result ? undefined : hashItems(serverItems),
-      );
+    if (update.record.length > 0 || update.drop.length > 0 || syncsApplications)
+      await recordState(configFilePath, flags.host, restClient, update);
   }
 }
