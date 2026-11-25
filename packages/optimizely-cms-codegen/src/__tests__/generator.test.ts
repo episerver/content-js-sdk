@@ -238,37 +238,6 @@ export { Nested as default };`
     });
   });
 
-  describe('platform', () => {
-    it('emits OptimizelyCmsRegister from config({ platform })', async () => {
-      await fs.mkdir(path.join(testRoot, 'src', 'app'), { recursive: true });
-      await fs.writeFile(
-        path.join(testRoot, 'optimizely.config.mjs'),
-        `export default { components: 'src/components/**/*.tsx' };`
-      );
-      await fs.writeFile(
-        path.join(testRoot, 'src', 'app', 'layout.tsx'),
-        `import { config } from '@optimizely/cms-sdk';
-config({ apiKey: 'k', query: { cache: true }, platform: 'paas' });`
-      );
-      await generate(testRoot);
-      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
-      expect(types).toContain("platform: 'paas';");
-      expect(types).toContain('interface OptimizelyCmsRegister');
-    });
-
-    it('emits nothing when no platform is set', async () => {
-      await fs.mkdir(path.join(testRoot, 'src'), { recursive: true });
-      await fs.writeFile(path.join(testRoot, 'optimizely.config.mjs'), `export default { components: 'src/**/*.tsx' };`);
-      await fs.writeFile(
-        path.join(testRoot, 'src', 'layout.tsx'),
-        `import { config } from '@optimizely/cms-sdk';\nconfig({ apiKey: 'k' });`
-      );
-      await generate(testRoot);
-      const types = await fs.readFile(path.join(testRoot, 'global.d.ts'), 'utf-8');
-      expect(types).not.toContain('OptimizelyCmsRegister');
-    });
-  });
-
   describe('scanComponents', () => {
     it('scans component files based on config pattern', async () => {
       // Create config

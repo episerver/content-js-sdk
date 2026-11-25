@@ -39,5 +39,4 @@ declare module '@optimizely/cms-sdk' {
   }
 }
 
-
 export {};

@@ -307,13 +307,6 @@ declare module '@optimizely/cms-sdk' {
   }
 }
 
-// Only when `config({ platform })` is set in your app
-declare global {
-  interface OptimizelyCmsRegister {
-    platform: 'saas';
-  }
-}
-
 export {};
 ```
 

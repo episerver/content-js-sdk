@@ -82,32 +82,8 @@ export async function scanComponents(
   return fg(validatePatterns(config.components), { cwd: root, absolute: true });
 }
 
-// ============================================================================
-// Platform Detection
-// ============================================================================
-
-export const PLATFORM_GLOB = '**/*.{ts,tsx,js,jsx,mjs}';
 // Build output and tool folders; dot folders (`.next`, `.turbo`, `.vercel`) are skipped by the globs and listed here for the watcher.
 export const IGNORED_DIRS = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/out/**', '**/coverage/**', '**/.*/**'];
-const PLATFORM_IGNORE = [...IGNORED_DIRS, '**/*.d.ts'];
-// `config({ ... platform: 'paas' })`, allowing one level of nested braces before `platform`.
-const PLATFORM_RE =
-  /\bconfig\s*\(\s*\{(?:[^{}]|\{[^{}]*\})*?\bplatform\s*:\s*(['"])(saas|paas)\1/;
-
-/**
- * Find the literal `platform` passed to the SDK's `config()` in app source.
- * Returns undefined when absent (the SDK then defaults to SaaS).
- * shortcut: first literal match wins and `platform: someVariable` is not seen; upgrade to an AST parse if that shows up.
- */
-export async function detectPlatform(root: string): Promise<'saas' | 'paas' | undefined> {
-  const files = await fg(PLATFORM_GLOB, { cwd: root, absolute: true, ignore: PLATFORM_IGNORE });
-  for (const file of files) {
-    const content = await fs.readFile(file, 'utf-8');
-    if (!content.includes('@optimizely/cms-sdk')) continue;
-    const platform = content.match(PLATFORM_RE)?.[2];
-    if (platform) return platform as 'saas' | 'paas';
-  }
-}
 
 // ============================================================================
 // Source Parsing
@@ -479,7 +455,6 @@ function buildTypesContent(
   contentTypeKeys: Set<string>,
   propertyGroupKeys: Set<string>,
   mayContainKeys: Set<string>,
-  platform?: 'saas' | 'paas',
 ): string {
   const sortedContentTypes = Array.from(contentTypeKeys).sort();
   const sortedPropertyGroups = Array.from(propertyGroupKeys).sort();
@@ -501,17 +476,6 @@ ${sortedMayContain.map(key => `    '${q(key)}': string;`).join('\n')}
   }
 }
 
-${
-    platform ?
-      `
-declare global {
-  interface OptimizelyCmsRegister {
-    platform: '${platform}';
-  }
-}
-`
-    : ''
-  }
 export {};
 `;
 }
@@ -576,14 +540,17 @@ export async function generate(root = process.cwd(), { check = false } = {}) {
     data.contentTypeKeys,
     propertyGroupKeys,
     data.mayContainKeys,
-    await detectPlatform(root),
   );
 
   const typesFile = path.join(root, 'global.d.ts');
-  const changed = await Promise.all([
+  // allSettled: both writes finish before an error is thrown, so a watch-mode rerun never overlaps one still running.
+  const results = await Promise.allSettled([
     writeIfChanged(registryFile, registryContent, check),
     writeIfChanged(typesFile, typesContent, check),
   ]);
+  const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (failed) throw failed.reason;
+  const changed = results.map(r => (r as PromiseFulfilledResult<boolean>).value);
 
   /** With `check`, the generated files that are missing or out of date. */
   const stale = [registryFile, typesFile].filter((_, i) => changed[i]);

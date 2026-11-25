@@ -2,7 +2,7 @@
 import chokidar from 'chokidar';
 import path from 'node:path';
 import type { FSWatcher } from 'chokidar';
-import { generate, loadConfig, IGNORED_DIRS, PLATFORM_GLOB } from './generator.js';
+import { generate, loadConfig, IGNORED_DIRS } from './generator.js';
 
 const PREFIX = '[cms-codegen]';
 const root = process.cwd();
@@ -86,7 +86,7 @@ async function watch() {
   const patterns = globs.filter(g => !g.startsWith('!'));
   const excluded = globs.filter(g => g.startsWith('!')).map(g => g.slice(1));
 
-  watcher = chokidar.watch([...patterns, CONFIG_FILE, PLATFORM_GLOB], {
+  watcher = chokidar.watch([...patterns, CONFIG_FILE], {
     ignored: [...IGNORED_DIRS, '**/*.d.ts', '**/registry.ts', ...excluded],
     cwd: root,
     ignoreInitial: true,
