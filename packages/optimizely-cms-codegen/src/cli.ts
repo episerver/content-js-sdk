@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import chokidar from 'chokidar';
 import path from 'node:path';
-import { generate, loadConfig, PLATFORM_GLOB } from './generator.js';
+import type { FSWatcher } from 'chokidar';
+import { generate, loadConfig, IGNORED_DIRS, PLATFORM_GLOB } from './generator.js';
 
 const PREFIX = '[cms-codegen]';
 const root = process.cwd();
@@ -59,37 +60,50 @@ async function main() {
 
   if (watchMode) {
     console.log(`${PREFIX} 👀 Watching for changes...`);
-
-    const config = await loadConfig(root).catch(() => null);
-    const patterns =
-      Array.isArray(config?.components) ?
-        config.components
-      : [config?.components || 'src/components/**/*.{ts,tsx}'];
-
-    const watcher = chokidar.watch([...patterns, 'optimizely.config.mjs', PLATFORM_GLOB], {
-      ignored: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts', '**/registry.ts'],
-      cwd: root,
-      ignoreInitial: true,
-    });
-
-    const events = { change: '🔄 File changed', add: '➕ File added', unlink: '➖ File removed' };
-    for (const [event, label] of Object.entries(events)) {
-      watcher.on(event, filePath => {
-        console.log(`\n${PREFIX} ${label}: ${filePath}`);
-        regenerate();
-      });
-    }
-
-    watcher.on('error', error => {
-      console.error(`${PREFIX} ✗ Watcher error:`, error);
-    });
+    await watch();
 
     process.on('SIGINT', () => {
       console.log(`\n${PREFIX} ⏹ Stopping watch mode...`);
-      watcher.close();
+      watcher?.close();
       process.exit(0);
     });
   }
+}
+
+const CONFIG_FILE = 'optimizely.config.mjs';
+let watcher: FSWatcher | undefined;
+
+// Watches the config's `components` globs. Started again when the config changes, so new globs are picked up.
+async function watch() {
+  await watcher?.close();
+
+  const config = await loadConfig(root).catch(() => null);
+  const globs: string[] =
+    Array.isArray(config?.components) ?
+      config.components
+    : [config?.components || 'src/components/**/*.{ts,tsx}'];
+  // chokidar has no negated globs, so `!x` becomes an ignore entry
+  const patterns = globs.filter(g => !g.startsWith('!'));
+  const excluded = globs.filter(g => g.startsWith('!')).map(g => g.slice(1));
+
+  watcher = chokidar.watch([...patterns, CONFIG_FILE, PLATFORM_GLOB], {
+    ignored: [...IGNORED_DIRS, '**/*.d.ts', '**/registry.ts', ...excluded],
+    cwd: root,
+    ignoreInitial: true,
+  });
+
+  const events = { change: '🔄 File changed', add: '➕ File added', unlink: '➖ File removed' };
+  for (const [event, label] of Object.entries(events)) {
+    watcher.on(event, filePath => {
+      console.log(`\n${PREFIX} ${label}: ${filePath}`);
+      regenerate();
+      if (filePath === CONFIG_FILE) setTimeout(() => watch().catch(e => console.error(`${PREFIX} ✗`, message(e))), 400);
+    });
+  }
+
+  watcher.on('error', error => {
+    console.error(`${PREFIX} ✗ Watcher error:`, error);
+  });
 }
 
 main().catch(console.error);

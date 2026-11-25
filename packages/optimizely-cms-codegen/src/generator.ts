@@ -87,7 +87,9 @@ export async function scanComponents(
 // ============================================================================
 
 export const PLATFORM_GLOB = '**/*.{ts,tsx,js,jsx,mjs}';
-const PLATFORM_IGNORE = ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/*.d.ts'];
+// Build output and tool folders; dot folders (`.next`, `.turbo`, `.vercel`) are skipped by the globs and listed here for the watcher.
+export const IGNORED_DIRS = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/out/**', '**/coverage/**', '**/.*/**'];
+const PLATFORM_IGNORE = [...IGNORED_DIRS, '**/*.d.ts'];
 // `config({ ... platform: 'paas' })`, allowing one level of nested braces before `platform`.
 const PLATFORM_RE =
   /\bconfig\s*\(\s*\{(?:[^{}]|\{[^{}]*\})*?\bplatform\s*:\s*(['"])(saas|paas)\1/;
@@ -523,11 +525,17 @@ export {};
 // Returns true when the file differs from `content`; with `check` nothing is written.
 async function writeIfChanged(file: string, content: string, check: boolean) {
   const existing = await fs.readFile(file, 'utf-8').catch(() => null);
-  if (existing === content) return false;
+  // Line endings are ignored, so a CRLF checkout does not count as stale.
+  if (existing?.replace(/\r\n/g, '\n') === content) return false;
   if (!check) {
     const tmp = `${file}.${process.pid}.tmp`;
-    await fs.writeFile(tmp, content);
-    await fs.rename(tmp, file);
+    try {
+      await fs.writeFile(tmp, content);
+      await fs.rename(tmp, file);
+    } catch (error) {
+      await fs.rm(tmp, { force: true });
+      throw error;
+    }
   }
   return true;
 }
