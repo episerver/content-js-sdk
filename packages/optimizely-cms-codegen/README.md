@@ -247,7 +247,11 @@ export default function HeroCompact() { ... }
 // 'Hero:compact': Hero_compactComponent
 ```
 
-**3. The one content type the component imports**
+**3. The file name**
+
+A file named `Hero.tsx` matches a content type with key `Hero`, or one exported as `Hero` or `HeroContentType`.
+
+**4. The one content type the component imports**
 
 ```tsx
 // HeroView.tsx
@@ -256,9 +260,7 @@ export default function HeroView({ content }: { content: ContentProps<typeof Her
 // 'Hero': HeroComponent
 ```
 
-**4. The file name**
-
-A file named `Hero.tsx` matches a content type with key `Hero`, or one exported as `Hero` or `HeroContentType`.
+A file matched only by an import never takes a slot from a file matched by one of the other rules.
 
 #### Tags
 

@@ -377,4 +377,45 @@ export const HeroDisplayTemplate = displayTemplate({
       expect(registryContent).toContain('initDisplayTemplateRegistry');
     });
   });
+  describe('matching edge cases', () => {
+    const setup = async (files: Record<string, string>) => {
+      await fs.mkdir(path.join(testRoot, 'src', 'components'), { recursive: true });
+      await fs.writeFile(path.join(testRoot, 'optimizely.config.mjs'), `export default { components: 'src/components/**/*.tsx' };`);
+      for (const [name, body] of Object.entries(files)) {
+        await fs.writeFile(path.join(testRoot, 'src', 'components', name), body);
+      }
+    };
+    const registry = () => fs.readFile(path.join(testRoot, 'src', 'registry.ts'), 'utf-8');
+
+    it('an import-only file never beats the file named after the type', async () => {
+      // Article.tsx matches by file name; AAA.tsx (sorts first) only by import
+      await setup({
+        'Types.tsx': `export const ArticleContentType = contentType({ key: 'Article', baseType: '_component' });`,
+        'Article.tsx': `export default function A() {}`,
+        'AAA.tsx': `import { ArticleContentType } from './Types';\nexport default function Helper() {}`,
+      });
+      await generate(testRoot);
+      expect(await registry()).toContain("from './components/Article';");
+      expect(await registry()).not.toContain("from './components/AAA';");
+    });
+
+    it('fails when two files export the same name', async () => {
+      await setup({
+        'a.tsx': `export const HeroContentType = contentType({ key: 'HeroA', baseType: '_component' });`,
+        'b.tsx': `export const HeroContentType = contentType({ key: 'HeroB', baseType: '_component' });`,
+      });
+      await expect(generate(testRoot)).rejects.toThrow("'HeroContentType' is exported by both");
+    });
+
+    it('skips a component whose tag is not a string literal', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await setup({
+        'Hero.tsx': `export const HeroContentType = contentType({ key: 'Hero', baseType: '_component' });\nexport const tag = TAG;\nexport default function H() {}`,
+      });
+      await generate(testRoot);
+      expect(await registry()).not.toContain("'Hero'");
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('tag must be a string literal'));
+      warn.mockRestore();
+    });
+  });
 });

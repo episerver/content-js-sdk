@@ -106,6 +106,8 @@ interface FileData {
   hasDefaultExport: boolean;
   /** `export const tag = '...'`, the slot a component fills for its content type. */
   tag?: string;
+  /** `export const tag` exists but is not a string literal. */
+  badTag?: boolean;
   /** `export const tags = { ... }`, the component's tag variants. */
   hasTags: boolean;
 }
@@ -181,7 +183,10 @@ function parseFileContent(content: string, fileName: string): FileData {
       for (const decl of node.declarationList.declarations) {
         if (!ts.isIdentifier(decl.name)) continue;
         const name = decl.name.text;
-        if (name === 'tag') data.tag = stringValue(decl.initializer);
+        if (name === 'tag') {
+          data.tag = stringValue(decl.initializer);
+          data.badTag = data.tag === undefined;
+        }
         else if (name === 'tags') data.hasTags = true;
         else {
           // What the variable is assigned decides its kind; the name suffix is the fallback.
@@ -253,7 +258,8 @@ const ownTypes = ({ parsed }: ParsedFile) => parsed.keys.filter(k => k.isContent
 
 /**
  * Pick the content type slot a file's default export fills, or undefined when none is found.
- * In order: the file's own content type, a tagged display template it imports, a content type it imports, or its file name.
+ * In order: the file's own content type, a tagged display template it imports, its file name, a content type it imports.
+ * `rank` is 1 for an import-only match, so a helper file never beats a file matched more directly.
  * shortcut: a file with several keyed content types gets no component; upgrade if that is common.
  */
 function resolveSlot(
@@ -261,25 +267,25 @@ function resolveSlot(
   own: FileData['keys'],
   typeKeys: Map<string, string>,
   templates: Map<string, FileData['templates'][number]>,
-): { key: string; tag?: string } | undefined {
-  if (own.length === 1) return { key: own[0].key, tag: parsed.tag };
+): { key: string; tag?: string; rank: number } | undefined {
+  if (own.length === 1) return { key: own[0].key, tag: parsed.tag, rank: 0 };
 
   const imported = [...parsed.imports];
   const tagged = imported.map(n => templates.get(n)).filter(t => t?.contentType && t.tag);
-  if (tagged.length === 1) return { key: tagged[0]!.contentType!, tag: tagged[0]!.tag };
-
-  const types = imported.filter(n => typeKeys.has(n));
-  if (types.length === 1) return { key: typeKeys.get(types[0])!, tag: parsed.tag };
+  if (tagged.length === 1) return { key: tagged[0]!.contentType!, tag: tagged[0]!.tag, rank: 0 };
 
   const base = path.basename(file).replace(/\.\w+$/, '');
   const byName = [...typeKeys].find(([name, key]) => key === base || stripSuffix(name) === base);
-  return byName && { key: byName[1], tag: parsed.tag };
+  if (byName) return { key: byName[1], tag: parsed.tag, rank: 0 };
+
+  const types = imported.filter(n => typeKeys.has(n));
+  if (types.length === 1) return { key: typeKeys.get(types[0])!, tag: parsed.tag, rank: 1 };
 }
 
 /**
  * Register each file's default export as the component for its slot (`Key` or `Key:tag`).
- * Files that define their own content type go first, so an inferred match never beats them;
- * a later duplicate is ignored, with a warning unless it lost to such a file.
+ * Direct matches go before import-only ones, so a helper file never takes a slot from the real component;
+ * a later duplicate is ignored, with a warning unless it lost to a file's own content type.
  */
 function collectComponents(
   parsedFiles: ParsedFile[],
@@ -287,21 +293,25 @@ function collectComponents(
   templates: Map<string, FileData['templates'][number]>,
   data: RegistryData,
 ) {
-  const ordered = [...parsedFiles].sort(
-    (a, b) => Number(ownTypes(b).length === 1) - Number(ownTypes(a).length === 1),
-  );
+  const candidates = parsedFiles.flatMap(pf => {
+    const own = ownTypes(pf);
+    if (!pf.parsed.hasDefaultExport || own.length > 1) return [];
+    if (pf.parsed.badTag) {
+      console.warn(`[cms-codegen] tag must be a string literal in ${path.relative(process.cwd(), pf.file)}, skipping it`);
+      return [];
+    }
+    const resolved = resolveSlot(pf, own, typeKeys, templates);
+    return resolved ? [{ pf, own, resolved }] : [];
+  });
+  // own-type files first, then other direct matches, then import-only; path order inside each
+  const rankOf = ({ own, resolved }: (typeof candidates)[number]) => (own.length === 1 ? 0 : resolved.rank + 1);
+  candidates.sort((a, b) => rankOf(a) - rankOf(b));
   const slots = new Map<string, boolean>(); // slot -> claimed by a file's own content type
   const claimedKeys = new Set<string>();
   const taken = new Set([...data.contentTypes, ...data.contracts, ...data.displayTemplates]);
 
-  for (const pf of ordered) {
+  for (const { pf, own, resolved } of candidates) {
     const { file, parsed, importPath } = pf;
-    const own = ownTypes(pf);
-    if (!parsed.hasDefaultExport || own.length > 1) continue;
-
-    const resolved = resolveSlot(pf, own, typeKeys, templates);
-    if (!resolved) continue;
-
     const slot = resolved.tag ? `${resolved.key}:${resolved.tag}` : resolved.key;
     if (slots.has(slot)) {
       if (!slots.get(slot)) {
@@ -340,6 +350,7 @@ async function parseAllFiles(files: string[], registryFile: string): Promise<Reg
   };
   const typeKeys = new Map<string, string>(); // content type export name -> key
   const templates = new Map<string, FileData['templates'][number]>();
+  const exportedBy = new Map<string, string>(); // exported name -> file
 
   // Sorted, so which duplicate wins does not depend on glob order.
   const sorted = [...files].sort();
@@ -353,6 +364,13 @@ async function parseAllFiles(files: string[], registryFile: string): Promise<Reg
       ...parsed.displayTemplateNames,
       ...parsed.contractNames,
     ];
+    for (const name of importItems) {
+      const other = exportedBy.get(name);
+      if (other) {
+        throw new Error(`'${name}' is exported by both ${path.relative(process.cwd(), other)} and ${path.relative(process.cwd(), file)}. Rename one.`);
+      }
+      exportedBy.set(name, file);
+    }
     data.contentTypes.push(...parsed.contentTypeNames);
     data.displayTemplates.push(...parsed.displayTemplateNames);
     data.contracts.push(...parsed.contractNames);
