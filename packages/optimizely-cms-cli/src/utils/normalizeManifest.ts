@@ -109,6 +109,18 @@ export const parseItemId = (id: string) => {
   };
 };
 
+const SECTION_LABELS: Record<ManifestSection, string> = {
+  contentTypes: 'content type',
+  displayTemplates: 'display template',
+  propertyGroups: 'property group',
+};
+
+/** Names an item for people, e.g. `Hero (content type)` */
+export const itemLabel = (id: string) => {
+  const { section, key } = parseItemId(id);
+  return `${key} (${SECTION_LABELS[section]})`;
+};
+
 /** Maps every item of a manifest, keyed by item id. */
 export const mapItemsById = <T extends { key?: unknown }, R>(
   manifest: Partial<Record<ManifestSection, T[] | null>>,

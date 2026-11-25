@@ -1,7 +1,7 @@
 import { Args, Flags } from '@oclif/core';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import { select } from '@inquirer/prompts';
+import { confirm, select } from '@inquirer/prompts';
 import { BaseCommand } from '../../baseCommand.js';
 import { createApiClient } from '../../service/cmsRestClient.js';
 import { checkApplications } from '../../service/applicationService.js';
@@ -10,6 +10,7 @@ import {
   processContentWithApplications,
   type ContentConfig,
 } from '../../service/contentService.js';
+import { deleteItems } from '../../service/deleteService.js';
 import { findLocalesToSync, syncLocales } from '../../service/localeService.js';
 import {
   buildManifest,
@@ -94,6 +95,21 @@ const resolveConflicts = async (
   return exitOnConflicts();
 };
 
+const shouldDeleteRemoved = async (count: number, deleteRemoved: boolean) => {
+  if (count === 0) return false;
+  if (deleteRemoved) return true;
+  if (isInteractive())
+    return confirm({
+      message: `Delete the ${count} ${pluralize(count, 'item')} removed from your config from the CMS? This cannot be undone.`,
+      default: false,
+    });
+
+  console.log(
+    chalk.dim('Pass --deleteRemoved to delete the items that are still in the CMS.'),
+  );
+  return false;
+};
+
 export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
   static override args = {
     file: Args.string({
@@ -117,6 +133,10 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
     skipConflicts: Flags.boolean({
       description: 'push everything except items that also changed on the server',
       exclusive: ['overwrite'],
+    }),
+    deleteRemoved: Flags.boolean({
+      description:
+        'delete items removed from the config that are still in the CMS, without asking',
     }),
   };
   static override description =
@@ -203,7 +223,17 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
         ),
       );
 
-    if (pushIds.length === 0 && !syncsApplications && !syncsContent && !syncsLocales)
+    // every question comes before the first change
+    const removed = statuses.filter(hasStatus('removed'));
+    const deletesRemoved = await shouldDeleteRemoved(removed.length, flags.deleteRemoved);
+
+    if (
+      pushIds.length === 0 &&
+      !syncsApplications &&
+      !syncsContent &&
+      !syncsLocales &&
+      !deletesRemoved
+    )
       console.log(chalk.green('Nothing to push.'));
 
     const result =
@@ -219,10 +249,19 @@ export default class ConfigPatch extends BaseCommand<typeof ConfigPatch> {
       await processContentWithApplications(contentToSync, [], flags.host);
     if (result) reportImportResult(result);
 
+    const deleteOutcomes =
+      deletesRemoved ? await deleteItems(restClient, idsOf(removed)) : {};
+    // an item already missing from the CMS is as good as deleted
+    const deletedIds = Object.keys(deleteOutcomes).filter(
+      id => deleteOutcomes[id] !== 'failed',
+    );
+
+    if (Object.values(deleteOutcomes).includes('failed')) process.exitCode = 1;
+
     const update = {
       local: localHashes,
       record: [...pushIds, ...idsOf(statuses.filter(hasStatus('inSync')))],
-      drop: idsOf(statuses.filter(hasStatus('gone'))),
+      drop: [...idsOf(statuses.filter(hasStatus('gone'))), ...deletedIds],
       ...(syncsApplications ? { applications: applicationHashes } : {}),
     };
 

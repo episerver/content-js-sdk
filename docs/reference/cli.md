@@ -15,7 +15,7 @@ optimizely-cms-cli <command> [arguments] [flags]
 | [`config patch`](#config-patch)                                       | Pushes only what changed since your last push            |
 | [`config pull`](#config-pull)                                         | Generates TypeScript files, or JSON, from the CMS        |
 | [`config delete`](#config-delete)                                     | Deletes the content types defined in your config file    |
-| [`content delete`](#content-delete)                                   | Deletes one content type                                 |
+| [`content delete`](#content-delete)                                   | Deletes one or more content types                        |
 | [`danger delete-all-content-types`](#danger-delete-all-content-types) | Deletes every user-defined content type in the CMS       |
 | [`deploy`](#deploy)                                                   | Packages the project and deploys it to front-end hosting |
 
@@ -265,7 +265,7 @@ changed since your last push, and leaves everything else in the CMS alone. It al
 you when someone changed the same item in the CMS in the meantime.
 
 ```sh
-optimizely-cms-cli config patch [file] [--dryRun] [--force] [--overwrite | --skipConflicts] [--host <url>]
+optimizely-cms-cli config patch [file] [--dryRun] [--force] [--overwrite | --skipConflicts] [--deleteRemoved] [--host <url>]
 ```
 
 ### Reference
@@ -276,13 +276,14 @@ optimizely-cms-cli config patch [file] [--dryRun] [--force] [--overwrite | --ski
 
 #### Flags
 
-| Flag              | Default | Description                                                                  |
-| ----------------- | ------- | ---------------------------------------------------------------------------- |
-| `--dryRun`        | `false` | Reports what would be pushed, then stops. Never prompts and saves nothing    |
-| `--force`         | `false` | Applies changes the CMS would otherwise reject because they can lose data    |
-| `--overwrite`     | `false` | Pushes [conflicting](#conflicts) items too, replacing the version in the CMS |
-| `--skipConflicts` | `false` | Pushes everything except conflicting items                                   |
-| `--host <url>`    |         | The CMS to compare with and push to                                          |
+| Flag              | Default | Description                                                                              |
+| ----------------- | ------- | ---------------------------------------------------------------------------------------- |
+| `--dryRun`        | `false` | Reports what would be pushed, then stops. Never prompts and saves nothing                |
+| `--force`         | `false` | Applies changes the CMS would otherwise reject because they can lose data                |
+| `--overwrite`     | `false` | Pushes [conflicting](#conflicts) items too, replacing the version in the CMS             |
+| `--skipConflicts` | `false` | Pushes everything except conflicting items                                               |
+| `--deleteRemoved` | `false` | Deletes [items removed from your config](#items-removed-from-your-config) without asking |
+| `--host <url>`    |         | The CMS to compare with and push to                                                      |
 
 `--overwrite` and `--skipConflicts` can't be combined.
 
@@ -291,15 +292,15 @@ optimizely-cms-cli config patch [file] [--dryRun] [--force] [--overwrite | --ski
 Patch compares three versions of every item: the one in your config, the one in the CMS,
 and the [saved state](#the-state-file) from the last time you pushed it.
 
-| Reported as           | Meaning                                      | What patch does                                      |
-| --------------------- | -------------------------------------------- | ---------------------------------------------------- |
-| Changed               | Changed in your config                       | Pushes it                                            |
-| New                   | In your config, not in the CMS               | Pushes it                                            |
-| Up to date            | Unchanged, or identical on both sides        | Nothing                                              |
-| Changed on the server | Changed in the CMS, unchanged in your config | Warns. Run [`config pull`](#config-pull) to see it   |
-| Deleted on the server | Deleted in the CMS, unchanged in your config | Warns, and doesn't recreate it                       |
-| Removed locally       | Removed from your config, still in the CMS   | Reports it. Nothing is deleted                       |
-| Conflict              | See [Conflicts](#conflicts)                  | Asks you, or follows `--overwrite`/`--skipConflicts` |
+| Reported as           | Meaning                                      | What patch does                                                   |
+| --------------------- | -------------------------------------------- | ----------------------------------------------------------------- |
+| Changed               | Changed in your config                       | Pushes it                                                         |
+| New                   | In your config, not in the CMS               | Pushes it                                                         |
+| Up to date            | Unchanged, or identical on both sides        | Nothing                                                           |
+| Changed on the server | Changed in the CMS, unchanged in your config | Warns. Run [`config pull`](#config-pull) to see it                |
+| Deleted on the server | Deleted in the CMS, unchanged in your config | Warns, and doesn't recreate it                                    |
+| Removed locally       | Removed from your config, still in the CMS   | Offers to delete it, see [below](#items-removed-from-your-config) |
+| Conflict              | See [Conflicts](#conflicts)                  | Asks you, or follows `--overwrite`/`--skipConflicts`              |
 
 Only the changed and new items are uploaded. Unlike `config push --only`, patch doesn't
 add a content type's display templates or property groups unless those changed too. Items
@@ -335,6 +336,21 @@ Pass `--overwrite` or `--skipConflicts` to decide in advance.
 The details compare your config with the CMS. They show what differs, not which side
 changed it.
 
+#### Items removed from your config
+
+An item you pushed before and have since removed from your config is reported under
+**Still in the CMS**. Patch never deletes it on its own:
+
+- In a terminal, patch asks whether to delete these items from the CMS. The answer
+  defaults to no.
+- Outside a terminal, nothing is deleted unless you pass `--deleteRemoved`.
+- `--dryRun` never asks and never deletes.
+
+Display templates are deleted before the content types they belong to, and property groups
+last. An item the CMS refuses to delete, such as a content type that still has content, is
+reported, stays in the report, and makes the command exit with code `1`. An item that's
+already gone counts as deleted.
+
 #### The state file
 
 Patch stores fingerprints of what was pushed in `.optimizely/patch-state.json`, next to
@@ -351,7 +367,9 @@ a first run.
 
 #### Caveats
 
-- **`config patch` never deletes anything**, just like `config push`.
+- **`config patch` only deletes what you confirm,** or what `--deleteRemoved` allows, and
+  only items you removed from your config. Items in the CMS that were never in your config
+  are never touched.
 - **The first run asks about every difference.** Without a saved state, items identical to
   the CMS are recorded as up to date and items missing from the CMS are pushed as new. Any
   item that differs from the CMS is a conflict, because patch can't tell which side
@@ -544,17 +562,18 @@ couldn't.
 
 ## `content delete`
 
-Deletes one content type from the CMS, after a confirmation.
+Deletes one or more content types from the CMS, after a single confirmation.
 
 ```sh
-optimizely-cms-cli content delete <key> [--host <url>]
+optimizely-cms-cli content delete <key> [<key>...] [--host <url>]
 ```
 
 ### Reference
 
 #### Arguments
 
-- `key` (required) — the key of the content type to delete, such as `Article`.
+- `key` (required, repeatable) — the keys of the content types to delete, separated by
+  spaces, such as `Article ProductPage`.
 
 #### Flags
 
@@ -565,15 +584,17 @@ optimizely-cms-cli content delete <key> [--host <url>]
 #### Caveats
 
 - **A type that has content can't be deleted.** The CLI prints
-  `Cannot delete: Content type is in use`. Delete the content first.
-- **An unknown key fails** with `Content type "<key>" not found`.
+  `Could not delete <key> (content type): it is in use`. Delete the content first.
+- **An unknown key fails** with `<key> (content type) is not in the CMS`.
+- **One failure doesn't stop the rest.** Every key is attempted, and the command exits
+  with code `1` if any of them wasn't deleted.
 
 ### Usage
 
-#### Deleting a content type
+#### Deleting content types
 
 ```sh
-optimizely-cms-cli content delete Article
+optimizely-cms-cli content delete Article ProductPage
 ```
 
 ## `danger delete-all-content-types`

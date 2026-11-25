@@ -9,6 +9,7 @@ import {
   mockApiClient,
   mockExit,
   printed,
+  respondByPath,
   silenceConsole,
   spinnerMessages,
   type MockApiClient,
@@ -25,10 +26,13 @@ describe('content delete', () => {
   let consoleSpies: ReturnType<typeof silenceConsole>;
 
   const remove = (...args: string[]) => ContentDelete.run(args, import.meta.url);
+  const deletedKeys = () =>
+    client.DELETE.mock.calls.map(([, options]) => options.params.path.key);
 
   beforeEach(() => {
     vi.clearAllMocks();
     client = mockApiClient();
+    client.DELETE.mockResolvedValue(apiResponse({ status: 204 }));
     vi.mocked(createApiClient).mockResolvedValue(client as never);
     vi.mocked(confirm).mockResolvedValue(true);
     consoleSpies = silenceConsole();
@@ -54,40 +58,49 @@ describe('content delete', () => {
     expect(createApiClient).not.toHaveBeenCalled();
   });
 
-  test('deletes the content type', async () => {
-    client.DELETE.mockResolvedValue(apiResponse({ status: 204 }));
-
+  test('deletes one content type', async () => {
     await remove('Article', '--host', 'https://cms.example.com');
 
     expect(createApiClient).toHaveBeenCalledWith('https://cms.example.com');
     expect(client.DELETE).toHaveBeenCalledWith('/contenttypes/{key}', {
       params: { path: { key: 'Article' } },
     });
-    expect(spinnerMessages(ora, 'succeed')).toEqual(['Content type "Article" deleted successfully']);
+    expect(spinnerMessages(ora, 'succeed')).toEqual(['Deleted Article (content type)']);
+  });
+
+  test('deletes several content types after one confirmation, ignoring repeated keys', async () => {
+    await remove('Article', 'ProductPage', 'Article');
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(confirm).mock.calls[0][0].message).toContain('2 content types');
+    expect(deletedKeys()).toEqual(['Article', 'ProductPage']);
   });
 
   test.each([
-    ['404', { status: 404, title: 'Not Found' }, 'Content type "Article" not found'],
-    ['409', { status: 409, title: 'Conflict' }, 'Cannot delete: Content type is in use'],
-    ['other', { status: 400, title: 'Bad Request', detail: 'Locked' }, 'Error 400: Bad Request'],
-  ])('explains a %s failure and exits', async (_, error, message) => {
+    [
+      '404',
+      { status: 404, title: 'Not Found' },
+      'warn',
+      'Article (content type) is not in the CMS',
+    ],
+    [
+      '409',
+      { status: 409, title: 'Conflict' },
+      'fail',
+      'Could not delete Article (content type): it is in use',
+    ],
+    [
+      'other',
+      { status: 400, title: 'Bad Request', detail: 'Locked' },
+      'fail',
+      'Could not delete Article (content type): error 400: Bad Request (Locked)',
+    ],
+  ] as const)('explains a %s response and exits', async (_, error, method, message) => {
     client.DELETE.mockResolvedValue(apiResponse({ status: error.status, error }));
 
     await expect(remove('Article')).rejects.toThrow(ExitError);
 
-    expect(spinnerMessages(ora, 'fail')[0]).toBe('Failed to delete content type "Article"');
-    expect(printed(consoleSpies.error)).toContain(message);
-  });
-
-  test('prints the detail of an unexpected error status', async () => {
-    client.DELETE.mockResolvedValue(
-      apiResponse({ status: 400, error: { status: 400, detail: 'Locked by an editor' } }),
-    );
-
-    await expect(remove('Article')).rejects.toThrow(ExitError);
-
-    expect(printed(consoleSpies.error)).toContain('Error 400: Unknown error');
-    expect(printed(consoleSpies.error)).toContain('Locked by an editor');
+    expect(spinnerMessages(ora, method)).toEqual([message]);
   });
 
   test('reports an unexpected error when the failure has no body', async () => {
@@ -95,15 +108,28 @@ describe('content delete', () => {
 
     await expect(remove('Article')).rejects.toThrow(ExitError);
 
-    expect(printed(consoleSpies.error)).toContain('An unexpected error occurred');
+    expect(spinnerMessages(ora, 'fail')).toEqual([
+      'Could not delete Article (content type): an unexpected error occurred',
+    ]);
+  });
+
+  test('deletes the remaining keys when one fails, then exits', async () => {
+    respondByPath(client.DELETE, {}, apiResponse({ status: 204 }));
+    client.DELETE.mockResolvedValueOnce(
+      apiResponse({ status: 409, error: { status: 409 } }),
+    );
+
+    await expect(remove('Article', 'ProductPage')).rejects.toThrow(ExitError);
+
+    expect(deletedKeys()).toEqual(['Article', 'ProductPage']);
+    expect(spinnerMessages(ora, 'succeed')).toEqual([
+      'Deleted ProductPage (content type)',
+    ]);
   });
 
   test('reports a connection failure', async () => {
     vi.mocked(createApiClient).mockRejectedValue(new Error('Invalid credentials'));
 
     await expect(remove('Article')).rejects.toThrow('Invalid credentials');
-
-    expect(spinnerMessages(ora, 'fail')).toEqual(['Failed to delete content type']);
-    expect(printed(consoleSpies.error)).toContain('Invalid credentials');
   });
 });

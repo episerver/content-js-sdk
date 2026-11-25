@@ -72,7 +72,7 @@ describe('patch report', () => {
         'Deleted on the server — not recreated (1)',
         '  Old (content type)',
         '',
-        'Still in the CMS — removed from your config, not deleted (1)',
+        'Still in the CMS — removed from your config (1)',
         '  Gone (content type)',
       ]);
     });

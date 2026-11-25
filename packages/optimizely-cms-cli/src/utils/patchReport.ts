@@ -2,8 +2,8 @@ import chalk, { type ChalkInstance } from 'chalk';
 import { pluralize } from './general.js';
 import {
   diffItems,
+  itemLabel,
   mapItemsById,
-  parseItemId,
   type FieldDifference,
   type ManifestSection,
 } from './normalizeManifest.js';
@@ -52,12 +52,6 @@ type ReportSection = {
   describe?: (change: ServerChange | undefined, status: ItemStatus) => string;
 };
 
-const SECTION_LABELS: Record<ManifestSection, string> = {
-  contentTypes: 'content type',
-  displayTemplates: 'display template',
-  propertyGroups: 'property group',
-};
-
 const CONFLICT_REASONS: Record<ConflictReason, string> = {
   bothChanged: 'changed locally and on the server',
   deletedOnServer: 'changed locally, deleted on the server',
@@ -65,11 +59,6 @@ const CONFLICT_REASONS: Record<ConflictReason, string> = {
 };
 
 const MAX_VALUE_LENGTH = 60;
-
-const labelOf = (id: string) => {
-  const { section, key } = parseItemId(id);
-  return `${key} (${SECTION_LABELS[section]})`;
-};
 
 const formatTime = (timestamp: string) => {
   const date = new Date(timestamp);
@@ -114,7 +103,7 @@ const REPORT_SECTIONS: ReportSection[] = [
     matches: hasStatus('deletedOnServer'),
   },
   {
-    heading: 'Still in the CMS — removed from your config, not deleted',
+    heading: 'Still in the CMS — removed from your config',
     color: chalk.cyan,
     matches: hasStatus('removed'),
   },
@@ -127,7 +116,7 @@ const formatSection = (
 ) => {
   const items = statuses.filter(matches);
   const itemLine = (status: ItemStatus) =>
-    `  ${labelOf(status.id).padEnd(labelWidth)}  ${chalk.dim(describe?.(serverChanges[status.id], status) ?? '')}`.trimEnd();
+    `  ${itemLabel(status.id).padEnd(labelWidth)}  ${chalk.dim(describe?.(serverChanges[status.id], status) ?? '')}`.trimEnd();
 
   return items.length > 0 ?
       [color.bold(`${heading} (${items.length})`), ...items.map(itemLine)]
@@ -201,7 +190,7 @@ export const printPatchReport = (input: ReportInput) => {
   const reported = input.statuses.filter(it =>
     REPORT_SECTIONS.some(section => section.matches(it)),
   );
-  const labelWidth = Math.max(0, ...reported.map(it => labelOf(it.id).length));
+  const labelWidth = Math.max(0, ...reported.map(it => itemLabel(it.id).length));
   const blocks = [
     ...REPORT_SECTIONS.map(section => formatSection(section, input, labelWidth)),
     ...formatSyncs(input.syncs),
@@ -227,7 +216,7 @@ export const printConflictDetails = ({
       .join(', ');
 
     return [
-      `  ${labelOf(it.id)} ${chalk.dim(`— ${reason}`)}`,
+      `  ${itemLabel(it.id)} ${chalk.dim(`— ${reason}`)}`,
       // an item deleted on the server has nothing to compare against
       ...(serverItems[it.id] ?
         formatDifferences(diffItems(localItems[it.id], serverItems[it.id]))

@@ -101,7 +101,7 @@ npx @optimizely/cms-cli config push ./optimizely.config.mjs
 | `config patch` | Push only what changed since your last push, and flag changes made in the CMS |
 | `config pull` | Generate TypeScript files from the content types in the CMS |
 | `config delete` | Delete the content types defined in your project from the CMS |
-| `content delete <key>` | Delete one content type from the CMS |
+| `content delete <key>...` | Delete one or more content types from the CMS |
 | `danger delete-all-content-types` | Delete every user-defined content type in the CMS |
 | `deploy` | Package the project and deploy it to Optimizely front-end hosting |
 

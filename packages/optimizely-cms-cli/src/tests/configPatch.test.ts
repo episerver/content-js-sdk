@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { select } from '@inquirer/prompts';
+import { confirm, select } from '@inquirer/prompts';
 import ConfigPatch from '../commands/config/patch.js';
 import { createApiClient } from '../service/cmsRestClient.js';
 import { buildManifest } from '../service/manifestService.js';
@@ -24,6 +24,7 @@ import {
   printed,
   silenceConsole,
   stubCmsEnv,
+  useTerminal,
   writeProject,
   type MockApiClient,
 } from './helpers.js';
@@ -230,18 +231,74 @@ describe('config patch', () => {
     );
   });
 
-  test('reports an item removed from the config without deleting it', async () => {
-    await baseline();
-    await writeConfig([hero]);
+  describe('items removed from the config', () => {
+    const REMOVED_HEADING = 'Still in the CMS — removed from your config';
 
-    await patch();
+    // Banner is removed locally after a baseline that recorded it
+    const removeBanner = async () => {
+      await baseline();
+      await writeConfig([hero]);
+      client.DELETE.mockResolvedValue(apiResponse({ status: 204 }));
+    };
 
-    expect(client.POST).not.toHaveBeenCalled();
-    expect(client.DELETE).not.toHaveBeenCalled();
-    expectReported(
-      'Still in the CMS — removed from your config, not deleted',
-      'Banner (content type)',
-    );
+    test('are reported, and only suggested for deletion outside a terminal', async () => {
+      await removeBanner();
+
+      await patch();
+
+      expect(client.POST).not.toHaveBeenCalled();
+      expect(client.DELETE).not.toHaveBeenCalled();
+      expectReported(REMOVED_HEADING, 'Banner (content type)');
+      expect(printed(consoleSpies.log)).toContain('Pass --deleteRemoved');
+    });
+
+    test('are deleted with --deleteRemoved and forgotten afterwards', async () => {
+      await removeBanner();
+
+      await patch('--deleteRemoved');
+      consoleSpies.log.mockClear();
+      await patch();
+
+      expect(client.DELETE).toHaveBeenCalledTimes(1);
+      expect(client.DELETE).toHaveBeenCalledWith('/contenttypes/{key}', {
+        params: { path: { key: 'Banner' } },
+      });
+      expect(reportSection(REMOVED_HEADING)).toEqual([]);
+    });
+
+    test('stay reported and fail the run when the CMS refuses to delete them', async () => {
+      await removeBanner();
+      client.DELETE.mockResolvedValue(
+        apiResponse({ status: 409, error: { status: 409 } }),
+      );
+
+      await patch('--deleteRemoved');
+      consoleSpies.log.mockClear();
+      await patch();
+
+      expect(process.exitCode).toBe(1);
+      expectReported(REMOVED_HEADING, 'Banner (content type)');
+    });
+
+    describe('in a terminal', () => {
+      useTerminal();
+
+      test.each([
+        [true, 1],
+        [false, 0],
+      ])(
+        'delete them only when the question is answered with %s',
+        async (answer, calls) => {
+          await removeBanner();
+          vi.mocked(confirm).mockResolvedValue(answer);
+
+          await patch();
+
+          expect(confirm).toHaveBeenCalledTimes(1);
+          expect(client.DELETE).toHaveBeenCalledTimes(calls);
+        },
+      );
+    });
   });
 
   describe('conflicts', () => {
@@ -305,24 +362,7 @@ describe('config patch', () => {
     });
 
     describe('in a terminal', () => {
-      const streams = [process.stdin, process.stdout];
-      const ttyDescriptors = streams.map(stream =>
-        Object.getOwnPropertyDescriptor(stream, 'isTTY'),
-      );
-
-      beforeEach(() =>
-        streams.forEach(stream =>
-          Object.defineProperty(stream, 'isTTY', { value: true, configurable: true }),
-        ),
-      );
-
-      afterEach(() =>
-        streams.forEach((stream, index) => {
-          const descriptor = ttyDescriptors[index];
-          if (descriptor) Object.defineProperty(stream, 'isTTY', descriptor);
-          else delete (stream as { isTTY?: boolean }).isTTY;
-        }),
-      );
+      useTerminal();
 
       test.each([
         ['overwrite', ['Hero', 'Banner']],
