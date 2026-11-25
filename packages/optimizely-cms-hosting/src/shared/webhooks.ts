@@ -47,7 +47,7 @@ const createWebhooksApi = (appKey: string, secret: string) => {
         body: JSON.stringify({
           disabled: false,
           request: { url, method: 'post', headers: { 'x-api-key': callbackApiKey } },
-          topic: ['*.*'],
+          topics: ['*.*'],
           filters: [{ status: { eq: 'Published' } }],
         }),
       }),

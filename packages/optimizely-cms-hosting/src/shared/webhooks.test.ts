@@ -56,7 +56,7 @@ describe('registerWebhook', () => {
         method: 'post',
         headers: { 'x-api-key': 'callback-key' },
       },
-      topic: ['*.*'],
+      topics: ['*.*'],
       filters: [{ status: { eq: 'Published' } }],
     });
   });
