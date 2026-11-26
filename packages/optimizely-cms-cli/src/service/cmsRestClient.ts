@@ -1,10 +1,16 @@
-import createClient from 'openapi-fetch';
+import createClient, { type Client } from 'openapi-fetch';
 import { readEnvCredentials } from './config.js';
 import { credentialErrors } from './error.js';
 import { OAuthPaths } from './apiSchema/gateway-auth-types.js';
 import { paths } from './apiSchema/openapi-schema-types.js';
 
 const DEFAULT_GATEWAY_URL = 'https://api.cms.optimizely.com';
+
+/** CMS REST API version, used in request URLs and versioned media types */
+export const API_VERSION = 'v1';
+
+/** Typed client for the CMS REST API */
+export type ApiClient = Client<paths>;
 
 /**
  * Determines if the provided URL matches the pattern of a SaaS API gateway.
@@ -20,7 +26,7 @@ function isSaasApiGateway(url: string): boolean {
  * Resolves the effective CMS host, falling back to the environment variable and
  * then the default SaaS gateway URL. Trailing slashes are stripped.
  */
-function resolveHost(host?: string): string {
+export function resolveHost(host?: string): string {
   return (host || process.env.OPTIMIZELY_CMS_API_URL || DEFAULT_GATEWAY_URL).replace(
     /\/$/,
     '',
@@ -35,7 +41,6 @@ function resolveHost(host?: string): string {
  * @returns The constructed root URL for the CMS API
  */
 function rootUrl(options?: { host?: string; omitVersion?: boolean }): string {
-  const API_VERSION = 'v1';
   const omitVersion = options?.omitVersion ?? false;
 
   const baseUrl = resolveHost(options?.host);

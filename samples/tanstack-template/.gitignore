@@ -3,3 +3,6 @@ node_modules
 .vscode
 .tanstack
 dist
+
+# Optimizely CLI per-developer state (config patch)
+.optimizely/

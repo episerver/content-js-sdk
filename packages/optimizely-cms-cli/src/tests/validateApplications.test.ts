@@ -6,8 +6,10 @@ const app: ApplicationsType = {
   key: 'site',
   displayName: 'Site',
   type: 'website',
+  entryPoint: 'cms://content/abc',
   hosts: [{ authority: 'example.com' }],
 };
+const appWithoutEntryPoint = { ...app, entryPoint: undefined };
 
 const validate = (applications: unknown) =>
   validateApplications(applications as ApplicationsType[]);
@@ -41,5 +43,17 @@ describe('validateApplications', () => {
     expect(() =>
       validate([{ ...app, hosts: [{ authority: 'example.com' }, { locale: 'en' }] }]),
     ).toThrow('Error in hosts: Host at index 1 has an empty or missing "authority" field');
+  });
+
+  test('rejects an application without entryPoint when there is no content', () => {
+    expect(() => validate([app, appWithoutEntryPoint])).toThrow(
+      'Content configuration required when applications defined without entryPoint',
+    );
+  });
+
+  test('accepts an application without entryPoint when content is configured', () => {
+    const applications = [appWithoutEntryPoint];
+
+    expect(validateApplications(applications, [])).toBe(applications);
   });
 });

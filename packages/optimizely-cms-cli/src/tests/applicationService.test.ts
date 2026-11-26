@@ -193,6 +193,25 @@ describe('detectApplicationChanges', () => {
     expect(result).toBeNull();
   });
 
+  it('ignores optional fields the config leaves out', () => {
+    const {
+      previewUrlFormats: _previewUrlFormats,
+      isDefault: _isDefault,
+      hosts: _hosts,
+      ...configApp
+    } = baseConfigApp;
+
+    expect(detectApplicationChanges(baseExistingApp, configApp)).toBeNull();
+  });
+
+  it('keeps a real change next to a field the config leaves out', () => {
+    const { previewUrlFormats: _previewUrlFormats, ...configApp } = baseConfigApp;
+
+    expect(
+      detectApplicationChanges(baseExistingApp, { ...configApp, displayName: 'Renamed' }),
+    ).toEqual({ displayName: 'Renamed' });
+  });
+
   it('detects displayName change', () => {
     const configApp = { ...baseConfigApp, displayName: 'Updated App' };
     const result = detectApplicationChanges(baseExistingApp, configApp);

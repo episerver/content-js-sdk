@@ -1,4 +1,4 @@
-import { vi, type Mock, type MockInstance } from 'vitest';
+import { afterEach, beforeEach, vi, type Mock, type MockInstance } from 'vitest';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
@@ -38,7 +38,12 @@ export const respondByPath = (
   method: MockInstance,
   responses: Record<string, ReturnType<typeof apiResponse>>,
   fallback = apiResponse({ status: 404, error: { status: 404, title: 'Not Found' } }),
-): MockInstance => method.mockImplementation(async (path: string) => responses[path] ?? fallback);
+): MockInstance =>
+  method.mockImplementation(async (path: string) => responses[path] ?? fallback);
+
+/** Keys passed to the client's DELETE calls, in call order */
+export const deletedKeys = (client: MockApiClient): string[] =>
+  client.DELETE.mock.calls.map(([, options]) => options.params.path.key);
 
 /** Thrown by the mocked `process.exit` so the command flow stops where the real one would */
 export class ExitError extends Error {
@@ -102,7 +107,10 @@ export const componentSource = (definitions: Record<string, unknown>[]) =>
     .map((it, index) => `export const definition${index} = ${JSON.stringify(it)};`)
     .join('\n');
 
-export const contentTypeDefinition = (key: string, overrides: Record<string, unknown> = {}) => ({
+export const contentTypeDefinition = (
+  key: string,
+  overrides: Record<string, unknown> = {},
+) => ({
   __type: 'contentType',
   key,
   displayName: key,
@@ -132,3 +140,39 @@ export const writeProject = async (
 
   return configPath;
 };
+
+/** Patch state key of the instance `stubCmsEnv` points at */
+export const STUB_INSTANCE_KEY = 'https://api.cms.optimizely.com|client-a';
+
+/** Stubs CMS credentials and clears the API URL, so the default gateway is used */
+export const stubCmsEnv = (clientId = 'client-a') => {
+  vi.stubEnv('OPTIMIZELY_CMS_CLIENT_ID', clientId);
+  vi.stubEnv('OPTIMIZELY_CMS_CLIENT_SECRET', 'secret');
+  vi.stubEnv('OPTIMIZELY_CMS_API_URL', '');
+};
+
+/** Makes stdin and stdout report a terminal for every test in the calling `describe` block */
+export const useTerminal = () => {
+  const streams = [process.stdin, process.stdout];
+  const descriptors = streams.map(stream =>
+    Object.getOwnPropertyDescriptor(stream, 'isTTY'),
+  );
+
+  beforeEach(() =>
+    streams.forEach(stream =>
+      Object.defineProperty(stream, 'isTTY', { value: true, configurable: true }),
+    ),
+  );
+
+  afterEach(() =>
+    streams.forEach((stream, index) => {
+      const descriptor = descriptors[index];
+      if (descriptor) Object.defineProperty(stream, 'isTTY', descriptor);
+      else delete (stream as { isTTY?: boolean }).isTTY;
+    }),
+  );
+};
+
+/** Path of the patch state file for a project rooted at `root` */
+export const patchStateFile = (root: string) =>
+  join(root, '.optimizely', 'patch-state.json');

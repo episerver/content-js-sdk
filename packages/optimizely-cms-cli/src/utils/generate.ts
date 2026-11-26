@@ -12,6 +12,7 @@ import {
   isCircular,
   type CircularDependencyMap,
 } from './dependency.js';
+import { isObject } from './general.js';
 
 // UTILITY FUNCTIONS
 
@@ -428,9 +429,6 @@ const isContract = (content: JSONContent): boolean =>
   isContentType(content) && content.isContract === true;
 
 const isImportable = (value: string) => !value.startsWith('_');
-
-const isObject = (item: unknown): item is Record<string, unknown> =>
-  typeof item === 'object' && item !== null && Array.isArray(item) === false;
 
 // OBJECT TRANSFORMATION
 

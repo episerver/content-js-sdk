@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import ora from 'ora';
-import { syncLocales } from '../service/localeService.js';
+import { findLocalesToSync, syncLocales } from '../service/localeService.js';
 import {
   apiResponse,
   mockApiClient,
@@ -16,6 +16,39 @@ vi.mock('ora', async () => ({
 
 const existingLocales = (items: { key: string; isEnabled: boolean }[]) =>
   apiResponse({ data: { items } });
+
+describe('findLocalesToSync', () => {
+  let client: MockApiClient;
+
+  beforeEach(() => {
+    client = mockApiClient();
+  });
+
+  test('lists configured locales that are missing or disabled in the CMS', async () => {
+    client.GET.mockResolvedValue(
+      existingLocales([
+        { key: 'en', isEnabled: true },
+        { key: 'sv', isEnabled: false },
+      ]),
+    );
+
+    expect(await findLocalesToSync(['en', 'sv', 'fr'], client as never)).toEqual([
+      'sv',
+      'fr',
+    ]);
+  });
+
+  test('lists every locale when the CMS cannot be read', async () => {
+    client.GET.mockResolvedValue(apiResponse({ status: 500, error: { status: 500 } }));
+
+    expect(await findLocalesToSync(['en', 'sv'], client as never)).toEqual(['en', 'sv']);
+  });
+
+  test('does not call the CMS for an empty list', async () => {
+    expect(await findLocalesToSync([], client as never)).toEqual([]);
+    expect(client.GET).not.toHaveBeenCalled();
+  });
+});
 
 describe('syncLocales', () => {
   let client: MockApiClient;
@@ -138,7 +171,9 @@ describe('syncLocales', () => {
 
     await sync(['sv']);
 
-    expect(spinnerMessages(ora, 'warn')).toEqual(['Failed to enable locale sv: Unknown error']);
+    expect(spinnerMessages(ora, 'warn')).toEqual([
+      'Failed to enable locale sv: Unknown error',
+    ]);
     expect(printed(consoleSpies.log)).toContain('- Read-only (field: isEnabled)');
   });
 });

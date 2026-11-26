@@ -12,6 +12,7 @@ import {
   apiResponse,
   componentSource,
   contentTypeDefinition,
+  deletedKeys,
   mockApiClient,
   mockExit,
   printed,
@@ -28,7 +29,9 @@ vi.mock('ora', async () => ({
 }));
 
 const cmsTypes = (...items: { key: string; source?: string }[]) =>
-  apiResponse({ data: { items: items.map(it => ({ displayName: `${it.key} Name`, ...it })) } });
+  apiResponse({
+    data: { items: items.map(it => ({ displayName: `${it.key} Name`, ...it })) },
+  });
 
 const dependencyConflict = apiResponse({
   status: 409,
@@ -64,7 +67,11 @@ describe('config delete', () => {
     writeProject(
       tempDir,
       { components: ['./components/*.ts'] },
-      { 'components/Types.ts': componentSource(keys.map(key => contentTypeDefinition(key))) },
+      {
+        'components/Types.ts': componentSource(
+          keys.map(key => contentTypeDefinition(key)),
+        ),
+      },
     );
 
   beforeEach(async () => {
@@ -92,7 +99,9 @@ describe('config delete', () => {
 
     await remove(configPath);
 
-    expect(printed(consoleSpies.log)).toContain('No content types defined in project configuration');
+    expect(printed(consoleSpies.log)).toContain(
+      'No content types defined in project configuration',
+    );
     expect(createApiClient).not.toHaveBeenCalled();
   });
 
@@ -116,16 +125,22 @@ describe('config delete', () => {
 
   test('exits when the CMS returns no content type list', async () => {
     const configPath = await writeConfig();
-    client.GET.mockResolvedValue(apiResponse({ status: 500, error: { title: 'Server Error' } }));
+    client.GET.mockResolvedValue(
+      apiResponse({ status: 500, error: { title: 'Server Error' } }),
+    );
 
     await expect(remove(configPath)).rejects.toThrow(ExitError);
 
-    expect(printed(consoleSpies.error)).toContain('Failed to fetch content types from the CMS');
+    expect(printed(consoleSpies.error)).toContain(
+      'Failed to fetch content types from the CMS',
+    );
   });
 
   test('lists project types missing from the CMS and deletes nothing when none match', async () => {
     const configPath = await writeConfig();
-    client.GET.mockResolvedValue(cmsTypes({ key: 'Hero', source: 'system' }, { key: 'Other' }));
+    client.GET.mockResolvedValue(
+      cmsTypes({ key: 'Hero', source: 'system' }, { key: 'Other' }),
+    );
 
     await remove(configPath);
 
@@ -150,10 +165,16 @@ describe('config delete', () => {
   test('deletes only project types without a source and summarises the result', async () => {
     const configPath = await writeConfig(['Hero', 'Banner', 'Card', 'Missing']);
     client.GET.mockResolvedValue(
-      cmsTypes({ key: 'Hero' }, { key: 'Banner' }, { key: 'Card' }, { key: 'Other' }, {
-        key: 'System',
-        source: 'system',
-      }),
+      cmsTypes(
+        { key: 'Hero' },
+        { key: 'Banner' },
+        { key: 'Card' },
+        { key: 'Other' },
+        {
+          key: 'System',
+          source: 'system',
+        },
+      ),
     );
     client.DELETE.mockImplementation(async (_, { params }) =>
       params.path.key === 'Banner' ? dependencyConflict
@@ -164,15 +185,15 @@ describe('config delete', () => {
     await remove(configPath, '--host', 'https://cms.example.com');
 
     expect(createApiClient).toHaveBeenCalledWith('https://cms.example.com');
-    expect(client.DELETE.mock.calls.map(([, options]) => options.params.path.key)).toEqual([
-      'Hero',
-      'Banner',
-      'Card',
-    ]);
+    expect(deletedKeys(client)).toEqual(['Hero', 'Banner', 'Card']);
     expect(confirm).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('Delete 3 content types?') }),
+      expect.objectContaining({
+        message: expect.stringContaining('Delete 3 content types?'),
+      }),
     );
-    expect(printed(consoleSpies.log)).toContain('Note: The following project types are not in the CMS:');
+    expect(printed(consoleSpies.log)).toContain(
+      'Note: The following project types are not in the CMS:',
+    );
     expect(spinnerMessages(ora, 'succeed')).toEqual(["'Hero' deleted"]);
     expect(spinnerMessages(ora, 'fail')).toEqual([
       "'Banner' cannot be deleted",
@@ -191,7 +212,8 @@ describe('config delete', () => {
 });
 
 describe('danger delete-all-content-types', () => {
-  const removeAll = (...args: string[]) => DangerDeleteAllContentTypes.run(args, import.meta.url);
+  const removeAll = (...args: string[]) =>
+    DangerDeleteAllContentTypes.run(args, import.meta.url);
 
   test('reports a connection failure', async () => {
     vi.mocked(createApiClient).mockRejectedValue(new Error('Invalid credentials'));
@@ -212,7 +234,9 @@ describe('danger delete-all-content-types', () => {
   test('exits when the CMS returns no content type list', async () => {
     await expect(removeAll()).rejects.toThrow(ExitError);
 
-    expect(printed(consoleSpies.error)).toContain('Failed to fetch content types from the CMS');
+    expect(printed(consoleSpies.error)).toContain(
+      'Failed to fetch content types from the CMS',
+    );
   });
 
   test('stops when only system types exist', async () => {
@@ -220,7 +244,9 @@ describe('danger delete-all-content-types', () => {
 
     await removeAll();
 
-    expect(printed(consoleSpies.log)).toContain('There are no user-defined content types in the CMS');
+    expect(printed(consoleSpies.log)).toContain(
+      'There are no user-defined content types in the CMS',
+    );
     expect(confirm).not.toHaveBeenCalled();
   });
 
@@ -240,7 +266,12 @@ describe('danger delete-all-content-types', () => {
 
   test('deletes every user-defined type and summarises the result', async () => {
     client.GET.mockResolvedValue(
-      cmsTypes({ key: 'Hero' }, { key: 'Banner' }, { key: 'Card' }, { key: 'System', source: 'cms' }),
+      cmsTypes(
+        { key: 'Hero' },
+        { key: 'Banner' },
+        { key: 'Card' },
+        { key: 'System', source: 'cms' },
+      ),
     );
     client.DELETE.mockImplementation(async (_, { params }) =>
       params.path.key === 'Banner' ? dependencyConflict
@@ -251,13 +282,11 @@ describe('danger delete-all-content-types', () => {
     await removeAll();
 
     expect(confirm).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('ALL 3 user-defined content types') }),
+      expect.objectContaining({
+        message: expect.stringContaining('ALL 3 user-defined content types'),
+      }),
     );
-    expect(client.DELETE.mock.calls.map(([, options]) => options.params.path.key)).toEqual([
-      'Hero',
-      'Banner',
-      'Card',
-    ]);
+    expect(deletedKeys(client)).toEqual(['Hero', 'Banner', 'Card']);
     expect(printed(consoleSpies.log)).toContain('Hero Name (Hero)');
 
     const errors = printed(consoleSpies.error);

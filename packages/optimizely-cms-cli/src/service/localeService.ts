@@ -1,9 +1,8 @@
 import ora from 'ora';
 import chalk from 'chalk';
-import type { Client } from 'openapi-fetch';
 import type { paths } from './apiSchema/openapi-schema-types.js';
+import type { ApiClient } from './cmsRestClient.js';
 
-type ApiClient = Client<paths>;
 type Locale = paths['/locales']['post']['requestBody']['content']['application/json'];
 
 /**
@@ -17,6 +16,37 @@ const deriveDisplayName = (key: string): string => {
     return key;
   }
 };
+
+// splits the configured locales by what the sync has to do with them
+const categorizeLocales = (
+  locale: string[],
+  existing: { key?: string; isEnabled?: boolean }[],
+) => {
+  const byKey = new Map(existing.map(it => [it.key, it]));
+
+  return {
+    toCreate: locale.filter(it => !byKey.has(it)),
+    toEnable: locale.filter(it => byKey.has(it) && !byKey.get(it)?.isEnabled),
+    alreadyEnabled: locale.filter(it => byKey.get(it)?.isEnabled),
+  };
+};
+
+/**
+ * Lists the configured locales that are missing or disabled in the CMS; all of them when the
+ * CMS can't be read, so the sync runs and reports the problem
+ */
+export async function findLocalesToSync(
+  locale: string[],
+  restClient: ApiClient,
+): Promise<string[]> {
+  if (locale.length === 0) return [];
+
+  const { data, error } = await restClient.GET('/locales');
+  if (error) return locale;
+
+  const { alreadyEnabled } = categorizeLocales(locale, data?.items ?? []);
+  return locale.filter(it => !alreadyEnabled.includes(it));
+}
 
 /**
  * Syncs locales from buildConfig to CMS via REST API
@@ -44,19 +74,10 @@ export async function syncLocales(
     return;
   }
 
-  const existingLocales = listResponse.data?.items || [];
-  const existingKeys = new Set(existingLocales.map(l => l.key));
-
-  // Categorize locales
-  const toCreate = locale.filter(lang => !existingKeys.has(lang));
-  const toEnable = locale.filter(lang => {
-    const existing = existingLocales.find(l => l.key === lang);
-    return existing && !existing.isEnabled;
-  });
-  const alreadyEnabled = locale.filter(lang => {
-    const existing = existingLocales.find(l => l.key === lang);
-    return existing && existing.isEnabled;
-  });
+  const { toCreate, toEnable, alreadyEnabled } = categorizeLocales(
+    locale,
+    listResponse.data?.items ?? [],
+  );
 
   let createdCount = 0;
   for (const lang of toCreate) {

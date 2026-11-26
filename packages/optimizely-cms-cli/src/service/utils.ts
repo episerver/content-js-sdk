@@ -368,6 +368,7 @@ const validateApplication = (app: ApplicationsType, applicationIndex: number): v
  */
 export const validateApplications = (
   applications: ApplicationsType[],
+  content?: unknown[],
 ): ApplicationsType[] => {
   if (!Array.isArray(applications))
     throw new Error(
@@ -375,6 +376,12 @@ export const validateApplications = (
     );
 
   applications.forEach(validateApplication);
+
+  // an application without entryPoint gets it from the content config
+  if (applications.some(app => !app.entryPoint) && !content)
+    throw new Error(
+      'Content configuration required when applications defined without entryPoint. Either configure entryPoint in application OR configure content array',
+    );
 
   return applications;
 };

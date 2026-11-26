@@ -17,9 +17,10 @@ import {
   generateRegistryFilePath,
 } from '../../utils/generate.js';
 import { getRelevantPath, makeDirs, makeFile, makeFiles } from '../../utils/make.js';
-import { formatCounts, validateManifest } from '../../utils/general.js';
+import { formatCounts, isInteractive, validateManifest } from '../../utils/general.js';
 import { filterOutBuiltinTypes } from '../../utils/mapping.js';
 import { buildCircularDependencyMap } from '../../utils/dependency.js';
+import { fetchManifest } from '../../service/manifestService.js';
 
 const defaultOutput = './src/content-types';
 const outputFlags = ['output', 'single-file', 'individual', 'group'] as const;
@@ -78,42 +79,8 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
   // API METHODS
 
-  /**
-   * Fetches the manifest from CMS
-   * @throws Error with descriptive message if fetch fails
-   */
-  private async fetchManifest(host?: string, includeReadOnly?: boolean) {
-    const restClient = await createApiClient(host);
-    const { data, error, response } = await restClient.GET('/manifest', {
-      params: {
-        query: {
-          sections: ['contentTypes', 'displayTemplates', 'propertyGroups'],
-          ...(includeReadOnly ? { includeReadOnly } : {}),
-        },
-      },
-    });
-    if (error || (response && !response.ok)) {
-      throw new Error(this.buildErrorMessage(error, response));
-    }
-    return data;
-  }
-
-  // ERROR HANDLING
-
-  /**
-   * Builds formatted error message from API response
-   */
-  private buildErrorMessage(error: any, response: any): string {
-    const status = error?.status ?? response?.status;
-    const title = error?.title ?? error?.message ?? response?.statusText;
-    const detail = error?.detail;
-
-    let message = 'Failed to fetch manifest from CMS';
-    if (status) message += chalk.dim(` (status ${status})`);
-    if (title) message += `: ${chalk.yellow(title)}`;
-    if (detail) message += chalk.dim(` - ${detail}`);
-
-    return message;
+  private async downloadManifest(host?: string, includeReadOnly?: boolean) {
+    return fetchManifest(await createApiClient(host), { includeReadOnly });
   }
 
   /**
@@ -183,7 +150,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     }).start();
 
     try {
-      const response = await this.fetchManifest(host, includeReadOnly);
+      const response = await this.downloadManifest(host, includeReadOnly);
       if (!this.handleEmptyResponse(response, spinner)) return;
 
       spinner.succeed(` Downloaded configuration from CMS (${formatCounts(response)})`);
@@ -306,9 +273,9 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
 
   public async run(): Promise<void | any> {
     const { flags } = await this.parse(ConfigPull);
-    const isInteractive = process.stdout.isTTY === true && process.stdin.isTTY === true;
+    const interactive = isInteractive();
     const hasOutputFlag = outputFlags.some(flag => Boolean(flags[flag]));
-    const shouldOutputJson = flags.json || (!isInteractive && !hasOutputFlag);
+    const shouldOutputJson = flags.json || (!interactive && !hasOutputFlag);
     const includeReadOnly = flags.includeReadOnly;
 
     if (shouldOutputJson) return this.handleJsonOutput(flags.host, includeReadOnly);
@@ -319,7 +286,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     // Prompt for output directory if not provided
     const providedOutput =
       flags.output ||
-      (isInteractive ?
+      (interactive ?
         await input({
           message: 'Where should the generated file(s) be saved?',
           default: defaultOutput,
@@ -335,7 +302,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
       : flags.individual ? 'individual'
       : flags.group ? 'group'
       : isForcedSingleFileMode ? 'single-file'
-      : isInteractive ?
+      : interactive ?
         await select({
           message: 'How would you like to organize the output?',
           choices: [
@@ -353,7 +320,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     const actualOutputType = isForcedSingleFileMode ? 'single-file' : outputType;
 
     const wantsRegistry =
-      isInteractive &&
+      interactive &&
       (await confirm({
         message: 'Generate a registry file (registry.ts) for the generated types?',
         default: false,
@@ -376,7 +343,7 @@ export default class ConfigPull extends BaseCommand<typeof ConfigPull> {
     const spinner = ora('Downloading configuration from CMS').start();
 
     try {
-      const response = await this.fetchManifest(flags.host, includeReadOnly);
+      const response = await this.downloadManifest(flags.host, includeReadOnly);
       if (!this.handleEmptyResponse(response, spinner)) return;
 
       spinner.text = 'Validating manifest';
