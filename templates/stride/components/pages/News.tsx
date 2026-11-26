@@ -5,7 +5,7 @@ import SubNavigationLayout from '../layouts/SubNavigationLayout';
 import { OptimizelyComposition } from '@optimizely/cms-sdk/react/server';
 
 export const NewsPage = contentType({
-  key: 'NewsPage2',
+  key: 'NewsPage',
   baseType: '_experience',
   displayName: 'News Page',
   description: 'News page with text, sidebar, and sub-navigation.',
@@ -35,7 +35,7 @@ type NewsPageProps = {
 
 export default function News({ content }: NewsPageProps) {
   const CmsField = bindCmsField(content);
-  
+
   return (
     <SubNavigationLayout>
       <CmsField field={c => c.heading} alwaysRender>

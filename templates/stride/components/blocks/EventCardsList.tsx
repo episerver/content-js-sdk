@@ -11,6 +11,7 @@ export const EventCardsListContentType = contentType({
     title: {
       type: 'string',
       displayName: 'Title',
+      sortOrder: 1,
     },
     events: {
       type: 'array',
@@ -19,6 +20,7 @@ export const EventCardsListContentType = contentType({
         allowedTypes: [EventCardComponent],
       },
       displayName: 'List of events',
+      sortOrder: 2,
     },
   },
   compositionBehaviors: ['sectionEnabled'],
