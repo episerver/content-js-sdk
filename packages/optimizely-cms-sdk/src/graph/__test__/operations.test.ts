@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { GraphClient } from '../index.js';
 import { GraphResponseError } from '../error.js';
 import { clearTaxonomyCache } from '../operations.js';
@@ -79,6 +79,50 @@ describe('getContentByPath', () => {
 
     await expect(client.getContentByPath('/missing/')).resolves.toEqual([]);
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  describe('host mismatch warning', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    const miss = { _Content: { item: null }, damAssetType: null };
+    const warnings = () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      return () => warn.mock.calls.map(call => String(call[0]));
+    };
+
+    test('warns once per host when nothing matches', async () => {
+      const warned = warnings();
+      stubGraph(client, { metadata: miss });
+
+      await client.getContentByPath('/a/', { host: 'https://miss-1.example.com/' });
+      await client.getContentByPath('/b/', { host: 'https://miss-1.example.com' });
+
+      expect(warned()).toHaveLength(1);
+      expect(warned()[0]).toContain('"https://miss-1.example.com"');
+    });
+
+    test('does not warn for a host that has matched content', async () => {
+      const warned = warnings();
+      stubGraph(client, {
+        metadata: metadataResponse(['Article']),
+        content: { _Content: { items: [{ __typename: 'Article' }] } },
+      });
+      await client.getContentByPath('/news/', { host: 'https://hit-1.example.com' });
+
+      stubGraph(client, { metadata: miss });
+      await client.getContentByPath('/missing/', { host: 'https://hit-1.example.com' });
+
+      expect(warned()).toEqual([]);
+    });
+
+    test('does not warn without a host', async () => {
+      const warned = warnings();
+      stubGraph(client, { metadata: miss });
+
+      await client.getContentByPath('/missing/');
+
+      expect(warned()).toEqual([]);
+    });
   });
 
   test('returns an empty list when the content type is not registered', async () => {

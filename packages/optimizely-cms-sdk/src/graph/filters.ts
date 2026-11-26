@@ -44,8 +44,28 @@ export type VariationMode =
   | 'all'
   | { count: number; includeOriginal?: boolean };
 
-export function pathScalarFilter(path: string, host?: string): ScalarFilter {
+const HAS_SCHEME = /^[a-z][a-z\d+.-]*:\/\//i;
+
+/**
+ * Reduces a host to the form Graph stores in `_metadata.url.base`: lowercase
+ * scheme and host, no path, no trailing slash. A bare host gets `https://`.
+ * A value that doesn't parse as a URL is passed through trimmed.
+ */
+export function normalizeHost(host?: string): string | undefined {
+  const trimmed = host?.trim();
+  if (!trimmed) return undefined;
+
+  try {
+    const { origin } = new URL(HAS_SCHEME.test(trimmed) ? trimmed : `https://${trimmed}`);
+    return origin === 'null' ? trimmed : origin;
+  } catch {
+    return trimmed;
+  }
+}
+
+export function pathScalarFilter(path: string, rawHost?: string): ScalarFilter {
   const { pathWithTrailingSlash, pathWithoutTrailingSlash } = normalizePath(path);
+  const host = normalizeHost(rawHost);
   return {
     filterShape: 'by-path',
     variables: {
