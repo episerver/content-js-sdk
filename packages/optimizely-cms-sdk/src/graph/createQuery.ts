@@ -303,11 +303,11 @@ export const createFragment = (
     // Sections fetch their own composition unless nested in one already.
     // Standalone sections need composition to render properly. The field
     // must be known to exist; use caller's schema list if available,
-    // otherwise fall back to the forms container.
+    // otherwise only the forms container, which is known to have it.
     const canBeAsked =
       ctx.sectionTypes ?
         ctx.sectionTypes.has(stripSourcePrefix(contentTypeName))
-      : isRootCall || isFormContentType(contentTypeName);
+      : isFormContentType(contentTypeName);
     const isStandaloneSection =
       canBeAsked && !insideComposition && !isExperience && holdsComposition(contentType);
 

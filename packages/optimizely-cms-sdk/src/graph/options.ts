@@ -309,6 +309,11 @@ export type GraphOptions = {
    * @default 'OptimizelySDK/{version} (JS)'
    */
   userAgent?: string;
+  /**
+   * Milliseconds to wait for a Graph response before the request fails.
+   * @default 30000
+   */
+  requestTimeout?: number;
   /** Settings that shape the generated GraphQL query. */
   fragment?: GraphFragmentOptions;
   /** Defaults for the per-request options, overridable on any single call. */

@@ -60,7 +60,9 @@ beforeEach(() => {
 
 describe('a section requested on its own', () => {
   test('fetches its composition', () => {
-    const fragments = fragmentsFor('PlainSection');
+    const fragments = fragmentsFor('PlainSection', {
+      sectionTypes: new Set(['PlainSection']),
+    });
 
     expect(sectionFragment(fragments)).toContain('composition { ...ICompositionNode }');
     expect(fragments.some(f => f.startsWith('fragment ICompositionNode'))).toBe(true);
@@ -71,10 +73,18 @@ describe('a section requested on its own', () => {
   // GraphQL rejects a document that declares a fragment nothing spreads, and a
   // section reads `composition` directly rather than through `_IExperience`.
   test('does not declare the unused _IExperience fragment', () => {
-    const fragments = fragmentsFor('PlainSection');
+    const fragments = fragmentsFor('PlainSection', {
+      sectionTypes: new Set(['PlainSection']),
+    });
 
     expect(fragments.some(f => f.startsWith('fragment _IExperience'))).toBe(false);
   });
+});
+
+// An unverified lookup must not guess: a section-enabled type Graph does not list
+// under `_ISection` has no `composition` field, and asking for it fails the query.
+test('an unverified section does not ask for composition', () => {
+  expect(sectionFragment(fragmentsFor('PlainSection'))).not.toContain('composition');
 });
 
 describe('a section reached through an experience', () => {
