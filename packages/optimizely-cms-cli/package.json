@@ -81,6 +81,9 @@
       },
       "danger": {
         "description": "⚠️  Destructive operations - use with caution"
+      },
+      "generate": {
+        "description": "Generate code from content type definitions"
       }
     }
   }

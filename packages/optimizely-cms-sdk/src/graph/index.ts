@@ -43,7 +43,20 @@ export {
   GraphReference,
   GraphSlot,
   PreviewParams,
+  OrderBy,
+  OrderDirection,
+  ContentMetadataOrderByInput,
+  ItemMetadataOrderByInput,
+  ChangesetMetadataOrderByInput,
 } from './options.js';
+export {
+  createClient,
+  createClientFromRegistry,
+  ContentTypeMap,
+  TypedClient,
+  TypedContentMethods,
+  TypedOrderBy,
+} from './typed-client.js';
 export type {
   DamMode,
   GraphActingUser,
@@ -342,7 +355,7 @@ export class GraphClient {
    * - String format: `graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en`
    *
    * @param input - URL path string or GraphReference object/string
-   * @param options - Optional host and locales filters
+   * @param options - Optional host, locales filters, and orderBy
    * @returns A list with the metadata information of all child/descendant pages
    *
    * @example
@@ -355,6 +368,11 @@ export class GraphClient {
    *
    * // Using string format
    * const items = await client.getItems('graph://Page/880777d5a2824399b07e93e3ca70668e?loc=en');
+   *
+   * // With orderBy
+   * const items = await client.getItems('/blog', {
+   *   orderBy: { _metadata: { sortOrder: 'ASC' } },
+   * });
    * ```
    */
   async getItems(reference: string | GraphReference, options?: GraphGetLinksOptions) {

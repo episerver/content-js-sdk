@@ -62,7 +62,7 @@ type InferredInstanceMetadata = {
   createdBy: string | null;
 };
 
-type InferredContentMetadata = {
+export type InferredContentMetadata = {
   key: string;
   locale: string;
   fallbackForLocale: string;

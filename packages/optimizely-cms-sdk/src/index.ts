@@ -21,6 +21,13 @@ export {
   GraphVariationInput,
   getClient,
   config,
+  createClient,
+  createClientFromRegistry,
+  OrderBy,
+  OrderDirection,
+  ContentMetadataOrderByInput,
+  ItemMetadataOrderByInput,
+  ChangesetMetadataOrderByInput,
 } from './graph/index.js';
 
 // GraphQL types
@@ -44,6 +51,10 @@ export type {
   DamMode,
   TaxonomyTerm,
   TaxonomyMode,
+  ContentTypeMap,
+  TypedClient,
+  TypedContentMethods,
+  TypedOrderBy,
 } from './graph/index.js';
 export type { TelemetryOptions } from './telemetry/settings.js';
 

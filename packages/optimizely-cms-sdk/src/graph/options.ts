@@ -1,4 +1,5 @@
 import { GraphVariationInput } from './filters.js';
+import type { InferredContentMetadata } from '../infer.js';
 import {
   DEFAULT_MAX_FRAGMENT_THRESHOLD,
   DEFAULT_EXPAND_CONTRACTS,
@@ -324,8 +325,45 @@ export type GraphGetContentOptions = GraphQueryOptions & {
   variation?: GraphVariationInput;
 };
 
+export type OrderDirection = 'ASC' | 'DESC';
+
+/** Matches `IContentMetadataOrderByInput` from Graph schema. */
+export type ContentMetadataOrderByInput = {
+  [K in keyof InferredContentMetadata]?: OrderDirection | { [field: string]: OrderDirection };
+};
+
+/** Matches `_MetadataOrderByInput` from Graph schema. Accepts unknown fields for forward compat. */
+export type ItemMetadataOrderByInput = {
+  [K in 'key' | 'displayName' | 'lastModified' | 'type' | 'categories' | (string & {})]?: OrderDirection;
+};
+
+/** Matches `_ChangesetMetadataOrderByInput` from Graph schema. Accepts unknown fields for forward compat. */
+export type ChangesetMetadataOrderByInput = {
+  [K in 'changesetKey' | 'changesetName' | 'status' | 'locale' | (string & {})]?: OrderDirection;
+};
+
+/**
+ * Order-by clause matching Graph's `orderBy` format.
+ *
+ * ```ts
+ * { _metadata: { published: 'DESC', sortOrder: 'ASC' } }
+ * { _modified: 'DESC' }
+ * { body: { html: 'ASC' }, _metadata: { published: 'DESC' } }
+ * ```
+ */
+type OrderByValue = OrderDirection | { [nested: string]: OrderByValue } | undefined;
+
+export type OrderBy = {
+  _metadata?: ContentMetadataOrderByInput;
+  _itemMetadata?: ItemMetadataOrderByInput;
+  _changesetMetadata?: ChangesetMetadataOrderByInput;
+  _modified?: OrderDirection;
+  [field: string]: OrderByValue;
+};
+
 export type GraphGetLinksOptions = GraphQueryOptions & {
   locales?: string[];
+  orderBy?: OrderBy;
 };
 
 export type GraphGetItemOptions = GraphQueryOptions & {
