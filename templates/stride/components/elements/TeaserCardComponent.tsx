@@ -8,19 +8,24 @@ export const TeaserCardComponent = contentType({
   properties: {
     heading: {
       type: 'string',
-      displayName: 'Teaser Text',
+      displayName: 'Heading',
+      sortOrder: 1,
     },
     description: {
       type: 'string',
-      displayName: 'Teaser Description',
+      displayName: 'Description',
+      sortOrder: 2,
     },
     image: {
       type: 'contentReference',
-      displayName: 'Teaser Image',
+      displayName: 'Image',
+      sortOrder: 3,
       allowedTypes: ['_image'],
     },
     link: {
       type: 'contentReference',
+      displayName: 'Link',
+      sortOrder: 4,
       allowedTypes: ['_page', '_experience'],
     },
   },

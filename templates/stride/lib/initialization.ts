@@ -1,5 +1,6 @@
 import {
   BlankExperienceContentType,
+  BlankSectionContentType,
   config,
   initContentTypeRegistry,
   initDisplayTemplateRegistry,
@@ -76,6 +77,7 @@ export function initialize() {
 
   initContentTypeRegistry([
     BlankExperienceContentType,
+    BlankSectionContentType,
     ProductPage,
     StandardPage,
     StartPage,
@@ -98,13 +100,13 @@ export function initialize() {
   initReactComponentRegistry({
     resolver: {
       BlankExperience,
+      BlankSection,
       ProductPage: Product,
       StandardPage: Standard,
       StartPage: Start,
-      NewsPage2: News,
+      NewsPage: News,
       NewsEvents: NewsEventsList,
       TeaserCardComponent: TeaserCard,
-      BlankSection,
       HeroSection: Hero,
       ImageCardElement: ImageCard,
       ButtonElement: Button,

@@ -11,7 +11,7 @@ export const NewsEventsListContentType = contentType({
     title: {
       type: 'string',
       displayName: 'Title',
-      group: 'Content',
+      sortOrder: 1,
     },
     teasers: {
       type: 'array',
@@ -20,6 +20,7 @@ export const NewsEventsListContentType = contentType({
         allowedTypes: [TeaserCardComponent],
       },
       displayName: 'List of Teasers',
+      sortOrder: 2,
     },
   },
   compositionBehaviors: ['sectionEnabled'],

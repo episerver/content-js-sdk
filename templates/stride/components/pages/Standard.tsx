@@ -37,6 +37,8 @@ export const StandardPage = contentType({
     },
     extras: {
       type: 'array',
+      displayName: 'Extras',
+      sortOrder: 4,
       items: {
         type: 'content',
         allowedTypes: ['_component', '_experience'],
