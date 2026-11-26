@@ -402,7 +402,7 @@ export function getGraphConfig(): GraphOptions | null {
  *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
  *   fragment: { richTextFormat: 'json' }, // optional
- *   query: { cache: true, host: 'example.com' }, // optional
+ *   query: { cache: true, host: 'https://www.example.com' }, // optional
  *   telemetry: { componentMetrics: false }, // optional
  * });
  *
@@ -462,7 +462,7 @@ const mergeGraphOptions = (
  * config({
  *   apiKey: process.env.OPTIMIZELY_GRAPH_SINGLE_KEY!,
  *   graphUrl: process.env.OPTIMIZELY_GRAPH_GATEWAY, // optional
- *   query: { host: 'example.com' }, // optional
+ *   query: { host: 'https://www.example.com' }, // optional
  * });
  *
  * // In your components
@@ -472,7 +472,7 @@ const mergeGraphOptions = (
  * const content = await client.getContentByPath('/my-page/');
  *
  * // Or override config for specific use cases
- * const customClient = getClient({ query: { host: 'custom.example.com' } });
+ * const customClient = getClient({ query: { host: 'https://custom.example.com' } });
  * const jsonOnly = getClient({ fragment: { richTextFormat: 'json' } });
  * ```
  */

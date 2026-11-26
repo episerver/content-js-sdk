@@ -757,6 +757,13 @@ async function getContentMetaData(
 
 // CONTENT FETCHING
 
+/**
+ * Hosts that have matched content, or have already been warned about. A wrong
+ * host empties every page, so one warning per host is enough; a host that has
+ * matched once is known good and never warns.
+ */
+const checkedHosts = new Set<string>();
+
 /** Every item published at a URL path. See `GraphClient.getContentByPath`. */
 export async function getContentByPath<T = any>(
   context: GraphClientContext,
@@ -780,10 +787,26 @@ export async function getContentByPath<T = any>(
         options?.variation,
       );
 
+    const host = filter.variables.host as string | undefined;
+
     if (!contentTypeName) {
       span.setAttribute(SemanticAttributes.OPTI_CONTENT_FOUND, false);
+      if (host && !checkedHosts.has(host)) {
+        checkedHosts.add(host);
+        logWarning(
+          `No content found at "${path}" for host "${host}". If every page is empty, check that host ` +
+            'matches an application URL in the CMS, including the scheme (e.g. "https://www.example.com"). ' +
+            'Shown once per host.',
+          {
+            [SemanticAttributes.OPTI_HOST]: host,
+            [SemanticAttributes.OPTI_CONTENT_PATH]: path,
+          },
+        );
+      }
       return [];
     }
+
+    if (host) checkedHosts.add(host);
 
     span.setAttribute(SemanticAttributes.OPTI_CONTENT_TYPE, contentTypeName);
 

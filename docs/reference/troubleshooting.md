@@ -215,6 +215,16 @@ config({
 You can also pass `host` to a single `getContentByPath()` call. See
 [`config()`](./config.md).
 
+### Every page is empty after setting `host`
+
+**Cause:** `query.host` doesn't match any application URL in the CMS, so every path lookup
+comes back empty. The SDK logs one warning per host: `No content found at "<path>" for host
+"<host>"`. A common mistake is using the platform hostname (`app-xxxxx.cms.optimizely.com`)
+instead of the site's public URL.
+
+**Fix:** Set `host` to the application URL shown in the CMS, e.g. `https://www.example.com`.
+The SDK adds `https://` to a bare host and drops any path or trailing slash.
+
 ### `GraphFragmentThresholdError: Fragment generation for "<type>" produced <n> inner fragments`
 
 **Cause:** A content area accepts so many content types that the generated query would
